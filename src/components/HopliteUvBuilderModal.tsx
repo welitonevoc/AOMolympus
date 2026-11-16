@@ -162,8 +162,8 @@ export function HopliteUvBuilderModal({
       if (entityMeshRef.current?.userData.animatePose) {
         const moving = animStateRef.current === 'move';
         const attacking = animStateRef.current === 'attack';
-        const attackT = attacking ? (Math.sin(simTime * 3.5) + 1) * 0.5 : null;
-        entityMeshRef.current.userData.animatePose(dt, moving, 3.2, attackT);
+        const actionState = attacking ? (selectedUnit === 'villager' ? 'gather' : 'attack') : moving ? 'move' : 'idle';
+        entityMeshRef.current.userData.animatePose(dt, moving, 3.2, attackT, actionState, 'wood');
       }
 
       renderer.render(scene, camera);

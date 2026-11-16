@@ -5847,14 +5847,23 @@ export class AoMEngine {
       // Update 2.5D BRG Vertex-Cache Morphing (AoM Native BRG animation)
       u.mesh.userData.updateBrg?.(dt, u.manualAttackTimer > 0 ? 'attack' : u.state);
 
-      // Rigged hoplites (spine / upper body / knees) are posed by animatePose.
+      // Rigged units (hoplites and villagers) are posed by animatePose.
       // Other units keep the legacy limb swing below.
       const poseAnim = u.mesh.userData.animatePose as
-        | ((dt: number, moving: boolean, speed: number, attackT: number | null) => void)
+        | ((
+            dt: number,
+            moving: boolean,
+            speed: number,
+            attackT: number | null,
+            state?: string,
+            resourceType?: string | null,
+            carryAmount?: number
+          ) => void)
         | undefined;
       if (poseAnim) {
         const attackT = u.manualAttackTimer > 0 ? 1 - u.manualAttackTimer / (6 / 14) : null;
-        poseAnim(dt, u.state === 'move', stats.speed * mods.speedMult, attackT);
+        const resType = u.gatherResourceType ?? u.carryType;
+        poseAnim(dt, u.state === 'move', stats.speed * mods.speedMult, attackT, u.state, resType, u.carryAmount);
       }
 
       // 3D Procedural Limb Animations (when in 3D mode)
@@ -5931,7 +5940,7 @@ export class AoMEngine {
               farmBuilding.mesh.position.z - u.mesh.position.z
             );
             u.animPhase += dt * 7;
-            if (u.mesh.userData.rightArm) {
+            if (!poseAnim && u.mesh.userData.rightArm) {
               u.mesh.userData.rightArm.rotation.x = -0.6 + Math.sin(u.animPhase) * 0.55;
             }
             u.gatherTimer += dt * mods.gatherFoodMult;
@@ -5996,7 +6005,7 @@ export class AoMEngine {
               node.mesh.position.z - u.mesh.position.z
             );
             u.animPhase += dt * 7;
-            if (u.mesh.userData.rightArm) {
+            if (!poseAnim && u.mesh.userData.rightArm) {
               u.mesh.userData.rightArm.rotation.x = -0.6 + Math.sin(u.animPhase) * 0.55;
             }
             const gatherRateMult =
@@ -6146,7 +6155,7 @@ export class AoMEngine {
             animal.mesh.position.z - u.mesh.position.z
           );
           u.animPhase += dt * 7;
-          if (u.mesh.userData.rightArm) {
+          if (!poseAnim && u.mesh.userData.rightArm) {
             u.mesh.userData.rightArm.rotation.x = -0.6 + Math.sin(u.animPhase) * 0.55;
           }
           u.gatherTimer += dt * mods.gatherFoodMult;
@@ -6276,7 +6285,7 @@ export class AoMEngine {
             b.mesh.position.z - u.mesh.position.z
           );
           u.animPhase += dt * 8;
-          if (u.mesh.userData.rightArm) {
+          if (!poseAnim && u.mesh.userData.rightArm) {
             u.mesh.userData.rightArm.rotation.x = -0.6 + Math.sin(u.animPhase) * 0.65;
           }
           const bStats = this.buildingStats(b.kind, b.team);

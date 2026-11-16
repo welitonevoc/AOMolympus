@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { BuildingKind, FaunaKind, MapId, PANTHEONS, PantheonId, ResourceNodeKind, TeamId, UnitKind } from './types';
 import { createGreekUnitMesh } from '../civilizacao/gregos/gregosModels';
+import { createRiggedVillagerMesh } from '../civilizacao/gregos/villagerAnimator';
 import { createAoMOakTreeMesh, getFaunaCoatMaterial } from '../TEXTURA';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
@@ -1163,97 +1164,14 @@ export function createUnitMesh(
   };
 
   if (kind === 'villager') {
-    const gltfGroup = new THREE.Group();
-    root.add(gltfGroup);
-
-    const loader = new GLTFLoader();
-    loader.load(
-      '/models/agape.glb',
-      (gltf) => {
-        const model = gltf.scene;
-        model.scale.setScalar(0.72);
-        const box = new THREE.Box3().setFromObject(model);
-        const minY = box.min.y;
-        model.position.set(0, -minY, 0);
-
-        if (enableShadows) {
-          model.traverse((child) => {
-            if ((child as THREE.Mesh).isMesh) {
-              child.castShadow = true;
-              child.receiveShadow = true;
-            }
-          });
-        }
-        gltfGroup.add(model);
-
-        let mixer: THREE.AnimationMixer | null = null;
-        const actions: Record<string, THREE.AnimationAction> = {};
-        if (gltf.animations && gltf.animations.length > 0) {
-          mixer = new THREE.AnimationMixer(model);
-          gltf.animations.forEach((clip) => {
-            const action = mixer!.clipAction(clip);
-            actions[clip.name.toLowerCase()] = action;
-          });
-          const defAct = actions['idle'] || actions['walk'] || actions['gather'] || mixer.clipAction(gltf.animations[0]);
-          defAct.play();
-        }
-
-        root.userData.animatePose = (dt: number, moving: boolean, speed: number, _attackT: number | null) => {
-          if (mixer) mixer.update(dt);
-          if (moving) {
-            const t = performance.now() * 0.012 * speed;
-            model.position.y = -minY + Math.abs(Math.sin(t * 2)) * 0.08;
-          } else {
-            model.position.y = -minY + Math.sin(performance.now() * 0.003) * 0.03;
-          }
-        };
-
-        for (const child of [...root.children]) {
-          if (child !== gltfGroup && child !== root.userData.groundMarkers && child !== root.userData.healthBar) {
-            child.visible = false;
-          }
-        }
-      },
-      undefined,
-      (err) => {
-        console.warn('agape.glb fallback to procedural villager:', err);
-      }
-    );
-
-    const legMat = look.style === 'egyptian' ? pal.skin : look.style === 'norse' ? pal.furBrown : pal.timber;
-    const torsoMat = look.style === 'egyptian' ? pal.ivory : look.style === 'norse' ? pal.furBrown : teamMat;
-    const leftLeg = part(geos.sculptedLimb, legMat, -0.11, 0.25, 0);
-    const rightLeg = part(geos.sculptedLimb, legMat, 0.11, 0.25, 0);
-    part(geos.humanTorso, torsoMat, 0, 0.8, 0);
-    part(new THREE.CylinderGeometry(0.23, 0.24, 0.14, 10), teamMat, 0, 0.68, 0);
-    part(new THREE.SphereGeometry(0.18, 12, 10), pal.skin, 0, 1.32, 0);
-    if (look.style === 'egyptian') {
-      part(new THREE.CylinderGeometry(0.19, 0.22, 0.16, 10), pal.ivory, 0, 1.42, -0.02);
-    } else if (look.style === 'norse') {
-      part(new THREE.SphereGeometry(0.2, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2), pal.furBrown, 0, 1.35, 0);
-    } else if (look.style === 'atlantean') {
-      part(new THREE.CylinderGeometry(0.22, 0.28, 0.16, 8), look.trimMat, 0, 1.46, 0);
-    } else {
-      part(new THREE.ConeGeometry(0.3, 0.18, 10), pal.bronze, 0, 1.48, 0);
-    }
-
-    const leftArm = part(geos.sculptedLimb, pal.skin, -0.28, 0.85, 0);
-    const rightArm = new THREE.Group();
-    rightArm.position.set(0.28, 1.0, 0);
-    const armMesh = new THREE.Mesh(geos.sculptedLimb, pal.skin);
-    armMesh.position.y = -0.18;
-    const toolHandle = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.72, 6), pal.timber);
-    toolHandle.rotation.x = Math.PI / 2;
-    toolHandle.position.set(0, -0.35, 0.22);
-    const toolHead = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.22, 0.16), look.armorMat);
-    toolHead.position.set(0, -0.35, 0.54);
-    rightArm.add(armMesh, toolHandle, toolHead);
-    root.add(rightArm);
-
-    root.userData.leftLeg = leftLeg;
-    root.userData.rightLeg = rightLeg;
-    root.userData.leftArm = leftArm;
-    root.userData.rightArm = rightArm;
+    const villagerMesh = createRiggedVillagerMesh(team, pal, enableShadows);
+    root.add(villagerMesh);
+    root.userData.villagerMesh = villagerMesh;
+    root.userData.animatePose = villagerMesh.userData.animatePose;
+    root.userData.leftLeg = villagerMesh.userData.leftLeg;
+    root.userData.rightLeg = villagerMesh.userData.rightLeg;
+    root.userData.leftArm = villagerMesh.userData.leftArm;
+    root.userData.rightArm = villagerMesh.userData.rightArm;
     attachGroundMarkers(root, 0.44, pal, team);
     attachHealthBar(root, 1.85, 1.0);
   } else if (kind === 'hoplite' || kind === 'hipaspist') {
