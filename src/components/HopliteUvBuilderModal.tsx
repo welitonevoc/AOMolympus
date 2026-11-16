@@ -42,6 +42,16 @@ import {
   getCachedArtemisTextures,
   animateArtemis,
 } from '../civilizacao/gregos/artemisModel';
+import {
+  buildHephaestus,
+  getCachedHephaestusTextures,
+  animateHephaestus,
+} from '../civilizacao/gregos/hefestoModel';
+import {
+  buildDionysus,
+  getCachedDionysusTextures,
+  animateDionysus,
+} from '../civilizacao/gregos/dionisioModel';
 import { createBuildingMesh, createMaterialPalette, createUnitMesh } from '../game/models';
 import { BuildingKind, PantheonId, UnitKind } from '../game/types';
 import {
@@ -59,7 +69,7 @@ interface HopliteUvBuilderModalProps {
   onSelectTier: (tier: 1 | 2 | 3 | 4) => void;
 }
 
-export type InspectableUnitId = UnitKind | 'zeus' | 'poseidon' | 'hades' | 'artemis';
+export type InspectableUnitId = UnitKind | 'zeus' | 'poseidon' | 'hades' | 'artemis' | 'hefesto' | 'dionisio';
 
 interface CivEntityOption {
   id: InspectableUnitId;
@@ -208,6 +218,16 @@ export function getUnitsForCivAndGod(civ: PantheonId, majorGod: string): CivEnti
         id: 'artemis',
         name: '🌙 Ártemis (Deusa Menor)',
         role: 'Deusa da Caça & da Lua — Empunha a Foice Lunar de duas lâminas, Corça Sagrada de Prata e Alcateia Noturna',
+      },
+      {
+        id: 'hefesto',
+        name: '🔨 Hefesto (Deus Menor)',
+        role: 'Deus da Forja & do Fogo — Empunha o Grande Martelo Divino, Bigorna de Lemnos e Autômato Dourado',
+      },
+      {
+        id: 'dionisio',
+        name: '🍇 Dionísio (Deus Menor)',
+        role: 'Deus do Vinho & do Êxtase — Empunha o Tirso com pinha dourada, Cálice de vinho e Vinhas Selvagens',
       },
       {
         id: 'hoplite',
@@ -419,6 +439,8 @@ export function HopliteUvBuilderModal({
   const [poseidonMode, setPoseidonMode] = useState<'conduzido' | 'correnteza' | 'golpe' | 'tsunami'>('conduzido');
   const [hadesMode, setHadesMode] = useState<'reinar' | 'marcha' | 'chama' | 'portal'>('reinar');
   const [artemisMode, setArtemisMode] = useState<'vigilia' | 'cacada' | 'raizes' | 'alcateia'>('vigilia');
+  const [hefestoMode, setHefestoMode] = useState<'forja' | 'martelo' | 'automato' | 'erupcao'>('forja');
+  const [dionisioMode, setDionisioMode] = useState<'banquete' | 'danca' | 'vinhas' | 'extase'>('banquete');
   const [focusDivine, setFocusDivine] = useState(false);
 
   const animStateRef = useRef(animState);
@@ -436,6 +458,10 @@ export function HopliteUvBuilderModal({
   hadesModeRef.current = hadesMode;
   const artemisModeRef = useRef(artemisMode);
   artemisModeRef.current = artemisMode;
+  const hefestoModeRef = useRef(hefestoMode);
+  hefestoModeRef.current = hefestoMode;
+  const dionisioModeRef = useRef(dionisioMode);
+  dionisioModeRef.current = dionisioMode;
   const focusDivineRef = useRef(focusDivine);
   focusDivineRef.current = focusDivine;
 
@@ -513,7 +539,7 @@ export function HopliteUvBuilderModal({
       prevMouseX = e.clientX;
       prevMouseY = e.clientY;
 
-      const isGod = (selectedUnit === 'zeus' || selectedUnit === 'poseidon' || selectedUnit === 'hades' || selectedUnit === 'artemis') && selectedCiv === 'greek';
+      const isGod = (selectedUnit === 'zeus' || selectedUnit === 'poseidon' || selectedUnit === 'hades' || selectedUnit === 'artemis' || selectedUnit === 'hefesto' || selectedUnit === 'dionisio') && selectedCiv === 'greek';
       if (isGod) {
         // No caso dos deuses, a câmera orbita em 360° e o deus permanece fixo no centro
         orbitYaw -= dx * 0.008;
@@ -1377,6 +1403,75 @@ export function HopliteUvBuilderModal({
             const m = artemisModeRef.current;
             animateArtemis(artemis, dt, simTime, m);
           };
+        } else if (selectedUnit === 'hefesto' && selectedCiv === 'greek') {
+          // ===============================
+          // CENÁRIO DA GRANDE FORJA DE LEMNOS (HEFESTO)
+          // ===============================
+          scene.background = new THREE.Color(0x160b07);
+          scene.fog = new THREE.FogExp2(0x160b07, 0.025);
+
+          const pedGeo = new THREE.CylinderGeometry(2.3, 2.5, 0.2, 40);
+          const pedMat = new THREE.MeshStandardMaterial({ color: 0x1c1917, roughness: 0.6, metalness: 0.3 });
+          const pedestal = new THREE.Mesh(pedGeo, pedMat);
+          pedestal.position.y = -0.1;
+          pedestal.receiveShadow = true;
+          environmentGroup.add(pedestal);
+
+          const ringGeo = new THREE.RingGeometry(2.0, 2.2, 40);
+          const ringMat = new THREE.MeshBasicMaterial({ color: 0xea580c, side: THREE.DoubleSide });
+          const ring = new THREE.Mesh(ringGeo, ringMat);
+          ring.rotation.x = -Math.PI / 2;
+          ring.position.y = 0.01;
+          environmentGroup.add(ring);
+
+          // Bigorna diante de Hefesto
+          const anvil = new THREE.Mesh(
+            new THREE.BoxGeometry(0.72, 0.22, 0.36),
+            new THREE.MeshStandardMaterial({ color: 0x1c1917, metalness: 0.9, roughness: 0.2 })
+          );
+          anvil.position.set(0.18, 0.65, 0.95);
+          anvil.receiveShadow = true;
+          environmentGroup.add(anvil);
+
+          const hTex = getCachedHephaestusTextures();
+          const hefesto = buildHephaestus(hTex);
+          group = hefesto.root;
+          group.scale.setScalar(0.85);
+
+          group.userData.animatePose = (dt: number) => {
+            const m = hefestoModeRef.current;
+            animateHephaestus(hefesto, dt, simTime, m);
+          };
+        } else if (selectedUnit === 'dionisio' && selectedCiv === 'greek') {
+          // ===============================
+          // CENÁRIO DO BANQUETE & VINHEDO (DIONÍSIO)
+          // ===============================
+          scene.background = new THREE.Color(0x1a0726);
+          scene.fog = new THREE.FogExp2(0x1a0726, 0.02);
+
+          const pedGeo = new THREE.CylinderGeometry(2.3, 2.5, 0.2, 40);
+          const pedMat = new THREE.MeshStandardMaterial({ color: 0x2e1045, roughness: 0.4, metalness: 0.25 });
+          const pedestal = new THREE.Mesh(pedGeo, pedMat);
+          pedestal.position.y = -0.1;
+          pedestal.receiveShadow = true;
+          environmentGroup.add(pedestal);
+
+          const ringGeo = new THREE.RingGeometry(2.0, 2.2, 40);
+          const ringMat = new THREE.MeshBasicMaterial({ color: 0xa855f7, side: THREE.DoubleSide });
+          const ring = new THREE.Mesh(ringGeo, ringMat);
+          ring.rotation.x = -Math.PI / 2;
+          ring.position.y = 0.01;
+          environmentGroup.add(ring);
+
+          const dTex = getCachedDionysusTextures();
+          const dionisio = buildDionysus(dTex);
+          group = dionisio.root;
+          group.scale.setScalar(0.85);
+
+          group.userData.animatePose = (dt: number) => {
+            const m = dionisioModeRef.current;
+            animateDionysus(dionisio, dt, simTime, m);
+          };
         } else if (selectedUnit === 'hoplite' || selectedUnit === 'hipaspist') {
           // ===============================
           // CENÁRIO PADRÃO (PEDESTAL)
@@ -1746,7 +1841,7 @@ export function HopliteUvBuilderModal({
       if (hadesBlastLight.intensity > 0) hadesBlastLight.intensity = Math.max(0, hadesBlastLight.intensity - dt * 20);
 
       // Rotação da entidade / Órbita 360° da câmera
-      const isGod = (selectedUnit === 'zeus' || selectedUnit === 'poseidon' || selectedUnit === 'hades' || selectedUnit === 'artemis') && selectedCiv === 'greek';
+      const isGod = (selectedUnit === 'zeus' || selectedUnit === 'poseidon' || selectedUnit === 'hades' || selectedUnit === 'artemis' || selectedUnit === 'hefesto' || selectedUnit === 'dionisio') && selectedCiv === 'greek';
 
       if (autoRotateRef.current) {
         if (isGod) {
@@ -1776,7 +1871,7 @@ export function HopliteUvBuilderModal({
 
       if (isGod) {
         // Câmera orbital 360° ao redor do Deus posicionado no centro exato
-        const focusY = isFocus ? (selectedUnit === 'zeus' ? 1.4 : selectedUnit === 'poseidon' ? 1.5 : selectedUnit === 'artemis' ? 1.42 : 1.48) : 1.35;
+        const focusY = isFocus ? (selectedUnit === 'zeus' ? 1.4 : selectedUnit === 'poseidon' ? 1.5 : selectedUnit === 'artemis' ? 1.42 : selectedUnit === 'hefesto' ? 1.45 : selectedUnit === 'dionisio' ? 1.42 : 1.48) : 1.35;
         const effDist = isFocus ? 2.0 / zoomRef.current : 5.8 / zoomRef.current;
 
         const horizDist = effDist * Math.cos(orbitPitch);
@@ -2260,6 +2355,136 @@ export function HopliteUvBuilderModal({
                   >
                     <Eye className="h-3.5 w-3.5" />
                     <span>{focusDivine ? 'Visão Corpo' : 'Focar Rosto/Foice'}</span>
+                  </button>
+                  <div className="h-5 w-[1px] bg-white/15 mx-1" />
+                </>
+              ) : entityType === 'unit' && selectedUnit === 'hefesto' && selectedCiv === 'greek' ? (
+                // Poderes e Animações de Hefesto (Deus da Forja & do Fogo)
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setHefestoMode('forja')}
+                    className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      hefestoMode === 'forja'
+                        ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/30'
+                        : 'border border-amber-400/30 text-amber-200 hover:bg-amber-400/20'
+                    }`}
+                  >
+                    <Flame className="h-3.5 w-3.5" />
+                    <span>Forja Divina</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setHefestoMode('martelo')}
+                    className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      hefestoMode === 'martelo'
+                        ? 'bg-orange-500 text-slate-950 shadow-md shadow-orange-500/30'
+                        : 'border border-orange-400/30 text-orange-200 hover:bg-orange-400/20'
+                    }`}
+                  >
+                    <Swords className="h-3.5 w-3.5" />
+                    <span>Golpe de Bigorna</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setHefestoMode('automato')}
+                    className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      hefestoMode === 'automato'
+                        ? 'bg-yellow-400 text-slate-950 shadow-md shadow-yellow-500/30'
+                        : 'border border-yellow-400/30 text-yellow-200 hover:bg-yellow-400/20'
+                    }`}
+                  >
+                    <Crown className="h-3.5 w-3.5" />
+                    <span>Autômato de Ouro</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setHefestoMode('erupcao')}
+                    className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      hefestoMode === 'erupcao'
+                        ? 'bg-red-500 text-white shadow-md shadow-red-500/30'
+                        : 'border border-red-400/30 text-red-200 hover:bg-red-400/20'
+                    }`}
+                  >
+                    <Zap className="h-3.5 w-3.5" />
+                    <span>Erupção de Lemnos</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFocusDivine(!focusDivine)}
+                    className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      focusDivine
+                        ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/30'
+                        : 'border border-amber-400/40 text-amber-200 hover:bg-amber-500/20'
+                    }`}
+                  >
+                    <Eye className="h-3.5 w-3.5" />
+                    <span>{focusDivine ? 'Visão Corpo' : 'Focar Rosto/Martelo'}</span>
+                  </button>
+                  <div className="h-5 w-[1px] bg-white/15 mx-1" />
+                </>
+              ) : entityType === 'unit' && selectedUnit === 'dionisio' && selectedCiv === 'greek' ? (
+                // Poderes e Animações de Dionísio (Deus do Vinho & do Êxtase)
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setDionisioMode('banquete')}
+                    className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      dionisioMode === 'banquete'
+                        ? 'bg-purple-500 text-white shadow-md shadow-purple-500/30'
+                        : 'border border-purple-400/30 text-purple-200 hover:bg-purple-400/20'
+                    }`}
+                  >
+                    <Crown className="h-3.5 w-3.5" />
+                    <span>Banquete Olímpico</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDionisioMode('danca')}
+                    className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      dionisioMode === 'danca'
+                        ? 'bg-fuchsia-500 text-white shadow-md shadow-fuchsia-500/30'
+                        : 'border border-fuchsia-400/30 text-fuchsia-200 hover:bg-fuchsia-400/20'
+                    }`}
+                  >
+                    <Wind className="h-3.5 w-3.5" />
+                    <span>Dança Báquica</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDionisioMode('vinhas')}
+                    className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      dionisioMode === 'vinhas'
+                        ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/30'
+                        : 'border border-emerald-400/30 text-emerald-200 hover:bg-emerald-400/20'
+                    }`}
+                  >
+                    <Sparkles className="h-3.5 w-3.5" />
+                    <span>Vinhas Selvagens</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDionisioMode('extase')}
+                    className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      dionisioMode === 'extase'
+                        ? 'bg-violet-500 text-white shadow-md shadow-violet-500/30'
+                        : 'border border-violet-400/30 text-violet-200 hover:bg-violet-400/20'
+                    }`}
+                  >
+                    <Zap className="h-3.5 w-3.5" />
+                    <span>Êxtase Dionisíaco</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFocusDivine(!focusDivine)}
+                    className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      focusDivine
+                        ? 'bg-purple-500 text-white shadow-md shadow-purple-500/30'
+                        : 'border border-purple-400/40 text-purple-200 hover:bg-purple-500/20'
+                    }`}
+                  >
+                    <Eye className="h-3.5 w-3.5" />
+                    <span>{focusDivine ? 'Visão Corpo' : 'Focar Rosto/Tirso'}</span>
                   </button>
                   <div className="h-5 w-[1px] bg-white/15 mx-1" />
                 </>

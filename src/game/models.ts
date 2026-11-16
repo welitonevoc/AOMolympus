@@ -6,6 +6,8 @@ import { buildCharybdisTitan, getCachedCaribdisTextures } from '../civilizacao/g
 import { buildTyphonTitan, getCachedTyphonTextures } from '../civilizacao/gregos/tifaoModel';
 import { buildCerberusTitan, getCachedCerberusTextures } from '../civilizacao/gregos/cerberoModel';
 import { buildArtemis, getCachedArtemisTextures, animateArtemis } from '../civilizacao/gregos/artemisModel';
+import { buildHephaestus, getCachedHephaestusTextures, animateHephaestus } from '../civilizacao/gregos/hefestoModel';
+import { buildDionysus, getCachedDionysusTextures, animateDionysus } from '../civilizacao/gregos/dionisioModel';
 import { createAoMOakTreeMesh, getFaunaCoatMaterial } from '../TEXTURA';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
@@ -2539,6 +2541,34 @@ export function createUnitMesh(
       aPhase += dt;
       const mode = attackT !== null ? 'raizes' : moving ? 'cacada' : 'vigilia';
       animateArtemis(artemis, dt, aPhase, mode);
+    };
+    attachGroundMarkers(root, 1.25, pal, team);
+    attachHealthBar(root, 3.4, 1.6);
+    return root;
+  } else if ((kind as any) === 'hefesto') {
+    const hefTex = getCachedHephaestusTextures();
+    const hef = buildHephaestus(hefTex);
+    hef.root.scale.setScalar(1.25);
+    root.add(hef.root);
+    let hPhase = 0;
+    root.userData.animatePose = (dt: number, moving: boolean, _speed: number, attackT: number | null) => {
+      hPhase += dt;
+      const mode = attackT !== null ? 'martelo' : moving ? 'automato' : 'forja';
+      animateHephaestus(hef, dt, hPhase, mode);
+    };
+    attachGroundMarkers(root, 1.25, pal, team);
+    attachHealthBar(root, 3.4, 1.6);
+    return root;
+  } else if ((kind as any) === 'dionisio') {
+    const dioTex = getCachedDionysusTextures();
+    const dio = buildDionysus(dioTex);
+    dio.root.scale.setScalar(1.25);
+    root.add(dio.root);
+    let dPhase = 0;
+    root.userData.animatePose = (dt: number, moving: boolean, _speed: number, attackT: number | null) => {
+      dPhase += dt;
+      const mode = attackT !== null ? 'vinhas' : moving ? 'danca' : 'banquete';
+      animateDionysus(dio, dt, dPhase, mode);
     };
     attachGroundMarkers(root, 1.25, pal, team);
     attachHealthBar(root, 3.4, 1.6);
