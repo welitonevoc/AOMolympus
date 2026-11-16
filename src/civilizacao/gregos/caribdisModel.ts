@@ -70,6 +70,12 @@ export function createCaribdisTextures(): CaribdisTextures {
   return { scaleBump, whirlTex, waterTex };
 }
 
+let _cachedCaribdisTex: CaribdisTextures | null = null;
+export function getCachedCaribdisTextures(): CaribdisTextures {
+  if (!_cachedCaribdisTex) _cachedCaribdisTex = createCaribdisTextures();
+  return _cachedCaribdisTex;
+}
+
 function group(parent: THREE.Object3D | null, x = 0, y = 0, z = 0): THREE.Group {
   const g = new THREE.Group();
   g.position.set(x, y, z);

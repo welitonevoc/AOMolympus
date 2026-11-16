@@ -1729,8 +1729,8 @@ export class AoMEngine {
     const pantheon = this.teamPantheon(team);
     const stats = getCivUnitSpec(pantheon, kind);
     const mods = this.computeUnitModifiers(kind, team);
-    const scaledMaxHp = Math.round(stats.maxHp * mods.hpMult);
-    const mesh = createUnitMesh(kind, team, this.palette, !this.isSoftwareGl, pantheon);
+    const majorGod = team === 'player' ? this.majorGodName : (pantheon === 'greek' ? 'Poseidon' : undefined);
+    const mesh = createUnitMesh(kind, team, this.palette, !this.isSoftwareGl, pantheon, majorGod);
     mesh.position.set(x, groundHeightAt(x, z, this.mapId), z);
     mesh.userData.entityType = 'unit';
     mesh.userData.entityId = id;

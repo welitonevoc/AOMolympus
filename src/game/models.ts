@@ -2,7 +2,8 @@ import * as THREE from 'three';
 import { BuildingKind, FaunaKind, MapId, PANTHEONS, PantheonId, ResourceNodeKind, TeamId, UnitKind } from './types';
 import { createGreekUnitMesh } from '../civilizacao/gregos/gregosModels';
 import { createRiggedVillagerMesh } from '../civilizacao/gregos/villagerAnimator';
-import { buildCharybdisTitan, createCaribdisTextures } from '../civilizacao/gregos/caribdisModel';
+import { buildCharybdisTitan, getCachedCaribdisTextures } from '../civilizacao/gregos/caribdisModel';
+import { buildTyphonTitan, getCachedTyphonTextures } from '../civilizacao/gregos/tifaoModel';
 import { createAoMOakTreeMesh, getFaunaCoatMaterial } from '../TEXTURA';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
@@ -2162,6 +2163,113 @@ export function createUnitMesh(
     // Customizado especificamente para o Deus Maior selecionado!
     const godKey = (majorGod || 'zeus').toLowerCase();
 
+    // ==============================================================
+    // 1. TITÃ DE ZEUS: TITÃ TIFÃO - SENHOR DOS FURACÕES
+    // ==============================================================
+    if (godKey.includes('zeus')) {
+      const typhonTex = getCachedTyphonTextures();
+      const typhon = buildTyphonTitan(typhonTex);
+      typhon.titanRoot.scale.setScalar(1.85);
+      root.add(typhon.titanRoot);
+      root.userData.typhon = typhon;
+
+      // Animação procedural completa no loop do jogo (3D e 2.5D)
+      let tPhase = 0;
+      root.userData.animatePose = (dt: number, moving: boolean, speed: number, attackT: number | null) => {
+        tPhase += dt;
+        // Rotação contínua do funil ciclônico e anéis de vento
+        typhon.funnelMesh.rotation.y += dt * (moving ? 4.8 : 2.4);
+        typhon.cycloneRings.forEach((cr) => {
+          cr.mesh.rotation.z += dt * 3.2;
+          cr.mesh.position.y = cr.baseY + Math.sin(tPhase * 3.6 + cr.phase) * 0.08;
+        });
+        // Bater majestoso das asas gigantes de tempestade
+        const wingFlap = Math.sin(tPhase * (moving ? 3.6 : 1.8)) * 0.24;
+        if (typhon.wings.L) typhon.wings.L.wingRoot.rotation.y = -wingFlap;
+        if (typhon.wings.R) typhon.wings.R.wingRoot.rotation.y = wingFlap;
+        // Serpentes dracônicas da cintura
+        typhon.waistSerpents.forEach((ws) => {
+          ws.root.rotation.z = Math.sin(tPhase * 2.8 + ws.side) * 0.16;
+        });
+        // Animação de ataque ou golpe dos braços
+        if (attackT !== null) {
+          typhon.rightArm.arm.rotation.x = -Math.sin(attackT * Math.PI) * 1.25;
+          typhon.leftArm.arm.rotation.x = -Math.sin(attackT * Math.PI) * 0.85;
+        } else {
+          typhon.rightArm.arm.rotation.x *= 0.88;
+          typhon.leftArm.arm.rotation.x *= 0.88;
+        }
+      };
+
+      root.userData.setMode = (mode: '3d' | 'sprite' | 'brg' | 'uv2d') => {
+        // Suporte a modos 3D e 2.5D
+      };
+      root.userData.updateBrg = (dt: number, state: string) => {
+        root.userData.animatePose?.(dt, state === 'move', 2.0, state === 'attack' ? 0.5 : null);
+      };
+
+      attachGroundMarkers(root, 2.2, pal, team);
+      attachHealthBar(root, 8.2, 2.8);
+      return root;
+    }
+
+    // ==============================================================
+    // 2. TITÃ DE POSEIDON: TITÃ CARÍBDIS - COLOSSO DAS PROFUNDEZAS
+    // ==============================================================
+    if (godKey.includes('poseidon')) {
+      const caribTex = getCachedCaribdisTextures();
+      const caribdis = buildCharybdisTitan(caribTex);
+      caribdis.root.scale.setScalar(1.85);
+      root.add(caribdis.root);
+      root.userData.caribdis = caribdis;
+
+      // Animação procedural completa no loop do jogo (3D e 2.5D)
+      let cPhase = 0;
+      root.userData.animatePose = (dt: number, moving: boolean, speed: number, attackT: number | null) => {
+        cPhase += dt;
+        // Rotação do redemoinho devorador sob Caríbdis
+        caribdis.whirlpoolGroup.rotation.y += dt * (moving ? 4.2 : 2.0);
+        caribdis.whirlRings.forEach((wr) => {
+          wr.mesh.rotation.z += dt * 2.8;
+          wr.mesh.position.y = wr.baseY + Math.sin(cPhase * 3.2 + wr.phase) * 0.07;
+        });
+        // Ondulação dos 4 tentáculos dorsais colossais
+        caribdis.backTentacles.forEach((bt) => {
+          bt.segs.forEach((seg, sIdx) => {
+            seg.pivot.rotation.x = Math.sin(cPhase * 2.4 + seg.phase) * (0.08 + sIdx * 0.04);
+            seg.pivot.rotation.z = Math.cos(cPhase * 2.0 + seg.phase) * (0.06 + sIdx * 0.03);
+          });
+        });
+        // Animação de ataque da garra-pinça e mandíbula
+        if (attackT !== null) {
+          const clawStrike = Math.sin(attackT * Math.PI);
+          caribdis.armL.rotation.x = -clawStrike * 1.15;
+          caribdis.clawUpper.rotation.z = 0.28 + clawStrike * 0.45;
+          caribdis.clawLower.rotation.z = -0.28 - clawStrike * 0.45;
+          caribdis.jawPivot.rotation.x = clawStrike * 0.38;
+        } else {
+          caribdis.armL.rotation.x *= 0.88;
+          caribdis.clawUpper.rotation.z = 0.28;
+          caribdis.clawLower.rotation.z = -0.28;
+          caribdis.jawPivot.rotation.x *= 0.88;
+        }
+      };
+
+      root.userData.setMode = (mode: '3d' | 'sprite' | 'brg' | 'uv2d') => {
+        // Suporte a modos 3D e 2.5D
+      };
+      root.userData.updateBrg = (dt: number, state: string) => {
+        root.userData.animatePose?.(dt, state === 'move', 2.0, state === 'attack' ? 0.5 : null);
+      };
+
+      attachGroundMarkers(root, 2.2, pal, team);
+      attachHealthBar(root, 8.2, 2.8);
+      return root;
+    }
+
+    // ==============================================================
+    // 3. TITÃS HUMANÓIDES (HADES E DEMAIS PANTEÕES)
+    // ==============================================================
     const leftLeg = part(geos.giantLimb, look.titanBodyMat, -0.75, 1.55, 0);
     leftLeg.scale.set(2.4, 2.6, 2.4);
     const rightLeg = part(geos.giantLimb, look.titanBodyMat, 0.75, 1.55, 0);
@@ -2196,91 +2304,7 @@ export function createUnitMesh(
     arm.position.y = -0.95;
     rightArm.add(arm);
 
-    // ==============================================================
-    // ADEREÇOS E ARMAS SAGRADAS EXCLUSIVAS DE CADA DEUS MAIOR
-    // ==============================================================
-    if (godKey.includes('zeus')) {
-      // TITÃ DE ZEUS: Titã Tifão - Senhor dos Furacões
-      // Chifres celestes colossais de ouro e relâmpago
-      for (const s of [-1, 1]) {
-        const horn = part(new THREE.ConeGeometry(0.22, 1.35, 6), pal.gold, s * 0.72, 7.85, -0.15);
-        horn.rotation.set(-0.25, 0, s * -0.42);
-        const hornTip = part(new THREE.ConeGeometry(0.12, 0.6, 6), pal.crystalGlow, s * 1.05, 8.4, -0.22);
-        hornTip.rotation.set(-0.35, 0, s * -0.6);
-      }
-      // Coroa de raios dourados
-      for (let i = 0; i < 5; i++) {
-        const ang = ((i - 2) / 2) * 0.55;
-        const ray = part(new THREE.ConeGeometry(0.18, 0.95, 4), pal.gold, Math.sin(ang) * 0.75, 7.6 + Math.cos(ang) * 0.2, 0.1);
-        ray.rotation.z = -ang;
-      }
-      // Asas colossais de tempestade de Tifão nas costas
-      for (const s of [-1, 1]) {
-        const wingRoot = new THREE.Group();
-        wingRoot.position.set(s * 1.2, 5.2, -0.85);
-        // Braço estrutural da asa
-        const armBeam = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.08, 3.2, 8), pal.gold);
-        armBeam.position.set(s * 1.4, 0.8, -0.2);
-        armBeam.rotation.z = s * -1.05;
-        wingRoot.add(armBeam);
-        // Plumas gigantes de nuvem de tempestade e relâmpago
-        for (let f = 0; f < 5; f++) {
-          const t = f / 4;
-          const feather = new THREE.Mesh(
-            new THREE.ConeGeometry(0.35, 2.4 - t * 0.5, 5),
-            f % 2 === 0 ? pal.crystalGlow : pal.steel
-          );
-          feather.position.set(s * (0.8 + t * 1.6), 0.5 - t * 0.7, -0.15);
-          feather.rotation.z = s * (-0.35 - t * 0.35);
-          feather.scale.set(1.2, 1, 0.3);
-          wingRoot.add(feather);
-        }
-        root.add(wingRoot);
-      }
-      // Anel ciclônico de vento sob a cintura de Tifão
-      const stormRing = part(new THREE.TorusGeometry(2.2, 0.12, 8, 32), pal.crystalGlow, 0, 2.65, 0);
-      stormRing.rotation.x = Math.PI / 2;
-      const stormRing2 = part(new THREE.TorusGeometry(1.6, 0.08, 8, 28), pal.gold, 0, 2.2, 0);
-      stormRing2.rotation.x = Math.PI / 2;
-      // Orbe de furacão e relâmpago na mão esquerda
-      const palmOrb = new THREE.Mesh(new THREE.SphereGeometry(0.55, 12, 12), pal.crystalGlow);
-      palmOrb.position.set(0, -1.8, 0.3);
-      leftArm.add(palmOrb);
-      // Espada colossal crepitante de relâmpagos
-      const sword = new THREE.Mesh(geos.greatSwordBlade, pal.gold);
-      sword.rotation.x = Math.PI / 2.2;
-      sword.scale.set(4.6, 5.0, 4.6);
-      sword.position.set(0, -1.6, 0.5);
-      rightArm.add(sword);
-    } else if (godKey.includes('poseidon')) {
-      // TITÃ DE POSEIDON: Caríbdis - Colosso das Profundezas
-      // Cristas dorsais de coral luminoso
-      for (let i = 0; i < 6; i++) {
-        const fin = part(new THREE.ConeGeometry(0.28, 0.85, 4), pal.crystalGlow, 0, 2.5 + i * 0.75, -1.05);
-        fin.rotation.x = -Math.PI / 3;
-      }
-      // Tridente colossal de 3 pontas marinhas
-      const tridentShaft = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.14, 5.8, 12), pal.bronze);
-      tridentShaft.rotation.x = Math.PI / 2.2;
-      tridentShaft.position.set(0, -1.2, 0.5);
-      const prCenter = new THREE.Mesh(new THREE.ConeGeometry(0.3, 1.4, 6), pal.crystalGlow);
-      prCenter.position.set(0, 3.2, 0);
-      const prLeft = new THREE.Mesh(new THREE.ConeGeometry(0.24, 1.1, 6), pal.crystalGlow);
-      prLeft.position.set(-0.65, 2.8, 0);
-      const prRight = new THREE.Mesh(new THREE.ConeGeometry(0.24, 1.1, 6), pal.crystalGlow);
-      prRight.position.set(0.65, 2.8, 0);
-      tridentShaft.add(prCenter, prLeft, prRight);
-      rightArm.add(tridentShaft);
-
-      // Garra-pinça colossal de Caríbdis no braço esquerdo
-      const clawUpper = new THREE.Mesh(new THREE.ConeGeometry(0.25, 1.5, 8), pal.bronze);
-      clawUpper.position.set(-0.25, -1.1, 0.2);
-      clawUpper.rotation.set(0.2, 0, 0.28);
-      const clawLower = new THREE.Mesh(new THREE.ConeGeometry(0.22, 1.4, 8), pal.stoneDark);
-      clawLower.position.set(0.25, -1.0, -0.2);
-      clawLower.rotation.set(-0.2, 0, -0.28);
-      leftArm.add(clawUpper, clawLower);
-    } else if (godKey.includes('hades')) {
+    if (godKey.includes('hades')) {
       // TITÃ DE HADES: Cérbero Titânico / Monarca do Tártaro
       // Chifres sombrios curvados para trás
       const hL = part(geos.bullHorn, pal.obsidian, -0.65, 7.45, -0.2);

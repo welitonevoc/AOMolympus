@@ -68,6 +68,12 @@ export function createTyphonTextures(): TyphonTextures {
   return { skinBump, vortexTex, floorTex };
 }
 
+let _cachedTyphonTex: TyphonTextures | null = null;
+export function getCachedTyphonTextures(): TyphonTextures {
+  if (!_cachedTyphonTex) _cachedTyphonTex = createTyphonTextures();
+  return _cachedTyphonTex;
+}
+
 function group(parent: THREE.Object3D | null, x = 0, y = 0, z = 0): THREE.Group {
   const g = new THREE.Group();
   g.position.set(x, y, z);
