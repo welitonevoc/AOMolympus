@@ -18,8 +18,16 @@ import {
   Zap,
 } from 'lucide-react';
 import { createGreekUnitMesh } from '../civilizacao/gregos/gregosModels';
-import { buildZeus, createZeusProceduralTextures } from '../civilizacao/gregos/zeusModel';
-import { buildPoseidon, createPoseidonProceduralTextures } from '../civilizacao/gregos/poseidonModel';
+import {
+  buildZeus,
+  createZeusProceduralTextures,
+  createZeusTempleEnvironment,
+} from '../civilizacao/gregos/zeusModel';
+import {
+  buildPoseidon,
+  createPoseidonEnvironment,
+  createPoseidonProceduralTextures,
+} from '../civilizacao/gregos/poseidonModel';
 import { createBuildingMesh, createMaterialPalette, createUnitMesh } from '../game/models';
 import { BuildingKind, PantheonId, UnitKind } from '../game/types';
 import {
@@ -157,9 +165,10 @@ export function HopliteUvBuilderModal({
     const height = container.clientHeight || 360;
 
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x0b0e14);
+    const defaultBg = new THREE.Color(0x0b0e14);
+    scene.background = defaultBg.clone();
 
-    const camera = new THREE.PerspectiveCamera(38, width / height, 0.1, 100);
+    const camera = new THREE.PerspectiveCamera(38, width / height, 0.1, 120);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
     renderer.setSize(width, height);
@@ -208,7 +217,7 @@ export function HopliteUvBuilderModal({
     window.addEventListener('mousemove', onMouseMove);
     window.addEventListener('mouseup', onMouseUp);
 
-    // Iluminação Tripla de Estúdio Clássico
+    // Luzes da Cena
     const hemi = new THREE.HemisphereLight(0xfffbeb, 0x1e293b, 1.25);
     scene.add(hemi);
 
@@ -221,27 +230,225 @@ export function HopliteUvBuilderModal({
     rim.position.set(-4, 3, -4);
     scene.add(rim);
 
-    // Pedestal & Anel Dourado Clássico
-    const pedGeo = new THREE.CylinderGeometry(1.4, 1.55, 0.16, 32);
-    const pedMat = new THREE.MeshStandardMaterial({
-      color: 0x161c28,
-      roughness: 0.5,
-      metalness: 0.4,
-    });
-    const pedestal = new THREE.Mesh(pedGeo, pedMat);
-    pedestal.position.y = -0.08;
-    pedestal.receiveShadow = true;
-    scene.add(pedestal);
+    // Luzes de Efeitos Especiais dos Deuses
+    const flashLight = new THREE.PointLight(0xfff3c4, 0, 16);
+    scene.add(flashLight);
 
-    const ringGeo = new THREE.RingGeometry(1.25, 1.34, 32);
-    const ringMat = new THREE.MeshBasicMaterial({
-      color: 0xd4af37,
+    const impactLight = new THREE.PointLight(0x2dd4bf, 0, 16);
+    scene.add(impactLight);
+
+    // Grupos dedicados
+    const environmentGroup = new THREE.Group();
+    scene.add(environmentGroup);
+
+    const fxGroup = new THREE.Group();
+    scene.add(fxGroup);
+
+    // ==========================================
+    // SISTEMA DE FAÍSCAS (ZEUS)
+    // ==========================================
+    const SPARK_N = 220;
+    const sparkPos = new Float32Array(SPARK_N * 3).fill(-100);
+    const sparkVel = new Float32Array(SPARK_N * 3);
+    const sparkLife = new Float32Array(SPARK_N);
+    let sparkIdx = 0;
+    const sparkGeo = new THREE.BufferGeometry();
+    sparkGeo.setAttribute('position', new THREE.BufferAttribute(sparkPos, 3));
+    const sparkPoints = new THREE.Points(
+      sparkGeo,
+      new THREE.PointsMaterial({
+        color: 0xfff3a0,
+        size: 0.09,
+        transparent: true,
+        opacity: 0.95,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+      })
+    );
+    scene.add(sparkPoints);
+
+    function spawnSpark(p: THREE.Vector3) {
+      const i = sparkIdx;
+      sparkIdx = (sparkIdx + 1) % SPARK_N;
+      sparkPos[i * 3] = p.x;
+      sparkPos[i * 3 + 1] = 0.1;
+      sparkPos[i * 3 + 2] = p.z;
+      sparkVel[i * 3] = (Math.random() - 0.5) * 3.4;
+      sparkVel[i * 3 + 1] = Math.random() * 3.2 + 1.2;
+      sparkVel[i * 3 + 2] = (Math.random() - 0.5) * 3.4;
+      sparkLife[i] = 0.5 + Math.random() * 0.4;
+    }
+
+    // ==========================================
+    // SISTEMA DE BORRIFOS D'ÁGUA (POSEIDON)
+    // ==========================================
+    const SPRAY_N = 260;
+    const sprayPos = new Float32Array(SPRAY_N * 3).fill(-100);
+    const sprayVel = new Float32Array(SPRAY_N * 3);
+    const sprayLife = new Float32Array(SPRAY_N);
+    let sprayIdx = 0;
+    const sprayGeo = new THREE.BufferGeometry();
+    sprayGeo.setAttribute('position', new THREE.BufferAttribute(sprayPos, 3));
+    const sprayPoints = new THREE.Points(
+      sprayGeo,
+      new THREE.PointsMaterial({
+        color: 0xccfbf1,
+        size: 0.08,
+        transparent: true,
+        opacity: 0.85,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+      })
+    );
+    scene.add(sprayPoints);
+
+    function spawnSpray(originX: number, originY: number, originZ: number, spreadH: number, vMin: number, vSpread: number) {
+      const i = sprayIdx;
+      sprayIdx = (sprayIdx + 1) % SPRAY_N;
+      sprayPos[i * 3] = originX + (Math.random() - 0.5) * 0.3;
+      sprayPos[i * 3 + 1] = originY;
+      sprayPos[i * 3 + 2] = originZ + (Math.random() - 0.5) * 0.3;
+      sprayVel[i * 3] = (Math.random() - 0.5) * spreadH;
+      sprayVel[i * 3 + 1] = vMin + Math.random() * vSpread;
+      sprayVel[i * 3 + 2] = (Math.random() - 0.5) * spreadH;
+      sprayLife[i] = 0.6 + Math.random() * 0.4;
+    }
+
+    // Raios e Ondas de Choque
+    const bolts: Array<{ meshes: THREE.Mesh[]; life: number; max: number }> = [];
+    const shockwaves: Array<{ mesh: THREE.Mesh; life: number; max: number; delay: number }> = [];
+    const geysers: Array<{ mesh: THREE.Mesh; gx: number; gz: number; life: number; max: number; delay: number; erupted: boolean }> = [];
+
+    // Tsunami 3D Mesh
+    const tsunamiGroup = new THREE.Group();
+    tsunamiGroup.visible = false;
+    scene.add(tsunamiGroup);
+
+    const tsuWidth = 14.0;
+    const tsuGeo = new THREE.PlaneGeometry(tsuWidth, 4.2, 48, 24);
+    const tsuAttr = tsuGeo.attributes.position;
+    for (let i = 0; i < tsuAttr.count; i++) {
+      const y = tsuAttr.getY(i);
+      const ny = (y + 2.1) / 4.2;
+      const curl = Math.pow(ny, 2.2) * 2.2;
+      tsuAttr.setZ(i, tsuAttr.getZ(i) - curl);
+    }
+    tsuGeo.computeVertexNormals();
+    const tsuMat = new THREE.MeshStandardMaterial({
+      color: 0x0284c7,
+      roughness: 0.18,
+      metalness: 0.25,
+      transparent: true,
+      opacity: 0.88,
       side: THREE.DoubleSide,
     });
-    const ring = new THREE.Mesh(ringGeo, ringMat);
-    ring.rotation.x = -Math.PI / 2;
-    ring.position.y = 0.01;
-    scene.add(ring);
+    const tsuWall = new THREE.Mesh(tsuGeo, tsuMat);
+    tsuWall.position.y = 2.0;
+    tsunamiGroup.add(tsuWall);
+
+    // Crista de Espuma do Tsunami
+    const crestPuffs: Array<{ mesh: THREE.Mesh; baseX: number; baseY: number; phase: number }> = [];
+    const puffMat = new THREE.MeshStandardMaterial({
+      color: 0xf0fdfa,
+      emissive: new THREE.Color(0x5eead4),
+      emissiveIntensity: 0.45,
+      roughness: 0.5,
+    });
+    for (let c = 0; c < 22; c++) {
+      const bx = (c / 21 - 0.5) * (tsuWidth - 0.4);
+      const puff = new THREE.Mesh(new THREE.SphereGeometry(0.36, 8, 8), puffMat);
+      puff.position.set(bx, 4.0, -2.1);
+      tsunamiGroup.add(puff);
+      crestPuffs.push({ mesh: puff, baseX: bx, baseY: 4.0, phase: c * 0.4 });
+    }
+
+    let tsunamiZ = -12.0;
+
+    function triggerZeusBolt(from: THREE.Vector3, to: THREE.Vector3) {
+      const pts = [from.clone()];
+      const len = from.distanceTo(to);
+      const n = Math.max(5, Math.round(len * 3.2));
+      for (let i = 1; i < n; i++) {
+        const p = from.clone().lerp(to, i / n);
+        const j = len * 0.05;
+        p.x += (Math.random() - 0.5) * j;
+        p.y += (Math.random() - 0.5) * j;
+        p.z += (Math.random() - 0.5) * j;
+        pts.push(p);
+      }
+      pts.push(to.clone());
+      const curve = new THREE.CatmullRomCurve3(pts);
+
+      const core = new THREE.Mesh(
+        new THREE.TubeGeometry(curve, n * 5, 0.024, 6, false),
+        new THREE.MeshBasicMaterial({ color: 0xffffff, blending: THREE.AdditiveBlending, depthWrite: false })
+      );
+      const glow = new THREE.Mesh(
+        new THREE.TubeGeometry(curve, n * 5, 0.08, 6, false),
+        new THREE.MeshBasicMaterial({ color: 0xfde047, transparent: true, opacity: 0.7, blending: THREE.AdditiveBlending, depthWrite: false })
+      );
+      const electric = new THREE.Mesh(
+        new THREE.TubeGeometry(curve, n * 5, 0.14, 6, false),
+        new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.5, blending: THREE.AdditiveBlending, depthWrite: false })
+      );
+
+      scene.add(core, glow, electric);
+      bolts.push({ meshes: [core, glow, electric], life: 0.4, max: 0.4 });
+
+      flashLight.position.set(to.x, 0.8, to.z);
+      flashLight.intensity = 10.0;
+      for (let s = 0; s < 16; s++) spawnSpark(to);
+    }
+
+    function triggerPoseidonSlam(originX: number, originZ: number) {
+      for (let k = 0; k < 3; k++) {
+        const sw = new THREE.Mesh(
+          new THREE.RingGeometry(0.3, 0.65, 32),
+          new THREE.MeshBasicMaterial({
+            color: 0x2dd4bf,
+            transparent: true,
+            opacity: 0.9,
+            side: THREE.DoubleSide,
+            depthWrite: false,
+            blending: THREE.AdditiveBlending,
+          })
+        );
+        sw.rotation.x = -Math.PI / 2;
+        sw.position.set(originX, 0.12 + k * 0.03, originZ);
+        scene.add(sw);
+        shockwaves.push({ mesh: sw, life: 1.1, max: 1.1, delay: k * 0.12 });
+      }
+
+      for (let g = 0; g < 5; g++) {
+        const dist = 1.3 + g * 1.0;
+        const ang = (g - 2) * 0.22;
+        const gx = originX + Math.sin(ang) * dist;
+        const gz = originZ + Math.cos(ang) * dist;
+        const gCol = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.18, 0.45, 3.2, 16),
+          new THREE.MeshStandardMaterial({
+            color: 0x0ea5e9,
+            emissive: new THREE.Color(0x2dd4bf),
+            emissiveIntensity: 0.55,
+            transparent: true,
+            opacity: 0.8,
+            roughness: 0.2,
+          })
+        );
+        gCol.position.set(gx, 0.1, gz);
+        gCol.scale.set(1, 0.01, 1);
+        scene.add(gCol);
+        geysers.push({ mesh: gCol, gx, gz, life: 1.1, max: 1.1, delay: g * 0.09, erupted: false });
+      }
+
+      impactLight.position.set(originX, 1.2, originZ);
+      impactLight.intensity = 8.5;
+      for (let i = 0; i < 30; i++) spawnSpray(originX, 0.2, originZ, 4.5, 2.0, 5.0);
+    }
+
+    let zeusClouds: Array<{ g: THREE.Group; baseY: number; ph: number }> = [];
+    let poseidonOceanPos: THREE.BufferAttribute | null = null;
+    let poseidonOceanInitY: Float32Array | null = null;
 
     const marbleTex = createMarbleTexture(1);
     const shadowTex = createContactShadowTexture();
@@ -249,15 +456,50 @@ export function HopliteUvBuilderModal({
     const ringEnemyTex = createSelectionRingTexture('#ef4444');
     const pal = createMaterialPalette(marbleTex, shadowTex, ringPlayerTex, ringEnemyTex, 0x2563eb);
 
-    // Construção e Montagem da Entidade Selecionada
+    // ==========================================
+    // CONSTRUÇÃO E MONTAGEM DA ENTIDADE & CENÁRIO
+    // ==========================================
     const buildCurrentEntity = () => {
+      // Limpeza do modelo anterior
       if (entityMeshRef.current) {
         scene.remove(entityMeshRef.current);
       }
+      // Limpeza do cenário anterior
+      while (environmentGroup.children.length > 0) {
+        const c = environmentGroup.children[0];
+        environmentGroup.remove(c);
+      }
+      zeusClouds = [];
+      poseidonOceanPos = null;
+      poseidonOceanInitY = null;
+      tsunamiGroup.visible = false;
+
       let group: THREE.Group;
+
       if (entityType === 'unit') {
         if (selectedUnit === 'zeus' && selectedCiv === 'greek') {
+          // ===============================
+          // CENÁRIO DO OLIMPO (ZEUS)
+          // ===============================
+          scene.background = new THREE.Color(0x7fb8bd);
+          scene.fog = new THREE.FogExp2(0x7fb8bd, 0.018);
+
           const zTex = createZeusProceduralTextures();
+          const temple = createZeusTempleEnvironment(environmentGroup, zTex);
+          zeusClouds = temple.clouds;
+
+          // Sombra suave de chão
+          const blobMat = new THREE.MeshBasicMaterial({
+            color: 0x000000,
+            transparent: true,
+            opacity: 0.38,
+            depthWrite: false,
+          });
+          const blob = new THREE.Mesh(new THREE.CircleGeometry(1.6, 24), blobMat);
+          blob.rotation.x = -Math.PI / 2;
+          blob.position.y = 0.02;
+          environmentGroup.add(blob);
+
           const zeus = buildZeus(zTex);
           group = zeus.flight;
           group.scale.setScalar(0.72);
@@ -267,13 +509,13 @@ export function HopliteUvBuilderModal({
             const m = zeusModeRef.current;
             const wind = m === 'voar' ? 2.4 : m === 'tempestade' ? 2.8 : 1.2;
 
-            // Animação da barba ondulante
+            // Barba ondulante
             for (const b of zeus.beardLocks) {
               b.mesh.rotation.x = b.rx + Math.sin(simTime * 2.8 * wind + b.phase) * 0.045;
               b.mesh.rotation.z = b.rz + Math.cos(simTime * 2.2 * wind + b.phase) * 0.035;
             }
 
-            // Animação da capa esvoaçante de linho
+            // Capa esvoaçante de linho
             const cAttr = zeus.cape.geometry.attributes.position;
             for (let i = 0; i < cAttr.count; i++) {
               const bx = zeus.capeBase[i * 3];
@@ -285,7 +527,7 @@ export function HopliteUvBuilderModal({
             }
             cAttr.needsUpdate = true;
 
-            // Variação conforme modo de Zeus
+            // Variação de Pose conforme modo de Zeus
             if (m === 'voar') {
               const t = simTime * 2.6;
               zeus.flight.position.y = 0.22 + Math.sin(t) * 0.15;
@@ -329,7 +571,20 @@ export function HopliteUvBuilderModal({
             zeus.handGlow.scale.setScalar(1.2 * pulse);
           };
         } else if (selectedUnit === 'poseidon' && selectedCiv === 'greek') {
+          // ===============================
+          // CENÁRIO DO OCEANO (POSEIDON)
+          // ===============================
+          scene.background = new THREE.Color(0x04151f);
+          scene.fog = new THREE.FogExp2(0x04151f, 0.022);
+
           const pTex = createPoseidonProceduralTextures();
+          const oceanEnv = createPoseidonEnvironment(environmentGroup, pTex);
+          poseidonOceanPos = oceanEnv.oceanPos as THREE.BufferAttribute;
+          poseidonOceanInitY = new Float32Array(oceanEnv.oceanPos.count);
+          for (let i = 0; i < oceanEnv.oceanPos.count; i++) {
+            poseidonOceanInitY[i] = oceanEnv.oceanPos.getY(i);
+          }
+
           const poseidon = buildPoseidon(pTex);
           group = poseidon.vessel;
           group.scale.setScalar(0.72);
@@ -346,6 +601,9 @@ export function HopliteUvBuilderModal({
               for (const r of poseidon.swirlRings) {
                 r.mesh.rotation.y -= dt * 4.0;
                 r.mesh.position.y = r.baseY + Math.sin(simTime * 4 + r.phase) * 0.07;
+              }
+              if (Math.random() < 0.3) {
+                spawnSpray((Math.random() - 0.5) * 1.2, 0.2, (Math.random() - 0.5) * 1.2, 2.5, 1.2, 2.8);
               }
             } else if (m === 'golpe') {
               const cycle = (simTime * 1.4) % 2.4;
@@ -393,15 +651,63 @@ export function HopliteUvBuilderModal({
             }
           };
         } else if (selectedUnit === 'hoplite' || selectedUnit === 'hipaspist') {
+          // ===============================
+          // CENÁRIO PADRÃO (PEDESTAL)
+          // ===============================
+          scene.background = defaultBg.clone();
+          scene.fog = null;
+
+          const pedGeo = new THREE.CylinderGeometry(1.4, 1.55, 0.16, 32);
+          const pedMat = new THREE.MeshStandardMaterial({ color: 0x161c28, roughness: 0.5, metalness: 0.4 });
+          const pedestal = new THREE.Mesh(pedGeo, pedMat);
+          pedestal.position.y = -0.08;
+          pedestal.receiveShadow = true;
+          environmentGroup.add(pedestal);
+
+          const ringGeo = new THREE.RingGeometry(1.25, 1.34, 32);
+          const ringMat = new THREE.MeshBasicMaterial({ color: 0xd4af37, side: THREE.DoubleSide });
+          const ring = new THREE.Mesh(ringGeo, ringMat);
+          ring.rotation.x = -Math.PI / 2;
+          ring.position.y = 0.01;
+          environmentGroup.add(ring);
+
           group = createGreekUnitMesh(selectedUnit, 'player', pal, true, activeTier);
           group.userData.setArmorTier?.(activeTier);
           group.userData.setMode?.('3d');
         } else {
+          scene.background = defaultBg.clone();
+          scene.fog = null;
+
+          const pedGeo = new THREE.CylinderGeometry(1.4, 1.55, 0.16, 32);
+          const pedMat = new THREE.MeshStandardMaterial({ color: 0x161c28, roughness: 0.5, metalness: 0.4 });
+          const pedestal = new THREE.Mesh(pedGeo, pedMat);
+          pedestal.position.y = -0.08;
+          pedestal.receiveShadow = true;
+          environmentGroup.add(pedestal);
+
+          const ringGeo = new THREE.RingGeometry(1.25, 1.34, 32);
+          const ringMat = new THREE.MeshBasicMaterial({ color: 0xd4af37, side: THREE.DoubleSide });
+          const ring = new THREE.Mesh(ringGeo, ringMat);
+          ring.rotation.x = -Math.PI / 2;
+          ring.position.y = 0.01;
+          environmentGroup.add(ring);
+
           group = createUnitMesh(selectedUnit as UnitKind, 'player', pal, true);
         }
       } else {
+        scene.background = defaultBg.clone();
+        scene.fog = null;
+
+        const pedGeo = new THREE.CylinderGeometry(2.4, 2.65, 0.2, 32);
+        const pedMat = new THREE.MeshStandardMaterial({ color: 0x161c28, roughness: 0.5, metalness: 0.4 });
+        const pedestal = new THREE.Mesh(pedGeo, pedMat);
+        pedestal.position.y = -0.1;
+        pedestal.receiveShadow = true;
+        environmentGroup.add(pedestal);
+
         group = createBuildingMesh(selectedBuilding, 'player', pal, true, selectedCiv);
       }
+
       scene.add(group);
       entityMeshRef.current = group;
     };
@@ -411,6 +717,8 @@ export function HopliteUvBuilderModal({
     let frameId = 0;
     let lastTime = performance.now();
     let simTime = 0;
+    let lastBoltTime = 0;
+    let lastSlamTime = 0;
 
     const animate = () => {
       frameId = requestAnimationFrame(animate);
@@ -419,10 +727,176 @@ export function HopliteUvBuilderModal({
       lastTime = now;
       simTime += dt;
 
+      // Animação das nuvens do Olimpo
+      if (zeusClouds.length > 0) {
+        for (const c of zeusClouds) {
+          c.g.rotation.y += dt * 0.04;
+        }
+      }
+
+      // Animação das ondas da superfície marinha de Poseidon
+      if (poseidonOceanPos && poseidonOceanInitY) {
+        for (let i = 0; i < poseidonOceanPos.count; i++) {
+          const x = poseidonOceanPos.getX(i);
+          const z = poseidonOceanPos.getZ(i);
+          const wave = Math.sin(simTime * 2.2 + x * 0.6) * Math.cos(simTime * 1.8 + z * 0.6) * 0.14;
+          poseidonOceanPos.setY(i, poseidonOceanInitY[i] + wave);
+        }
+        poseidonOceanPos.needsUpdate = true;
+      }
+
+      // ==========================================
+      // DISPARO DE PODERES & EFEITOS
+      // ==========================================
+      if (selectedCiv === 'greek' && selectedUnit === 'zeus') {
+        const zm = zeusModeRef.current;
+        // Céu dinâmico conforme modo
+        if (zm === 'tempestade') {
+          (scene.background as THREE.Color).setHex(0x1e2e38);
+        } else {
+          (scene.background as THREE.Color).setHex(0x7fb8bd);
+        }
+
+        const interval = zm === 'tempestade' ? 0.65 : zm === 'raios' ? 1.4 : 999;
+        if (simTime - lastBoltTime > interval) {
+          lastBoltTime = simTime;
+          const targetX = (Math.random() - 0.5) * 6.0;
+          const targetZ = (Math.random() - 0.5) * 6.0;
+          const skyFrom = new THREE.Vector3(targetX + (Math.random() - 0.5) * 2, 7.5, targetZ + (Math.random() - 0.5) * 2);
+          const groundTo = new THREE.Vector3(targetX, 0.05, targetZ);
+          triggerZeusBolt(skyFrom, groundTo);
+        }
+      } else if (selectedCiv === 'greek' && selectedUnit === 'poseidon') {
+        const pm = poseidonModeRef.current;
+        if (pm === 'golpe') {
+          if (simTime - lastSlamTime > 2.4) {
+            lastSlamTime = simTime;
+            triggerPoseidonSlam(0, 0);
+          }
+        } else if (pm === 'tsunami') {
+          tsunamiGroup.visible = true;
+          tsunamiZ += dt * 6.0;
+          tsunamiGroup.position.z = tsunamiZ;
+
+          for (const puff of crestPuffs) {
+            puff.mesh.position.y = puff.baseY + Math.sin(simTime * 8 + puff.phase) * 0.14;
+          }
+          if (Math.random() < 0.4) {
+            spawnSpray((Math.random() - 0.5) * 10, 3.8, tsunamiZ + 1.8, 3.8, 1.5, 3.5);
+          }
+          if (tsunamiZ > 12.0) {
+            tsunamiZ = -12.0;
+          }
+        } else {
+          tsunamiGroup.visible = false;
+        }
+      }
+
+      // ==========================================
+      // ATUALIZAÇÃO DE FÍSICA DE PARTÍCULAS & FX
+      // ==========================================
+      // Faíscas
+      for (let i = 0; i < SPARK_N; i++) {
+        if (sparkLife[i] > 0) {
+          sparkLife[i] -= dt;
+          sparkVel[i * 3 + 1] -= 9.5 * dt;
+          sparkPos[i * 3] += sparkVel[i * 3] * dt;
+          sparkPos[i * 3 + 1] += sparkVel[i * 3 + 1] * dt;
+          sparkPos[i * 3 + 2] += sparkVel[i * 3 + 2] * dt;
+          if (sparkLife[i] <= 0) sparkPos[i * 3 + 1] = -100;
+        }
+      }
+      sparkGeo.attributes.position.needsUpdate = true;
+
+      // Borrifos
+      for (let i = 0; i < SPRAY_N; i++) {
+        if (sprayLife[i] > 0) {
+          sprayLife[i] -= dt;
+          sprayVel[i * 3 + 1] -= 9.0 * dt;
+          sprayPos[i * 3] += sprayVel[i * 3] * dt;
+          sprayPos[i * 3 + 1] += sprayVel[i * 3 + 1] * dt;
+          sprayPos[i * 3 + 2] += sprayVel[i * 3 + 2] * dt;
+          if (sprayLife[i] <= 0) sprayPos[i * 3 + 1] = -100;
+        }
+      }
+      sprayGeo.attributes.position.needsUpdate = true;
+
+      // Raios
+      for (let i = bolts.length - 1; i >= 0; i--) {
+        const b = bolts[i];
+        b.life -= dt;
+        const alpha = Math.max(0, b.life / b.max);
+        b.meshes.forEach((m) => {
+          if (!Array.isArray(m.material)) m.material.opacity = alpha;
+        });
+        if (b.life <= 0) {
+          b.meshes.forEach((m) => {
+            scene.remove(m);
+            m.geometry.dispose();
+          });
+          bolts.splice(i, 1);
+        }
+      }
+
+      // Ondas de choque
+      for (let i = shockwaves.length - 1; i >= 0; i--) {
+        const sw = shockwaves[i];
+        if (sw.delay > 0) {
+          sw.delay -= dt;
+          continue;
+        }
+        sw.life -= dt;
+        const progress = 1 - sw.life / sw.max;
+        const scale = 1 + progress * 7.5;
+        sw.mesh.scale.set(scale, scale, 1);
+        if (!Array.isArray(sw.mesh.material)) {
+          sw.mesh.material.opacity = Math.max(0, sw.life / sw.max);
+        }
+        if (sw.life <= 0) {
+          scene.remove(sw.mesh);
+          sw.mesh.geometry.dispose();
+          shockwaves.splice(i, 1);
+        }
+      }
+
+      // Gêiseres
+      for (let i = geysers.length - 1; i >= 0; i--) {
+        const g = geysers[i];
+        if (g.delay > 0) {
+          g.delay -= dt;
+          continue;
+        }
+        if (!g.erupted) {
+          g.erupted = true;
+          for (let s = 0; s < 18; s++) spawnSpray(g.gx, 1.2, g.gz, 2.5, 3.2, 4.0);
+        }
+        g.life -= dt;
+        const p = 1 - g.life / g.max;
+        if (p < 0.28) {
+          const sy = (p / 0.28) * 1.5;
+          g.mesh.scale.set(1.1, sy, 1.1);
+        } else {
+          const fade = g.life / (g.max * 0.72);
+          g.mesh.scale.set(1.0 + (1 - fade) * 0.4, 1.5 * fade, 1.0 + (1 - fade) * 0.4);
+          if (!Array.isArray(g.mesh.material)) g.mesh.material.opacity = Math.max(0, fade * 0.85);
+        }
+        if (g.life <= 0) {
+          scene.remove(g.mesh);
+          g.mesh.geometry.dispose();
+          geysers.splice(i, 1);
+        }
+      }
+
+      // Decaimento de luzes de impacto
+      if (flashLight.intensity > 0) flashLight.intensity = Math.max(0, flashLight.intensity - dt * 24);
+      if (impactLight.intensity > 0) impactLight.intensity = Math.max(0, impactLight.intensity - dt * 18);
+
+      // Rotação da entidade
       if (autoRotateRef.current && entityMeshRef.current) {
         entityMeshRef.current.rotation.y += dt * 0.45;
       }
 
+      // Animação procedural de pose
       if (entityMeshRef.current?.userData.animatePose) {
         const moving = animStateRef.current === 'move';
         const attacking = animStateRef.current === 'attack';
@@ -442,8 +916,8 @@ export function HopliteUvBuilderModal({
         camera.lookAt(0, focusY, 0);
       } else {
         const isBuilding = entityType === 'building';
-        const baseDist = isBuilding ? 8.5 : 4.8;
-        const baseHeight = isBuilding ? 1.6 : 1.1;
+        const baseDist = isGod ? 5.8 : isBuilding ? 8.5 : 4.8;
+        const baseHeight = isGod ? 1.35 : isBuilding ? 1.6 : 1.1;
         const dist = baseDist / zoomRef.current;
         const height = baseHeight * (1 + (1 - zoomRef.current) * 0.2);
 
@@ -470,7 +944,6 @@ export function HopliteUvBuilderModal({
   if (!isOpen) return null;
 
   const currentCivUnits = CIVILIZATION_UNITS[selectedCiv] || CIVILIZATION_UNITS.greek!;
-  const isGodSelected = (selectedUnit === 'zeus' || selectedUnit === 'poseidon') && selectedCiv === 'greek';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#07090f]/85 p-3 backdrop-blur-md">
@@ -484,7 +957,7 @@ export function HopliteUvBuilderModal({
             <div>
               <h2 className="font-display text-xl font-bold text-[#f3d27a]">Modelo 3D/2.5D — Age of Mythology</h2>
               <p className="text-xs text-[#9ca3af]">
-                Inspecione deuses olímpicos, unidades e edificações com iluminação 3D PBR, animações procedurais e zoom 360°
+                Inspecione deuses olímpicos com cenários de templo/oceano e poderes em tempo real, tropas com rigging e edifícios em 360°
               </p>
             </div>
           </div>

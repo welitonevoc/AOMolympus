@@ -622,7 +622,7 @@ export function buildZeus(textures: ZeusProceduralTextures): ZeusMeshHierarchy {
   };
 }
 
-export function createZeusTempleEnvironment(scene: THREE.Scene, textures: ZeusProceduralTextures) {
+export function createZeusTempleEnvironment(scene: THREE.Scene | THREE.Group, textures: ZeusProceduralTextures) {
   // Chão circular do Templo + Anéis dourados concêntricos
   const groundMat = new THREE.MeshStandardMaterial({
     map: textures.marbleTex,

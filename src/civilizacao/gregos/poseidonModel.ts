@@ -753,7 +753,7 @@ export function buildPoseidon(textures: PoseidonProceduralTextures): PoseidonMes
   };
 }
 
-export function createPoseidonEnvironment(scene: THREE.Scene, textures: PoseidonProceduralTextures) {
+export function createPoseidonEnvironment(scene: THREE.Scene | THREE.Group, textures: PoseidonProceduralTextures) {
   const oceanGeo = new THREE.PlaneGeometry(34, 34, 96, 96);
   oceanGeo.rotateX(-Math.PI / 2);
   const oceanPos = oceanGeo.attributes.position;
