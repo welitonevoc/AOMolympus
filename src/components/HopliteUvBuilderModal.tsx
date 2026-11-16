@@ -82,8 +82,8 @@ export const MAJOR_GODS_BY_CIV: Partial<Record<PantheonId, MajorGodOption[]>> = 
       name: 'Zeus',
       title: 'Pai dos Deuses (Céus & Tempestades)',
       color: '#eab308',
-      titanName: 'Colosso de Ceráunio (Titã de Zeus)',
-      titanRole: 'Colosso coroado de trovões celestes, empunhando a lâmina divina crepitante de raios.',
+      titanName: 'Titã Tifão - Senhor dos Furacões (Titã de Zeus)',
+      titanRole: 'Colosso tempestuoso dos céus com asas monumentais de tempestade, vórtice de tornados e relâmpagos apocalípticos.',
     },
     {
       id: 'Poseidon',

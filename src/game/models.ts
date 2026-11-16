@@ -2200,21 +2200,58 @@ export function createUnitMesh(
     // ADEREÇOS E ARMAS SAGRADAS EXCLUSIVAS DE CADA DEUS MAIOR
     // ==============================================================
     if (godKey.includes('zeus')) {
-      // TITÃ DE ZEUS: Colosso Tempestuoso de Ceráunio
+      // TITÃ DE ZEUS: Titã Tifão - Senhor dos Furacões
+      // Chifres celestes colossais de ouro e relâmpago
+      for (const s of [-1, 1]) {
+        const horn = part(new THREE.ConeGeometry(0.22, 1.35, 6), pal.gold, s * 0.72, 7.85, -0.15);
+        horn.rotation.set(-0.25, 0, s * -0.42);
+        const hornTip = part(new THREE.ConeGeometry(0.12, 0.6, 6), pal.crystalGlow, s * 1.05, 8.4, -0.22);
+        hornTip.rotation.set(-0.35, 0, s * -0.6);
+      }
       // Coroa de raios dourados
       for (let i = 0; i < 5; i++) {
         const ang = ((i - 2) / 2) * 0.55;
         const ray = part(new THREE.ConeGeometry(0.18, 0.95, 4), pal.gold, Math.sin(ang) * 0.75, 7.6 + Math.cos(ang) * 0.2, 0.1);
         ray.rotation.z = -ang;
       }
+      // Asas colossais de tempestade de Tifão nas costas
+      for (const s of [-1, 1]) {
+        const wingRoot = new THREE.Group();
+        wingRoot.position.set(s * 1.2, 5.2, -0.85);
+        // Braço estrutural da asa
+        const armBeam = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.08, 3.2, 8), pal.gold);
+        armBeam.position.set(s * 1.4, 0.8, -0.2);
+        armBeam.rotation.z = s * -1.05;
+        wingRoot.add(armBeam);
+        // Plumas gigantes de nuvem de tempestade e relâmpago
+        for (let f = 0; f < 5; f++) {
+          const t = f / 4;
+          const feather = new THREE.Mesh(
+            new THREE.ConeGeometry(0.35, 2.4 - t * 0.5, 5),
+            f % 2 === 0 ? pal.crystalGlow : pal.steel
+          );
+          feather.position.set(s * (0.8 + t * 1.6), 0.5 - t * 0.7, -0.15);
+          feather.rotation.z = s * (-0.35 - t * 0.35);
+          feather.scale.set(1.2, 1, 0.3);
+          wingRoot.add(feather);
+        }
+        root.add(wingRoot);
+      }
+      // Anel ciclônico de vento sob a cintura de Tifão
+      const stormRing = part(new THREE.TorusGeometry(2.2, 0.12, 8, 32), pal.crystalGlow, 0, 2.65, 0);
+      stormRing.rotation.x = Math.PI / 2;
+      const stormRing2 = part(new THREE.TorusGeometry(1.6, 0.08, 8, 28), pal.gold, 0, 2.2, 0);
+      stormRing2.rotation.x = Math.PI / 2;
+      // Orbe de furacão e relâmpago na mão esquerda
+      const palmOrb = new THREE.Mesh(new THREE.SphereGeometry(0.55, 12, 12), pal.crystalGlow);
+      palmOrb.position.set(0, -1.8, 0.3);
+      leftArm.add(palmOrb);
       // Espada colossal crepitante de relâmpagos
       const sword = new THREE.Mesh(geos.greatSwordBlade, pal.gold);
       sword.rotation.x = Math.PI / 2.2;
       sword.scale.set(4.6, 5.0, 4.6);
       sword.position.set(0, -1.6, 0.5);
       rightArm.add(sword);
-      // Manto dorsal dourado
-      part(new THREE.BoxGeometry(2.8, 4.2, 0.15), pal.goldOre, 0, 3.8, -0.95);
     } else if (godKey.includes('poseidon')) {
       // TITÃ DE POSEIDON: Caríbdis - Colosso das Profundezas
       // Cristas dorsais de coral luminoso
