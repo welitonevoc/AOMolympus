@@ -3,7 +3,6 @@ import { TeamId } from '../../game/types';
 import { MaterialPalette } from '../../game/models';
 import { buildBrgHopliteGeometry, evaluateBrgClip, remapUvRegion64 } from '../../game/brgAnimation';
 import { HopliteAnimator } from './hopliteAnimator';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 export type HopliteArmorTier = 1 | 2 | 3 | 4;
 export type HopliteRenderMode = '3d' | 'brg' | 'uv2d' | 'sprite';
@@ -518,97 +517,6 @@ export function createGreekUnitMesh(
   const root = new THREE.Group();
   let currentTier: HopliteArmorTier = initialTier;
   let currentMode: HopliteRenderMode = '3d';
-
-  // Load ancient_blue_hoplite_warrior.glb as primary model for hoplites
-  const gltfGroup = new THREE.Group();
-  root.add(gltfGroup);
-  if (kind === 'hoplite') {
-    const loader = new GLTFLoader();
-    loader.load(
-      '/models/ancient_blue_hoplite_warrior.glb',
-      (gltf) => {
-        const model = gltf.scene;
-        model.scale.setScalar(0.72);
-        const box = new THREE.Box3().setFromObject(model);
-        const minY = box.min.y;
-        const baseY = -minY;
-        model.position.set(0, baseY, 0);
-
-        if (enableShadows) {
-          model.traverse((child) => {
-            if ((child as THREE.Mesh).isMesh) {
-              child.castShadow = true;
-              child.receiveShadow = true;
-            }
-          });
-        }
-        gltfGroup.add(model);
-
-        let mixer: THREE.AnimationMixer | null = null;
-        const actions: Record<string, THREE.AnimationAction> = {};
-        if (gltf.animations && gltf.animations.length > 0) {
-          mixer = new THREE.AnimationMixer(model);
-          gltf.animations.forEach((clip) => {
-            const action = mixer!.clipAction(clip);
-            actions[clip.name.toLowerCase()] = action;
-          });
-          const defaultAction = actions['idle'] || actions['walk'] || actions['attack'] || mixer.clipAction(gltf.animations[0]);
-          defaultAction.play();
-        }
-
-        root.userData.animatePose = (dt: number, moving: boolean, speed: number, attackT: number | null) => {
-          if (mixer) {
-            mixer.update(dt);
-            if (attackT !== null && attackT > 0) {
-              const atk = actions['attack'] || actions['strike'] || actions['combat'];
-              if (atk && !atk.isRunning()) {
-                Object.values(actions).forEach(a => a.stop());
-                atk.reset().play();
-              }
-            } else if (moving) {
-              const walk = actions['walk'] || actions['run'] || actions['march'];
-              if (walk && !walk.isRunning()) {
-                Object.values(actions).forEach(a => a.stop());
-                walk.reset().play();
-              }
-            } else {
-              const idle = actions['idle'] || actions['stand'];
-              if (idle && !idle.isRunning()) {
-                Object.values(actions).forEach(a => a.stop());
-                idle.reset().play();
-              }
-            }
-          }
-
-          if (attackT !== null && attackT > 0) {
-            const th = Math.sin(THREE.MathUtils.clamp(attackT, 0, 1) * Math.PI);
-            model.position.z = th * 0.3;
-            model.rotation.x = th * 0.18;
-          } else if (moving) {
-            const t = performance.now() * 0.012 * speed;
-            model.position.y = baseY + Math.abs(Math.sin(t * 2)) * 0.09;
-            model.rotation.z = Math.sin(t) * 0.05;
-            model.position.z = 0;
-            model.rotation.x = 0;
-          } else {
-            model.position.y = baseY + Math.sin(performance.now() * 0.003) * 0.035;
-            model.position.z = 0;
-            model.rotation.z = 0;
-            model.rotation.x = 0;
-          }
-        };
-
-        // Hide procedural fallback group once GLB model loads successfully
-        if (root.userData.group3D) {
-          (root.userData.group3D as THREE.Group).visible = false;
-        }
-      },
-      undefined,
-      (err) => {
-        console.warn('GLB load fallback to procedural model:', err);
-      }
-    );
-  }
 
   const uvTex = getHopliteUvTexture(currentTier);
   const tierSpec = AOM_HOPLITE_UV_TIERS[currentTier];
