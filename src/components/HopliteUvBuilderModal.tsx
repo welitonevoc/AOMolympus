@@ -191,6 +191,8 @@ export function HopliteUvBuilderModal({
     let isDragging = false;
     let prevMouseX = 0;
     let prevMouseY = 0;
+    let orbitYaw = 0;
+    let orbitPitch = 0.12;
 
     const onMouseDown = (e: MouseEvent) => {
       isDragging = true;
@@ -205,8 +207,15 @@ export function HopliteUvBuilderModal({
       prevMouseX = e.clientX;
       prevMouseY = e.clientY;
 
-      entityMeshRef.current.rotation.y += dx * 0.01;
-      entityMeshRef.current.rotation.x = Math.max(-0.6, Math.min(0.6, entityMeshRef.current.rotation.x + dy * 0.008));
+      const isGod = (selectedUnit === 'zeus' || selectedUnit === 'poseidon') && selectedCiv === 'greek';
+      if (isGod) {
+        // No caso dos deuses, a câmera orbita em 360° e o deus permanece fixo no centro
+        orbitYaw -= dx * 0.008;
+        orbitPitch = Math.max(-0.4, Math.min(0.65, orbitPitch + dy * 0.006));
+      } else {
+        entityMeshRef.current.rotation.y += dx * 0.01;
+        entityMeshRef.current.rotation.x = Math.max(-0.6, Math.min(0.6, entityMeshRef.current.rotation.x + dy * 0.008));
+      }
     };
 
     const onMouseUp = () => {
@@ -460,6 +469,8 @@ export function HopliteUvBuilderModal({
     // CONSTRUÇÃO E MONTAGEM DA ENTIDADE & CENÁRIO
     // ==========================================
     const buildCurrentEntity = () => {
+      orbitYaw = 0;
+      orbitPitch = 0.12;
       // Limpeza do modelo anterior
       if (entityMeshRef.current) {
         scene.remove(entityMeshRef.current);
@@ -891,9 +902,21 @@ export function HopliteUvBuilderModal({
       if (flashLight.intensity > 0) flashLight.intensity = Math.max(0, flashLight.intensity - dt * 24);
       if (impactLight.intensity > 0) impactLight.intensity = Math.max(0, impactLight.intensity - dt * 18);
 
-      // Rotação da entidade
-      if (autoRotateRef.current && entityMeshRef.current) {
-        entityMeshRef.current.rotation.y += dt * 0.45;
+      // Rotação da entidade / Órbita 360° da câmera
+      const isGod = (selectedUnit === 'zeus' || selectedUnit === 'poseidon') && selectedCiv === 'greek';
+
+      if (autoRotateRef.current) {
+        if (isGod) {
+          // No caso dos deuses, quem gira em 360° é o cenário e a câmera ao redor; o deus fica fixo no centro
+          orbitYaw += dt * 0.35;
+        } else if (entityMeshRef.current) {
+          entityMeshRef.current.rotation.y += dt * 0.45;
+        }
+      }
+
+      if (isGod && entityMeshRef.current) {
+        // Assegura que o deus permaneça sempre centralizado de frente
+        entityMeshRef.current.rotation.x = 0;
       }
 
       // Animação procedural de pose
@@ -906,18 +929,24 @@ export function HopliteUvBuilderModal({
       }
 
       // Enquadramento e Foco da Câmera
-      const isGod = (selectedUnit === 'zeus' || selectedUnit === 'poseidon') && selectedCiv === 'greek';
       const isFocus = focusDivineRef.current && isGod;
 
-      if (isFocus) {
-        // Câmera de close-up no rosto divino e armas
-        const focusY = selectedUnit === 'zeus' ? 1.4 : 1.5;
-        camera.position.set(0, focusY, 2.0 / zoomRef.current);
+      if (isGod) {
+        // Câmera orbital 360° ao redor do Deus posicionado no centro exato
+        const focusY = isFocus ? (selectedUnit === 'zeus' ? 1.4 : 1.5) : 1.35;
+        const effDist = isFocus ? 2.0 / zoomRef.current : 5.8 / zoomRef.current;
+
+        const horizDist = effDist * Math.cos(orbitPitch);
+        const camX = Math.sin(orbitYaw) * horizDist;
+        const camZ = Math.cos(orbitYaw) * horizDist;
+        const camY = focusY + effDist * Math.sin(orbitPitch);
+
+        camera.position.set(camX, camY, camZ);
         camera.lookAt(0, focusY, 0);
       } else {
         const isBuilding = entityType === 'building';
-        const baseDist = isGod ? 5.8 : isBuilding ? 8.5 : 4.8;
-        const baseHeight = isGod ? 1.35 : isBuilding ? 1.6 : 1.1;
+        const baseDist = isBuilding ? 8.5 : 4.8;
+        const baseHeight = isBuilding ? 1.6 : 1.1;
         const dist = baseDist / zoomRef.current;
         const height = baseHeight * (1 + (1 - zoomRef.current) * 0.2);
 
