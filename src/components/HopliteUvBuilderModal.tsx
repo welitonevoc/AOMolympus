@@ -78,6 +78,7 @@ import {
   getCachedHermesTextures,
   animateHermes,
 } from '../civilizacao/gregos/hermesModel';
+import { AOM_HOPLITE_UV_TIERS, HopliteArmorTier } from '../civilizacao/gregos/gregosModels';
 import { createBuildingMesh, createMaterialPalette, createUnitMesh } from '../game/models';
 import { BuildingKind, PantheonId, UnitKind } from '../game/types';
 import {
@@ -2283,24 +2284,93 @@ export function HopliteUvBuilderModal({
                   ))}
             </div>
 
-            {/* Nível de Armadura do Hoplita (se grego e hoplita) */}
+            {/* Nível de Armadura e Textura UV do Hoplita (se grego e hoplita) */}
             {entityType === 'unit' && selectedUnit === 'hoplite' && selectedCiv === 'greek' && (
-              <div className="flex flex-col gap-2 rounded-xl border border-white/10 bg-[#171c28] p-3">
-                <span className="text-xs font-bold text-[#f3d27a]">Nível de Armadura do Hoplita</span>
-                <div className="grid grid-cols-4 gap-1.5">
-                  {[1, 2, 3, 4].map((tier) => (
-                    <button
-                      key={tier}
-                      type="button"
-                      onClick={() => onSelectTier(tier as any)}
-                      className={`rounded py-1.5 text-xs font-bold transition-all cursor-pointer ${
-                        activeTier === tier ? 'bg-[#d4af37] text-[#0b0e14]' : 'bg-[#222938] text-[#9ca3af] hover:text-white'
-                      }`}
-                    >
-                      T{tier}
-                    </button>
-                  ))}
+              <div className="flex flex-col gap-2.5 rounded-xl border border-amber-600/40 bg-stone-950/80 p-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-amber-400">🛡️ Tiers de Armadura do Hoplita</span>
+                  <span className="text-[10px] font-mono text-amber-300/80 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20">
+                    {AOM_HOPLITE_UV_TIERS[activeTier as HopliteArmorTier]?.id ?? 'map_03'}
+                  </span>
                 </div>
+
+                <div className="space-y-1.5">
+                  {([1, 2, 3, 4] as HopliteArmorTier[]).map((t) => {
+                    const spec = AOM_HOPLITE_UV_TIERS[t];
+                    const isSelected = activeTier === t;
+                    return (
+                      <div
+                        key={t}
+                        onClick={() => onSelectTier(t)}
+                        className={`cursor-pointer p-2 rounded-lg border transition-all flex items-center justify-between ${
+                          isSelected
+                            ? 'bg-amber-500/15 border-amber-500 shadow-md shadow-amber-500/10 text-amber-200'
+                            : 'bg-stone-900/60 border-stone-800 text-stone-400 hover:bg-stone-800/60 hover:text-stone-200'
+                        }`}
+                      >
+                        <div>
+                          <div className="flex items-center space-x-1.5">
+                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                              T{t}
+                            </span>
+                            <span className="text-xs font-medium">{spec.name}</span>
+                          </div>
+                          <p className="text-[10px] text-stone-400 mt-0.5 line-clamp-1">{spec.subtitle}</p>
+                        </div>
+                        {isSelected && <span className="text-amber-400 text-xs font-bold">●</span>}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Paleta Hex do Tier Ativo */}
+                {(() => {
+                  const activeSpec = AOM_HOPLITE_UV_TIERS[activeTier as HopliteArmorTier] ?? AOM_HOPLITE_UV_TIERS[3];
+                  return (
+                    <div className="pt-2 border-t border-stone-800 space-y-2">
+                      <div>
+                        <span className="text-[9px] uppercase font-bold tracking-wider text-stone-500 block mb-1">
+                          Paleta de Cores Hexadecimais
+                        </span>
+                        <div className="grid grid-cols-3 gap-1.5 text-center text-[9px]">
+                          <div className="bg-stone-900/90 p-1.5 rounded border border-stone-800">
+                            <div
+                              className="w-full h-4 rounded mb-1 border border-black/40"
+                              style={{ backgroundColor: `#${activeSpec.armorHex.toString(16).padStart(6, '0')}` }}
+                            />
+                            <span className="text-stone-400 font-mono text-[8px]">Couraça</span>
+                          </div>
+                          <div className="bg-stone-900/90 p-1.5 rounded border border-stone-800">
+                            <div
+                              className="w-full h-4 rounded mb-1 border border-black/40"
+                              style={{ backgroundColor: `#${activeSpec.accentHex.toString(16).padStart(6, '0')}` }}
+                            />
+                            <span className="text-stone-400 font-mono text-[8px]">Detalhe</span>
+                          </div>
+                          <div className="bg-stone-900/90 p-1.5 rounded border border-stone-800">
+                            <div
+                              className="w-full h-4 rounded mb-1 border border-black/40"
+                              style={{ backgroundColor: `#${activeSpec.greaveHex.toString(16).padStart(6, '0')}` }}
+                            />
+                            <span className="text-stone-400 font-mono text-[8px]">Grevas</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div>
+                        <span className="text-[9px] uppercase font-bold tracking-wider text-stone-500 block mb-0.5">
+                          Textura UV
+                        </span>
+                        <div
+                          className="text-[9px] font-mono text-stone-400 truncate bg-stone-900/90 px-2 py-1 rounded border border-stone-800"
+                          title={activeSpec.url}
+                        >
+                          {activeSpec.url}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
             )}
           </div>
@@ -3106,3 +3176,5 @@ export function HopliteUvBuilderModal({
     </div>
   );
 }
+
+export { HopliteArmorTierModal } from './HopliteArmorTierModal';
