@@ -13,6 +13,7 @@ import {
   Shield,
   Skull,
   Sparkles,
+  Sun,
   Swords,
   User,
   Waves,
@@ -57,6 +58,11 @@ import {
   getCachedAphroditeTextures,
   animateAphrodite,
 } from '../civilizacao/gregos/afroditeModel';
+import {
+  buildApollo,
+  getCachedApolloTextures,
+  animateApollo,
+} from '../civilizacao/gregos/apoloModel';
 import { createBuildingMesh, createMaterialPalette, createUnitMesh } from '../game/models';
 import { BuildingKind, PantheonId, UnitKind } from '../game/types';
 import {
@@ -74,7 +80,7 @@ interface HopliteUvBuilderModalProps {
   onSelectTier: (tier: 1 | 2 | 3 | 4) => void;
 }
 
-export type InspectableUnitId = UnitKind | 'zeus' | 'poseidon' | 'hades' | 'artemis' | 'hefesto' | 'dionisio' | 'afrodite';
+export type InspectableUnitId = UnitKind | 'zeus' | 'poseidon' | 'hades' | 'artemis' | 'hefesto' | 'dionisio' | 'afrodite' | 'apolo';
 
 interface CivEntityOption {
   id: InspectableUnitId;
@@ -238,6 +244,11 @@ export function getUnitsForCivAndGod(civ: PantheonId, majorGod: string): CivEnti
         id: 'afrodite',
         name: '🌹 Afrodite (Deusa Menor)',
         role: 'Deusa da Beleza & do Amor — Concha de nácar flutuante, Espelho Sagrado de Vênus e Maré de Paixão',
+      },
+      {
+        id: 'apolo',
+        name: '☀️ Apolo (Deus Menor)',
+        role: 'Deus do Sol & da Luz — Arco Solar Recurvo, Kithara Dourada de 7 cordas e Chama de Hélio',
       },
       {
         id: 'hoplite',
@@ -452,6 +463,7 @@ export function HopliteUvBuilderModal({
   const [hefestoMode, setHefestoMode] = useState<'forja' | 'martelo' | 'automato' | 'erupcao'>('forja');
   const [dionisioMode, setDionisioMode] = useState<'banquete' | 'danca' | 'vinhas' | 'extase'>('banquete');
   const [afroditeMode, setAfroditeMode] = useState<'graca' | 'danca' | 'encanto' | 'mare'>('graca');
+  const [apoloMode, setApoloMode] = useState<'pairar' | 'voo' | 'flecha' | 'helio'>('pairar');
   const [focusDivine, setFocusDivine] = useState(false);
 
   const animStateRef = useRef(animState);
@@ -475,6 +487,8 @@ export function HopliteUvBuilderModal({
   dionisioModeRef.current = dionisioMode;
   const afroditeModeRef = useRef(afroditeMode);
   afroditeModeRef.current = afroditeMode;
+  const apoloModeRef = useRef(apoloMode);
+  apoloModeRef.current = apoloMode;
   const focusDivineRef = useRef(focusDivine);
   focusDivineRef.current = focusDivine;
 
@@ -552,7 +566,7 @@ export function HopliteUvBuilderModal({
       prevMouseX = e.clientX;
       prevMouseY = e.clientY;
 
-      const isGod = (selectedUnit === 'zeus' || selectedUnit === 'poseidon' || selectedUnit === 'hades' || selectedUnit === 'artemis' || selectedUnit === 'hefesto' || selectedUnit === 'dionisio' || selectedUnit === 'afrodite') && selectedCiv === 'greek';
+      const isGod = (selectedUnit === 'zeus' || selectedUnit === 'poseidon' || selectedUnit === 'hades' || selectedUnit === 'artemis' || selectedUnit === 'hefesto' || selectedUnit === 'dionisio' || selectedUnit === 'afrodite' || selectedUnit === 'apolo') && selectedCiv === 'greek';
       if (isGod) {
         // No caso dos deuses, a câmera orbita em 360° e o deus permanece fixo no centro
         orbitYaw -= dx * 0.008;
@@ -1515,6 +1529,36 @@ export function HopliteUvBuilderModal({
             const m = afroditeModeRef.current;
             animateAphrodite(afrodite, dt, simTime, m);
           };
+        } else if (selectedUnit === 'apolo' && selectedCiv === 'greek') {
+          // ===============================
+          // CENÁRIO DO TEMPLO DE DELFOS & SOL (APOLO)
+          // ===============================
+          scene.background = new THREE.Color(0x181206);
+          scene.fog = new THREE.FogExp2(0x241808, 0.016);
+
+          const pedGeo = new THREE.CylinderGeometry(2.4, 2.6, 0.2, 44);
+          const pedMat = new THREE.MeshStandardMaterial({ color: 0x3d2810, roughness: 0.35, metalness: 0.3 });
+          const pedestal = new THREE.Mesh(pedGeo, pedMat);
+          pedestal.position.y = -0.1;
+          pedestal.receiveShadow = true;
+          environmentGroup.add(pedestal);
+
+          const ringGeo = new THREE.RingGeometry(2.1, 2.3, 44);
+          const ringMat = new THREE.MeshBasicMaterial({ color: 0xfacc15, side: THREE.DoubleSide });
+          const ring = new THREE.Mesh(ringGeo, ringMat);
+          ring.rotation.x = -Math.PI / 2;
+          ring.position.y = 0.01;
+          environmentGroup.add(ring);
+
+          const apoTex = getCachedApolloTextures();
+          const apolo = buildApollo(apoTex);
+          group = apolo.root;
+          group.scale.setScalar(0.85);
+
+          group.userData.animatePose = (dt: number) => {
+            const m = apoloModeRef.current;
+            animateApollo(apolo, dt, simTime, m);
+          };
         } else if (selectedUnit === 'hoplite' || selectedUnit === 'hipaspist') {
           // ===============================
           // CENÁRIO PADRÃO (PEDESTAL)
@@ -1884,7 +1928,7 @@ export function HopliteUvBuilderModal({
       if (hadesBlastLight.intensity > 0) hadesBlastLight.intensity = Math.max(0, hadesBlastLight.intensity - dt * 20);
 
       // Rotação da entidade / Órbita 360° da câmera
-      const isGod = (selectedUnit === 'zeus' || selectedUnit === 'poseidon' || selectedUnit === 'hades' || selectedUnit === 'artemis' || selectedUnit === 'hefesto' || selectedUnit === 'dionisio' || selectedUnit === 'afrodite') && selectedCiv === 'greek';
+      const isGod = (selectedUnit === 'zeus' || selectedUnit === 'poseidon' || selectedUnit === 'hades' || selectedUnit === 'artemis' || selectedUnit === 'hefesto' || selectedUnit === 'dionisio' || selectedUnit === 'afrodite' || selectedUnit === 'apolo') && selectedCiv === 'greek';
 
       if (autoRotateRef.current) {
         if (isGod) {
@@ -1914,7 +1958,7 @@ export function HopliteUvBuilderModal({
 
       if (isGod) {
         // Câmera orbital 360° ao redor do Deus posicionado no centro exato
-        const focusY = isFocus ? (selectedUnit === 'zeus' ? 1.4 : selectedUnit === 'poseidon' ? 1.5 : selectedUnit === 'artemis' ? 1.42 : selectedUnit === 'hefesto' ? 1.45 : selectedUnit === 'dionisio' ? 1.42 : selectedUnit === 'afrodite' ? 1.46 : 1.48) : 1.35;
+        const focusY = isFocus ? (selectedUnit === 'zeus' ? 1.4 : selectedUnit === 'poseidon' ? 1.5 : selectedUnit === 'artemis' ? 1.42 : selectedUnit === 'hefesto' ? 1.45 : selectedUnit === 'dionisio' ? 1.42 : selectedUnit === 'afrodite' ? 1.46 : selectedUnit === 'apolo' ? 1.48 : 1.48) : 1.35;
         const effDist = isFocus ? 2.0 / zoomRef.current : 5.8 / zoomRef.current;
 
         const horizDist = effDist * Math.cos(orbitPitch);
@@ -2593,6 +2637,71 @@ export function HopliteUvBuilderModal({
                   >
                     <Eye className="h-3.5 w-3.5" />
                     <span>{focusDivine ? 'Visão Corpo' : 'Focar Rosto/Espelho'}</span>
+                  </button>
+                  <div className="h-5 w-[1px] bg-white/15 mx-1" />
+                </>
+              ) : entityType === 'unit' && selectedUnit === 'apolo' && selectedCiv === 'greek' ? (
+                // Poderes e Animações de Apolo (Deus do Sol & da Luz)
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setApoloMode('pairar')}
+                    className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      apoloMode === 'pairar'
+                        ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/30'
+                        : 'border border-amber-400/30 text-amber-200 hover:bg-amber-400/20'
+                    }`}
+                  >
+                    <Sun className="h-3.5 w-3.5" />
+                    <span>Pairar Solar</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setApoloMode('voo')}
+                    className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      apoloMode === 'voo'
+                        ? 'bg-yellow-400 text-slate-950 shadow-md shadow-yellow-400/30'
+                        : 'border border-yellow-400/30 text-yellow-200 hover:bg-yellow-400/20'
+                    }`}
+                  >
+                    <Wind className="h-3.5 w-3.5" />
+                    <span>Voo Radiante</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setApoloMode('flecha')}
+                    className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      apoloMode === 'flecha'
+                        ? 'bg-orange-500 text-white shadow-md shadow-orange-500/30'
+                        : 'border border-orange-400/30 text-orange-200 hover:bg-orange-400/20'
+                    }`}
+                  >
+                    <Sparkles className="h-3.5 w-3.5" />
+                    <span>Flecha Divina</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setApoloMode('helio')}
+                    className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      apoloMode === 'helio'
+                        ? 'bg-amber-400 text-slate-950 shadow-md shadow-amber-400/30'
+                        : 'border border-amber-400/30 text-amber-200 hover:bg-amber-400/20'
+                    }`}
+                  >
+                    <Flame className="h-3.5 w-3.5" />
+                    <span>Chama de Hélio</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFocusDivine(!focusDivine)}
+                    className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      focusDivine
+                        ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/30'
+                        : 'border border-amber-400/40 text-amber-200 hover:bg-amber-500/20'
+                    }`}
+                  >
+                    <Eye className="h-3.5 w-3.5" />
+                    <span>{focusDivine ? 'Visão Corpo' : 'Focar Rosto/Arco'}</span>
                   </button>
                   <div className="h-5 w-[1px] bg-white/15 mx-1" />
                 </>

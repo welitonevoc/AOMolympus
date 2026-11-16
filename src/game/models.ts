@@ -9,6 +9,7 @@ import { buildArtemis, getCachedArtemisTextures, animateArtemis } from '../civil
 import { buildHephaestus, getCachedHephaestusTextures, animateHephaestus } from '../civilizacao/gregos/hefestoModel';
 import { buildDionysus, getCachedDionysusTextures, animateDionysus } from '../civilizacao/gregos/dionisioModel';
 import { buildAphrodite, getCachedAphroditeTextures, animateAphrodite } from '../civilizacao/gregos/afroditeModel';
+import { buildApollo, getCachedApolloTextures, animateApollo } from '../civilizacao/gregos/apoloModel';
 import { createAoMOakTreeMesh, getFaunaCoatMaterial } from '../TEXTURA';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
@@ -2584,6 +2585,20 @@ export function createUnitMesh(
       aPhase += dt;
       const mode = attackT !== null ? 'encanto' : moving ? 'danca' : 'graca';
       animateAphrodite(afro, dt, aPhase, mode);
+    };
+    attachGroundMarkers(root, 1.25, pal, team);
+    attachHealthBar(root, 3.4, 1.6);
+    return root;
+  } else if ((kind as any) === 'apolo') {
+    const apoTex = getCachedApolloTextures();
+    const apo = buildApollo(apoTex);
+    apo.root.scale.setScalar(1.25);
+    root.add(apo.root);
+    let aPhase = 0;
+    root.userData.animatePose = (dt: number, moving: boolean, _speed: number, attackT: number | null) => {
+      aPhase += dt;
+      const mode = attackT !== null ? 'flecha' : moving ? 'voo' : 'pairar';
+      animateApollo(apo, dt, aPhase, mode);
     };
     attachGroundMarkers(root, 1.25, pal, team);
     attachHealthBar(root, 3.4, 1.6);
