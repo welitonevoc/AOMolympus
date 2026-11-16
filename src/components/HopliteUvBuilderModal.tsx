@@ -5,7 +5,7 @@ import { createGreekUnitMesh } from '../civilizacao/gregos/gregosModels';
 import { buildZeus, createZeusProceduralTextures } from '../civilizacao/gregos/zeusModel';
 import { buildPoseidon, createPoseidonProceduralTextures } from '../civilizacao/gregos/poseidonModel';
 import { createBuildingMesh, createMaterialPalette, createUnitMesh } from '../game/models';
-import { BuildingKind, UnitKind } from '../game/types';
+import { BuildingKind, PantheonId, UnitKind } from '../game/types';
 import {
   createContactShadowTexture,
   createMarbleTexture,
@@ -57,13 +57,21 @@ export function HopliteUvBuilderModal({
   const [entityType, setEntityType] = useState<'unit' | 'building'>('unit');
   const [selectedUnit, setSelectedUnit] = useState<UnitKind | 'zeus' | 'poseidon'>('zeus');
   const [selectedBuilding, setSelectedBuilding] = useState<BuildingKind>('town_center');
+  const [selectedCiv, setSelectedCiv] = useState<PantheonId>('greek');
   const [animState, setAnimState] = useState<'idle' | 'move' | 'attack'>('attack');
   const [autoRotate3D, setAutoRotate3D] = useState(true);
+  const [zoomLevel, setZoomLevel] = useState(1.0);
 
   const animStateRef = useRef(animState);
   animStateRef.current = animState;
   const autoRotateRef = useRef(autoRotate3D);
   autoRotateRef.current = autoRotate3D;
+  const zoomRef = useRef(zoomLevel);
+  zoomRef.current = zoomLevel;
+
+  useEffect(() => {
+    setZoomLevel(1.0);
+  }, [entityType, selectedUnit, selectedBuilding, selectedCiv]);
 
   useEffect(() => {
     if (!isOpen || !mount3DRef.current) return;
@@ -84,6 +92,42 @@ export function HopliteUvBuilderModal({
     renderer.shadowMap.enabled = true;
     container.innerHTML = '';
     container.appendChild(renderer.domElement);
+
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      setZoomLevel((prev) => Math.max(0.4, Math.min(3.0, prev - e.deltaY * 0.002)));
+    };
+    container.addEventListener('wheel', onWheel, { passive: false });
+
+    // 360º Mouse Drag Orbit / Rotation
+    let isDragging = false;
+    let prevMouseX = 0;
+    let prevMouseY = 0;
+
+    const onMouseDown = (e: MouseEvent) => {
+      isDragging = true;
+      prevMouseX = e.clientX;
+      prevMouseY = e.clientY;
+    };
+
+    const onMouseMove = (e: MouseEvent) => {
+      if (!isDragging || !entityMeshRef.current) return;
+      const dx = e.clientX - prevMouseX;
+      const dy = e.clientY - prevMouseY;
+      prevMouseX = e.clientX;
+      prevMouseY = e.clientY;
+
+      entityMeshRef.current.rotation.y += dx * 0.01;
+      entityMeshRef.current.rotation.x = Math.max(-0.6, Math.min(0.6, entityMeshRef.current.rotation.x + dy * 0.008));
+    };
+
+    const onMouseUp = () => {
+      isDragging = false;
+    };
+
+    container.addEventListener('mousedown', onMouseDown);
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
 
     const hemi = new THREE.HemisphereLight(0xfffbeb, 0x1e293b, 1.25);
     scene.add(hemi);
@@ -183,7 +227,7 @@ export function HopliteUvBuilderModal({
           group = createUnitMesh(selectedUnit, 'player', pal, true);
         }
       } else {
-        group = createBuildingMesh(selectedBuilding, 'player', pal, true, 'greek');
+        group = createBuildingMesh(selectedBuilding, 'player', pal, true, selectedCiv);
       }
       scene.add(group);
       entityMeshRef.current = group;
@@ -214,6 +258,16 @@ export function HopliteUvBuilderModal({
         entityMeshRef.current.userData.animatePose(dt, moving, 3.2, attackT, actionState, 'wood');
       }
 
+      // Responsive camera framing & zoom
+      const isBuilding = entityType === 'building';
+      const baseDist = isBuilding ? 8.5 : 4.8;
+      const baseHeight = isBuilding ? 1.6 : 1.1;
+      const dist = baseDist / zoomRef.current;
+      const height = baseHeight * (1 + (1 - zoomRef.current) * 0.2);
+
+      camera.position.set(0, height, dist);
+      camera.lookAt(0, baseHeight, 0);
+
       renderer.render(scene, camera);
     };
 
@@ -221,10 +275,14 @@ export function HopliteUvBuilderModal({
 
     return () => {
       cancelAnimationFrame(frameId);
+      container.removeEventListener('wheel', onWheel);
+      container.removeEventListener('mousedown', onMouseDown);
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
       renderer.dispose();
       container.innerHTML = '';
     };
-  }, [isOpen, entityType, selectedUnit, selectedBuilding, activeTier]);
+  }, [isOpen, entityType, selectedUnit, selectedBuilding, activeTier, selectedCiv]);
 
   if (!isOpen) return null;
 
@@ -255,6 +313,32 @@ export function HopliteUvBuilderModal({
         <div className="grid grid-cols-1 md:grid-cols-12 flex-1 overflow-hidden">
           {/* Left Panel: Entity Selectors */}
           <div className="col-span-1 md:col-span-4 border-r border-white/10 bg-[#121620]/70 p-5 flex flex-col gap-4 overflow-y-auto">
+            {/* Civilization Selector */}
+            <div className="flex flex-col gap-1.5">
+              <span className="text-xs font-bold text-[#f3d27a]">Civilização (Panteão)</span>
+              <div className="grid grid-cols-2 gap-1.5">
+                {[
+                  { id: 'greek', name: 'Grega' },
+                  { id: 'egyptian', name: 'Egípcia' },
+                  { id: 'norse', name: 'Nórdica' },
+                  { id: 'atlantean', name: 'Atlanteana' },
+                ].map((civ) => (
+                  <button
+                    key={civ.id}
+                    type="button"
+                    onClick={() => setSelectedCiv(civ.id as any)}
+                    className={`rounded-lg py-1.5 px-2.5 text-xs font-semibold border transition-all cursor-pointer ${
+                      selectedCiv === civ.id
+                        ? 'border-[#d4af37] bg-[#d4af37]/20 text-[#f3d27a]'
+                        : 'border-white/10 bg-[#161c28] text-[#9ca3af] hover:text-white'
+                    }`}
+                  >
+                    {civ.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {/* Category Toggle */}
             <div className="flex rounded-xl bg-[#171c28] p-1 border border-white/10">
               <button
@@ -387,6 +471,26 @@ export function HopliteUvBuilderModal({
                 <RotateCw className="h-3.5 w-3.5" />
                 <span>Girar</span>
               </button>
+              <div className="h-5 w-[1px] bg-white/15 mx-1" />
+              <div className="flex items-center gap-1 text-xs">
+                <button
+                  type="button"
+                  onClick={() => setZoomLevel((prev) => Math.max(0.4, prev - 0.25))}
+                  title="Aproximar Zoom (-)"
+                  className="flex h-7 w-7 items-center justify-center rounded bg-[#1f2636] text-[#f3d27a] font-bold hover:bg-[#2a344a] cursor-pointer"
+                >
+                  -
+                </button>
+                <span className="font-mono text-[11px] text-[#9ca3af] px-1">{Math.round(zoomLevel * 100)}%</span>
+                <button
+                  type="button"
+                  onClick={() => setZoomLevel((prev) => Math.min(3.0, prev + 0.25))}
+                  title="Afastar Zoom (+)"
+                  className="flex h-7 w-7 items-center justify-center rounded bg-[#1f2636] text-[#f3d27a] font-bold hover:bg-[#2a344a] cursor-pointer"
+                >
+                  +
+                </button>
+              </div>
             </div>
           </div>
         </div>
