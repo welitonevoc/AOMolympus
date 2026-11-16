@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Castle, Eye, Swords, Trees } from 'lucide-react';
+import { Castle, Crosshair, Eye, Maximize2, Minimize2, Swords, Trees } from 'lucide-react';
 import { groundHeightAt, MAP_HALF_SIZE, PLAYABLE_HALF_SIZE } from '../game/models';
-import { MinimapBlip, MapId, MAPS, PANTHEONS, PantheonId } from '../game/types';
+import { MapId, MAPS, MinimapBlip, PANTHEONS, PantheonId } from '../game/types';
 
 export type MinimapFilterMode = 'all' | 'combat' | 'economy';
 
@@ -20,7 +20,14 @@ interface MinimapProps {
   onFocusTownCenter?: () => void;
 }
 
-const CANVAS_SIZE = 272; // 2x internal resolution for crisp HiDPI rendering
+interface MinimapPing {
+  wx: number;
+  wz: number;
+  color: string;
+  createdAt: number;
+}
+
+const CANVAS_SIZE = 280; // Crisp 2x HiDPI internal canvas resolution
 
 function hexToRgb(hex: number): [number, number, number] {
   return [(hex >> 16) & 255, (hex >> 8) & 255, hex & 255];
@@ -173,7 +180,7 @@ function createTerrainBackdrop(mapId: MapId): HTMLCanvasElement {
   ctx.putImageData(img, 0, 0);
 
   const pad = ((MAP_HALF_SIZE - PLAYABLE_HALF_SIZE) / (MAP_HALF_SIZE * 2)) * CANVAS_SIZE;
-  ctx.strokeStyle = 'rgba(212, 175, 55, 0.28)';
+  ctx.strokeStyle = 'rgba(212, 175, 55, 0.32)';
   ctx.lineWidth = 2;
   ctx.strokeRect(pad, pad, CANVAS_SIZE - pad * 2, CANVAS_SIZE - pad * 2);
 
@@ -198,21 +205,39 @@ export function Minimap({
   const fogCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [filterMode, setFilterMode] = useState<MinimapFilterMode>('all');
+  const [expanded, setExpanded] = useState(false);
+  const [hoverInfo, setHoverInfo] = useState<string | null>(null);
+  const [pings, setPings] = useState<MinimapPing[]>([]);
 
   const terrainBackdrop = useMemo(() => createTerrainBackdrop(mapId), [mapId]);
   const playerColor = PANTHEONS[pantheon].primaryColor;
 
-  const { playerUnits, enemyUnits } = useMemo(() => {
-    let pCount = 0;
-    let eCount = 0;
+  // Summarize allied buildings, allied units, and revealed enemies (buildings + units)
+  const { playerBuildings, playerUnits, revealedEnemies } = useMemo(() => {
+    let pBuildings = 0;
+    let pUnits = 0;
+    let eTotal = 0;
     for (const b of blips) {
-      if (b.category === 'unit') {
-        if (b.team === 'player') pCount++;
-        else if (b.team === 'enemy') eCount++;
+      if (b.category === 'building') {
+        if (b.team === 'player') pBuildings++;
+        else if (b.team === 'enemy') eTotal++;
+      } else if (b.category === 'unit') {
+        if (b.team === 'player') pUnits++;
+        else if (b.team === 'enemy') eTotal++;
       }
     }
-    return { playerUnits: pCount, enemyUnits: eCount };
+    return { playerBuildings: pBuildings, playerUnits: pUnits, revealedEnemies: eTotal };
   }, [blips]);
+
+  // Clean up expired visual pings
+  useEffect(() => {
+    if (pings.length === 0) return;
+    const timer = window.setInterval(() => {
+      const now = performance.now();
+      setPings((prev) => prev.filter((p) => now - p.createdAt < 750));
+    }, 50);
+    return () => window.clearInterval(timer);
+  }, [pings.length]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -275,25 +300,7 @@ export function Minimap({
       }
     }
 
-    // 3. Buildings
-    for (const blip of blips) {
-      if (blip.category !== 'building') continue;
-      if (filterMode === 'combat' && blip.team === 'player' && !blip.isMajor) continue;
-      const { mx, my } = toMini(blip.x, blip.z);
-      const s = blip.size * 2;
-      ctx.fillStyle = blip.team === 'player' ? playerColor : '#dc2626';
-      ctx.strokeStyle = blip.selected ? '#facc15' : '#0b0e13';
-      ctx.lineWidth = blip.selected ? 2.5 : 1.5;
-      ctx.fillRect(mx - s / 2, my - s / 2, s, s);
-      ctx.strokeRect(mx - s / 2, my - s / 2, s, s);
-
-      if (blip.isMajor) {
-        ctx.fillStyle = blip.team === 'player' ? '#facc15' : '#fca5a5';
-        ctx.fillRect(mx - 2, my - 2, 4, 4);
-      }
-    }
-
-    // 4. Fog of War Canvas Overlay (covers unexplored smoke & dimmed explored mist)
+    // 3. Fog of War Canvas Overlay (covers unexplored smoke & dimmed explored mist)
     if (!revealedMap && fogGrid && fogGrid.length >= fogGridSize * fogGridSize) {
       let fogOff = fogCanvasRef.current;
       if (!fogOff || fogOff.width !== fogGridSize || fogOff.height !== fogGridSize) {
@@ -312,7 +319,7 @@ export function Minimap({
           d[off] = 6;
           d[off + 1] = 9;
           d[off + 2] = 16;
-          d[off + 3] = v === 2 ? 0 : v === 1 ? 136 : 244;
+          d[off + 3] = v === 2 ? 0 : v === 1 ? 132 : 242;
         }
         fctx.putImageData(img, 0, 0);
         ctx.save();
@@ -322,7 +329,32 @@ export function Minimap({
       }
     }
 
-    // 5. Visible Fauna (drawn above fog so active wildlife pops cleanly)
+    // 4. Allied & Revealed Enemy Buildings (drawn above fog so revealed enemy bases & player structures stand out clearly)
+    for (const blip of blips) {
+      if (blip.category !== 'building') continue;
+      if (filterMode === 'combat' && blip.team === 'player' && !blip.isMajor) continue;
+      const { mx, my } = toMini(blip.x, blip.z);
+      const s = blip.size * 2.1;
+
+      ctx.save();
+      if (blip.isConstructed === false) {
+        ctx.globalAlpha = 0.72;
+      }
+      ctx.fillStyle = blip.team === 'player' ? playerColor : '#dc2626';
+      ctx.strokeStyle = blip.selected ? '#facc15' : blip.team === 'player' ? '#e2e8f0' : '#fca5a5';
+      ctx.lineWidth = blip.selected ? 2.6 : 1.4;
+      ctx.fillRect(mx - s / 2, my - s / 2, s, s);
+      ctx.strokeRect(mx - s / 2, my - s / 2, s, s);
+
+      // Major buildings (Town Center, Fortress, Titan Gate) get an inner crown dot
+      if (blip.isMajor) {
+        ctx.fillStyle = blip.team === 'player' ? '#facc15' : '#fef08a';
+        ctx.fillRect(mx - 2.5, my - 2.5, 5, 5);
+      }
+      ctx.restore();
+    }
+
+    // 5. Visible Fauna
     if (showEconomy) {
       for (const blip of blips) {
         if (blip.category !== 'fauna') continue;
@@ -334,7 +366,7 @@ export function Minimap({
       }
     }
 
-    // 6. Visible Units (player circles, enemy diamonds)
+    // 6. Allied Units & Revealed Enemy Units
     if (showCombat) {
       for (const blip of blips) {
         if (blip.category !== 'unit') continue;
@@ -343,12 +375,12 @@ export function Minimap({
         if (blip.team === 'player') {
           if (blip.selected) {
             ctx.strokeStyle = '#facc15';
-            ctx.lineWidth = 2;
+            ctx.lineWidth = 2.2;
             ctx.beginPath();
-            ctx.arc(mx, my, blip.size + 2, 0, Math.PI * 2);
+            ctx.arc(mx, my, blip.size + 2.4, 0, Math.PI * 2);
             ctx.stroke();
           }
-          ctx.fillStyle = '#60a5fa';
+          ctx.fillStyle = blip.isTitan ? '#a855f7' : blip.isHero ? '#facc15' : '#60a5fa';
           ctx.strokeStyle = '#0b0e13';
           ctx.lineWidth = 1.4;
           ctx.beginPath();
@@ -356,10 +388,11 @@ export function Minimap({
           ctx.fill();
           ctx.stroke();
         } else {
-          const r = blip.size + 0.6;
-          ctx.fillStyle = '#ef4444';
-          ctx.strokeStyle = '#0b0e13';
-          ctx.lineWidth = 1.4;
+          // Revealed Enemy Unit (crimson diamond)
+          const r = blip.size + 1.0;
+          ctx.fillStyle = blip.isTitan ? '#f43f5e' : '#ef4444';
+          ctx.strokeStyle = '#fef2f2';
+          ctx.lineWidth = 1.2;
           ctx.beginPath();
           ctx.moveTo(mx, my - r);
           ctx.lineTo(mx + r, my);
@@ -372,14 +405,29 @@ export function Minimap({
       }
     }
 
-    // 7. Camera Viewport Frustum Reticle
+    // 7. Interactive Click / Order Pings
+    const now = performance.now();
+    for (const p of pings) {
+      const age = Math.min(1, (now - p.createdAt) / 750);
+      const { mx, my } = toMini(p.wx, p.wz);
+      ctx.save();
+      ctx.strokeStyle = p.color;
+      ctx.lineWidth = 2.2 * (1 - age * 0.5);
+      ctx.globalAlpha = 1 - age;
+      ctx.beginPath();
+      ctx.arc(mx, my, 4 + age * 22, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // 8. Camera Viewport Frustum Reticle + Center Crosshair
     const cam = toMini(cameraTarget.x, cameraTarget.z);
     const zoomScale = Math.max(0.45, Math.min(2.1, cameraDistance / 36));
     ctx.save();
     ctx.translate(cam.mx, cam.my);
     ctx.rotate(-cameraYaw);
     ctx.strokeStyle = '#facc15';
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 2.2;
     ctx.beginPath();
     ctx.moveTo(-22 * zoomScale, -16 * zoomScale);
     ctx.lineTo(22 * zoomScale, -16 * zoomScale);
@@ -387,6 +435,12 @@ export function Minimap({
     ctx.lineTo(-15 * zoomScale, 16 * zoomScale);
     ctx.closePath();
     ctx.stroke();
+
+    // Subtle center focus dot inside camera frustum
+    ctx.fillStyle = '#facc15';
+    ctx.beginPath();
+    ctx.arc(0, 0, 2.2, 0, Math.PI * 2);
+    ctx.fill();
     ctx.restore();
   }, [
     blips,
@@ -399,6 +453,7 @@ export function Minimap({
     fogGrid,
     fogGridSize,
     filterMode,
+    pings,
   ]);
 
   const toWorldCoords = (e: React.PointerEvent<HTMLCanvasElement>) => {
@@ -411,24 +466,49 @@ export function Minimap({
     };
   };
 
+  const findHoveredBlip = (wx: number, wz: number): MinimapBlip | null => {
+    let closest: MinimapBlip | null = null;
+    let bestDist = 7.5; // world-unit hover radius
+    for (const b of blips) {
+      if (b.category === 'node' && filterMode === 'combat') continue;
+      if (b.category === 'unit' && filterMode === 'economy') continue;
+      const d = Math.hypot(b.x - wx, b.z - wz);
+      if (d < bestDist) {
+        bestDist = d;
+        closest = b;
+      }
+    }
+    return closest;
+  };
+
   const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
     e.stopPropagation();
+    const { wx, wz } = toWorldCoords(e);
+
     if (e.button === 2) {
       e.preventDefault();
-      const { wx, wz } = toWorldCoords(e);
+      setPings((prev) => [...prev.slice(-4), { wx, wz, color: '#4ade80', createdAt: performance.now() }]);
       onMoveOrder(wx, wz);
       return;
     }
+
     e.currentTarget.setPointerCapture(e.pointerId);
     setIsDragging(true);
-    const { wx, wz } = toWorldCoords(e);
+    setPings((prev) => [...prev.slice(-4), { wx, wz, color: '#facc15', createdAt: performance.now() }]);
     onJumpCamera(wx, wz);
   };
 
   const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    if (!isDragging) return;
     const { wx, wz } = toWorldCoords(e);
-    onJumpCamera(wx, wz);
+    if (isDragging) {
+      onJumpCamera(wx, wz);
+    }
+    const hit = findHoveredBlip(wx, wz);
+    if (hit?.label) {
+      setHoverInfo(hit.label);
+    } else {
+      setHoverInfo(`Mover Câmera (${Math.round(wx)}, ${Math.round(wz)})`);
+    }
   };
 
   const handlePointerUp = (e: React.PointerEvent<HTMLCanvasElement>) => {
@@ -438,15 +518,29 @@ export function Minimap({
     setIsDragging(false);
   };
 
+  const handlePointerLeave = () => {
+    setHoverInfo(null);
+  };
+
+  const displaySizeClass = expanded ? 'h-[204px] w-[204px]' : 'h-[138px] w-[138px]';
+
   return (
-    <div className="flex items-stretch gap-1.5 shrink-0">
-      {/* AoM: The Titans Side Filter & Town Center Strip */}
+    <div className="relative flex items-stretch gap-1.5 shrink-0 select-none">
+      {/* Floating Hover Tooltip above Minimap */}
+      {hoverInfo && (
+        <div className="pointer-events-none absolute -top-7 right-0 z-30 flex items-center gap-1.5 rounded border border-[#d4af37]/60 bg-[#0d111a]/95 px-2 py-0.5 text-[10px] font-semibold text-[#f3d27a] shadow-lg whitespace-nowrap">
+          <Crosshair className="h-3 w-3 text-[#facc15]" />
+          <span>{hoverInfo}</span>
+        </div>
+      )}
+
+      {/* AoM: The Titans Side Filter, Town Center & Expand Strip */}
       <div className="flex flex-col justify-between gap-1 py-0.5">
         {onFocusTownCenter && (
           <button
             type="button"
             onClick={onFocusTownCenter}
-            title="Focar próximo Centro da Cidade"
+            title="Focar próximo Centro da Cidade (Espaço / H)"
             aria-label="Focar Centro da Cidade"
             className="flex h-7 w-7 items-center justify-center rounded border border-[#d4af37]/40 bg-[#171c26] text-[#f3d27a] hover:border-[#f3d27a] hover:bg-[#222a38] cursor-pointer"
           >
@@ -456,7 +550,7 @@ export function Minimap({
         <button
           type="button"
           onClick={() => setFilterMode('all')}
-          title="Filtro Padrão: mostrar tudo"
+          title="Filtro Padrão: exibir Edifícios, Unidades Aliadas, Inimigos e Recursos"
           aria-label="Mostrar tudo no minimapa"
           className={`flex h-7 w-7 items-center justify-center rounded border transition-colors cursor-pointer ${
             filterMode === 'all'
@@ -469,7 +563,7 @@ export function Minimap({
         <button
           type="button"
           onClick={() => setFilterMode('combat')}
-          title="Filtro de Combate: tropas e fortalezas"
+          title="Filtro Militar: destacar Unidades Aliadas, Inimigos Revelados e Fortificações"
           aria-label="Filtrar combate no minimapa"
           className={`flex h-7 w-7 items-center justify-center rounded border transition-colors cursor-pointer ${
             filterMode === 'combat'
@@ -482,7 +576,7 @@ export function Minimap({
         <button
           type="button"
           onClick={() => setFilterMode('economy')}
-          title="Filtro Econômico: ouro, bosques e fauna"
+          title="Filtro Econômico: destacar Minas de Ouro, Bosques e Fauna"
           aria-label="Filtrar recursos no minimapa"
           className={`flex h-7 w-7 items-center justify-center rounded border transition-colors cursor-pointer ${
             filterMode === 'economy'
@@ -492,9 +586,18 @@ export function Minimap({
         >
           <Trees className="h-3.5 w-3.5" />
         </button>
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          title={expanded ? 'Reduzir tamanho do Minimapa' : 'Expandir Minimapa Tático'}
+          aria-label="Alternar tamanho do minimapa"
+          className="flex h-7 w-7 items-center justify-center rounded border border-white/15 bg-[#171c26] text-[#e5c45e] hover:border-[#f3d27a] hover:bg-[#222938] cursor-pointer"
+        >
+          {expanded ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
+        </button>
       </div>
 
-      {/* Minimap Canvas + Unit Counts */}
+      {/* Minimap Canvas + Tactical Entity Legend (Buildings, Allies, Revealed Enemies) */}
       <div className="flex flex-col gap-1">
         <canvas
           ref={canvasRef}
@@ -504,19 +607,32 @@ export function Minimap({
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
           onPointerCancel={handlePointerUp}
+          onPointerLeave={handlePointerLeave}
           onContextMenu={(e) => e.preventDefault()}
-          title="Clique ou arraste para navegar · Clique direito para mover unidades"
-          className="h-[132px] w-[132px] touch-none cursor-crosshair rounded border border-[#d4af37]/50 bg-[#0b1018] shadow-inner"
+          title="Clique esquerdo ou arraste para mover a câmera · Clique direito para enviar tropas"
+          className={`${displaySizeClass} touch-none cursor-crosshair rounded border-2 border-[#d4af37]/65 bg-[#0b1018] shadow-[0_0_16px_rgba(0,0,0,0.85)] transition-[width,height] duration-150`}
         />
         <div className="flex items-center justify-between gap-2 px-0.5 text-[10px] text-[#cbd5e1]">
-          <span className="flex items-center gap-1 whitespace-nowrap">
-            <span className="inline-block h-2 w-2 rounded-full bg-[#60a5fa]" />
-            <span className="font-mono-num">{playerUnits}</span>
+          <span
+            className="flex items-center gap-1 whitespace-nowrap"
+            title="Edifícios Aliados"
+          >
+            <span className="inline-block h-2 w-2 border border-white/70 bg-[#3b82f6]" />
+            <span className="font-mono-num font-semibold">{playerBuildings}</span>
           </span>
-          <span className="text-[#94a3b8]">Mapa</span>
-          <span className="flex items-center gap-1 whitespace-nowrap">
+          <span
+            className="flex items-center gap-1 whitespace-nowrap"
+            title="Unidades Aliadas"
+          >
+            <span className="inline-block h-2 w-2 rounded-full bg-[#60a5fa]" />
+            <span className="font-mono-num font-semibold">{playerUnits}</span>
+          </span>
+          <span
+            className="flex items-center gap-1 whitespace-nowrap"
+            title="Inimigos Revelados (Unidades e Construções Visíveis)"
+          >
             <span className="inline-block h-2 w-2 rotate-45 bg-[#ef4444]" />
-            <span className="font-mono-num">{enemyUnits}</span>
+            <span className="font-mono-num font-semibold text-rose-300">{revealedEnemies}</span>
           </span>
         </div>
       </div>

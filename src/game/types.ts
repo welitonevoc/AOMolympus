@@ -1196,6 +1196,11 @@ export interface MinimapBlip {
   size: number;
   selected?: boolean;
   isMajor?: boolean;
+  label?: string;
+  subKind?: string;
+  isHero?: boolean;
+  isTitan?: boolean;
+  isConstructed?: boolean;
 }
 
 export type UnitVoiceAction = 'select' | 'attack' | 'move' | 'work';
@@ -1335,35 +1340,35 @@ export interface AoMGlobalScaleConfig {
 export const AOM_SCALE_PROFILES: Record<AoMScaleProfile, AoMGlobalScaleConfig> = {
   classic_aom: {
     profile: 'classic_aom',
-    buildingMultiplier: 1.35, // Edifícios imponentes dominando a paisagem mítico-arquitetônica
-    unitMultiplier: 0.95,     // Soldados na escala clássica legível de RTS
-    faunaMultiplier: 0.90,    // Animais proporcionais ao relevo
-    resourceMultiplier: 1.15, // Árvores e minas proeminentes
-    settlementMultiplier: 1.15,
+    buildingMultiplier: 1.05, // Proporção perfeita entre edifícios, unidades e terreno
+    unitMultiplier: 1.0,      // Escala padrão legível de unidades
+    faunaMultiplier: 1.0,     // Animais com tamanho natural proporcional
+    resourceMultiplier: 1.0,  // Árvores e recursos perfeitamente equilibrados
+    settlementMultiplier: 1.05,
   },
   monumental: {
     profile: 'monumental',
-    buildingMultiplier: 1.55, // Edificações épicas titânicas
-    unitMultiplier: 0.88,
-    faunaMultiplier: 0.85,
-    resourceMultiplier: 1.25,
-    settlementMultiplier: 1.25,
+    buildingMultiplier: 1.25, // Edificações ligeiramente maiores
+    unitMultiplier: 1.0,
+    faunaMultiplier: 1.0,
+    resourceMultiplier: 1.12,
+    settlementMultiplier: 1.12,
   },
   realistic: {
     profile: 'realistic',
-    buildingMultiplier: 1.80, // Escala arquitetônica colossal
-    unitMultiplier: 0.78,
-    faunaMultiplier: 0.80,
-    resourceMultiplier: 1.35,
-    settlementMultiplier: 1.35,
+    buildingMultiplier: 1.45, // Edifícios imponentes
+    unitMultiplier: 0.95,
+    faunaMultiplier: 0.95,
+    resourceMultiplier: 1.2,
+    settlementMultiplier: 1.2,
   },
   compact: {
     profile: 'compact',
-    buildingMultiplier: 1.15,
-    unitMultiplier: 1.0,
-    faunaMultiplier: 0.95,
-    resourceMultiplier: 1.05,
-    settlementMultiplier: 1.05,
+    buildingMultiplier: 0.95, // Visão tática compacta
+    unitMultiplier: 1.05,
+    faunaMultiplier: 1.05,
+    resourceMultiplier: 0.95,
+    settlementMultiplier: 0.95,
   },
 };
 

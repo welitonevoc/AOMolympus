@@ -2,6 +2,8 @@ import * as THREE from 'three';
 import { TeamId } from '../../game/types';
 import { MaterialPalette } from '../../game/models';
 import { buildBrgHopliteGeometry, evaluateBrgClip, remapUvRegion64 } from '../../game/brgAnimation';
+import { HopliteAnimator } from './hopliteAnimator';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 export type HopliteArmorTier = 1 | 2 | 3 | 4;
 export type HopliteRenderMode = '3d' | 'brg' | 'uv2d' | 'sprite';
@@ -517,20 +519,116 @@ export function createGreekUnitMesh(
   let currentTier: HopliteArmorTier = initialTier;
   let currentMode: HopliteRenderMode = '3d';
 
+  // Load ancient_blue_hoplite_warrior.glb as primary model for hoplites
+  const gltfGroup = new THREE.Group();
+  root.add(gltfGroup);
+  if (kind === 'hoplite') {
+    const loader = new GLTFLoader();
+    loader.load(
+      '/models/ancient_blue_hoplite_warrior.glb',
+      (gltf) => {
+        const model = gltf.scene;
+        model.scale.setScalar(0.72);
+        const box = new THREE.Box3().setFromObject(model);
+        const minY = box.min.y;
+        const baseY = -minY;
+        model.position.set(0, baseY, 0);
+
+        if (enableShadows) {
+          model.traverse((child) => {
+            if ((child as THREE.Mesh).isMesh) {
+              child.castShadow = true;
+              child.receiveShadow = true;
+            }
+          });
+        }
+        gltfGroup.add(model);
+
+        let mixer: THREE.AnimationMixer | null = null;
+        const actions: Record<string, THREE.AnimationAction> = {};
+        if (gltf.animations && gltf.animations.length > 0) {
+          mixer = new THREE.AnimationMixer(model);
+          gltf.animations.forEach((clip) => {
+            const action = mixer!.clipAction(clip);
+            actions[clip.name.toLowerCase()] = action;
+          });
+          const defaultAction = actions['idle'] || actions['walk'] || actions['attack'] || mixer.clipAction(gltf.animations[0]);
+          defaultAction.play();
+        }
+
+        root.userData.animatePose = (dt: number, moving: boolean, speed: number, attackT: number | null) => {
+          if (mixer) {
+            mixer.update(dt);
+            if (attackT !== null && attackT > 0) {
+              const atk = actions['attack'] || actions['strike'] || actions['combat'];
+              if (atk && !atk.isRunning()) {
+                Object.values(actions).forEach(a => a.stop());
+                atk.reset().play();
+              }
+            } else if (moving) {
+              const walk = actions['walk'] || actions['run'] || actions['march'];
+              if (walk && !walk.isRunning()) {
+                Object.values(actions).forEach(a => a.stop());
+                walk.reset().play();
+              }
+            } else {
+              const idle = actions['idle'] || actions['stand'];
+              if (idle && !idle.isRunning()) {
+                Object.values(actions).forEach(a => a.stop());
+                idle.reset().play();
+              }
+            }
+          }
+
+          if (attackT !== null && attackT > 0) {
+            const th = Math.sin(THREE.MathUtils.clamp(attackT, 0, 1) * Math.PI);
+            model.position.z = th * 0.3;
+            model.rotation.x = th * 0.18;
+          } else if (moving) {
+            const t = performance.now() * 0.012 * speed;
+            model.position.y = baseY + Math.abs(Math.sin(t * 2)) * 0.09;
+            model.rotation.z = Math.sin(t) * 0.05;
+            model.position.z = 0;
+            model.rotation.x = 0;
+          } else {
+            model.position.y = baseY + Math.sin(performance.now() * 0.003) * 0.035;
+            model.position.z = 0;
+            model.rotation.z = 0;
+            model.rotation.x = 0;
+          }
+        };
+
+        // Hide procedural fallback group once GLB model loads successfully
+        if (root.userData.group3D) {
+          (root.userData.group3D as THREE.Group).visible = false;
+        }
+      },
+      undefined,
+      (err) => {
+        console.warn('GLB load fallback to procedural model:', err);
+      }
+    );
+  }
+
   const uvTex = getHopliteUvTexture(currentTier);
   const tierSpec = AOM_HOPLITE_UV_TIERS[currentTier];
 
-  // Shared UV-mapped material powered by the uploaded 64x64 AoM texture!
-  const uvBodyMat = new THREE.MeshStandardMaterial({
-    map: uvTex,
-    roughness: 0.42,
-    metalness: 0.18,
+  const skinMat = new THREE.MeshStandardMaterial({
+    color: 0xe5b887,
+    roughness: 0.65,
+    metalness: 0.05,
   });
 
-  const uvArmorMat = new THREE.MeshStandardMaterial({
-    map: uvTex,
-    roughness: 0.28,
-    metalness: 0.62,
+  const tunicMat = new THREE.MeshStandardMaterial({
+    color: 0xf8fafc,
+    roughness: 0.8,
+    metalness: 0.02,
+  });
+
+  const leatherMat = new THREE.MeshStandardMaterial({
+    color: 0x78350f,
+    roughness: 0.82,
+    metalness: 0.08,
   });
 
   const bronzeArmorMat = new THREE.MeshStandardMaterial({
@@ -605,6 +703,16 @@ export function createGreekUnitMesh(
   contactShadow.userData.ignoreRaycast = true;
   group3D.add(contactShadow);
 
+  // Pivot hierarchy for animation: spine rotates around the hip, upper holds torso/head/arms.
+  // Upper is offset by -hipY inside spine so child coordinates stay unchanged.
+  const hipY = 0.72 * S;
+  const spine = new THREE.Group();
+  spine.position.set(0, hipY, 0);
+  const upper = new THREE.Group();
+  upper.position.set(0, -hipY, 0);
+  spine.add(upper);
+  group3D.add(spine);
+
   // --- 1.2 Torso & Muscled Cuirass (UV Mapped to [42, 24, 63, 51]) ---
   const torsoGroup = new THREE.Group();
   torsoGroup.position.set(0, 0.98 * S, 0);
@@ -615,16 +723,16 @@ export function createGreekUnitMesh(
     42, 24, 63, 51
   );
   cuirassGeo.rotateY(Math.PI); // align front UV seam forward
-  const cuirass = addMesh(torsoGroup, cuirassGeo, uvArmorMat);
+  const cuirass = addMesh(torsoGroup, cuirassGeo, bronzeArmorMat);
   cuirass.position.y = 0.28 * S;
 
   // Sculpted pectoral muscle relief mapped to upper cuirass [44, 25, 62, 42]
   const pecGeo = remapUvRegion64(new THREE.SphereGeometry(0.11 * S, 10, 8), 44, 35, 62, 48);
-  const leftPec = addMesh(torsoGroup, pecGeo, uvArmorMat);
+  const leftPec = addMesh(torsoGroup, pecGeo, bronzeArmorMat);
   leftPec.scale.set(1.1, 0.75, 0.45);
   leftPec.position.set(-0.11 * S, 0.40 * S, 0.23 * S);
 
-  const rightPec = addMesh(torsoGroup, pecGeo, uvArmorMat);
+  const rightPec = addMesh(torsoGroup, pecGeo, bronzeArmorMat);
   rightPec.scale.set(1.1, 0.75, 0.45);
   rightPec.position.set(0.11 * S, 0.40 * S, 0.23 * S);
 
@@ -637,7 +745,7 @@ export function createGreekUnitMesh(
     new THREE.CylinderGeometry(0.28 * S, 0.39 * S, 0.36 * S, 16),
     1, 52, 35, 63
   );
-  const skirtPleats = addMesh(torsoGroup, chitonSkirtGeo, uvBodyMat);
+  const skirtPleats = addMesh(torsoGroup, chitonSkirtGeo, tunicMat);
   skirtPleats.position.y = -0.18 * S;
 
   // Leather Pteruges Battle Skirt Strips mapped to AoM UV [1, 43, 36, 52]
@@ -645,7 +753,7 @@ export function createGreekUnitMesh(
     new THREE.CylinderGeometry(0.29 * S, 0.36 * S, 0.24 * S, 16),
     1, 43, 36, 52
   );
-  const pterugesMesh = addMesh(torsoGroup, pterugesGeo, uvBodyMat);
+  const pterugesMesh = addMesh(torsoGroup, pterugesGeo, leatherMat);
   pterugesMesh.position.y = -0.10 * S;
 
   const pterugesCount = 10;
@@ -654,11 +762,11 @@ export function createGreekUnitMesh(
     const angle = (i / pterugesCount) * Math.PI * 2;
     const px = Math.sin(angle) * 0.31 * S;
     const pz = Math.cos(angle) * 0.31 * S;
-    const pt = addMesh(torsoGroup, ptStripGeo, uvBodyMat);
+    const pt = addMesh(torsoGroup, ptStripGeo, leatherMat);
     pt.position.set(px, -0.14 * S, pz);
     pt.rotation.y = angle;
   }
-  group3D.add(torsoGroup);
+  upper.add(torsoGroup);
 
   // --- 1.3 Head & Painted AoM Face [14, 26, 23, 42] + Corinthian Helmet ---
   const headGroup = new THREE.Group();
@@ -666,13 +774,13 @@ export function createGreekUnitMesh(
 
   // Neck mapped to skin [15, 36, 22, 42]
   const neckGeo = remapUvRegion64(new THREE.CylinderGeometry(0.09 * S, 0.10 * S, 0.16 * S, 8), 15, 36, 22, 42);
-  const neck = addMesh(headGroup, neckGeo, uvBodyMat);
+  const neck = addMesh(headGroup, neckGeo, skinMat);
   neck.position.y = -0.06 * S;
 
   // Face inside helmet mapped directly to the AoM painted face [14, 26, 23, 42]!
   const faceGeo = remapUvRegion64(new THREE.SphereGeometry(0.185 * S, 14, 12), 14, 26, 23, 42);
   faceGeo.rotateY(-Math.PI / 2); // Orient UV center toward +Z (front of face)
-  const face = addMesh(headGroup, faceGeo, uvBodyMat);
+  const face = addMesh(headGroup, faceGeo, skinMat);
   face.position.set(0, 0.12 * S, 0.03 * S);
 
   // Corinthian Helmet Dome
@@ -719,35 +827,41 @@ export function createGreekUnitMesh(
   crestMesh.position.set(0, 0.58 * S, -0.04 * S);
   crestMesh.rotation.y = Math.PI / 2;
 
-  group3D.add(headGroup);
+  upper.add(headGroup);
 
-  // --- 1.4 Legs with UV-Mapped Thighs [44,52,58,63], Greaves [5,16,13,25] & Sandals [29,1,54,11] ---
   const thighGeo = remapUvRegion64(new THREE.CylinderGeometry(0.10 * S, 0.085 * S, 0.34 * S, 10), 44, 52, 58, 63);
   const greaveGeo = remapUvRegion64(new THREE.CylinderGeometry(0.092 * S, 0.074 * S, 0.38 * S, 10), 5, 16, 13, 25);
   const sandalGeo = remapUvRegion64(new THREE.BoxGeometry(0.098 * S, 0.065 * S, 0.22 * S), 29, 1, 54, 11);
 
+  // --- 1.4 Legs with knee pivots ---
   const leftLeg = new THREE.Group();
   leftLeg.position.set(-0.14 * S, 0.72 * S, 0);
-  const thighL = addMesh(leftLeg, thighGeo, uvBodyMat);
+  const thighL = addMesh(leftLeg, thighGeo, skinMat);
   thighL.position.y = -0.17 * S;
-  const kneeL = addMesh(leftLeg, new THREE.SphereGeometry(0.075 * S, 8, 8), bronzeArmorMat);
-  kneeL.position.set(0, -0.34 * S, 0.02 * S);
-  const greaveL = addMesh(leftLeg, greaveGeo, uvArmorMat);
-  greaveL.position.set(0, -0.52 * S, 0.01 * S);
-  const footL = addMesh(leftLeg, sandalGeo, uvBodyMat);
-  footL.position.set(0, -0.69 * S, 0.05 * S);
+  const lowerLegL = new THREE.Group();
+  lowerLegL.position.set(0, -0.34 * S, 0);
+  leftLeg.add(lowerLegL);
+  const kneeL = addMesh(lowerLegL, new THREE.SphereGeometry(0.075 * S, 8, 8), bronzeArmorMat);
+  kneeL.position.set(0, 0, 0.02 * S);
+  const greaveL = addMesh(lowerLegL, greaveGeo, bronzeArmorMat);
+  greaveL.position.set(0, -0.18 * S, 0.01 * S);
+  const footL = addMesh(lowerLegL, sandalGeo, leatherMat);
+  footL.position.set(0, -0.35 * S, 0.05 * S);
   group3D.add(leftLeg);
 
   const rightLeg = new THREE.Group();
   rightLeg.position.set(0.14 * S, 0.72 * S, 0);
-  const thighR = addMesh(rightLeg, thighGeo, uvBodyMat);
+  const thighR = addMesh(rightLeg, thighGeo, skinMat);
   thighR.position.y = -0.17 * S;
-  const kneeR = addMesh(rightLeg, new THREE.SphereGeometry(0.075 * S, 8, 8), bronzeArmorMat);
-  kneeR.position.set(0, -0.34 * S, 0.02 * S);
-  const greaveR = addMesh(rightLeg, greaveGeo, uvArmorMat);
-  greaveR.position.set(0, -0.52 * S, 0.01 * S);
-  const footR = addMesh(rightLeg, sandalGeo, uvBodyMat);
-  footR.position.set(0, -0.69 * S, 0.05 * S);
+  const lowerLegR = new THREE.Group();
+  lowerLegR.position.set(0, -0.34 * S, 0);
+  rightLeg.add(lowerLegR);
+  const kneeR = addMesh(lowerLegR, new THREE.SphereGeometry(0.075 * S, 8, 8), bronzeArmorMat);
+  kneeR.position.set(0, 0, 0.02 * S);
+  const greaveR = addMesh(lowerLegR, greaveGeo, bronzeArmorMat);
+  greaveR.position.set(0, -0.18 * S, 0.01 * S);
+  const footR = addMesh(lowerLegR, sandalGeo, leatherMat);
+  footR.position.set(0, -0.35 * S, 0.05 * S);
   group3D.add(rightLeg);
 
   // --- 1.5 Left Arm [2,27,13,36] & Hoplon Shield with Spartan Lambda (Λ) ---
@@ -757,7 +871,7 @@ export function createGreekUnitMesh(
   leftArm.position.set(-0.36 * S, 1.34 * S, 0);
   const pauldronL = addMesh(leftArm, new THREE.SphereGeometry(0.13 * S, 8, 8, 0, Math.PI * 2, 0, Math.PI * 0.5), bronzeArmorMat);
   pauldronL.position.set(0, 0.06 * S, 0);
-  const armMeshL = addMesh(leftArm, armGeo, uvBodyMat);
+  const armMeshL = addMesh(leftArm, armGeo, skinMat);
   armMeshL.position.set(0, -0.22 * S, 0.06 * S);
   armMeshL.rotation.x = -0.35;
 
@@ -772,14 +886,14 @@ export function createGreekUnitMesh(
   porpax.position.z = -0.04 * S;
   porpax.rotation.x = Math.PI / 2;
   leftArm.add(shieldGroup);
-  group3D.add(leftArm);
+  upper.add(leftArm);
 
   // --- 1.6 Right Arm [2,27,13,36] & Doru Spear ---
   const rightArm = new THREE.Group();
   rightArm.position.set(0.36 * S, 1.34 * S, -0.05 * S);
   const pauldronR = addMesh(rightArm, new THREE.SphereGeometry(0.13 * S, 8, 8, 0, Math.PI * 2, 0, Math.PI * 0.5), bronzeArmorMat);
   pauldronR.position.set(0, 0.06 * S, 0);
-  const armMeshR = addMesh(rightArm, armGeo, uvBodyMat);
+  const armMeshR = addMesh(rightArm, armGeo, skinMat);
   armMeshR.position.set(0, -0.22 * S, 0.08 * S);
   armMeshR.rotation.x = -0.45;
 
@@ -796,7 +910,7 @@ export function createGreekUnitMesh(
   sauroter.rotation.x = Math.PI;
   sauroter.position.y = -0.98 * S;
   rightArm.add(spearGroup);
-  group3D.add(rightArm);
+  upper.add(rightArm);
 
   root.add(group3D);
 
@@ -879,6 +993,21 @@ export function createGreekUnitMesh(
   root.userData.rightArm = rightArm;
   root.userData.headGroup = headGroup;
 
+  // Rig + procedural pose animator (see hopliteAnimator.ts)
+  const poseAnimator = new HopliteAnimator({
+    spine,
+    upper,
+    head: headGroup,
+    legL: leftLeg,
+    legR: rightLeg,
+    lowerLegL,
+    lowerLegR,
+    armL: leftArm,
+    armR: rightArm,
+  });
+  root.userData.animatePose = (dt: number, moving: boolean, speed: number, attackT: number | null) =>
+    poseAnimator.update(dt, moving, speed, attackT);
+
   root.userData.setFrame = (frameIndex: number) => {
     const activeTex = root.userData.texture as THREE.Texture;
     const col = frameIndex % cols;
@@ -893,10 +1022,7 @@ export function createGreekUnitMesh(
     const nextUvTex = getHopliteUvTexture(tier);
     const nextSpec = AOM_HOPLITE_UV_TIERS[tier] ?? AOM_HOPLITE_UV_TIERS[3];
 
-    uvBodyMat.map = nextUvTex;
-    uvBodyMat.needsUpdate = true;
-    uvArmorMat.map = nextUvTex;
-    uvArmorMat.needsUpdate = true;
+
     brgMat.map = nextUvTex;
     brgMat.needsUpdate = true;
 

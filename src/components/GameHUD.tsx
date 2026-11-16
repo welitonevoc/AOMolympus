@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import {
   ArrowRightLeft,
   BookOpen,
+  Box,
   BoxSelect,
   Castle,
   Check,
@@ -2053,6 +2054,26 @@ export function GameHUD({
         </div>
       </div>
 
+      {/* FLOATING MINIMAP WHEN DOCK IS COLLAPSED (Always-accessible Tactical Radar) */}
+      {dockCollapsed && (
+        <div className="fixed bottom-3 right-3 z-20 rounded-lg border border-[#d4af37]/55 bg-[#10141d]/95 p-2 shadow-2xl">
+          <Minimap
+            blips={hud.minimapBlips}
+            pantheon={hud.pantheon}
+            mapId={hud.mapId}
+            revealedMap={hud.revealedMap}
+            fogGrid={hud.fogGrid}
+            fogGridSize={hud.fogGridSize}
+            cameraTarget={hud.cameraTarget}
+            cameraYaw={hud.cameraYaw}
+            cameraDistance={hud.cameraDistance}
+            onJumpCamera={onJumpCamera}
+            onMoveOrder={onMinimapMoveOrder}
+            onFocusTownCenter={onFocusTownCenter}
+          />
+        </div>
+      )}
+
       {/* MINOR GOD AGE-UP SELECTION MODAL */}
       {hud.pendingMinorGodAge !== null && hud.phase === 'playing' && (
         <div className="fixed inset-0 z-30 flex items-center justify-center bg-[#0b0e13]/78 p-4">
@@ -2461,6 +2482,17 @@ export function GameHUD({
                   >
                     <SlidersHorizontal className="h-3.5 w-3.5 text-[#e5c45e]" />
                     <span>Opções do Jogador</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onTogglePause();
+                      setUvBuilderOpen(true);
+                    }}
+                    className="flex items-center justify-center gap-2 rounded border border-[#38bdf8]/40 bg-[#171c26] px-4 py-2 text-xs font-semibold text-[#38bdf8] hover:bg-[#222938] cursor-pointer"
+                  >
+                    <Box className="h-3.5 w-3.5 text-[#38bdf8]" />
+                    <span>Modelo 3D/2.5D</span>
                   </button>
                   <button
                     type="button"

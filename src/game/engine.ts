@@ -2719,11 +2719,12 @@ export class AoMEngine {
   }
 
   public jumpCameraTo(worldX: number, worldZ: number) {
-    this.camDesiredTarget.set(
-      THREE.MathUtils.clamp(worldX, -PLAYABLE_HALF_SIZE, PLAYABLE_HALF_SIZE),
-      0,
-      THREE.MathUtils.clamp(worldZ, -PLAYABLE_HALF_SIZE, PLAYABLE_HALF_SIZE)
-    );
+    const clampedX = THREE.MathUtils.clamp(worldX, -PLAYABLE_HALF_SIZE, PLAYABLE_HALF_SIZE);
+    const clampedZ = THREE.MathUtils.clamp(worldZ, -PLAYABLE_HALF_SIZE, PLAYABLE_HALF_SIZE);
+    this.camDesiredTarget.set(clampedX, 0, clampedZ);
+    this.camTarget.set(clampedX, 0, clampedZ);
+    this.updateCameraTransform(0.016);
+    this.emitHudSnapshot();
   }
 
   public zoomCameraBy(delta: number) {
@@ -5427,6 +5428,11 @@ export class AoMEngine {
     }
 
     // Animate limbs
+    const poseAnim = u.mesh.userData.animatePose as
+      | ((dt: number, moving: boolean, speed: number, attackT: number | null) => void)
+      | undefined;
+    if (poseAnim) return false; // rigged hoplites are posed elsewhere
+
     u.animPhase += dt * speed * 2.2;
     const swing = Math.sin(u.animPhase) * 0.52;
     if (u.mesh.userData.leftLeg) u.mesh.userData.leftLeg.rotation.x = swing;
@@ -5687,8 +5693,20 @@ export class AoMEngine {
       // Update 2.5D BRG Vertex-Cache Morphing (AoM Native BRG animation)
       u.mesh.userData.updateBrg?.(dt, u.manualAttackTimer > 0 ? 'attack' : u.state);
 
+      // Rigged hoplites (spine / upper body / knees) are posed by animatePose.
+      // Other units keep the legacy limb swing below.
+      const poseAnim = u.mesh.userData.animatePose as
+        | ((dt: number, moving: boolean, speed: number, attackT: number | null) => void)
+        | undefined;
+      if (poseAnim) {
+        const attackT = u.manualAttackTimer > 0 ? 1 - u.manualAttackTimer / (6 / 14) : null;
+        poseAnim(dt, u.state === 'move', stats.speed * mods.speedMult, attackT);
+      }
+
       // 3D Procedural Limb Animations (when in 3D mode)
-      if (u.state === 'idle') {
+      if (poseAnim) {
+        // handled by animatePose above
+      } else if (u.state === 'idle') {
         if (u.mesh.userData.leftLeg) u.mesh.userData.leftLeg.rotation.x *= 0.85;
         if (u.mesh.userData.rightLeg) u.mesh.userData.rightLeg.rotation.x *= 0.85;
         if (u.mesh.userData.rightArm) {
@@ -5711,13 +5729,13 @@ export class AoMEngine {
 
       // While manualAttackTimer > 0 (`atacar()`), lock movement and play the attack animation
       if (u.manualAttackTimer > 0) {
-        if (u.mesh.userData.rightArm) {
+        if (!poseAnim && u.mesh.userData.rightArm) {
           const thrustPhase = 1 - u.manualAttackTimer / (6 / 14);
           const thrust = Math.sin(Math.max(0, Math.min(1, thrustPhase)) * Math.PI);
           u.mesh.userData.rightArm.rotation.x = -0.35 - thrust * 0.85;
           u.mesh.userData.rightArm.position.z = thrust * 0.38;
         }
-        if (u.mesh.userData.leftArm) {
+        if (!poseAnim && u.mesh.userData.leftArm) {
           u.mesh.userData.leftArm.rotation.y = -0.22;
         }
       } else if (u.state === 'move' && u.targetPos) {
@@ -7072,7 +7090,7 @@ export class AoMEngine {
 
     const blips: MinimapBlip[] = [];
     for (const n of this.nodes.values()) {
-      if (!this.isWorldExplored(n.mesh.position.x, n.mesh.position.z)) continue;
+      if (!this.revealedMap && !this.isWorldExplored(n.mesh.position.x, n.mesh.position.z)) continue;
       blips.push({
         x: n.mesh.position.x,
         z: n.mesh.position.z,
@@ -7080,10 +7098,12 @@ export class AoMEngine {
         team: 'neutral',
         color: n.kind === 'gold_mine' ? '#facc15' : n.kind === 'berry' ? '#fb7185' : '#2e7d32',
         size: 2.2,
+        subKind: n.kind,
+        label: n.kind === 'gold_mine' ? 'Mina de Ouro' : n.kind === 'berry' ? 'Arbusto de Frutas' : 'Bosque',
       });
     }
     for (const s of this.settlements.values()) {
-      if (!this.isWorldExplored(s.mesh.position.x, s.mesh.position.z)) continue;
+      if (!this.revealedMap && !this.isWorldExplored(s.mesh.position.x, s.mesh.position.z)) continue;
       blips.push({
         x: s.mesh.position.x,
         z: s.mesh.position.z,
@@ -7092,10 +7112,12 @@ export class AoMEngine {
         color: '#fbbf24',
         size: 4.0,
         selected: s.selected,
+        subKind: 'settlement',
+        label: 'Assentamento Neutro',
       });
     }
     for (const f of this.fauna.values()) {
-      if (!f.mesh.visible) continue;
+      if (!f.mesh.visible && !this.revealedMap) continue;
       blips.push({
         x: f.mesh.position.x,
         z: f.mesh.position.z,
@@ -7104,10 +7126,12 @@ export class AoMEngine {
         color: '#fb923c',
         size: 1.9,
         selected: f.selected,
+        subKind: f.kind,
+        label: FAUNA_STATS[f.kind].name,
       });
     }
     for (const r of this.relics.values()) {
-      if (r.claimedByTeam !== null || !this.isWorldExplored(r.mesh.position.x, r.mesh.position.z)) continue;
+      if (r.claimedByTeam !== null || (!this.revealedMap && !this.isWorldExplored(r.mesh.position.x, r.mesh.position.z))) continue;
       blips.push({
         x: r.mesh.position.x,
         z: r.mesh.position.z,
@@ -7116,31 +7140,42 @@ export class AoMEngine {
         color: '#22d3ee',
         size: 3.6,
         selected: r.selected,
+        subKind: 'relic',
+        label: r.name,
       });
     }
     for (const b of this.buildings.values()) {
-      if (b.team === 'enemy' && !this.isWorldExplored(b.mesh.position.x, b.mesh.position.z)) continue;
+      if (b.team === 'enemy' && !this.revealedMap && !this.isWorldExplored(b.mesh.position.x, b.mesh.position.z)) continue;
+      const bSpec = this.buildingStats(b.kind, b.team);
       blips.push({
         x: b.mesh.position.x,
         z: b.mesh.position.z,
         category: 'building',
         team: b.team,
         color: b.team === 'player' ? '#3b82f6' : '#dc2626',
-        size: b.kind === 'town_center' ? 6 : 4.5,
+        size: b.kind === 'town_center' || b.kind === 'titan_gate' ? 6.2 : b.kind === 'fortress' ? 5.4 : 4.5,
         selected: b.selected,
-        isMajor: b.kind === 'town_center',
+        isMajor: b.kind === 'town_center' || b.kind === 'fortress' || b.kind === 'titan_gate',
+        subKind: b.kind,
+        isConstructed: b.isConstructed,
+        label: `${bSpec.name} (${b.team === 'player' ? 'Aliado' : 'Inimigo'})`,
       });
     }
     for (const u of this.units.values()) {
-      if (u.team === 'enemy' && !u.mesh.visible) continue;
+      if (u.team === 'enemy' && !this.revealedMap && !this.isWorldVisible(u.mesh.position.x, u.mesh.position.z)) continue;
+      const uSpec = this.unitStats(u.kind, u.team);
       blips.push({
         x: u.mesh.position.x,
         z: u.mesh.position.z,
         category: 'unit',
         team: u.team,
         color: u.team === 'player' ? '#60a5fa' : '#ef4444',
-        size: 3.4,
+        size: u.kind === 'titan' ? 5.8 : uSpec.isHero ? 4.2 : 3.4,
         selected: u.selected,
+        subKind: u.kind,
+        isHero: Boolean(uSpec.isHero),
+        isTitan: u.kind === 'titan',
+        label: `${uSpec.name} (${u.team === 'player' ? 'Aliado' : 'Inimigo'})`,
       });
     }
 

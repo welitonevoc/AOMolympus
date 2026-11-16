@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import { BuildingKind, FaunaKind, MapId, PANTHEONS, PantheonId, ResourceNodeKind, TeamId, UnitKind } from './types';
 import { createGreekUnitMesh } from '../civilizacao/gregos/gregosModels';
+import { createAoMOakTreeMesh, getFaunaCoatMaterial } from '../TEXTURA';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 export const MAP_HALF_SIZE = 74;
 export const PLAYABLE_HALF_SIZE = 58;
@@ -1161,12 +1163,68 @@ export function createUnitMesh(
   };
 
   if (kind === 'villager') {
+    const gltfGroup = new THREE.Group();
+    root.add(gltfGroup);
+
+    const loader = new GLTFLoader();
+    loader.load(
+      '/models/agape.glb',
+      (gltf) => {
+        const model = gltf.scene;
+        model.scale.setScalar(0.72);
+        const box = new THREE.Box3().setFromObject(model);
+        const minY = box.min.y;
+        model.position.set(0, -minY, 0);
+
+        if (enableShadows) {
+          model.traverse((child) => {
+            if ((child as THREE.Mesh).isMesh) {
+              child.castShadow = true;
+              child.receiveShadow = true;
+            }
+          });
+        }
+        gltfGroup.add(model);
+
+        let mixer: THREE.AnimationMixer | null = null;
+        const actions: Record<string, THREE.AnimationAction> = {};
+        if (gltf.animations && gltf.animations.length > 0) {
+          mixer = new THREE.AnimationMixer(model);
+          gltf.animations.forEach((clip) => {
+            const action = mixer!.clipAction(clip);
+            actions[clip.name.toLowerCase()] = action;
+          });
+          const defAct = actions['idle'] || actions['walk'] || actions['gather'] || mixer.clipAction(gltf.animations[0]);
+          defAct.play();
+        }
+
+        root.userData.animatePose = (dt: number, moving: boolean, speed: number, _attackT: number | null) => {
+          if (mixer) mixer.update(dt);
+          if (moving) {
+            const t = performance.now() * 0.012 * speed;
+            model.position.y = -minY + Math.abs(Math.sin(t * 2)) * 0.08;
+          } else {
+            model.position.y = -minY + Math.sin(performance.now() * 0.003) * 0.03;
+          }
+        };
+
+        for (const child of [...root.children]) {
+          if (child !== gltfGroup && child !== root.userData.groundMarkers && child !== root.userData.healthBar) {
+            child.visible = false;
+          }
+        }
+      },
+      undefined,
+      (err) => {
+        console.warn('agape.glb fallback to procedural villager:', err);
+      }
+    );
+
     const legMat = look.style === 'egyptian' ? pal.skin : look.style === 'norse' ? pal.furBrown : pal.timber;
     const torsoMat = look.style === 'egyptian' ? pal.ivory : look.style === 'norse' ? pal.furBrown : teamMat;
     const leftLeg = part(geos.sculptedLimb, legMat, -0.11, 0.25, 0);
     const rightLeg = part(geos.sculptedLimb, legMat, 0.11, 0.25, 0);
     part(geos.humanTorso, torsoMat, 0, 0.8, 0);
-    // Waist sash / belt in faction color
     part(new THREE.CylinderGeometry(0.23, 0.24, 0.14, 10), teamMat, 0, 0.68, 0);
     part(new THREE.SphereGeometry(0.18, 12, 10), pal.skin, 0, 1.32, 0);
     if (look.style === 'egyptian') {
@@ -1219,6 +1277,7 @@ export function createUnitMesh(
     root.userData.updateBrg = (dt: number, state: string) => {
       greekMesh.userData.updateBrg?.(dt, state);
     };
+    root.userData.animatePose = greekMesh.userData.animatePose;
     attachGroundMarkers(root, 0.48, pal, team);
     attachHealthBar(root, 1.88, 1.05);
   } else if (kind === 'archer') {
@@ -2095,12 +2154,12 @@ export function createResourceMesh(
   };
 
   if (kind === 'tree') {
-    add(new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.36, 2.2, 8), pal.timber), 0, 1.1, 0);
-    add(new THREE.Mesh(new THREE.ConeGeometry(1.65, 2.6, 8), pal.foliageDark), 0, 2.8, 0);
-    add(new THREE.Mesh(new THREE.ConeGeometry(1.35, 2.3, 8), pal.foliagePine), 0, 4.0, 0);
-    add(new THREE.Mesh(new THREE.ConeGeometry(0.95, 1.8, 8), pal.foliagePine), 0, 5.1, 0);
-    attachGroundMarkers(root, 0.95, pal, 'neutral');
-    attachHealthBar(root, 5.8, 1.75);
+    const oakGroup = createAoMOakTreeMesh(pal, enableShadows);
+    root.add(oakGroup);
+    root.userData.oakCanopyGroup = oakGroup.userData.oakCanopyGroup;
+    root.userData.oakVariant = oakGroup.userData.oakVariant;
+    attachGroundMarkers(root, 0.98, pal, 'neutral');
+    attachHealthBar(root, 5.9, 1.75);
   } else if (kind === 'berry') {
     add(new THREE.Mesh(new THREE.DodecahedronGeometry(0.72, 1), pal.foliagePine), 0, 0.48, 0);
     add(new THREE.Mesh(new THREE.DodecahedronGeometry(0.55, 1), pal.foliageDark), 0.48, 0.4, 0.22);
@@ -2217,21 +2276,7 @@ export function createFaunaMesh(
   root.add(bodyGroup);
   root.userData.bodyGroup = bodyGroup;
 
-  const coatColor =
-    kind === 'gazelle'
-      ? 0xc89d66
-      : kind === 'deer'
-      ? 0x9c6234
-      : kind === 'boar'
-      ? 0x4b3629
-      : kind === 'aurochs'
-      ? 0x3b2820
-      : 0x6b7280;
-  const coatMat = new THREE.MeshStandardMaterial({
-    color: coatColor,
-    roughness: 0.82,
-    metalness: 0.04,
-  });
+  const coatMat = getFaunaCoatMaterial(kind);
 
   const part = (geo: THREE.BufferGeometry, mat: THREE.Material, x: number, y: number, z: number) => {
     const m = new THREE.Mesh(geo, mat);

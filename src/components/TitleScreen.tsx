@@ -189,8 +189,10 @@ export function TitleScreen({
           }}
           className="flex h-8 items-center gap-1.5 rounded border border-emerald-400/60 bg-emerald-950/90 px-3 text-xs font-bold text-emerald-200 shadow-lg hover:border-emerald-300 hover:bg-emerald-900 cursor-pointer"
         >
-          <Shield className="h-3.5 w-3.5 text-[#f3d27a]" />
-          <span>Personagem 3D & 2D (UV 64×64)</span>
+          <span className="flex items-center gap-1.5">
+            <Shield className="h-3.5 w-3.5 text-[#f3d27a]" />
+            <span>Modelo 3D/2.5D</span>
+          </span>
         </button>
 
         <button
