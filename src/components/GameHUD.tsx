@@ -83,8 +83,6 @@ import {
   UnitKind,
 } from '../game/types';
 import { HopliteUvBuilderModal } from './HopliteUvBuilderModal';
-import { ZeusViewerModal } from './ZeusViewerModal';
-import { PoseidonViewerModal } from './PoseidonViewerModal';
 import { Minimap } from './Minimap';
 
 const GAME_TYPE_LABELS: Record<GameTypeId, string> = {
@@ -255,8 +253,6 @@ export function GameHUD({
   const [activeTab, setActiveTab] = useState<DockTab>('build');
   const [activeDialog, setActiveDialog] = useState<InGameDialog>('none');
   const [uvBuilderOpen, setUvBuilderOpen] = useState(false);
-  const [zeusModalOpen, setZeusModalOpen] = useState(false);
-  const [poseidonModalOpen, setPoseidonModalOpen] = useState(false);
   const [pausePrompt, setPausePrompt] = useState<PausePrompt>('menu');
   const [postGameTab, setPostGameTab] = useState<PostGameTab>('summary');
   const [tributeFrom, setTributeFrom] = useState<ResourceType>('food');
@@ -705,32 +701,12 @@ export function GameHUD({
 
           <button
             type="button"
-            onClick={() => setPoseidonModalOpen(true)}
-            title="Poseidon 3D — Senhor dos Mares & Tridente"
-            className="flex h-8 items-center gap-1 rounded border border-cyan-400/60 bg-gradient-to-r from-teal-700/90 to-cyan-500/90 px-2 text-xs font-bold text-slate-950 hover:from-teal-600 hover:to-cyan-400 whitespace-nowrap cursor-pointer animate-pulse"
-          >
-            <Waves className="h-3.5 w-3.5 fill-current" />
-            <span className="hidden lg:inline">🌊 Poseidon 3D</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setZeusModalOpen(true)}
-            title="Zeus 3D — Olimpo & Poderes Divinos"
-            className="flex h-8 items-center gap-1 rounded border border-yellow-400/60 bg-gradient-to-r from-amber-600/90 to-yellow-500/90 px-2 text-xs font-bold text-slate-950 hover:from-amber-500 hover:to-yellow-400 whitespace-nowrap cursor-pointer animate-pulse"
-          >
-            <Zap className="h-3.5 w-3.5 fill-current" />
-            <span className="hidden lg:inline">⚡ Zeus 3D</span>
-          </button>
-
-          <button
-            type="button"
             onClick={() => setUvBuilderOpen(true)}
-            title="Forja de Hefesto — Montador de Personagem 3D & 2D (Atlas UV 64x64 AoM)"
+            title="Modelo 3D/2.5D — Deuses, Unidades & Edifícios"
             className="flex h-8 items-center gap-1 rounded border border-emerald-400/60 bg-emerald-950/90 px-2 text-xs font-bold text-emerald-200 hover:border-emerald-300 hover:bg-emerald-900 whitespace-nowrap cursor-pointer"
           >
             <Shield className="h-3.5 w-3.5 text-[#f3d27a]" />
-            <span className="hidden lg:inline">3D/2D UV</span>
+            <span className="hidden lg:inline">Modelo 3D/2.5D</span>
           </button>
 
           <button
@@ -2813,16 +2789,6 @@ export function GameHUD({
           onSetHopliteArmorTier?.(tier);
           onUpdateOptions({ ...options, hopliteArmorTier: tier });
         }}
-      />
-
-      <ZeusViewerModal
-        isOpen={zeusModalOpen}
-        onClose={() => setZeusModalOpen(false)}
-      />
-
-      <PoseidonViewerModal
-        isOpen={poseidonModalOpen}
-        onClose={() => setPoseidonModalOpen(false)}
       />
     </>
   );
