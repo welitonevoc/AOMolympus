@@ -5,10 +5,13 @@ import {
   Building2,
   CloudLightning,
   Compass,
+  Crown,
   Eye,
+  Flame,
   Play,
   RotateCw,
   Shield,
+  Skull,
   Sparkles,
   Swords,
   User,
@@ -28,6 +31,12 @@ import {
   createPoseidonEnvironment,
   createPoseidonProceduralTextures,
 } from '../civilizacao/gregos/poseidonModel';
+import {
+  buildHades,
+  createHadesProceduralTextures,
+  createHadesUnderworldEnvironment,
+  HadesUnderworldEnvironment,
+} from '../civilizacao/gregos/hadesModel';
 import { createBuildingMesh, createMaterialPalette, createUnitMesh } from '../game/models';
 import { BuildingKind, PantheonId, UnitKind } from '../game/types';
 import {
@@ -45,7 +54,7 @@ interface HopliteUvBuilderModalProps {
   onSelectTier: (tier: 1 | 2 | 3 | 4) => void;
 }
 
-export type InspectableUnitId = UnitKind | 'zeus' | 'poseidon';
+export type InspectableUnitId = UnitKind | 'zeus' | 'poseidon' | 'hades';
 
 interface CivEntityOption {
   id: InspectableUnitId;
@@ -55,12 +64,13 @@ interface CivEntityOption {
 
 /**
  * Catálogo de unidades e deuses estritamente dividido por civilização.
- * Zeus e Poseidon são deuses gregos e aparecem EXCLUSIVAMENTE no Panteão Grego!
+ * Zeus, Poseidon e Hades são deuses gregos e aparecem EXCLUSIVAMENTE no Panteão Grego!
  */
 const CIVILIZATION_UNITS: Partial<Record<PantheonId, CivEntityOption[]>> = {
   greek: [
     { id: 'zeus', name: '⚡ Zeus (Deus Maior)', role: 'Pai dos Deuses — Empunha Raios Divinos e convoca Tempestades' },
     { id: 'poseidon', name: '🌊 Poseidon (Deus dos Mares)', role: 'Senhor dos Mares — Conduzido por vórtices, golpeia com tridente e invoca tsunamis' },
+    { id: 'hades', name: '💀 Hades (Senhor do Submundo)', role: 'Monarca dos Mortos — Empunha o Bidente Real, invoca Chamas do Tártaro e o Portal das Almas' },
     { id: 'hoplite', name: 'Hoplita Espartano', role: 'Infantaria pesada com lança e escudo hoplon' },
     { id: 'hipaspist', name: 'Hipaspista', role: 'Infantaria de elite ágil' },
     { id: 'archer', name: 'Arqueiro Toxotes', role: 'Combatente à distância' },
@@ -127,6 +137,7 @@ export function HopliteUvBuilderModal({
   // Modos de Animação e Poderes dos Deuses Gregos
   const [zeusMode, setZeusMode] = useState<'pairar' | 'voar' | 'raios' | 'tempestade'>('pairar');
   const [poseidonMode, setPoseidonMode] = useState<'conduzido' | 'correnteza' | 'golpe' | 'tsunami'>('conduzido');
+  const [hadesMode, setHadesMode] = useState<'reinar' | 'marcha' | 'chama' | 'portal'>('reinar');
   const [focusDivine, setFocusDivine] = useState(false);
 
   const animStateRef = useRef(animState);
@@ -140,6 +151,8 @@ export function HopliteUvBuilderModal({
   zeusModeRef.current = zeusMode;
   const poseidonModeRef = useRef(poseidonMode);
   poseidonModeRef.current = poseidonMode;
+  const hadesModeRef = useRef(hadesMode);
+  hadesModeRef.current = hadesMode;
   const focusDivineRef = useRef(focusDivine);
   focusDivineRef.current = focusDivine;
 
@@ -207,7 +220,7 @@ export function HopliteUvBuilderModal({
       prevMouseX = e.clientX;
       prevMouseY = e.clientY;
 
-      const isGod = (selectedUnit === 'zeus' || selectedUnit === 'poseidon') && selectedCiv === 'greek';
+      const isGod = (selectedUnit === 'zeus' || selectedUnit === 'poseidon' || selectedUnit === 'hades') && selectedCiv === 'greek';
       if (isGod) {
         // No caso dos deuses, a câmera orbita em 360° e o deus permanece fixo no centro
         orbitYaw -= dx * 0.008;
@@ -239,12 +252,18 @@ export function HopliteUvBuilderModal({
     rim.position.set(-4, 3, -4);
     scene.add(rim);
 
-    // Luzes de Efeitos Especiais dos Deuses
+    // Luzes de Efeitos Especiais dos Deuses (Zeus, Poseidon e Hades)
     const flashLight = new THREE.PointLight(0xfff3c4, 0, 16);
     scene.add(flashLight);
 
     const impactLight = new THREE.PointLight(0x2dd4bf, 0, 16);
     scene.add(impactLight);
+
+    const bidentLight = new THREE.PointLight(0x10b981, 0, 10);
+    scene.add(bidentLight);
+
+    const hadesBlastLight = new THREE.PointLight(0x34d399, 0, 15);
+    scene.add(hadesBlastLight);
 
     // Grupos dedicados
     const environmentGroup = new THREE.Group();
@@ -455,6 +474,238 @@ export function HopliteUvBuilderModal({
       for (let i = 0; i < 30; i++) spawnSpray(originX, 0.2, originZ, 4.5, 2.0, 5.0);
     }
 
+    // ==========================================
+    // SISTEMAS DE PODERES DE HADES (SUBMUNDO)
+    // ==========================================
+    let hadesEnv: HadesUnderworldEnvironment | null = null;
+    let hadesBidentAnchor: THREE.Group | null = null;
+
+    // Cinzas e Almas Flutuantes
+    const ASH_N = 200;
+    const ashPos = new Float32Array(ASH_N * 3);
+    const ashVel = new Float32Array(ASH_N * 3);
+    const ashLife = new Float32Array(ASH_N);
+    let ashIdx = 0;
+    for (let i = 0; i < ASH_N; i++) {
+      ashPos[i * 3] = (Math.random() - 0.5) * 13;
+      ashPos[i * 3 + 1] = Math.random() * 5.2;
+      ashPos[i * 3 + 2] = (Math.random() - 0.5) * 13;
+      ashVel[i * 3] = (Math.random() - 0.5) * 0.25;
+      ashVel[i * 3 + 1] = 0.22 + Math.random() * 0.45;
+      ashVel[i * 3 + 2] = (Math.random() - 0.5) * 0.25;
+      ashLife[i] = 999;
+    }
+    const ashGeo = new THREE.BufferGeometry();
+    ashGeo.setAttribute('position', new THREE.BufferAttribute(ashPos, 3));
+    const ashPoints = new THREE.Points(
+      ashGeo,
+      new THREE.PointsMaterial({
+        color: 0x6ee7b7,
+        size: 0.08,
+        transparent: true,
+        opacity: 0.75,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+      })
+    );
+    ashPoints.visible = false;
+    scene.add(ashPoints);
+
+    function spawnSoulBurst(x: number, y: number, z: number, count = 16) {
+      for (let c = 0; c < count; c++) {
+        const i = ashIdx;
+        ashIdx = (ashIdx + 1) % 70;
+        ashPos[i * 3] = x;
+        ashPos[i * 3 + 1] = y;
+        ashPos[i * 3 + 2] = z;
+        ashVel[i * 3] = (Math.random() - 0.5) * 4.0;
+        ashVel[i * 3 + 1] = 1.3 + Math.random() * 3.8;
+        ashVel[i * 3 + 2] = (Math.random() - 0.5) * 4.0;
+        ashLife[i] = 0.75 + Math.random() * 0.5;
+      }
+    }
+
+    // Projéteis e Crateras da Chama do Tártaro
+    const tartarusBolts: Array<{
+      mesh: THREE.Group;
+      start: THREE.Vector3;
+      target: THREE.Vector3;
+      progress: number;
+      speed: number;
+    }> = [];
+
+    const hellfirePools: Array<{
+      pool: THREE.Mesh;
+      pillar: THREE.Mesh;
+      life: number;
+      max: number;
+    }> = [];
+
+    const hadesShadowTrails: Array<{
+      mesh: THREE.Mesh;
+      life: number;
+      max: number;
+    }> = [];
+
+    function triggerTartarusFlame(startPos: THREE.Vector3) {
+      const a = Math.random() * Math.PI * 2;
+      const r = 1.2 + Math.random() * 2.8;
+      const target = new THREE.Vector3(Math.cos(a) * r, 0.08, Math.sin(a) * r);
+
+      const boltGroup = new THREE.Group();
+      boltGroup.position.copy(startPos);
+
+      const core = new THREE.Mesh(
+        new THREE.SphereGeometry(0.12, 12, 12),
+        new THREE.MeshBasicMaterial({ color: 0xa7f3d0 })
+      );
+      const aura = new THREE.Mesh(
+        new THREE.SphereGeometry(0.24, 12, 12),
+        new THREE.MeshBasicMaterial({
+          color: 0x9333ea,
+          transparent: true,
+          opacity: 0.65,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false,
+        })
+      );
+      boltGroup.add(core, aura);
+      scene.add(boltGroup);
+
+      tartarusBolts.push({
+        mesh: boltGroup,
+        start: startPos.clone(),
+        target,
+        progress: 0,
+        speed: 2.4,
+      });
+    }
+
+    function eruptHellfire(pos: THREE.Vector3) {
+      const pool = new THREE.Mesh(
+        new THREE.CircleGeometry(0.72, 24),
+        new THREE.MeshBasicMaterial({
+          color: 0x10b981,
+          transparent: true,
+          opacity: 0.9,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false,
+        })
+      );
+      pool.rotation.x = -Math.PI / 2;
+      pool.position.set(pos.x, 0.04, pos.z);
+      scene.add(pool);
+
+      const pillar = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.12, 0.45, 2.2, 14, 1, true),
+        new THREE.MeshBasicMaterial({
+          color: 0xa855f7,
+          transparent: true,
+          opacity: 0.78,
+          blending: THREE.AdditiveBlending,
+          side: THREE.DoubleSide,
+          depthWrite: false,
+        })
+      );
+      pillar.position.set(pos.x, 1.1, pos.z);
+      scene.add(pillar);
+
+      hellfirePools.push({ pool, pillar, life: 0.75, max: 0.75 });
+      hadesBlastLight.position.set(pos.x, 0.9, pos.z);
+      hadesBlastLight.intensity = 8.5;
+      spawnSoulBurst(pos.x, 0.2, pos.z, 20);
+    }
+
+    function spawnShadowTrail(x: number, z: number) {
+      const ring = new THREE.Mesh(
+        new THREE.RingGeometry(0.32, 0.82, 24),
+        new THREE.MeshBasicMaterial({
+          color: 0x581c87,
+          transparent: true,
+          opacity: 0.62,
+          blending: THREE.AdditiveBlending,
+          side: THREE.DoubleSide,
+          depthWrite: false,
+        })
+      );
+      ring.rotation.x = -Math.PI / 2;
+      ring.position.set(x, 0.04, z);
+      scene.add(ring);
+      hadesShadowTrails.push({ mesh: ring, life: 1.0, max: 1.0 });
+    }
+
+    // Portal das Almas
+    const portalGroup = new THREE.Group();
+    portalGroup.visible = false;
+    scene.add(portalGroup);
+
+    const portalDisc = new THREE.Mesh(
+      new THREE.RingGeometry(0.25, 3.5, 64),
+      new THREE.MeshBasicMaterial({
+        color: 0x10b981,
+        transparent: true,
+        opacity: 0.55,
+        blending: THREE.AdditiveBlending,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+      })
+    );
+    portalDisc.rotation.x = -Math.PI / 2;
+    portalDisc.position.y = 0.025;
+    portalGroup.add(portalDisc);
+
+    const portalInnerRing = new THREE.Mesh(
+      new THREE.RingGeometry(1.4, 2.2, 48),
+      new THREE.MeshBasicMaterial({
+        color: 0x9333ea,
+        transparent: true,
+        opacity: 0.7,
+        blending: THREE.AdditiveBlending,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+      })
+    );
+    portalInnerRing.rotation.x = -Math.PI / 2;
+    portalInnerRing.position.y = 0.03;
+    portalGroup.add(portalInnerRing);
+
+    const hadesWraiths: Array<{
+      group: THREE.Group;
+      radius: number;
+      speed: number;
+      phase: number;
+      vSpeed: number;
+      baseHeight: number;
+    }> = [];
+    const wraithSkullGeo = new THREE.SphereGeometry(0.16, 12, 12);
+    const wraithTailGeo = new THREE.ConeGeometry(0.14, 0.7, 10);
+    wraithTailGeo.rotateX(Math.PI);
+
+    for (let i = 0; i < 10; i++) {
+      const wg = new THREE.Group();
+      const wMat = new THREE.MeshBasicMaterial({
+        color: i % 2 === 0 ? 0x34d399 : 0xc084fc,
+        transparent: true,
+        opacity: 0.75,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+      });
+      const headM = new THREE.Mesh(wraithSkullGeo, wMat);
+      const tailM = new THREE.Mesh(wraithTailGeo, wMat);
+      tailM.position.y = -0.32;
+      wg.add(headM, tailM);
+      portalGroup.add(wg);
+
+      hadesWraiths.push({
+        group: wg,
+        radius: 0.8 + Math.random() * 2.2,
+        speed: (0.4 + Math.random() * 0.7) * (i % 2 === 0 ? 1 : -1),
+        phase: (i / 10) * Math.PI * 2,
+        vSpeed: 0.8 + Math.random() * 1.2,
+        baseHeight: Math.random() * 3.5,
+      });
+    }
+
     let zeusClouds: Array<{ g: THREE.Group; baseY: number; ph: number }> = [];
     let poseidonOceanPos: THREE.BufferAttribute | null = null;
     let poseidonOceanInitY: Float32Array | null = null;
@@ -484,6 +735,12 @@ export function HopliteUvBuilderModal({
       poseidonOceanPos = null;
       poseidonOceanInitY = null;
       tsunamiGroup.visible = false;
+      hadesEnv = null;
+      hadesBidentAnchor = null;
+      ashPoints.visible = false;
+      portalGroup.visible = false;
+      bidentLight.intensity = 0;
+      hadesBlastLight.intensity = 0;
 
       let group: THREE.Group;
 
@@ -661,6 +918,142 @@ export function HopliteUvBuilderModal({
               poseidon.tridentCore.scale.setScalar(1.2 * pulse);
             }
           };
+        } else if (selectedUnit === 'hades' && selectedCiv === 'greek') {
+          // ===============================
+          // CENÁRIO DO SUBMUNDO (HADES)
+          // ===============================
+          scene.background = new THREE.Color(0x090b14);
+          scene.fog = new THREE.FogExp2(0x090b14, 0.026);
+          ashPoints.visible = true;
+
+          const hTex = createHadesProceduralTextures();
+          hadesEnv = createHadesUnderworldEnvironment(environmentGroup, hTex);
+
+          const hades = buildHades(hTex);
+          hadesBidentAnchor = hades.bidentAnchor;
+          group = hades.vessel;
+          group.scale.setScalar(0.72);
+          group.position.set(0, -0.1, 0);
+
+          let trailTimer = 0;
+          const tmpV = new THREE.Vector3();
+
+          group.userData.animatePose = (dt: number) => {
+            const m = hadesModeRef.current;
+            const t = simTime;
+
+            // 1. Deslize sombrio e bob de flutuação
+            let gx = 0;
+            let gz = 0;
+            let yaw = Math.sin(t * 0.35) * 0.16;
+            let tiltPitch = 0.03;
+            let tiltRoll = 0;
+            const hoverBob = Math.sin(t * 1.4) * 0.06;
+
+            if (m === 'marcha') {
+              const a = t * 0.65;
+              const R = 2.4;
+              gx = Math.cos(a) * R;
+              gz = Math.sin(a) * R;
+              yaw = -a;
+              tiltPitch = 0.16;
+              tiltRoll = -0.2;
+
+              trailTimer -= dt;
+              if (trailTimer <= 0) {
+                trailTimer = 0.12;
+                spawnShadowTrail(gx, gz);
+              }
+            } else {
+              gx = Math.sin(t * 0.45) * 0.2;
+              gz = Math.cos(t * 0.38) * 0.15;
+            }
+
+            hades.vessel.position.set(gx, -0.1, gz);
+            hades.vessel.rotation.set(0, yaw, 0);
+            hades.body.position.y = 1.12 + hoverBob;
+            hades.body.rotation.set(tiltPitch, 0, tiltRoll);
+
+            // Vórtice de fumaça sombria e almas orbitando aos pés
+            hades.shadowCone.rotation.y -= dt * (m === 'marcha' ? 4.5 : 2.2);
+            hades.groundAuraRing.scale.setScalar(1 + Math.sin(t * 3.0) * 0.06);
+            for (const w of hades.orbitingWisps) {
+              const ang = t * w.speed + w.phase;
+              w.mesh.position.set(
+                Math.cos(ang) * w.radius,
+                w.height + Math.sin(t * 2.5 + w.phase) * 0.15,
+                Math.sin(ang) * w.radius
+              );
+            }
+
+            // 2. Postura e Animação do Bidente Real
+            if (m === 'chama') {
+              hades.rightArm.arm.rotation.set(-0.55, 0.15, 1.35);
+              hades.rightArm.elbow.rotation.set(-0.35, 0.2, 0.25);
+              hades.bident.rotation.set(0.95, 0, -0.35);
+              hades.leftArm.arm.rotation.set(0.45, -0.3, -0.85);
+            } else if (m === 'portal') {
+              hades.rightArm.arm.rotation.set(-0.50, 0.15, 2.38 + Math.sin(t * 2.0) * 0.04);
+              hades.rightArm.elbow.rotation.set(0.55, 0.2, 0.28);
+              hades.bident.rotation.set(0.22, 0, -0.24);
+              hades.leftArm.arm.rotation.set(0.55, -0.35, -1.15);
+            } else if (m === 'marcha') {
+              hades.rightArm.arm.rotation.set(0.32, 0.15, 0.72);
+              hades.rightArm.elbow.rotation.set(-0.45, 0.1, 0.22);
+              hades.bident.rotation.set(0.85, 0.1, -0.36);
+              hades.leftArm.arm.rotation.set(0.28, -0.22, -0.78);
+            } else {
+              // Reinar
+              hades.rightArm.arm.rotation.set(-0.18, 0.12, 0.55 + Math.sin(t * 1.4) * 0.03);
+              hades.rightArm.elbow.rotation.set(-0.52, 0.15, 0.22);
+              hades.bident.rotation.set(0.18, 0, -0.46);
+              hades.leftArm.arm.rotation.set(0.25, -0.2, -0.74 + Math.cos(t * 1.3) * 0.03);
+            }
+
+            // Núcleo de Alma aprisionada entre as pontas do Bidente
+            hades.soulOrb.rotation.y += dt * 3.0;
+            hades.soulRing1.rotation.z += dt * 3.6;
+            hades.soulRing2.rotation.y -= dt * 3.2;
+
+            const powerMult = m === 'chama' || m === 'portal' ? 1.55 : 1.0;
+            hades.bidentGlow.scale.setScalar((0.9 + Math.sin(t * 14) * 0.18) * powerMult);
+
+            hades.bidentAnchor.getWorldPosition(tmpV);
+            bidentLight.position.copy(tmpV);
+            bidentLight.intensity = 2.4 * powerMult + Math.sin(t * 16) * 0.4;
+
+            // Vento no manto esfarrapado, saiote e cabelos
+            const wind = m === 'marcha' || m === 'portal' ? 1.85 : 1.0;
+            hades.beardTip.rotation.x = -0.14 + Math.sin(t * 2.4 * wind) * 0.035;
+            for (const s of hades.hairStrands) {
+              s.mesh.rotation.x = Math.sin(t * 2.3 * wind + s.phase) * 0.04;
+              s.mesh.rotation.z = Math.cos(t * 1.8 * wind + s.phase) * 0.032;
+            }
+
+            const cAttr = hades.cape.geometry.attributes.position as THREE.BufferAttribute;
+            for (let i = 0; i < cAttr.count; i++) {
+              const bx = hades.capeBase[i * 3];
+              const by = hades.capeBase[i * 3 + 1];
+              const bz = hades.capeBase[i * 3 + 2];
+              const normY = Math.max(0, Math.min(1, (0.98 - by) / 1.96));
+              const wave1 = Math.sin(t * 3.1 * wind - normY * 4.5 + bx * 2.5) * 0.14 * normY;
+              const wave2 = Math.cos(t * 2.1 * wind - normY * 3.0) * 0.06 * normY;
+              cAttr.setXYZ(i, bx + Math.sin(t * 2.3 - normY * 3.0) * 0.035 * normY, by, bz + wave1 + wave2);
+            }
+            cAttr.needsUpdate = true;
+            hades.cape.geometry.computeVertexNormals();
+
+            const skAttr = hades.skirtMesh.geometry.attributes.position as THREE.BufferAttribute;
+            for (let i = 0; i < skAttr.count; i++) {
+              const bx = hades.skirtBase[i * 3];
+              const by = hades.skirtBase[i * 3 + 1];
+              const bz = hades.skirtBase[i * 3 + 2];
+              const normY = Math.max(0, Math.min(1, (0.46 - by) / 0.92));
+              skAttr.setZ(i, bz + Math.sin(t * 3.3 * wind - normY * 4.0 + bx * 4.0) * 0.042 * normY);
+            }
+            skAttr.needsUpdate = true;
+            hades.skirtMesh.geometry.computeVertexNormals();
+          };
         } else if (selectedUnit === 'hoplite' || selectedUnit === 'hipaspist') {
           // ===============================
           // CENÁRIO PADRÃO (PEDESTAL)
@@ -730,6 +1123,7 @@ export function HopliteUvBuilderModal({
     let simTime = 0;
     let lastBoltTime = 0;
     let lastSlamTime = 0;
+    let lastHadesFlameTime = 0;
 
     const animate = () => {
       frameId = requestAnimationFrame(animate);
@@ -754,6 +1148,18 @@ export function HopliteUvBuilderModal({
           poseidonOceanPos.setY(i, poseidonOceanInitY[i] + wave);
         }
         poseidonOceanPos.needsUpdate = true;
+      }
+
+      // Chamas e runas do Submundo de Hades
+      if (hadesEnv) {
+        for (const rg of hadesEnv.runeRings) {
+          rg.rotation.z += dt * 0.08;
+        }
+        for (const pf of hadesEnv.pillarFlames) {
+          const fl = 1 + Math.sin(simTime * 6.0 + pf.phase) * 0.12;
+          pf.f1.scale.set(fl, fl * 1.1, fl);
+          pf.f2.scale.set(fl * 0.95, fl, fl * 0.95);
+        }
       }
 
       // ==========================================
@@ -800,6 +1206,43 @@ export function HopliteUvBuilderModal({
           }
         } else {
           tsunamiGroup.visible = false;
+        }
+      } else if (selectedCiv === 'greek' && selectedUnit === 'hades') {
+        const hm = hadesModeRef.current;
+        if (hm === 'portal') {
+          (scene.background as THREE.Color).setHex(0x040308);
+          portalGroup.visible = true;
+          portalDisc.rotation.z += dt * 0.45;
+          portalInnerRing.rotation.z -= dt * 0.65;
+          for (const w of hadesWraiths) {
+            const ang = simTime * w.speed + w.phase;
+            w.baseHeight += dt * w.vSpeed;
+            if (w.baseHeight > 4.2) {
+              w.baseHeight = 0.1;
+              w.phase = Math.random() * Math.PI * 2;
+            }
+            w.group.position.set(
+              Math.cos(ang) * w.radius,
+              w.baseHeight,
+              Math.sin(ang) * w.radius
+            );
+            w.group.rotation.y = -ang + Math.PI / 2;
+            w.group.rotation.x = Math.sin(simTime * 3.5 + w.phase) * 0.25;
+          }
+        } else {
+          (scene.background as THREE.Color).setHex(0x090b14);
+          portalGroup.visible = false;
+        }
+
+        if (hm === 'chama') {
+          if (simTime - lastHadesFlameTime > 0.68) {
+            lastHadesFlameTime = simTime;
+            if (hadesBidentAnchor) {
+              const startV = new THREE.Vector3();
+              hadesBidentAnchor.getWorldPosition(startV);
+              triggerTartarusFlame(startV);
+            }
+          }
         }
       }
 
@@ -898,12 +1341,85 @@ export function HopliteUvBuilderModal({
         }
       }
 
+      // Cinzas e Almas de Hades
+      if (ashPoints.visible) {
+        for (let i = 0; i < ASH_N; i++) {
+          if (i < 70 && ashLife[i] < 100) {
+            if (ashLife[i] <= 0) continue;
+            ashLife[i] -= dt;
+            ashVel[i * 3 + 1] -= 4.2 * dt;
+            ashPos[i * 3] += ashVel[i * 3] * dt;
+            ashPos[i * 3 + 1] += ashVel[i * 3 + 1] * dt;
+            ashPos[i * 3 + 2] += ashVel[i * 3 + 2] * dt;
+            if (ashLife[i] <= 0) ashPos[i * 3 + 1] = -100;
+          } else {
+            ashPos[i * 3] += Math.sin(simTime + i) * 0.12 * dt;
+            ashPos[i * 3 + 1] += ashVel[i * 3 + 1] * dt;
+            ashPos[i * 3 + 2] += Math.cos(simTime + i) * 0.12 * dt;
+            if (ashPos[i * 3 + 1] > 5.5) {
+              ashPos[i * 3 + 1] = 0.05;
+              ashPos[i * 3] = (Math.random() - 0.5) * 12;
+              ashPos[i * 3 + 2] = (Math.random() - 0.5) * 12;
+            }
+          }
+        }
+        ashGeo.attributes.position.needsUpdate = true;
+      }
+
+      // Projéteis da Chama do Tártaro
+      for (let i = tartarusBolts.length - 1; i >= 0; i--) {
+        const b = tartarusBolts[i];
+        b.progress += dt * b.speed;
+        const p = Math.min(1, b.progress);
+        b.mesh.position.lerpVectors(b.start, b.target, p);
+        b.mesh.position.y += Math.sin(p * Math.PI) * 0.6;
+        b.mesh.rotation.y += dt * 10;
+        if (p >= 1) {
+          eruptHellfire(b.target);
+          scene.remove(b.mesh);
+          tartarusBolts.splice(i, 1);
+        }
+      }
+
+      // Poças e Colunas de Fogo Necromântico do Tártaro
+      for (let i = hellfirePools.length - 1; i >= 0; i--) {
+        const hf = hellfirePools[i];
+        hf.life -= dt;
+        const k = Math.max(0, hf.life / hf.max);
+        hf.pool.scale.setScalar(1 + (1 - k) * 0.8);
+        (hf.pool.material as THREE.Material).opacity = 0.9 * k;
+        hf.pillar.scale.set(1 + (1 - k) * 0.5, 1 + (1 - k) * 0.8, 1 + (1 - k) * 0.5);
+        (hf.pillar.material as THREE.Material).opacity = 0.78 * k;
+        if (hf.life <= 0) {
+          scene.remove(hf.pool);
+          scene.remove(hf.pillar);
+          hf.pool.geometry.dispose();
+          hf.pillar.geometry.dispose();
+          hellfirePools.splice(i, 1);
+        }
+      }
+
+      // Rastros de Sombra de Hades
+      for (let i = hadesShadowTrails.length - 1; i >= 0; i--) {
+        const st = hadesShadowTrails[i];
+        st.life -= dt;
+        const k = Math.max(0, st.life / st.max);
+        st.mesh.scale.setScalar(1 + (1 - k) * 2.2);
+        (st.mesh.material as THREE.Material).opacity = 0.62 * k;
+        if (st.life <= 0) {
+          scene.remove(st.mesh);
+          st.mesh.geometry.dispose();
+          hadesShadowTrails.splice(i, 1);
+        }
+      }
+
       // Decaimento de luzes de impacto
       if (flashLight.intensity > 0) flashLight.intensity = Math.max(0, flashLight.intensity - dt * 24);
       if (impactLight.intensity > 0) impactLight.intensity = Math.max(0, impactLight.intensity - dt * 18);
+      if (hadesBlastLight.intensity > 0) hadesBlastLight.intensity = Math.max(0, hadesBlastLight.intensity - dt * 20);
 
       // Rotação da entidade / Órbita 360° da câmera
-      const isGod = (selectedUnit === 'zeus' || selectedUnit === 'poseidon') && selectedCiv === 'greek';
+      const isGod = (selectedUnit === 'zeus' || selectedUnit === 'poseidon' || selectedUnit === 'hades') && selectedCiv === 'greek';
 
       if (autoRotateRef.current) {
         if (isGod) {
@@ -933,7 +1449,7 @@ export function HopliteUvBuilderModal({
 
       if (isGod) {
         // Câmera orbital 360° ao redor do Deus posicionado no centro exato
-        const focusY = isFocus ? (selectedUnit === 'zeus' ? 1.4 : 1.5) : 1.35;
+        const focusY = isFocus ? (selectedUnit === 'zeus' ? 1.4 : selectedUnit === 'poseidon' ? 1.5 : 1.48) : 1.35;
         const effDist = isFocus ? 2.0 / zoomRef.current : 5.8 / zoomRef.current;
 
         const horizDist = effDist * Math.cos(orbitPitch);
@@ -1067,6 +1583,8 @@ export function HopliteUvBuilderModal({
                             ? 'border-yellow-400 bg-yellow-500/20 text-yellow-300'
                             : u.id === 'poseidon'
                             ? 'border-cyan-400 bg-cyan-500/20 text-cyan-300'
+                            : u.id === 'hades'
+                            ? 'border-emerald-400 bg-emerald-500/20 text-emerald-300'
                             : 'border-[#d4af37] bg-[#d4af37]/15 text-[#f3d27a]'
                           : 'border-white/10 bg-[#171c26]/60 text-[#d1d5db] hover:border-white/25 hover:bg-[#1f2636]'
                       }`}
@@ -1250,6 +1768,71 @@ export function HopliteUvBuilderModal({
                   >
                     <Eye className="h-3.5 w-3.5" />
                     <span>{focusDivine ? 'Visão Corpo' : 'Focar Tridente'}</span>
+                  </button>
+                  <div className="h-5 w-[1px] bg-white/15 mx-1" />
+                </>
+              ) : entityType === 'unit' && selectedUnit === 'hades' && selectedCiv === 'greek' ? (
+                // Poderes e Animações de Hades
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setHadesMode('reinar')}
+                    className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      hadesMode === 'reinar'
+                        ? 'bg-emerald-400 text-slate-950 shadow-md shadow-emerald-500/30'
+                        : 'border border-emerald-400/30 text-emerald-200 hover:bg-emerald-400/20'
+                    }`}
+                  >
+                    <Crown className="h-3.5 w-3.5" />
+                    <span>Reinar</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setHadesMode('marcha')}
+                    className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      hadesMode === 'marcha'
+                        ? 'bg-purple-400 text-slate-950 shadow-md shadow-purple-500/30'
+                        : 'border border-purple-400/30 text-purple-200 hover:bg-purple-400/20'
+                    }`}
+                  >
+                    <Wind className="h-3.5 w-3.5" />
+                    <span>Marcha Sombria</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setHadesMode('chama')}
+                    className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      hadesMode === 'chama'
+                        ? 'bg-emerald-400 text-slate-950 shadow-md shadow-emerald-500/30'
+                        : 'border border-emerald-400/30 text-emerald-200 hover:bg-emerald-400/20'
+                    }`}
+                  >
+                    <Flame className="h-3.5 w-3.5" />
+                    <span>Chama Tártaro</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setHadesMode('portal')}
+                    className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      hadesMode === 'portal'
+                        ? 'bg-purple-400 text-slate-950 shadow-md shadow-purple-500/30'
+                        : 'border border-purple-400/30 text-purple-200 hover:bg-purple-400/20'
+                    }`}
+                  >
+                    <Skull className="h-3.5 w-3.5" />
+                    <span>Portal Almas</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFocusDivine(!focusDivine)}
+                    className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      focusDivine
+                        ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/30'
+                        : 'border border-emerald-400/40 text-emerald-200 hover:bg-emerald-500/20'
+                    }`}
+                  >
+                    <Eye className="h-3.5 w-3.5" />
+                    <span>{focusDivine ? 'Visão Corpo' : 'Focar Rosto/Bidente'}</span>
                   </button>
                   <div className="h-5 w-[1px] bg-white/15 mx-1" />
                 </>
