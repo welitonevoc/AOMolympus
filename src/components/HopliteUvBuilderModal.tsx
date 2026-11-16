@@ -37,6 +37,11 @@ import {
   createHadesUnderworldEnvironment,
   HadesUnderworldEnvironment,
 } from '../civilizacao/gregos/hadesModel';
+import {
+  buildArtemis,
+  getCachedArtemisTextures,
+  animateArtemis,
+} from '../civilizacao/gregos/artemisModel';
 import { createBuildingMesh, createMaterialPalette, createUnitMesh } from '../game/models';
 import { BuildingKind, PantheonId, UnitKind } from '../game/types';
 import {
@@ -54,7 +59,7 @@ interface HopliteUvBuilderModalProps {
   onSelectTier: (tier: 1 | 2 | 3 | 4) => void;
 }
 
-export type InspectableUnitId = UnitKind | 'zeus' | 'poseidon' | 'hades';
+export type InspectableUnitId = UnitKind | 'zeus' | 'poseidon' | 'hades' | 'artemis';
 
 interface CivEntityOption {
   id: InspectableUnitId;
@@ -199,6 +204,11 @@ export function getUnitsForCivAndGod(civ: PantheonId, majorGod: string): CivEnti
 
     return [
       godUnit,
+      {
+        id: 'artemis',
+        name: '🌙 Ártemis (Deusa Menor)',
+        role: 'Deusa da Caça & da Lua — Empunha a Foice Lunar de duas lâminas, Corça Sagrada de Prata e Alcateia Noturna',
+      },
       {
         id: 'hoplite',
         name: isZeus ? 'Hoplita de Zeus' : isPoseidon ? 'Hoplita do Tridente' : 'Hoplita do Tártaro',
@@ -408,6 +418,7 @@ export function HopliteUvBuilderModal({
   const [zeusMode, setZeusMode] = useState<'pairar' | 'voar' | 'raios' | 'tempestade'>('pairar');
   const [poseidonMode, setPoseidonMode] = useState<'conduzido' | 'correnteza' | 'golpe' | 'tsunami'>('conduzido');
   const [hadesMode, setHadesMode] = useState<'reinar' | 'marcha' | 'chama' | 'portal'>('reinar');
+  const [artemisMode, setArtemisMode] = useState<'vigilia' | 'cacada' | 'raizes' | 'alcateia'>('vigilia');
   const [focusDivine, setFocusDivine] = useState(false);
 
   const animStateRef = useRef(animState);
@@ -423,6 +434,8 @@ export function HopliteUvBuilderModal({
   poseidonModeRef.current = poseidonMode;
   const hadesModeRef = useRef(hadesMode);
   hadesModeRef.current = hadesMode;
+  const artemisModeRef = useRef(artemisMode);
+  artemisModeRef.current = artemisMode;
   const focusDivineRef = useRef(focusDivine);
   focusDivineRef.current = focusDivine;
 
@@ -500,7 +513,7 @@ export function HopliteUvBuilderModal({
       prevMouseX = e.clientX;
       prevMouseY = e.clientY;
 
-      const isGod = (selectedUnit === 'zeus' || selectedUnit === 'poseidon' || selectedUnit === 'hades') && selectedCiv === 'greek';
+      const isGod = (selectedUnit === 'zeus' || selectedUnit === 'poseidon' || selectedUnit === 'hades' || selectedUnit === 'artemis') && selectedCiv === 'greek';
       if (isGod) {
         // No caso dos deuses, a câmera orbita em 360° e o deus permanece fixo no centro
         orbitYaw -= dx * 0.008;
@@ -1334,6 +1347,36 @@ export function HopliteUvBuilderModal({
             skAttr.needsUpdate = true;
             hades.skirtMesh.geometry.computeVertexNormals();
           };
+        } else if (selectedUnit === 'artemis' && selectedCiv === 'greek') {
+          // ===============================
+          // CENÁRIO DO BOSQUE SAGRADO LUNAR (ÁRTEMIS)
+          // ===============================
+          scene.background = new THREE.Color(0x050d14);
+          scene.fog = new THREE.FogExp2(0x050d14, 0.02);
+
+          const pedGeo = new THREE.CylinderGeometry(2.3, 2.5, 0.2, 40);
+          const pedMat = new THREE.MeshStandardMaterial({ color: 0x071926, roughness: 0.4, metalness: 0.3 });
+          const pedestal = new THREE.Mesh(pedGeo, pedMat);
+          pedestal.position.y = -0.1;
+          pedestal.receiveShadow = true;
+          environmentGroup.add(pedestal);
+
+          const ringGeo = new THREE.RingGeometry(2.0, 2.2, 40);
+          const ringMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8, side: THREE.DoubleSide });
+          const ring = new THREE.Mesh(ringGeo, ringMat);
+          ring.rotation.x = -Math.PI / 2;
+          ring.position.y = 0.01;
+          environmentGroup.add(ring);
+
+          const aTex = getCachedArtemisTextures();
+          const artemis = buildArtemis(aTex);
+          group = artemis.root;
+          group.scale.setScalar(0.85);
+
+          group.userData.animatePose = (dt: number) => {
+            const m = artemisModeRef.current;
+            animateArtemis(artemis, dt, simTime, m);
+          };
         } else if (selectedUnit === 'hoplite' || selectedUnit === 'hipaspist') {
           // ===============================
           // CENÁRIO PADRÃO (PEDESTAL)
@@ -1703,7 +1746,7 @@ export function HopliteUvBuilderModal({
       if (hadesBlastLight.intensity > 0) hadesBlastLight.intensity = Math.max(0, hadesBlastLight.intensity - dt * 20);
 
       // Rotação da entidade / Órbita 360° da câmera
-      const isGod = (selectedUnit === 'zeus' || selectedUnit === 'poseidon' || selectedUnit === 'hades') && selectedCiv === 'greek';
+      const isGod = (selectedUnit === 'zeus' || selectedUnit === 'poseidon' || selectedUnit === 'hades' || selectedUnit === 'artemis') && selectedCiv === 'greek';
 
       if (autoRotateRef.current) {
         if (isGod) {
@@ -1733,7 +1776,7 @@ export function HopliteUvBuilderModal({
 
       if (isGod) {
         // Câmera orbital 360° ao redor do Deus posicionado no centro exato
-        const focusY = isFocus ? (selectedUnit === 'zeus' ? 1.4 : selectedUnit === 'poseidon' ? 1.5 : 1.48) : 1.35;
+        const focusY = isFocus ? (selectedUnit === 'zeus' ? 1.4 : selectedUnit === 'poseidon' ? 1.5 : selectedUnit === 'artemis' ? 1.42 : 1.48) : 1.35;
         const effDist = isFocus ? 2.0 / zoomRef.current : 5.8 / zoomRef.current;
 
         const horizDist = effDist * Math.cos(orbitPitch);
@@ -2152,6 +2195,71 @@ export function HopliteUvBuilderModal({
                   >
                     <Eye className="h-3.5 w-3.5" />
                     <span>{focusDivine ? 'Visão Corpo' : 'Focar Rosto/Bidente'}</span>
+                  </button>
+                  <div className="h-5 w-[1px] bg-white/15 mx-1" />
+                </>
+              ) : entityType === 'unit' && selectedUnit === 'artemis' && selectedCiv === 'greek' ? (
+                // Poderes e Animações de Ártemis (Deusa da Caça & da Lua)
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setArtemisMode('vigilia')}
+                    className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      artemisMode === 'vigilia'
+                        ? 'bg-sky-400 text-slate-950 shadow-md shadow-sky-500/30'
+                        : 'border border-sky-400/30 text-sky-200 hover:bg-sky-400/20'
+                    }`}
+                  >
+                    <Compass className="h-3.5 w-3.5" />
+                    <span>Vigília Lunar</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setArtemisMode('cacada')}
+                    className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      artemisMode === 'cacada'
+                        ? 'bg-emerald-400 text-slate-950 shadow-md shadow-emerald-500/30'
+                        : 'border border-emerald-400/30 text-emerald-200 hover:bg-emerald-400/20'
+                    }`}
+                  >
+                    <Wind className="h-3.5 w-3.5" />
+                    <span>Caçada Ágil</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setArtemisMode('raizes')}
+                    className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      artemisMode === 'raizes'
+                        ? 'bg-teal-400 text-slate-950 shadow-md shadow-teal-500/30'
+                        : 'border border-teal-400/30 text-teal-200 hover:bg-teal-400/20'
+                    }`}
+                  >
+                    <Sparkles className="h-3.5 w-3.5" />
+                    <span>Raízes Espinhosas</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setArtemisMode('alcateia')}
+                    className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      artemisMode === 'alcateia'
+                        ? 'bg-indigo-400 text-slate-950 shadow-md shadow-indigo-500/30'
+                        : 'border border-indigo-400/30 text-indigo-200 hover:bg-indigo-400/20'
+                    }`}
+                  >
+                    <Crown className="h-3.5 w-3.5" />
+                    <span>Alcateia Noturna</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFocusDivine(!focusDivine)}
+                    className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      focusDivine
+                        ? 'bg-sky-500 text-slate-950 shadow-md shadow-sky-500/30'
+                        : 'border border-sky-400/40 text-sky-200 hover:bg-sky-500/20'
+                    }`}
+                  >
+                    <Eye className="h-3.5 w-3.5" />
+                    <span>{focusDivine ? 'Visão Corpo' : 'Focar Rosto/Foice'}</span>
                   </button>
                   <div className="h-5 w-[1px] bg-white/15 mx-1" />
                 </>

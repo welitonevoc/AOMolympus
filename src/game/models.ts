@@ -5,6 +5,7 @@ import { createRiggedVillagerMesh } from '../civilizacao/gregos/villagerAnimator
 import { buildCharybdisTitan, getCachedCaribdisTextures } from '../civilizacao/gregos/caribdisModel';
 import { buildTyphonTitan, getCachedTyphonTextures } from '../civilizacao/gregos/tifaoModel';
 import { buildCerberusTitan, getCachedCerberusTextures } from '../civilizacao/gregos/cerberoModel';
+import { buildArtemis, getCachedArtemisTextures, animateArtemis } from '../civilizacao/gregos/artemisModel';
 import { createAoMOakTreeMesh, getFaunaCoatMaterial } from '../TEXTURA';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
@@ -2528,6 +2529,20 @@ export function createUnitMesh(
     root.userData.rightArm = rightArm;
     attachGroundMarkers(root, 2.2, pal, team);
     attachHealthBar(root, 8.85, 2.8);
+  } else if ((kind as any) === 'artemis') {
+    const artemisTex = getCachedArtemisTextures();
+    const artemis = buildArtemis(artemisTex);
+    artemis.root.scale.setScalar(1.25);
+    root.add(artemis.root);
+    let aPhase = 0;
+    root.userData.animatePose = (dt: number, moving: boolean, _speed: number, attackT: number | null) => {
+      aPhase += dt;
+      const mode = attackT !== null ? 'raizes' : moving ? 'cacada' : 'vigilia';
+      animateArtemis(artemis, dt, aPhase, mode);
+    };
+    attachGroundMarkers(root, 1.25, pal, team);
+    attachHealthBar(root, 3.4, 1.6);
+    return root;
   }
 
   return root;
