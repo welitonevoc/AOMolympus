@@ -449,6 +449,52 @@ class SoundEngine {
           : action === 'move'
           ? 'Ájax marcha para a posição.'
           : 'Herói Ájax Telamônio pronto para o combate.';
+    } else if (kind === 'jason') {
+      phrase =
+        action === 'attack'
+          ? 'JASÃO: "Pelos Argonautas e pelo Velocino!"'
+          : action === 'move'
+          ? 'JASÃO: "Em frente, rumo à glória!"'
+          : 'JASÃO: "Prostagma? A tripulação de Argo aguarda!"';
+      translation =
+        action === 'attack'
+          ? 'Ataque heroico com o Velocino de Ouro!'
+          : action === 'move'
+          ? 'Jasão avança com firmeza.'
+          : 'Herói Jasão pronto para liderar.';
+    } else if (kind === 'odysseus') {
+      phrase =
+        action === 'attack'
+          ? 'ULISSES: "Nenhuma fera escapará do arco de Ítaca!"'
+          : 'ULISSES: "Etimos! Estratégia acima da força bruta."';
+      translation = action === 'attack' ? 'Flecha certeira de Ulisses!' : 'Rei de Ítaca à escuta.';
+    } else if (kind === 'perseus') {
+      phrase =
+        action === 'attack'
+          ? 'PERSEU: "Pela lâmina de Hermes e o escudo de Atena!"'
+          : 'PERSEU: "Lege? Nenhum monstro resistirá."';
+      translation = action === 'attack' ? 'Golpe mortal de Perseu!' : 'Matador da Górgona pronto.';
+    } else if (kind === 'bellerophon') {
+      phrase =
+        action === 'attack'
+          ? 'BELEROFONTE: "Dos céus com Pégaso — ao ataque!"'
+          : 'BELEROFONTE: "Asas abertas sobre o Olimpo!"';
+      translation = action === 'attack' ? 'Investida alada de Belerofonte!' : 'Cavaleiro alado pronto.';
+    } else if (kind === 'hippolyta') {
+      phrase =
+        action === 'attack'
+          ? 'HIPÓLITA: "Pelas Amazonas! Chuva de flechas!"'
+          : 'HIPÓLITA: "Etimos! Ágil como o vento de Ártemis."';
+      translation = action === 'attack' ? 'Rajada veloz da Rainha Amazona!' : 'Hipólita aguarda ordens.';
+    } else if (kind === 'theseus') {
+      phrase =
+        action === 'attack'
+          ? 'TESEU: "Por Atenas! Pela ordem da falange!"'
+          : 'TESEU: "Prostagma? O tático de Atenas está pronto."';
+      translation = action === 'attack' ? 'Avanço tático de Teseu!' : 'Herói Teseu atento ao campo.';
+    } else if (kind === 'cyclops') {
+      phrase = action === 'attack' ? 'CICLOPE: "GRAAAH! ESMAGAR E ARREMESSAR!"' : 'CICLOPE: "Mmmgh... Ordem?"';
+      translation = action === 'attack' ? 'O Ciclope agarra e arremessa os inimigos!' : 'Ciclope de Zeus pronto.';
     }
 
     const result: UnitVoiceLineInfo = {
@@ -473,18 +519,22 @@ class SoundEngine {
     const kindPitchMult =
       kind === 'titan'
         ? 0.52
-        : kind === 'minotaur' || kind === 'cyclops'
-        ? 0.68
-        : kind === 'siege'
+        : kind === 'colossus' || kind === 'hydra' || kind === 'cyclops'
         ? 0.62
-        : kind === 'ajax'
-        ? 0.85
-        : kind === 'hero' || kind === 'hoplite'
+        : kind === 'minotaur' || kind === 'manticore' || kind === 'automaton' || kind === 'iron_dwarf'
+        ? 0.72
+        : kind === 'siege' || kind === 'ram'
+        ? 0.62
+        : kind === 'ajax' || kind === 'perseus'
+        ? 0.84
+        : kind === 'jason' || kind === 'theseus' || kind === 'odysseus' || kind === 'bellerophon' || kind === 'hero' || kind === 'hoplite' || kind === 'myrmidon'
         ? 0.92
-        : kind === 'cavalry'
+        : kind === 'cavalry' || kind === 'prodromos' || kind === 'pegasus'
         ? 0.96
-        : kind === 'archer'
-        ? 1.08
+        : kind === 'hippolyta' || kind === 'nymph' || kind === 'medusa' || kind === 'phoenix'
+        ? 1.12
+        : kind === 'archer' || kind === 'peltast' || kind === 'gastraphetes' || kind === 'satyr'
+        ? 1.06
         : 1.02;
 
     const baseFreq = profile.basePitch * kindPitchMult;
@@ -506,7 +556,16 @@ class SoundEngine {
         const f2Filter = ctx.createBiquadFilter();
         const gain = ctx.createGain();
 
-        osc.type = kind === 'titan' || kind === 'minotaur' || kind === 'cyclops' ? 'sawtooth' : 'triangle';
+        osc.type =
+          kind === 'titan' ||
+          kind === 'minotaur' ||
+          kind === 'cyclops' ||
+          kind === 'colossus' ||
+          kind === 'hydra' ||
+          kind === 'manticore' ||
+          kind === 'automaton'
+            ? 'sawtooth'
+            : 'triangle';
         osc.frequency.setValueAtTime(sylPitch, cursor);
         osc.frequency.exponentialRampToValueAtTime(
           sylPitch * (action === 'select' && i === syllables.length - 1 ? 1.12 : 0.94),

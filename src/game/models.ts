@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import { BuildingKind, FaunaKind, MapId, PANTHEONS, PantheonId, ResourceNodeKind, TeamId, UnitKind } from './types';
 import { createGreekUnitMesh } from '../civilizacao/gregos/gregosModels';
+import { createZeusMilitaryUnitMesh, ZeusMilitaryUnitKind } from '../civilizacao/gregos/zeusMilitaryModels';
+import { createZeusMythOrHeroMesh, ZeusMythOrHeroKind } from '../civilizacao/gregos/zeusMythAndHeroModels';
 import { createRiggedVillagerMesh } from '../civilizacao/gregos/villagerAnimator';
 import { buildCharybdisTitan, getCachedCaribdisTextures } from '../civilizacao/gregos/caribdisModel';
 import { buildTyphonTitan, getCachedTyphonTextures } from '../civilizacao/gregos/tifaoModel';
@@ -899,6 +901,87 @@ export function createBuildingMesh(
     return root;
   }
 
+  if (kind === 'archery_range') {
+    // Campo de Tiro (Archery Range): Pitched target pavilion + archery butts + arrow racks
+    addPart(new THREE.Mesh(new THREE.BoxGeometry(4.6, 0.36, 4.0), pal.stoneDark), 0, 0.18, 0);
+    addPart(new THREE.Mesh(new THREE.BoxGeometry(3.8, 1.9, 2.4), look.wallMat), 0, 1.3, -0.55);
+    addPart(new THREE.Mesh(new THREE.BoxGeometry(4.1, 0.25, 2.7), look.trimMat), 0, 2.35, -0.55);
+    const roof = new THREE.Mesh(new THREE.ConeGeometry(2.8, 1.45, 4), look.roofMat);
+    roof.rotation.y = Math.PI / 4;
+    addPart(roof, 0, 3.15, -0.55);
+    // Open front portico pillars
+    for (const px of [-1.6, 0, 1.6]) {
+      addPart(new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.14, 2.1, 8), look.wallMat), px, 1.3, 0.7);
+    }
+    // Dual circular straw/painted Archery Targets in front courtyard
+    for (const tx of [-1.15, 1.15]) {
+      addPart(new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.9, 0.12), pal.timber), tx, 0.75, 1.45);
+      const targetDisc = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.45, 0.14, 14), pal.ivory);
+      targetDisc.rotation.x = Math.PI / 2;
+      addPart(targetDisc, tx, 1.15, 1.52);
+      const bullseye = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.16, 12), pal.crimson);
+      bullseye.rotation.x = Math.PI / 2;
+      addPart(bullseye, tx, 1.15, 1.53);
+    }
+    // Banner standard
+    addPart(new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 2.2, 8), look.trimMat), 1.85, 2.9, 0.7);
+    addPart(new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.6, 0.08), teamMat), 2.35, 3.65, 0.7);
+
+    attachGroundMarkers(root, 2.6, pal, team);
+    attachHealthBar(root, 4.2, 2.5);
+    return root;
+  }
+
+  if (kind === 'stable') {
+    // Estábulo (Stable): Twin horse stalls + fenced paddock courtyard + hay bales
+    addPart(new THREE.Mesh(new THREE.BoxGeometry(4.8, 0.36, 4.4), pal.stoneDark), 0, 0.18, 0);
+    addPart(new THREE.Mesh(new THREE.BoxGeometry(4.2, 2.0, 2.6), look.wallMat), 0, 1.35, -0.65);
+    addPart(new THREE.Mesh(new THREE.BoxGeometry(4.5, 0.28, 2.9), look.trimMat), 0, 2.45, -0.65);
+    const roof = new THREE.Mesh(new THREE.ConeGeometry(3.2, 1.6, 4), look.roofMat);
+    roof.rotation.y = Math.PI / 4;
+    addPart(roof, 0, 3.3, -0.65);
+    // Stall archway dividers
+    for (const sx of [-1.4, 0, 1.4]) {
+      addPart(new THREE.Mesh(new THREE.BoxGeometry(0.22, 1.9, 0.3), pal.timber), sx, 1.3, 0.65);
+    }
+    // Fenced paddock rails
+    addPart(new THREE.Mesh(new THREE.BoxGeometry(4.4, 0.12, 0.12), pal.timber), 0, 0.85, 1.95);
+    addPart(new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, 1.4), pal.timber), -2.15, 0.85, 1.3);
+    addPart(new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, 1.4), pal.timber), 2.15, 0.85, 1.3);
+    // Hay bales & drinking trough
+    addPart(new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.55, 0.65), pal.goldOre), -1.35, 0.62, 1.35);
+    addPart(new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.36, 0.5), pal.stoneDark), 1.15, 0.52, 1.35);
+    addPart(new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.65, 0.08), teamMat), 0, 2.85, 0.72);
+
+    attachGroundMarkers(root, 2.8, pal, team);
+    attachHealthBar(root, 4.3, 2.6);
+    return root;
+  }
+
+  if (kind === 'siege_works') {
+    // Oficina de Cerco (Siege Works): Reinforced workshop + timber crane gantry + spare siege wheels
+    addPart(new THREE.Mesh(new THREE.BoxGeometry(5.0, 0.4, 4.6), pal.stoneDark), 0, 0.2, 0);
+    addPart(new THREE.Mesh(new THREE.BoxGeometry(3.4, 2.2, 3.0), look.wallMat), -0.55, 1.5, -0.45);
+    addPart(new THREE.Mesh(new THREE.BoxGeometry(3.7, 0.3, 3.3), look.trimMat), -0.55, 2.7, -0.45);
+    const roof = new THREE.Mesh(new THREE.ConeGeometry(2.6, 1.5, 4), look.roofMat);
+    roof.rotation.y = Math.PI / 4;
+    addPart(roof, -0.55, 3.55, -0.45);
+    // Siege Crane Gantry & Hanging Hook on right courtyard
+    addPart(new THREE.Mesh(new THREE.BoxGeometry(0.24, 3.8, 0.24), pal.timber), 1.65, 2.1, -0.35);
+    addPart(new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.22, 2.6), pal.timber), 1.65, 3.9, 0.45);
+    addPart(new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.4, 6), pal.steel), 1.65, 3.15, 1.45);
+    addPart(new THREE.Mesh(new THREE.DodecahedronGeometry(0.36, 0), pal.stoneDark), 1.65, 2.35, 1.45);
+    // Spare Siege Wheels & Team Standard
+    const spareWheel = new THREE.Mesh(new THREE.TorusGeometry(0.45, 0.08, 6, 14), pal.timber);
+    spareWheel.rotation.y = Math.PI / 4;
+    addPart(spareWheel, -1.65, 0.85, 1.55);
+    addPart(new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.72, 0.08), teamMat), -0.55, 3.1, 1.15);
+
+    attachGroundMarkers(root, 2.9, pal, team);
+    attachHealthBar(root, 4.5, 2.8);
+    return root;
+  }
+
   if (kind === 'fortress') {
     // MONUMENTAL CITADEL (AoM: The Titans 5x5 Footprint, 4 Towering Bastions, Height 8.2u)
     addPart(new THREE.Mesh(new THREE.BoxGeometry(6.4, 0.55, 6.4), pal.stoneDark), 0, 0.275, 0);
@@ -1345,7 +1428,7 @@ export function createUnitMesh(
     root.userData.rightArm = villagerMesh.userData.rightArm;
     attachGroundMarkers(root, 0.44, pal, team);
     attachHealthBar(root, 1.85, 1.0);
-  } else if (kind === 'hoplite' || kind === 'hipaspist') {
+  } else if (kind === 'hoplite' || kind === 'hipaspist' || kind === 'myrmidon') {
     const greekMesh = createGreekUnitMesh(kind, team, pal, enableShadows);
     root.add(greekMesh);
     root.userData.greekMesh = greekMesh;
@@ -1363,271 +1446,192 @@ export function createUnitMesh(
     root.userData.setArmorTier = (tier: 1 | 2 | 3 | 4) => {
       greekMesh.userData.setArmorTier?.(tier);
     };
+    root.userData.setCombatFury = (furyRatio: number) => {
+      greekMesh.userData.setCombatFury?.(furyRatio);
+    };
     root.userData.updateBrg = (dt: number, state: string) => {
       greekMesh.userData.updateBrg?.(dt, state);
     };
     root.userData.animatePose = greekMesh.userData.animatePose;
-    attachGroundMarkers(root, 0.48, pal, team);
-    attachHealthBar(root, 1.88, 1.05);
-  } else if (kind === 'archer') {
-    if (look.style === 'greek') {
-      // Archer G Toxotes Standard + Archer G Toxotes Head Standard (BANG 3-MTRL 3D procedural model)
-      const S = 0.40;
-      const Y_OFF = 0.20;
-      const tunicMat = team === 'player' ? pal.ivory : teamMat;
-      const helmMat = pal.gold;
-      const crestMat = pal.berryRed;
-      const crestBaseMat = pal.crimson;
-      const leatherMat = pal.furBrown;
+    attachGroundMarkers(root, kind === 'myrmidon' ? 0.52 : 0.48, pal, team);
+    attachHealthBar(root, kind === 'myrmidon' ? 1.95 : 1.88, 1.05);
+  } else if (
+    look.style === 'greek' &&
+    (kind === 'peltast' ||
+      kind === 'archer' ||
+      kind === 'gastraphetes' ||
+      kind === 'cavalry' ||
+      kind === 'prodromos' ||
+      kind === 'ram' ||
+      kind === 'siege')
+  ) {
+    const zeusMesh = createZeusMilitaryUnitMesh(kind as ZeusMilitaryUnitKind, team, pal, enableShadows, 3);
+    root.add(zeusMesh);
+    root.userData.leftLeg = zeusMesh.userData.leftLeg;
+    root.userData.rightLeg = zeusMesh.userData.rightLeg;
+    root.userData.leftArm = zeusMesh.userData.leftArm;
+    root.userData.rightArm = zeusMesh.userData.rightArm;
+    root.userData.animatePose = zeusMesh.userData.animatePose;
+    root.userData.setArmorTier = (tier: 1 | 2 | 3 | 4) => {
+      zeusMesh.userData.setArmorTier?.(tier);
+    };
+    const markerR =
+      kind === 'siege' || kind === 'ram'
+        ? 0.98
+        : kind === 'cavalry' || kind === 'prodromos'
+        ? 0.72
+        : 0.46;
+    const barY =
+      kind === 'cavalry' || kind === 'prodromos'
+        ? 2.55
+        : kind === 'siege' || kind === 'ram'
+        ? 2.35
+        : 1.92;
+    const barW =
+      kind === 'siege' || kind === 'ram'
+        ? 1.5
+        : kind === 'cavalry' || kind === 'prodromos'
+        ? 1.4
+        : 1.0;
+    attachGroundMarkers(root, markerR, pal, team);
+    attachHealthBar(root, barY, barW);
+  } else if (
+    kind === 'jason' ||
+    kind === 'odysseus' ||
+    kind === 'perseus' ||
+    kind === 'bellerophon' ||
+    kind === 'hippolyta' ||
+    kind === 'theseus' ||
+    kind === 'manticore' ||
+    kind === 'medusa' ||
+    kind === 'hydra' ||
+    kind === 'colossus' ||
+    kind === 'nymph' ||
+    kind === 'pegasus' ||
+    kind === 'satyr' ||
+    kind === 'automaton' ||
+    kind === 'iron_dwarf' ||
+    kind === 'phoenix' ||
+    (look.style === 'greek' && kind === 'cyclops')
+  ) {
+    const mythHeroMesh = createZeusMythOrHeroMesh(kind as ZeusMythOrHeroKind, team, pal, enableShadows);
+    root.add(mythHeroMesh);
+    root.userData.leftLeg = mythHeroMesh.userData.leftLeg;
+    root.userData.rightLeg = mythHeroMesh.userData.rightLeg;
+    root.userData.leftArm = mythHeroMesh.userData.leftArm;
+    root.userData.rightArm = mythHeroMesh.userData.rightArm;
+    root.userData.animatePose = mythHeroMesh.userData.animatePose;
 
-      const addBox = (
-        parent: THREE.Object3D,
-        mat: THREE.Material,
-        x: number,
-        y: number,
-        z: number,
-        w: number,
-        h: number,
-        d: number,
-        rx = 0,
-        ry = 0,
-        rz = 0,
-        px = 0,
-        py = 0,
-        pz = 0,
-      ) => {
-        const m = new THREE.Mesh(new THREE.BoxGeometry(w * S, h * S, d * S), mat);
-        m.position.set((x - px) * S, (y - py) * S + (parent === root ? Y_OFF : 0), (z - pz) * S);
-        if (rx || ry || rz) m.rotation.set(rx, ry, rz);
-        m.castShadow = true;
-        m.receiveShadow = true;
-        parent.add(m);
-        return m;
-      };
+    const markerR =
+      kind === 'colossus' || kind === 'cyclops' || kind === 'hydra'
+        ? 1.15
+        : kind === 'manticore' || kind === 'pegasus' || kind === 'bellerophon' || kind === 'phoenix'
+        ? 0.86
+        : kind === 'medusa' || kind === 'automaton'
+        ? 0.72
+        : 0.56;
+    const barY =
+      kind === 'colossus'
+        ? 3.7
+        : kind === 'cyclops'
+        ? 3.45
+        : kind === 'hydra' || kind === 'bellerophon' || kind === 'phoenix'
+        ? 2.85
+        : kind === 'manticore' || kind === 'pegasus'
+        ? 2.45
+        : 2.25;
+    const barW =
+      kind === 'colossus' || kind === 'cyclops' || kind === 'hydra'
+        ? 1.85
+        : kind === 'manticore' || kind === 'bellerophon' || kind === 'phoenix'
+        ? 1.45
+        : 1.25;
+    attachGroundMarkers(root, markerR, pal, team);
+    attachHealthBar(root, barY, barW);
+  } else if (kind === 'archer' || kind === 'peltast' || kind === 'gastraphetes') {
+    const leftLeg = part(geos.sculptedLimb, pal.furBrown, -0.11, 0.25, 0);
+    const rightLeg = part(geos.sculptedLimb, pal.furBrown, 0.11, 0.25, 0);
+    part(geos.humanTorso, look.style === 'egyptian' ? pal.ivory : teamMat, 0, 0.84, 0);
+    part(new THREE.CylinderGeometry(0.21, 0.23, 0.16, 10), teamMat, 0, 0.68, 0);
+    part(new THREE.SphereGeometry(0.18, 10, 8), pal.skin, 0, 1.34, 0);
+    part(geos.corinthianHelm, look.style === 'norse' ? pal.steel : look.style === 'atlantean' ? look.trimMat : teamMat, 0, 1.4, 0);
 
-      const addCylZ = (
-        parent: THREE.Object3D,
-        mat: THREE.Material,
-        x: number,
-        y: number,
-        z: number,
-        r: number,
-        h: number,
-        px = 0,
-        py = 0,
-        pz = 0,
-      ) => {
-        const m = new THREE.Mesh(new THREE.CylinderGeometry(r * S, r * S, h * S, 12), mat);
-        m.position.set((x - px) * S, (y - py) * S + (parent === root ? Y_OFF : 0), (z - pz) * S);
-        m.rotation.x = Math.PI / 2;
-        m.castShadow = true;
-        m.receiveShadow = true;
-        parent.add(m);
-        return m;
-      };
+    const leftArm = new THREE.Group();
+    leftArm.position.set(-0.26, 0.96, 0.12);
 
-      const addCylY = (
-        parent: THREE.Object3D,
-        mat: THREE.Material,
-        x: number,
-        y: number,
-        z: number,
-        r: number,
-        h: number,
-        rx = 0,
-      ) => {
-        const m = new THREE.Mesh(new THREE.CylinderGeometry(r * S, r * S * 0.85, h * S, 10), mat);
-        m.position.set(x * S, y * S + Y_OFF, z * S);
-        if (rx) m.rotation.x = rx;
-        m.castShadow = true;
-        m.receiveShadow = true;
-        parent.add(m);
-        return m;
-      };
-
-      // 1. Head & Helmet (Archer G Toxotes Head Standard)
-      addBox(root, pal.skin, 0, 2.32, 0, 0.52, 0.50, 0.48);
-      addBox(root, pal.skin, 0, 2.02, 0, 0.18, 0.18, 0.18);
-      addBox(root, helmMat, 0, 2.62, 0, 0.62, 0.32, 0.58);
-      addBox(root, helmMat, 0, 2.48, 0, 0.68, 0.09, 0.64);
-      addBox(root, helmMat, -0.30, 2.24, 0.08, 0.07, 0.30, 0.32);
-      addBox(root, helmMat, 0.30, 2.24, 0.08, 0.07, 0.30, 0.32);
-      addBox(root, helmMat, 0, 2.30, 0.28, 0.06, 0.20, 0.06);
-      addBox(root, crestBaseMat, 0, 2.82, 0, 0.10, 0.08, 0.78);
-      addBox(root, crestMat, 0, 3.02, 0, 0.06, 0.34, 0.88);
-
-      // 2. Torso, Tunic, Golden Chest Plate & Medallion, Belt, Skirt & Shoulder Pauldrons
-      addBox(root, tunicMat, 0, 1.55, 0, 0.92, 1.05, 0.56);
-      addBox(root, helmMat, 0, 1.72, 0.29, 0.56, 0.56, 0.06);
-      addCylZ(root, pal.bronze, 0, 1.72, 0.33, 0.16, 0.05);
-      addBox(root, leatherMat, 0, 1.08, 0, 0.96, 0.18, 0.60);
-      addBox(root, helmMat, 0, 1.08, 0.31, 0.16, 0.12, 0.04);
-      addBox(root, teamMat, 0, 0.68, 0, 0.98, 0.52, 0.62);
-      addBox(root, helmMat, 0, 0.46, 0, 1.00, 0.08, 0.64);
-      addBox(root, helmMat, -0.55, 1.96, 0, 0.28, 0.18, 0.52);
-      addBox(root, helmMat, 0.55, 1.96, 0, 0.28, 0.18, 0.52);
-
-      // 3. Legs & Leather Sandals in Archer Stance
-      const leftLeg = new THREE.Group();
-      const lHipX = -0.28, lHipY = 0.50, lHipZ = 0.08;
-      leftLeg.position.set(lHipX * S, lHipY * S + Y_OFF, lHipZ * S);
-      addBox(leftLeg, pal.skin, -0.28, 0.28, 0.28, 0.28, 0.58, 0.28, -0.55, 0, 0, lHipX, lHipY, lHipZ);
-      addBox(leftLeg, pal.skin, -0.28, -0.28, 0.48, 0.24, 0.58, 0.24, 0.25, 0, 0, lHipX, lHipY, lHipZ);
-      addBox(leftLeg, leatherMat, -0.28, -0.60, 0.60, 0.30, 0.10, 0.58, 0, 0, 0, lHipX, lHipY, lHipZ);
-      root.add(leftLeg);
-
-      const rightLeg = new THREE.Group();
-      const rHipX = 0.28, rHipY = 0.50, rHipZ = -0.08;
-      rightLeg.position.set(rHipX * S, rHipY * S + Y_OFF, rHipZ * S);
-      addBox(rightLeg, pal.skin, 0.28, 0.28, -0.22, 0.28, 0.58, 0.28, 0.45, 0, 0, rHipX, rHipY, rHipZ);
-      addBox(rightLeg, pal.skin, 0.28, -0.28, -0.38, 0.24, 0.58, 0.24, 0, 0, 0, rHipX, rHipY, rHipZ);
-      addBox(rightLeg, leatherMat, 0.28, -0.60, -0.48, 0.30, 0.10, 0.58, 0, 0, 0, rHipX, rHipY, rHipZ);
-      root.add(rightLeg);
-
-      // 4. Left Arm + Light Shield + 11-Segment Curved Longbow + Bowstring + Nocked Arrow
-      const leftArm = new THREE.Group();
-      const lShX = -0.62, lShY = 1.86, lShZ = 0.10;
-      leftArm.position.set(lShX * S, lShY * S + Y_OFF, lShZ * S);
-      addBox(leftArm, pal.skin, -0.62, 1.66, 0.28, 0.22, 0.52, 0.22, -0.9, 0, 0, lShX, lShY, lShZ);
-      addBox(leftArm, pal.skin, -0.62, 1.52, 0.68, 0.20, 0.48, 0.20, -1.35, 0, 0, lShX, lShY, lShZ);
-      addBox(leftArm, pal.skin, -0.62, 1.52, 0.94, 0.18, 0.18, 0.18, 0, 0, 0, lShX, lShY, lShZ);
-
-      // Light Shield strapped to Left Arm
-      addCylZ(leftArm, crestBaseMat, -0.62, 1.32, 0.52, 0.38, 0.08, lShX, lShY, lShZ);
-      addCylZ(leftArm, helmMat, -0.62, 1.32, 0.60, 0.10, 0.06, lShX, lShY, lShZ);
-      addBox(leftArm, helmMat, -0.62, 1.32, 0.58, 0.70, 0.06, 0.04, 0, 0, 0, lShX, lShY, lShZ);
-      addBox(leftArm, helmMat, -0.62, 1.32, 0.58, 0.06, 0.70, 0.04, 0, 0, 0, lShX, lShY, lShZ);
-
-      // 11-Segment Curved Wooden Longbow
-      for (let s = 0; s <= 10; s++) {
-        const p = -1 + s / 5;
-        const bx = -0.62 + Math.abs(p) * 0.24;
-        const by = 1.62 + p * 0.98;
-        const bz = 0.96 - Math.abs(p) * 0.10;
-        addBox(leftArm, pal.timber, bx, by, bz, 0.08, 0.24, 0.08, 0, 0, p * 0.28, lShX, lShY, lShZ);
-      }
-
-      // Drawn Bowstring
-      const strPts = [
-        new THREE.Vector3((-0.62 - lShX) * S, (2.60 - lShY) * S, (0.86 - lShZ) * S),
-        new THREE.Vector3((0.22 - lShX) * S, (1.88 - lShY) * S, (0.32 - lShZ) * S),
-        new THREE.Vector3((-0.62 - lShX) * S, (0.64 - lShY) * S, (1.06 - lShZ) * S),
-      ];
-      const strGeo = new THREE.BufferGeometry().setFromPoints(strPts);
-      const bowString = new THREE.Line(strGeo, new THREE.LineBasicMaterial({ color: 0xeae0c8 }));
-      leftArm.add(bowString);
-
-      // Nocked Arrow with Steel Tip & Red Fletching
-      addBox(leftArm, pal.ivory, -0.18, 1.74, 0.66, 0.045, 0.045, 1.15, 0.02, -0.38, 0, lShX, lShY, lShZ);
-      addBox(leftArm, pal.steel, -0.36, 1.73, 1.18, 0.05, 0.05, 0.18, 0.02, -0.38, 0, lShX, lShY, lShZ);
-      addBox(leftArm, crestMat, 0.06, 1.76, 0.26, 0.04, 0.15, 0.13, 0.02, -0.38, 0, lShX, lShY, lShZ);
+    if (look.style === 'norse') {
+      const hL = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.52, 6), pal.timber);
+      hL.rotation.x = Math.PI / 2.2;
+      hL.position.set(0, -0.05, 0.2);
+      const bL = new THREE.Mesh(geos.axeBlade, pal.steel);
+      bL.rotation.y = Math.PI / 2;
+      bL.scale.setScalar(0.65);
+      bL.position.set(0, 0.05, 0.36);
+      leftArm.add(hL, bL);
       root.add(leftArm);
 
-      // 5. Right Arm Drawing the Bowstring
       const rightArm = new THREE.Group();
-      const rShX = 0.62, rShY = 1.86, rShZ = 0.05;
-      rightArm.position.set(rShX * S, rShY * S + Y_OFF, rShZ * S);
-      addBox(rightArm, pal.skin, 0.62, 1.66, 0.05, 0.22, 0.52, 0.22, 0, 0, -0.35, rShX, rShY, rShZ);
-      addBox(rightArm, pal.skin, 0.48, 1.62, 0.32, 0.20, 0.46, 0.20, -1.0, 0, -0.35, rShX, rShY, rShZ);
-      addBox(rightArm, pal.skin, 0.22, 1.88, 0.32, 0.18, 0.16, 0.16, 0, 0, 0, rShX, rShY, rShZ);
+      rightArm.position.set(0.26, 0.96, 0.08);
+      const armR = new THREE.Mesh(geos.sculptedLimb, pal.skin);
+      armR.position.y = -0.14;
+      const hR = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.56, 6), pal.timber);
+      hR.rotation.x = Math.PI / 2.2;
+      hR.position.set(0, -0.05, 0.24);
+      const bR = new THREE.Mesh(geos.axeBlade, pal.steel);
+      bR.rotation.y = Math.PI / 2;
+      bR.scale.setScalar(0.65);
+      bR.position.set(0, 0.06, 0.42);
+      rightArm.add(armR, hR, bR);
       root.add(rightArm);
 
-      // 6. Back Quiver with 3 Arrows
-      addCylY(root, leatherMat, 0.42, 1.72, -0.48, 0.22, 0.72, 0.28);
-      addBox(root, pal.ivory, 0.34, 2.28, -0.52, 0.04, 0.52, 0.04);
-      addBox(root, pal.ivory, 0.46, 2.30, -0.50, 0.04, 0.52, 0.04);
-      addBox(root, pal.ivory, 0.42, 2.28, -0.58, 0.04, 0.52, 0.04);
-      addBox(root, crestMat, 0.40, 2.52, -0.52, 0.10, 0.08, 0.10);
+      root.userData.leftLeg = leftLeg;
+      root.userData.rightLeg = rightLeg;
+      root.userData.leftArm = leftArm;
+      root.userData.rightArm = rightArm;
+    } else if (look.style === 'egyptian') {
+      const armL = new THREE.Mesh(geos.sculptedLimb, pal.skin);
+      armL.position.y = -0.14;
+      leftArm.add(armL);
+      root.add(leftArm);
+
+      const rightArm = new THREE.Group();
+      rightArm.position.set(0.26, 0.98, 0.08);
+      const armR = new THREE.Mesh(geos.sculptedLimb, pal.skin);
+      armR.position.y = -0.14;
+      const slingRing = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.024, 6, 12), pal.furBrown);
+      slingRing.position.set(0, 0.14, 0.26);
+      const stone = new THREE.Mesh(new THREE.SphereGeometry(0.08, 6, 6), pal.gold);
+      stone.position.set(0, 0.34, 0.26);
+      rightArm.add(armR, slingRing, stone);
+      root.add(rightArm);
 
       root.userData.leftLeg = leftLeg;
       root.userData.rightLeg = rightLeg;
       root.userData.leftArm = leftArm;
       root.userData.rightArm = rightArm;
     } else {
-      const leftLeg = part(geos.sculptedLimb, pal.furBrown, -0.11, 0.25, 0);
-      const rightLeg = part(geos.sculptedLimb, pal.furBrown, 0.11, 0.25, 0);
-      part(geos.humanTorso, look.style === 'egyptian' ? pal.ivory : teamMat, 0, 0.84, 0);
-      part(new THREE.CylinderGeometry(0.21, 0.23, 0.16, 10), teamMat, 0, 0.68, 0);
-      part(new THREE.SphereGeometry(0.18, 10, 8), pal.skin, 0, 1.34, 0);
-      part(geos.corinthianHelm, look.style === 'norse' ? pal.steel : look.style === 'atlantean' ? look.trimMat : teamMat, 0, 1.4, 0);
+      const quiver = part(new THREE.CylinderGeometry(0.08, 0.07, 0.55, 6), pal.timber, -0.12, 0.96, -0.24);
+      quiver.rotation.z = 0.25;
+      const armL = new THREE.Mesh(geos.sculptedLimb, pal.skin);
+      armL.position.y = -0.14;
+      const bow = new THREE.Mesh(geos.compoundBow, look.style === 'atlantean' ? look.trimMat : pal.timber);
+      bow.position.set(0.02, 0.02, 0.22);
+      const arrowShaft = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.65, 5), pal.ivory);
+      arrowShaft.rotation.x = Math.PI / 2;
+      arrowShaft.position.set(0.02, 0.02, 0.28);
+      leftArm.add(armL, bow, arrowShaft);
+      root.add(leftArm);
 
-      const leftArm = new THREE.Group();
-      leftArm.position.set(-0.26, 0.96, 0.12);
-
-      if (look.style === 'norse') {
-        const hL = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.52, 6), pal.timber);
-        hL.rotation.x = Math.PI / 2.2;
-        hL.position.set(0, -0.05, 0.2);
-        const bL = new THREE.Mesh(geos.axeBlade, pal.steel);
-        bL.rotation.y = Math.PI / 2;
-        bL.scale.setScalar(0.65);
-        bL.position.set(0, 0.05, 0.36);
-        leftArm.add(hL, bL);
-        root.add(leftArm);
-
-        const rightArm = new THREE.Group();
-        rightArm.position.set(0.26, 0.96, 0.08);
-        const armR = new THREE.Mesh(geos.sculptedLimb, pal.skin);
-        armR.position.y = -0.14;
-        const hR = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.56, 6), pal.timber);
-        hR.rotation.x = Math.PI / 2.2;
-        hR.position.set(0, -0.05, 0.24);
-        const bR = new THREE.Mesh(geos.axeBlade, pal.steel);
-        bR.rotation.y = Math.PI / 2;
-        bR.scale.setScalar(0.65);
-        bR.position.set(0, 0.06, 0.42);
-        rightArm.add(armR, hR, bR);
-        root.add(rightArm);
-
-        root.userData.leftLeg = leftLeg;
-        root.userData.rightLeg = rightLeg;
-        root.userData.leftArm = leftArm;
-        root.userData.rightArm = rightArm;
-      } else if (look.style === 'egyptian') {
-        const armL = new THREE.Mesh(geos.sculptedLimb, pal.skin);
-        armL.position.y = -0.14;
-        leftArm.add(armL);
-        root.add(leftArm);
-
-        const rightArm = new THREE.Group();
-        rightArm.position.set(0.26, 0.98, 0.08);
-        const armR = new THREE.Mesh(geos.sculptedLimb, pal.skin);
-        armR.position.y = -0.14;
-        const slingRing = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.024, 6, 12), pal.furBrown);
-        slingRing.position.set(0, 0.14, 0.26);
-        const stone = new THREE.Mesh(new THREE.SphereGeometry(0.08, 6, 6), pal.gold);
-        stone.position.set(0, 0.34, 0.26);
-        rightArm.add(armR, slingRing, stone);
-        root.add(rightArm);
-
-        root.userData.leftLeg = leftLeg;
-        root.userData.rightLeg = rightLeg;
-        root.userData.leftArm = leftArm;
-        root.userData.rightArm = rightArm;
-      } else {
-        const quiver = part(new THREE.CylinderGeometry(0.08, 0.07, 0.55, 6), pal.timber, -0.12, 0.96, -0.24);
-        quiver.rotation.z = 0.25;
-        const armL = new THREE.Mesh(geos.sculptedLimb, pal.skin);
-        armL.position.y = -0.14;
-        const bow = new THREE.Mesh(geos.compoundBow, look.style === 'atlantean' ? look.trimMat : pal.timber);
-        bow.position.set(0.02, 0.02, 0.22);
-        const arrowShaft = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.65, 5), pal.ivory);
-        arrowShaft.rotation.x = Math.PI / 2;
-        arrowShaft.position.set(0.02, 0.02, 0.28);
-        leftArm.add(armL, bow, arrowShaft);
-        root.add(leftArm);
-
-        const rightArm = part(geos.sculptedLimb, pal.skin, 0.26, 0.88, 0.08);
-        root.userData.leftLeg = leftLeg;
-        root.userData.rightLeg = rightLeg;
-        root.userData.leftArm = leftArm;
-        root.userData.rightArm = rightArm;
-      }
+      const rightArm = part(geos.sculptedLimb, pal.skin, 0.26, 0.88, 0.08);
+      root.userData.leftLeg = leftLeg;
+      root.userData.rightLeg = rightLeg;
+      root.userData.leftArm = leftArm;
+      root.userData.rightArm = rightArm;
     }
 
     attachGroundMarkers(root, 0.45, pal, team);
     attachHealthBar(root, 1.88, 1.0);
-  } else if (kind === 'cavalry') {
+  } else if (kind === 'cavalry' || kind === 'prodromos') {
     // Sculpted Mount (Horse / Camel) + Armored Rider with Lance & Cape
     part(geos.horseBarrel, look.mountMat, 0, 0.94, 0);
     if (look.style === 'egyptian') {
@@ -1654,12 +1658,12 @@ export function createUnitMesh(
 
     const rightArm = new THREE.Group();
     rightArm.position.set(0.3, 1.58, 0);
-    const lance = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.04, 2.0, 6), pal.timber);
+    const lance = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.04, kind === 'prodromos' ? 2.4 : 2.0, 6), pal.timber);
     lance.rotation.x = Math.PI / 2.2;
     lance.position.set(0, -0.05, 0.55);
     const tip = new THREE.Mesh(new THREE.ConeGeometry(0.07, 0.32, 6), pal.steel);
     tip.rotation.x = Math.PI / 2.2;
-    tip.position.set(0, 0.12, 1.52);
+    tip.position.set(0, 0.12, kind === 'prodromos' ? 1.72 : 1.52);
     rightArm.add(lance, tip);
     root.add(rightArm);
 
@@ -1872,7 +1876,7 @@ export function createUnitMesh(
     root.userData.rightArm = rightArm;
     attachGroundMarkers(root, 0.56, pal, team);
     attachHealthBar(root, 2.25, 1.35);
-  } else if (kind === 'siege') {
+  } else if (kind === 'siege' || kind === 'ram') {
     // 4-Wheeled Siege Catapult / Onager with Torsion Bar, Throwing Arm & Boulder
     const chassis = part(new THREE.BoxGeometry(1.15, 0.28, 1.75), pal.timber, 0, 0.48, 0);
     part(new THREE.BoxGeometry(1.25, 0.18, 0.35), look.trimMat, 0, 0.65, 0.45);

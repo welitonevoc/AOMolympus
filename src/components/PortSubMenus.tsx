@@ -551,7 +551,7 @@ export function PortSubMenus({
               <div className="mt-2 rounded border border-white/10 bg-[#0e121a] px-2.5 py-1.5 text-[11px] text-[#cbd5e1]">
                 <span className="font-semibold text-[#f3d27a]">{currentPantheon.architectureLabel}: </span>
                 <span>
-                  {(['hoplite', 'archer', 'cavalry', 'hero', 'minotaur', 'cyclops'] as UnitKind[])
+                  {(['hoplite', 'hipaspist', 'myrmidon', 'peltast', 'archer', 'gastraphetes', 'cavalry', 'prodromos', 'ram', 'siege', 'jason', 'odysseus', 'perseus', 'bellerophon', 'hippolyta', 'ajax', 'theseus', 'cyclops', 'minotaur', 'centaur', 'manticore', 'hydra', 'colossus', 'medusa', 'phoenix'] as UnitKind[])
                     .map((k) => getCivUnitSpec(skirmish.pantheon, k).name)
                     .join(' · ')}
                 </span>
@@ -1080,7 +1080,7 @@ export function PortSubMenus({
                 }}
                 className="flex h-11 items-center justify-between rounded border border-white/15 bg-[#1b1610] px-4 text-sm font-semibold cursor-pointer"
               >
-                <span className="text-[#e6dfd1]">Textura UV do Hoplita (map_01..04)</span>
+                <span className="text-[#e6dfd1]">Armadura &amp; UV Infantaria Grega (T1–T4)</span>
                 <span className="text-[#f3d27a]">
                   {options.hopliteArmorTier === 1
                     ? 'Tier 1: Padrão (map_01)'
@@ -2002,14 +2002,62 @@ export function PortSubMenus({
 
   // ── 12. UI_HISTORY & UI_TECHTREE ──
   if (menuState === 'UI_HISTORY' || menuState === 'UI_TECHTREE') {
-    const unitKinds: UnitKind[] = ['villager', 'hoplite', 'archer', 'cavalry', 'hero', 'siege', 'minotaur', 'centaur', 'cyclops', 'titan'];
-    const buildingKinds: BuildingKind[] = ['town_center', 'house', 'farm', 'barracks', 'armory', 'market', 'temple', 'tower', 'fortress', 'titan_gate'];
+    const unitKinds: UnitKind[] = [
+      'villager',
+      'hoplite',
+      'hipaspist',
+      'myrmidon',
+      'peltast',
+      'archer',
+      'gastraphetes',
+      'cavalry',
+      'prodromos',
+      'jason',
+      'ajax',
+      'odysseus',
+      'hippolyta',
+      'theseus',
+      'perseus',
+      'bellerophon',
+      'hero',
+      'ram',
+      'siege',
+      'cyclops',
+      'minotaur',
+      'centaur',
+      'nymph',
+      'pegasus',
+      'manticore',
+      'hydra',
+      'satyr',
+      'phoenix',
+      'colossus',
+      'automaton',
+      'iron_dwarf',
+      'medusa',
+      'titan',
+    ];
+    const buildingKinds: BuildingKind[] = [
+      'town_center',
+      'house',
+      'farm',
+      'barracks',
+      'archery_range',
+      'stable',
+      'siege_works',
+      'armory',
+      'market',
+      'temple',
+      'tower',
+      'fortress',
+      'titan_gate',
+    ];
     const techList = Object.values(TECH_SPECS);
     return (
       <div className="flex flex-col gap-4">
         {renderPanelHeader(
           menuState === 'UI_TECHTREE' ? 'ÁRVORE TECNOLÓGICA' : 'HISTÓRIA E MITOLOGIA',
-          '13 Panteões, 10 Edificações, 10 Tropas e 14 Tecnologias (uitechtree)',
+          '13 Panteões, 13 Edificações, 16 Tropas e 18 Tecnologias (uitechtree)',
           'SUB_MORE'
         )}
 

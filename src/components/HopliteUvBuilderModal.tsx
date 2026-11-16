@@ -283,28 +283,96 @@ export function getUnitsForCivAndGod(civ: PantheonId, majorGod: string): CivEnti
       },
       {
         id: 'hoplite',
-        name: isZeus ? 'Hoplita de Zeus' : isPoseidon ? 'Hoplita do Tridente' : 'Hoplita do Tártaro',
-        role: isZeus ? 'Infantaria pesada consagrada ao deus dos raios' : isPoseidon ? 'Guerreiro costeiro com bênção das marés' : 'Guarda fúnebre com armadura de bronze escuro',
+        name: isZeus ? '🛡️ Hoplita de Zeus (T1–T4)' : isPoseidon ? 'Hoplita do Tridente (T1–T4)' : 'Hoplita do Tártaro (T1–T4)',
+        role: isZeus
+          ? 'Espinha dorsal da falange — Lança Dory, Hoplon (Λ) e Elmo Coríntio. Bônus de Zeus em HP e Dano (+20%)'
+          : isPoseidon
+          ? 'Guerreiro costeiro com bênção das marés e falange pesada'
+          : 'Guarda fúnebre com armadura de bronze escuro',
       },
       {
         id: 'hipaspist',
-        name: isZeus ? 'Hipaspista Celestial' : isPoseidon ? 'Hipaspista das Ondas' : 'Hipaspista das Sombras',
-        role: 'Infantaria de choque ágil com velocidade e vestes temáticas',
+        name: isZeus ? '⚔️ Hipaspista de Zeus (T1–T4)' : isPoseidon ? 'Hipaspista das Ondas (T1–T4)' : 'Hipaspista das Sombras (T1–T4)',
+        role: 'Infantaria leve anti-infantaria — Espada curva Kopis, Escudo Áspis estrelado e elmo alado',
+      },
+      ...(isZeus
+        ? [
+            {
+              id: 'myrmidon' as UnitKind,
+              name: '⚡ Mirmidão de Zeus (Era Mítica · T1–T4)',
+              role: 'Infantaria de elite exclusiva de Zeus — ganha velocidade (+35%) e ataque (+40%) à medida que combate',
+            },
+          ]
+        : []),
+      {
+        id: 'peltast',
+        name: isZeus ? '🏹 Peltasta de Zeus (T1–T4)' : isPoseidon ? 'Peltasta das Marés (T1–T4)' : 'Peltasta Sombrio (T1–T4)',
+        role: 'Escaramuçador ágil — Escudo Pelta em meia-lua, dardos leves, bônus vs Infantaria & Arqueiros',
       },
       {
         id: 'archer',
-        name: isZeus ? 'Toxotes da Tempestade' : isPoseidon ? 'Toxotes da Correnteza' : 'Toxotes das Sombras',
-        role: 'Arqueiro de precisão disparando flechas consagradas',
+        name: isZeus ? '🏹 Toxota de Zeus (T1–T4)' : isPoseidon ? 'Toxota da Correnteza (T1–T4)' : 'Toxota das Sombras (T1–T4)',
+        role: 'Arqueiro grego clássico de longo alcance — Arco recurvo composto e aljava, forte vs Infantaria & Míticos',
+      },
+      {
+        id: 'gastraphetes',
+        name: isZeus ? '🎯 Fundibulário / Gastraphetes (Apolo · T1–T4)' : 'Fundibulário / Gastraphetes (T1–T4)',
+        role: 'Besteiro pesado grego (requer Deus Menor Apolo) — Besta de barriga de longo alcance e alto dano perfurante',
       },
       {
         id: 'cavalry',
-        name: isZeus ? 'Pródromo de Zeus' : isPoseidon ? 'Hetaireia de Poseidon' : 'Pródromo Espectral',
-        role: isPoseidon ? 'Cavalaria de elite com bônus a cavalos e estábulos' : 'Cavalaria de reconhecimento veloz',
+        name: isZeus ? '🐎 Hippo / Hippikon de Zeus (T1–T4)' : isPoseidon ? 'Hetaireia de Poseidon (T1–T4)' : 'Hippikon Espectral (T1–T4)',
+        role: 'Cavalaria pesada rápida — Forte vs Arqueiros & Cerco, ataque de atropelamento (Hit-and-Run)',
       },
       {
-        id: 'hero',
-        name: isZeus ? 'Herói (Jasão / Hércules)' : isPoseidon ? 'Herói (Teseu / Atalanta)' : 'Herói (Aquiles / Perseu)',
-        role: 'Líder semideus lendário abençoado com proezas heroicas',
+        id: 'prodromos',
+        name: isZeus ? '🐎 Pródromo de Zeus (T1–T4)' : isPoseidon ? 'Pródromo das Ondas (T1–T4)' : 'Pródromo das Sombras (T1–T4)',
+        role: 'Cavalaria leve veloz anti-cavalaria (+110% dano vs Cavalaria) — Lança longa Kontos e elmo beócio',
+      },
+      {
+        id: 'ram',
+        name: '🪵 Aríete Coberto de Cerco',
+        role: 'Máquina mecânica de cerco blindada — Ariete de bronze contra edifícios e muralhas (84% armadura perfurante)',
+      },
+      {
+        id: 'siege',
+        name: '🪨 Catapulta Helepolis',
+        role: 'Artilharia pesada de torção — Lança rochas flamejantes de longo alcance com dano em área contra construções e tropas',
+      },
+      {
+        id: 'jason',
+        name: '⚔️ Jasão (Herói Padrão de Zeus)',
+        role: 'Líder dos Argonautas com Velocino de Ouro — Herói inicial de Zeus, 3.5x vs Míticas e coleta Relíquias',
+      },
+      {
+        id: 'ajax',
+        name: '🛡️ Ajax de Salamina (Herói Tanque)',
+        role: 'Escudo Torre de 7 camadas e Lança Dory colossal — extrema resistência frontal (3.5x vs Míticas)',
+      },
+      {
+        id: 'odysseus',
+        name: '🏹 Ulisses / Odysseus (Herói Arqueiro)',
+        role: 'Rei de Ítaca com Arco Recurvo letal à distância contra Unidades Míticas (3.6x vs Míticas)',
+      },
+      {
+        id: 'hippolyta',
+        name: '🏹 Hipólita (Heroína Amazona)',
+        role: 'Rainha Amazona ágil focada em ataques rápidos à distância (3.4x vs Míticas)',
+      },
+      {
+        id: 'theseus',
+        name: '🛡️ Teseu de Atenas (Herói Tático)',
+        role: 'Especialista em combate tático com Lança Dory e Hoplon (3.4x vs Míticas)',
+      },
+      {
+        id: 'perseus',
+        name: '⚔️ Perseu (Herói Matador de Górgonas)',
+        role: 'Excelente corpo a corpo com espada curva Harpê e Escudo Espelho da Égide (3.8x vs Míticas)',
+      },
+      {
+        id: 'bellerophon',
+        name: '🪽 Belerofonte em Pégaso (Herói Alado)',
+        role: 'Altamente móvel montado em Pégaso com investida aérea devastadora (3.6x vs Míticas)',
       },
       {
         id: 'villager',
@@ -312,9 +380,69 @@ export function getUnitsForCivAndGod(civ: PantheonId, majorGod: string): CivEnti
         role: isHades ? 'Econômico com bônus de extração de ouro e pedras' : 'Unidade econômica de coleta e construção',
       },
       {
+        id: 'cyclops',
+        name: '👁️ Ciclope (Exclusivo de Zeus · Templo)',
+        role: 'Monstro colossal de Zeus — dano massivo em área e agarra inimigos humanos arremessando-os longe!',
+      },
+      {
         id: 'minotaur',
-        name: isZeus ? 'Minotauro de Creta' : isPoseidon ? 'Centauro das Marés' : 'Cérbero Guardião',
-        role: 'Criatura mítica feroz de dano esmagador',
+        name: '🐂 Minotauro de Creta (Atena/Ares)',
+        role: 'Criatura mítica feroz com machado Labrys e dano esmagador em área',
+      },
+      {
+        id: 'centaur',
+        name: '🏹 Centauro (Hermes)',
+        role: 'Arqueiro mítico de alta velocidade e grande alcance',
+      },
+      {
+        id: 'nymph',
+        name: '🌿 Ninfa / Dríade (Atena/Afrodite)',
+        role: 'Espírito da natureza ágil com ataques mágicos à média distância',
+      },
+      {
+        id: 'pegasus',
+        name: '🪽 Pégaso (Hermes)',
+        role: 'Corcel alado sagrado — batedor voador extremamente veloz com visão ampliada',
+      },
+      {
+        id: 'manticore',
+        name: '🦂 Mantícora (Apolo/Ártemis)',
+        role: 'Leão alado com cauda de escorpião que dispara rajadas de espinhos em área',
+      },
+      {
+        id: 'hydra',
+        name: '🐉 Hidra (Dionísio)',
+        role: 'Monstro de cinco cabeças com regeneração contínua e fúria crescente em combate',
+      },
+      {
+        id: 'satyr',
+        name: '🪵 Sátiro (Dionísio)',
+        role: 'Escaramuçador silvestre ágil que arremessa dardos letais contra infantaria',
+      },
+      {
+        id: 'phoenix',
+        name: '🔥 Fênix (Apolo)',
+        role: 'Ave imortal flamejante que lança orbes de fogo com dano em área',
+      },
+      {
+        id: 'colossus',
+        name: '🗿 Colosso de Bronze (Hefesto)',
+        role: 'Gigante de bronze forjado — armadura colossal, autorreparo e demolição de edifícios',
+      },
+      {
+        id: 'automaton',
+        name: '⚙️ Autômato (Hefesto)',
+        role: 'Constructo mecânico de bronze com engrenagem dorsal e autorreparo contínuo',
+      },
+      {
+        id: 'iron_dwarf',
+        name: '🔨 Anão de Ferro (Hefesto)',
+        role: 'Guerreiro ferreiro blindado com martelo pesado anti-construções',
+      },
+      {
+        id: 'medusa',
+        name: '🐍 Medusa (Hera/Ártemis)',
+        role: 'Górgona com flechas petrificantes que congelam inimigos no lugar',
       },
       {
         id: 'titan',
@@ -457,7 +585,10 @@ export function getBuildingsForCivAndGod(civ: PantheonId, majorGod: string): { i
   const god = majorGod || 'Zeus';
   return [
     { id: 'town_center', name: `Centro da Cidade (${god})`, role: `Sede principal consagrada a ${god} — treina aldeões e avança eras` },
-    { id: 'barracks', name: `Quartel de ${god}`, role: `Treina e equipa soldados sob a bênção marcial de ${god}` },
+    { id: 'barracks', name: `Quartel de ${god}`, role: `Treina infantaria (Hoplita, Hipaspista${civ === 'greek' && god.toLowerCase().includes('zeus') ? ', Mirmidão' : ''}) sob a bênção de ${god}` },
+    { id: 'archery_range', name: `Campo de Tiro (${god})`, role: `Treina Peltasta, Toxota e Fundibulário/Gastraphetes com precisão militar` },
+    { id: 'stable', name: `Estábulo de ${god}`, role: `Treina Hippikon (cavalaria pesada) e Pródromo (cavalaria leve anti-cavalaria)` },
+    { id: 'siege_works', name: `Oficina de Cerco (${god})`, role: `Constrói Aríetes cobertos e Catapultas Helepolis para destruir fortificações` },
     { id: 'armory', name: `Arsenal Divino de ${god}`, role: `Forja armas e armaduras aprimoradas com tecnologias de ${god}` },
     { id: 'temple', name: `Templo Sagrado de ${god}`, role: `Gera Favor divino e treina criaturas míticas devotas a ${god}` },
     { id: 'fortress', name: `Fortaleza de ${god}`, role: `Bastião de defesa impenetrável e armas de cerco sob a proteção de ${god}` },
@@ -499,6 +630,9 @@ export function HopliteUvBuilderModal({
   const [atenaMode, setAtenaMode] = useState<'guardia' | 'avanco' | 'egide' | 'furia'>('guardia');
   const [hermesMode, setHermesMode] = useState<'flutuar' | 'velocidade' | 'rajada' | 'relampago'>('flutuar');
   const [focusDivine, setFocusDivine] = useState(false);
+  const [myrmidonFury, setMyrmidonFury] = useState(true);
+  const myrmidonFuryRef = useRef(myrmidonFury);
+  myrmidonFuryRef.current = myrmidonFury;
 
   const animStateRef = useRef(animState);
   animStateRef.current = animState;
@@ -556,6 +690,12 @@ export function HopliteUvBuilderModal({
     setZoomLevel(1.0);
     setFocusDivine(false);
   }, [entityType, selectedUnit, selectedBuilding, selectedCiv, selectedMajorGod]);
+
+  useEffect(() => {
+    if (selectedUnit === 'myrmidon' && entityMeshRef.current) {
+      entityMeshRef.current.userData.setCombatFury?.(myrmidonFury ? 1.0 : 0.0);
+    }
+  }, [myrmidonFury, selectedUnit, activeTier]);
 
   useEffect(() => {
     if (!isOpen || !mount3DRef.current) return;
@@ -1689,7 +1829,7 @@ export function HopliteUvBuilderModal({
             const m = hermesModeRef.current;
             animateHermes(hermes, dt, simTime, m);
           };
-        } else if (selectedUnit === 'hoplite' || selectedUnit === 'hipaspist') {
+        } else if (selectedUnit === 'hoplite' || selectedUnit === 'hipaspist' || selectedUnit === 'myrmidon') {
           // ===============================
           // CENÁRIO PADRÃO (PEDESTAL)
           // ===============================
@@ -1713,6 +1853,9 @@ export function HopliteUvBuilderModal({
           group = createGreekUnitMesh(selectedUnit, 'player', pal, true, activeTier);
           group.userData.setArmorTier?.(activeTier);
           group.userData.setMode?.('3d');
+          if (selectedUnit === 'myrmidon') {
+            group.userData.setCombatFury?.(myrmidonFuryRef.current ? 1.0 : 0.0);
+          }
         } else {
           scene.background = defaultBg.clone();
           scene.fog = null;
@@ -1732,6 +1875,8 @@ export function HopliteUvBuilderModal({
           environmentGroup.add(ring);
 
           group = createUnitMesh(selectedUnit as UnitKind, 'player', pal, true, selectedCiv, selectedMajorGod);
+          group.userData.setArmorTier?.(activeTier);
+          group.userData.setMode?.('3d');
           if (selectedUnit === 'titan') {
             group.scale.setScalar(0.48);
             group.position.y = -0.05;
@@ -2101,8 +2246,18 @@ export function HopliteUvBuilderModal({
       } else {
         const isBuilding = entityType === 'building';
         const isTitan = selectedUnit === 'titan';
-        const baseDist = isBuilding ? 8.5 : isTitan ? 10.5 : 4.8;
-        const baseHeight = isBuilding ? 1.6 : isTitan ? 2.8 : 1.1;
+        const isGiantMyth = selectedUnit === 'cyclops' || selectedUnit === 'colossus' || selectedUnit === 'hydra';
+        const isMountedOrSiege =
+          selectedUnit === 'cavalry' ||
+          selectedUnit === 'prodromos' ||
+          selectedUnit === 'bellerophon' ||
+          selectedUnit === 'pegasus' ||
+          selectedUnit === 'manticore' ||
+          selectedUnit === 'phoenix' ||
+          selectedUnit === 'ram' ||
+          selectedUnit === 'siege';
+        const baseDist = isBuilding ? 8.5 : isTitan ? 10.5 : isGiantMyth ? 6.8 : isMountedOrSiege ? 6.0 : 4.8;
+        const baseHeight = isBuilding ? 1.6 : isTitan ? 2.8 : isGiantMyth ? 1.75 : isMountedOrSiege ? 1.3 : 1.1;
         const dist = baseDist / zoomRef.current;
         const height = baseHeight * (1 + (1 - zoomRef.current) * 0.2);
 
@@ -2284,11 +2439,37 @@ export function HopliteUvBuilderModal({
                   ))}
             </div>
 
-            {/* Nível de Armadura e Textura UV do Hoplita (se grego e hoplita) */}
-            {entityType === 'unit' && selectedUnit === 'hoplite' && selectedCiv === 'greek' && (
+            {/* Nível de Armadura e Textura UV dos Guerreiros Gregos (T1–T4) */}
+            {entityType === 'unit' &&
+              (selectedUnit === 'hoplite' ||
+                selectedUnit === 'hipaspist' ||
+                selectedUnit === 'myrmidon' ||
+                selectedUnit === 'peltast' ||
+                selectedUnit === 'archer' ||
+                selectedUnit === 'gastraphetes' ||
+                selectedUnit === 'cavalry' ||
+                selectedUnit === 'prodromos') &&
+              selectedCiv === 'greek' && (
               <div className="flex flex-col gap-2.5 rounded-xl border border-amber-600/40 bg-stone-950/80 p-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-amber-400">🛡️ Tiers de Armadura do Hoplita</span>
+                  <span className="text-xs font-bold text-amber-400">
+                    🛡️ Tiers T1–T4 —{' '}
+                    {selectedUnit === 'myrmidon'
+                      ? 'Mirmidão'
+                      : selectedUnit === 'hipaspist'
+                      ? 'Hipaspista'
+                      : selectedUnit === 'peltast'
+                      ? 'Peltasta'
+                      : selectedUnit === 'archer'
+                      ? 'Toxota'
+                      : selectedUnit === 'gastraphetes'
+                      ? 'Gastraphetes'
+                      : selectedUnit === 'cavalry'
+                      ? 'Hippikon'
+                      : selectedUnit === 'prodromos'
+                      ? 'Pródromo'
+                      : 'Hoplita'}
+                  </span>
                   <span className="text-[10px] font-mono text-amber-300/80 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20">
                     {AOM_HOPLITE_UV_TIERS[activeTier as HopliteArmorTier]?.id ?? 'map_03'}
                   </span>
@@ -3132,6 +3313,20 @@ export function HopliteUvBuilderModal({
                     <Swords className="h-3.5 w-3.5" />
                     <span>Ataque</span>
                   </button>
+                  {selectedUnit === 'myrmidon' && selectedCiv === 'greek' && (
+                    <button
+                      type="button"
+                      onClick={() => setMyrmidonFury((v) => !v)}
+                      className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                        myrmidonFury
+                          ? 'bg-sky-500 text-slate-950 shadow-md shadow-sky-500/30'
+                          : 'border border-sky-400/30 text-sky-200 hover:bg-sky-400/20'
+                      }`}
+                    >
+                      <Zap className="h-3.5 w-3.5" />
+                      <span>{myrmidonFury ? 'Fúria de Zeus: ON' : 'Fúria de Zeus: OFF'}</span>
+                    </button>
+                  )}
                   <div className="h-5 w-[1px] bg-white/15 mx-1" />
                 </>
               ) : null}

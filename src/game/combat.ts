@@ -57,6 +57,7 @@ export class CombatManager {
       kind: string;
       isBuilding?: boolean;
       isMythic?: boolean;
+      isSiege?: boolean;
       hackArmor?: number;
       pierceArmor?: number;
       crushArmor?: number;
@@ -79,14 +80,17 @@ export class CombatManager {
     if (target.isMythic && attackerStats.bonusVsMyth) {
       finalDmg *= attackerStats.bonusVsMyth;
     }
-    if (target.kind === 'cavalry' && attackerStats.bonusVsCavalry) {
+    if ((target.kind === 'cavalry' || target.kind === 'prodromos') && attackerStats.bonusVsCavalry) {
       finalDmg *= attackerStats.bonusVsCavalry;
     }
-    if ((target.kind === 'hoplite' || target.kind === 'hipaspist' || target.kind === 'villager') && attackerStats.bonusVsInfantry) {
+    if ((target.kind === 'hoplite' || target.kind === 'hipaspist' || target.kind === 'myrmidon' || target.kind === 'villager') && attackerStats.bonusVsInfantry) {
       finalDmg *= attackerStats.bonusVsInfantry;
     }
-    if (target.kind === 'archer' && attackerStats.bonusVsArcher) {
+    if ((target.kind === 'archer' || target.kind === 'peltast' || target.kind === 'gastraphetes') && attackerStats.bonusVsArcher) {
       finalDmg *= attackerStats.bonusVsArcher;
+    }
+    if ((target.isSiege || target.kind === 'siege' || target.kind === 'ram') && attackerStats.bonusVsSiege) {
+      finalDmg *= attackerStats.bonusVsSiege;
     }
 
     return Math.max(1, Math.round(finalDmg));

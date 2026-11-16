@@ -525,15 +525,15 @@ export const TECH_SPECS: Record<TechId, TechSpec> = {
 
 export const MINOR_GODS: Record<string, MinorGodSpec> = {
   // Greek
-  Athena: { id: 'Athena', name: 'Atena', age: 2, pantheon: 'greek', godPower: 'restoration', mythUnit: 'minotaur', mythUnitTitle: 'Minotauro', passiveBonusLabel: '+15% Armadura de Infantaria', hpBonusPct: 12 },
-  Ares: { id: 'Ares', name: 'Ares', age: 2, pantheon: 'greek', godPower: 'pestilence', mythUnit: 'minotaur', mythUnitTitle: 'Ciclope Menor / Minotauro', passiveBonusLabel: '+14% Ataque Corpo a Corpo', attackBonusPct: 14 },
-  Hermes: { id: 'Hermes', name: 'Hermes', age: 2, pantheon: 'greek', godPower: 'prosperity', mythUnit: 'centaur', mythUnitTitle: 'Centauro', passiveBonusLabel: '+15% Velocidade da Cavalaria', speedBonusPct: 15 },
-  Apollo: { id: 'Apollo', name: 'Apolo', age: 3, pantheon: 'greek', godPower: 'solar_beam', mythUnit: 'centaur', mythUnitTitle: 'Mantícora / Centauro', passiveBonusLabel: '+15% Alcance & Dano à Distância', attackBonusPct: 12 },
-  Dionysos: { id: 'Dionysos', name: 'Dionísio', age: 3, pantheon: 'greek', godPower: 'walking_woods', mythUnit: 'centaur', mythUnitTitle: 'Hidra / Centauro', passiveBonusLabel: '+18% Vida da Cavalaria', hpBonusPct: 15 },
-  Aphrodite: { id: 'Aphrodite', name: 'Afrodite', age: 3, pantheon: 'greek', godPower: 'prosperity', mythUnit: 'minotaur', mythUnitTitle: 'Leão da Nemeia', passiveBonusLabel: '+20% Coleta dos Aldeões', gatherBonusPct: 20 },
-  Hephaestus: { id: 'Hephaestus', name: 'Hefesto', age: 4, pantheon: 'greek', godPower: 'volcanic_eruption', mythUnit: 'cyclops', mythUnitTitle: 'Colosso', passiveBonusLabel: '+20% Ataque & Armadura', attackBonusPct: 18, hpBonusPct: 12 },
-  Hera: { id: 'Hera', name: 'Hera', age: 4, pantheon: 'greek', godPower: 'lightning_storm', mythUnit: 'cyclops', mythUnitTitle: 'Medusa / Ciclope', passiveBonusLabel: '+25% Vida Mítica', hpBonusPct: 22 },
-  Artemis: { id: 'Artemis', name: 'Ártemis', age: 4, pantheon: 'greek', godPower: 'tremor', mythUnit: 'cyclops', mythUnitTitle: 'Quimera / Ciclope', passiveBonusLabel: '+20% Dano Arqueiros & Cerco', attackBonusPct: 18 },
+  Athena: { id: 'Athena', name: 'Atena', age: 2, pantheon: 'greek', godPower: 'restoration', mythUnit: 'minotaur', mythUnitTitle: 'Minotauro / Ninfa (Dríade)', passiveBonusLabel: '+15% Armadura de Infantaria', hpBonusPct: 12 },
+  Ares: { id: 'Ares', name: 'Ares', age: 2, pantheon: 'greek', godPower: 'pestilence', mythUnit: 'minotaur', mythUnitTitle: 'Minotauro / Ciclope', passiveBonusLabel: '+14% Ataque Corpo a Corpo', attackBonusPct: 14 },
+  Hermes: { id: 'Hermes', name: 'Hermes', age: 2, pantheon: 'greek', godPower: 'prosperity', mythUnit: 'centaur', mythUnitTitle: 'Centauro / Pégaso', passiveBonusLabel: '+15% Velocidade da Cavalaria', speedBonusPct: 15 },
+  Apollo: { id: 'Apollo', name: 'Apolo', age: 3, pantheon: 'greek', godPower: 'solar_beam', mythUnit: 'manticore', mythUnitTitle: 'Mantícora / Fênix', passiveBonusLabel: '+15% Alcance & Dano à Distância · Desbloqueia Gastraphetes', attackBonusPct: 12 },
+  Dionysos: { id: 'Dionysos', name: 'Dionísio', age: 3, pantheon: 'greek', godPower: 'walking_woods', mythUnit: 'hydra', mythUnitTitle: 'Hidra / Sátiro', passiveBonusLabel: '+18% Vida da Cavalaria', hpBonusPct: 15 },
+  Aphrodite: { id: 'Aphrodite', name: 'Afrodite', age: 3, pantheon: 'greek', godPower: 'prosperity', mythUnit: 'nymph', mythUnitTitle: 'Ninfa (Dríade) / Minotauro', passiveBonusLabel: '+20% Coleta dos Aldeões', gatherBonusPct: 20 },
+  Hephaestus: { id: 'Hephaestus', name: 'Hefesto', age: 4, pantheon: 'greek', godPower: 'volcanic_eruption', mythUnit: 'colossus', mythUnitTitle: 'Colosso / Autômato / Anão de Ferro', passiveBonusLabel: '+20% Ataque & Armadura', attackBonusPct: 18, hpBonusPct: 12 },
+  Hera: { id: 'Hera', name: 'Hera', age: 4, pantheon: 'greek', godPower: 'lightning_storm', mythUnit: 'medusa', mythUnitTitle: 'Medusa / Ciclope', passiveBonusLabel: '+25% Vida Mítica', hpBonusPct: 22 },
+  Artemis: { id: 'Artemis', name: 'Ártemis', age: 4, pantheon: 'greek', godPower: 'tremor', mythUnit: 'medusa', mythUnitTitle: 'Medusa / Mantícora', passiveBonusLabel: '+20% Dano Arqueiros & Cerco', attackBonusPct: 18 },
 
   // Egyptian
   Bast: { id: 'Bast', name: 'Bast', age: 2, pantheon: 'egyptian', godPower: 'darkest_night', mythUnit: 'minotaur', mythUnitTitle: 'Esfinge', passiveBonusLabel: '+18% Coleta de Ouro & Alimento', gatherBonusPct: 18 },
@@ -635,24 +635,130 @@ export const MAJOR_GODS: MajorGodSpec[] = [
 const CIV_UNIT_NAMES: Partial<Record<PantheonId, Partial<Record<UnitKind, { name: string; role?: string }>>>> = {
   greek: {
     villager: { name: 'Aldeão Grego' },
-    hoplite: { name: 'Hoplita' },
-    archer: {
-      name: 'Toxotes',
-      role: 'Arqueiro Grego (Archer G Toxotes Standard) — Arco longo recurvo, escudo leve no braço esquerdo, elmo coríntio dourado de crista vermelha, peitoral com medalhão e aljava.',
+    hoplite: {
+      name: 'Hoplita',
+      role: 'Espinha dorsal do exército grego (T1–T4) — excelente contra cavalaria e fortalecido por Zeus.',
     },
-    cavalry: { name: 'Hippikon' },
+    hipaspist: {
+      name: 'Hipaspista',
+      role: 'Infantaria leve anti-infantaria (T1–T4) — espada curva Kopis e bônus contra infantaria inimiga.',
+    },
+    myrmidon: {
+      name: 'Mirmidão',
+      role: 'Infantaria de elite exclusiva de Zeus (Era Mítica, T1–T4) — ganha velocidade e dano crescentes em combate.',
+    },
+    peltast: {
+      name: 'Peltasta',
+      role: 'Atirador leve ágil (T1–T4) — lança dardos e porta escudo Pelta em meia-lua; letal contra infantaria rápida e outros arqueiros.',
+    },
+    archer: {
+      name: 'Toxota (Toxotes)',
+      role: 'Arqueiro grego de longo alcance (T1–T4) — arco composto recurvo; forte contra infantaria e unidades míticas fracas.',
+    },
+    gastraphetes: {
+      name: 'Fundibulário (Gastraphetes)',
+      role: 'Atirador com besta abdominal grega (T1–T4) — liberado via Deus Menor (Apolo/Ártemis); alto alcance e impacto perfurante.',
+    },
+    cavalry: {
+      name: 'Hippo (Hippikon)',
+      role: 'Cavalaria pesada rápida (T1–T4) — excelente contra arqueiros e cerco; realiza ataques de atropelamento (hit-and-run).',
+    },
+    prodromos: {
+      name: 'Pródromo (Prodromos)',
+      role: 'Cavalaria leve de lança Kontos (T1–T4) — especialista veloz no combate contra outras unidades de cavalaria.',
+    },
+    jason: {
+      name: 'Jasão',
+      role: 'Herói Padrão de Zeus (Era I) — Líder dos Argonautas com Velocino de Ouro; 3.5x vs Míticas e coleta Relíquias.',
+    },
+    odysseus: {
+      name: 'Ulisses (Odysseus)',
+      role: 'Herói Arqueiro Grego (Era II) — Arco Ítaco letal à distância contra Unidades Míticas (3.6x vs Míticas).',
+    },
+    perseus: {
+      name: 'Perseu',
+      role: 'Herói Grego de Combate (Era III) — Espada curva Harpê e Escudo Espelho da Égide; devastador corpo a corpo (3.8x vs Míticas).',
+    },
+    bellerophon: {
+      name: 'Belerofonte',
+      role: 'Herói Montado em Pégaso (Era IV) — Voo veloz de longo alcance de investida aérea contra Míticas (3.6x vs Míticas).',
+    },
+    hippolyta: {
+      name: 'Hipólita',
+      role: 'Heroína Amazona Ágil (Era II) — Ataques rápidos à distância com Arco Dourado de Ártemis (3.4x vs Míticas).',
+    },
     ajax: {
       name: 'Ajax',
-      role: 'Herói Grego de Salamina (Hero G Ajax Standard) — Escudo Torre de 7 Camadas de Couro e Bronze, Lança Dory Colossal, Elmo Dourado de Crista Heroica e Golpe de Escudo (3.5x vs Míticas).',
+      role: 'Herói Bruto de Salamina — Escudo Torre de 7 Camadas e alta resistência frontal (3.5x vs Míticas).',
+    },
+    theseus: {
+      name: 'Teseu',
+      role: 'Herói Tático de Atenas (Era II) — Lança Dory equilibrada e Escudo Hoplon contra monstros míticos (3.4x vs Míticas).',
     },
     hero: {
       name: 'Herói Héracles',
       role: 'Campeão Olímpico que causa 3x de dano contra Unidades Míticas.',
     },
-    siege: { name: 'Petróbolo' },
-    minotaur: { name: 'Minotauro' },
-    centaur: { name: 'Centauro' },
-    cyclops: { name: 'Ciclope' },
+    ram: {
+      name: 'Aríete (Kriós)',
+      role: 'Unidade mecânica de cerco blindada — teto reforçado e cabeça de aríete em bronze para derrubar muralhas e edifícios.',
+    },
+    siege: {
+      name: 'Catapulta (Helepolis)',
+      role: 'Máquina de cerco à distância de alta potência contra construções e exércitos agrupados (impacto em área).',
+    },
+    minotaur: {
+      name: 'Minotauro',
+      role: 'Monstro de Creta (Atena/Ares) — Chifradas brutais e machado Labrys com impacto em área.',
+    },
+    centaur: {
+      name: 'Centauro',
+      role: 'Arqueiro Mítico Veloz (Hermes) — Dispara flechas precisas em movimento.',
+    },
+    cyclops: {
+      name: 'Ciclope',
+      role: 'Unidade Mítica Exclusiva de Zeus (Templo) — Dano massivo em área; agarra humanos e os arremessa longe!',
+    },
+    manticore: {
+      name: 'Mantícora',
+      role: 'Fera Alada (Apolo/Ártemis) — Lança rajadas de espinhos venenosos em área.',
+    },
+    medusa: {
+      name: 'Medusa',
+      role: 'Górgona (Hera/Ártemis) — Flechas petrificantes que congelam inimigos temporariamente.',
+    },
+    hydra: {
+      name: 'Hidra',
+      role: 'Serpente Policéfala (Dionísio) — Regeneração contínua e fúria crescente em combate.',
+    },
+    colossus: {
+      name: 'Colosso',
+      role: 'Gigante de Bronze (Hefesto) — Armadura titânica, autorreparo e esmagamento de edifícios.',
+    },
+    nymph: {
+      name: 'Ninfa (Dríade)',
+      role: 'Espírito da Natureza (Atena/Afrodite) — Ágil com ataque mágico à média distância.',
+    },
+    pegasus: {
+      name: 'Pégaso',
+      role: 'Corcel Alado (Hermes) — Batedor voador extremamente veloz com campo de visão ampliado.',
+    },
+    satyr: {
+      name: 'Sátiro',
+      role: 'Escaramuçador Silvestre (Dionísio) — Arremessa dardos rápidos com bônus anti-infantaria.',
+    },
+    automaton: {
+      name: 'Autômato',
+      role: 'Constructo Mecânico (Hefesto) — Guerreiro de bronze articulado com autorreparo contínuo.',
+    },
+    iron_dwarf: {
+      name: 'Anão de Ferro',
+      role: 'Ferreiro Blindado (Hefesto) — Martelo pesado letal contra construções inimigas.',
+    },
+    phoenix: {
+      name: 'Fênix',
+      role: 'Ave Imortal de Fogo (Apolo) — Orbes flamejantes com dano em área sobre tropas e estruturas.',
+    },
     titan: { name: 'Titã Olímpico' },
   },
   egyptian: {

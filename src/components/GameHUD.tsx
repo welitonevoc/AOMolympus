@@ -360,6 +360,9 @@ export function GameHUD({
     'house',
     'farm',
     'barracks',
+    'archery_range',
+    'stable',
+    'siege_works',
     'armory',
     'market',
     'temple',
@@ -370,14 +373,38 @@ export function GameHUD({
   const unitKinds: UnitKind[] = [
     'villager',
     'hoplite',
+    'hipaspist',
+    ...(hud.pantheon === 'greek' && hud.majorGodName.toLowerCase().includes('zeus')
+      ? (['myrmidon'] as UnitKind[])
+      : []),
+    'peltast',
     'archer',
+    'gastraphetes',
     'cavalry',
-    ...(hud.pantheon === 'greek' ? (['ajax'] as UnitKind[]) : []),
+    'prodromos',
+    ...(hud.pantheon === 'greek'
+      ? (['jason', 'ajax', 'odysseus', 'hippolyta', 'theseus', 'perseus', 'bellerophon'] as UnitKind[])
+      : []),
     'hero',
+    'ram',
     'siege',
+    'cyclops',
     'minotaur',
     'centaur',
-    'cyclops',
+    ...(hud.pantheon === 'greek'
+      ? ([
+          'nymph',
+          'pegasus',
+          'manticore',
+          'hydra',
+          'satyr',
+          'phoenix',
+          'colossus',
+          'automaton',
+          'iron_dwarf',
+          'medusa',
+        ] as UnitKind[])
+      : []),
   ];
   const powerIds = Array.from(new Set(hud.unlockedPowers));
 
@@ -393,6 +420,9 @@ export function GameHUD({
     hud.selection.isConstructed &&
     (hud.selection.buildingKind === 'town_center' ||
       hud.selection.buildingKind === 'barracks' ||
+      hud.selection.buildingKind === 'archery_range' ||
+      hud.selection.buildingKind === 'stable' ||
+      hud.selection.buildingKind === 'siege_works' ||
       hud.selection.buildingKind === 'temple' ||
       hud.selection.buildingKind === 'fortress');
 
@@ -1041,14 +1071,38 @@ export function GameHUD({
           const allTrainableKinds: UnitKind[] = [
             'villager',
             'hoplite',
+            'hipaspist',
+            ...(hud.pantheon === 'greek' && hud.majorGodName.toLowerCase().includes('zeus')
+              ? (['myrmidon'] as UnitKind[])
+              : []),
+            'peltast',
             'archer',
+            'gastraphetes',
             'cavalry',
-            ...(hud.pantheon === 'greek' ? (['ajax'] as UnitKind[]) : []),
+            'prodromos',
+            ...(hud.pantheon === 'greek'
+              ? (['jason', 'ajax', 'odysseus', 'hippolyta', 'theseus', 'perseus', 'bellerophon'] as UnitKind[])
+              : []),
             'hero',
+            'ram',
             'siege',
+            'cyclops',
             'minotaur',
             'centaur',
-            'cyclops',
+            ...(hud.pantheon === 'greek'
+              ? ([
+                  'nymph',
+                  'pegasus',
+                  'manticore',
+                  'hydra',
+                  'satyr',
+                  'phoenix',
+                  'colossus',
+                  'automaton',
+                  'iron_dwarf',
+                  'medusa',
+                ] as UnitKind[])
+              : []),
             ...(hud.titansEnabled ? (['titan'] as UnitKind[]) : []),
           ];
           const buildingUnits = allTrainableKinds
@@ -1056,7 +1110,9 @@ export function GameHUD({
             .filter(
               (u) =>
                 u.producedAt === bKind ||
-                (u.kind === 'ajax' && (bKind === 'town_center' || bKind === 'fortress'))
+                (u.isHero && (bKind === 'town_center' || bKind === 'fortress')) ||
+                (u.kind === 'myrmidon' && (bKind === 'barracks' || bKind === 'fortress')) ||
+                ((u.kind === 'ram' || u.kind === 'siege') && (bKind === 'siege_works' || bKind === 'fortress'))
             );
 
           const buildingTechs = techList.filter((t) => {
@@ -1205,8 +1261,16 @@ export function GameHUD({
                   <div className="grid grid-cols-1 gap-1.5">
                     {buildingUnits.map((u) => {
                       const ageLocked = hud.age < u.minAge;
+                      const minorGodLocked = Boolean(
+                        u.requiresMinorGod && !u.requiresMinorGod.some((mg) => hud.chosenMinorGods.includes(mg))
+                      );
                       const notBuilt = !hud.selection.isConstructed;
-                      const disabled = ageLocked || notBuilt;
+                      const disabled = ageLocked || minorGodLocked || notBuilt;
+                      const lockText = ageLocked
+                        ? `Requer ${AGE_NAMES[u.minAge]}`
+                        : minorGodLocked
+                        ? `Requer ${u.requiresMinorGodLabel ?? 'Deus Menor'}`
+                        : null;
                       return (
                         <button
                           key={u.kind}
@@ -1232,11 +1296,11 @@ export function GameHUD({
                             </div>
                             <div className="text-[10px] text-[#9ca3af] truncate">{u.role}</div>
                             <div className="mt-0.5 font-mono-num text-[10px] text-[#fde68a]">
-                              {ageLocked ? `Requer ${AGE_NAMES[u.minAge]}` : formatCost(u.cost)}
+                              {lockText ?? formatCost(u.cost)}
                             </div>
                           </div>
                           <span className="rounded bg-white/10 px-2 py-1 text-[10px] font-semibold text-white shrink-0">
-                            {ageLocked ? AGE_NAMES[u.minAge] : 'Treinar'}
+                            {ageLocked ? AGE_NAMES[u.minAge] : minorGodLocked ? (u.requiresMinorGodLabel ?? 'Deus') : 'Treinar'}
                           </span>
                         </button>
                       );
@@ -1753,7 +1817,11 @@ export function GameHUD({
               {activeTab === 'units' && (
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 max-h-[120px] overflow-y-auto pr-0.5">
                   {unitList.map((u) => {
-                    const locked = hud.age < u.minAge;
+                    const ageLocked = hud.age < u.minAge;
+                    const minorGodLocked = Boolean(
+                      u.requiresMinorGod && !u.requiresMinorGod.some((mg) => hud.chosenMinorGods.includes(mg))
+                    );
+                    const locked = ageLocked || minorGodLocked;
                     return (
                       <button
                         key={u.kind}
@@ -1773,7 +1841,11 @@ export function GameHUD({
                       >
                         <span className="text-[11px] font-semibold truncate w-full">{u.name}</span>
                         <span className="font-mono-num text-[10px] text-[#9ca3af] truncate w-full">
-                          {locked ? AGE_NAMES[u.minAge] : formatCost(u.cost)}
+                          {ageLocked
+                            ? AGE_NAMES[u.minAge]
+                            : minorGodLocked
+                            ? `Requer ${u.requiresMinorGodLabel ?? 'Deus Menor'}`
+                            : formatCost(u.cost)}
                         </span>
                       </button>
                     );

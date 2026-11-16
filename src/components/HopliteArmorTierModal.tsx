@@ -34,10 +34,10 @@ export const HopliteArmorTierModal: React.FC<HopliteArmorTierModalProps> = ({
             <span className="text-2xl">🛡️</span>
             <div>
               <h2 className="text-lg font-bold tracking-wide text-amber-400 font-serif">
-                Arsenal Olímpico — Inspetor de Tiers do Hoplita
+                Arsenal Olímpico — Tiers T1–T4 (Hoplita, Hipaspista &amp; Mirmidão)
               </h2>
               <p className="text-xs text-stone-400">
-                Gerencie as texturas UV globais e esquemas de armadura de infantaria pesada
+                Gerencie os níveis de armadura, escudos, cristas e texturas UV dos guerreiros de Zeus (T1 a T4)
               </p>
             </div>
           </div>
