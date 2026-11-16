@@ -11,6 +11,8 @@ import { buildDionysus, getCachedDionysusTextures, animateDionysus } from '../ci
 import { buildAphrodite, getCachedAphroditeTextures, animateAphrodite } from '../civilizacao/gregos/afroditeModel';
 import { buildApollo, getCachedApolloTextures, animateApollo } from '../civilizacao/gregos/apoloModel';
 import { buildAres, getCachedAresTextures, animateAres } from '../civilizacao/gregos/aresModel';
+import { buildAthena, getCachedAtenaTextures, animateAthena } from '../civilizacao/gregos/atenaModel';
+import { buildHermes, getCachedHermesTextures, animateHermes } from '../civilizacao/gregos/hermesModel';
 import { createAoMOakTreeMesh, getFaunaCoatMaterial } from '../TEXTURA';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
@@ -2614,6 +2616,34 @@ export function createUnitMesh(
       aPhase += dt;
       const mode = attackT !== null ? (attackT > 0.6 ? 'sismico' : 'furia') : moving ? 'investida' : 'postura';
       animateAres(ares, dt, aPhase, mode);
+    };
+    attachGroundMarkers(root, 1.25, pal, team);
+    attachHealthBar(root, 3.4, 1.6);
+    return root;
+  } else if ((kind as any) === 'atena') {
+    const atenaTex = getCachedAtenaTextures();
+    const atena = buildAthena(atenaTex);
+    atena.root.scale.setScalar(1.25);
+    root.add(atena.root);
+    let aPhase = 0;
+    root.userData.animatePose = (dt: number, moving: boolean, _speed: number, attackT: number | null) => {
+      aPhase += dt;
+      const mode = attackT !== null ? (attackT > 0.5 ? 'furia' : 'avanco') : moving ? 'egide' : 'guardia';
+      animateAthena(atena, dt, aPhase, mode);
+    };
+    attachGroundMarkers(root, 1.25, pal, team);
+    attachHealthBar(root, 3.4, 1.6);
+    return root;
+  } else if ((kind as any) === 'hermes') {
+    const hermesTex = getCachedHermesTextures();
+    const hermes = buildHermes(hermesTex);
+    hermes.root.scale.setScalar(1.25);
+    root.add(hermes.root);
+    let aPhase = 0;
+    root.userData.animatePose = (dt: number, moving: boolean, _speed: number, attackT: number | null) => {
+      aPhase += dt;
+      const mode = attackT !== null ? (attackT > 0.5 ? 'relampago' : 'rajada') : moving ? 'velocidade' : 'flutuar';
+      animateHermes(hermes, dt, aPhase, mode);
     };
     attachGroundMarkers(root, 1.25, pal, team);
     attachHealthBar(root, 3.4, 1.6);

@@ -68,6 +68,16 @@ import {
   getCachedAresTextures,
   animateAres,
 } from '../civilizacao/gregos/aresModel';
+import {
+  buildAthena,
+  getCachedAtenaTextures,
+  animateAthena,
+} from '../civilizacao/gregos/atenaModel';
+import {
+  buildHermes,
+  getCachedHermesTextures,
+  animateHermes,
+} from '../civilizacao/gregos/hermesModel';
 import { createBuildingMesh, createMaterialPalette, createUnitMesh } from '../game/models';
 import { BuildingKind, PantheonId, UnitKind } from '../game/types';
 import {
@@ -85,7 +95,7 @@ interface HopliteUvBuilderModalProps {
   onSelectTier: (tier: 1 | 2 | 3 | 4) => void;
 }
 
-export type InspectableUnitId = UnitKind | 'zeus' | 'poseidon' | 'hades' | 'artemis' | 'hefesto' | 'dionisio' | 'afrodite' | 'apolo' | 'ares';
+export type InspectableUnitId = UnitKind | 'zeus' | 'poseidon' | 'hades' | 'artemis' | 'hefesto' | 'dionisio' | 'afrodite' | 'apolo' | 'ares' | 'atena' | 'hermes';
 
 interface CivEntityOption {
   id: InspectableUnitId;
@@ -259,6 +269,16 @@ export function getUnitsForCivAndGod(civ: PantheonId, majorGod: string): CivEnti
         id: 'ares',
         name: '⚔️ Ares (Deus Menor)',
         role: 'Deus da Guerra Brutal — Espada Larga Xiphos incandescente, Escudo Hoplon com Lambda (Λ) e Fúria de Sangue',
+      },
+      {
+        id: 'atena',
+        name: '🦉 Atena (Deusa Menor)',
+        role: 'Deusa da Sabedoria & da Estratégia — Lança Dory dourada, Escudo Égide com Górgona e Coruja Sagrada Glaux',
+      },
+      {
+        id: 'hermes',
+        name: '🪶 Hermes (Deus Menor)',
+        role: 'Mensageiro dos Deuses & da Velocidade — Elmo Pétaso com asas, Sandálias Aladas Talária e Caduceu Sagrado',
       },
       {
         id: 'hoplite',
@@ -475,6 +495,8 @@ export function HopliteUvBuilderModal({
   const [afroditeMode, setAfroditeMode] = useState<'graca' | 'danca' | 'encanto' | 'mare'>('graca');
   const [apoloMode, setApoloMode] = useState<'pairar' | 'voo' | 'flecha' | 'helio'>('pairar');
   const [aresMode, setAresMode] = useState<'postura' | 'investida' | 'sismico' | 'furia'>('postura');
+  const [atenaMode, setAtenaMode] = useState<'guardia' | 'avanco' | 'egide' | 'furia'>('guardia');
+  const [hermesMode, setHermesMode] = useState<'flutuar' | 'velocidade' | 'rajada' | 'relampago'>('flutuar');
   const [focusDivine, setFocusDivine] = useState(false);
 
   const animStateRef = useRef(animState);
@@ -502,6 +524,10 @@ export function HopliteUvBuilderModal({
   apoloModeRef.current = apoloMode;
   const aresModeRef = useRef(aresMode);
   aresModeRef.current = aresMode;
+  const atenaModeRef = useRef(atenaMode);
+  atenaModeRef.current = atenaMode;
+  const hermesModeRef = useRef(hermesMode);
+  hermesModeRef.current = hermesMode;
   const focusDivineRef = useRef(focusDivine);
   focusDivineRef.current = focusDivine;
 
@@ -579,7 +605,7 @@ export function HopliteUvBuilderModal({
       prevMouseX = e.clientX;
       prevMouseY = e.clientY;
 
-      const isGod = (selectedUnit === 'zeus' || selectedUnit === 'poseidon' || selectedUnit === 'hades' || selectedUnit === 'artemis' || selectedUnit === 'hefesto' || selectedUnit === 'dionisio' || selectedUnit === 'afrodite' || selectedUnit === 'apolo' || selectedUnit === 'ares') && selectedCiv === 'greek';
+      const isGod = (selectedUnit === 'zeus' || selectedUnit === 'poseidon' || selectedUnit === 'hades' || selectedUnit === 'artemis' || selectedUnit === 'hefesto' || selectedUnit === 'dionisio' || selectedUnit === 'afrodite' || selectedUnit === 'apolo' || selectedUnit === 'ares' || selectedUnit === 'atena' || selectedUnit === 'hermes') && selectedCiv === 'greek';
       if (isGod) {
         // No caso dos deuses, a câmera orbita em 360° e o deus permanece fixo no centro
         orbitYaw -= dx * 0.008;
@@ -1602,6 +1628,66 @@ export function HopliteUvBuilderModal({
             const m = aresModeRef.current;
             animateAres(ares, dt, simTime, m);
           };
+        } else if (selectedUnit === 'atena' && selectedCiv === 'greek') {
+          // ===============================
+          // CENÁRIO DA ACRÓPOLE DE ATENAS & MOSAICO (ATENA)
+          // ===============================
+          scene.background = new THREE.Color(0x0c1628);
+          scene.fog = new THREE.FogExp2(0x13233e, 0.016);
+
+          const pedGeo = new THREE.CylinderGeometry(2.4, 2.6, 0.2, 44);
+          const pedMat = new THREE.MeshStandardMaterial({ color: 0x1e2e4a, roughness: 0.5, metalness: 0.3 });
+          const pedestal = new THREE.Mesh(pedGeo, pedMat);
+          pedestal.position.y = -0.1;
+          pedestal.receiveShadow = true;
+          environmentGroup.add(pedestal);
+
+          const ringGeo = new THREE.RingGeometry(2.1, 2.3, 44);
+          const ringMat = new THREE.MeshBasicMaterial({ color: 0xfacc15, side: THREE.DoubleSide });
+          const ring = new THREE.Mesh(ringGeo, ringMat);
+          ring.rotation.x = -Math.PI / 2;
+          ring.position.y = 0.01;
+          environmentGroup.add(ring);
+
+          const atenaTex = getCachedAtenaTextures();
+          const atena = buildAthena(atenaTex);
+          group = atena.root;
+          group.scale.setScalar(0.85);
+
+          group.userData.animatePose = (dt: number) => {
+            const m = atenaModeRef.current;
+            animateAthena(atena, dt, simTime, m);
+          };
+        } else if (selectedUnit === 'hermes' && selectedCiv === 'greek') {
+          // ===============================
+          // CENÁRIO DO SANTUÁRIO DAS NUVENS & VENTO (HERMES)
+          // ===============================
+          scene.background = new THREE.Color(0x0c1d30);
+          scene.fog = new THREE.FogExp2(0x102842, 0.018);
+
+          const pedGeo = new THREE.CylinderGeometry(2.4, 2.6, 0.2, 44);
+          const pedMat = new THREE.MeshStandardMaterial({ color: 0x15314d, roughness: 0.45, metalness: 0.35 });
+          const pedestal = new THREE.Mesh(pedGeo, pedMat);
+          pedestal.position.y = -0.1;
+          pedestal.receiveShadow = true;
+          environmentGroup.add(pedestal);
+
+          const ringGeo = new THREE.RingGeometry(2.1, 2.3, 44);
+          const ringMat = new THREE.MeshBasicMaterial({ color: 0x2dd4bf, side: THREE.DoubleSide });
+          const ring = new THREE.Mesh(ringGeo, ringMat);
+          ring.rotation.x = -Math.PI / 2;
+          ring.position.y = 0.01;
+          environmentGroup.add(ring);
+
+          const hermesTex = getCachedHermesTextures();
+          const hermes = buildHermes(hermesTex);
+          group = hermes.root;
+          group.scale.setScalar(0.85);
+
+          group.userData.animatePose = (dt: number) => {
+            const m = hermesModeRef.current;
+            animateHermes(hermes, dt, simTime, m);
+          };
         } else if (selectedUnit === 'hoplite' || selectedUnit === 'hipaspist') {
           // ===============================
           // CENÁRIO PADRÃO (PEDESTAL)
@@ -1971,7 +2057,7 @@ export function HopliteUvBuilderModal({
       if (hadesBlastLight.intensity > 0) hadesBlastLight.intensity = Math.max(0, hadesBlastLight.intensity - dt * 20);
 
       // Rotação da entidade / Órbita 360° da câmera
-      const isGod = (selectedUnit === 'zeus' || selectedUnit === 'poseidon' || selectedUnit === 'hades' || selectedUnit === 'artemis' || selectedUnit === 'hefesto' || selectedUnit === 'dionisio' || selectedUnit === 'afrodite' || selectedUnit === 'apolo' || selectedUnit === 'ares') && selectedCiv === 'greek';
+      const isGod = (selectedUnit === 'zeus' || selectedUnit === 'poseidon' || selectedUnit === 'hades' || selectedUnit === 'artemis' || selectedUnit === 'hefesto' || selectedUnit === 'dionisio' || selectedUnit === 'afrodite' || selectedUnit === 'apolo' || selectedUnit === 'ares' || selectedUnit === 'atena' || selectedUnit === 'hermes') && selectedCiv === 'greek';
 
       if (autoRotateRef.current) {
         if (isGod) {
@@ -2001,7 +2087,7 @@ export function HopliteUvBuilderModal({
 
       if (isGod) {
         // Câmera orbital 360° ao redor do Deus posicionado no centro exato
-        const focusY = isFocus ? (selectedUnit === 'zeus' ? 1.4 : selectedUnit === 'poseidon' ? 1.5 : selectedUnit === 'artemis' ? 1.42 : selectedUnit === 'hefesto' ? 1.45 : selectedUnit === 'dionisio' ? 1.42 : selectedUnit === 'afrodite' ? 1.46 : selectedUnit === 'apolo' ? 1.48 : selectedUnit === 'ares' ? 1.48 : 1.48) : 1.35;
+        const focusY = isFocus ? (selectedUnit === 'zeus' ? 1.4 : selectedUnit === 'poseidon' ? 1.5 : selectedUnit === 'artemis' ? 1.42 : selectedUnit === 'hefesto' ? 1.45 : selectedUnit === 'dionisio' ? 1.42 : selectedUnit === 'afrodite' ? 1.46 : selectedUnit === 'apolo' ? 1.48 : selectedUnit === 'ares' ? 1.48 : selectedUnit === 'atena' ? 1.46 : selectedUnit === 'hermes' ? 1.44 : 1.48) : 1.35;
         const effDist = isFocus ? 2.0 / zoomRef.current : 5.8 / zoomRef.current;
 
         const horizDist = effDist * Math.cos(orbitPitch);
@@ -2810,6 +2896,136 @@ export function HopliteUvBuilderModal({
                   >
                     <Eye className="h-3.5 w-3.5" />
                     <span>{focusDivine ? 'Visão Corpo' : 'Focar Rosto/Elmo'}</span>
+                  </button>
+                  <div className="h-5 w-[1px] bg-white/15 mx-1" />
+                </>
+              ) : entityType === 'unit' && selectedUnit === 'atena' && selectedCiv === 'greek' ? (
+                // Poderes e Animações de Atena (Deusa da Sabedoria e Estratégia Militar)
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setAtenaMode('guardia')}
+                    className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      atenaMode === 'guardia'
+                        ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
+                        : 'border border-blue-400/30 text-blue-200 hover:bg-blue-400/20'
+                    }`}
+                  >
+                    <Shield className="h-3.5 w-3.5" />
+                    <span>Guardiã de Atenas</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAtenaMode('avanco')}
+                    className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      atenaMode === 'avanco'
+                        ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/30'
+                        : 'border border-amber-400/30 text-amber-200 hover:bg-amber-400/20'
+                    }`}
+                  >
+                    <Wind className="h-3.5 w-3.5" />
+                    <span>Avanço Tático</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAtenaMode('egide')}
+                    className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      atenaMode === 'egide'
+                        ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
+                        : 'border border-indigo-400/30 text-indigo-200 hover:bg-indigo-400/20'
+                    }`}
+                  >
+                    <Sparkles className="h-3.5 w-3.5" />
+                    <span>Égide Protetora</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAtenaMode('furia')}
+                    className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      atenaMode === 'furia'
+                        ? 'bg-gradient-to-r from-blue-600 to-amber-500 text-white shadow-md shadow-blue-600/40'
+                        : 'border border-blue-400/30 text-blue-200 hover:bg-blue-400/20'
+                    }`}
+                  >
+                    <Flame className="h-3.5 w-3.5" />
+                    <span>Fúria Estratégica</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFocusDivine(!focusDivine)}
+                    className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      focusDivine
+                        ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
+                        : 'border border-blue-400/40 text-blue-200 hover:bg-blue-500/20'
+                    }`}
+                  >
+                    <Eye className="h-3.5 w-3.5" />
+                    <span>{focusDivine ? 'Visão Corpo' : 'Focar Rosto/Elmo'}</span>
+                  </button>
+                  <div className="h-5 w-[1px] bg-white/15 mx-1" />
+                </>
+              ) : entityType === 'unit' && selectedUnit === 'hermes' && selectedCiv === 'greek' ? (
+                // Poderes e Animações de Hermes (Mensageiro dos Deuses & Velocidade)
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setHermesMode('flutuar')}
+                    className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      hermesMode === 'flutuar'
+                        ? 'bg-teal-600 text-white shadow-md shadow-teal-600/30'
+                        : 'border border-teal-400/30 text-teal-200 hover:bg-teal-400/20'
+                    }`}
+                  >
+                    <Wind className="h-3.5 w-3.5" />
+                    <span>Flutuar</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setHermesMode('velocidade')}
+                    className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      hermesMode === 'velocidade'
+                        ? 'bg-amber-400 text-slate-950 shadow-md shadow-amber-400/30'
+                        : 'border border-amber-400/30 text-amber-200 hover:bg-amber-400/20'
+                    }`}
+                  >
+                    <Zap className="h-3.5 w-3.5" />
+                    <span>Velocidade Divina</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setHermesMode('rajada')}
+                    className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      hermesMode === 'rajada'
+                        ? 'bg-cyan-600 text-white shadow-md shadow-cyan-600/30'
+                        : 'border border-cyan-400/30 text-cyan-200 hover:bg-cyan-400/20'
+                    }`}
+                  >
+                    <Sparkles className="h-3.5 w-3.5" />
+                    <span>Rajada de Vento</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setHermesMode('relampago')}
+                    className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      hermesMode === 'relampago'
+                        ? 'bg-gradient-to-r from-teal-500 to-amber-400 text-slate-950 shadow-md shadow-teal-500/40'
+                        : 'border border-teal-400/30 text-teal-200 hover:bg-teal-400/20'
+                    }`}
+                  >
+                    <Flame className="h-3.5 w-3.5" />
+                    <span>Passo Relâmpago</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFocusDivine(!focusDivine)}
+                    className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      focusDivine
+                        ? 'bg-teal-600 text-white shadow-md shadow-teal-600/30'
+                        : 'border border-teal-400/40 text-teal-200 hover:bg-teal-500/20'
+                    }`}
+                  >
+                    <Eye className="h-3.5 w-3.5" />
+                    <span>{focusDivine ? 'Visão Corpo' : 'Focar Rosto/Pétaso'}</span>
                   </button>
                   <div className="h-5 w-[1px] bg-white/15 mx-1" />
                 </>
