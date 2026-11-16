@@ -8,6 +8,7 @@ import { buildCerberusTitan, getCachedCerberusTextures } from '../civilizacao/gr
 import { buildArtemis, getCachedArtemisTextures, animateArtemis } from '../civilizacao/gregos/artemisModel';
 import { buildHephaestus, getCachedHephaestusTextures, animateHephaestus } from '../civilizacao/gregos/hefestoModel';
 import { buildDionysus, getCachedDionysusTextures, animateDionysus } from '../civilizacao/gregos/dionisioModel';
+import { buildAphrodite, getCachedAphroditeTextures, animateAphrodite } from '../civilizacao/gregos/afroditeModel';
 import { createAoMOakTreeMesh, getFaunaCoatMaterial } from '../TEXTURA';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
@@ -2569,6 +2570,20 @@ export function createUnitMesh(
       dPhase += dt;
       const mode = attackT !== null ? 'vinhas' : moving ? 'danca' : 'banquete';
       animateDionysus(dio, dt, dPhase, mode);
+    };
+    attachGroundMarkers(root, 1.25, pal, team);
+    attachHealthBar(root, 3.4, 1.6);
+    return root;
+  } else if ((kind as any) === 'afrodite') {
+    const afroTex = getCachedAphroditeTextures();
+    const afro = buildAphrodite(afroTex);
+    afro.root.scale.setScalar(1.25);
+    root.add(afro.root);
+    let aPhase = 0;
+    root.userData.animatePose = (dt: number, moving: boolean, _speed: number, attackT: number | null) => {
+      aPhase += dt;
+      const mode = attackT !== null ? 'encanto' : moving ? 'danca' : 'graca';
+      animateAphrodite(afro, dt, aPhase, mode);
     };
     attachGroundMarkers(root, 1.25, pal, team);
     attachHealthBar(root, 3.4, 1.6);

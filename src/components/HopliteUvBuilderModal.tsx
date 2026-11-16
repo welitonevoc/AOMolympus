@@ -52,6 +52,11 @@ import {
   getCachedDionysusTextures,
   animateDionysus,
 } from '../civilizacao/gregos/dionisioModel';
+import {
+  buildAphrodite,
+  getCachedAphroditeTextures,
+  animateAphrodite,
+} from '../civilizacao/gregos/afroditeModel';
 import { createBuildingMesh, createMaterialPalette, createUnitMesh } from '../game/models';
 import { BuildingKind, PantheonId, UnitKind } from '../game/types';
 import {
@@ -69,7 +74,7 @@ interface HopliteUvBuilderModalProps {
   onSelectTier: (tier: 1 | 2 | 3 | 4) => void;
 }
 
-export type InspectableUnitId = UnitKind | 'zeus' | 'poseidon' | 'hades' | 'artemis' | 'hefesto' | 'dionisio';
+export type InspectableUnitId = UnitKind | 'zeus' | 'poseidon' | 'hades' | 'artemis' | 'hefesto' | 'dionisio' | 'afrodite';
 
 interface CivEntityOption {
   id: InspectableUnitId;
@@ -228,6 +233,11 @@ export function getUnitsForCivAndGod(civ: PantheonId, majorGod: string): CivEnti
         id: 'dionisio',
         name: '🍇 Dionísio (Deus Menor)',
         role: 'Deus do Vinho & do Êxtase — Empunha o Tirso com pinha dourada, Cálice de vinho e Vinhas Selvagens',
+      },
+      {
+        id: 'afrodite',
+        name: '🌹 Afrodite (Deusa Menor)',
+        role: 'Deusa da Beleza & do Amor — Concha de nácar flutuante, Espelho Sagrado de Vênus e Maré de Paixão',
       },
       {
         id: 'hoplite',
@@ -441,6 +451,7 @@ export function HopliteUvBuilderModal({
   const [artemisMode, setArtemisMode] = useState<'vigilia' | 'cacada' | 'raizes' | 'alcateia'>('vigilia');
   const [hefestoMode, setHefestoMode] = useState<'forja' | 'martelo' | 'automato' | 'erupcao'>('forja');
   const [dionisioMode, setDionisioMode] = useState<'banquete' | 'danca' | 'vinhas' | 'extase'>('banquete');
+  const [afroditeMode, setAfroditeMode] = useState<'graca' | 'danca' | 'encanto' | 'mare'>('graca');
   const [focusDivine, setFocusDivine] = useState(false);
 
   const animStateRef = useRef(animState);
@@ -462,6 +473,8 @@ export function HopliteUvBuilderModal({
   hefestoModeRef.current = hefestoMode;
   const dionisioModeRef = useRef(dionisioMode);
   dionisioModeRef.current = dionisioMode;
+  const afroditeModeRef = useRef(afroditeMode);
+  afroditeModeRef.current = afroditeMode;
   const focusDivineRef = useRef(focusDivine);
   focusDivineRef.current = focusDivine;
 
@@ -539,7 +552,7 @@ export function HopliteUvBuilderModal({
       prevMouseX = e.clientX;
       prevMouseY = e.clientY;
 
-      const isGod = (selectedUnit === 'zeus' || selectedUnit === 'poseidon' || selectedUnit === 'hades' || selectedUnit === 'artemis' || selectedUnit === 'hefesto' || selectedUnit === 'dionisio') && selectedCiv === 'greek';
+      const isGod = (selectedUnit === 'zeus' || selectedUnit === 'poseidon' || selectedUnit === 'hades' || selectedUnit === 'artemis' || selectedUnit === 'hefesto' || selectedUnit === 'dionisio' || selectedUnit === 'afrodite') && selectedCiv === 'greek';
       if (isGod) {
         // No caso dos deuses, a câmera orbita em 360° e o deus permanece fixo no centro
         orbitYaw -= dx * 0.008;
@@ -1472,6 +1485,36 @@ export function HopliteUvBuilderModal({
             const m = dionisioModeRef.current;
             animateDionysus(dionisio, dt, simTime, m);
           };
+        } else if (selectedUnit === 'afrodite' && selectedCiv === 'greek') {
+          // ===============================
+          // CENÁRIO DE CITERA & PÉROLAS (AFRODITE)
+          // ===============================
+          scene.background = new THREE.Color(0x2a0e1d);
+          scene.fog = new THREE.FogExp2(0x3b1228, 0.016);
+
+          const pedGeo = new THREE.CylinderGeometry(2.4, 2.6, 0.2, 44);
+          const pedMat = new THREE.MeshStandardMaterial({ color: 0x4a1230, roughness: 0.38, metalness: 0.2 });
+          const pedestal = new THREE.Mesh(pedGeo, pedMat);
+          pedestal.position.y = -0.1;
+          pedestal.receiveShadow = true;
+          environmentGroup.add(pedestal);
+
+          const ringGeo = new THREE.RingGeometry(2.1, 2.3, 44);
+          const ringMat = new THREE.MeshBasicMaterial({ color: 0xfb7185, side: THREE.DoubleSide });
+          const ring = new THREE.Mesh(ringGeo, ringMat);
+          ring.rotation.x = -Math.PI / 2;
+          ring.position.y = 0.01;
+          environmentGroup.add(ring);
+
+          const aTex = getCachedAphroditeTextures();
+          const afrodite = buildAphrodite(aTex);
+          group = afrodite.root;
+          group.scale.setScalar(0.85);
+
+          group.userData.animatePose = (dt: number) => {
+            const m = afroditeModeRef.current;
+            animateAphrodite(afrodite, dt, simTime, m);
+          };
         } else if (selectedUnit === 'hoplite' || selectedUnit === 'hipaspist') {
           // ===============================
           // CENÁRIO PADRÃO (PEDESTAL)
@@ -1841,7 +1884,7 @@ export function HopliteUvBuilderModal({
       if (hadesBlastLight.intensity > 0) hadesBlastLight.intensity = Math.max(0, hadesBlastLight.intensity - dt * 20);
 
       // Rotação da entidade / Órbita 360° da câmera
-      const isGod = (selectedUnit === 'zeus' || selectedUnit === 'poseidon' || selectedUnit === 'hades' || selectedUnit === 'artemis' || selectedUnit === 'hefesto' || selectedUnit === 'dionisio') && selectedCiv === 'greek';
+      const isGod = (selectedUnit === 'zeus' || selectedUnit === 'poseidon' || selectedUnit === 'hades' || selectedUnit === 'artemis' || selectedUnit === 'hefesto' || selectedUnit === 'dionisio' || selectedUnit === 'afrodite') && selectedCiv === 'greek';
 
       if (autoRotateRef.current) {
         if (isGod) {
@@ -1871,7 +1914,7 @@ export function HopliteUvBuilderModal({
 
       if (isGod) {
         // Câmera orbital 360° ao redor do Deus posicionado no centro exato
-        const focusY = isFocus ? (selectedUnit === 'zeus' ? 1.4 : selectedUnit === 'poseidon' ? 1.5 : selectedUnit === 'artemis' ? 1.42 : selectedUnit === 'hefesto' ? 1.45 : selectedUnit === 'dionisio' ? 1.42 : 1.48) : 1.35;
+        const focusY = isFocus ? (selectedUnit === 'zeus' ? 1.4 : selectedUnit === 'poseidon' ? 1.5 : selectedUnit === 'artemis' ? 1.42 : selectedUnit === 'hefesto' ? 1.45 : selectedUnit === 'dionisio' ? 1.42 : selectedUnit === 'afrodite' ? 1.46 : 1.48) : 1.35;
         const effDist = isFocus ? 2.0 / zoomRef.current : 5.8 / zoomRef.current;
 
         const horizDist = effDist * Math.cos(orbitPitch);
@@ -2485,6 +2528,71 @@ export function HopliteUvBuilderModal({
                   >
                     <Eye className="h-3.5 w-3.5" />
                     <span>{focusDivine ? 'Visão Corpo' : 'Focar Rosto/Tirso'}</span>
+                  </button>
+                  <div className="h-5 w-[1px] bg-white/15 mx-1" />
+                </>
+              ) : entityType === 'unit' && selectedUnit === 'afrodite' && selectedCiv === 'greek' ? (
+                // Poderes e Animações de Afrodite (Deusa da Beleza & do Amor)
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setAfroditeMode('graca')}
+                    className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      afroditeMode === 'graca'
+                        ? 'bg-rose-500 text-white shadow-md shadow-rose-500/30'
+                        : 'border border-rose-400/30 text-rose-200 hover:bg-rose-400/20'
+                    }`}
+                  >
+                    <Crown className="h-3.5 w-3.5" />
+                    <span>Graça Divina</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAfroditeMode('danca')}
+                    className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      afroditeMode === 'danca'
+                        ? 'bg-pink-500 text-white shadow-md shadow-pink-500/30'
+                        : 'border border-pink-400/30 text-pink-200 hover:bg-pink-400/20'
+                    }`}
+                  >
+                    <Wind className="h-3.5 w-3.5" />
+                    <span>Dança nas Pétalas</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAfroditeMode('encanto')}
+                    className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      afroditeMode === 'encanto'
+                        ? 'bg-fuchsia-500 text-white shadow-md shadow-fuchsia-500/30'
+                        : 'border border-fuchsia-400/30 text-fuchsia-200 hover:bg-fuchsia-400/20'
+                    }`}
+                  >
+                    <Sparkles className="h-3.5 w-3.5" />
+                    <span>Encanto Irresistível</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAfroditeMode('mare')}
+                    className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      afroditeMode === 'mare'
+                        ? 'bg-amber-400 text-slate-950 shadow-md shadow-amber-400/30'
+                        : 'border border-amber-400/30 text-amber-200 hover:bg-amber-400/20'
+                    }`}
+                  >
+                    <Waves className="h-3.5 w-3.5" />
+                    <span>Maré de Paixão</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFocusDivine(!focusDivine)}
+                    className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      focusDivine
+                        ? 'bg-rose-500 text-white shadow-md shadow-rose-500/30'
+                        : 'border border-rose-400/40 text-rose-200 hover:bg-rose-500/20'
+                    }`}
+                  >
+                    <Eye className="h-3.5 w-3.5" />
+                    <span>{focusDivine ? 'Visão Corpo' : 'Focar Rosto/Espelho'}</span>
                   </button>
                   <div className="h-5 w-[1px] bg-white/15 mx-1" />
                 </>
