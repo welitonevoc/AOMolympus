@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { BuildingKind, FaunaKind, MapId, PANTHEONS, PantheonId, ResourceNodeKind, TeamId, UnitKind } from './types';
 import { createGreekUnitMesh } from '../civilizacao/gregos/gregosModels';
 import { createRiggedVillagerMesh } from '../civilizacao/gregos/villagerAnimator';
+import { buildCharybdisTitan, createCaribdisTextures } from '../civilizacao/gregos/caribdisModel';
 import { createAoMOakTreeMesh, getFaunaCoatMaterial } from '../TEXTURA';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
@@ -2215,10 +2216,10 @@ export function createUnitMesh(
       // Manto dorsal dourado
       part(new THREE.BoxGeometry(2.8, 4.2, 0.15), pal.goldOre, 0, 3.8, -0.95);
     } else if (godKey.includes('poseidon')) {
-      // TITÃ DE POSEIDON: Leviatã Abissal dos Mares
-      // Cristas dorsais de concha e coral turquesa
+      // TITÃ DE POSEIDON: Caríbdis - Colosso das Profundezas
+      // Cristas dorsais de coral luminoso
       for (let i = 0; i < 6; i++) {
-        const fin = part(new THREE.ConeGeometry(0.28, 0.85, 4), pal.turquoise, 0, 2.5 + i * 0.75, -1.05);
+        const fin = part(new THREE.ConeGeometry(0.28, 0.85, 4), pal.crystalGlow, 0, 2.5 + i * 0.75, -1.05);
         fin.rotation.x = -Math.PI / 3;
       }
       // Tridente colossal de 3 pontas marinhas
@@ -2227,12 +2228,21 @@ export function createUnitMesh(
       tridentShaft.position.set(0, -1.2, 0.5);
       const prCenter = new THREE.Mesh(new THREE.ConeGeometry(0.3, 1.4, 6), pal.crystalGlow);
       prCenter.position.set(0, 3.2, 0);
-      const prLeft = new THREE.Mesh(new THREE.ConeGeometry(0.24, 1.1, 6), pal.turquoise);
+      const prLeft = new THREE.Mesh(new THREE.ConeGeometry(0.24, 1.1, 6), pal.crystalGlow);
       prLeft.position.set(-0.65, 2.8, 0);
-      const prRight = new THREE.Mesh(new THREE.ConeGeometry(0.24, 1.1, 6), pal.turquoise);
+      const prRight = new THREE.Mesh(new THREE.ConeGeometry(0.24, 1.1, 6), pal.crystalGlow);
       prRight.position.set(0.65, 2.8, 0);
       tridentShaft.add(prCenter, prLeft, prRight);
       rightArm.add(tridentShaft);
+
+      // Garra-pinça colossal de Caríbdis no braço esquerdo
+      const clawUpper = new THREE.Mesh(new THREE.ConeGeometry(0.25, 1.5, 8), pal.bronze);
+      clawUpper.position.set(-0.25, -1.1, 0.2);
+      clawUpper.rotation.set(0.2, 0, 0.28);
+      const clawLower = new THREE.Mesh(new THREE.ConeGeometry(0.22, 1.4, 8), pal.stoneDark);
+      clawLower.position.set(0.25, -1.0, -0.2);
+      clawLower.rotation.set(-0.2, 0, -0.28);
+      leftArm.add(clawUpper, clawLower);
     } else if (godKey.includes('hades')) {
       // TITÃ DE HADES: Cérbero Titânico / Monarca do Tártaro
       // Chifres sombrios curvados para trás

@@ -90,8 +90,8 @@ export const MAJOR_GODS_BY_CIV: Partial<Record<PantheonId, MajorGodOption[]>> = 
       name: 'Poseidon',
       title: 'Senhor dos Mares (Oceanos & Terremotos)',
       color: '#2dd4bf',
-      titanName: 'Leviatã Abissal (Titã de Poseidon)',
-      titanRole: 'Titã marinho emergido das fossas abissais, empunhando o tridente colossal de oricalco.',
+      titanName: 'Titã Caríbdis - Colosso das Profundezas (Titã de Poseidon)',
+      titanRole: 'Colosso abissal emergido sobre redemoinho devorador, com carapaça de coral negro, pinça titânica e tentáculos dorsais.',
     },
     {
       id: 'Hades',
