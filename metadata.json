@@ -1,0 +1,6 @@
+{
+  "name": "Aegis of Olympus",
+  "description": "Jogo de estratégia em tempo real mitológico 3D moderno com construção de bases, unidades míticas e poderes divinos.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
