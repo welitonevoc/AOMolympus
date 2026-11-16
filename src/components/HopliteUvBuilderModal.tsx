@@ -98,8 +98,8 @@ export const MAJOR_GODS_BY_CIV: Partial<Record<PantheonId, MajorGodOption[]>> = 
       name: 'Hades',
       title: 'Soberano do Submundo (Tártaro & Riquezas)',
       color: '#10b981',
-      titanName: 'Senhor do Tártaro (Titã de Hades)',
-      titanRole: 'Titã de obsidiana e chifres infernais com manto de almas, empunhando o bidente colossal do Tártaro.',
+      titanName: 'Titã Cérbero - Guardião do Submundo (Titã de Hades)',
+      titanRole: 'Colosso bestial de três cabeças caninas do Tártaro, correntes de ferro negro, garras de basalto e cauda de serpente víbora.',
     },
   ],
   egyptian: [

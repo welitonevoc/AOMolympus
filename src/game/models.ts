@@ -4,6 +4,7 @@ import { createGreekUnitMesh } from '../civilizacao/gregos/gregosModels';
 import { createRiggedVillagerMesh } from '../civilizacao/gregos/villagerAnimator';
 import { buildCharybdisTitan, getCachedCaribdisTextures } from '../civilizacao/gregos/caribdisModel';
 import { buildTyphonTitan, getCachedTyphonTextures } from '../civilizacao/gregos/tifaoModel';
+import { buildCerberusTitan, getCachedCerberusTextures } from '../civilizacao/gregos/cerberoModel';
 import { createAoMOakTreeMesh, getFaunaCoatMaterial } from '../TEXTURA';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
@@ -2268,7 +2269,84 @@ export function createUnitMesh(
     }
 
     // ==============================================================
-    // 3. TITÃS HUMANÓIDES (HADES E DEMAIS PANTEÕES)
+    // 3. TITÃ DE HADES: TITÃ CÉRBERO - GUARDIÃO DO SUBMUNDO
+    // ==============================================================
+    if (godKey.includes('hades')) {
+      const cerbTex = getCachedCerberusTextures();
+      const cerberus = buildCerberusTitan(cerbTex);
+      cerberus.titanRoot.scale.setScalar(1.85);
+      root.add(cerberus.titanRoot);
+      root.userData.cerberus = cerberus;
+
+      // Animação procedural completa no loop do jogo (3D e 2.5D)
+      let cerbPhase = 0;
+      root.userData.animatePose = (dt: number, moving: boolean, speed: number, attackT: number | null) => {
+        cerbPhase += dt;
+        const breath = Math.sin(cerbPhase * 2.2) * 0.025;
+        cerberus.body.position.y = 1.32 + breath;
+
+        // Pulso vivo das veias de magma e energia de alma
+        cerberus.veinMatHell.emissiveIntensity = 2.8 + Math.sin(cerbPhase * 5.0) * 0.8;
+        cerberus.veinMatSoul.emissiveIntensity = 2.4 + Math.cos(cerbPhase * 4.5) * 0.7;
+
+        // Movimento independente das três cabeças infernais de cão
+        const jawOpen = attackT !== null ? 0.38 : 0.08;
+        cerberus.neckCenter.rotation.y = Math.sin(cerbPhase * 1.1) * 0.14;
+        cerberus.headCenterObj.jawPivot.rotation.x = jawOpen + Math.max(0, Math.sin(cerbPhase * 3.4)) * 0.18;
+
+        cerberus.neckLeft.rotation.y = 0.34 + Math.cos(cerbPhase * 1.4) * 0.16;
+        cerberus.headLeftObj.jawPivot.rotation.x = jawOpen + Math.max(0, Math.cos(cerbPhase * 3.8)) * 0.18;
+
+        cerberus.neckRight.rotation.y = -0.34 + Math.sin(cerbPhase * 1.3 + 1.5) * 0.16;
+        cerberus.headRightObj.jawPivot.rotation.x = jawOpen + Math.max(0, Math.sin(cerbPhase * 3.6 + 1.2)) * 0.18;
+
+        // Ondulação da cauda de serpente
+        const tailSpeed = moving ? 5.2 : 3.0;
+        for (const ts of cerberus.tailSegments) {
+          ts.pivot.rotation.y = Math.sin(cerbPhase * tailSpeed - ts.phase) * 0.26;
+        }
+
+        // Passos pesados das pernas titânicas ao se mover
+        if (moving) {
+          const stride = cerbPhase * speed * 2.8;
+          const sinS = Math.sin(stride);
+          const cosS = Math.cos(stride);
+          cerberus.legs.L.hip.rotation.x = -0.18 + sinS * 0.42;
+          cerberus.legs.L.knee.rotation.x = 0.24 + Math.max(0, -cosS) * 0.45;
+          cerberus.legs.R.hip.rotation.x = -0.18 - sinS * 0.42;
+          cerberus.legs.R.knee.rotation.x = 0.24 + Math.max(0, cosS) * 0.45;
+
+          cerberus.rightArm.arm.rotation.x = -0.26 - sinS * 0.35;
+          cerberus.leftArm.arm.rotation.x = -0.26 + sinS * 0.35;
+        } else {
+          cerberus.legs.L.hip.rotation.x *= 0.9;
+          cerberus.legs.R.hip.rotation.x *= 0.9;
+          cerberus.rightArm.arm.rotation.x *= 0.9;
+          cerberus.leftArm.arm.rotation.x *= 0.9;
+        }
+
+        // Ataque com garras e mandíbulas
+        if (attackT !== null) {
+          const strike = Math.sin(attackT * Math.PI);
+          cerberus.rightArm.arm.rotation.x = -strike * 1.2;
+          cerberus.leftArm.arm.rotation.x = -strike * 0.8;
+        }
+      };
+
+      root.userData.setMode = (mode: '3d' | 'sprite' | 'brg' | 'uv2d') => {
+        // Suporte a modos 3D e 2.5D
+      };
+      root.userData.updateBrg = (dt: number, state: string) => {
+        root.userData.animatePose?.(dt, state === 'move', 2.0, state === 'attack' ? 0.5 : null);
+      };
+
+      attachGroundMarkers(root, 2.2, pal, team);
+      attachHealthBar(root, 8.2, 2.8);
+      return root;
+    }
+
+    // ==============================================================
+    // 4. TITÃS HUMANÓIDES (DEMAIS PANTEÕES)
     // ==============================================================
     const leftLeg = part(geos.giantLimb, look.titanBodyMat, -0.75, 1.55, 0);
     leftLeg.scale.set(2.4, 2.6, 2.4);
@@ -2304,31 +2382,7 @@ export function createUnitMesh(
     arm.position.y = -0.95;
     rightArm.add(arm);
 
-    if (godKey.includes('hades')) {
-      // TITÃ DE HADES: Cérbero Titânico / Monarca do Tártaro
-      // Chifres sombrios curvados para trás
-      const hL = part(geos.bullHorn, pal.obsidian, -0.65, 7.45, -0.2);
-      hL.scale.set(-2.8, 2.8, 2.8);
-      hL.rotation.x = -0.45;
-      const hR = part(geos.bullHorn, pal.obsidian, 0.65, 7.45, -0.2);
-      hR.scale.set(2.8, 2.8, 2.8);
-      hR.rotation.x = -0.45;
-      // Ombreiras com crânios de olhos espectrais verdes
-      part(new THREE.SphereGeometry(0.48, 12, 12), pal.obsidian, -2.1, 6.2, 0.4);
-      part(new THREE.SphereGeometry(0.48, 12, 12), pal.obsidian, 2.1, 6.2, 0.4);
-      part(new THREE.SphereGeometry(0.1, 8, 8), pal.crystalGlow, -2.25, 6.25, 0.85);
-      part(new THREE.SphereGeometry(0.1, 8, 8), pal.crystalGlow, 2.25, 6.25, 0.85);
-      // Bidente colossal do Tártaro de Ferro Negro
-      const bident = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.14, 5.6, 12), pal.obsidian);
-      bident.rotation.x = Math.PI / 2.2;
-      bident.position.set(0, -1.2, 0.5);
-      const bL = new THREE.Mesh(new THREE.ConeGeometry(0.26, 1.5, 6), pal.ember);
-      bL.position.set(-0.48, 3.1, 0);
-      const bR = new THREE.Mesh(new THREE.ConeGeometry(0.26, 1.5, 6), pal.ember);
-      bR.position.set(0.48, 3.1, 0);
-      bident.add(bL, bR);
-      rightArm.add(bident);
-    } else if (godKey.includes('rá') || godKey.includes('ra')) {
+    if (godKey.includes('rá') || godKey.includes('ra')) {
       // TITÃ DE RÁ: Avatar Solar de Hórus-Rá
       // Grande disco solar flamejante sobre a cabeça
       const sunDisc = part(new THREE.CylinderGeometry(1.2, 1.2, 0.18, 24), pal.gold, 0, 8.45, 0);
