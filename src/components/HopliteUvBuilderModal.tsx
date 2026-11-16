@@ -63,6 +63,11 @@ import {
   getCachedApolloTextures,
   animateApollo,
 } from '../civilizacao/gregos/apoloModel';
+import {
+  buildAres,
+  getCachedAresTextures,
+  animateAres,
+} from '../civilizacao/gregos/aresModel';
 import { createBuildingMesh, createMaterialPalette, createUnitMesh } from '../game/models';
 import { BuildingKind, PantheonId, UnitKind } from '../game/types';
 import {
@@ -80,7 +85,7 @@ interface HopliteUvBuilderModalProps {
   onSelectTier: (tier: 1 | 2 | 3 | 4) => void;
 }
 
-export type InspectableUnitId = UnitKind | 'zeus' | 'poseidon' | 'hades' | 'artemis' | 'hefesto' | 'dionisio' | 'afrodite' | 'apolo';
+export type InspectableUnitId = UnitKind | 'zeus' | 'poseidon' | 'hades' | 'artemis' | 'hefesto' | 'dionisio' | 'afrodite' | 'apolo' | 'ares';
 
 interface CivEntityOption {
   id: InspectableUnitId;
@@ -249,6 +254,11 @@ export function getUnitsForCivAndGod(civ: PantheonId, majorGod: string): CivEnti
         id: 'apolo',
         name: '☀️ Apolo (Deus Menor)',
         role: 'Deus do Sol & da Luz — Arco Solar Recurvo, Kithara Dourada de 7 cordas e Chama de Hélio',
+      },
+      {
+        id: 'ares',
+        name: '⚔️ Ares (Deus Menor)',
+        role: 'Deus da Guerra Brutal — Espada Larga Xiphos incandescente, Escudo Hoplon com Lambda (Λ) e Fúria de Sangue',
       },
       {
         id: 'hoplite',
@@ -464,6 +474,7 @@ export function HopliteUvBuilderModal({
   const [dionisioMode, setDionisioMode] = useState<'banquete' | 'danca' | 'vinhas' | 'extase'>('banquete');
   const [afroditeMode, setAfroditeMode] = useState<'graca' | 'danca' | 'encanto' | 'mare'>('graca');
   const [apoloMode, setApoloMode] = useState<'pairar' | 'voo' | 'flecha' | 'helio'>('pairar');
+  const [aresMode, setAresMode] = useState<'postura' | 'investida' | 'sismico' | 'furia'>('postura');
   const [focusDivine, setFocusDivine] = useState(false);
 
   const animStateRef = useRef(animState);
@@ -489,6 +500,8 @@ export function HopliteUvBuilderModal({
   afroditeModeRef.current = afroditeMode;
   const apoloModeRef = useRef(apoloMode);
   apoloModeRef.current = apoloMode;
+  const aresModeRef = useRef(aresMode);
+  aresModeRef.current = aresMode;
   const focusDivineRef = useRef(focusDivine);
   focusDivineRef.current = focusDivine;
 
@@ -566,7 +579,7 @@ export function HopliteUvBuilderModal({
       prevMouseX = e.clientX;
       prevMouseY = e.clientY;
 
-      const isGod = (selectedUnit === 'zeus' || selectedUnit === 'poseidon' || selectedUnit === 'hades' || selectedUnit === 'artemis' || selectedUnit === 'hefesto' || selectedUnit === 'dionisio' || selectedUnit === 'afrodite' || selectedUnit === 'apolo') && selectedCiv === 'greek';
+      const isGod = (selectedUnit === 'zeus' || selectedUnit === 'poseidon' || selectedUnit === 'hades' || selectedUnit === 'artemis' || selectedUnit === 'hefesto' || selectedUnit === 'dionisio' || selectedUnit === 'afrodite' || selectedUnit === 'apolo' || selectedUnit === 'ares') && selectedCiv === 'greek';
       if (isGod) {
         // No caso dos deuses, a câmera orbita em 360° e o deus permanece fixo no centro
         orbitYaw -= dx * 0.008;
@@ -1559,6 +1572,36 @@ export function HopliteUvBuilderModal({
             const m = apoloModeRef.current;
             animateApollo(apolo, dt, simTime, m);
           };
+        } else if (selectedUnit === 'ares' && selectedCiv === 'greek') {
+          // ===============================
+          // CENÁRIO DO CAMPO DE BATALHA ESPARTANO & MAGMA (ARES)
+          // ===============================
+          scene.background = new THREE.Color(0x190806);
+          scene.fog = new THREE.FogExp2(0x280c08, 0.018);
+
+          const pedGeo = new THREE.CylinderGeometry(2.4, 2.6, 0.2, 44);
+          const pedMat = new THREE.MeshStandardMaterial({ color: 0x29120c, roughness: 0.6, metalness: 0.2 });
+          const pedestal = new THREE.Mesh(pedGeo, pedMat);
+          pedestal.position.y = -0.1;
+          pedestal.receiveShadow = true;
+          environmentGroup.add(pedestal);
+
+          const ringGeo = new THREE.RingGeometry(2.1, 2.3, 44);
+          const ringMat = new THREE.MeshBasicMaterial({ color: 0xef4444, side: THREE.DoubleSide });
+          const ring = new THREE.Mesh(ringGeo, ringMat);
+          ring.rotation.x = -Math.PI / 2;
+          ring.position.y = 0.01;
+          environmentGroup.add(ring);
+
+          const aresTex = getCachedAresTextures();
+          const ares = buildAres(aresTex);
+          group = ares.root;
+          group.scale.setScalar(0.85);
+
+          group.userData.animatePose = (dt: number) => {
+            const m = aresModeRef.current;
+            animateAres(ares, dt, simTime, m);
+          };
         } else if (selectedUnit === 'hoplite' || selectedUnit === 'hipaspist') {
           // ===============================
           // CENÁRIO PADRÃO (PEDESTAL)
@@ -1928,7 +1971,7 @@ export function HopliteUvBuilderModal({
       if (hadesBlastLight.intensity > 0) hadesBlastLight.intensity = Math.max(0, hadesBlastLight.intensity - dt * 20);
 
       // Rotação da entidade / Órbita 360° da câmera
-      const isGod = (selectedUnit === 'zeus' || selectedUnit === 'poseidon' || selectedUnit === 'hades' || selectedUnit === 'artemis' || selectedUnit === 'hefesto' || selectedUnit === 'dionisio' || selectedUnit === 'afrodite' || selectedUnit === 'apolo') && selectedCiv === 'greek';
+      const isGod = (selectedUnit === 'zeus' || selectedUnit === 'poseidon' || selectedUnit === 'hades' || selectedUnit === 'artemis' || selectedUnit === 'hefesto' || selectedUnit === 'dionisio' || selectedUnit === 'afrodite' || selectedUnit === 'apolo' || selectedUnit === 'ares') && selectedCiv === 'greek';
 
       if (autoRotateRef.current) {
         if (isGod) {
@@ -1958,7 +2001,7 @@ export function HopliteUvBuilderModal({
 
       if (isGod) {
         // Câmera orbital 360° ao redor do Deus posicionado no centro exato
-        const focusY = isFocus ? (selectedUnit === 'zeus' ? 1.4 : selectedUnit === 'poseidon' ? 1.5 : selectedUnit === 'artemis' ? 1.42 : selectedUnit === 'hefesto' ? 1.45 : selectedUnit === 'dionisio' ? 1.42 : selectedUnit === 'afrodite' ? 1.46 : selectedUnit === 'apolo' ? 1.48 : 1.48) : 1.35;
+        const focusY = isFocus ? (selectedUnit === 'zeus' ? 1.4 : selectedUnit === 'poseidon' ? 1.5 : selectedUnit === 'artemis' ? 1.42 : selectedUnit === 'hefesto' ? 1.45 : selectedUnit === 'dionisio' ? 1.42 : selectedUnit === 'afrodite' ? 1.46 : selectedUnit === 'apolo' ? 1.48 : selectedUnit === 'ares' ? 1.48 : 1.48) : 1.35;
         const effDist = isFocus ? 2.0 / zoomRef.current : 5.8 / zoomRef.current;
 
         const horizDist = effDist * Math.cos(orbitPitch);
@@ -2702,6 +2745,71 @@ export function HopliteUvBuilderModal({
                   >
                     <Eye className="h-3.5 w-3.5" />
                     <span>{focusDivine ? 'Visão Corpo' : 'Focar Rosto/Arco'}</span>
+                  </button>
+                  <div className="h-5 w-[1px] bg-white/15 mx-1" />
+                </>
+              ) : entityType === 'unit' && selectedUnit === 'ares' && selectedCiv === 'greek' ? (
+                // Poderes e Animações de Ares (Deus da Guerra Brutal)
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setAresMode('postura')}
+                    className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      aresMode === 'postura'
+                        ? 'bg-red-600 text-white shadow-md shadow-red-600/30'
+                        : 'border border-red-500/30 text-red-200 hover:bg-red-500/20'
+                    }`}
+                  >
+                    <Shield className="h-3.5 w-3.5" />
+                    <span>Postura de Guerra</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAresMode('investida')}
+                    className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      aresMode === 'investida'
+                        ? 'bg-orange-600 text-white shadow-md shadow-orange-600/30'
+                        : 'border border-orange-500/30 text-orange-200 hover:bg-orange-500/20'
+                    }`}
+                  >
+                    <Wind className="h-3.5 w-3.5" />
+                    <span>Investida Brutal</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAresMode('sismico')}
+                    className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      aresMode === 'sismico'
+                        ? 'bg-amber-600 text-white shadow-md shadow-amber-600/30'
+                        : 'border border-amber-500/30 text-amber-200 hover:bg-amber-500/20'
+                    }`}
+                  >
+                    <Zap className="h-3.5 w-3.5" />
+                    <span>Golpe Sísmico</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAresMode('furia')}
+                    className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      aresMode === 'furia'
+                        ? 'bg-gradient-to-r from-red-600 to-orange-600 text-white shadow-md shadow-red-600/40'
+                        : 'border border-red-500/30 text-red-200 hover:bg-red-500/20'
+                    }`}
+                  >
+                    <Flame className="h-3.5 w-3.5" />
+                    <span>Fúria de Sangue</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFocusDivine(!focusDivine)}
+                    className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      focusDivine
+                        ? 'bg-red-600 text-white shadow-md shadow-red-600/30'
+                        : 'border border-red-500/40 text-red-200 hover:bg-red-500/20'
+                    }`}
+                  >
+                    <Eye className="h-3.5 w-3.5" />
+                    <span>{focusDivine ? 'Visão Corpo' : 'Focar Rosto/Elmo'}</span>
                   </button>
                   <div className="h-5 w-[1px] bg-white/15 mx-1" />
                 </>

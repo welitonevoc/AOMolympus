@@ -10,6 +10,7 @@ import { buildHephaestus, getCachedHephaestusTextures, animateHephaestus } from 
 import { buildDionysus, getCachedDionysusTextures, animateDionysus } from '../civilizacao/gregos/dionisioModel';
 import { buildAphrodite, getCachedAphroditeTextures, animateAphrodite } from '../civilizacao/gregos/afroditeModel';
 import { buildApollo, getCachedApolloTextures, animateApollo } from '../civilizacao/gregos/apoloModel';
+import { buildAres, getCachedAresTextures, animateAres } from '../civilizacao/gregos/aresModel';
 import { createAoMOakTreeMesh, getFaunaCoatMaterial } from '../TEXTURA';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
@@ -2599,6 +2600,20 @@ export function createUnitMesh(
       aPhase += dt;
       const mode = attackT !== null ? 'flecha' : moving ? 'voo' : 'pairar';
       animateApollo(apo, dt, aPhase, mode);
+    };
+    attachGroundMarkers(root, 1.25, pal, team);
+    attachHealthBar(root, 3.4, 1.6);
+    return root;
+  } else if ((kind as any) === 'ares') {
+    const aresTex = getCachedAresTextures();
+    const ares = buildAres(aresTex);
+    ares.root.scale.setScalar(1.25);
+    root.add(ares.root);
+    let aPhase = 0;
+    root.userData.animatePose = (dt: number, moving: boolean, _speed: number, attackT: number | null) => {
+      aPhase += dt;
+      const mode = attackT !== null ? (attackT > 0.6 ? 'sismico' : 'furia') : moving ? 'investida' : 'postura';
+      animateAres(ares, dt, aPhase, mode);
     };
     attachGroundMarkers(root, 1.25, pal, team);
     attachHealthBar(root, 3.4, 1.6);

@@ -1,0 +1,1545 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Ares - Deus da Guerra | Age of Mythology: Olympus 3D</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --crimson: #dc2626;
+      --ember: #f97316;
+      --gold: #eab308;
+      --glass: rgba(24, 10, 10, 0.82);
+      --border: rgba(239, 68, 68, 0.45);
+    }
+    * { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #140707;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    }
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+      cursor: grab;
+    }
+    canvas:active { cursor: grabbing; }
+
+    #ui {
+      position: fixed;
+      top: 14px;
+      left: 14px;
+      right: 14px;
+      display: flex;
+      gap: 8px;
+      z-index: 10;
+      flex-wrap: wrap;
+      align-items: center;
+      pointer-events: none;
+    }
+    .btn-group {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      pointer-events: auto;
+    }
+    button {
+      padding: 9px 14px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--glass);
+      backdrop-filter: blur(10px);
+      color: #fef2f2;
+      font-weight: 600;
+      font-size: 13px;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+      transition: all 0.2s ease;
+    }
+    button:hover {
+      border-color: #f97316;
+      transform: translateY(-1px);
+      background: rgba(48, 16, 14, 0.94);
+    }
+    button.on {
+      background: linear-gradient(135deg, #ef4444 0%, #ea580c 100%);
+      color: #fff;
+      border-color: #fed7aa;
+      box-shadow: 0 0 22px rgba(239, 68, 68, 0.6);
+    }
+    button.cam-btn {
+      border-color: rgba(234, 179, 8, 0.55);
+    }
+    button.cam-btn.active {
+      background: linear-gradient(135deg, #eab308 0%, #b45309 100%);
+      color: #180904;
+      border-color: #fef08a;
+      box-shadow: 0 0 18px rgba(234, 179, 8, 0.5);
+    }
+
+    #badge {
+      position: fixed;
+      top: 14px;
+      right: 16px;
+      background: var(--glass);
+      backdrop-filter: blur(8px);
+      border: 1px solid var(--border);
+      padding: 7px 13px;
+      border-radius: 10px;
+      color: #fca5a5;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      pointer-events: none;
+      z-index: 9;
+    }
+    @media (max-width: 960px) {
+      #badge { display: none; }
+    }
+
+    #hint {
+      position: fixed;
+      bottom: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(22, 8, 8, 0.78);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(239, 68, 68, 0.32);
+      padding: 7px 16px;
+      border-radius: 999px;
+      color: #fee2e2;
+      font-size: 12.5px;
+      white-space: nowrap;
+      pointer-events: none;
+      z-index: 10;
+    }
+  </style>
+</head>
+<body>
+
+<div id="ui">
+  <div class="btn-group">
+    <button data-m="postura" class="on">Postura de Guerra</button>
+    <button data-m="investida">Investida Brutal</button>
+    <button data-m="sismico">Golpe Sísmico</button>
+    <button data-m="furia">Fúria de Sangue</button>
+    <button id="btn-focus" class="cam-btn">Focar Rosto</button>
+  </div>
+</div>
+
+<div id="badge">Olympus • Ares</div>
+<div id="hint">Arraste para girar 360° • Scroll / Pinça para zoom</div>
+
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+const T = THREE;
+
+/* ==========================================================================
+   1. TEXTURAS PROCEDURAIS PBR (PELE MARCADA, ESCUDO HOPLON E SOLO VULCÂNICO)
+   ========================================================================== */
+function createProceduralTextures() {
+  // 1.1 Bump map de pele guerreira + cicatrizes sutis
+  const skinCanvas = document.createElement('canvas');
+  skinCanvas.width = skinCanvas.height = 256;
+  const sCtx = skinCanvas.getContext('2d');
+  sCtx.fillStyle = '#808080';
+  sCtx.fillRect(0, 0, 256, 256);
+  for (let i = 0; i < 6500; i++) {
+    const v = 120 + Math.floor(Math.random() * 16);
+    sCtx.fillStyle = `rgb(${v},${v},${v})`;
+    sCtx.fillRect(Math.random() * 256, Math.random() * 256, 1.5, 1.5);
+  }
+  const skinBump = new T.CanvasTexture(skinCanvas);
+  skinBump.wrapS = skinBump.wrapT = T.RepeatWrapping;
+  skinBump.repeat.set(4, 4);
+
+  // 1.2 Textura do Escudo Hoplon Espartano (Bronze Escurecido, Aro Dourado e Lambda Λ)
+  const shieldCanvas = document.createElement('canvas');
+  shieldCanvas.width = shieldCanvas.height = 512;
+  const shCtx = shieldCanvas.getContext('2d');
+
+  // Fundo metálico bronze envelhecido e ferro
+  const radGrad = shCtx.createRadialGradient(256, 256, 30, 256, 256, 250);
+  radGrad.addColorStop(0, '#573018');
+  radGrad.addColorStop(0.65, '#3b1d0e');
+  radGrad.addColorStop(0.84, '#7f1d1d');
+  radGrad.addColorStop(0.92, '#eab308');
+  radGrad.addColorStop(1, '#92400e');
+  shCtx.fillStyle = radGrad;
+  shCtx.fillRect(0, 0, 512, 512);
+
+  // Arranhões e marcas de batalha no bronze
+  shCtx.strokeStyle = 'rgba(254, 215, 170, 0.22)';
+  shCtx.lineWidth = 2;
+  for (let i = 0; i < 38; i++) {
+    shCtx.beginPath();
+    const sx = 80 + Math.random() * 352;
+    const sy = 80 + Math.random() * 352;
+    shCtx.moveTo(sx, sy);
+    shCtx.lineTo(sx + (Math.random() - 0.5) * 65, sy + (Math.random() - 0.5) * 65);
+    shCtx.stroke();
+  }
+
+  // Borda de Meandro Espartano Dourado
+  shCtx.strokeStyle = '#facc15';
+  shCtx.lineWidth = 6;
+  shCtx.beginPath();
+  shCtx.arc(256, 256, 224, 0, Math.PI * 2);
+  shCtx.stroke();
+
+  // Símbolo Lambda Espartano (Λ) monumental incandescente no centro do escudo
+  shCtx.save();
+  shCtx.shadowColor = '#f97316';
+  shCtx.shadowBlur = 18;
+  shCtx.fillStyle = '#facc15';
+  shCtx.beginPath();
+  shCtx.moveTo(256, 118); // Topo do Lambda
+  shCtx.lineTo(356, 368); // Perna direita externa
+  shCtx.lineTo(314, 368); // Perna direita interna
+  shCtx.lineTo(256, 206); // Vértice interno
+  shCtx.lineTo(198, 368); // Perna esquerda interna
+  shCtx.lineTo(156, 368); // Perna esquerda externa
+  shCtx.closePath();
+  shCtx.fill();
+  shCtx.strokeStyle = '#ef4444';
+  shCtx.lineWidth = 4;
+  shCtx.stroke();
+  shCtx.restore();
+
+  const shieldTex = new T.CanvasTexture(shieldCanvas);
+
+  // 1.3 Arena de Pedra Vulcânica e Mármore Rachado com Brasas
+  const floorCanvas = document.createElement('canvas');
+  floorCanvas.width = floorCanvas.height = 1024;
+  const fCtx = floorCanvas.getContext('2d');
+  fCtx.fillStyle = '#1c1917';
+  fCtx.fillRect(0, 0, 1024, 1024);
+
+  // Textura granulada de basalto e cinzas
+  for (let i = 0; i < 4500; i++) {
+    fCtx.fillStyle = i % 2 === 0 ? 'rgba(41, 37, 36, 0.45)' : 'rgba(12, 10, 9, 0.55)';
+    fCtx.fillRect(Math.random() * 1024, Math.random() * 1024, 10, 10);
+  }
+
+  // Círculos de arena de guerra
+  const cx = 512, cy = 512;
+  fCtx.strokeStyle = '#7f1d1d';
+  fCtx.lineWidth = 16;
+  fCtx.beginPath();
+  fCtx.arc(cx, cy, 410, 0, Math.PI * 2);
+  fCtx.stroke();
+
+  fCtx.strokeStyle = '#b45309';
+  fCtx.lineWidth = 6;
+  fCtx.beginPath();
+  fCtx.arc(cx, cy, 424, 0, Math.PI * 2);
+  fCtx.stroke();
+
+  // Fissuras de magma incandescentes espalhadas pelo solo rachado
+  for (let i = 0; i < 36; i++) {
+    const startAng = Math.random() * Math.PI * 2;
+    const startR = 60 + Math.random() * 340;
+    let px = cx + Math.cos(startAng) * startR;
+    let py = cy + Math.sin(startAng) * startR;
+
+    fCtx.strokeStyle = i % 2 === 0 ? 'rgba(239, 68, 68, 0.65)' : 'rgba(249, 115, 22, 0.72)';
+    fCtx.lineWidth = 2.6;
+    fCtx.beginPath();
+    fCtx.moveTo(px, py);
+    for (let s = 0; s < 6; s++) {
+      px += (Math.random() - 0.5) * 65;
+      py += (Math.random() - 0.5) * 65;
+      fCtx.lineTo(px, py);
+    }
+    fCtx.stroke();
+  }
+
+  const floorTex = new T.CanvasTexture(floorCanvas);
+
+  return { skinBump, shieldTex, floorTex };
+}
+
+/* ==========================================================================
+   2. HELPERS DE ESCULTURA ANATÔMICA E MATERIAIS
+   ========================================================================== */
+function group(parent, x = 0, y = 0, z = 0) {
+  const g = new T.Group();
+  g.position.set(x, y, z);
+  if (parent) parent.add(g);
+  return g;
+}
+
+function sculpt(parent, geo, mat, pos = [0, 0, 0], rot = [0, 0, 0], scale = [1, 1, 1]) {
+  const m = new T.Mesh(geo, mat);
+  m.position.set(pos[0], pos[1], pos[2]);
+  m.rotation.set(rot[0], rot[1], rot[2]);
+  m.scale.set(scale[0], scale[1], scale[2]);
+  m.castShadow = true;
+  m.receiveShadow = true;
+  if (parent) parent.add(m);
+  return m;
+}
+
+function createMaterials(textures) {
+  return {
+    skin: new T.MeshStandardMaterial({
+      color: 0xb97a56,
+      roughness: 0.42,
+      metalness: 0.08,
+      bumpMap: textures.skinBump,
+      bumpScale: 0.0045
+    }),
+    skinShade: new T.MeshStandardMaterial({
+      color: 0x965c3c,
+      roughness: 0.46,
+      metalness: 0.08,
+      bumpMap: textures.skinBump,
+      bumpScale: 0.0045
+    }),
+    scarMat: new T.MeshStandardMaterial({
+      color: 0x6b3424,
+      emissive: 0x2a0804,
+      emissiveIntensity: 0.25,
+      roughness: 0.55
+    }),
+    beardDark: new T.MeshStandardMaterial({
+      color: 0x18181b,
+      roughness: 0.65,
+      metalness: 0.08
+    }),
+    darkBronze: new T.MeshStandardMaterial({
+      color: 0x451a03,
+      emissive: 0x1c0802,
+      emissiveIntensity: 0.2,
+      metalness: 0.88,
+      roughness: 0.28
+    }),
+    blackIron: new T.MeshStandardMaterial({
+      color: 0x1c1917,
+      metalness: 0.92,
+      roughness: 0.26
+    }),
+    bloodGold: new T.MeshStandardMaterial({
+      color: 0xeab308,
+      emissive: 0x451a03,
+      emissiveIntensity: 0.3,
+      metalness: 0.9,
+      roughness: 0.22
+    }),
+    crimsonArmor: new T.MeshStandardMaterial({
+      color: 0x7f1d1d,
+      emissive: 0x2b0404,
+      emissiveIntensity: 0.25,
+      roughness: 0.48,
+      metalness: 0.2,
+      side: T.DoubleSide
+    }),
+    warCloak: new T.MeshStandardMaterial({
+      color: 0x991b1b,
+      emissive: 0x3b0707,
+      emissiveIntensity: 0.3,
+      roughness: 0.62,
+      metalness: 0.1,
+      side: T.DoubleSide
+    }),
+    plumeCrimson: new T.MeshStandardMaterial({
+      color: 0xdc2626,
+      emissive: 0x450a0a,
+      emissiveIntensity: 0.35,
+      roughness: 0.45
+    }),
+    leatherDark: new T.MeshStandardMaterial({
+      color: 0x29150c,
+      roughness: 0.72,
+      metalness: 0.08
+    }),
+    eyeEmber: new T.MeshStandardMaterial({
+      color: 0xffedd5,
+      emissive: 0xf97316,
+      emissiveIntensity: 4.2,
+      roughness: 0.05
+    }),
+    magmaEdge: new T.MeshStandardMaterial({
+      color: 0xfef08a,
+      emissive: 0xef4444,
+      emissiveIntensity: 3.8,
+      roughness: 0.1
+    }),
+    shieldFace: new T.MeshStandardMaterial({
+      map: textures.shieldTex,
+      metalness: 0.84,
+      roughness: 0.28,
+      side: T.DoubleSide
+    })
+  };
+}
+
+/* ==========================================================================
+   3. CONSTRUÇÃO BRUTAL DE ARES (ANATOMIA MASSIVA, ELMO ESPARTANO, XIPHOS & HOPLON)
+   ========================================================================== */
+function buildAres(textures) {
+  const M = createMaterials(textures);
+
+  const root = new T.Group();
+  const body = group(root, 0, 1.08, 0);
+
+  // ------------------------------------------------------------------------
+  // A. PELVE E PERNAS MACIÇAS DE GUERREIRO ESPARTANO (GREVAS DE BRONZE E FERRO)
+  // ------------------------------------------------------------------------
+  const pelvis = group(body, 0, 0.90, 0);
+  sculpt(pelvis, new T.SphereGeometry(0.28, 22, 20), M.leatherDark, [0, 0, 0], [0, 0, 0], [1.16, 0.78, 0.88]);
+
+  const legs = {};
+  for (const side of ['L', 'R']) {
+    const s = side === 'R' ? 1 : -1;
+    const hip = group(pelvis, s * 0.185, -0.04, 0);
+
+    // Coxa massiva (Quadríceps pesados de guerreiro)
+    sculpt(hip, new T.CylinderGeometry(0.168, 0.122, 0.50, 20), M.skin, [0, -0.24, 0], [0, 0, 0], [1.06, 1, 1.12]);
+    const quadGeo = new T.SphereGeometry(0.132, 16, 16);
+    sculpt(hip, quadGeo, M.skin, [s * 0.025, -0.21, 0.058], [0, 0, 0], [0.98, 1.85, 0.88]);
+    sculpt(hip, quadGeo, M.skin, [s * 0.06, -0.24, 0.015], [0, 0, 0], [0.88, 1.75, 0.92]);
+
+    // Joelho
+    sculpt(hip, new T.SphereGeometry(0.105, 16, 16), M.skin, [0, -0.50, 0.016]);
+
+    // Panturrilha e Grevas Pesadas de Bronze Escuro e Ouro
+    const knee = group(hip, 0, -0.51, 0);
+    sculpt(knee, new T.CylinderGeometry(0.108, 0.066, 0.46, 18), M.skin, [0, -0.23, 0], [0, 0, 0], [1.02, 1, 1.06]);
+    sculpt(knee, new T.SphereGeometry(0.102, 16, 16), M.skin, [0, -0.15, -0.045], [0, 0, 0], [1.0, 1.65, 0.98]);
+
+    // Greva frontal esculpida em bronze escuro com borda dourada
+    sculpt(knee, new T.CylinderGeometry(0.106, 0.072, 0.38, 18, 1, false, -0.9, 1.8), M.darkBronze, [0, -0.23, 0.012]);
+    sculpt(knee, new T.ConeGeometry(0.055, 0.12, 5), M.bloodGold, [0, -0.02, 0.095], [0.15, 0, 0], [1.1, 1, 0.45]);
+
+    // Bota / Sandália de Batalha Pesada
+    const ankle = group(knee, 0, -0.46, 0.02);
+    sculpt(ankle, new T.BoxGeometry(0.115, 0.065, 0.24), M.leatherDark, [0, -0.02, 0.04], [0.05, 0, 0]);
+    sculpt(ankle, new T.BoxGeometry(0.124, 0.022, 0.255), M.darkBronze, [0, -0.052, 0.04], [0.05, 0, 0]);
+    sculpt(ankle, new T.BoxGeometry(0.118, 0.045, 0.06), M.bloodGold, [0, -0.015, 0.14], [0.2, 0, 0]);
+
+    legs[side] = { hip, knee, ankle };
+  }
+
+  // Base de combate firme, aberta e pesada no chão
+  legs.L.hip.rotation.set(-0.24, -0.18, -0.14);
+  legs.L.knee.rotation.set(0.32, 0, 0);
+  legs.R.hip.rotation.set(0.20, 0.22, 0.16);
+  legs.R.knee.rotation.set(0.26, 0, 0);
+
+  // ------------------------------------------------------------------------
+  // B. TRONCO BRUTAL E MASSIVO (PEITORAIS COM CICATRIZES, 6-PACK & TRAPÉZIOS)
+  // ------------------------------------------------------------------------
+  const torso = group(body, 0, 1.34, 0);
+
+  const torsoPts = [
+    new T.Vector2(0.01, -0.44),
+    new T.Vector2(0.29, -0.40),
+    new T.Vector2(0.27, -0.20),
+    new T.Vector2(0.34, 0.04),
+    new T.Vector2(0.46, 0.28),
+    new T.Vector2(0.41, 0.44),
+    new T.Vector2(0.18, 0.51),
+    new T.Vector2(0.01, 0.52)
+  ];
+  sculpt(torso, new T.LatheGeometry(torsoPts, 36), M.skin, [0, 0, 0], [0, 0, 0], [1.24, 1.02, 0.78]);
+
+  // Peitorais largos e volumosos
+  const pecGeo = new T.SphereGeometry(0.245, 24, 24);
+  sculpt(torso, pecGeo, M.skin, [-0.215, 0.23, 0.185], [0.12, -0.22, -0.14], [1.08, 0.88, 0.62]);
+  sculpt(torso, pecGeo, M.skin, [0.215, 0.23, 0.185], [0.12, 0.22, 0.14], [1.08, 0.88, 0.62]);
+
+  // CICATRIZES DE BATALHA ESCULPIDAS NO PEITORAL E ABDÔMEN
+  const chestScar1 = new T.CatmullRomCurve3([
+    new T.Vector3(-0.34, 0.34, 0.16),
+    new T.Vector3(-0.18, 0.24, 0.29),
+    new T.Vector3(-0.04, 0.14, 0.30)
+  ]);
+  sculpt(torso, new T.TubeGeometry(chestScar1, 14, 0.0085, 6, false), M.scarMat);
+
+  const chestScar2 = new T.CatmullRomCurve3([
+    new T.Vector3(0.28, 0.26, 0.25),
+    new T.Vector3(0.14, 0.17, 0.29),
+    new T.Vector3(0.22, 0.07, 0.27)
+  ]);
+  sculpt(torso, new T.TubeGeometry(chestScar2, 12, 0.0075, 6, false), M.scarMat);
+
+  // Six-Pack Abdominal
+  const abGeo = new T.SphereGeometry(0.098, 16, 16);
+  [
+    { y: 0.04, sx: 1.05, sy: 0.76, z: 0.242 },
+    { y: -0.08, sx: 1.0, sy: 0.78, z: 0.238 },
+    { y: -0.20, sx: 0.92, sy: 0.84, z: 0.226 }
+  ].forEach(lvl => {
+    sculpt(torso, abGeo, M.skin, [-0.082, lvl.y, lvl.z], [0, -0.1, 0], [lvl.sx, lvl.sy, 0.50]);
+    sculpt(torso, abGeo, M.skin, [0.082, lvl.y, lvl.z], [0, 0.1, 0], [lvl.sx, lvl.sy, 0.50]);
+  });
+
+  // Oblíquos, Dorsais e Trapézio maciços
+  const obliqueGeo = new T.CapsuleGeometry(0.092, 0.24, 10, 16);
+  sculpt(torso, obliqueGeo, M.skin, [-0.285, -0.11, 0.095], [0.1, 0, -0.18], [0.88, 1, 0.88]);
+  sculpt(torso, obliqueGeo, M.skin, [0.285, -0.11, 0.095], [0.1, 0, 0.18], [0.88, 1, 0.88]);
+
+  const latGeo = new T.SphereGeometry(0.27, 20, 20);
+  sculpt(torso, latGeo, M.skin, [-0.245, 0.17, -0.13], [0, 0, -0.25], [1.04, 1.36, 0.68]);
+  sculpt(torso, latGeo, M.skin, [0.245, 0.17, -0.13], [0, 0, 0.25], [1.04, 1.36, 0.68]);
+
+  const trapGeo = new T.SphereGeometry(0.245, 18, 18);
+  sculpt(torso, trapGeo, M.skin, [-0.21, 0.43, -0.05], [0, 0, 0.42], [1.15, 0.68, 0.78]);
+  sculpt(torso, trapGeo, M.skin, [0.21, 0.43, -0.05], [0, 0, -0.42], [1.15, 0.68, 0.78]);
+
+  // Pescoço grosso
+  sculpt(torso, new T.CylinderGeometry(0.145, 0.182, 0.25, 20), M.skin, [0, 0.53, -0.01], [0.08, 0, 0], [1.02, 1, 1.08]);
+
+  // Correia diagonal de couro e bronze cruzando o peito
+  const baldricCurve = new T.CatmullRomCurve3([
+    new T.Vector3(0.32, 0.42, 0.14),
+    new T.Vector3(0.14, 0.16, 0.29),
+    new T.Vector3(-0.12, -0.12, 0.27),
+    new T.Vector3(-0.28, -0.34, 0.16)
+  ]);
+  const baldricGeo = new T.TubeGeometry(baldricCurve, 24, 0.032, 8, false);
+  baldricGeo.scale(1, 1, 0.45);
+  sculpt(torso, baldricGeo, M.leatherDark);
+  // Medalhão de ouro ensanguentado
+  sculpt(torso, new T.CylinderGeometry(0.055, 0.055, 0.022, 18), M.bloodGold, [0.12, 0.15, 0.295], [Math.PI / 2 - 0.15, 0.2, 0]);
+
+  // ------------------------------------------------------------------------
+  // C. ROSTO FEROZ + CICATRIZ FACIAL + BARBA CERRADA + ELMO ESPARTANO EM T
+  // ------------------------------------------------------------------------
+  const head = group(torso, 0, 0.75, 0.038);
+
+  const skullGeo = new T.SphereGeometry(0.212, 36, 36);
+  const sPos = skullGeo.attributes.position;
+  for (let i = 0; i < sPos.count; i++) {
+    let x = sPos.getX(i), y = sPos.getY(i), z = sPos.getZ(i);
+    y *= 1.16;
+    x *= 0.96;
+    if (y < 0.02 && y > -0.09 && z > 0) { x *= 1.08; z *= 1.06; }
+    if (y <= -0.08 && z > -0.02) { x *= 1.02; z *= 1.12; }
+    if (z < -0.12) z *= 0.92;
+    sPos.setXYZ(i, x, y, z);
+  }
+  skullGeo.computeVertexNormals();
+  sculpt(head, skullGeo, M.skin);
+
+  // Nariz grego
+  sculpt(head, new T.BoxGeometry(0.034, 0.088, 0.052), M.skin, [0, 0.004, 0.202], [-0.14, 0, 0]);
+  sculpt(head, new T.SphereGeometry(0.022, 14, 14), M.skin, [0, -0.038, 0.216], [0, 0, 0], [1.05, 0.85, 1.05]);
+
+  // Sobrancelhas franzidas
+  const browRidge = new T.CapsuleGeometry(0.018, 0.068, 8, 12);
+  sculpt(head, browRidge, M.skinShade, [-0.056, 0.044, 0.192], [0.12, 0.25, 1.24]);
+  sculpt(head, browRidge, M.skinShade, [0.056, 0.044, 0.192], [0.12, -0.25, -1.24]);
+
+  const eyebrow = new T.CapsuleGeometry(0.013, 0.066, 8, 12);
+  sculpt(head, eyebrow, M.beardDark, [-0.056, 0.051, 0.201], [0.12, 0.25, 1.20], [1.1, 1, 0.85]);
+  sculpt(head, eyebrow, M.beardDark, [0.056, 0.051, 0.201], [0.12, -0.25, -1.20], [1.1, 1, 0.85]);
+
+  // Olhos Incandescentes Vermelho-Brasa / Laranja
+  const eyeGeo = new T.SphereGeometry(0.021, 16, 16);
+  sculpt(head, eyeGeo, M.eyeEmber, [-0.055, 0.022, 0.188], [0, 0, 0], [1.18, 0.66, 0.8]);
+  sculpt(head, eyeGeo, M.eyeEmber, [0.055, 0.022, 0.188], [0, 0, 0], [1.18, 0.66, 0.8]);
+
+  // Cicatriz facial diagonal
+  const faceScarCurve = new T.CatmullRomCurve3([
+    new T.Vector3(-0.072, 0.072, 0.195),
+    new T.Vector3(-0.055, 0.025, 0.204),
+    new T.Vector3(-0.036, -0.035, 0.206),
+    new T.Vector3(-0.024, -0.078, 0.202)
+  ]);
+  sculpt(head, new T.TubeGeometry(faceScarCurve, 12, 0.0055, 6, false), M.scarMat);
+
+  // Boca cerrada
+  sculpt(head, new T.BoxGeometry(0.058, 0.011, 0.025), M.skinShade, [0, -0.092, 0.204], [0.1, 0, 0]);
+
+  // Barba curta cerrada escura
+  sculpt(head, new T.CylinderGeometry(0.182, 0.158, 0.12, 24, 1, false, -Math.PI * 0.42, Math.PI * 0.84), M.beardDark, [0, -0.115, 0.048], [0.12, 0, 0], [0.96, 1, 1.06]);
+  sculpt(head, new T.BoxGeometry(0.095, 0.055, 0.045), M.beardDark, [0, -0.145, 0.195], [0.15, 0, 0]);
+  sculpt(head, new T.CapsuleGeometry(0.012, 0.056, 8, 10), M.beardDark, [0, -0.074, 0.208], [0, 0, Math.PI / 2], [1, 1, 0.75]);
+
+  // ------------------------------------------------------------------------
+  // ELMO ESPARTANO DE BRONZE ESCURO E OURO ENSANGUENTADO
+  // ------------------------------------------------------------------------
+  const helm = group(head, 0, 0.035, -0.005);
+
+  // Cúpula do Elmo
+  sculpt(
+    helm,
+    new T.SphereGeometry(0.228, 32, 24, 0, Math.PI * 2, 0, Math.PI * 0.56),
+    M.darkBronze,
+    [0, 0.02, 0],
+    [-0.08, 0, 0],
+    [0.98, 1.08, 1.06]
+  );
+
+  // Crista metálica dourada central
+  sculpt(helm, new T.BoxGeometry(0.038, 0.09, 0.36), M.bloodGold, [0, 0.23, -0.01], [-0.08, 0, 0]);
+
+  // Protetor Nasal em T
+  sculpt(helm, new T.BoxGeometry(0.024, 0.115, 0.032), M.bloodGold, [0, 0.035, 0.226], [-0.06, 0, 0]);
+
+  // Sobrancelha metálica em V invertido
+  sculpt(helm, new T.BoxGeometry(0.115, 0.026, 0.032), M.bloodGold, [-0.055, 0.066, 0.216], [0, 0.28, -0.22]);
+  sculpt(helm, new T.BoxGeometry(0.115, 0.026, 0.032), M.bloodGold, [0.055, 0.066, 0.216], [0, -0.28, 0.22]);
+
+  // Protetores de Bochechas
+  for (const side of [-1, 1]) {
+    const cheekGuard = group(helm, side * 0.165, -0.045, 0.115);
+    cheekGuard.rotation.set(0.08, side * 0.52, side * -0.12);
+    sculpt(cheekGuard, new T.BoxGeometry(0.024, 0.17, 0.135), M.darkBronze, [0, 0, 0]);
+    sculpt(cheekGuard, new T.BoxGeometry(0.028, 0.175, 0.022), M.bloodGold, [0, 0, 0.065]);
+  }
+
+  // Protetor de Nuca
+  sculpt(
+    helm,
+    new T.CylinderGeometry(0.215, 0.245, 0.15, 24, 1, true, Math.PI * 0.62, Math.PI * 0.76),
+    M.darkBronze,
+    [0, -0.075, -0.015],
+    [0.12, 0, 0]
+  );
+
+  // CRISTA VERMELHA CARMESIM IMPONENTE (Crina de cavalo arqueada)
+  const crestGroup = group(helm, 0, 0.26, -0.01);
+  const crestSegments = [];
+  const numCrest = 22;
+  for (let i = 0; i < numCrest; i++) {
+    const t = i / (numCrest - 1);
+    const ang = -0.55 + t * 2.55;
+    const r = 0.26;
+    const cy = Math.cos(ang) * r * 0.88 - 0.04;
+    const cz = Math.sin(ang) * r * 1.15 - 0.04;
+    const segH = 0.16 + Math.sin(t * Math.PI) * 0.06;
+
+    const seg = sculpt(
+      crestGroup,
+      new T.BoxGeometry(0.028, segH, 0.036),
+      M.plumeCrimson,
+      [0, cy, cz],
+      [ang, 0, 0]
+    );
+    crestSegments.push({ mesh: seg, baseX: 0, phase: i * 0.45, factor: 0.3 + t * 0.9 });
+  }
+
+  // ------------------------------------------------------------------------
+  // D. OMBREIRAS PONTIAGUDAS DE BRONZE & FERRO + BRAÇOS PESADOS DE GUERREIRO
+  // ------------------------------------------------------------------------
+  function createWarArm(isRight) {
+    const s = isRight ? 1 : -1;
+    const arm = group(torso, s * 0.49, 0.34, -0.01);
+
+    // Ombreira Pontiaguda Pesada
+    const pauldron = group(arm, s * 0.02, 0.04, 0);
+    pauldron.rotation.set(0.06, -s * 0.1, s * -0.34);
+
+    for (let layer = 0; layer < 3; layer++) {
+      const rad = 0.205 - layer * 0.016;
+      sculpt(
+        pauldron,
+        new T.SphereGeometry(rad, 20, 14, 0, Math.PI * 2, 0, Math.PI * 0.5),
+        layer === 1 ? M.bloodGold : (layer === 0 ? M.blackIron : M.darkBronze),
+        [0, 0.045 - layer * 0.048, 0],
+        [0, 0, 0],
+        [1.15, 0.76, 1.18]
+      );
+    }
+    sculpt(pauldron, new T.ConeGeometry(0.032, 0.16, 6), M.bloodGold, [s * 0.08, 0.13, 0], [0, 0, s * -0.45]);
+
+    // Deltoide, Bíceps e Tríceps
+    sculpt(arm, new T.SphereGeometry(0.162, 20, 20), M.skin, [0, -0.02, 0], [0, 0, s * -0.25], [1.06, 1.16, 1.06]);
+    sculpt(arm, new T.CapsuleGeometry(0.106, 0.28, 12, 18), M.skin, [s * 0.028, -0.19, 0], [0, 0, s * 0.08]);
+    sculpt(arm, new T.SphereGeometry(0.098, 16, 16), M.skin, [s * 0.02, -0.18, 0.052], [0, 0, s * 0.08], [0.95, 1.48, 0.95]);
+    sculpt(arm, new T.SphereGeometry(0.095, 16, 16), M.skin, [s * 0.058, -0.19, -0.045], [0, 0, s * 0.08], [0.96, 1.42, 0.92]);
+
+    // Antebraço
+    const elbow = group(arm, s * 0.048, -0.38, 0);
+    sculpt(elbow, new T.CylinderGeometry(0.098, 0.064, 0.34, 18), M.skin, [0, -0.16, 0], [0, 0, 0], [1.06, 1, 0.96]);
+    sculpt(elbow, new T.SphereGeometry(0.08, 14, 14), M.skin, [s * 0.022, -0.09, 0.024], [0, 0, 0], [0.96, 1.5, 0.96]);
+
+    // Braçadeira de Guerra
+    const bracer = group(elbow, 0, -0.25, 0);
+    sculpt(bracer, new T.CylinderGeometry(0.078, 0.068, 0.13, 24, 1, true), M.blackIron, [0, 0, 0], [0, 0, 0], [1.06, 1, 0.97]);
+    const bRing = new T.TorusGeometry(0.075, 0.008, 8, 24);
+    bRing.rotateX(Math.PI / 2);
+    sculpt(bracer, bRing, M.bloodGold, [0, 0.058, 0], [0, 0, 0], [1.06, 1, 0.97]);
+    sculpt(bracer, bRing, M.bloodGold, [0, -0.058, 0], [0, 0, 0], [1.06, 1, 0.97]);
+
+    // Mão
+    const hand = group(elbow, 0, -0.35, 0);
+    sculpt(hand, new T.BoxGeometry(0.084, 0.092, 0.044), M.skin, [0, -0.02, 0]);
+    const fingerGeo = new T.CapsuleGeometry(0.012, 0.044, 6, 8);
+    for (let f = 0; f < 4; f++) {
+      const fx = (f - 1.5) * 0.0195;
+      sculpt(hand, fingerGeo, M.skin, [fx, -0.072, 0.022], [1.3, 0, 0]);
+    }
+    sculpt(hand, fingerGeo, M.skin, [-s * 0.045, -0.036, 0.026], [0.65, 0, -s * 0.65], [1.15, 0.9, 1.15]);
+
+    return { arm, elbow, hand };
+  }
+
+  const rightArm = createWarArm(true);
+  const leftArm = createWarArm(false);
+
+  // ------------------------------------------------------------------------
+  // E. ESPADA LARGA ESPARTANA (XIPHOS COLOSSAL) COM FIO INCANDESCENTE
+  // ------------------------------------------------------------------------
+  const sword = new T.Group();
+  rightArm.hand.add(sword);
+  sword.position.set(0, -0.04, 0.038);
+  sword.rotation.set(Math.PI / 2, 0, 0);
+
+  // Pomo e Empunhadura
+  sculpt(sword, new T.SphereGeometry(0.042, 14, 14), M.bloodGold, [0, -0.22, 0], [0, 0, 0], [1.2, 0.85, 0.85]);
+  sculpt(sword, new T.CylinderGeometry(0.024, 0.028, 0.24, 14), M.leatherDark, [0, -0.08, 0]);
+
+  // Guarda-mão
+  sculpt(sword, new T.BoxGeometry(0.24, 0.048, 0.068), M.bloodGold, [0, 0.05, 0]);
+  sculpt(sword, new T.ConeGeometry(0.032, 0.08, 6), M.darkBronze, [-0.13, 0.05, 0], [0, 0, Math.PI / 2]);
+  sculpt(sword, new T.ConeGeometry(0.032, 0.08, 6), M.darkBronze, [0.13, 0.05, 0], [0, 0, -Math.PI / 2]);
+
+  // Lâmina Colossal Xiphos foliácea
+  const bladeLength = 1.48;
+  const bladeGeo = new T.BoxGeometry(0.145, bladeLength, 0.022, 4, 16, 1);
+  const bPos = bladeGeo.attributes.position;
+  for (let i = 0; i < bPos.count; i++) {
+    let x = bPos.getX(i), y = bPos.getY(i), z = bPos.getZ(i);
+    const t = (y + bladeLength * 0.5) / bladeLength;
+    let widthFactor = 1.0;
+    if (t < 0.35) widthFactor = 0.82 + (t / 0.35) * 0.36;
+    else if (t < 0.78) widthFactor = 1.18 - ((t - 0.35) / 0.43) * 0.14;
+    else widthFactor = Math.max(0.02, 1.04 * (1 - (t - 0.78) / 0.22));
+
+    x *= widthFactor;
+    if (Math.abs(x) > 0.03) z *= 0.35;
+    bPos.setXYZ(i, x, y, z);
+  }
+  bladeGeo.computeVertexNormals();
+  sculpt(sword, bladeGeo, M.blackIron, [0, 0.07 + bladeLength * 0.5, 0]);
+
+  // Fio Incandescente Vermelho-Fogo
+  sculpt(sword, new T.BoxGeometry(0.014, bladeLength * 0.92, 0.012), M.magmaEdge, [-0.072, 0.07 + bladeLength * 0.48, 0], [0, 0, -0.02]);
+  sculpt(sword, new T.BoxGeometry(0.014, bladeLength * 0.92, 0.012), M.magmaEdge, [0.072, 0.07 + bladeLength * 0.48, 0], [0, 0, 0.02]);
+  sculpt(sword, new T.BoxGeometry(0.016, bladeLength * 0.78, 0.026), M.magmaEdge, [0, 0.07 + bladeLength * 0.44, 0]);
+
+  // Aura de chama
+  const swordAura = new T.Mesh(
+    new T.BoxGeometry(0.24, bladeLength * 0.98, 0.08),
+    new T.MeshBasicMaterial({
+      color: 0xef4444,
+      transparent: true,
+      opacity: 0.28,
+      blending: T.AdditiveBlending,
+      depthWrite: false
+    })
+  );
+  swordAura.position.set(0, 0.07 + bladeLength * 0.5, 0);
+  sword.add(swordAura);
+
+  const swordTipAnchor = group(sword, 0, 0.07 + bladeLength, 0);
+
+  // ------------------------------------------------------------------------
+  // F. ESCUDO HOPLON CIRCULAR COM LAMBDA ESPARTANO (Λ)
+  // ------------------------------------------------------------------------
+  const hoplonShield = group(leftArm.elbow, -0.065, -0.22, 0.02);
+  hoplonShield.rotation.set(0, -Math.PI / 2, 0);
+
+  const shieldDomeGeo = new T.SphereGeometry(0.68, 36, 24, 0, Math.PI * 2, 0, Math.PI * 0.28);
+  shieldDomeGeo.rotateX(Math.PI / 2);
+  sculpt(hoplonShield, shieldDomeGeo, M.shieldFace, [0, 0, -0.52]);
+
+  // Aro externo reforçado em Ouro e Rebites
+  sculpt(hoplonShield, new T.TorusGeometry(0.64, 0.032, 12, 48), M.bloodGold, [0, 0, 0.02]);
+  for (let i = 0; i < 16; i++) {
+    const a = (i / 16) * Math.PI * 2;
+    sculpt(hoplonShield, new T.SphereGeometry(0.016, 8, 8), M.darkBronze, [Math.cos(a) * 0.64, Math.sin(a) * 0.64, 0.048]);
+  }
+
+  // ------------------------------------------------------------------------
+  // G. CINTURÃO DE GUERRA + PTERUGES ESCARLATES + CAPA CARMESIM RASGADA
+  // ------------------------------------------------------------------------
+  const garments = group(torso, 0, 0, 0);
+
+  const beltGeo = new T.TorusGeometry(0.30, 0.034, 12, 36);
+  beltGeo.rotateX(Math.PI / 2);
+  sculpt(garments, beltGeo, M.leatherDark, [0, -0.36, 0.01], [0.05, 0, -0.03], [1.12, 1, 0.85]);
+
+  const goldBeltRim = new T.TorusGeometry(0.305, 0.012, 8, 36);
+  goldBeltRim.rotateX(Math.PI / 2);
+  sculpt(garments, goldBeltRim, M.bloodGold, [0, -0.34, 0.01], [0.05, 0, -0.03], [1.12, 1, 0.85]);
+
+  sculpt(garments, new T.BoxGeometry(0.14, 0.11, 0.032), M.bloodGold, [0, -0.36, 0.265]);
+  sculpt(garments, new T.OctahedronGeometry(0.034, 0), M.magmaEdge, [0, -0.36, 0.285]);
+
+  // PTERUGES
+  const pterugesStrips = [];
+  const numStrips = 16;
+  for (let i = 0; i < numStrips; i++) {
+    const a = (i / numStrips) * Math.PI * 2;
+    const stripPivot = group(garments, Math.sin(a) * 0.31, -0.40, Math.cos(a) * 0.24);
+    stripPivot.rotation.set(Math.cos(a) * 0.14, a, -Math.sin(a) * 0.14);
+
+    sculpt(stripPivot, new T.BoxGeometry(0.088, 0.42, 0.018), i % 2 === 0 ? M.crimsonArmor : M.leatherDark, [0, -0.21, 0]);
+    sculpt(stripPivot, new T.BoxGeometry(0.092, 0.045, 0.022), M.bloodGold, [0, -0.41, 0]);
+
+    pterugesStrips.push({ pivot: stripPivot, baseRx: stripPivot.rotation.x, phase: i * 0.5 });
+  }
+
+  // Capa de Guerra Carmesim Rasgada
+  const capeGeo = new T.PlaneGeometry(1.46, 1.98, 26, 34);
+  const cPos = capeGeo.attributes.position;
+  const capeBase = new Float32Array(cPos.array.length);
+  for (let i = 0; i < cPos.count; i++) {
+    const x = cPos.getX(i), y = cPos.getY(i);
+    const normY = Math.max(0, Math.min(1, (0.99 - y) / 1.98));
+    const archZ = -0.18 - Math.cos((x / 0.73) * Math.PI * 0.5) * 0.09;
+    const z = archZ - normY * 0.55;
+    const fx = x * (0.66 + normY * 0.78);
+    const tatter = (Math.sin(x * 13) * 0.09 + Math.cos(x * 23) * 0.05) * Math.pow(normY, 2.2);
+    const fy = y + tatter;
+    cPos.setXYZ(i, fx, fy, z);
+    capeBase[i * 3] = fx;
+    capeBase[i * 3 + 1] = fy;
+    capeBase[i * 3 + 2] = z;
+  }
+  capeGeo.computeVertexNormals();
+  const cape = sculpt(garments, capeGeo, M.warCloak, [0, -0.46, -0.05]);
+
+  return {
+    root, body, torso, head, helm, legs,
+    rightArm, leftArm,
+    sword, swordAura, swordTipAnchor,
+    hoplonShield,
+    crestSegments, pterugesStrips,
+    cape, capeBase
+  };
+}
+
+/* ==========================================================================
+   4. CAMPO DE BATALHA OLÍMPICO VULCÂNICO, PILARES QUEBRADOS E BRASEIROS
+   ========================================================================== */
+const renderer = new T.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = T.PCFSoftShadowMap;
+renderer.toneMapping = T.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.15;
+document.body.appendChild(renderer.domElement);
+
+const scene = new T.Scene();
+const warBg = new T.Color(0x1f0a08);
+const rageBg = new T.Color(0x3b0707);
+scene.background = warBg.clone();
+scene.fog = new T.FogExp2(0x1f0a08, 0.025);
+
+const skyGeo = new T.SphereGeometry(80, 32, 32);
+const skyMat = new T.ShaderMaterial({
+  side: THREE.BackSide,
+  depthWrite: false,
+  uniforms: {
+    topColor: { value: new T.Color(0x0c0404) },
+    midColor: { value: new T.Color(0x450a0a) },
+    horizonColor: { value: new T.Color(0xd97706) },
+    sunDir: { value: new T.Vector3(0.45, 0.32, -0.82).normalize() }
+  },
+  vertexShader: `
+    varying vec3 vWorldPos;
+    void main() {
+      vec4 wp = modelMatrix * vec4(position, 1.0);
+      vWorldPos = wp.xyz;
+      gl_Position = projectionMatrix * viewMatrix * wp;
+    }
+  `,
+  fragmentShader: `
+    uniform vec3 topColor;
+    uniform vec3 midColor;
+    uniform vec3 horizonColor;
+    uniform vec3 sunDir;
+    varying vec3 vWorldPos;
+    void main() {
+      vec3 dir = normalize(vWorldPos);
+      float h = clamp(dir.y * 0.5 + 0.5, 0.0, 1.0);
+      vec3 col = mix(horizonColor, midColor, smoothstep(0.40, 0.65, h));
+      col = mix(col, topColor, smoothstep(0.65, 0.96, h));
+      float sunGlow = max(dot(dir, sunDir), 0.0);
+      col += vec3(1.0, 0.45, 0.15) * pow(sunGlow, 8.0) * 0.55;
+      gl_FragColor = vec4(col, 1.0);
+    }
+  `
+});
+scene.add(new T.Mesh(skyGeo, skyMat));
+
+const camera = new T.PerspectiveCamera(36, innerWidth / innerHeight, 0.1, 150);
+
+const hemi = new T.HemisphereLight(0xfed7aa, 0x450a0a, 0.85);
+scene.add(hemi);
+
+const sun = new T.DirectionalLight(0xffedd5, 2.05);
+sun.position.set(4.8, 7.6, 5.2);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, { left: -8, right: 8, top: 8, bottom: -8, near: 1, far: 28 });
+sun.shadow.bias = -0.0004;
+scene.add(sun);
+
+const crimsonRim = new T.DirectionalLight(0xef4444, 1.65);
+crimsonRim.position.set(-4.5, 4.2, -5.0);
+scene.add(crimsonRim);
+
+const magmaUnderLight = new T.DirectionalLight(0xf97316, 0.95);
+magmaUnderLight.position.set(0, -4, 2);
+scene.add(magmaUnderLight);
+
+const swordLight = new T.PointLight(0xf97316, 2.5, 8.5);
+scene.add(swordLight);
+
+const blastLight = new T.PointLight(0xffedd5, 0, 16);
+scene.add(blastLight);
+
+const textures = createProceduralTextures();
+
+// Arena de Pedra Vulcânica e Mármore Rachado
+const arenaFloor = new T.Mesh(
+  new T.CylinderGeometry(7.5, 7.8, 0.32, 72),
+  new T.MeshStandardMaterial({
+    map: textures.floorTex,
+    roughness: 0.62,
+    metalness: 0.25
+  })
+);
+arenaFloor.position.y = -0.16;
+arenaFloor.receiveShadow = true;
+scene.add(arenaFloor);
+
+const warRuneRing = new T.Mesh(
+  new T.RingGeometry(3.45, 3.68, 72),
+  new T.MeshBasicMaterial({
+    color: 0xef4444,
+    transparent: true,
+    opacity: 0.78,
+    blending: T.AdditiveBlending,
+    side: T.DoubleSide
+  })
+);
+warRuneRing.rotation.x = -Math.PI / 2;
+warRuneRing.position.y = 0.015;
+scene.add(warRuneRing);
+
+const outerEmberRing = new T.Mesh(
+  new T.RingGeometry(4.45, 4.54, 72),
+  new T.MeshBasicMaterial({
+    color: 0xf97316,
+    transparent: true,
+    opacity: 0.65,
+    blending: T.AdditiveBlending,
+    side: T.DoubleSide
+  })
+);
+outerEmberRing.rotation.x = -Math.PI / 2;
+outerEmberRing.position.y = 0.015;
+scene.add(outerEmberRing);
+
+// 8 Pilares Quebrados de Templo em Guerra
+const ruinedStoneMat = new T.MeshStandardMaterial({
+  color: 0x44403c,
+  roughness: 0.78,
+  metalness: 0.15
+});
+const bronzeBrazierMat = new T.MeshStandardMaterial({
+  color: 0x78350f,
+  metalness: 0.85,
+  roughness: 0.3
+});
+const fireCoreMat = new T.MeshBasicMaterial({
+  color: 0xfef08a,
+  transparent: true,
+  opacity: 0.9,
+  blending: T.AdditiveBlending
+});
+const fireOuterMat = new T.MeshBasicMaterial({
+  color: 0xef4444,
+  transparent: true,
+  opacity: 0.72,
+  blending: T.AdditiveBlending
+});
+
+const brazierFlames = [];
+for (let i = 0; i < 8; i++) {
+  const a = (i / 8) * Math.PI * 2 + 0.22;
+  const dist = 5.75;
+  const pGroup = group(scene, Math.cos(a) * dist, 0, Math.sin(a) * dist);
+  pGroup.rotation.set((i % 3 - 1) * 0.04, a, ((i + 1) % 3 - 1) * 0.04);
+
+  sculpt(pGroup, new T.BoxGeometry(0.76, 0.18, 0.76), ruinedStoneMat, [0, 0.09, 0]);
+  const colH = 2.25 + (i % 3) * 0.35;
+  sculpt(pGroup, new T.CylinderGeometry(0.26, 0.31, colH, 12), ruinedStoneMat, [0, 0.18 + colH * 0.5, 0]);
+  sculpt(pGroup, new T.BoxGeometry(0.68, 0.15, 0.68), ruinedStoneMat, [0, 0.24 + colH, 0]);
+
+  const topY = 0.36 + colH;
+  sculpt(pGroup, new T.CylinderGeometry(0.36, 0.20, 0.18, 12), bronzeBrazierMat, [0, topY, 0]);
+
+  const fCore = new T.Mesh(new T.ConeGeometry(0.14, 0.44, 8), fireCoreMat);
+  fCore.position.y = topY + 0.24;
+  pGroup.add(fCore);
+
+  const fOuter = new T.Mesh(new T.ConeGeometry(0.22, 0.62, 10), fireOuterMat);
+  fOuter.position.y = topY + 0.32;
+  pGroup.add(fOuter);
+
+  brazierFlames.push({ fCore, fOuter, phase: i * 0.9 });
+}
+
+function createShadowTex() {
+  const c = document.createElement('canvas');
+  c.width = c.height = 128;
+  const g = c.getContext('2d');
+  const gr = g.createRadialGradient(64, 64, 6, 64, 64, 64);
+  gr.addColorStop(0, 'rgba(0, 0, 0, 0.55)');
+  gr.addColorStop(1, 'rgba(0, 0, 0, 0)');
+  g.fillStyle = gr;
+  g.fillRect(0, 0, 128, 128);
+  return new T.CanvasTexture(c);
+}
+const shadowBlob = new T.Mesh(
+  new T.PlaneGeometry(1, 1),
+  new T.MeshBasicMaterial({ map: createShadowTex(), transparent: true, depthWrite: false })
+);
+shadowBlob.rotation.x = -Math.PI / 2;
+shadowBlob.position.y = 0.015;
+scene.add(shadowBlob);
+
+const ares = buildAres(textures);
+scene.add(ares.root);
+
+/* ==========================================================================
+   5. PODERES EXCLUSIVOS DE ARES:
+      - Fagulhas e Brasas Subindo Constantemente
+      - Golpe Sísmico (Salto + Cravada da Espada + Ondas de Magma e Rachaduras)
+      - Fúria de Sangue (Aura Carmesim Intensa + Pilares de Fogo + Céu Sangrento)
+   ========================================================================== */
+const EMBER_N = 360;
+const emberPos = new Float32Array(EMBER_N * 3);
+const emberVel = new Float32Array(EMBER_N * 3);
+const emberLife = new Float32Array(EMBER_N);
+let emberIdx = 0;
+
+for (let i = 0; i < EMBER_N; i++) {
+  emberPos[i * 3] = (Math.random() - 0.5) * 14;
+  emberPos[i * 3 + 1] = Math.random() * 5.8;
+  emberPos[i * 3 + 2] = (Math.random() - 0.5) * 14;
+  emberVel[i * 3] = (Math.random() - 0.5) * 0.4;
+  emberVel[i * 3 + 1] = 0.45 + Math.random() * 0.75;
+  emberVel[i * 3 + 2] = (Math.random() - 0.5) * 0.4;
+  emberLife[i] = 999;
+}
+const emberGeo = new T.BufferGeometry();
+emberGeo.setAttribute('position', new T.BufferAttribute(emberPos, 3));
+scene.add(new T.Points(emberGeo, new T.PointsMaterial({
+  color: 0xf97316,
+  size: 0.095,
+  transparent: true,
+  opacity: 0.88,
+  blending: T.AdditiveBlending,
+  depthWrite: false,
+  toneMapped: false
+})));
+
+function spawnEmberExplosion(x, y, z, count = 28) {
+  for (let c = 0; c < count; c++) {
+    const i = emberIdx;
+    emberIdx = (emberIdx + 1) % 160;
+    emberPos[i * 3] = x;
+    emberPos[i * 3 + 1] = y;
+    emberPos[i * 3 + 2] = z;
+    emberVel[i * 3] = (Math.random() - 0.5) * 6.5;
+    emberVel[i * 3 + 1] = 2.0 + Math.random() * 5.8;
+    emberVel[i * 3 + 2] = (Math.random() - 0.5) * 6.5;
+    emberLife[i] = 0.7 + Math.random() * 0.5;
+  }
+}
+
+function updateEmbers(dt, t) {
+  for (let i = 0; i < EMBER_N; i++) {
+    if (i < 160 && emberLife[i] < 100) {
+      if (emberLife[i] <= 0) continue;
+      emberLife[i] -= dt;
+      emberVel[i * 3 + 1] -= 9.2 * dt;
+      emberPos[i * 3] += emberVel[i * 3] * dt;
+      emberPos[i * 3 + 1] += emberVel[i * 3 + 1] * dt;
+      emberPos[i * 3 + 2] += emberVel[i * 3 + 2] * dt;
+      if (emberLife[i] <= 0) emberPos[i * 3 + 1] = -100;
+    } else {
+      emberPos[i * 3] += Math.sin(t * 1.4 + i) * 0.25 * dt;
+      emberPos[i * 3 + 1] += emberVel[i * 3 + 1] * dt;
+      emberPos[i * 3 + 2] += Math.cos(t * 1.3 + i) * 0.25 * dt;
+      if (emberPos[i * 3 + 1] > 6.0) {
+        emberPos[i * 3 + 1] = 0.05;
+        emberPos[i * 3] = (Math.random() - 0.5) * 13;
+        emberPos[i * 3 + 2] = (Math.random() - 0.5) * 13;
+      }
+    }
+  }
+  emberGeo.attributes.position.needsUpdate = true;
+}
+
+const magmaWaves = [];
+const magmaCracks = [];
+const chargeTrails = [];
+
+function spawnChargeTrail(x, z) {
+  const trail = new T.Mesh(
+    new T.RingGeometry(0.3, 0.75, 24),
+    new T.MeshBasicMaterial({
+      color: 0xf97316,
+      transparent: true,
+      opacity: 0.72,
+      blending: T.AdditiveBlending,
+      side: T.DoubleSide,
+      depthWrite: false
+    })
+  );
+  trail.rotation.x = -Math.PI / 2;
+  trail.position.set(x, 0.03, z);
+  scene.add(trail);
+  chargeTrails.push({ mesh: trail, life: 0.85, max: 0.85 });
+}
+
+function triggerSeismicSlam(x, z, yaw) {
+  const hitX = x + Math.sin(yaw) * 0.95;
+  const hitZ = z + Math.cos(yaw) * 0.95;
+
+  for (let k = 0; k < 3; k++) {
+    const sw = new T.Mesh(
+      new T.RingGeometry(0.35, 0.72, 48),
+      new T.MeshBasicMaterial({
+        color: k === 0 ? 0xfef08a : (k === 1 ? 0xf97316 : 0xef4444),
+        transparent: true,
+        opacity: 0.95,
+        blending: T.AdditiveBlending,
+        side: T.DoubleSide,
+        depthWrite: false
+      })
+    );
+    sw.rotation.x = -Math.PI / 2;
+    sw.position.set(hitX, 0.04 + k * 0.02, hitZ);
+    scene.add(sw);
+    magmaWaves.push({ mesh: sw, life: 1.1, max: 1.1, delay: k * 0.1 });
+  }
+
+  for (let r = 0; r < 8; r++) {
+    const ang = (r / 8) * Math.PI * 2 + Math.random() * 0.25;
+    const crack = new T.Mesh(
+      new T.PlaneGeometry(0.16, 3.8),
+      new T.MeshBasicMaterial({
+        color: 0xf97316,
+        transparent: true,
+        opacity: 0.9,
+        blending: T.AdditiveBlending,
+        side: T.DoubleSide,
+        depthWrite: false
+      })
+    );
+    crack.rotation.set(-Math.PI / 2, 0, -ang);
+    crack.position.set(hitX + Math.sin(ang) * 1.9, 0.035, hitZ + Math.cos(ang) * 1.9);
+    scene.add(crack);
+    magmaCracks.push({ mesh: crack, life: 1.35, max: 1.35 });
+  }
+
+  blastLight.position.set(hitX, 1.0, hitZ);
+  blastLight.intensity = 12.5;
+  spawnEmberExplosion(hitX, 0.2, hitZ, 45);
+}
+
+const bloodRageGroup = new T.Group();
+bloodRageGroup.visible = false;
+scene.add(bloodRageGroup);
+
+const rageAuraCylinder = new T.Mesh(
+  new T.CylinderGeometry(0.85, 1.35, 3.4, 28, 1, true),
+  new T.MeshBasicMaterial({
+    color: 0xdc2626,
+    transparent: true,
+    opacity: 0.35,
+    blending: T.AdditiveBlending,
+    side: T.DoubleSide,
+    depthWrite: false
+  })
+);
+rageAuraCylinder.position.y = 1.7;
+bloodRageGroup.add(rageAuraCylinder);
+
+const ragePillars = [];
+for (let i = 0; i < 6; i++) {
+  const a = (i / 6) * Math.PI * 2;
+  const dist = 3.2;
+  const pFlame = new T.Mesh(
+    new T.CylinderGeometry(0.18, 0.48, 4.2, 16, 1, true),
+    new T.MeshBasicMaterial({
+      color: i % 2 === 0 ? 0xef4444 : 0xf97316,
+      transparent: true,
+      opacity: 0.72,
+      blending: T.AdditiveBlending,
+      side: T.DoubleSide,
+      depthWrite: false
+    })
+  );
+  pFlame.position.set(Math.cos(a) * dist, 2.1, Math.sin(a) * dist);
+  bloodRageGroup.add(pFlame);
+  ragePillars.push({ mesh: pFlame, angle: a, dist, phase: i * 1.1 });
+}
+
+/* ==========================================================================
+   6. CONTROLES INTERATIVOS E CÂMERA 360° / FOCO NO ROSTO E ELMO
+   ========================================================================== */
+let mode = 'postura';
+let seismicCycle = 0;
+let seismicTriggered = false;
+let rageWeight = 0;
+let trailTimer = 0;
+let quakeShake = 0;
+let focusFace = false;
+
+let camAngle = 0.45;
+let camPitch = 0.20;
+let camDist = 8.6;
+let targetCamDist = 8.6;
+let currentLookAt = new T.Vector3(0, 1.95, 0);
+
+let dragging = false;
+let lastX = 0, lastY = 0;
+let pinchStartDist = 0;
+
+document.querySelectorAll('button[data-m]').forEach((b) => {
+  b.addEventListener('click', () => {
+    mode = b.dataset.m;
+    document.querySelectorAll('button[data-m]').forEach((x) => x.classList.toggle('on', x === b));
+    if (mode === 'sismico') {
+      seismicCycle = 0.001;
+      seismicTriggered = false;
+    }
+  });
+});
+
+const btnFocus = document.getElementById('btn-focus');
+btnFocus.addEventListener('click', () => {
+  focusFace = !focusFace;
+  btnFocus.classList.toggle('active', focusFace);
+  btnFocus.textContent = focusFace ? 'Corpo Inteiro' : 'Focar Rosto';
+  targetCamDist = focusFace ? 2.55 : 8.6;
+  if (focusFace) {
+    camAngle = 0.16;
+    camPitch = 0.06;
+  }
+});
+
+renderer.domElement.addEventListener('pointerdown', (e) => {
+  dragging = true;
+  lastX = e.clientX;
+  lastY = e.clientY;
+});
+addEventListener('pointerup', () => { dragging = false; });
+addEventListener('pointermove', (e) => {
+  if (!dragging) return;
+  camAngle -= (e.clientX - lastX) * 0.009;
+  camPitch = T.MathUtils.clamp(camPitch + (e.clientY - lastY) * 0.006, -0.22, 0.85);
+  lastX = e.clientX;
+  lastY = e.clientY;
+});
+
+renderer.domElement.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  targetCamDist = T.MathUtils.clamp(targetCamDist + e.deltaY * 0.005, 1.85, 15.5);
+}, { passive: false });
+
+renderer.domElement.addEventListener('touchstart', (e) => {
+  if (e.touches.length === 2) {
+    const dx = e.touches[0].clientX - e.touches[1].clientX;
+    const dy = e.touches[0].clientY - e.touches[1].clientY;
+    pinchStartDist = Math.hypot(dx, dy);
+  }
+}, { passive: true });
+
+renderer.domElement.addEventListener('touchmove', (e) => {
+  if (e.touches.length === 2) {
+    const dx = e.touches[0].clientX - e.touches[1].clientX;
+    const dy = e.touches[0].clientY - e.touches[1].clientY;
+    const dist = Math.hypot(dx, dy);
+    const delta = pinchStartDist - dist;
+    targetCamDist = T.MathUtils.clamp(targetCamDist + delta * 0.015, 1.85, 15.5);
+    pinchStartDist = dist;
+  }
+}, { passive: true });
+
+addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+
+/* ==========================================================================
+   7. LOOP DE ANIMAÇÃO (POSTURA DE GUERRA, INVESTIDA, GOLPE SÍSMICO & FÚRIA)
+   ========================================================================== */
+const tmpV = new T.Vector3();
+
+function update(dt, t) {
+  let ax = 0, az = 0, ay = 0, yaw = Math.sin(t * 0.35) * 0.14, pitch = 0.04, roll = 0;
+  const breath = Math.sin(t * 2.4) * 0.03;
+
+  if (mode === 'investida') {
+    const a = t * 1.45;
+    const R = 2.85;
+    ax = Math.cos(a) * R;
+    az = Math.sin(a) * R;
+    yaw = -a;
+    pitch = 0.24;
+    roll = -0.25;
+    ay = Math.abs(Math.sin(t * 9.0)) * 0.14;
+
+    ares.legs.L.hip.rotation.x = -0.55 + Math.sin(t * 9.0) * 0.45;
+    ares.legs.L.knee.rotation.x = 0.65 + Math.max(0, -Math.cos(t * 9.0)) * 0.45;
+    ares.legs.R.hip.rotation.x = -0.55 - Math.sin(t * 9.0) * 0.45;
+    ares.legs.R.knee.rotation.x = 0.65 + Math.max(0, Math.cos(t * 9.0)) * 0.45;
+
+    ares.leftArm.arm.rotation.set(-0.92, -0.55, -0.35);
+    ares.leftArm.elbow.rotation.set(-1.1, -0.3, 0.25);
+    ares.rightArm.arm.rotation.set(0.45, 0.2, 0.55);
+    ares.rightArm.elbow.rotation.set(-0.75, 0.15, 0.2);
+    ares.sword.rotation.set(Math.PI / 2 - 0.15, 0, 0);
+
+    trailTimer -= dt;
+    if (trailTimer <= 0) {
+      trailTimer = 0.09;
+      spawnChargeTrail(ax, az);
+      spawnEmberExplosion(ax, 0.15, az, 4);
+    }
+  } else if (mode === 'sismico') {
+    seismicCycle += dt * 0.72;
+    if (seismicCycle >= 1.0) {
+      seismicCycle = 0.001;
+      seismicTriggered = false;
+    }
+
+    if (seismicCycle < 0.38) {
+      const k = seismicCycle / 0.38;
+      const jumpCurve = Math.sin(k * Math.PI * 0.85);
+      ay = jumpCurve * 1.45;
+      pitch = -0.22 * k;
+      ares.rightArm.arm.rotation.set(-0.45 * k, 0.1, 2.75 * k);
+      ares.rightArm.elbow.rotation.set(0.75 * k, 0.1, 0.2);
+      ares.sword.rotation.set(Math.PI / 2 - 0.45 * k, 0, 0);
+      ares.leftArm.arm.rotation.set(-0.25, -0.25, -0.75);
+      ares.legs.L.hip.rotation.x = -0.45 * k;
+      ares.legs.L.knee.rotation.x = 0.75 * k;
+      ares.legs.R.hip.rotation.x = 0.35 * k;
+    } else if (seismicCycle < 0.56) {
+      const k = (seismicCycle - 0.38) / 0.18;
+      ay = 1.45 * (1 - k);
+      pitch = -0.22 + 0.58 * k;
+      ares.rightArm.arm.rotation.set(-0.45 + 1.35 * k, 0.1, 2.75 - 2.35 * k);
+      ares.rightArm.elbow.rotation.set(0.75 - 0.55 * k, 0.1, 0.2);
+      ares.sword.rotation.set(Math.PI / 2 + 0.45 * k, 0, 0);
+      ares.legs.L.hip.rotation.x = -0.45;
+      ares.legs.L.knee.rotation.x = 0.75;
+      ares.legs.R.hip.rotation.x = 0.35;
+
+      if (k > 0.82 && !seismicTriggered) {
+        seismicTriggered = true;
+        triggerSeismicSlam(ax, az, yaw);
+        quakeShake = 0.26;
+      }
+    } else {
+      const k = (seismicCycle - 0.56) / 0.44;
+      ay = 0;
+      pitch = 0.36 * (1 - k) + 0.04 * k;
+      ares.rightArm.arm.rotation.set(0.90 * (1 - k) - 0.15 * k, 0.12, 0.40 * (1 - k) + 0.48 * k);
+      ares.rightArm.elbow.rotation.set(0.20 * (1 - k) - 0.45 * k, 0.15, 0.2);
+      ares.sword.rotation.set(Math.PI / 2, 0, 0);
+      ares.legs.L.hip.rotation.x = -0.24;
+      ares.legs.L.knee.rotation.x = 0.32;
+      ares.legs.R.hip.rotation.x = 0.20;
+    }
+  } else if (mode === 'furia') {
+    pitch = -0.08 + Math.sin(t * 14) * 0.015;
+    ares.rightArm.arm.rotation.set(-0.42, 0.15, 2.38 + Math.sin(t * 3.0) * 0.05);
+    ares.rightArm.elbow.rotation.set(0.55, 0.2, 0.25);
+    ares.sword.rotation.set(Math.PI / 2 - 0.25, 0, 0);
+    ares.leftArm.arm.rotation.set(-0.35, -0.3, -0.82);
+    ares.leftArm.elbow.rotation.set(-0.75, -0.2, 0.15);
+    ares.legs.L.hip.rotation.x = -0.26;
+    ares.legs.L.knee.rotation.x = 0.36;
+    ares.legs.R.hip.rotation.x = 0.22;
+  } else {
+    ares.rightArm.arm.rotation.set(-0.15, 0.12, 0.48 + Math.sin(t * 2.0) * 0.03);
+    ares.rightArm.elbow.rotation.set(-0.45, 0.15, 0.2);
+    ares.sword.rotation.set(Math.PI / 2, 0, 0);
+    ares.leftArm.arm.rotation.set(-0.42, -0.35, -0.52 + Math.cos(t * 1.8) * 0.03);
+    ares.leftArm.elbow.rotation.set(-0.88, -0.25, 0.22);
+    ares.legs.L.hip.rotation.x = -0.24;
+    ares.legs.L.knee.rotation.x = 0.32;
+    ares.legs.R.hip.rotation.x = 0.20;
+    ares.legs.R.knee.rotation.x = 0.26;
+  }
+
+  ares.root.position.set(ax, ay, az);
+  ares.root.rotation.set(0, yaw, 0);
+  ares.body.position.y = 1.08 + breath;
+  ares.body.rotation.set(pitch, 0, roll);
+
+  const rageTarget = (mode === 'furia') ? 1 : 0;
+  rageWeight = T.MathUtils.damp(rageWeight, rageTarget, 2.8, dt);
+  bloodRageGroup.visible = rageWeight > 0.02;
+
+  if (bloodRageGroup.visible) {
+    bloodRageGroup.position.set(ax, 0, az);
+    rageAuraCylinder.rotation.y += dt * 4.5;
+    rageAuraCylinder.material.opacity = 0.35 * rageWeight;
+
+    for (const rp of ragePillars) {
+      rp.angle += dt * 1.6;
+      rp.mesh.position.set(Math.cos(rp.angle) * rp.dist, 2.1, Math.sin(rp.angle) * rp.dist);
+      rp.mesh.scale.set(
+        1 + Math.sin(t * 10 + rp.phase) * 0.2,
+        rageWeight * (0.9 + Math.cos(t * 12 + rp.phase) * 0.25),
+        1 + Math.sin(t * 10 + rp.phase) * 0.2
+      );
+      rp.mesh.material.opacity = 0.72 * rageWeight;
+    }
+
+    if (Math.random() < 0.45) spawnEmberExplosion(ax, 0.3, az, 3);
+  }
+
+  const fireMult = 1.0 + rageWeight * 1.4;
+  ares.swordAura.scale.set(1 + Math.sin(t * 18) * 0.15 * fireMult, 1, 1 + Math.cos(t * 16) * 0.2 * fireMult);
+  ares.swordAura.material.opacity = 0.26 * fireMult;
+  ares.swordTipAnchor.getWorldPosition(tmpV);
+  swordLight.position.copy(tmpV);
+  swordLight.intensity = 2.4 * fireMult + Math.sin(t * 16) * 0.45;
+
+  const wind = (mode === 'investida' || mode === 'furia') ? 2.0 : 1.0;
+  for (const cs of ares.crestSegments) {
+    cs.mesh.position.x = cs.baseX + Math.sin(t * 3.8 * wind - cs.phase) * 0.022 * cs.factor;
+  }
+  for (const pt of ares.pterugesStrips) {
+    pt.pivot.rotation.x = pt.baseRx + Math.sin(t * 3.2 * wind + pt.phase) * 0.06;
+  }
+
+  const cAttr = ares.cape.geometry.attributes.position;
+  for (let i = 0; i < cAttr.count; i++) {
+    const bx = ares.capeBase[i * 3];
+    const by = ares.capeBase[i * 3 + 1];
+    const bz = ares.capeBase[i * 3 + 2];
+    const normY = Math.max(0, Math.min(1, (0.99 - by) / 1.98));
+    const wave1 = Math.sin(t * 3.4 * wind - normY * 4.5 + bx * 2.5) * 0.15 * normY;
+    const wave2 = Math.cos(t * 2.4 * wind - normY * 3.0) * 0.065 * normY;
+    cAttr.setXYZ(i, bx + Math.sin(t * 2.6 - normY * 3.0) * 0.04 * normY, by, bz + wave1 + wave2);
+  }
+  cAttr.needsUpdate = true;
+  ares.cape.geometry.computeVertexNormals();
+
+  for (let i = magmaWaves.length - 1; i >= 0; i--) {
+    const mw = magmaWaves[i];
+    if (mw.delay > 0) { mw.delay -= dt; continue; }
+    mw.life -= dt;
+    const k = Math.max(0, mw.life / mw.max);
+    mw.mesh.scale.setScalar(1 + (1 - k) * 9.0);
+    mw.mesh.material.opacity = 0.95 * k;
+    if (mw.life <= 0) {
+      scene.remove(mw.mesh);
+      mw.mesh.geometry.dispose();
+      mw.mesh.material.dispose();
+      magmaWaves.splice(i, 1);
+    }
+  }
+
+  for (let i = magmaCracks.length - 1; i >= 0; i--) {
+    const mc = magmaCracks[i];
+    mc.life -= dt;
+    const k = Math.max(0, mc.life / mc.max);
+    mc.mesh.material.opacity = 0.9 * k;
+    if (mc.life <= 0) {
+      scene.remove(mc.mesh);
+      mc.mesh.geometry.dispose();
+      mc.mesh.material.dispose();
+      magmaCracks.splice(i, 1);
+    }
+  }
+
+  for (let i = chargeTrails.length - 1; i >= 0; i--) {
+    const ct = chargeTrails[i];
+    ct.life -= dt;
+    const k = Math.max(0, ct.life / ct.max);
+    ct.mesh.scale.setScalar(1 + (1 - k) * 2.4);
+    ct.mesh.material.opacity = 0.72 * k;
+    if (ct.life <= 0) {
+      scene.remove(ct.mesh);
+      ct.mesh.geometry.dispose();
+      ct.mesh.material.dispose();
+      chargeTrails.splice(i, 1);
+    }
+  }
+
+  for (const bf of brazierFlames) {
+    bf.fCore.scale.set(1 + Math.sin(t * 11 + bf.phase) * 0.14, 1 + Math.cos(t * 13 + bf.phase) * 0.2, 1);
+    bf.fOuter.scale.set(1 + Math.cos(t * 10 + bf.phase) * 0.16, 1 + Math.sin(t * 9 + bf.phase) * 0.22, 1);
+  }
+
+  warRuneRing.rotation.z += dt * (0.2 + rageWeight * 0.8);
+  warRuneRing.material.opacity = 0.65 + Math.sin(t * 4) * 0.18 + rageWeight * 0.2;
+  outerEmberRing.rotation.z -= dt * 0.15;
+
+  shadowBlob.position.set(ax, 0.015, az);
+  const shScale = Math.max(0.7, 1.85 - ay * 0.45);
+  shadowBlob.scale.set(shScale, shScale, 1);
+
+  blastLight.intensity = Math.max(0, blastLight.intensity - dt * 16);
+  updateEmbers(dt, t);
+
+  scene.background.lerpColors(warBg, rageBg, rageWeight);
+  scene.fog.color.copy(scene.background);
+
+  quakeShake = Math.max(0, quakeShake - dt * 0.55);
+  const shakeX = (Math.random() - 0.5) * quakeShake;
+  const shakeY = (Math.random() - 0.5) * quakeShake;
+
+  camDist = T.MathUtils.damp(camDist, targetCamDist, 6, dt);
+  if (!dragging && !focusFace && mode !== 'investida') camAngle += dt * 0.055;
+
+  const desiredTarget = focusFace
+    ? new T.Vector3(ax, 3.04 + ay + breath, az)
+    : new T.Vector3(0, 1.96, 0);
+  currentLookAt.lerp(desiredTarget, 0.13);
+
+  const horizDist = Math.cos(camPitch) * camDist;
+  const vertDist = Math.sin(camPitch) * camDist;
+  camera.position.set(
+    currentLookAt.x + Math.sin(camAngle) * horizDist + shakeX,
+    currentLookAt.y + vertDist + shakeY,
+    currentLookAt.z + Math.cos(camAngle) * horizDist
+  );
+  camera.lookAt(currentLookAt);
+}
+
+const clock = new T.Clock();
+let elapsed = 0;
+
+function animate() {
+  const dt = Math.min(clock.getDelta(), 0.05);
+  elapsed += dt;
+  update(dt, elapsed);
+  renderer.render(scene, camera);
+  requestAnimationFrame(animate);
+}
+
+window.onload = animate;
+</script>
+</body>
+</html>
