@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { Box, Eye, Layers, Play, RotateCw, Shield, Sparkles, Swords, X, Building2, User } from 'lucide-react';
 import { createGreekUnitMesh } from '../civilizacao/gregos/gregosModels';
 import { buildZeus, createZeusProceduralTextures } from '../civilizacao/gregos/zeusModel';
+import { buildPoseidon, createPoseidonProceduralTextures } from '../civilizacao/gregos/poseidonModel';
 import { createBuildingMesh, createMaterialPalette, createUnitMesh } from '../game/models';
 import { BuildingKind, UnitKind } from '../game/types';
 import {
@@ -20,8 +21,9 @@ interface HopliteUvBuilderModalProps {
   onSelectTier: (tier: 1 | 2 | 3 | 4) => void;
 }
 
-const INSPECTABLE_UNITS: { id: UnitKind | 'zeus'; name: string; role: string }[] = [
+const INSPECTABLE_UNITS: { id: UnitKind | 'zeus' | 'poseidon'; name: string; role: string }[] = [
   { id: 'zeus', name: '⚡ Zeus (Deus Maior)', role: 'Pai dos Deuses — Empunha Raios Divinos e convoca Tempestades' },
+  { id: 'poseidon', name: '🌊 Poseidon (Deus dos Mares)', role: 'Senhor dos Mares — Conduzido por vórtices, golpeia com tridente e invoca tsunamis' },
   { id: 'hoplite', name: 'Hoplita Espartano', role: 'Infantaria pesada com lança e escudo hoplon' },
   { id: 'hipaspist', name: 'Hipaspista', role: 'Infantaria de elite ágil' },
   { id: 'archer', name: 'Arqueiro Toxotes', role: 'Combatente à distância' },
@@ -53,7 +55,7 @@ export function HopliteUvBuilderModal({
   const entityMeshRef = useRef<THREE.Group | null>(null);
 
   const [entityType, setEntityType] = useState<'unit' | 'building'>('unit');
-  const [selectedUnit, setSelectedUnit] = useState<UnitKind | 'zeus'>('zeus');
+  const [selectedUnit, setSelectedUnit] = useState<UnitKind | 'zeus' | 'poseidon'>('zeus');
   const [selectedBuilding, setSelectedBuilding] = useState<BuildingKind>('town_center');
   const [animState, setAnimState] = useState<'idle' | 'move' | 'attack'>('attack');
   const [autoRotate3D, setAutoRotate3D] = useState(true);
@@ -156,6 +158,22 @@ export function HopliteUvBuilderModal({
             zeus.ring1.material.opacity = 0.38 + 0.22 * Math.sin(simTime * 2.2);
             const pulse = 1 + Math.sin(simTime * 16) * 0.16;
             zeus.handGlow.scale.setScalar(1.2 * pulse);
+          };
+        } else if (selectedUnit === 'poseidon') {
+          const pTex = createPoseidonProceduralTextures();
+          const poseidon = buildPoseidon(pTex);
+          group = poseidon.vessel;
+          group.scale.setScalar(0.72);
+          group.position.set(0, -0.2, 0);
+          group.userData.animatePose = (dt: number) => {
+            poseidon.vortexGroup.rotation.y += dt * 1.5;
+            for (const r of poseidon.swirlRings) {
+              r.mesh.rotation.y -= dt * 2.5;
+              r.mesh.position.y = r.baseY + Math.sin(simTime * 3 + r.phase) * 0.05;
+            }
+            const pulse = 1 + Math.sin(simTime * 8) * 0.2;
+            poseidon.tridentCore.scale.setScalar(1.2 * pulse);
+            poseidon.body.position.y = 1.05 + Math.sin(simTime * 2.2) * 0.06;
           };
         } else if (selectedUnit === 'hoplite' || selectedUnit === 'hipaspist') {
           group = createGreekUnitMesh(selectedUnit, 'player', pal, true, activeTier);

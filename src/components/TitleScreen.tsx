@@ -19,6 +19,7 @@ import {
   Users,
   Volume2,
   VolumeX,
+  Waves,
   Wrench,
   Zap,
 } from 'lucide-react';
@@ -34,6 +35,7 @@ import {
 } from '../game/types';
 import { HopliteUvBuilderModal } from './HopliteUvBuilderModal';
 import { ZeusViewerModal } from './ZeusViewerModal';
+import { PoseidonViewerModal } from './PoseidonViewerModal';
 import { PortSubMenus, SkirmishDraft } from './PortSubMenus';
 
 interface TitleScreenProps {
@@ -79,6 +81,7 @@ export function TitleScreen({
   const [menuState, setMenuState] = useState<PortMenuState>('MAIN_MENU');
   const [uvModalOpen, setUvModalOpen] = useState(false);
   const [zeusModalOpen, setZeusModalOpen] = useState(false);
+  const [poseidonModalOpen, setPoseidonModalOpen] = useState(false);
   const [skirmish, setSkirmish] = useState<SkirmishDraft>({
     pantheon: 'greek',
     minorGod: 'Zeus',
@@ -188,6 +191,21 @@ export function TitleScreen({
           onClick={() => {
             soundEngine.unlock();
             soundEngine.playSelect();
+            setPoseidonModalOpen(true);
+          }}
+          className="flex h-8 items-center gap-1.5 rounded border border-cyan-400/70 bg-gradient-to-r from-teal-700/90 to-cyan-500/90 px-3 text-xs font-bold text-slate-950 shadow-lg hover:from-teal-600 hover:to-cyan-400 cursor-pointer animate-pulse"
+        >
+          <span className="flex items-center gap-1.5">
+            <Waves className="h-3.5 w-3.5 fill-current" />
+            <span>🌊 Poseidon 3D</span>
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            soundEngine.unlock();
+            soundEngine.playSelect();
             setZeusModalOpen(true);
           }}
           className="flex h-8 items-center gap-1.5 rounded border border-yellow-400/70 bg-gradient-to-r from-amber-600/90 to-yellow-500/90 px-3 text-xs font-bold text-slate-950 shadow-lg hover:from-amber-500 hover:to-yellow-400 cursor-pointer animate-pulse"
@@ -256,6 +274,11 @@ export function TitleScreen({
       <ZeusViewerModal
         isOpen={zeusModalOpen}
         onClose={() => setZeusModalOpen(false)}
+      />
+
+      <PoseidonViewerModal
+        isOpen={poseidonModalOpen}
+        onClose={() => setPoseidonModalOpen(false)}
       />
 
       <div className={`relative w-full ${containerWidth} max-h-[calc(100vh-1.5rem)] flex flex-col transition-[max-width] duration-200`}>

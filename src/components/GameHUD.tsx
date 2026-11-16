@@ -48,6 +48,7 @@ import {
   Users,
   Volume2,
   VolumeX,
+  Waves,
   Wheat,
   Wind,
   X,
@@ -83,6 +84,7 @@ import {
 } from '../game/types';
 import { HopliteUvBuilderModal } from './HopliteUvBuilderModal';
 import { ZeusViewerModal } from './ZeusViewerModal';
+import { PoseidonViewerModal } from './PoseidonViewerModal';
 import { Minimap } from './Minimap';
 
 const GAME_TYPE_LABELS: Record<GameTypeId, string> = {
@@ -254,6 +256,7 @@ export function GameHUD({
   const [activeDialog, setActiveDialog] = useState<InGameDialog>('none');
   const [uvBuilderOpen, setUvBuilderOpen] = useState(false);
   const [zeusModalOpen, setZeusModalOpen] = useState(false);
+  const [poseidonModalOpen, setPoseidonModalOpen] = useState(false);
   const [pausePrompt, setPausePrompt] = useState<PausePrompt>('menu');
   const [postGameTab, setPostGameTab] = useState<PostGameTab>('summary');
   const [tributeFrom, setTributeFrom] = useState<ResourceType>('food');
@@ -699,6 +702,16 @@ export function GameHUD({
           </button>
 
           <div className="mx-0.5 h-5 w-px bg-white/15" />
+
+          <button
+            type="button"
+            onClick={() => setPoseidonModalOpen(true)}
+            title="Poseidon 3D — Senhor dos Mares & Tridente"
+            className="flex h-8 items-center gap-1 rounded border border-cyan-400/60 bg-gradient-to-r from-teal-700/90 to-cyan-500/90 px-2 text-xs font-bold text-slate-950 hover:from-teal-600 hover:to-cyan-400 whitespace-nowrap cursor-pointer animate-pulse"
+          >
+            <Waves className="h-3.5 w-3.5 fill-current" />
+            <span className="hidden lg:inline">🌊 Poseidon 3D</span>
+          </button>
 
           <button
             type="button"
@@ -2805,6 +2818,11 @@ export function GameHUD({
       <ZeusViewerModal
         isOpen={zeusModalOpen}
         onClose={() => setZeusModalOpen(false)}
+      />
+
+      <PoseidonViewerModal
+        isOpen={poseidonModalOpen}
+        onClose={() => setPoseidonModalOpen(false)}
       />
     </>
   );
