@@ -280,6 +280,135 @@ const FOG_GRID_SIZE = 64;
 const MINIMAP_FOG_SIZE = 32;
 const MAX_TOWN_CENTERS = 3;
 
+// Zero-GC Day / Night cycle math helpers & orbital keyframes
+const _sunColorA = new THREE.Color();
+const _sunColorB = new THREE.Color();
+const _hemiSkyA = new THREE.Color();
+const _hemiSkyB = new THREE.Color();
+const _hemiGndA = new THREE.Color();
+const _hemiGndB = new THREE.Color();
+const _rimColorA = new THREE.Color();
+const _rimColorB = new THREE.Color();
+const _targetSunColor = new THREE.Color();
+const _targetSkyColor = new THREE.Color();
+const _targetGndColor = new THREE.Color();
+const _targetRimColor = new THREE.Color();
+const _mapSkyColor = new THREE.Color();
+const _targetSunPos = new THREE.Vector3();
+const DAY_NIGHT_CYCLE_SECONDS = 180;
+
+interface DayNightKeyframe {
+  time: number;
+  label: string;
+  sunColor: number;
+  sunIntensity: number;
+  sunPos: [number, number, number];
+  skyColor: number;
+  groundColor: number;
+  hemiIntensity: number;
+  rimColor: number;
+  rimIntensity: number;
+}
+
+const DAY_NIGHT_KEYFRAMES: DayNightKeyframe[] = [
+  {
+    time: 0.00,
+    label: 'Amanhecer',
+    sunColor: 0xffa459,
+    sunIntensity: 1.25,
+    sunPos: [68, 22, 38],
+    skyColor: 0xfdb48e,
+    groundColor: 0x4a3b32,
+    hemiIntensity: 0.62,
+    rimColor: 0x7dd3fc,
+    rimIntensity: 0.35,
+  },
+  {
+    time: 0.14,
+    label: 'Manhã',
+    sunColor: 0xffeed4,
+    sunIntensity: 1.68,
+    sunPos: [52, 62, 42],
+    skyColor: 0xbae6fd,
+    groundColor: 0x5c4d3c,
+    hemiIntensity: 0.74,
+    rimColor: 0x93c5fd,
+    rimIntensity: 0.42,
+  },
+  {
+    time: 0.28,
+    label: 'Meio-Dia',
+    sunColor: 0xffffff,
+    sunIntensity: 1.95,
+    sunPos: [10, 88, 42],
+    skyColor: 0xdbeafe,
+    groundColor: 0x5f5240,
+    hemiIntensity: 0.82,
+    rimColor: 0xbfdbfe,
+    rimIntensity: 0.46,
+  },
+  {
+    time: 0.44,
+    label: 'Tarde',
+    sunColor: 0xffeed0,
+    sunIntensity: 1.72,
+    sunPos: [-36, 68, 44],
+    skyColor: 0xcce7ff,
+    groundColor: 0x5a4a38,
+    hemiIntensity: 0.75,
+    rimColor: 0x93c5fd,
+    rimIntensity: 0.40,
+  },
+  {
+    time: 0.56,
+    label: 'Entardecer',
+    sunColor: 0xf97316,
+    sunIntensity: 1.35,
+    sunPos: [-68, 22, 36],
+    skyColor: 0xfb923c,
+    groundColor: 0x3b2416,
+    hemiIntensity: 0.58,
+    rimColor: 0xa855f7,
+    rimIntensity: 0.38,
+  },
+  {
+    time: 0.65,
+    label: 'Crepúsculo',
+    sunColor: 0xa855f7,
+    sunIntensity: 0.68,
+    sunPos: [-48, 18, -12],
+    skyColor: 0x312e81,
+    groundColor: 0x1e1b4b,
+    hemiIntensity: 0.44,
+    rimColor: 0x38bdf8,
+    rimIntensity: 0.28,
+  },
+  {
+    time: 0.76,
+    label: 'Noite',
+    sunColor: 0x93c5fd,
+    sunIntensity: 0.52,
+    sunPos: [42, 62, -35],
+    skyColor: 0x0f172a,
+    groundColor: 0x090d16,
+    hemiIntensity: 0.34,
+    rimColor: 0x6366f1,
+    rimIntensity: 0.24,
+  },
+  {
+    time: 0.90,
+    label: 'Madrugada',
+    sunColor: 0x818cf8,
+    sunIntensity: 0.58,
+    sunPos: [62, 36, -18],
+    skyColor: 0x1e1b4b,
+    groundColor: 0x15162c,
+    hemiIntensity: 0.38,
+    rimColor: 0xf472b6,
+    rimIntensity: 0.26,
+  },
+];
+
 export class AoMEngine {
   private container: HTMLElement;
   private renderer: THREE.WebGLRenderer;
@@ -321,7 +450,7 @@ export class AoMEngine {
   private gameType: GameTypeId = 'supremacy';
   private visibilityMode: VisibilityMode = 'normal';
   private worldSize: WorldSizeId = 'normal';
-  private dayNightCycle = false;
+  private dayNightCycle = true;
   private dayTimeLabel = 'Dia';
   private currentWeather: 'clear' | 'rain' | 'snow' | 'sandstorm' = 'clear';
   private weatherTimer = 0;
@@ -578,17 +707,19 @@ export class AoMEngine {
 
     const sun = new THREE.DirectionalLight(0xfff1d6, 1.85);
     sun.position.set(55, 82, 42);
+    sun.target.position.set(0, 0, 0);
+    this.scene.add(sun.target);
     if (!this.isSoftwareGl) {
       sun.castShadow = true;
       sun.shadow.mapSize.width = 2048;
       sun.shadow.mapSize.height = 2048;
-      const d = 68;
+      const d = 75;
       sun.shadow.camera.left = -d;
       sun.shadow.camera.right = d;
       sun.shadow.camera.top = d;
       sun.shadow.camera.bottom = -d;
-      sun.shadow.camera.near = 10;
-      sun.shadow.camera.far = 200;
+      sun.shadow.camera.near = 5;
+      sun.shadow.camera.far = 240;
       sun.shadow.bias = -0.0005;
       sun.shadow.normalBias = 0.025;
     }
@@ -864,7 +995,7 @@ export class AoMEngine {
       ? 'revealed'
       : extras?.visibilityMode ?? (revealedMap ? 'revealed' : 'normal');
     this.revealedMap = this.visibilityMode === 'revealed';
-    this.dayNightCycle = Boolean(extras?.dayNightCycle);
+    this.dayNightCycle = extras?.dayNightCycle !== undefined ? Boolean(extras.dayNightCycle) : true;
     this.dayTimeLabel = 'Dia';
     this.titansEnabled = extras?.titansEnabled !== undefined ? extras.titansEnabled : true;
     this.treatyRemaining = isTitlePreview ? 0 : Math.max(0, (extras?.treatyMinutes ?? 0) * 60);
@@ -1852,6 +1983,9 @@ export class AoMEngine {
     if (opts.projectionMode && opts.projectionMode !== this.projectionMode) {
       this.setProjectionMode(opts.projectionMode);
     }
+    if (opts.dayNightCycle !== undefined && opts.dayNightCycle !== this.dayNightCycle) {
+      this.setDayNightCycle(opts.dayNightCycle);
+    }
     if (opts.hopliteRenderMode && opts.hopliteRenderMode !== this.hopliteRenderMode) {
       this.setHopliteRenderMode(opts.hopliteRenderMode);
     }
@@ -2001,6 +2135,26 @@ export class AoMEngine {
     this.camera = this.projectionMode === '2.5d' ? this.orthoCamera : this.perspCamera;
     this.updateCameraTransform(0.016);
     this.emitHudSnapshot();
+  }
+
+  public toggleDayNightCycle(): boolean {
+    this.dayNightCycle = !this.dayNightCycle;
+    this.notifyStatus(
+      this.dayNightCycle
+        ? '☀️🌙 Ciclo Dinâmico de Dia e Noite ativado (Órbita e sombras em tempo real)!'
+        : '☀️ Modo Solar Estático ativado (Iluminação fixa da partida)!'
+    );
+    this.emitHudSnapshot();
+    return this.dayNightCycle;
+  }
+
+  public setDayNightCycle(enabled: boolean): void {
+    this.dayNightCycle = enabled;
+    this.emitHudSnapshot();
+  }
+
+  public getDayNightCycle(): boolean {
+    return this.dayNightCycle;
   }
 
   public toggleHopliteRenderMode(): '3d' | 'sprite' | 'brg' | 'uv2d' {
@@ -7393,24 +7547,143 @@ export class AoMEngine {
 
       // Day / Night & Eclipse dynamic atmosphere
       if (this.hemiLight && this.sunLight && this.rimLight) {
+        const mapCfg = MAPS[this.mapId];
         if (this.eclipseTimer > 0) {
           this.dayTimeLabel = 'Eclipse';
-          this.hemiLight.intensity = 0.38;
-          this.sunLight.intensity = 0.55;
-          this.sunLight.color.setHex(0x818cf8);
+          _targetSunPos.set(-45, 45, 10);
+          _targetSunColor.setHex(0x9333ea);
+          _targetSkyColor.setHex(0x180a2a);
+          _targetGndColor.setHex(0x280e3d);
+          _targetRimColor.setHex(0xc084fc);
+
+          const eclipseDamp = Math.min(1, simDt * 3.5);
+          this.sunLight.position.lerp(_targetSunPos, eclipseDamp);
+          this.sunLight.color.lerp(_targetSunColor, eclipseDamp);
+          this.sunLight.intensity = THREE.MathUtils.lerp(this.sunLight.intensity, 0.48, eclipseDamp);
+
+          this.hemiLight.color.lerp(_targetSkyColor, eclipseDamp);
+          this.hemiLight.groundColor.lerp(_targetGndColor, eclipseDamp);
+          this.hemiLight.intensity = THREE.MathUtils.lerp(this.hemiLight.intensity, 0.35, eclipseDamp);
+
+          this.rimLight.color.lerp(_targetRimColor, eclipseDamp);
+          this.rimLight.intensity = THREE.MathUtils.lerp(this.rimLight.intensity, 0.40, eclipseDamp);
+
+          if (this.scene.background instanceof THREE.Color) {
+            this.scene.background.lerp(_targetSkyColor, eclipseDamp);
+          }
+          if (this.scene.fog) {
+            this.scene.fog.color.lerp(_targetSkyColor, eclipseDamp);
+          }
         } else if (this.dayNightCycle) {
-          const cycle = (this.elapsedSeconds % 180) / 180;
-          const sunArc = Math.sin(cycle * Math.PI * 2);
-          const dayStrength = THREE.MathUtils.clamp((sunArc + 1) * 0.5, 0.16, 1);
-          this.dayTimeLabel = dayStrength > 0.65 ? 'Dia' : dayStrength > 0.35 ? 'Crepúsculo' : 'Noite';
-          this.hemiLight.intensity = THREE.MathUtils.lerp(0.32, 0.85, dayStrength);
-          this.sunLight.intensity = THREE.MathUtils.lerp(0.45, 1.85, dayStrength);
-          this.sunLight.color.setHex(dayStrength < 0.38 ? 0x93c5fd : dayStrength < 0.6 ? 0xfdba74 : 0xfff3da);
+          const cycle = (this.elapsedSeconds % DAY_NIGHT_CYCLE_SECONDS) / DAY_NIGHT_CYCLE_SECONDS;
+          const kfs = DAY_NIGHT_KEYFRAMES;
+          const numKfs = kfs.length;
+
+          // Find the two keyframes enclosing the current cycle time
+          let i0 = numKfs - 1;
+          let i1 = 0;
+          for (let i = 0; i < numKfs; i++) {
+            const nextIdx = (i + 1) % numKfs;
+            const t0 = kfs[i].time;
+            const t1 = nextIdx === 0 ? 1.0 : kfs[nextIdx].time;
+            if (cycle >= t0 && cycle < t1) {
+              i0 = i;
+              i1 = nextIdx;
+              break;
+            }
+          }
+
+          const k0 = kfs[i0];
+          const k1 = kfs[i1];
+          const t0 = k0.time;
+          const t1 = i1 === 0 ? 1.0 : k1.time;
+          const span = Math.max(0.001, t1 - t0);
+          const rawAlpha = THREE.MathUtils.clamp((cycle - t0) / span, 0, 1);
+          // Hermite smoothstep for C1-continuous motion without sudden velocity changes
+          const s = rawAlpha * rawAlpha * (3 - 2 * rawAlpha);
+
+          this.dayTimeLabel = rawAlpha < 0.5 ? k0.label : k1.label;
+
+          // Interpolate orbital 3D position
+          _targetSunPos.set(
+            THREE.MathUtils.lerp(k0.sunPos[0], k1.sunPos[0], s),
+            THREE.MathUtils.lerp(k0.sunPos[1], k1.sunPos[1], s),
+            THREE.MathUtils.lerp(k0.sunPos[2], k1.sunPos[2], s)
+          );
+
+          // Interpolate colors and intensities
+          _sunColorA.setHex(k0.sunColor);
+          _sunColorB.setHex(k1.sunColor);
+          _targetSunColor.lerpColors(_sunColorA, _sunColorB, s);
+          const targetSunIntensity = THREE.MathUtils.lerp(k0.sunIntensity, k1.sunIntensity, s);
+
+          _hemiSkyA.setHex(k0.skyColor);
+          _hemiSkyB.setHex(k1.skyColor);
+          _targetSkyColor.lerpColors(_hemiSkyA, _hemiSkyB, s);
+
+          _hemiGndA.setHex(k0.groundColor);
+          _hemiGndB.setHex(k1.groundColor);
+          _targetGndColor.lerpColors(_hemiGndA, _hemiGndB, s);
+          const targetHemiIntensity = THREE.MathUtils.lerp(k0.hemiIntensity, k1.hemiIntensity, s);
+
+          _rimColorA.setHex(k0.rimColor);
+          _rimColorB.setHex(k1.rimColor);
+          _targetRimColor.lerpColors(_rimColorA, _rimColorB, s);
+          const targetRimIntensity = THREE.MathUtils.lerp(k0.rimIntensity, k1.rimIntensity, s);
+
+          // Blend with map-specific sky tone during daytime
+          if (mapCfg) {
+            _mapSkyColor.setHex(mapCfg.skyColorHex);
+            const isDaytime = cycle < 0.62;
+            const mapBlend = isDaytime ? 0.28 : 0.08;
+            _targetSkyColor.lerp(_mapSkyColor, mapBlend);
+          }
+
+          // Apply smoothly
+          const stepDamp = Math.min(1, simDt * 8.0);
+          this.sunLight.position.lerp(_targetSunPos, stepDamp);
+          this.sunLight.color.lerp(_targetSunColor, stepDamp);
+          this.sunLight.intensity = THREE.MathUtils.lerp(this.sunLight.intensity, targetSunIntensity, stepDamp);
+
+          this.hemiLight.color.lerp(_targetSkyColor, stepDamp);
+          this.hemiLight.groundColor.lerp(_targetGndColor, stepDamp);
+          this.hemiLight.intensity = THREE.MathUtils.lerp(this.hemiLight.intensity, targetHemiIntensity, stepDamp);
+
+          this.rimLight.color.lerp(_targetRimColor, stepDamp);
+          this.rimLight.intensity = THREE.MathUtils.lerp(this.rimLight.intensity, targetRimIntensity, stepDamp);
+
+          if (this.scene.background instanceof THREE.Color) {
+            this.scene.background.lerp(_targetSkyColor, stepDamp);
+          }
+          if (this.scene.fog) {
+            this.scene.fog.color.lerp(_targetSkyColor, stepDamp);
+          }
         } else {
           this.dayTimeLabel = 'Dia';
-          this.hemiLight.intensity = 0.82;
-          this.sunLight.intensity = 1.75;
-          this.sunLight.color.setHex(0xfff3da);
+          _targetSunPos.set(55, 82, 42);
+          _targetSunColor.setHex(0xfff1d6);
+          _targetSkyColor.setHex(mapCfg?.skyColorHex ?? 0xdbeafe);
+          _targetGndColor.setHex(0x5c4d3c);
+          _targetRimColor.setHex(0x93c5fd);
+
+          const staticDamp = Math.min(1, simDt * 4.0);
+          this.sunLight.position.lerp(_targetSunPos, staticDamp);
+          this.sunLight.color.lerp(_targetSunColor, staticDamp);
+          this.sunLight.intensity = THREE.MathUtils.lerp(this.sunLight.intensity, 1.85, staticDamp);
+
+          this.hemiLight.color.lerp(_targetSkyColor, staticDamp);
+          this.hemiLight.groundColor.lerp(_targetGndColor, staticDamp);
+          this.hemiLight.intensity = THREE.MathUtils.lerp(this.hemiLight.intensity, 0.72, staticDamp);
+
+          this.rimLight.color.lerp(_targetRimColor, staticDamp);
+          this.rimLight.intensity = THREE.MathUtils.lerp(this.rimLight.intensity, 0.45, staticDamp);
+
+          if (this.scene.background instanceof THREE.Color) {
+            this.scene.background.lerp(_targetSkyColor, staticDamp);
+          }
+          if (this.scene.fog) {
+            this.scene.fog.color.lerp(_targetSkyColor, staticDamp);
+          }
         }
       }
 

@@ -89,7 +89,7 @@ export function TitleScreen({
     gameType: 'supremacy',
     visibilityMode: 'normal',
     worldSize: 'normal',
-    dayNightCycle: false,
+    dayNightCycle: true,
     titansEnabled: true,
     treatyMinutes: 0,
   });

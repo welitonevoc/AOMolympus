@@ -195,6 +195,7 @@ export default function App() {
           onCenterCamera={() => engineRef.current?.centerCameraOnBase()}
           onSetCameraPanMode={(mode) => engineRef.current?.setCameraPanMode(mode)}
           onToggleProjectionMode={() => engineRef.current?.toggleProjectionMode()}
+          onToggleDayNightCycle={() => engineRef.current?.toggleDayNightCycle()}
           onToggleHopliteMode={() => engineRef.current?.toggleHopliteRenderMode()}
           onSetHopliteMode={(mode) => engineRef.current?.setHopliteRenderMode(mode)}
           onSetHopliteArmorTier={(tier) => engineRef.current?.setHopliteArmorTier(tier)}

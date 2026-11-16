@@ -25,6 +25,7 @@ import {
   Lock,
   Menu,
   Moon,
+  MoonStar,
   Mountain,
   Orbit,
   Pause,
@@ -40,6 +41,8 @@ import {
   Sparkles,
   StretchHorizontal,
   Sun,
+  Sunrise,
+  Sunset,
   Swords,
   Trees,
   Users,
@@ -117,6 +120,7 @@ interface GameHUDProps {
   onCenterCamera: () => void;
   onSetCameraPanMode: (mode: 'select' | 'pan') => void;
   onToggleProjectionMode?: () => void;
+  onToggleDayNightCycle?: () => void;
   onToggleHopliteMode?: () => void;
   onSetHopliteMode?: (mode: '3d' | 'sprite' | 'brg' | 'uv2d') => void;
   onSetHopliteArmorTier?: (tier: 1 | 2 | 3 | 4) => void;
@@ -230,6 +234,7 @@ export function GameHUD({
   onCenterCamera,
   onSetCameraPanMode,
   onToggleProjectionMode,
+  onToggleDayNightCycle,
   onToggleHopliteMode,
   onSetHopliteMode,
   onSetHopliteArmorTier,
@@ -457,23 +462,39 @@ export function GameHUD({
           </div>
 
           {(hud.dayNightCycle || hud.dayTimeLabel === 'Eclipse') && (
-            <div
-              title="Ciclo Dia / Noite"
-              className={`flex items-center gap-1 rounded border px-2 py-1 text-[11px] font-semibold whitespace-nowrap shadow-md ${
+            <button
+              type="button"
+              onClick={onToggleDayNightCycle}
+              title="Ciclo Dinâmico de Luz e Sombras (Clique para alternar modo dinâmico/estático)"
+              className={`flex items-center gap-1.5 rounded border px-2.5 py-1 text-[11px] font-semibold whitespace-nowrap shadow-md cursor-pointer transition-colors ${
                 hud.dayTimeLabel === 'Eclipse'
-                  ? 'border-purple-400/60 bg-[#231438]/95 text-purple-200'
+                  ? 'border-purple-400/60 bg-[#231438]/95 text-purple-200 hover:border-purple-300'
                   : hud.dayTimeLabel === 'Noite'
-                  ? 'border-sky-400/35 bg-[#101829]/95 text-sky-200'
-                  : 'border-[#d4af37]/30 bg-[#10141d]/95 text-[#fde68a]'
+                  ? 'border-sky-400/35 bg-[#101829]/95 text-sky-200 hover:border-sky-300'
+                  : hud.dayTimeLabel === 'Crepúsculo' || hud.dayTimeLabel === 'Madrugada'
+                  ? 'border-indigo-400/40 bg-[#16142a]/95 text-indigo-200 hover:border-indigo-300'
+                  : hud.dayTimeLabel === 'Entardecer'
+                  ? 'border-orange-500/50 bg-[#251510]/95 text-orange-200 hover:border-orange-400'
+                  : hud.dayTimeLabel === 'Amanhecer'
+                  ? 'border-amber-500/50 bg-[#241712]/95 text-amber-200 hover:border-amber-400'
+                  : 'border-[#d4af37]/35 bg-[#141824]/95 text-[#fde68a] hover:border-[#fde68a]'
               }`}
             >
-              {hud.dayTimeLabel === 'Dia' || hud.dayTimeLabel === 'Amanhecer' ? (
-                <Sun className="h-3.5 w-3.5 text-[#facc15]" />
-              ) : (
+              {hud.dayTimeLabel === 'Amanhecer' ? (
+                <Sunrise className="h-3.5 w-3.5 text-[#fb923c]" />
+              ) : hud.dayTimeLabel === 'Entardecer' ? (
+                <Sunset className="h-3.5 w-3.5 text-[#f97316]" />
+              ) : hud.dayTimeLabel === 'Noite' ? (
+                <MoonStar className="h-3.5 w-3.5 text-[#93c5fd]" />
+              ) : hud.dayTimeLabel === 'Crepúsculo' || hud.dayTimeLabel === 'Madrugada' ? (
                 <Moon className="h-3.5 w-3.5 text-[#a78bfa]" />
+              ) : hud.dayTimeLabel === 'Eclipse' ? (
+                <Moon className="h-3.5 w-3.5 text-[#c084fc]" />
+              ) : (
+                <Sun className="h-3.5 w-3.5 text-[#facc15]" />
               )}
               <span>{hud.dayTimeLabel}</span>
-            </div>
+            </button>
           )}
 
           {hud.treatyRemaining > 0 && (
@@ -2453,6 +2474,31 @@ export function GameHUD({
                       : (hud.hopliteRenderMode ?? options.hopliteRenderMode) === 'brg'
                       ? '2.5D BRG'
                       : '3D REAL'}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const nextVal = !(options.dayNightCycle ?? hud.dayNightCycle);
+                    onUpdateOptions({ ...options, dayNightCycle: nextVal });
+                    if (onToggleDayNightCycle) onToggleDayNightCycle();
+                  }}
+                  className="flex w-full items-center justify-between rounded border border-white/15 bg-[#161b26] px-4 py-2.5 font-semibold text-white cursor-pointer hover:bg-[#1f2533]"
+                >
+                  <div className="text-left">
+                    <div>Ciclo Dinâmico Dia & Noite</div>
+                    <div className="text-[10px] text-gray-400 font-normal">
+                      Órbita solar contínua, sombras em tempo real e cores dinâmicas
+                    </div>
+                  </div>
+                  <span
+                    className={
+                      (options.dayNightCycle ?? hud.dayNightCycle)
+                        ? 'text-[#86efac]'
+                        : 'text-[#fca5a5]'
+                    }
+                  >
+                    {(options.dayNightCycle ?? hud.dayNightCycle) ? 'LIGADO' : 'DESLIGADO'}
                   </span>
                 </button>
               </div>

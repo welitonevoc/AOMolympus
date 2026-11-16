@@ -1396,6 +1396,7 @@ export interface GameOptionsConfig {
   scaleProfile?: AoMScaleProfile;
   buildingScaleMultiplier?: number;
   unitScaleMultiplier?: number;
+  dayNightCycle?: boolean;
 }
 
 export const DEFAULT_GAME_OPTIONS: GameOptionsConfig = {
@@ -1420,4 +1421,5 @@ export const DEFAULT_GAME_OPTIONS: GameOptionsConfig = {
   scaleProfile: 'classic_aom',
   buildingScaleMultiplier: 1.35,
   unitScaleMultiplier: 0.95,
+  dayNightCycle: true,
 };
