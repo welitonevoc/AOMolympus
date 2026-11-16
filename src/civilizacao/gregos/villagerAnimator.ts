@@ -378,7 +378,7 @@ export function createRiggedVillagerMesh(
   const root = new THREE.Group();
   const S = 0.92; // Canonical villager scale relative to standard military units
 
-  const teamMat = team === 'player' ? pal.playerTeam : pal.enemyTeam;
+  const teamMat = team === 'player' ? pal.tunicPlayer : pal.tunicEnemy;
   const skinMat = pal.skin;
   const woodMat = pal.timber;
   const ironMat = pal.stoneDark;

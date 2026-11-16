@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { Box, Eye, Layers, Play, RotateCw, Shield, Sparkles, Swords, X, Building2, User } from 'lucide-react';
 import { createGreekUnitMesh } from '../civilizacao/gregos/gregosModels';
+import { buildZeus, createZeusProceduralTextures } from '../civilizacao/gregos/zeusModel';
 import { createBuildingMesh, createMaterialPalette, createUnitMesh } from '../game/models';
 import { BuildingKind, UnitKind } from '../game/types';
 import {
@@ -19,7 +20,8 @@ interface HopliteUvBuilderModalProps {
   onSelectTier: (tier: 1 | 2 | 3 | 4) => void;
 }
 
-const INSPECTABLE_UNITS: { id: UnitKind; name: string; role: string }[] = [
+const INSPECTABLE_UNITS: { id: UnitKind | 'zeus'; name: string; role: string }[] = [
+  { id: 'zeus', name: '⚡ Zeus (Deus Maior)', role: 'Pai dos Deuses — Empunha Raios Divinos e convoca Tempestades' },
   { id: 'hoplite', name: 'Hoplita Espartano', role: 'Infantaria pesada com lança e escudo hoplon' },
   { id: 'hipaspist', name: 'Hipaspista', role: 'Infantaria de elite ágil' },
   { id: 'archer', name: 'Arqueiro Toxotes', role: 'Combatente à distância' },
@@ -51,7 +53,7 @@ export function HopliteUvBuilderModal({
   const entityMeshRef = useRef<THREE.Group | null>(null);
 
   const [entityType, setEntityType] = useState<'unit' | 'building'>('unit');
-  const [selectedUnit, setSelectedUnit] = useState<UnitKind>('hoplite');
+  const [selectedUnit, setSelectedUnit] = useState<UnitKind | 'zeus'>('zeus');
   const [selectedBuilding, setSelectedBuilding] = useState<BuildingKind>('town_center');
   const [animState, setAnimState] = useState<'idle' | 'move' | 'attack'>('attack');
   const [autoRotate3D, setAutoRotate3D] = useState(true);
@@ -128,7 +130,34 @@ export function HopliteUvBuilderModal({
       }
       let group: THREE.Group;
       if (entityType === 'unit') {
-        if (selectedUnit === 'hoplite' || selectedUnit === 'hipaspist') {
+        if (selectedUnit === 'zeus') {
+          const zTex = createZeusProceduralTextures();
+          const zeus = buildZeus(zTex);
+          group = zeus.flight;
+          group.scale.setScalar(0.72);
+          group.position.set(0, 0.15, 0);
+          group.userData.animatePose = (dt: number) => {
+            const wind = 1.2;
+            for (const b of zeus.beardLocks) {
+              b.mesh.rotation.x = b.rx + Math.sin(simTime * 2.8 * wind + b.phase) * 0.045;
+              b.mesh.rotation.z = b.rz + Math.cos(simTime * 2.2 * wind + b.phase) * 0.035;
+            }
+            const cAttr = zeus.cape.geometry.attributes.position;
+            for (let i = 0; i < cAttr.count; i++) {
+              const bx = zeus.capeBase[i * 3];
+              const by = zeus.capeBase[i * 3 + 1];
+              const bz = zeus.capeBase[i * 3 + 2];
+              const normY = (0.91 - by) / 1.82;
+              const wave1 = Math.sin(simTime * 3.4 * wind - normY * 4.5 + bx * 2.6) * 0.14 * normY;
+              cAttr.setXYZ(i, bx, by, bz + wave1);
+            }
+            cAttr.needsUpdate = true;
+            zeus.ring2.rotation.z += dt * 0.65;
+            zeus.ring1.material.opacity = 0.38 + 0.22 * Math.sin(simTime * 2.2);
+            const pulse = 1 + Math.sin(simTime * 16) * 0.16;
+            zeus.handGlow.scale.setScalar(1.2 * pulse);
+          };
+        } else if (selectedUnit === 'hoplite' || selectedUnit === 'hipaspist') {
           group = createGreekUnitMesh(selectedUnit, 'player', pal, true, activeTier);
           group.userData.setArmorTier?.(activeTier);
           group.userData.setMode?.('3d');
@@ -162,6 +191,7 @@ export function HopliteUvBuilderModal({
       if (entityMeshRef.current?.userData.animatePose) {
         const moving = animStateRef.current === 'move';
         const attacking = animStateRef.current === 'attack';
+        const attackT = attacking ? (simTime % 1.2) / 1.2 : null;
         const actionState = attacking ? (selectedUnit === 'villager' ? 'gather' : 'attack') : moving ? 'move' : 'idle';
         entityMeshRef.current.userData.animatePose(dt, moving, 3.2, attackT, actionState, 'wood');
       }

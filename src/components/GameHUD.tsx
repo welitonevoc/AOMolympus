@@ -82,6 +82,7 @@ import {
   UnitKind,
 } from '../game/types';
 import { HopliteUvBuilderModal } from './HopliteUvBuilderModal';
+import { ZeusViewerModal } from './ZeusViewerModal';
 import { Minimap } from './Minimap';
 
 const GAME_TYPE_LABELS: Record<GameTypeId, string> = {
@@ -252,6 +253,7 @@ export function GameHUD({
   const [activeTab, setActiveTab] = useState<DockTab>('build');
   const [activeDialog, setActiveDialog] = useState<InGameDialog>('none');
   const [uvBuilderOpen, setUvBuilderOpen] = useState(false);
+  const [zeusModalOpen, setZeusModalOpen] = useState(false);
   const [pausePrompt, setPausePrompt] = useState<PausePrompt>('menu');
   const [postGameTab, setPostGameTab] = useState<PostGameTab>('summary');
   const [tributeFrom, setTributeFrom] = useState<ResourceType>('food');
@@ -697,6 +699,16 @@ export function GameHUD({
           </button>
 
           <div className="mx-0.5 h-5 w-px bg-white/15" />
+
+          <button
+            type="button"
+            onClick={() => setZeusModalOpen(true)}
+            title="Zeus 3D — Olimpo & Poderes Divinos"
+            className="flex h-8 items-center gap-1 rounded border border-yellow-400/60 bg-gradient-to-r from-amber-600/90 to-yellow-500/90 px-2 text-xs font-bold text-slate-950 hover:from-amber-500 hover:to-yellow-400 whitespace-nowrap cursor-pointer animate-pulse"
+          >
+            <Zap className="h-3.5 w-3.5 fill-current" />
+            <span className="hidden lg:inline">⚡ Zeus 3D</span>
+          </button>
 
           <button
             type="button"
@@ -2788,6 +2800,11 @@ export function GameHUD({
           onSetHopliteArmorTier?.(tier);
           onUpdateOptions({ ...options, hopliteArmorTier: tier });
         }}
+      />
+
+      <ZeusViewerModal
+        isOpen={zeusModalOpen}
+        onClose={() => setZeusModalOpen(false)}
       />
     </>
   );

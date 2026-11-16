@@ -20,6 +20,7 @@ import {
   Volume2,
   VolumeX,
   Wrench,
+  Zap,
 } from 'lucide-react';
 import { soundEngine } from '../game/audio';
 import { PortMenuState } from '../game/menuData';
@@ -32,6 +33,7 @@ import {
   PantheonId,
 } from '../game/types';
 import { HopliteUvBuilderModal } from './HopliteUvBuilderModal';
+import { ZeusViewerModal } from './ZeusViewerModal';
 import { PortSubMenus, SkirmishDraft } from './PortSubMenus';
 
 interface TitleScreenProps {
@@ -76,6 +78,7 @@ export function TitleScreen({
 }: TitleScreenProps) {
   const [menuState, setMenuState] = useState<PortMenuState>('MAIN_MENU');
   const [uvModalOpen, setUvModalOpen] = useState(false);
+  const [zeusModalOpen, setZeusModalOpen] = useState(false);
   const [skirmish, setSkirmish] = useState<SkirmishDraft>({
     pantheon: 'greek',
     minorGod: 'Zeus',
@@ -185,6 +188,21 @@ export function TitleScreen({
           onClick={() => {
             soundEngine.unlock();
             soundEngine.playSelect();
+            setZeusModalOpen(true);
+          }}
+          className="flex h-8 items-center gap-1.5 rounded border border-yellow-400/70 bg-gradient-to-r from-amber-600/90 to-yellow-500/90 px-3 text-xs font-bold text-slate-950 shadow-lg hover:from-amber-500 hover:to-yellow-400 cursor-pointer animate-pulse"
+        >
+          <span className="flex items-center gap-1.5">
+            <Zap className="h-3.5 w-3.5 fill-current" />
+            <span>⚡ Zeus 3D</span>
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            soundEngine.unlock();
+            soundEngine.playSelect();
             setUvModalOpen(true);
           }}
           className="flex h-8 items-center gap-1.5 rounded border border-emerald-400/60 bg-emerald-950/90 px-3 text-xs font-bold text-emerald-200 shadow-lg hover:border-emerald-300 hover:bg-emerald-900 cursor-pointer"
@@ -233,6 +251,11 @@ export function TitleScreen({
         activeTier={options.hopliteArmorTier ?? 3}
         onSelectMode={(mode) => onUpdateOptions({ ...options, hopliteRenderMode: mode })}
         onSelectTier={(tier) => onUpdateOptions({ ...options, hopliteArmorTier: tier })}
+      />
+
+      <ZeusViewerModal
+        isOpen={zeusModalOpen}
+        onClose={() => setZeusModalOpen(false)}
       />
 
       <div className={`relative w-full ${containerWidth} max-h-[calc(100vh-1.5rem)] flex flex-col transition-[max-width] duration-200`}>
