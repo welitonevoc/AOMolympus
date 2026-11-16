@@ -66,54 +66,323 @@ interface CivEntityOption {
  * Catálogo de unidades e deuses estritamente dividido por civilização.
  * Zeus, Poseidon e Hades são deuses gregos e aparecem EXCLUSIVAMENTE no Panteão Grego!
  */
-const CIVILIZATION_UNITS: Partial<Record<PantheonId, CivEntityOption[]>> = {
+export interface MajorGodOption {
+  id: string;
+  name: string;
+  title: string;
+  color: string;
+  titanName: string;
+  titanRole: string;
+}
+
+export const MAJOR_GODS_BY_CIV: Partial<Record<PantheonId, MajorGodOption[]>> = {
   greek: [
-    { id: 'zeus', name: '⚡ Zeus (Deus Maior)', role: 'Pai dos Deuses — Empunha Raios Divinos e convoca Tempestades' },
-    { id: 'poseidon', name: '🌊 Poseidon (Deus dos Mares)', role: 'Senhor dos Mares — Conduzido por vórtices, golpeia com tridente e invoca tsunamis' },
-    { id: 'hades', name: '💀 Hades (Senhor do Submundo)', role: 'Monarca dos Mortos — Empunha o Bidente Real, invoca Chamas do Tártaro e o Portal das Almas' },
-    { id: 'hoplite', name: 'Hoplita Espartano', role: 'Infantaria pesada com lança e escudo hoplon' },
-    { id: 'hipaspist', name: 'Hipaspista', role: 'Infantaria de elite ágil' },
-    { id: 'archer', name: 'Arqueiro Toxotes', role: 'Combatente à distância' },
-    { id: 'cavalry', name: 'Cavalaria Pródromo', role: 'Cavalaria rápida de reconhecimento' },
-    { id: 'hero', name: 'Herói (Ajax / Odisseu)', role: 'Líder lendário com aura mítica' },
-    { id: 'villager', name: 'Aldeão Grego', role: 'Unidade econômica de coleta' },
-    { id: 'minotaur', name: 'Minotauro Mítico', role: 'Criatura mítica feroz' },
+    {
+      id: 'Zeus',
+      name: 'Zeus',
+      title: 'Pai dos Deuses (Céus & Tempestades)',
+      color: '#eab308',
+      titanName: 'Colosso de Ceráunio (Titã de Zeus)',
+      titanRole: 'Colosso coroado de trovões celestes, empunhando a lâmina divina crepitante de raios.',
+    },
+    {
+      id: 'Poseidon',
+      name: 'Poseidon',
+      title: 'Senhor dos Mares (Oceanos & Terremotos)',
+      color: '#2dd4bf',
+      titanName: 'Leviatã Abissal (Titã de Poseidon)',
+      titanRole: 'Titã marinho emergido das fossas abissais, empunhando o tridente colossal de oricalco.',
+    },
+    {
+      id: 'Hades',
+      name: 'Hades',
+      title: 'Soberano do Submundo (Tártaro & Riquezas)',
+      color: '#10b981',
+      titanName: 'Senhor do Tártaro (Titã de Hades)',
+      titanRole: 'Titã de obsidiana e chifres infernais com manto de almas, empunhando o bidente colossal do Tártaro.',
+    },
   ],
   egyptian: [
-    { id: 'hoplite', name: 'Homem das Armas (Spearman)', role: 'Infantaria pesada núbia com escudo largo' },
-    { id: 'archer', name: 'Arqueiro Núbio', role: 'Arqueiro veloz do deserto com arco composto' },
-    { id: 'cavalry', name: 'Carruagem de Guerra', role: 'Cavalaria ligeira de ataque à distância' },
-    { id: 'hero', name: 'Faraó / Sacerdote', role: 'Líder espiritual e guardião de monumentos' },
-    { id: 'villager', name: 'Aldeão Egípcio', role: 'Trabalhador e construtor de pirâmides' },
-    { id: 'minotaur', name: 'Anubita Mítico', role: 'Guardião chacal ágil com saltos mortais' },
+    {
+      id: 'Rá',
+      name: 'Rá',
+      title: 'Deus do Sol (Luz Divina & Glória)',
+      color: '#f59e0b',
+      titanName: 'Avatar Solar (Titã de Rá)',
+      titanRole: 'Colosso solar alado em armadura de ouro reluzente com disco solar flamejante e cetro Ankh monumental.',
+    },
+    {
+      id: 'Ísis',
+      name: 'Ísis',
+      title: 'Deusa da Magia (Proteção & Fertilidade)',
+      color: '#06b6d4',
+      titanName: 'Guardiã Celeste do Nilo (Titã de Ísis)',
+      titanRole: 'Colosso alado de marfim e turquesa, coroada com o disco hathórico e cetro de lótus primordial.',
+    },
+    {
+      id: 'Set',
+      name: 'Set',
+      title: 'Deus do Caos (Tempestades de Areia & Feras)',
+      color: '#ef4444',
+      titanName: 'Besta Titânica do Caos (Titã de Set)',
+      titanRole: 'Besta colossal do deserto com orelhas rígidas e foice Khopesh rubra de basalto e chamas do deserto.',
+    },
   ],
   norse: [
-    { id: 'hoplite', name: 'Ulfsark', role: 'Infantaria rápida capaz de erguer construções' },
-    { id: 'hipaspist', name: 'Lançador de Machados', role: 'Guerreiro com machados arremessados' },
-    { id: 'cavalry', name: 'Cavaleiro Saqueador', role: 'Cavalaria nórdica de ataque surpresa' },
-    { id: 'hero', name: 'Hersir (Herói)', role: 'Guerreiro devoto que gera favor em combate' },
-    { id: 'villager', name: 'Coletor Nórdico', role: 'Unidade com carro de bois para entrega rápida' },
-    { id: 'minotaur', name: 'Gigante do Gelo', role: 'Monstro colossal com sopro congelante' },
+    {
+      id: 'Thor',
+      name: 'Thor',
+      title: 'Deus do Trovão (Força Heroica & Tempestades)',
+      color: '#38bdf8',
+      titanName: 'Gigante do Trovão Mjölnir (Titã de Thor)',
+      titanRole: 'Titã guerreiro com chifres maciços de bronze e um martelo monumental Mjölnir de granito rúnico.',
+    },
+    {
+      id: 'Odin',
+      name: 'Odin',
+      title: 'Pai de Todos (Sabedoria & Runas de Guerra)',
+      color: '#818cf8',
+      titanName: 'Gigante Primordial Ymir (Titã de Odin)',
+      titanRole: 'Ancestral colossal de gelo eterno com runas brilhantes, asas de corvo e a lança sagrada Gungnir.',
+    },
+    {
+      id: 'Loki',
+      name: 'Loki',
+      title: 'Mestre da Trapaça (Chamas & Mudança de Forma)',
+      color: '#f97316',
+      titanName: 'Gigante de Fogo Surtr (Titã de Loki)',
+      titanRole: 'Monstruosidade titânica de chamas eternas de Muspelheim com espada monumental de magma puro.',
+    },
   ],
   atlantean: [
-    { id: 'hoplite', name: 'Murmillo', role: 'Infantaria pesada com espada de oricalco e escudo' },
-    { id: 'archer', name: 'Arcus', role: 'Arqueiro de elite com flechas perfurantes' },
-    { id: 'cavalry', name: 'Contarius', role: 'Cavalaria de lança longa e impacto devastador' },
-    { id: 'hero', name: 'Herói Atlante', role: 'Guerreiro consagrado com bênção de Cronos' },
-    { id: 'villager', name: 'Cidadão Atlante', role: 'Econômico auto-suficiente com mula de carga' },
-    { id: 'minotaur', name: 'Autômato Mítico', role: 'Constructo de bronze autoregenerativo' },
+    {
+      id: 'Cronos',
+      name: 'Cronos',
+      title: 'Titã Primordial do Tempo (Oricalco & Teletransporte)',
+      color: '#fbbf24',
+      titanName: 'Senhor Supremo do Tempo (Titã de Cronos)',
+      titanRole: 'Titã primordial com anéis de oricalco flutuantes em órbita temporal e a foice estelar da eternidade.',
+    },
+    {
+      id: 'Urano',
+      name: 'Urano',
+      title: 'Titã dos Céus (Vórtices & Portais Celestiais)',
+      color: '#a855f7',
+      titanName: 'Vórtice Celestial (Titã de Urano)',
+      titanRole: 'Titã cósmico envolto por anéis de plasma etéreo, empunhando uma lâmina luminosa transcendental.',
+    },
+    {
+      id: 'Gaia',
+      name: 'Gaia',
+      title: 'Mãe Terra (Natureza Viva & Regeneração)',
+      color: '#22c55e',
+      titanName: 'Mãe Terra Primordial (Titã de Gaia)',
+      titanRole: 'Titã vegetal de rocha viva e raízes sagradas com folhagens esmeraldas e clava florestal colossal.',
+    },
   ],
 };
 
-const INSPECTABLE_BUILDINGS: { id: BuildingKind; name: string; role: string }[] = [
-  { id: 'town_center', name: 'Centro da Cidade', role: 'Sede principal — treina aldeões e avança eras' },
-  { id: 'barracks', name: 'Quartel', role: 'Treina infantaria e soldados' },
-  { id: 'armory', name: 'Arsenal', role: 'Pesquisa tecnologias de armas e armaduras' },
-  { id: 'temple', name: 'Templo', role: 'Gera Favor e treina unidades míticas' },
-  { id: 'fortress', name: 'Fortaleza', role: 'Defesa pesada e cerco' },
-  { id: 'house', name: 'Casa', role: 'Aumenta o limite de população' },
-  { id: 'tower', name: 'Torre de Vigia', role: 'Defesa avançada contra invasores' },
-];
+export function getUnitsForCivAndGod(civ: PantheonId, majorGod: string): CivEntityOption[] {
+  const godList = MAJOR_GODS_BY_CIV[civ] || MAJOR_GODS_BY_CIV.greek!;
+  const godInfo = godList.find((g) => g.id.toLowerCase() === (majorGod || '').toLowerCase()) || godList[0];
+
+  if (civ === 'greek') {
+    const isZeus = godInfo.id.toLowerCase() === 'zeus';
+    const isPoseidon = godInfo.id.toLowerCase() === 'poseidon';
+    const isHades = godInfo.id.toLowerCase() === 'hades';
+
+    const godUnit: CivEntityOption = isZeus
+      ? { id: 'zeus', name: '⚡ Zeus (Deus Maior)', role: 'Pai dos Deuses — Empunha Raios Divinos e convoca Tempestades' }
+      : isPoseidon
+      ? { id: 'poseidon', name: '🌊 Poseidon (Deus dos Mares)', role: 'Senhor dos Mares — Conduzido por vórtices, golpeia com tridente e invoca tsunamis' }
+      : { id: 'hades', name: '💀 Hades (Senhor do Submundo)', role: 'Monarca dos Mortos — Empunha o Bidente Real, invoca Chamas do Tártaro e o Portal das Almas' };
+
+    return [
+      godUnit,
+      {
+        id: 'hoplite',
+        name: isZeus ? 'Hoplita de Zeus' : isPoseidon ? 'Hoplita do Tridente' : 'Hoplita do Tártaro',
+        role: isZeus ? 'Infantaria pesada consagrada ao deus dos raios' : isPoseidon ? 'Guerreiro costeiro com bênção das marés' : 'Guarda fúnebre com armadura de bronze escuro',
+      },
+      {
+        id: 'hipaspist',
+        name: isZeus ? 'Hipaspista Celestial' : isPoseidon ? 'Hipaspista das Ondas' : 'Hipaspista das Sombras',
+        role: 'Infantaria de choque ágil com velocidade e vestes temáticas',
+      },
+      {
+        id: 'archer',
+        name: isZeus ? 'Toxotes da Tempestade' : isPoseidon ? 'Toxotes da Correnteza' : 'Toxotes das Sombras',
+        role: 'Arqueiro de precisão disparando flechas consagradas',
+      },
+      {
+        id: 'cavalry',
+        name: isZeus ? 'Pródromo de Zeus' : isPoseidon ? 'Hetaireia de Poseidon' : 'Pródromo Espectral',
+        role: isPoseidon ? 'Cavalaria de elite com bônus a cavalos e estábulos' : 'Cavalaria de reconhecimento veloz',
+      },
+      {
+        id: 'hero',
+        name: isZeus ? 'Herói (Jasão / Hércules)' : isPoseidon ? 'Herói (Teseu / Atalanta)' : 'Herói (Aquiles / Perseu)',
+        role: 'Líder semideus lendário abençoado com proezas heroicas',
+      },
+      {
+        id: 'villager',
+        name: isZeus ? 'Aldeão Devoto de Zeus' : isPoseidon ? 'Aldeão Pescador de Poseidon' : 'Aldeão Mineiro de Hades',
+        role: isHades ? 'Econômico com bônus de extração de ouro e pedras' : 'Unidade econômica de coleta e construção',
+      },
+      {
+        id: 'minotaur',
+        name: isZeus ? 'Minotauro de Creta' : isPoseidon ? 'Centauro das Marés' : 'Cérbero Guardião',
+        role: 'Criatura mítica feroz de dano esmagador',
+      },
+      {
+        id: 'titan',
+        name: `⚡ ${godInfo.titanName}`,
+        role: godInfo.titanRole,
+      },
+    ];
+  }
+
+  if (civ === 'egyptian') {
+    const isRa = godInfo.id.toLowerCase() === 'rá';
+    const isIsis = godInfo.id.toLowerCase() === 'ísis';
+
+    return [
+      {
+        id: 'hoplite',
+        name: isRa ? 'Lanceiro Solar de Rá' : isIsis ? 'Guardião do Nilo de Ísis' : 'Homem de Armas do Caos (Set)',
+        role: isRa ? 'Infantaria pesada com couraça dourada refletora da luz solar' : isIsis ? 'Guerreiro com proteção mágica do Nilo' : 'Soldado de assalto imbuído pela tempestade de areia',
+      },
+      {
+        id: 'archer',
+        name: isRa ? 'Arqueiro Solar de Rá' : isIsis ? 'Arqueiro Protetor de Ísis' : 'Arqueiro do Vento Escuro (Set)',
+        role: 'Arqueiro veloz do deserto com arco composto e flechas incendiárias',
+      },
+      {
+        id: 'cavalry',
+        name: isRa ? 'Carruagem Sagrada de Rá' : isIsis ? 'Carruagem Real de Ísis' : 'Carruagem de Ataque de Set',
+        role: 'Cavalaria ligeira móvel de assédio e ataque em movimento',
+      },
+      {
+        id: 'hero',
+        name: isRa ? 'Faraó de Rá' : isIsis ? 'Sacerdotisa de Ísis' : 'Sumo Sacerdote de Set',
+        role: 'Líder espiritual consagrado capaz de abençoar monumentos e erguer feitiços',
+      },
+      {
+        id: 'villager',
+        name: isRa ? 'Construtor Solar de Rá' : isIsis ? 'Agricultor Fértil de Ísis' : 'Coletor Nômade de Set',
+        role: 'Aldeão trabalhador e construtor dedicado às grandes maravilhas',
+      },
+      {
+        id: 'minotaur',
+        name: isRa ? 'Anubita Solar' : isIsis ? 'Esfinge Sagrada' : 'Besta Chacal do Caos',
+        role: 'Criatura mítica ágil dotada de saltos fulminantes e garras mortais',
+      },
+      {
+        id: 'titan',
+        name: `☀️ ${godInfo.titanName}`,
+        role: godInfo.titanRole,
+      },
+    ];
+  }
+
+  if (civ === 'norse') {
+    const isThor = godInfo.id.toLowerCase() === 'thor';
+    const isOdin = godInfo.id.toLowerCase() === 'odin';
+
+    return [
+      {
+        id: 'hoplite',
+        name: isThor ? 'Ulfsark do Trovão (Thor)' : isOdin ? 'Ulfsark de Odin' : 'Ulfsark Ígneo de Loki',
+        role: 'Infantaria rápida nórdica capaz de erguer construções militares no campo',
+      },
+      {
+        id: 'hipaspist',
+        name: isThor ? 'Lançador de Machados Mjölnir' : isOdin ? 'Guerreiro Rúnico de Odin' : 'Lançador de Machados Ígneos',
+        role: 'Guerreiro devastador com machados arremessados',
+      },
+      {
+        id: 'cavalry',
+        name: isThor ? 'Cavaleiro Forjado de Thor' : isOdin ? 'Saqueador Corvo de Odin' : 'Saqueador de Cinzas de Loki',
+        role: 'Cavalaria nórdica de ataque surpresa e invasão relâmpago',
+      },
+      {
+        id: 'hero',
+        name: isThor ? 'Hersir do Trovão (Thor)' : isOdin ? 'Hersir Sábio de Odin' : 'Hersir Trapaceiro de Loki',
+        role: 'Guerreiro devoto que gera Favor místico em combate',
+      },
+      {
+        id: 'villager',
+        name: isThor ? 'Anão Minerador de Thor' : isOdin ? 'Coletor de Yggdrasil' : 'Servo Astuto de Loki',
+        role: 'Unidade com carro de bois para transporte instantâneo de recursos',
+      },
+      {
+        id: 'minotaur',
+        name: isThor ? 'Gigante de Tempestade' : isOdin ? 'Gigante de Gelo Ancestral' : 'Gigante de Fogo do Muspelheim',
+        role: 'Monstro colossal nórdico de força sísmica',
+      },
+      {
+        id: 'titan',
+        name: `❄️ ${godInfo.titanName}`,
+        role: godInfo.titanRole,
+      },
+    ];
+  }
+
+  // Atlantean
+  const isCronos = godInfo.id.toLowerCase() === 'cronos';
+  const isUrano = godInfo.id.toLowerCase() === 'urano';
+
+  return [
+    {
+      id: 'hoplite',
+      name: isCronos ? 'Murmillo do Tempo (Cronos)' : isUrano ? 'Murmillo Celeste (Urano)' : 'Murmillo Silvestre (Gaia)',
+      role: 'Infantaria pesada com armadura de oricalco e escudo protetor',
+    },
+    {
+      id: 'archer',
+      name: isCronos ? 'Arcus da Entropia' : isUrano ? 'Arcus do Éter' : 'Arcus da Natureza',
+      role: 'Arqueiro de elite com flechas perfurantes mágicas',
+    },
+    {
+      id: 'cavalry',
+      name: isCronos ? 'Contarius Temporal' : isUrano ? 'Contarius Estelar' : 'Contarius da Rocha Viva',
+      role: 'Cavalaria pesada de impacto com lança longa de oricalco',
+    },
+    {
+      id: 'hero',
+      name: isCronos ? 'Herói de Cronos' : isUrano ? 'Herói Celeste de Urano' : 'Herói Guardião de Gaia',
+      role: 'Guerreiro consagrado com poderes de metamorfose heroica',
+    },
+    {
+      id: 'villager',
+      name: isCronos ? 'Cidadão Croniano' : isUrano ? 'Cidadão dos Céus' : 'Cidadão de Gaia',
+      role: 'Trabalhador autossuficiente com mula de carga que dispensa entrepostos',
+    },
+    {
+      id: 'minotaur',
+      name: isCronos ? 'Autômato do Tempo' : isUrano ? 'Autômato Celestial' : 'Autômato de Madeira Viva',
+      role: 'Constructo de oricalco vivo com autorreparação contínua',
+    },
+    {
+      id: 'titan',
+      name: `🔮 ${godInfo.titanName}`,
+      role: godInfo.titanRole,
+    },
+  ];
+}
+
+export function getBuildingsForCivAndGod(civ: PantheonId, majorGod: string): { id: BuildingKind; name: string; role: string }[] {
+  const god = majorGod || 'Zeus';
+  return [
+    { id: 'town_center', name: `Centro da Cidade (${god})`, role: `Sede principal consagrada a ${god} — treina aldeões e avança eras` },
+    { id: 'barracks', name: `Quartel de ${god}`, role: `Treina e equipa soldados sob a bênção marcial de ${god}` },
+    { id: 'armory', name: `Arsenal Divino de ${god}`, role: `Forja armas e armaduras aprimoradas com tecnologias de ${god}` },
+    { id: 'temple', name: `Templo Sagrado de ${god}`, role: `Gera Favor divino e treina criaturas míticas devotas a ${god}` },
+    { id: 'fortress', name: `Fortaleza de ${god}`, role: `Bastião de defesa impenetrável e armas de cerco sob a proteção de ${god}` },
+    { id: 'house', name: `Habitação (${god})`, role: `Abriga os povos eleitos e eleva a capacidade populacional do império` },
+    { id: 'tower', name: `Torre Balística de ${god}`, role: `Guarda avançada que vigia fronteiras e dispara projéteis abençoados` },
+  ];
+}
 
 export function HopliteUvBuilderModal({
   isOpen,
@@ -128,6 +397,7 @@ export function HopliteUvBuilderModal({
 
   const [entityType, setEntityType] = useState<'unit' | 'building'>('unit');
   const [selectedCiv, setSelectedCiv] = useState<PantheonId>('greek');
+  const [selectedMajorGod, setSelectedMajorGod] = useState<string>('Zeus');
   const [selectedUnit, setSelectedUnit] = useState<InspectableUnitId>('zeus');
   const [selectedBuilding, setSelectedBuilding] = useState<BuildingKind>('town_center');
   const [animState, setAnimState] = useState<'idle' | 'move' | 'attack'>('attack');
@@ -156,20 +426,30 @@ export function HopliteUvBuilderModal({
   const focusDivineRef = useRef(focusDivine);
   focusDivineRef.current = focusDivine;
 
-  // Garante que, ao mudar de civilização, unidades que não pertencem ao panteão sejam desmarcadas
+  // Garante que, ao mudar de civilização, o primeiro Deus Maior e suas unidades sejam selecionados
   const handleSelectCiv = (civ: PantheonId) => {
     setSelectedCiv(civ);
-    const validUnits = CIVILIZATION_UNITS[civ] || CIVILIZATION_UNITS.greek!;
-    if (!validUnits.some((u) => u.id === selectedUnit)) {
-      setSelectedUnit(validUnits[0].id);
-    }
+    const godList = MAJOR_GODS_BY_CIV[civ] || MAJOR_GODS_BY_CIV.greek!;
+    const firstGod = godList[0].id;
+    setSelectedMajorGod(firstGod);
+    const validUnits = getUnitsForCivAndGod(civ, firstGod);
+    setSelectedUnit(validUnits[0].id);
     setFocusDivine(false);
+  };
+
+  const handleSelectMajorGod = (godId: string) => {
+    setSelectedMajorGod(godId);
+    if (selectedCiv === 'greek') {
+      if (godId.toLowerCase() === 'zeus') setSelectedUnit('zeus');
+      else if (godId.toLowerCase() === 'poseidon') setSelectedUnit('poseidon');
+      else if (godId.toLowerCase() === 'hades') setSelectedUnit('hades');
+    }
   };
 
   useEffect(() => {
     setZoomLevel(1.0);
     setFocusDivine(false);
-  }, [entityType, selectedUnit, selectedBuilding, selectedCiv]);
+  }, [entityType, selectedUnit, selectedBuilding, selectedCiv, selectedMajorGod]);
 
   useEffect(() => {
     if (!isOpen || !mount3DRef.current) return;
@@ -1096,7 +1376,11 @@ export function HopliteUvBuilderModal({
           ring.position.y = 0.01;
           environmentGroup.add(ring);
 
-          group = createUnitMesh(selectedUnit as UnitKind, 'player', pal, true);
+          group = createUnitMesh(selectedUnit as UnitKind, 'player', pal, true, selectedCiv, selectedMajorGod);
+          if (selectedUnit === 'titan') {
+            group.scale.setScalar(0.48);
+            group.position.y = -0.05;
+          }
         }
       } else {
         scene.background = defaultBg.clone();
@@ -1109,7 +1393,7 @@ export function HopliteUvBuilderModal({
         pedestal.receiveShadow = true;
         environmentGroup.add(pedestal);
 
-        group = createBuildingMesh(selectedBuilding, 'player', pal, true, selectedCiv);
+        group = createBuildingMesh(selectedBuilding, 'player', pal, true, selectedCiv, selectedMajorGod);
       }
 
       scene.add(group);
@@ -1461,8 +1745,9 @@ export function HopliteUvBuilderModal({
         camera.lookAt(0, focusY, 0);
       } else {
         const isBuilding = entityType === 'building';
-        const baseDist = isBuilding ? 8.5 : 4.8;
-        const baseHeight = isBuilding ? 1.6 : 1.1;
+        const isTitan = selectedUnit === 'titan';
+        const baseDist = isBuilding ? 8.5 : isTitan ? 10.5 : 4.8;
+        const baseHeight = isBuilding ? 1.6 : isTitan ? 2.8 : 1.1;
         const dist = baseDist / zoomRef.current;
         const height = baseHeight * (1 + (1 - zoomRef.current) * 0.2);
 
@@ -1484,11 +1769,12 @@ export function HopliteUvBuilderModal({
       renderer.dispose();
       container.innerHTML = '';
     };
-  }, [isOpen, entityType, selectedUnit, selectedBuilding, activeTier, selectedCiv]);
+  }, [isOpen, entityType, selectedUnit, selectedBuilding, activeTier, selectedCiv, selectedMajorGod]);
 
   if (!isOpen) return null;
 
-  const currentCivUnits = CIVILIZATION_UNITS[selectedCiv] || CIVILIZATION_UNITS.greek!;
+  const currentCivUnits = getUnitsForCivAndGod(selectedCiv, selectedMajorGod);
+  const currentCivBuildings = getBuildingsForCivAndGod(selectedCiv, selectedMajorGod);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#07090f]/85 p-3 backdrop-blur-md">
@@ -1545,6 +1831,39 @@ export function HopliteUvBuilderModal({
               </div>
             </div>
 
+            {/* Subcategoria: Deuses Maiores */}
+            <div className="flex flex-col gap-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-[#f3d27a]">Deus Maior</span>
+                <span className="text-[10px] text-[#9ca3af] uppercase tracking-wider">Subcategoria</span>
+              </div>
+              <div className="grid grid-cols-3 gap-1.5">
+                {(MAJOR_GODS_BY_CIV[selectedCiv] || MAJOR_GODS_BY_CIV.greek!).map((god) => {
+                  const isSel = selectedMajorGod.toLowerCase() === god.id.toLowerCase();
+                  return (
+                    <button
+                      key={god.id}
+                      type="button"
+                      onClick={() => handleSelectMajorGod(god.id)}
+                      style={{
+                        borderColor: isSel ? god.color : undefined,
+                        backgroundColor: isSel ? `${god.color}26` : undefined,
+                        color: isSel ? god.color : undefined,
+                      }}
+                      className={`rounded-lg py-1.5 px-1.5 text-xs font-bold border transition-all cursor-pointer flex flex-col items-center justify-center text-center ${
+                        isSel
+                          ? 'shadow-md font-bold'
+                          : 'border-white/10 bg-[#161c28] text-[#9ca3af] hover:text-white hover:border-white/20'
+                      }`}
+                      title={god.title}
+                    >
+                      <span className="truncate w-full">{god.name}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
             {/* Alternador de Categoria */}
             <div className="flex rounded-xl bg-[#171c28] p-1 border border-white/10">
               <button
@@ -1593,7 +1912,7 @@ export function HopliteUvBuilderModal({
                       <span className="text-[11px] text-[#9ca3af]">{u.role}</span>
                     </button>
                   ))
-                : INSPECTABLE_BUILDINGS.map((b) => (
+                : currentCivBuildings.map((b) => (
                     <button
                       key={b.id}
                       type="button"

@@ -607,8 +607,166 @@ interface CivLook {
   titanCoreMat: THREE.Material;
 }
 
-function getCivLook(pantheon: PantheonId, pal: MaterialPalette): CivLook {
+function getCivLook(pantheon: PantheonId, pal: MaterialPalette, majorGod?: string): CivLook {
   const style = PANTHEONS[pantheon].archStyle;
+
+  // Customização de estilo e materiais de acordo com o Deus Maior selecionado
+  if (majorGod) {
+    const mg = majorGod.toLowerCase();
+    // GREGOS: Zeus, Poseidon, Hades
+    if (mg.includes('zeus')) {
+      return {
+        style: 'greek',
+        wallMat: pal.marble,
+        trimMat: pal.gold,
+        roofMat: pal.terracotta,
+        armorMat: pal.gold,
+        mountMat: pal.furBrown,
+        titanBodyMat: pal.marble,
+        titanCoreMat: pal.goldOre,
+      };
+    }
+    if (mg.includes('poseidon')) {
+      return {
+        style: 'greek',
+        wallMat: pal.marble,
+        trimMat: pal.turquoise,
+        roofMat: pal.turquoise,
+        armorMat: pal.bronze,
+        mountMat: pal.sandstone,
+        titanBodyMat: pal.orichalcum,
+        titanCoreMat: pal.crystalGlow,
+      };
+    }
+    if (mg.includes('hades')) {
+      return {
+        style: 'greek',
+        wallMat: pal.obsidian,
+        trimMat: pal.stoneDark,
+        roofMat: pal.crimson,
+        armorMat: pal.steel,
+        mountMat: pal.obsidian,
+        titanBodyMat: pal.obsidian,
+        titanCoreMat: pal.ember,
+      };
+    }
+
+    // EGÍPCIOS: Rá, Ísis, Set
+    if (mg.includes('rá') || mg.includes('ra')) {
+      return {
+        style: 'egyptian',
+        wallMat: pal.sandstone,
+        trimMat: pal.gold,
+        roofMat: pal.gold,
+        armorMat: pal.gold,
+        mountMat: pal.sandstone,
+        titanBodyMat: pal.gold,
+        titanCoreMat: pal.goldOre,
+      };
+    }
+    if (mg.includes('ísis') || mg.includes('isis')) {
+      return {
+        style: 'egyptian',
+        wallMat: pal.sandstone,
+        trimMat: pal.turquoise,
+        roofMat: pal.lapis,
+        armorMat: pal.ivory,
+        mountMat: pal.sandstone,
+        titanBodyMat: pal.ivory,
+        titanCoreMat: pal.crystalGlow,
+      };
+    }
+    if (mg.includes('set')) {
+      return {
+        style: 'egyptian',
+        wallMat: pal.sandstoneDark,
+        trimMat: pal.ember,
+        roofMat: pal.obsidian,
+        armorMat: pal.steel,
+        mountMat: pal.furBrown,
+        titanBodyMat: pal.sandstoneDark,
+        titanCoreMat: pal.ember,
+      };
+    }
+
+    // NÓRDICOS: Odin, Thor, Loki
+    if (mg.includes('odin')) {
+      return {
+        style: 'norse',
+        wallMat: pal.norseTimber,
+        trimMat: pal.timber,
+        roofMat: pal.norseSlate,
+        armorMat: pal.steel,
+        mountMat: pal.furBrown,
+        titanBodyMat: pal.iceBlue,
+        titanCoreMat: pal.iceBlue,
+      };
+    }
+    if (mg.includes('thor')) {
+      return {
+        style: 'norse',
+        wallMat: pal.stoneDark,
+        trimMat: pal.bronze,
+        roofMat: pal.norseSlate,
+        armorMat: pal.bronze,
+        mountMat: pal.furBrown,
+        titanBodyMat: pal.bronze,
+        titanCoreMat: pal.goldOre,
+      };
+    }
+    if (mg.includes('loki')) {
+      return {
+        style: 'norse',
+        wallMat: pal.obsidian,
+        trimMat: pal.ember,
+        roofMat: pal.crimson,
+        armorMat: pal.steel,
+        mountMat: pal.obsidian,
+        titanBodyMat: pal.obsidian,
+        titanCoreMat: pal.ember,
+      };
+    }
+
+    // ATLANTES: Cronos, Urano, Gaia
+    if (mg.includes('cronos') || mg.includes('kronos')) {
+      return {
+        style: 'atlantean',
+        wallMat: pal.obsidian,
+        trimMat: pal.orichalcum,
+        roofMat: pal.crimson,
+        armorMat: pal.orichalcum,
+        mountMat: pal.ivory,
+        titanBodyMat: pal.orichalcum,
+        titanCoreMat: pal.crystalGlow,
+      };
+    }
+    if (mg.includes('urano') || mg.includes('ouranos')) {
+      return {
+        style: 'atlantean',
+        wallMat: pal.ivory,
+        trimMat: pal.turquoise,
+        roofMat: pal.turquoise,
+        armorMat: pal.crystalGlow,
+        mountMat: pal.ivory,
+        titanBodyMat: pal.ivory,
+        titanCoreMat: pal.crystalGlow,
+      };
+    }
+    if (mg.includes('gaia')) {
+      return {
+        style: 'atlantean',
+        wallMat: pal.stoneDark,
+        trimMat: pal.jade,
+        roofMat: pal.timber,
+        armorMat: pal.jade,
+        mountMat: pal.furBrown,
+        titanBodyMat: pal.jade,
+        titanCoreMat: pal.goldOre,
+      };
+    }
+  }
+
+  // Fallbacks de estilo por panteão
   switch (pantheon) {
     case 'greek':
       return { style, wallMat: pal.marble, trimMat: pal.bronze, roofMat: pal.terracotta, armorMat: pal.bronze, mountMat: pal.furBrown, titanBodyMat: pal.bronze, titanCoreMat: pal.goldOre };
@@ -644,11 +802,12 @@ export function createBuildingMesh(
   team: TeamId,
   pal: MaterialPalette,
   enableShadows: boolean,
-  pantheon: PantheonId = 'greek'
+  pantheon: PantheonId = 'greek',
+  majorGod?: string
 ): THREE.Group {
   const root = new THREE.Group();
   const teamMat = team === 'player' ? pal.tunicPlayer : pal.tunicEnemy;
-  const look = getCivLook(pantheon, pal);
+  const look = getCivLook(pantheon, pal, majorGod);
 
   const addPart = (mesh: THREE.Mesh, x: number, y: number, z: number) => {
     mesh.position.set(x, y, z);
@@ -1148,12 +1307,13 @@ export function createUnitMesh(
   team: TeamId,
   pal: MaterialPalette,
   enableShadows: boolean,
-  pantheon: PantheonId = 'greek'
+  pantheon: PantheonId = 'greek',
+  majorGod?: string
 ): THREE.Group {
   const root = new THREE.Group();
   const teamMat = team === 'player' ? pal.tunicPlayer : pal.tunicEnemy;
   const geos = getSculptedGeos();
-  const look = getCivLook(pantheon, pal);
+  const look = getCivLook(pantheon, pal, majorGod);
 
   const part = (geo: THREE.BufferGeometry, mat: THREE.Material, x: number, y: number, z: number) => {
     const m = new THREE.Mesh(geo, mat);
@@ -1997,7 +2157,10 @@ export function createUnitMesh(
       attachHealthBar(root, 3.55, 1.85);
     }
   } else if (kind === 'titan') {
-    // COLOSSAL TITAN (~8.4u tall supreme mythic god-avatar towering over Town Centers and forests)
+    // COLOSSAL TITAN (~8.4u tall supreme mythic god-avatar)
+    // Customizado especificamente para o Deus Maior selecionado!
+    const godKey = (majorGod || 'zeus').toLowerCase();
+
     const leftLeg = part(geos.giantLimb, look.titanBodyMat, -0.75, 1.55, 0);
     leftLeg.scale.set(2.4, 2.6, 2.4);
     const rightLeg = part(geos.giantLimb, look.titanBodyMat, 0.75, 1.55, 0);
@@ -2007,26 +2170,20 @@ export function createUnitMesh(
     part(new THREE.BoxGeometry(0.85, 0.5, 1.15), look.trimMat, -0.75, 0.25, 0.1);
     part(new THREE.BoxGeometry(0.85, 0.5, 1.15), look.trimMat, 0.75, 0.25, 0.1);
 
-    // Sculpted Titanic Armored Torso & Glowing Cosmic Tartarus Heart Core
+    // Torso e Núcleo Sagrado
     const torso = part(geos.heroCuirass, look.titanBodyMat, 0, 4.4, 0);
     torso.scale.set(4.2, 4.0, 3.8);
     const core = part(new THREE.OctahedronGeometry(0.82, 1), look.titanCoreMat, 0, 4.75, 1.05);
     root.userData.beaconCrystal = core;
     part(new THREE.CylinderGeometry(1.35, 1.6, 0.95, 12), teamMat, 0, 2.85, 0);
 
-    // Colossal Spiked Shoulder Pauldrons spanning 4.2 units
+    // Ombreiras Colossais
     part(new THREE.DodecahedronGeometry(0.95, 0), look.trimMat, -2.0, 5.75, 0);
     part(new THREE.DodecahedronGeometry(0.95, 0), look.trimMat, 2.0, 5.75, 0);
-    part(new THREE.ConeGeometry(0.35, 0.85, 6), look.titanCoreMat, -2.0, 6.55, 0);
-    part(new THREE.ConeGeometry(0.35, 0.85, 6), look.titanCoreMat, 2.0, 6.55, 0);
 
-    // Titan Head + Rayed Crown & Colossal Horns reaching 8.4u height
+    // Cabeça do Titã
     part(new THREE.SphereGeometry(0.82, 16, 12), look.titanBodyMat, 0, 6.85, 0.08);
     part(new THREE.BoxGeometry(0.82, 0.24, 0.44), look.titanCoreMat, 0, 6.9, 0.72);
-    const hL = part(geos.bullHorn, look.titanCoreMat, -0.52, 7.35, 0);
-    hL.scale.set(-2.6, 2.6, 2.6);
-    const hR = part(geos.bullHorn, look.titanCoreMat, 0.52, 7.35, 0);
-    hR.scale.set(2.6, 2.6, 2.6);
 
     const leftArm = part(geos.giantLimb, look.titanBodyMat, -2.15, 4.5, 0);
     leftArm.scale.set(2.4, 2.5, 2.4);
@@ -2036,13 +2193,210 @@ export function createUnitMesh(
     const arm = new THREE.Mesh(geos.giantLimb, look.titanBodyMat);
     arm.scale.set(2.4, 2.5, 2.4);
     arm.position.y = -0.95;
-    const titanicBlade = new THREE.Mesh(geos.greatSwordBlade, look.titanCoreMat);
-    titanicBlade.rotation.x = Math.PI / 2.2;
-    titanicBlade.scale.set(4.4, 4.6, 4.4);
-    titanicBlade.position.set(0, -1.55, 0.5);
-    rightArm.add(arm, titanicBlade);
-    root.add(rightArm);
+    rightArm.add(arm);
 
+    // ==============================================================
+    // ADEREÇOS E ARMAS SAGRADAS EXCLUSIVAS DE CADA DEUS MAIOR
+    // ==============================================================
+    if (godKey.includes('zeus')) {
+      // TITÃ DE ZEUS: Colosso Tempestuoso de Ceráunio
+      // Coroa de raios dourados
+      for (let i = 0; i < 5; i++) {
+        const ang = ((i - 2) / 2) * 0.55;
+        const ray = part(new THREE.ConeGeometry(0.18, 0.95, 4), pal.gold, Math.sin(ang) * 0.75, 7.6 + Math.cos(ang) * 0.2, 0.1);
+        ray.rotation.z = -ang;
+      }
+      // Espada colossal crepitante de relâmpagos
+      const sword = new THREE.Mesh(geos.greatSwordBlade, pal.gold);
+      sword.rotation.x = Math.PI / 2.2;
+      sword.scale.set(4.6, 5.0, 4.6);
+      sword.position.set(0, -1.6, 0.5);
+      rightArm.add(sword);
+      // Manto dorsal dourado
+      part(new THREE.BoxGeometry(2.8, 4.2, 0.15), pal.goldOre, 0, 3.8, -0.95);
+    } else if (godKey.includes('poseidon')) {
+      // TITÃ DE POSEIDON: Leviatã Abissal dos Mares
+      // Cristas dorsais de concha e coral turquesa
+      for (let i = 0; i < 6; i++) {
+        const fin = part(new THREE.ConeGeometry(0.28, 0.85, 4), pal.turquoise, 0, 2.5 + i * 0.75, -1.05);
+        fin.rotation.x = -Math.PI / 3;
+      }
+      // Tridente colossal de 3 pontas marinhas
+      const tridentShaft = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.14, 5.8, 12), pal.bronze);
+      tridentShaft.rotation.x = Math.PI / 2.2;
+      tridentShaft.position.set(0, -1.2, 0.5);
+      const prCenter = new THREE.Mesh(new THREE.ConeGeometry(0.3, 1.4, 6), pal.crystalGlow);
+      prCenter.position.set(0, 3.2, 0);
+      const prLeft = new THREE.Mesh(new THREE.ConeGeometry(0.24, 1.1, 6), pal.turquoise);
+      prLeft.position.set(-0.65, 2.8, 0);
+      const prRight = new THREE.Mesh(new THREE.ConeGeometry(0.24, 1.1, 6), pal.turquoise);
+      prRight.position.set(0.65, 2.8, 0);
+      tridentShaft.add(prCenter, prLeft, prRight);
+      rightArm.add(tridentShaft);
+    } else if (godKey.includes('hades')) {
+      // TITÃ DE HADES: Cérbero Titânico / Monarca do Tártaro
+      // Chifres sombrios curvados para trás
+      const hL = part(geos.bullHorn, pal.obsidian, -0.65, 7.45, -0.2);
+      hL.scale.set(-2.8, 2.8, 2.8);
+      hL.rotation.x = -0.45;
+      const hR = part(geos.bullHorn, pal.obsidian, 0.65, 7.45, -0.2);
+      hR.scale.set(2.8, 2.8, 2.8);
+      hR.rotation.x = -0.45;
+      // Ombreiras com crânios de olhos espectrais verdes
+      part(new THREE.SphereGeometry(0.48, 12, 12), pal.obsidian, -2.1, 6.2, 0.4);
+      part(new THREE.SphereGeometry(0.48, 12, 12), pal.obsidian, 2.1, 6.2, 0.4);
+      part(new THREE.SphereGeometry(0.1, 8, 8), pal.crystalGlow, -2.25, 6.25, 0.85);
+      part(new THREE.SphereGeometry(0.1, 8, 8), pal.crystalGlow, 2.25, 6.25, 0.85);
+      // Bidente colossal do Tártaro de Ferro Negro
+      const bident = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.14, 5.6, 12), pal.obsidian);
+      bident.rotation.x = Math.PI / 2.2;
+      bident.position.set(0, -1.2, 0.5);
+      const bL = new THREE.Mesh(new THREE.ConeGeometry(0.26, 1.5, 6), pal.ember);
+      bL.position.set(-0.48, 3.1, 0);
+      const bR = new THREE.Mesh(new THREE.ConeGeometry(0.26, 1.5, 6), pal.ember);
+      bR.position.set(0.48, 3.1, 0);
+      bident.add(bL, bR);
+      rightArm.add(bident);
+    } else if (godKey.includes('rá') || godKey.includes('ra')) {
+      // TITÃ DE RÁ: Avatar Solar de Hórus-Rá
+      // Grande disco solar flamejante sobre a cabeça
+      const sunDisc = part(new THREE.CylinderGeometry(1.2, 1.2, 0.18, 24), pal.gold, 0, 8.45, 0);
+      sunDisc.rotation.x = Math.PI / 2;
+      // Asas solares douradas nas costas
+      const wingL = part(new THREE.BoxGeometry(2.8, 4.6, 0.12), pal.goldOre, -1.9, 4.6, -0.9);
+      wingL.rotation.y = -0.35;
+      const wingR = part(new THREE.BoxGeometry(2.8, 4.6, 0.12), pal.goldOre, 1.9, 4.6, -0.9);
+      wingR.rotation.y = 0.35;
+      // Cetro solar Ankh de ouro puro
+      const ankh = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.14, 5.5, 12), pal.gold);
+      ankh.rotation.x = Math.PI / 2.2;
+      ankh.position.set(0, -1.2, 0.5);
+      const loop = new THREE.Mesh(new THREE.TorusGeometry(0.55, 0.12, 8, 20), pal.gold);
+      loop.position.set(0, 3.1, 0);
+      ankh.add(loop);
+      rightArm.add(ankh);
+    } else if (godKey.includes('ísis') || godKey.includes('isis')) {
+      // TITÃ DE ÍSIS: Guardiã Alada do Nilo
+      // Asas de turquesa e marfim majestosas
+      const wingL = part(new THREE.BoxGeometry(3.2, 5.2, 0.12), pal.turquoise, -2.1, 4.8, -0.95);
+      wingL.rotation.y = -0.45;
+      const wingR = part(new THREE.BoxGeometry(3.2, 5.2, 0.12), pal.turquoise, 2.1, 4.8, -0.95);
+      wingR.rotation.y = 0.45;
+      // Coroa hathórica com disco lunar/solar
+      const hathorDisc = part(new THREE.CylinderGeometry(0.9, 0.9, 0.16, 20), pal.crystalGlow, 0, 8.25, 0);
+      hathorDisc.rotation.x = Math.PI / 2;
+      // Báculo sagrado de lótus
+      const staff = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.13, 5.4, 12), pal.ivory);
+      staff.rotation.x = Math.PI / 2.2;
+      staff.position.set(0, -1.2, 0.5);
+      const lotus = new THREE.Mesh(new THREE.OctahedronGeometry(0.65, 1), pal.crystalGlow);
+      lotus.position.set(0, 3.0, 0);
+      staff.add(lotus);
+      rightArm.add(staff);
+    } else if (godKey.includes('set')) {
+      // TITÃ DE SET: Besta Titânica do Caos
+      // Orelhas retas da Besta do Caos e focinho angular
+      part(new THREE.BoxGeometry(0.22, 1.25, 0.35), pal.sandstoneDark, -0.55, 7.7, 0);
+      part(new THREE.BoxGeometry(0.22, 1.25, 0.35), pal.sandstoneDark, 0.55, 7.7, 0);
+      part(new THREE.BoxGeometry(0.65, 0.45, 0.95), pal.sandstoneDark, 0, 6.75, 0.75);
+      // Foice Khopesh colossal de basalto rubro
+      const khopesh = new THREE.Mesh(geos.greatSwordBlade, pal.ember);
+      khopesh.rotation.x = Math.PI / 2.2;
+      khopesh.scale.set(4.6, 4.8, 4.6);
+      khopesh.position.set(0, -1.5, 0.5);
+      rightArm.add(khopesh);
+    } else if (godKey.includes('odin')) {
+      // TITÃ DE ODIN: Gigante de Gelo Ymir
+      // Barba de gelo esculpida no queixo
+      part(new THREE.ConeGeometry(0.48, 1.5, 6), pal.iceBlue, 0, 5.85, 0.65);
+      // Manto com asas de corvo de ardósia
+      part(new THREE.BoxGeometry(3.0, 4.4, 0.16), pal.norseSlate, 0, 3.8, -0.95);
+      // Lança colossal rúnica Gungnir de gelo
+      const gungnir = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.14, 6.2, 12), pal.norseTimber);
+      gungnir.rotation.x = Math.PI / 2.2;
+      gungnir.position.set(0, -1.2, 0.5);
+      const spearTip = new THREE.Mesh(new THREE.ConeGeometry(0.35, 1.8, 6), pal.iceBlue);
+      spearTip.position.set(0, 3.5, 0);
+      gungnir.add(spearTip);
+      rightArm.add(gungnir);
+    } else if (godKey.includes('thor')) {
+      // TITÃ DE THOR: Gigante do Trovão Mjölnir
+      // Chifres pesados de ferro forjado
+      const hL = part(geos.bullHorn, pal.bronze, -0.62, 7.4, 0);
+      hL.scale.set(-2.4, 2.4, 2.4);
+      const hR = part(geos.bullHorn, pal.bronze, 0.62, 7.4, 0);
+      hR.scale.set(2.4, 2.4, 2.4);
+      // Martelo de Guerra Monumental Mjölnir
+      const hammerHandle = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.16, 4.8, 12), pal.norseTimber);
+      hammerHandle.rotation.x = Math.PI / 2.2;
+      hammerHandle.position.set(0, -1.0, 0.5);
+      const hammerHead = new THREE.Mesh(new THREE.BoxGeometry(1.65, 1.15, 1.25), pal.steel);
+      hammerHead.position.set(0, 2.4, 0);
+      hammerHandle.add(hammerHead);
+      rightArm.add(hammerHandle);
+    } else if (godKey.includes('loki')) {
+      // TITÃ DE LOKI: Gigante de Fogo Surtr
+      // Chifres de fogo retorcidos
+      const hL = part(new THREE.ConeGeometry(0.32, 1.6, 6), pal.ember, -0.7, 7.6, 0);
+      hL.rotation.z = -0.55;
+      const hR = part(new THREE.ConeGeometry(0.32, 1.6, 6), pal.ember, 0.7, 7.6, 0);
+      hR.rotation.z = 0.55;
+      // Espada monumental de magma flamejante
+      const fireBlade = new THREE.Mesh(geos.greatSwordBlade, pal.ember);
+      fireBlade.rotation.x = Math.PI / 2.2;
+      fireBlade.scale.set(4.8, 5.2, 4.8);
+      fireBlade.position.set(0, -1.6, 0.5);
+      rightArm.add(fireBlade);
+    } else if (godKey.includes('cronos') || godKey.includes('kronos')) {
+      // TITÃ DE CRONOS: Titã Primordial do Tempo
+      // Anéis de oricalco flutuantes orbitando o núcleo do peito
+      part(new THREE.TorusGeometry(1.2, 0.08, 8, 24), pal.orichalcum, 0, 4.75, 1.05);
+      const ring2 = part(new THREE.TorusGeometry(1.5, 0.07, 8, 24), pal.crystalGlow, 0, 4.75, 1.05);
+      ring2.rotation.x = Math.PI / 3;
+      // Foice colossal do tempo
+      const scytheHandle = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.14, 5.8, 12), pal.obsidian);
+      scytheHandle.rotation.x = Math.PI / 2.2;
+      scytheHandle.position.set(0, -1.2, 0.5);
+      const blade = new THREE.Mesh(new THREE.TorusGeometry(1.4, 0.15, 8, 16, Math.PI * 0.75), pal.orichalcum);
+      blade.position.set(0.7, 2.9, 0);
+      blade.rotation.z = Math.PI / 4;
+      scytheHandle.add(blade);
+      rightArm.add(scytheHandle);
+    } else if (godKey.includes('urano') || godKey.includes('ouranos')) {
+      // TITÃ DE URANO: Titã do Vórtice Celeste
+      // Anéis de plasma celeste pulsante no peito
+      part(new THREE.TorusGeometry(1.35, 0.12, 12, 32), pal.crystalGlow, 0, 4.75, 1.05);
+      // Lâmina translúcida de vento estelar
+      const plasmaSword = new THREE.Mesh(geos.greatSwordBlade, pal.crystalGlow);
+      plasmaSword.rotation.x = Math.PI / 2.2;
+      plasmaSword.scale.set(4.6, 5.0, 4.6);
+      plasmaSword.position.set(0, -1.5, 0.5);
+      rightArm.add(plasmaSword);
+    } else if (godKey.includes('gaia')) {
+      // TITÃ DE GAIA: Titã Florestal da Mãe Terra
+      // Ramos e folhagens brotando nos ombros
+      part(new THREE.SphereGeometry(0.95, 10, 8), pal.jade, -2.1, 6.4, 0);
+      part(new THREE.SphereGeometry(0.95, 10, 8), pal.jade, 2.1, 6.4, 0);
+      part(new THREE.CylinderGeometry(0.3, 0.45, 1.8, 8), pal.timber, -2.1, 5.8, -0.6);
+      part(new THREE.CylinderGeometry(0.3, 0.45, 1.8, 8), pal.timber, 2.1, 5.8, -0.6);
+      // Clava colossal de madeira viva e rocha
+      const club = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.22, 5.2, 10), pal.timber);
+      club.rotation.x = Math.PI / 2.2;
+      club.position.set(0, -1.2, 0.5);
+      const boulder = new THREE.Mesh(new THREE.DodecahedronGeometry(0.85, 0), pal.stoneDark);
+      boulder.position.set(0, 2.6, 0);
+      club.add(boulder);
+      rightArm.add(club);
+    } else {
+      // Fallback padrão
+      const titanicBlade = new THREE.Mesh(geos.greatSwordBlade, look.titanCoreMat);
+      titanicBlade.rotation.x = Math.PI / 2.2;
+      titanicBlade.scale.set(4.4, 4.6, 4.4);
+      titanicBlade.position.set(0, -1.55, 0.5);
+      rightArm.add(titanicBlade);
+    }
+
+    root.add(rightArm);
     root.userData.leftLeg = leftLeg;
     root.userData.rightLeg = rightLeg;
     root.userData.leftArm = leftArm;
