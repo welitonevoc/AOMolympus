@@ -47,12 +47,12 @@ export function OlympusTitleBackdrop({
       const height = container.clientHeight || 720;
 
       const scene = new THREE.Scene();
-      scene.background = new THREE.Color(0x0d1b32);
-      scene.fog = new THREE.FogExp2(0x1f2d47, 0.0125);
+      scene.background = new THREE.Color(0x28566e);
+      scene.fog = new THREE.FogExp2(0x6e857a, 0.011);
 
-      const camera = new THREE.PerspectiveCamera(39, width / height, 0.1, 160);
-      camera.position.set(-4.2, 4.4, 15.2);
-      camera.lookAt(1.8, 2.2, -1.2);
+      const camera = new THREE.PerspectiveCamera(42, width / height, 0.1, 180);
+      camera.position.set(0, 1.85, 18.4);
+      camera.lookAt(0, 5.3, -1.5);
 
       const renderer = new THREE.WebGLRenderer({
         antialias: !isSoftwareGl,
@@ -60,7 +60,7 @@ export function OlympusTitleBackdrop({
       });
       renderer.outputColorSpace = THREE.SRGBColorSpace;
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      renderer.toneMappingExposure = 1.18;
+      renderer.toneMappingExposure = 1.15;
       renderer.setSize(width, height);
       renderer.setPixelRatio(isSoftwareGl ? 1 : Math.min(window.devicePixelRatio || 1, 2));
       renderer.shadowMap.enabled = !isSoftwareGl;
@@ -90,7 +90,6 @@ export function OlympusTitleBackdrop({
         return m;
       };
 
-      // Procedural PBR studio reflection environment
       const pmremGenerator = new THREE.PMREMGenerator(renderer);
       const roomEnv = new RoomEnvironment();
       const envRT = pmremGenerator.fromScene(roomEnv, 0.04);
@@ -98,20 +97,20 @@ export function OlympusTitleBackdrop({
       roomEnv.dispose();
       pmremGenerator.dispose();
 
-      // ── Golden-Hour Olympian Sky Dome ──
+      // ── Painterly Sky Dome (Cerulean-Teal Zenith into Radiant Golden Olympus Haze) ──
       const skyCanvas = document.createElement('canvas');
       skyCanvas.width = 16;
       skyCanvas.height = 256;
       const sCtx = skyCanvas.getContext('2d');
       if (sCtx) {
         const grad = sCtx.createLinearGradient(0, 0, 0, 256);
-        grad.addColorStop(0.0, '#071124');
-        grad.addColorStop(0.28, '#10274a');
-        grad.addColorStop(0.5, '#254a78');
-        grad.addColorStop(0.68, '#7c5338');
-        grad.addColorStop(0.8, '#e39a47');
-        grad.addColorStop(0.89, '#fbd38d');
-        grad.addColorStop(1.0, '#18243a');
+        grad.addColorStop(0.0, '#133d57');
+        grad.addColorStop(0.24, '#24667e');
+        grad.addColorStop(0.45, '#598d84');
+        grad.addColorStop(0.62, '#c8b86b');
+        grad.addColorStop(0.75, '#f6d878');
+        grad.addColorStop(0.86, '#eab354');
+        grad.addColorStop(1.0, '#182430');
         sCtx.fillStyle = grad;
         sCtx.fillRect(0, 0, 16, 256);
       }
@@ -121,7 +120,7 @@ export function OlympusTitleBackdrop({
 
       scene.add(
         new THREE.Mesh(
-          trackGeo(new THREE.SphereGeometry(95, 28, 18)),
+          trackGeo(new THREE.SphereGeometry(105, 28, 18)),
           trackMat(
             new THREE.MeshBasicMaterial({
               map: skyTex,
@@ -133,124 +132,110 @@ export function OlympusTitleBackdrop({
         )
       );
 
-      // Soft Sun Halo on Horizon behind Olympus
-      const sunDisc = new THREE.Mesh(
-        trackGeo(new THREE.CircleGeometry(6.5, 32)),
+      // ── Radiant Sun Halo Behind Summit Parthenon ──
+      const sunHaloOuter = new THREE.Mesh(
+        trackGeo(new THREE.CircleGeometry(14, 36)),
         trackMat(
           new THREE.MeshBasicMaterial({
-            color: 0xffe4a0,
+            color: 0xfde047,
             transparent: true,
-            opacity: 0.42,
+            opacity: 0.24,
             blending: THREE.AdditiveBlending,
             depthWrite: false,
             fog: false,
           })
         )
       );
-      sunDisc.position.set(16, 9.5, -52);
-      scene.add(sunDisc);
+      sunHaloOuter.position.set(1.8, 12.2, -32);
+      scene.add(sunHaloOuter);
 
-      // ── 3-Point Warm Sun & Sky Lighting Rig ──
-      const hemi = new THREE.HemisphereLight(0xbfe3ff, 0x2c2238, 1.3);
+      const sunHaloInner = new THREE.Mesh(
+        trackGeo(new THREE.CircleGeometry(6.2, 32)),
+        trackMat(
+          new THREE.MeshBasicMaterial({
+            color: 0xfffbeb,
+            transparent: true,
+            opacity: 0.52,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false,
+            fog: false,
+          })
+        )
+      );
+      sunHaloInner.position.set(1.8, 12.2, -31.5);
+      scene.add(sunHaloInner);
+
+      // ── Dramatic Golden Backlight & Sculpting Key Lighting Rig ──
+      const hemi = new THREE.HemisphereLight(0xa5d8e6, 0x3b2d22, 1.2);
       scene.add(hemi);
 
-      const sunLight = new THREE.DirectionalLight(0xffe1a3, 2.75);
-      sunLight.position.set(11, 13, 8);
-      sunLight.castShadow = !isSoftwareGl;
-      sunLight.shadow.mapSize.set(1024, 1024);
-      sunLight.shadow.camera.near = 1;
-      sunLight.shadow.camera.far = 48;
-      sunLight.shadow.camera.left = -16;
-      sunLight.shadow.camera.right = 16;
-      sunLight.shadow.camera.top = 14;
-      sunLight.shadow.camera.bottom = -14;
-      sunLight.shadow.bias = -0.0005;
-      sunLight.shadow.normalBias = 0.02;
-      scene.add(sunLight);
+      const sunKey = new THREE.DirectionalLight(0xffe19c, 2.85);
+      sunKey.position.set(14, 15, -4);
+      sunKey.castShadow = !isSoftwareGl;
+      sunKey.shadow.mapSize.set(1024, 1024);
+      sunKey.shadow.camera.near = 1;
+      sunKey.shadow.camera.far = 55;
+      sunKey.shadow.camera.left = -20;
+      sunKey.shadow.camera.right = 20;
+      sunKey.shadow.camera.top = 18;
+      sunKey.shadow.camera.bottom = -14;
+      sunKey.shadow.bias = -0.0005;
+      sunKey.shadow.normalBias = 0.02;
+      scene.add(sunKey);
 
-      const rimLight = new THREE.DirectionalLight(0xf59e0b, 1.75);
-      rimLight.position.set(-9, 5, -12);
-      scene.add(rimLight);
+      const fillLight = new THREE.DirectionalLight(0x93c5fd, 1.05);
+      fillLight.position.set(-12, 8, 14);
+      scene.add(fillLight);
 
-      const sanctumLight = new THREE.PointLight(0xfbbf24, 3.2, 16);
-      sanctumLight.position.set(2.2, 3.8, -1.6);
-      scene.add(sanctumLight);
+      const frontWarmGlow = new THREE.DirectionalLight(0xfbbf24, 0.85);
+      frontWarmGlow.position.set(6, 5, 16);
+      scene.add(frontWarmGlow);
 
       // ── Material Library ──
       const zeusTex = getCachedZeusTextures();
       const marbleMat = trackMat(
         new THREE.MeshStandardMaterial({
           map: zeusTex.marbleTex,
-          color: 0xf7f2e7,
-          roughness: 0.42,
-          metalness: 0.06,
+          color: 0xf7f0df,
+          roughness: 0.44,
+          metalness: 0.08,
         })
       );
-      const warmStoneMat = trackMat(
+      const travertineMat = trackMat(
         new THREE.MeshStandardMaterial({
-          color: 0xd9cdb8,
-          roughness: 0.68,
-          metalness: 0.04,
+          color: 0xdccbb0,
+          roughness: 0.62,
+          metalness: 0.06,
         })
       );
       const goldMat = trackMat(
         new THREE.MeshStandardMaterial({
-          color: 0xe7b949,
-          roughness: 0.2,
+          color: 0xeab949,
+          roughness: 0.22,
           metalness: 0.92,
         })
       );
-      const bronzeMat = trackMat(
+      const cliffWarmMat = trackMat(
         new THREE.MeshStandardMaterial({
-          color: 0x9b6b2f,
-          roughness: 0.34,
-          metalness: 0.85,
+          color: 0x705d49,
+          roughness: 0.92,
+          metalness: 0.04,
         })
       );
-      const cliffMat = trackMat(
+      const cliffShadowMat = trackMat(
         new THREE.MeshStandardMaterial({
-          color: 0x3b4254,
-          roughness: 0.92,
+          color: 0x2f3b49,
+          roughness: 0.94,
           metalness: 0.05,
         })
       );
-      const terraceGrassMat = trackMat(
-        new THREE.MeshStandardMaterial({
-          color: 0x4b6e42,
-          roughness: 0.86,
-          metalness: 0.02,
-        })
-      );
-      const cypressMat = trackMat(
-        new THREE.MeshStandardMaterial({
-          color: 0x26482c,
-          roughness: 0.84,
-          metalness: 0.02,
-        })
-      );
-      const oliveLeafMat = trackMat(
-        new THREE.MeshStandardMaterial({
-          color: 0x5c7d4b,
-          roughness: 0.82,
-          metalness: 0.02,
-        })
-      );
-      const trunkMat = trackMat(
-        new THREE.MeshStandardMaterial({
-          color: 0x5d432c,
-          roughness: 0.9,
-          metalness: 0.02,
-        })
-      );
-      const waterMat = trackMat(
-        new THREE.MeshStandardMaterial({
-          color: 0x2dd4bf,
-          emissive: 0x0f766e,
-          emissiveIntensity: 0.32,
-          roughness: 0.14,
-          metalness: 0.45,
+      const torchMat = trackMat(
+        new THREE.MeshBasicMaterial({
+          color: 0xfdba74,
           transparent: true,
-          opacity: 0.86,
+          opacity: 0.92,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false,
         })
       );
 
@@ -276,246 +261,227 @@ export function OlympusTitleBackdrop({
         return m;
       };
 
-      // ── Mount Olympus Citadel & Gardens (Shifted Center-Right for Menu Balance) ──
-      const olympusRoot = new THREE.Group();
-      olympusRoot.position.set(2.2, 0, 0);
-      scene.add(olympusRoot);
+      const olympus = new THREE.Group();
+      scene.add(olympus);
 
-      // 1. Monumental Mountain Peak & Cliff Ridges
-      addMesh(olympusRoot, trackGeo(new THREE.CylinderGeometry(8.2, 4.6, 5.2, 16)), cliffMat, 0, -3.1, -0.8);
-      addMesh(olympusRoot, trackGeo(new THREE.CylinderGeometry(5.6, 7.6, 1.8, 14)), cliffMat, 0, -0.55, -0.5);
-      addMesh(olympusRoot, trackGeo(new THREE.ConeGeometry(4.2, 7.5, 8)), cliffMat, -7.8, -1.6, -5.6, 0.08, 0.4);
-      addMesh(olympusRoot, trackGeo(new THREE.ConeGeometry(4.8, 8.6, 8)), cliffMat, 8.4, -1.3, -6.2, -0.06, 0.8);
-      addMesh(olympusRoot, trackGeo(new THREE.ConeGeometry(6.5, 11.0, 9)), cliffMat, 1.2, -1.8, -13.5, 0.05, 0.3);
-      addMesh(olympusRoot, trackGeo(new THREE.ConeGeometry(5.2, 9.2, 7)), cliffMat, -13.5, -2.5, -12.0, 0.04, 1.1);
-      addMesh(olympusRoot, trackGeo(new THREE.ConeGeometry(5.6, 9.8, 7)), cliffMat, 14.5, -2.2, -11.5, -0.05, 0.2);
-
-      // 2. Lower Garden Terrace, Reflecting Pool & Cascading Waterfalls
-      addMesh(olympusRoot, trackGeo(new THREE.BoxGeometry(10.8, 0.45, 7.2)), warmStoneMat, 0, 0.05, 2.2);
-      addMesh(olympusRoot, trackGeo(new THREE.BoxGeometry(10.0, 0.14, 6.4)), terraceGrassMat, 0, 0.3, 2.2);
-
-      // Marble Reflecting Pool in Courtyard
-      addMesh(olympusRoot, trackGeo(new THREE.BoxGeometry(4.2, 0.16, 2.35)), marbleMat, 0, 0.36, 3.4);
-      const poolSurface = addMesh(olympusRoot, trackGeo(new THREE.PlaneGeometry(3.8, 1.95)), waterMat, 0, 0.45, 3.4, -Math.PI / 2);
-
-      // Cascading Waterfalls off the Terrace Rim into the Clouds
-      const waterfallSheets: THREE.Mesh[] = [];
-      const fallGeo = trackGeo(new THREE.PlaneGeometry(0.95, 4.6, 4, 12));
-      const fallMat = trackMat(
-        new THREE.MeshBasicMaterial({
-          color: 0x99f6e4,
-          transparent: true,
-          opacity: 0.65,
-          side: THREE.DoubleSide,
-          blending: THREE.AdditiveBlending,
-          depthWrite: false,
-        })
-      );
-      for (const wx of [-1.2, 1.2]) {
-        const wf = new THREE.Mesh(fallGeo, fallMat);
-        wf.position.set(wx, -1.85, 5.75);
-        wf.rotation.x = 0.08;
-        olympusRoot.add(wf);
-        waterfallSheets.push(wf);
-      }
-
-      // 3. Stepped Marble Grand Stairway up to Acropolis Summit
-      for (let s = 0; s < 5; s++) {
-        addMesh(
-          olympusRoot,
-          trackGeo(new THREE.BoxGeometry(4.6 - s * 0.25, 0.24, 1.0)),
-          marbleMat,
-          0,
-          0.42 + s * 0.22,
-          1.4 - s * 0.46
-        );
-      }
-
-      // Upper Acropolis Stylobate Base
-      addMesh(olympusRoot, trackGeo(new THREE.BoxGeometry(9.6, 0.38, 7.4)), marbleMat, 0, 1.38, -2.0);
-      addMesh(olympusRoot, trackGeo(new THREE.BoxGeometry(8.9, 0.26, 6.7)), marbleMat, 0, 1.7, -2.0);
-      addMesh(olympusRoot, trackGeo(new THREE.BoxGeometry(9.05, 0.07, 6.85)), goldMat, 0, 1.84, -2.0);
-
-      // 4. Grand Parthenon Temple of Olympus (Peristyle Colonnade + Sculpted Pediment)
-      const templeGroup = new THREE.Group();
-      templeGroup.position.set(0, 1.86, -2.15);
-      olympusRoot.add(templeGroup);
-
-      // Cella Sanctuary Walls & Glowing Golden Interior Hearth
-      addMesh(templeGroup, trackGeo(new THREE.BoxGeometry(4.5, 2.95, 3.7)), warmStoneMat, 0, 1.48, 0);
-      addMesh(templeGroup, trackGeo(new THREE.BoxGeometry(1.55, 2.25, 0.2)), goldMat, 0, 1.15, 1.82);
-      const cellaGlow = new THREE.Mesh(
-        trackGeo(new THREE.PlaneGeometry(1.32, 2.05)),
-        trackMat(
-          new THREE.MeshBasicMaterial({
-            color: 0xfde047,
-            transparent: true,
-            opacity: 0.72,
-            blending: THREE.AdditiveBlending,
-            depthWrite: false,
-          })
-        )
-      );
-      cellaGlow.position.set(0, 1.15, 1.94);
-      templeGroup.add(cellaGlow);
-
-      // 16 Peristyle Doric Columns (6 Front, 6 Back, 2 Left, 2 Right)
-      const colShaftGeo = trackGeo(new THREE.CylinderGeometry(0.18, 0.24, 3.15, 14));
-      const colBaseGeo = trackGeo(new THREE.BoxGeometry(0.54, 0.14, 0.54));
-      const colCapGeo = trackGeo(new THREE.CylinderGeometry(0.28, 0.19, 0.16, 14));
-      const colAbacusGeo = trackGeo(new THREE.BoxGeometry(0.54, 0.11, 0.54));
-      const colCollarGeo = trackGeo(new THREE.BoxGeometry(0.46, 0.05, 0.46));
-
-      const colPositions: Array<[number, number]> = [];
-      for (let i = 0; i < 6; i++) {
-        const x = -3.65 + i * 1.46;
-        colPositions.push([x, 2.75]);
-        colPositions.push([x, -2.75]);
-      }
-      for (const sz of [-0.92, 0.92]) {
-        colPositions.push([-3.65, sz]);
-        colPositions.push([3.65, sz]);
-      }
-
-      for (const [cx, cz] of colPositions) {
-        const col = new THREE.Group();
-        col.position.set(cx, 0, cz);
-        addMesh(col, colBaseGeo, marbleMat, 0, 0.07, 0);
-        addMesh(col, colShaftGeo, marbleMat, 0, 1.71, 0);
-        addMesh(col, colCapGeo, marbleMat, 0, 3.36, 0);
-        addMesh(col, colAbacusGeo, marbleMat, 0, 3.49, 0);
-        addMesh(col, colCollarGeo, goldMat, 0, 3.57, 0);
-        templeGroup.add(col);
-      }
-
-      // Entablature Architrave & Cornice
-      addMesh(templeGroup, trackGeo(new THREE.BoxGeometry(8.05, 0.42, 6.2)), marbleMat, 0, 3.8, 0);
-      addMesh(templeGroup, trackGeo(new THREE.BoxGeometry(8.2, 0.1, 6.35)), goldMat, 0, 4.05, 0);
-
-      // Sculpted Triangular Pediment Roof
-      const pedShape = new THREE.Shape();
-      pedShape.moveTo(-4.15, 0);
-      pedShape.lineTo(4.15, 0);
-      pedShape.lineTo(0, 1.48);
-      pedShape.closePath();
-      const pedGeo = trackGeo(
-        new THREE.ExtrudeGeometry(pedShape, {
-          depth: 6.1,
-          bevelEnabled: true,
-          bevelThickness: 0.06,
-          bevelSize: 0.05,
-          bevelSegments: 2,
-        })
-      );
-      pedGeo.translate(0, 0, -3.05);
-      addMesh(templeGroup, pedGeo, marbleMat, 0, 4.1, 0);
-
-      // Golden Acroterion Apex & Sun Medallion
-      addMesh(templeGroup, trackGeo(new THREE.OctahedronGeometry(0.28, 0)), goldMat, 0, 5.86, 3.06);
-      addMesh(templeGroup, trackGeo(new THREE.CylinderGeometry(0.36, 0.36, 0.09, 20)), goldMat, 0, 4.78, 3.12, Math.PI / 2);
-      for (const side of [-1, 1]) {
-        addMesh(templeGroup, trackGeo(new THREE.OctahedronGeometry(0.18, 0)), goldMat, side * 4.1, 4.3, 3.05);
-      }
-
-      // 5. Flanking Ceremonial Bronze Braziers on Courtyard Steps
-      const flameMeshes: THREE.Mesh[] = [];
-      const flameMat = trackMat(
-        new THREE.MeshBasicMaterial({
-          color: 0xfb923c,
-          transparent: true,
-          opacity: 0.9,
-          blending: THREE.AdditiveBlending,
-          depthWrite: false,
-        })
-      );
-      const flameCoreMat = trackMat(
-        new THREE.MeshBasicMaterial({
-          color: 0xfef08a,
-          transparent: true,
-          opacity: 0.95,
-          blending: THREE.AdditiveBlending,
-          depthWrite: false,
-        })
-      );
-      const brazierPedGeo = trackGeo(new THREE.CylinderGeometry(0.13, 0.24, 0.56, 10));
-      const brazierBowlGeo = trackGeo(new THREE.CylinderGeometry(0.36, 0.16, 0.22, 14));
-      const flameGeo = trackGeo(new THREE.ConeGeometry(0.2, 0.52, 10));
-      const flameCoreGeo = trackGeo(new THREE.ConeGeometry(0.1, 0.32, 8));
-
-      for (const bx of [-3.3, 3.3]) {
-        const bGroup = new THREE.Group();
-        bGroup.position.set(bx, 1.85, 1.15);
-        addMesh(bGroup, brazierPedGeo, bronzeMat, 0, 0.28, 0);
-        addMesh(bGroup, brazierBowlGeo, bronzeMat, 0, 0.64, 0);
-        const fOuter = new THREE.Mesh(flameGeo, flameMat);
-        fOuter.position.y = 0.96;
-        const fInner = new THREE.Mesh(flameCoreGeo, flameCoreMat);
-        fInner.position.y = 0.88;
-        bGroup.add(fOuter, fInner);
-        flameMeshes.push(fOuter, fInner);
-        olympusRoot.add(bGroup);
-      }
-
-      // 6. Sculpted Mediterranean Cypresses & Sunlit Olive Trees on Terrace Flanks
-      const cypressCoords: Array<[number, number, number]> = [
-        [-4.55, 0.36, 3.9],
-        [-4.75, 0.36, 1.2],
-        [4.55, 0.36, 3.9],
-        [4.75, 0.36, 1.2],
-        [-5.25, -0.1, -1.8],
-        [5.25, -0.1, -1.8],
+      // ── 1. Massive Craggy Mountain Massif & Distant Spires ──
+      const cragGeo = trackGeo(new THREE.ConeGeometry(1, 1, 7));
+      const spireSpecs: Array<[number, number, number, number, number, number, boolean]> = [
+        // Central massive core mountain
+        [0, 3.6, -2.5, 6.8, 9.8, 5.2, true],
+        [-2.2, 2.2, -1.2, 4.8, 8.2, 4.0, false],
+        [2.6, 2.5, -1.0, 4.9, 8.6, 4.2, true],
+        [-4.8, 1.0, -0.5, 3.9, 7.0, 3.6, false],
+        [4.9, 1.4, -0.8, 4.2, 7.6, 3.8, true],
+        [0.4, 0.5, 1.2, 4.6, 5.6, 3.4, true],
+        [-2.6, 0.2, 2.1, 3.4, 4.8, 2.8, false],
+        [3.1, 0.4, 2.2, 3.5, 5.0, 2.9, true],
+        // Foreground & framing jagged rock peaks rising from clouds
+        [-11.8, -0.2, 4.5, 2.2, 6.2, 2.2, false],
+        [-9.2, -0.8, 1.5, 2.4, 5.4, 2.4, false],
+        [11.5, -0.1, 4.2, 2.3, 6.4, 2.3, true],
+        [9.4, -0.6, 0.8, 2.6, 5.6, 2.4, true],
+        [-13.5, 1.5, -9.5, 4.5, 10.5, 4.2, false],
+        [14.2, 1.8, -10.5, 4.8, 11.2, 4.5, true],
       ];
-      const cyTrunkGeo = trackGeo(new THREE.CylinderGeometry(0.08, 0.12, 0.7, 8));
-      const cyConeAGeo = trackGeo(new THREE.ConeGeometry(0.48, 2.2, 10));
-      const cyConeBGeo = trackGeo(new THREE.ConeGeometry(0.36, 1.7, 10));
-      for (const [tx, ty, tz] of cypressCoords) {
+      for (let i = 0; i < spireSpecs.length; i++) {
+        const [x, y, z, sx, sy, sz, warm] = spireSpecs[i];
+        const m = addMesh(olympus, cragGeo, warm ? cliffWarmMat : cliffShadowMat, x, y, z, 0, i * 0.7, 0);
+        m.scale.set(sx, sy, sz);
+      }
+
+      // Helper: Build a classical Greek Temple (configurable columns & scale)
+      const colShaftGeo = trackGeo(new THREE.CylinderGeometry(0.16, 0.21, 2.6, 12));
+      const colBaseGeo = trackGeo(new THREE.BoxGeometry(0.46, 0.12, 0.46));
+      const colCapGeo = trackGeo(new THREE.BoxGeometry(0.48, 0.14, 0.48));
+      const pedTriShape = new THREE.Shape();
+      pedTriShape.moveTo(-1, 0);
+      pedTriShape.lineTo(1, 0);
+      pedTriShape.lineTo(0, 0.36);
+      pedTriShape.closePath();
+      const pedUnitGeo = trackGeo(
+        new THREE.ExtrudeGeometry(pedTriShape, {
+          depth: 1,
+          bevelEnabled: true,
+          bevelThickness: 0.02,
+          bevelSize: 0.02,
+          bevelSegments: 1,
+        })
+      );
+      pedUnitGeo.translate(0, 0, -0.5);
+
+      const buildTemple = (
+        w: number,
+        d: number,
+        colsX: number,
+        colsZ: number,
+        colHeightScale = 1.0,
+        withGlow = true
+      ) => {
         const tg = new THREE.Group();
-        tg.position.set(tx, ty, tz);
-        addMesh(tg, cyTrunkGeo, trunkMat, 0, 0.35, 0);
-        addMesh(tg, cyConeAGeo, cypressMat, 0, 1.6, 0);
-        addMesh(tg, cyConeBGeo, cypressMat, 0, 2.45, 0);
-        olympusRoot.add(tg);
+        // Stepped Stylobate
+        addMesh(tg, trackGeo(new THREE.BoxGeometry(w + 0.9, 0.28, d + 0.9)), travertineMat, 0, 0.14, 0);
+        addMesh(tg, trackGeo(new THREE.BoxGeometry(w + 0.45, 0.24, d + 0.45)), marbleMat, 0, 0.4, 0);
+        addMesh(tg, trackGeo(new THREE.BoxGeometry(w + 0.5, 0.07, d + 0.5)), goldMat, 0, 0.55, 0);
+
+        const baseTop = 0.58;
+        const colH = 2.6 * colHeightScale;
+
+        // Cella core
+        addMesh(tg, trackGeo(new THREE.BoxGeometry(w * 0.62, colH * 0.96, d * 0.68)), travertineMat, 0, baseTop + colH * 0.48, 0);
+        if (withGlow) {
+          const glow = new THREE.Mesh(
+            trackGeo(new THREE.PlaneGeometry(w * 0.36, colH * 0.72)),
+            trackMat(
+              new THREE.MeshBasicMaterial({
+                color: 0xfde047,
+                transparent: true,
+                opacity: 0.65,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false,
+              })
+            )
+          );
+          glow.position.set(0, baseTop + colH * 0.44, d * 0.345);
+          tg.add(glow);
+        }
+
+        const placeCol = (cx: number, cz: number) => {
+          const cg = new THREE.Group();
+          cg.position.set(cx, baseTop, cz);
+          addMesh(cg, colBaseGeo, marbleMat, 0, 0.06, 0);
+          const sh = addMesh(cg, colShaftGeo, marbleMat, 0, colH * 0.5 + 0.1, 0);
+          sh.scale.set(1, colHeightScale, 1);
+          addMesh(cg, colCapGeo, marbleMat, 0, colH + 0.14, 0);
+          tg.add(cg);
+        };
+
+        const hx = w * 0.45;
+        const hz = d * 0.45;
+        for (let ix = 0; ix < colsX; ix++) {
+          const x = colsX === 1 ? 0 : -hx + (ix / (colsX - 1)) * (hx * 2);
+          placeCol(x, hz);
+          placeCol(x, -hz);
+        }
+        for (let iz = 1; iz < colsZ - 1; iz++) {
+          const z = -hz + (iz / (colsZ - 1)) * (hz * 2);
+          placeCol(-hx, z);
+          placeCol(hx, z);
+        }
+
+        // Entablature & Gable Pediment
+        const entY = baseTop + colH + 0.36;
+        addMesh(tg, trackGeo(new THREE.BoxGeometry(w + 0.35, 0.34, d + 0.35)), marbleMat, 0, entY, 0);
+        addMesh(tg, trackGeo(new THREE.BoxGeometry(w + 0.45, 0.08, d + 0.45)), goldMat, 0, entY + 0.2, 0);
+
+        const pedMesh = addMesh(tg, pedUnitGeo, marbleMat, 0, entY + 0.24, 0);
+        pedMesh.scale.set((w + 0.45) * 0.5, w * 0.48, d + 0.35);
+
+        // Acroterion Apex Crest
+        addMesh(tg, trackGeo(new THREE.OctahedronGeometry(0.24, 0)), goldMat, 0, entY + 0.24 + w * 0.185, d * 0.16);
+        return tg;
+      };
+
+      // ── 2. Crown Summit Parthenon (Towering at the Peak like image_e2f4e546) ──
+      const summitParthenon = buildTemple(7.6, 9.6, 8, 10, 1.16, true);
+      summitParthenon.position.set(0, 7.65, -2.2);
+      summitParthenon.rotation.y = 0.26;
+      olympus.add(summitParthenon);
+
+      // Summit Marble Terrace Platform under Parthenon
+      addMesh(olympus, trackGeo(new THREE.BoxGeometry(10.6, 0.85, 11.4)), travertineMat, 0, 7.22, -2.2, 0, 0.26, 0);
+      addMesh(olympus, trackGeo(new THREE.BoxGeometry(11.4, 0.55, 12.2)), cliffWarmMat, 0, 6.72, -2.2, 0, 0.26, 0);
+
+      // ── 3. Flanking Secondary Acropolis Temples & Tholos Rotunda (Left & Right) ──
+      // Left Western Cliff Temple
+      const westTemple = buildTemple(4.2, 5.4, 5, 6, 0.88, true);
+      westTemple.position.set(-5.8, 5.15, -1.6);
+      westTemple.rotation.y = 0.34;
+      olympus.add(westTemple);
+      addMesh(olympus, trackGeo(new THREE.BoxGeometry(5.2, 0.7, 6.0)), travertineMat, -5.8, 4.82, -1.6, 0, 0.34, 0);
+
+      // Right Eastern Tholos Rotunda (matching circular tower in image_e2f4e546)
+      const tholos = new THREE.Group();
+      tholos.position.set(6.35, 5.45, -2.8);
+      addMesh(tholos, trackGeo(new THREE.CylinderGeometry(1.75, 2.0, 1.1, 18)), travertineMat, 0, -0.55, 0);
+      addMesh(tholos, trackGeo(new THREE.CylinderGeometry(1.55, 1.65, 0.25, 20)), marbleMat, 0, 0.12, 0);
+      for (let i = 0; i < 10; i++) {
+        const a = (i / 10) * Math.PI * 2;
+        addMesh(tholos, trackGeo(new THREE.CylinderGeometry(0.11, 0.14, 2.0, 10)), marbleMat, Math.cos(a) * 1.28, 1.22, Math.sin(a) * 1.28);
+      }
+      addMesh(tholos, trackGeo(new THREE.CylinderGeometry(1.55, 1.55, 0.24, 20)), marbleMat, 0, 2.34, 0);
+      addMesh(tholos, trackGeo(new THREE.ConeGeometry(1.62, 0.95, 20)), goldMat, 0, 2.92, 0);
+      olympus.add(tholos);
+
+      // ── 4. Winding Switchback Stairways, Terraced Porticoes & Golden Statues (from both refs) ──
+      const buildGoldenStatue = (scale = 1.0) => {
+        const sg = new THREE.Group();
+        addMesh(sg, trackGeo(new THREE.BoxGeometry(0.46, 0.52, 0.46)), marbleMat, 0, 0.26, 0);
+        addMesh(sg, trackGeo(new THREE.CylinderGeometry(0.13, 0.17, 0.76, 10)), goldMat, 0, 0.88, 0);
+        addMesh(sg, trackGeo(new THREE.SphereGeometry(0.14, 10, 10)), goldMat, 0, 1.38, 0);
+        addMesh(sg, trackGeo(new THREE.CylinderGeometry(0.03, 0.03, 1.25, 6)), goldMat, 0.18, 1.18, 0.05, 0, 0, -0.2);
+        addMesh(sg, trackGeo(new THREE.BoxGeometry(0.55, 0.22, 0.06)), goldMat, 0, 1.05, -0.14, 0.25, 0, 0);
+        sg.scale.setScalar(scale);
+        return sg;
+      };
+
+      // Tiered Switchback Terrace Platforms + Stair Flights Climbing the Mountain
+      const terraceSpecs: Array<[number, number, number, number, number, number]> = [
+        [2.4, 2.0, 2.6, 4.4, 2.2, 0.2],
+        [-2.8, 3.4, 1.6, 4.6, 2.4, -0.25],
+        [2.2, 4.9, 0.6, 4.8, 2.4, 0.18],
+        [-5.2, 2.5, 2.8, 3.2, 2.2, 0.35],
+        [5.5, 3.1, 2.2, 3.4, 2.4, -0.32],
+      ];
+
+      const torchFlames: THREE.Mesh[] = [];
+      const torchGeo = trackGeo(new THREE.ConeGeometry(0.08, 0.26, 8));
+
+      for (const [tx, ty, tz, tw, td, rotY] of terraceSpecs) {
+        const terrace = new THREE.Group();
+        terrace.position.set(tx, ty, tz);
+        terrace.rotation.y = rotY;
+        addMesh(terrace, trackGeo(new THREE.BoxGeometry(tw, 0.45, td)), travertineMat, 0, 0, 0);
+        addMesh(terrace, trackGeo(new THREE.BoxGeometry(tw + 0.15, 0.1, td + 0.15)), goldMat, 0, 0.26, 0);
+
+        // Front terrace colonnade + golden statue
+        const nCols = 4;
+        for (let c = 0; c < nCols; c++) {
+          const cx = -tw * 0.42 + (c / (nCols - 1)) * (tw * 0.84);
+          addMesh(terrace, trackGeo(new THREE.CylinderGeometry(0.09, 0.11, 1.35, 8)), marbleMat, cx, 0.95, -td * 0.32);
+        }
+        addMesh(terrace, trackGeo(new THREE.BoxGeometry(tw * 0.94, 0.2, td * 0.44)), marbleMat, 0, 1.72, -td * 0.3);
+
+        const statue = buildGoldenStatue(0.88);
+        statue.position.set(tw * 0.26, 0.3, td * 0.28);
+        terrace.add(statue);
+
+        const fl = new THREE.Mesh(torchGeo, torchMat);
+        fl.position.set(-tw * 0.32, 0.56, td * 0.32);
+        terrace.add(fl);
+        torchFlames.push(fl);
+
+        olympus.add(terrace);
       }
 
-      // Olive Trees
-      const oliveTrunkGeo = trackGeo(new THREE.CylinderGeometry(0.11, 0.16, 0.95, 8));
-      const oliveCrownGeo = trackGeo(new THREE.DodecahedronGeometry(0.75, 1));
-      for (const [ox, oz] of [
-        [-3.5, 4.5],
-        [3.5, 4.5],
-      ] as const) {
-        const og = new THREE.Group();
-        og.position.set(ox, 0.36, oz);
-        addMesh(og, oliveTrunkGeo, trunkMat, 0, 0.48, 0, 0.08, 0, -0.06);
-        const c1 = addMesh(og, oliveCrownGeo, oliveLeafMat, 0, 1.28, 0);
-        c1.scale.set(1.3, 0.78, 1.15);
-        addMesh(og, oliveCrownGeo, oliveLeafMat, 0.35, 1.15, 0.25).scale.set(0.8, 0.65, 0.8);
-        olympusRoot.add(og);
+      // Diagonal Ascending Marble Stairway Ramp linking terraces toward the Summit
+      for (let step = 0; step < 18; step++) {
+        const t = step / 17;
+        const sx = THREE.MathUtils.lerp(2.6, 0.4, t) + Math.sin(t * Math.PI * 2.2) * 1.1;
+        const sy = THREE.MathUtils.lerp(1.4, 6.95, t);
+        const sz = THREE.MathUtils.lerp(3.2, -0.4, t);
+        addMesh(olympus, trackGeo(new THREE.BoxGeometry(1.75, 0.22, 0.72)), marbleMat, sx, sy, sz, 0, 0.22, 0);
       }
 
-      // 7. Distant Floating Cloud Sanctuary Outcrops for Scale & Depth
-      for (const [px, py, pz, s] of [
-        [-11.5, 1.2, -16, 0.52],
-        [13.0, 2.1, -18, 0.48],
-      ] as const) {
-        const distant = new THREE.Group();
-        distant.position.set(px, py, pz);
-        distant.scale.setScalar(s);
-        addMesh(distant, trackGeo(new THREE.CylinderGeometry(3.8, 1.4, 3.6, 10)), cliffMat, 0, -1.8, 0);
-        addMesh(distant, trackGeo(new THREE.BoxGeometry(5.0, 0.4, 3.4)), marbleMat, 0, 0.2, 0);
-        addMesh(distant, trackGeo(new THREE.BoxGeometry(4.2, 2.0, 2.4)), warmStoneMat, 0, 1.4, 0);
-        olympusRoot.add(distant);
-      }
-
-      // 8. Sea of Golden Olympus Clouds (InstancedMesh)
-      const CLOUD_COUNT = 68;
-      const cloudGeo = trackGeo(new THREE.SphereGeometry(1, 14, 12));
+      // ── 5. Billowy Sunlit Cumulus Cloud Sea & Framing Cloud Pillars (InstancedMesh) ──
+      const CLOUD_COUNT = 135;
+      const cloudGeo = trackGeo(new THREE.SphereGeometry(1, 16, 12));
       const cloudMat = trackMat(
         new THREE.MeshStandardMaterial({
-          color: 0xfdf8ee,
-          emissive: 0x5c361c,
-          emissiveIntensity: 0.28,
-          roughness: 0.94,
+          color: 0xfff8e7,
+          emissive: 0x6b4720,
+          emissiveIntensity: 0.34,
+          roughness: 0.92,
           metalness: 0.02,
         })
       );
@@ -523,87 +489,111 @@ export function OlympusTitleBackdrop({
       cloudInst.frustumCulled = false;
 
       const cloudMeta: Array<{
-        angle: number;
-        radius: number;
-        y: number;
+        baseX: number;
+        baseY: number;
+        baseZ: number;
         sx: number;
         sy: number;
         sz: number;
+        driftAmp: number;
         speed: number;
         phase: number;
       }> = [];
 
       for (let i = 0; i < CLOUD_COUNT; i++) {
-        const ringBand = i % 3;
-        const radius = 8.2 + ringBand * 5.2 + Math.random() * 3.0;
-        const angle = (i / CLOUD_COUNT) * Math.PI * 2 + (Math.random() - 0.5) * 0.35;
-        const y = -2.4 + ringBand * 0.45 + (Math.random() - 0.5) * 1.1;
-        const sc = 1.45 + Math.random() * 1.85;
+        let bx = 0;
+        let by = 0;
+        let bz = 0;
+        let sc = 1.6;
+
+        if (i < 65) {
+          // Dense rolling cloud carpet at mountain base
+          bx = (Math.random() - 0.5) * 34;
+          by = -1.6 + Math.random() * 2.6;
+          bz = -8 + Math.random() * 19;
+          sc = 1.6 + Math.random() * 2.4;
+        } else if (i < 100) {
+          // Left towering cumulus pillar framing Olympus
+          const h = (i - 65) / 35;
+          bx = -13.5 - Math.random() * 5.0 + h * 2.5;
+          by = 0.5 + h * 13.5;
+          bz = -14 + (Math.random() - 0.5) * 10;
+          sc = 2.0 + Math.random() * 2.5;
+        } else {
+          // Right towering cumulus pillar bathed in sun
+          const h = (i - 100) / 35;
+          bx = 12.5 + Math.random() * 5.5 - h * 2.0;
+          by = 0.8 + h * 14.0;
+          bz = -14 + (Math.random() - 0.5) * 10;
+          sc = 2.1 + Math.random() * 2.6;
+        }
+
         cloudMeta.push({
-          angle,
-          radius,
-          y,
-          sx: sc * 1.75,
-          sy: sc * 0.56,
-          sz: sc * 1.32,
-          speed: (0.014 + Math.random() * 0.018) * (i % 2 === 0 ? 1 : -0.65),
+          baseX: bx,
+          baseY: by,
+          baseZ: bz,
+          sx: sc * 1.5,
+          sy: sc * 0.72,
+          sz: sc * 1.25,
+          driftAmp: 0.25 + Math.random() * 0.45,
+          speed: 0.18 + Math.random() * 0.22,
           phase: Math.random() * Math.PI * 2,
         });
-        _dummy.position.set(Math.cos(angle) * radius, y, Math.sin(angle) * radius);
-        _dummy.scale.set(sc * 1.75, sc * 0.56, sc * 1.32);
+
+        _dummy.position.set(bx, by, bz);
+        _dummy.scale.set(sc * 1.5, sc * 0.72, sc * 1.25);
         _dummy.updateMatrix();
         cloudInst.setMatrixAt(i, _dummy.matrix);
-        _tmpColor.setHex(i % 3 === 0 ? 0xffefd2 : i % 3 === 1 ? 0xfff8eb : 0xdbeafe);
+        _tmpColor.setHex(i % 3 === 0 ? 0xfff3d1 : i % 3 === 1 ? 0xfffbeb : 0xd9e8ec);
         cloudInst.setColorAt(i, _tmpColor);
       }
       cloudInst.instanceMatrix.needsUpdate = true;
       if (cloudInst.instanceColor) cloudInst.instanceColor.needsUpdate = true;
       cloudInst.computeBoundingSphere();
-      olympusRoot.add(cloudInst);
+      olympus.add(cloudInst);
 
-      // 9. Slanted Golden Sunbeam Shafts
+      // ── 6. Slanted Sunbeams & Floating Golden Dust Motes ──
       const beamMat = trackMat(
         new THREE.MeshBasicMaterial({
           color: 0xfde68a,
           transparent: true,
-          opacity: 0.06,
+          opacity: 0.065,
           blending: THREE.AdditiveBlending,
           side: THREE.DoubleSide,
           depthWrite: false,
         })
       );
-      const beamGeo = trackGeo(new THREE.CylinderGeometry(0.55, 2.35, 16, 14, 1, true));
-      for (let b = 0; b < 3; b++) {
+      const beamGeo = trackGeo(new THREE.CylinderGeometry(0.8, 3.6, 24, 16, 1, true));
+      for (let b = 0; b < 4; b++) {
         const beam = new THREE.Mesh(beamGeo, beamMat);
-        beam.position.set(-2.0 + b * 2.4, 6.2, -1.8 + b * 0.8);
-        beam.rotation.z = -0.36;
-        beam.rotation.x = 0.14;
-        olympusRoot.add(beam);
+        beam.position.set(-4.5 + b * 3.4, 9.2, -5.0 + b * 0.6);
+        beam.rotation.z = -0.38;
+        beam.rotation.x = 0.16;
+        olympus.add(beam);
       }
 
-      // 10. Floating Golden Sunlight Motes
-      const MOTE_N = 160;
+      const MOTE_N = 180;
       const motePos = new Float32Array(MOTE_N * 3);
       const moteSpeed = new Float32Array(MOTE_N);
       for (let i = 0; i < MOTE_N; i++) {
-        motePos[i * 3] = (Math.random() - 0.5) * 18;
-        motePos[i * 3 + 1] = Math.random() * 9.0 - 0.5;
-        motePos[i * 3 + 2] = (Math.random() - 0.5) * 14;
-        moteSpeed[i] = 0.22 + Math.random() * 0.45;
+        motePos[i * 3] = (Math.random() - 0.5) * 24;
+        motePos[i * 3 + 1] = Math.random() * 14;
+        motePos[i * 3 + 2] = (Math.random() - 0.5) * 16;
+        moteSpeed[i] = 0.2 + Math.random() * 0.45;
       }
       const moteGeo = trackGeo(new THREE.BufferGeometry());
       moteGeo.setAttribute('position', new THREE.BufferAttribute(motePos, 3));
       const moteMat = trackMat(
         new THREE.PointsMaterial({
           color: 0xfef08a,
-          size: 0.08,
+          size: 0.09,
           transparent: true,
-          opacity: 0.8,
+          opacity: 0.85,
           blending: THREE.AdditiveBlending,
           depthWrite: false,
         })
       );
-      olympusRoot.add(new THREE.Points(moteGeo, moteMat));
+      olympus.add(new THREE.Points(moteGeo, moteMat));
 
       // Mouse parallax tracking
       let mouseNormX = 0;
@@ -671,51 +661,34 @@ export function OlympusTitleBackdrop({
         const dt = prefersReducedMotion ? 0 : rawDt;
         simTime += dt;
 
-        // Graceful sweeping camera orbit showcasing the full Acropolis & Valleys
         const isCine = cinematicRef.current;
-        const baseCamX = isCine
-          ? Math.sin(simTime * 0.14) * 5.4
-          : -3.6 + Math.sin(simTime * 0.12) * 0.85;
-        const baseCamY = isCine
-          ? 4.6 + Math.sin(simTime * 0.22) * 0.45
-          : 4.35 + Math.sin(simTime * 0.2) * 0.2;
-        const baseCamZ = isCine
-          ? 13.6 + Math.cos(simTime * 0.14) * 1.8
-          : 15.0 + Math.cos(simTime * 0.14) * 0.55;
-        const lookX = isCine ? 2.2 : 0.8;
+        const baseCamX = Math.sin(simTime * 0.14) * (isCine ? 4.2 : 2.1);
+        const baseCamY = 1.85 + Math.sin(simTime * 0.22) * 0.38;
+        const baseCamZ = (isCine ? 16.8 : 18.4) + Math.cos(simTime * 0.14) * 0.85;
 
-        const targetCamX = baseCamX + (prefersReducedMotion ? 0 : mouseNormX * 0.65);
-        const targetCamY = baseCamY - (prefersReducedMotion ? 0 : mouseNormY * 0.3);
+        const targetCamX = baseCamX + (prefersReducedMotion ? 0 : mouseNormX * 0.8);
+        const targetCamY = baseCamY - (prefersReducedMotion ? 0 : mouseNormY * 0.35);
 
         if (dt > 0) {
-          camera.position.x = THREE.MathUtils.damp(camera.position.x, targetCamX, 2.8, dt);
-          camera.position.y = THREE.MathUtils.damp(camera.position.y, targetCamY, 2.8, dt);
-          camera.position.z = THREE.MathUtils.damp(camera.position.z, baseCamZ, 2.8, dt);
+          camera.position.x = THREE.MathUtils.damp(camera.position.x, targetCamX, 2.6, dt);
+          camera.position.y = THREE.MathUtils.damp(camera.position.y, targetCamY, 2.6, dt);
+          camera.position.z = THREE.MathUtils.damp(camera.position.z, baseCamZ, 2.6, dt);
         }
-        camera.lookAt(lookX, 2.45, -1.2);
+        camera.lookAt(0, 5.35, -1.5);
 
-        // Animate braziers, pool shimmer, waterfall pulse
-        sanctumLight.intensity = 3.0 + Math.sin(simTime * 5.4) * 0.35;
-        for (let i = 0; i < flameMeshes.length; i++) {
-          const fm = flameMeshes[i];
-          const flicker = 0.92 + Math.sin(simTime * 9.5 + i * 1.7) * 0.14;
-          fm.scale.set(flicker, 0.95 + Math.cos(simTime * 8.2 + i) * 0.18, flicker);
-        }
-        poolSurface.position.y = 0.45 + Math.sin(simTime * 2.1) * 0.008;
-        fallMat.opacity = 0.56 + Math.sin(simTime * 4.5) * 0.1;
-        for (let i = 0; i < waterfallSheets.length; i++) {
-          waterfallSheets[i].scale.x = 0.95 + Math.sin(simTime * 5.2 + i * 2) * 0.06;
+        for (let i = 0; i < torchFlames.length; i++) {
+          const fl = torchFlames[i];
+          const sc = 0.9 + Math.sin(simTime * 10 + i * 1.9) * 0.18;
+          fl.scale.set(sc, 1.0 + Math.cos(simTime * 8 + i) * 0.22, sc);
         }
 
-        // Orbit golden cloud sea & rising golden motes
         if (!prefersReducedMotion) {
           for (let i = 0; i < CLOUD_COUNT; i++) {
             const cm = cloudMeta[i];
-            const ang = cm.angle + simTime * cm.speed;
             _dummy.position.set(
-              Math.cos(ang) * cm.radius,
-              cm.y + Math.sin(simTime * 0.55 + cm.phase) * 0.16,
-              Math.sin(ang) * cm.radius
+              cm.baseX + Math.sin(simTime * cm.speed + cm.phase) * cm.driftAmp,
+              cm.baseY + Math.cos(simTime * cm.speed * 0.8 + cm.phase) * (cm.driftAmp * 0.45),
+              cm.baseZ
             );
             _dummy.scale.set(cm.sx, cm.sy, cm.sz);
             _dummy.updateMatrix();
@@ -725,11 +698,11 @@ export function OlympusTitleBackdrop({
 
           for (let i = 0; i < MOTE_N; i++) {
             motePos[i * 3 + 1] += moteSpeed[i] * dt;
-            motePos[i * 3] += Math.sin(simTime * 1.1 + i) * 0.07 * dt;
-            if (motePos[i * 3 + 1] > 8.8) {
-              motePos[i * 3 + 1] = -0.3;
-              motePos[i * 3] = (Math.random() - 0.5) * 18;
-              motePos[i * 3 + 2] = (Math.random() - 0.5) * 14;
+            motePos[i * 3] += Math.sin(simTime * 1.0 + i) * 0.08 * dt;
+            if (motePos[i * 3 + 1] > 14.0) {
+              motePos[i * 3 + 1] = 0.2;
+              motePos[i * 3] = (Math.random() - 0.5) * 24;
+              motePos[i * 3 + 2] = (Math.random() - 0.5) * 16;
             }
           }
           moteGeo.attributes.position.needsUpdate = true;
@@ -768,13 +741,13 @@ export function OlympusTitleBackdrop({
   }, []);
 
   return (
-    <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden bg-[radial-gradient(ellipse_at_68%_42%,rgba(227,154,71,0.34)_0%,rgba(24,52,92,0.72)_50%,#071124_100%)]">
+    <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden bg-[radial-gradient(ellipse_at_50%_22%,rgba(246,216,120,0.42)_0%,rgba(36,102,126,0.68)_48%,#0a1320_100%)]">
       {!contextLost && <div ref={mountRef} className="h-full w-full" />}
       <div
         className={`absolute inset-0 transition-opacity duration-300 ${
           cinematicMode
-            ? 'bg-gradient-to-t from-[#060b16]/55 via-transparent to-transparent'
-            : 'bg-gradient-to-r from-[#060b16]/88 via-[#060b16]/32 to-transparent'
+            ? 'bg-gradient-to-t from-[#060b14]/55 via-transparent to-transparent'
+            : 'bg-[radial-gradient(circle_at_center,rgba(6,10,18,0.48)_0%,rgba(6,10,18,0.18)_48%,rgba(6,10,18,0.55)_100%)]'
         }`}
       />
     </div>

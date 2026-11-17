@@ -229,13 +229,7 @@ export function TitleScreen({
   );
 
   return (
-    <div
-      className={`fixed inset-0 z-30 flex items-center p-4 sm:p-6 ${
-        isCompact && !cinematicView
-          ? 'justify-center lg:justify-start lg:pl-12 xl:pl-16'
-          : 'justify-center'
-      }`}
-    >
+    <div className="fixed inset-0 z-30 flex items-center justify-center p-4 sm:p-6">
       {/* Epic Real-Time Animated 3D Mount Olympus Scene */}
       <OlympusTitleBackdrop
         paused={uvModalOpen}
@@ -320,15 +314,15 @@ export function TitleScreen({
         onSelectTier={(tier) => onUpdateOptions({ ...options, hopliteArmorTier: tier })}
       />
 
-      {/* Main Architectural Menu Rail / Submenu Container */}
+      {/* Main Architectural Menu Container */}
       <div
         className={`relative z-10 w-full ${containerWidth} max-h-[calc(100vh-2rem)] flex flex-col transition-all duration-300 ${
           isCompact && cinematicView
-            ? '-translate-x-[120%] opacity-0 pointer-events-none'
-            : 'translate-x-0 opacity-100'
+            ? 'scale-95 opacity-0 pointer-events-none'
+            : 'scale-100 opacity-100'
         }`}
       >
-        <div className="animate-aom-panel flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-[#d4af37]/38 bg-[#0a0f1a]/92 shadow-[0_28px_72px_rgba(0,0,0,0.85)]">
+        <div className="animate-aom-panel flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-[#d4af37]/40 bg-[#090e1a]/86 shadow-[0_28px_72px_rgba(0,0,0,0.85)]">
           {/* Monumental Header Crest */}
           <div className="animate-aom-crest border-b border-white/10 bg-gradient-to-b from-[#131b2b] to-[#0d1320] px-6 pt-5 pb-3.5 text-center">
             <h1 className="font-display text-2xl font-bold tracking-[0.04em] text-[#f7e9c3] text-balance">
