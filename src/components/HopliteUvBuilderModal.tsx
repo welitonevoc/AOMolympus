@@ -23,6 +23,14 @@ import {
 } from 'lucide-react';
 import { createGreekUnitMesh } from '../civilizacao/gregos/gregosModels';
 import {
+  animateZeusHoplite,
+  buildZeusHoplite,
+  createZeusHopliteArena,
+  getCachedZeusHopliteTextures,
+  HopliteTierId,
+  ZeusHopliteAction,
+} from '../civilizacao/gregos/zeusHopliteModel';
+import {
   animateZeus,
   buildZeus,
   createZeusTempleEnvironment,
@@ -864,6 +872,9 @@ export function HopliteUvBuilderModal({
   const [isisMode, setIsisMode] = useState<'majestade' | 'heka' | 'ankh' | 'sopdet'>('majestade');
   const [setMode, setSetMode] = useState<'senhor' | 'tempestade' | 'deserto' | 'monstro'>('senhor');
   const [raMode, setRaMode] = useState<'gloria' | 'bencao' | 'chuva' | 'ira'>('gloria');
+  const [hopliteAction, setHopliteAction] = useState<ZeusHopliteAction>('guarda');
+  const hopliteActionRef = useRef<ZeusHopliteAction>(hopliteAction);
+  hopliteActionRef.current = hopliteAction;
   const [focusDivine, setFocusDivine] = useState(false);
   const [myrmidonFury, setMyrmidonFury] = useState(true);
   const myrmidonFuryRef = useRef(myrmidonFury);
@@ -2032,9 +2043,35 @@ export function HopliteUvBuilderModal({
             const m = raModeRef.current;
             animateRa(raGod, dt, simTime, m);
           };
+        } else if (selectedCiv === 'greek' && selectedUnit === 'hoplite') {
+          // ===============================
+          // ARENA DO HOPLITA DE ZEUS (T1–T4)
+          // ===============================
+          scene.background = new THREE.Color(0x132644);
+          scene.fog = new THREE.FogExp2(0x132644, 0.02);
+
+          const hTex = getCachedZeusHopliteTextures();
+          const hopliteRig = buildZeusHoplite(hTex, (activeTier as HopliteTierId) || 3);
+          group = hopliteRig.root;
+          group.scale.setScalar(0.95);
+          group.position.set(0, 0, 0);
+
+          const arena = createZeusHopliteArena(hTex);
+          environmentGroup.add(arena);
+
+          group.userData.setArmorTier = (tier: number) => {
+            hopliteRig.setTier(tier as HopliteTierId);
+          };
+
+          group.userData.animatePose = (dt: number) => {
+            const act: ZeusHopliteAction = hopliteActionRef.current;
+            animateZeusHoplite(hopliteRig, dt, simTime, act, (p) => {
+              spawnSpark(p);
+            });
+          };
         } else if (
           selectedCiv === 'greek' &&
-          (selectedUnit === 'hoplite' || selectedUnit === 'hipaspist' || selectedUnit === 'myrmidon')
+          (selectedUnit === 'hipaspist' || selectedUnit === 'myrmidon')
         ) {
           // ===============================
           // CENÁRIO PADRÃO (PEDESTAL)
@@ -3768,6 +3805,80 @@ export function HopliteUvBuilderModal({
                     <Eye className="h-3.5 w-3.5" />
                     <span>{focusDivine ? 'Visão Corpo' : 'Focar Elmo Faraônico'}</span>
                   </button>
+                  <div className="h-5 w-[1px] bg-white/15 mx-1" />
+                </>
+              ) : entityType === 'unit' && selectedCiv === 'greek' && selectedUnit === 'hoplite' ? (
+                // Ações e Posturas Específicas do Hoplita de Zeus (T1–T4)
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setHopliteAction('guarda')}
+                    className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      hopliteAction === 'guarda'
+                        ? 'bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 shadow-md font-bold'
+                        : 'border border-amber-400/30 text-amber-200 hover:bg-amber-400/20'
+                    }`}
+                  >
+                    <Shield className="h-3.5 w-3.5" />
+                    <span>Guarda Falange</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setHopliteAction('marcha')}
+                    className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      hopliteAction === 'marcha'
+                        ? 'bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 shadow-md font-bold'
+                        : 'border border-amber-400/30 text-amber-200 hover:bg-amber-400/20'
+                    }`}
+                  >
+                    <Play className="h-3.5 w-3.5" />
+                    <span>Andando em Marcha</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setHopliteAction('corrida')}
+                    className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      hopliteAction === 'corrida'
+                        ? 'bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 shadow-md font-bold'
+                        : 'border border-amber-400/30 text-amber-200 hover:bg-amber-400/20'
+                    }`}
+                  >
+                    <Wind className="h-3.5 w-3.5" />
+                    <span>Correndo em Marcha</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setHopliteAction('ataque')}
+                    className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      hopliteAction === 'ataque'
+                        ? 'bg-gradient-to-r from-sky-400 to-blue-600 text-white shadow-md shadow-sky-500/30 font-bold'
+                        : 'border border-sky-400/30 text-sky-200 hover:bg-sky-400/20'
+                    }`}
+                  >
+                    <Zap className="h-3.5 w-3.5" />
+                    <span>Ataque de Lança</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setHopliteAction('defesa')}
+                    className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      hopliteAction === 'defesa'
+                        ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-md shadow-amber-500/30 font-bold'
+                        : 'border border-amber-400/30 text-amber-200 hover:bg-amber-400/20'
+                    }`}
+                  >
+                    <Shield className="h-3.5 w-3.5" />
+                    <span>Defesa de Escudo</span>
+                  </button>
+                  <a
+                    href="/hoplita.html"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 rounded-lg border border-yellow-400/40 bg-yellow-500/10 px-2.5 py-1.5 text-xs font-bold text-yellow-300 hover:bg-yellow-400/20 transition whitespace-nowrap"
+                  >
+                    <Eye className="h-3.5 w-3.5" />
+                    <span>Demo 3D Tela Cheia</span>
+                  </a>
                   <div className="h-5 w-[1px] bg-white/15 mx-1" />
                 </>
               ) : entityType === 'unit' ? (

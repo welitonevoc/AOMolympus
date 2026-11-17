@@ -17,48 +17,88 @@ export interface HopliteUvTierSpec {
   armorHex: number;
   accentHex: number;
   greaveHex: number;
+  metalness?: number;
+  roughness?: number;
+  shieldRimHex?: number;
+  shieldBgHex?: number;
+  boltColorHex?: number;
+  crestColorHex?: number;
+  cloakColorHex?: number;
+  electricGlow?: number;
 }
 
 export const AOM_HOPLITE_UV_TIERS: Record<HopliteArmorTier, HopliteUvTierSpec> = {
   1: {
     tier: 1,
     id: 'map_01',
-    name: 'Tier 1 — Arcaico (Couro & Bronze)',
-    subtitle: 'Elmo leve, túnica reforçada, escudo de bronze simples e arma padrão',
+    name: 'Hoplita Padrão (Map 01)',
+    subtitle: 'Era Arcaica / Clássica — Couraça de Couro (Linothorax) & Bronze Simples',
     url: '/assets/aistudio/infantry_g_hoplite_map_01_66c270c4.png',
-    armorHex: 0xa46b39,
+    armorHex: 0xb4783c,
     accentHex: 0xd97706,
-    greaveHex: 0x7c4d26,
+    greaveHex: 0x8b5a2b,
+    metalness: 0.45,
+    roughness: 0.55,
+    shieldRimHex: 0x92400e,
+    shieldBgHex: 0x1e3a8a,
+    boltColorHex: 0xd97706,
+    crestColorHex: 0xdc2626,
+    cloakColorHex: 0x1d4ed8,
+    electricGlow: 0.0,
   },
   2: {
     tier: 2,
     id: 'map_02',
-    name: 'Tier 2 — Clássico (Bronze Forjado)',
-    subtitle: 'Peitoral anatômico, ombreiras forjadas, crista clássica e grevas de bronze',
+    name: 'Hoplita Médio (Map 02)',
+    subtitle: 'Era Heroica — Peitoral de Bronze Forjado, Ombreiras & Crista Dupla',
     url: '/assets/aistudio/infantry_g_hoplite_map_02_e1e4f7fd.png',
     armorHex: 0xc88b22,
     accentHex: 0xf59e0b,
     greaveHex: 0xb47828,
+    metalness: 0.78,
+    roughness: 0.32,
+    shieldRimHex: 0xd97706,
+    shieldBgHex: 0x1e40af,
+    boltColorHex: 0xfacc15,
+    crestColorHex: 0x2563eb,
+    cloakColorHex: 0x1e3a8a,
+    electricGlow: 0.25,
   },
   3: {
     tier: 3,
     id: 'map_03',
-    name: 'Tier 3 — Heroico (Ouro Olímpico)',
-    subtitle: 'Armadura muscular dourada, manto de guerra, braçadeiras e emblemas de Zeus',
+    name: 'Hoplita Pesado (Map 03)',
+    subtitle: 'Era Mítica — Couraça Muscular & Grevas de Ouro Olímpico',
     url: '/assets/aistudio/infantry_g_hoplite_map_03_fb1ce0e0.png',
-    armorHex: 0xf5c427,
+    armorHex: 0xfacc15,
     accentHex: 0xfef08a,
     greaveHex: 0xeab308,
+    metalness: 0.9,
+    roughness: 0.22,
+    shieldRimHex: 0xfacc15,
+    shieldBgHex: 0x0f172a,
+    boltColorHex: 0xfef08a,
+    crestColorHex: 0xfacc15,
+    cloakColorHex: 0x7f1d1d,
+    electricGlow: 0.8,
   },
   4: {
     tier: 4,
     id: 'map_04',
-    name: 'Tier 4 — Campeão de Zeus (Prata & Raio)',
-    subtitle: 'Oricalco prateado com adornos dourados, elmo alado/coroado e lâmina radiante',
+    name: 'Hoplita Campeão (Map 04)',
+    subtitle: 'Era dos Titãs — Armadura Muscular de Prata Divina, Aço & Raio de Zeus',
     url: '/assets/aistudio/infantry_g_hoplite_map_04_2dddf78e.png',
     armorHex: 0xe2e8f0,
-    accentHex: 0xfbbf24,
+    accentHex: 0x38bdf8,
     greaveHex: 0xcbd5e1,
+    metalness: 0.95,
+    roughness: 0.16,
+    shieldRimHex: 0x38bdf8,
+    shieldBgHex: 0x090d16,
+    boltColorHex: 0x7dd3fc,
+    crestColorHex: 0x38bdf8,
+    cloakColorHex: 0x0c4a6e,
+    electricGlow: 1.5,
   },
 };
 
