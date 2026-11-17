@@ -4,6 +4,8 @@ import {
   BookOpen,
   Compass,
   Crown,
+  Eye,
+  EyeOff,
   Film,
   Globe,
   HardDrive,
@@ -31,6 +33,7 @@ import {
   PantheonId,
 } from '../game/types';
 import { HopliteUvBuilderModal } from './HopliteUvBuilderModal';
+import { OlympusTitleBackdrop } from './OlympusTitleBackdrop';
 import { PortSubMenus, SkirmishDraft } from './PortSubMenus';
 
 interface TitleScreenProps {
@@ -75,6 +78,7 @@ export function TitleScreen({
 }: TitleScreenProps) {
   const [menuState, setMenuState] = useState<PortMenuState>('MAIN_MENU');
   const [uvModalOpen, setUvModalOpen] = useState(false);
+  const [cinematicView, setCinematicView] = useState(false);
   const [skirmish, setSkirmish] = useState<SkirmishDraft>({
     pantheon: 'greek',
     minorGod: 'Zeus',
@@ -109,7 +113,7 @@ export function TitleScreen({
     soundEngine.setMusicScene('title', savedPantheon);
   }, [menuState]);
 
-  // Escape navigates back cleanly inside port menus
+  // Escape navigates back cleanly inside port menus or exits cinematic showcase
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (menuState === 'SPLASH') {
@@ -117,17 +121,24 @@ export function TitleScreen({
         setMenuState('MAIN_MENU');
         return;
       }
-      if (e.key === 'Escape' && menuState !== 'MAIN_MENU') {
-        setMenuState('MAIN_MENU');
+      if (e.key === 'Escape') {
+        if (cinematicView) {
+          setCinematicView(false);
+          return;
+        }
+        if (menuState !== 'MAIN_MENU') {
+          setMenuState('MAIN_MENU');
+        }
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [menuState]);
+  }, [menuState, cinematicView]);
 
   const nav = (next: PortMenuState) => {
     soundEngine.unlock();
     soundEngine.playSelect();
+    setCinematicView(false);
     setMenuState(next);
   };
 
@@ -145,21 +156,37 @@ export function TitleScreen({
     });
   };
 
+  const renderOlympusFiligree = () => (
+    <div className="animate-aom-divider mx-auto my-2.5 flex items-center justify-center gap-2 text-[#d4af37]/75">
+      <span className="h-px flex-1 bg-gradient-to-r from-transparent via-[#d4af37]/45 to-[#d4af37]/80" />
+      <svg width="24" height="12" viewBox="0 0 24 12" fill="none" aria-hidden="true">
+        <path
+          d="M12 1L15.2 6L12 11L8.8 6L12 1Z"
+          stroke="currentColor"
+          strokeWidth="1.2"
+          fill="rgba(212,175,55,0.22)"
+        />
+        <path d="M1 6H7M17 6H23" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
+      </svg>
+      <span className="h-px flex-1 bg-gradient-to-l from-transparent via-[#d4af37]/45 to-[#d4af37]/80" />
+    </div>
+  );
+
   // ── SPLASH STATE ──
   if (menuState === 'SPLASH') {
     return (
       <div
         onClick={() => nav('MAIN_MENU')}
-        className="fixed inset-0 z-30 flex flex-col items-center justify-center bg-[#080b11]/92 p-6 text-center cursor-pointer select-none"
+        className="fixed inset-0 z-30 flex flex-col items-center justify-end pb-14 p-6 text-center cursor-pointer select-none"
       >
-        <div className="rounded-xl border border-[#d4af37]/40 bg-[#101520] px-10 py-8 shadow-2xl">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.26em] text-[#d4af37]">
-            Estratégia Mitológica 3D
-          </p>
-          <h1 className="mt-2 font-display text-3xl sm:text-4xl font-bold text-[#f5e3b0]">
+        <OlympusTitleBackdrop paused={uvModalOpen} cinematicMode={true} />
+
+        <div className="relative z-10 animate-aom-crest max-w-xl rounded-xl border border-[#d4af37]/40 bg-[#080d17]/88 px-10 py-8 shadow-[0_28px_72px_rgba(0,0,0,0.85)]">
+          <h1 className="font-display text-3xl sm:text-4xl font-bold tracking-[0.05em] text-[#f6e6b8] text-balance">
             Age of Mythology: Olympus
           </h1>
-          <p className="mt-4 text-xs text-[#94a3b8]">
+          {renderOlympusFiligree()}
+          <p className="mt-2 text-xs tracking-wide text-[#cbd5e1]">
             Clique na tela ou pressione qualquer tecla para continuar
           </p>
         </div>
@@ -168,7 +195,7 @@ export function TitleScreen({
   }
 
   const isCompact = COMPACT_MENU_STATES.has(menuState);
-  const containerWidth = isCompact ? 'max-w-[380px]' : 'max-w-5xl';
+  const containerWidth = isCompact ? 'max-w-[400px]' : 'max-w-5xl';
 
   const renderMenuBtn = (
     label: string,
@@ -180,26 +207,53 @@ export function TitleScreen({
       key={label}
       type="button"
       onClick={onClick}
-      className={`flex h-10 w-full items-center justify-center gap-2.5 rounded-md border px-4 text-sm font-semibold tracking-wide transition-colors duration-150 cursor-pointer whitespace-nowrap focus-visible:outline-2 focus-visible:outline-[#f3d27a] ${
+      className={`group flex min-h-[42px] w-full items-center justify-between rounded-lg border px-4 py-2 text-sm font-semibold tracking-wide transition-all duration-150 cursor-pointer whitespace-nowrap shrink-0 focus-visible:outline-2 focus-visible:outline-[#f3d27a] ${
         highlight
-          ? 'border-[#e5c45e] bg-[#d4af37] text-[#0b0e14] font-bold hover:bg-[#e3c252]'
-          : 'border-white/10 bg-[#151b26] text-[#ece6d9] hover:border-[#d4af37]/55 hover:bg-[#1c2433]'
+          ? 'border-[#f3d27a]/85 bg-gradient-to-r from-[#d4af37] via-[#e4c158] to-[#c99e28] text-[#090d16] font-bold shadow-[0_8px_24px_rgba(212,175,55,0.28)] hover:brightness-105'
+          : 'border-white/10 bg-[#121826]/92 text-[#ece6d9] hover:border-[#d4af37]/60 hover:bg-[#192235] hover:translate-x-0.5'
       }`}
     >
-      {icon}
-      <span>{label}</span>
+      <span className="flex items-center gap-3">
+        {icon}
+        <span>{label}</span>
+      </span>
+      <span
+        aria-hidden="true"
+        className={`text-xs transition-transform duration-150 group-hover:translate-x-0.5 ${
+          highlight ? 'text-[#090d16]/75' : 'text-[#d4af37]/60 group-hover:text-[#f3d27a]'
+        }`}
+      >
+        ›
+      </span>
     </button>
   );
 
   return (
-    <div className="fixed inset-0 z-30 flex items-center justify-center bg-[radial-gradient(ellipse_at_center,rgba(14,19,30,0.45)_0%,rgba(6,8,13,0.88)_100%)] p-3 sm:p-6">
+    <div
+      className={`fixed inset-0 z-30 flex items-center p-4 sm:p-6 ${
+        isCompact && !cinematicView
+          ? 'justify-center lg:justify-start lg:pl-12 xl:pl-16'
+          : 'justify-center'
+      }`}
+    >
+      {/* Epic Real-Time Animated 3D Mount Olympus Scene */}
+      <OlympusTitleBackdrop
+        paused={uvModalOpen}
+        cinematicMode={isCompact && cinematicView}
+      />
+
+      {/* Deeper Contrast Scrim Only When Wide Setup Modals Are Open */}
+      {!isCompact && (
+        <div className="pointer-events-none fixed inset-0 z-[1] bg-[#050914]/70" />
+      )}
+
       {/* Top-Right Minimal Utility Strip */}
-      <div className="fixed top-3 right-3 z-40 flex items-center gap-1.5 rounded-lg border border-white/10 bg-[#0f141e]/95 p-1 shadow-lg">
+      <div className="fixed top-4 right-4 z-40 flex items-center gap-1.5 rounded-lg border border-white/12 bg-[#0b101b]/92 p-1 shadow-lg">
         <button
           type="button"
           onClick={() => nav('UI_PROFILE_SELECT')}
           title="Selecionar Perfil de Jogador"
-          className="flex h-7 items-center gap-1.5 rounded px-2.5 text-xs font-medium text-[#f3d27a] hover:bg-[#1b2230] cursor-pointer transition-colors"
+          className="flex h-8 items-center gap-1.5 rounded px-2.5 text-xs font-medium text-[#f3d27a] hover:bg-[#182032] cursor-pointer transition-colors whitespace-nowrap shrink-0"
         >
           <User className="h-3.5 w-3.5" />
           <span>{options.playerName}</span>
@@ -215,17 +269,47 @@ export function TitleScreen({
             }
           }}
           aria-label={muted ? 'Ativar áudio' : 'Silenciar áudio'}
-          className="flex h-7 w-7 items-center justify-center rounded text-[#cbd5e1] hover:bg-[#1b2230] hover:text-white cursor-pointer transition-colors"
+          className="flex h-8 w-8 items-center justify-center rounded text-[#cbd5e1] hover:bg-[#182032] hover:text-white cursor-pointer transition-colors"
         >
-          {muted ? <VolumeX className="h-3.5 w-3.5 text-rose-400" /> : <Volume2 className="h-3.5 w-3.5 text-[#d4af37]" />}
+          {muted ? (
+            <VolumeX className="h-4 w-4 text-rose-400" />
+          ) : (
+            <Volume2 className="h-4 w-4 text-[#d4af37]" />
+          )}
         </button>
 
         {options.showFps && (
-          <div className="px-2 font-mono-num text-[11px] font-semibold text-emerald-300">
+          <div className="px-2 font-mono-num text-[11px] font-semibold text-emerald-300 whitespace-nowrap">
             {fps} FPS
           </div>
         )}
       </div>
+
+      {/* Bottom-Right Live Olympus Scene Stage Bar */}
+      {isCompact && (
+        <div className="fixed bottom-4 right-4 z-40 flex items-center gap-2.5 rounded-lg border border-[#d4af37]/30 bg-[#0b101b]/92 px-3 py-1.5 shadow-xl">
+          <span className="hidden sm:inline text-[11px] font-medium text-[#cbd5e1] whitespace-nowrap">
+            Monte Olimpo
+          </span>
+          <button
+            type="button"
+            onClick={() => setCinematicView((v) => !v)}
+            className="flex h-7 items-center gap-1.5 rounded-md border border-white/15 bg-[#151c2c] px-2.5 text-[11px] font-semibold text-[#e2e8f0] hover:border-[#d4af37]/45 hover:text-white transition-colors cursor-pointer whitespace-nowrap shrink-0"
+          >
+            {cinematicView ? (
+              <>
+                <Eye className="h-3.5 w-3.5 text-[#d4af37]" />
+                <span>Mostrar Menu</span>
+              </>
+            ) : (
+              <>
+                <EyeOff className="h-3.5 w-3.5 text-[#9ca3af]" />
+                <span>Vista Livre</span>
+              </>
+            )}
+          </button>
+        </div>
+      )}
 
       <HopliteUvBuilderModal
         isOpen={uvModalOpen}
@@ -236,23 +320,26 @@ export function TitleScreen({
         onSelectTier={(tier) => onUpdateOptions({ ...options, hopliteArmorTier: tier })}
       />
 
-      <div className={`relative w-full ${containerWidth} max-h-[calc(100vh-2rem)] flex flex-col transition-[max-width] duration-200`}>
-        {/* Clean Architectural Frame */}
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-[#d4af37]/35 bg-[#0f141e]/96 shadow-[0_24px_64px_rgba(0,0,0,0.85)]">
-          {/* Header Crest */}
-          <div className="border-b border-white/10 bg-[#131926] px-6 py-4 text-center">
-            <div className="mx-auto mb-1.5 flex items-center justify-center gap-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-[#d4af37]/85">
-              <span className="h-px w-6 bg-[#d4af37]/40" />
-              <span>{PANTHEONS[skirmish.pantheon].name} · {skirmish.minorGod}</span>
-              <span className="h-px w-6 bg-[#d4af37]/40" />
-            </div>
-            <h1 className="font-display text-xl sm:text-2xl font-bold tracking-[0.04em] text-[#f5e3b0]">
+      {/* Main Architectural Menu Rail / Submenu Container */}
+      <div
+        className={`relative z-10 w-full ${containerWidth} max-h-[calc(100vh-2rem)] flex flex-col transition-all duration-300 ${
+          isCompact && cinematicView
+            ? '-translate-x-[120%] opacity-0 pointer-events-none'
+            : 'translate-x-0 opacity-100'
+        }`}
+      >
+        <div className="animate-aom-panel flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-[#d4af37]/38 bg-[#0a0f1a]/92 shadow-[0_28px_72px_rgba(0,0,0,0.85)]">
+          {/* Monumental Header Crest */}
+          <div className="animate-aom-crest border-b border-white/10 bg-gradient-to-b from-[#131b2b] to-[#0d1320] px-6 pt-5 pb-3.5 text-center">
+            <h1 className="font-display text-2xl font-bold tracking-[0.04em] text-[#f7e9c3] text-balance">
               Age of Mythology: Olympus
             </h1>
+
+            {renderOlympusFiligree()}
           </div>
 
           {/* Menu Body */}
-          <div className="relative flex-1 overflow-y-auto px-5 py-5 sm:px-6">
+          <div className="relative flex-1 overflow-y-auto px-5 py-4 sm:px-6">
             {menuState === 'MAIN_MENU' && (
               <div className="flex flex-col gap-2">
                 {hasSavedMatch &&
