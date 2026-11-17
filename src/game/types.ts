@@ -84,7 +84,8 @@ export type UnitKind =
   | 'hefesto'
   | 'artemis'
   | 'isis'
-  | 'set';
+  | 'set'
+  | 'ra';
 
 export type BuildingKind =
   | 'town_center'

@@ -91,6 +91,11 @@ import {
   getCachedSetTextures,
   animateSet,
 } from '../civilizacao/egipcios/setModel';
+import {
+  buildRa,
+  getCachedRaTextures,
+  animateRa,
+} from '../civilizacao/egipcios/raModel';
 import { AOM_HOPLITE_UV_TIERS, HopliteArmorTier } from '../civilizacao/gregos/gregosModels';
 import { createBuildingMesh, createMaterialPalette, createUnitMesh } from '../game/models';
 import { BuildingKind, PantheonId, UnitKind } from '../game/types';
@@ -466,11 +471,19 @@ export function getUnitsForCivAndGod(civ: PantheonId, majorGod: string): CivEnti
   }
 
   if (civ === 'egyptian') {
-    const isRa = godInfo.id.toLowerCase() === 'rá';
-    const isIsis = godInfo.id.toLowerCase() === 'ísis';
+    const isRa = godInfo.id.toLowerCase() === 'rá' || godInfo.id.toLowerCase() === 'ra';
+    const isIsis = godInfo.id.toLowerCase() === 'ísis' || godInfo.id.toLowerCase() === 'isis';
     const isSet = godInfo.id.toLowerCase() === 'set';
 
-    const godOption: CivEntityOption[] = isIsis
+    const godOption: CivEntityOption[] = isRa
+      ? [
+          {
+            id: 'ra',
+            name: '☀️ Rá (Deus Maior do Sol)',
+            role: 'Deus do Sol e Rei dos Deuses — Elmo Faraônico de Falcão, Cetro Was e Chave Ankh Flutuantes, Raio de Rá',
+          },
+        ]
+      : isIsis
       ? [
           {
             id: 'isis',
@@ -664,6 +677,7 @@ export function HopliteUvBuilderModal({
   const [hermesMode, setHermesMode] = useState<'flutuar' | 'velocidade' | 'rajada' | 'relampago'>('flutuar');
   const [isisMode, setIsisMode] = useState<'majestade' | 'heka' | 'ankh' | 'sopdet'>('majestade');
   const [setMode, setSetMode] = useState<'senhor' | 'tempestade' | 'deserto' | 'monstro'>('senhor');
+  const [raMode, setRaMode] = useState<'gloria' | 'bencao' | 'chuva' | 'ira'>('gloria');
   const [focusDivine, setFocusDivine] = useState(false);
   const [myrmidonFury, setMyrmidonFury] = useState(true);
   const myrmidonFuryRef = useRef(myrmidonFury);
@@ -702,6 +716,8 @@ export function HopliteUvBuilderModal({
   isisModeRef.current = isisMode;
   const setModeRef = useRef(setMode);
   setModeRef.current = setMode;
+  const raModeRef = useRef(raMode);
+  raModeRef.current = raMode;
   const focusDivineRef = useRef(focusDivine);
   focusDivineRef.current = focusDivine;
 
@@ -723,7 +739,8 @@ export function HopliteUvBuilderModal({
       else if (godId.toLowerCase() === 'poseidon') setSelectedUnit('poseidon');
       else if (godId.toLowerCase() === 'hades') setSelectedUnit('hades');
     } else if (selectedCiv === 'egyptian') {
-      if (godId.toLowerCase() === 'ísis') setSelectedUnit('isis');
+      if (godId.toLowerCase() === 'rá' || godId.toLowerCase() === 'ra') setSelectedUnit('ra');
+      else if (godId.toLowerCase() === 'ísis' || godId.toLowerCase() === 'isis') setSelectedUnit('isis');
       else if (godId.toLowerCase() === 'set') setSelectedUnit('set');
     }
   };
@@ -788,7 +805,7 @@ export function HopliteUvBuilderModal({
       prevMouseX = e.clientX;
       prevMouseY = e.clientY;
 
-      const isGod = ((selectedUnit === 'zeus' || selectedUnit === 'poseidon' || selectedUnit === 'hades' || selectedUnit === 'artemis' || selectedUnit === 'hefesto' || selectedUnit === 'dionisio' || selectedUnit === 'afrodite' || selectedUnit === 'apolo' || selectedUnit === 'ares' || selectedUnit === 'atena' || selectedUnit === 'hermes') && selectedCiv === 'greek') || ((selectedUnit === 'isis' || selectedUnit === 'set') && selectedCiv === 'egyptian');
+      const isGod = ((selectedUnit === 'zeus' || selectedUnit === 'poseidon' || selectedUnit === 'hades' || selectedUnit === 'artemis' || selectedUnit === 'hefesto' || selectedUnit === 'dionisio' || selectedUnit === 'afrodite' || selectedUnit === 'apolo' || selectedUnit === 'ares' || selectedUnit === 'atena' || selectedUnit === 'hermes') && selectedCiv === 'greek') || ((selectedUnit === 'isis' || selectedUnit === 'set' || selectedUnit === 'ra') && selectedCiv === 'egyptian');
       if (isGod) {
         // No caso dos deuses, a câmera orbita em 360° e o deus permanece fixo no centro
         orbitYaw -= dx * 0.008;
@@ -1758,6 +1775,77 @@ export function HopliteUvBuilderModal({
             const m = setModeRef.current;
             animateSet(setGod, dt, simTime, m);
           };
+        } else if (selectedUnit === 'ra') {
+          // ===============================
+          // CENÁRIO DO TEMPLO SOLAR DE HELIÓPOLIS (RÁ)
+          // ===============================
+          scene.background = new THREE.Color(0x1e3a8a);
+          scene.fog = new THREE.FogExp2(0x1e3a8a, 0.016);
+
+          const raTex = getCachedRaTextures();
+
+          const pedGeo = new THREE.CylinderGeometry(2.8, 3.1, 0.2, 48);
+          const pedMat = new THREE.MeshStandardMaterial({
+            map: raTex.floorTex,
+            roughness: 0.42,
+            metalness: 0.15,
+          });
+          const pedestal = new THREE.Mesh(pedGeo, pedMat);
+          pedestal.position.y = -0.1;
+          pedestal.receiveShadow = true;
+          environmentGroup.add(pedestal);
+
+          const ringGeo = new THREE.RingGeometry(2.4, 2.65, 48);
+          const ringMat = new THREE.MeshBasicMaterial({ color: 0xfacc15, side: THREE.DoubleSide });
+          const ring = new THREE.Mesh(ringGeo, ringMat);
+          ring.rotation.x = -Math.PI / 2;
+          ring.position.y = 0.01;
+          environmentGroup.add(ring);
+
+          // Colunas Lotiformes com faixas douradas e discos solares
+          const sandstoneMat = new THREE.MeshStandardMaterial({ color: 0xd6b076, roughness: 0.68, metalness: 0.1 });
+          const goldColMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.92, roughness: 0.18 });
+          const lapisColMat = new THREE.MeshStandardMaterial({ color: 0x1e3a8a, metalness: 0.6, roughness: 0.25 });
+
+          for (let i = 0; i < 6; i++) {
+            const a = (i / 6) * Math.PI * 2 + 0.25;
+            const dist = 3.6;
+            const col = new THREE.Group();
+            col.position.set(Math.cos(a) * dist, 0, Math.sin(a) * dist);
+            col.rotation.y = -a + Math.PI / 2;
+
+            const baseMesh = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.15, 0.65), sandstoneMat);
+            baseMesh.position.y = 0.075;
+            const shaftMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.28, 2.4, 16), sandstoneMat);
+            shaftMesh.position.y = 1.35;
+
+            const f1 = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.26, 0.06, 16), goldColMat);
+            f1.position.y = 0.8;
+            const f2 = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.26, 0.06, 16), lapisColMat);
+            f2.position.y = 1.4;
+            const f3 = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.26, 0.06, 16), goldColMat);
+            f3.position.y = 2.0;
+
+            const capMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.22, 0.28, 16), goldColMat);
+            capMesh.position.y = 2.65;
+            const abacusMesh = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.12, 0.58), sandstoneMat);
+            abacusMesh.position.y = 2.85;
+            const sunDiskMesh = new THREE.Mesh(new THREE.SphereGeometry(0.14, 14, 14), goldColMat);
+            sunDiskMesh.position.y = 3.08;
+            sunDiskMesh.scale.set(1, 1, 0.35);
+
+            col.add(baseMesh, shaftMesh, f1, f2, f3, capMesh, abacusMesh, sunDiskMesh);
+            environmentGroup.add(col);
+          }
+
+          const raGod = buildRa(raTex);
+          group = raGod.root;
+          group.scale.setScalar(0.85);
+
+          group.userData.animatePose = (dt: number) => {
+            const m = raModeRef.current;
+            animateRa(raGod, dt, simTime, m);
+          };
         } else if (selectedUnit === 'hoplite' || selectedUnit === 'hipaspist' || selectedUnit === 'myrmidon') {
           // ===============================
           // CENÁRIO PADRÃO (PEDESTAL)
@@ -2132,7 +2220,7 @@ export function HopliteUvBuilderModal({
       if (hadesBlastLight.intensity > 0) hadesBlastLight.intensity = Math.max(0, hadesBlastLight.intensity - dt * 20);
 
       // Rotação da entidade / Órbita 360° da câmera
-      const isGod = ((selectedUnit === 'zeus' || selectedUnit === 'poseidon' || selectedUnit === 'hades' || selectedUnit === 'artemis' || selectedUnit === 'hefesto' || selectedUnit === 'dionisio' || selectedUnit === 'afrodite' || selectedUnit === 'apolo' || selectedUnit === 'ares' || selectedUnit === 'atena' || selectedUnit === 'hermes') && selectedCiv === 'greek') || ((selectedUnit === 'isis' || selectedUnit === 'set') && selectedCiv === 'egyptian');
+      const isGod = ((selectedUnit === 'zeus' || selectedUnit === 'poseidon' || selectedUnit === 'hades' || selectedUnit === 'artemis' || selectedUnit === 'hefesto' || selectedUnit === 'dionisio' || selectedUnit === 'afrodite' || selectedUnit === 'apolo' || selectedUnit === 'ares' || selectedUnit === 'atena' || selectedUnit === 'hermes') && selectedCiv === 'greek') || ((selectedUnit === 'isis' || selectedUnit === 'set' || selectedUnit === 'ra') && selectedCiv === 'egyptian');
 
       if (autoRotateRef.current) {
         if (isGod) {
@@ -2162,7 +2250,7 @@ export function HopliteUvBuilderModal({
 
       if (isGod) {
         // Câmera orbital 360° ao redor do Deus posicionado no centro exato
-        const isMajor = selectedUnit === 'zeus' || selectedUnit === 'poseidon' || selectedUnit === 'hades' || selectedUnit === 'isis' || selectedUnit === 'set';
+        const isMajor = selectedUnit === 'zeus' || selectedUnit === 'poseidon' || selectedUnit === 'hades' || selectedUnit === 'isis' || selectedUnit === 'set' || selectedUnit === 'ra';
         const focusY = isFocus
           ? isMajor
             ? 2.25
@@ -3343,6 +3431,71 @@ export function HopliteUvBuilderModal({
                   >
                     <Eye className="h-3.5 w-3.5" />
                     <span>{focusDivine ? 'Visão Corpo' : 'Focar Cabeça Bestial'}</span>
+                  </button>
+                  <div className="h-5 w-[1px] bg-white/15 mx-1" />
+                </>
+              ) : entityType === 'unit' && selectedUnit === 'ra' && selectedCiv === 'egyptian' ? (
+                // Poderes e Animações de Rá (Deus Maior do Sol e Rei dos Deuses)
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setRaMode('gloria')}
+                    className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      raMode === 'gloria'
+                        ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/30 font-bold'
+                        : 'border border-amber-400/30 text-amber-200 hover:bg-amber-400/20'
+                    }`}
+                  >
+                    <Sun className="h-3.5 w-3.5" />
+                    <span>Glória Solar</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRaMode('bencao')}
+                    className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      raMode === 'bencao'
+                        ? 'bg-yellow-400 text-slate-950 shadow-md shadow-yellow-400/30 font-bold'
+                        : 'border border-yellow-400/30 text-yellow-200 hover:bg-yellow-400/20'
+                    }`}
+                  >
+                    <Sparkles className="h-3.5 w-3.5" />
+                    <span>Bênção do Faraó</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRaMode('chuva')}
+                    className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      raMode === 'chuva'
+                        ? 'bg-orange-500 text-white shadow-md shadow-orange-500/30 font-bold'
+                        : 'border border-orange-400/30 text-orange-200 hover:bg-orange-400/20'
+                    }`}
+                  >
+                    <Wind className="h-3.5 w-3.5" />
+                    <span>Chuva Dourada</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRaMode('ira')}
+                    className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      raMode === 'ira'
+                        ? 'bg-gradient-to-r from-amber-500 to-red-600 text-white shadow-md shadow-red-500/40 font-bold'
+                        : 'border border-red-400/30 text-red-200 hover:bg-red-400/20'
+                    }`}
+                  >
+                    <Zap className="h-3.5 w-3.5" />
+                    <span>Raio de Rá</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFocusDivine(!focusDivine)}
+                    className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      focusDivine
+                        ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/30 font-bold'
+                        : 'border border-amber-400/40 text-amber-200 hover:bg-amber-500/20'
+                    }`}
+                  >
+                    <Eye className="h-3.5 w-3.5" />
+                    <span>{focusDivine ? 'Visão Corpo' : 'Focar Elmo Faraônico'}</span>
                   </button>
                   <div className="h-5 w-[1px] bg-white/15 mx-1" />
                 </>

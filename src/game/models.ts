@@ -20,6 +20,7 @@ import { buildPoseidon, getCachedPoseidonTextures, animatePoseidon } from '../ci
 import { buildHades, getCachedHadesTextures, animateHades } from '../civilizacao/gregos/hadesModel';
 import { buildIsis, getCachedIsisTextures, animateIsis } from '../civilizacao/egipcios/isisModel';
 import { buildSet, getCachedSetTextures, animateSet } from '../civilizacao/egipcios/setModel';
+import { buildRa, getCachedRaTextures, animateRa } from '../civilizacao/egipcios/raModel';
 import { createAoMOakTreeMesh, getFaunaCoatMaterial } from '../TEXTURA';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
@@ -2964,6 +2965,27 @@ export function createUnitMesh(
       sPhase += dt;
       const mode = attackT !== null ? (attackT > 0.5 ? 'deserto' : 'tempestade') : moving ? 'monstro' : 'senhor';
       animateSet(setGod, dt, sPhase, mode);
+    };
+    root.userData.updateBrg = (dt: number, state: string) => {
+      root.userData.animatePose?.(dt, state === 'move', 2.0, state === 'attack' ? 0.5 : null);
+    };
+    attachGroundMarkers(root, 2.95, pal, team);
+    attachHealthBar(root, 13.8, 3.4);
+    return root;
+  } else if (kind === 'ra') {
+    // DEUS MAIOR EGÍPCIO (~13.1u): Deus do Sol e Rei dos Deuses
+    const raTex = getCachedRaTextures();
+    const raGod = buildRa(raTex);
+    const raHolder = new THREE.Group();
+    raHolder.scale.setScalar(3.85);
+    raHolder.position.y = 0.25;
+    raHolder.add(raGod.root);
+    root.add(raHolder);
+    let rPhase = 0;
+    root.userData.animatePose = (dt: number, moving: boolean, _speed: number, attackT: number | null) => {
+      rPhase += dt;
+      const mode = attackT !== null ? (attackT > 0.5 ? 'ira' : 'chuva') : moving ? 'bencao' : 'gloria';
+      animateRa(raGod, dt, rPhase, mode);
     };
     root.userData.updateBrg = (dt: number, state: string) => {
       root.userData.animatePose?.(dt, state === 'move', 2.0, state === 'attack' ? 0.5 : null);
