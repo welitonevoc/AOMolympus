@@ -18,6 +18,7 @@ export interface MusicTrackSpec {
   melody: number[];
   arp: number[];
   bass: number[];
+  audioUrl?: string;
 }
 
 export const MUSIC_TRACKS: Record<string, MusicTrackSpec> = {
@@ -115,6 +116,56 @@ export const MUSIC_TRACKS: Record<string, MusicTrackSpec> = {
     melody: [0, 1, 4, 5, 4, 1, 0, -1, 7, 5, 4, 5, 4, 1, 0, -1],
     arp: [0, 4, 5, 7, 5, 4, 1, 0, 0, 4, 7, 8, 7, 4, 1, 0],
     bass: [0, -1, 0, -1, 1, -1, 0, -1, 4, -1, 1, -1, 0, -1, 0, -1],
+  },
+  serenidade_do_nilo: {
+    id: 'serenidade_do_nilo',
+    title: 'Serenidade do Nilo',
+    category: 'civilization',
+    pantheon: 'egyptian',
+    subtitle: 'Tema Egípcio · Serenidade do Nilo (Exclusivo)',
+    bpm: 96,
+    rootHz: 207.65,
+    scale: [0, 1, 4, 5, 7, 8, 10, 12, 13, 16, 17, 19],
+    leadWave: 'triangle',
+    bassWave: 'sine',
+    percussionStyle: 'nile',
+    melody: [0, 1, 4, 5, 7, 5, 4, 1, 0, 4, 5, 4, 1, 0, -1, -1],
+    arp: [0, 4, 5, 7, 8, 7, 5, 4, 1, 4, 7, 8, 7, 4, 1, 0],
+    bass: [0, -1, 1, -1, 4, -1, 1, -1, 0, -1, 4, -1, 1, -1, 0, -1],
+    audioUrl: '/assets/aistudio/Serenidade_do_Nilo_8e8ce22d.mp3',
+  },
+  vales_de_memfis: {
+    id: 'vales_de_memfis',
+    title: 'Vales de Mênfis',
+    category: 'civilization',
+    pantheon: 'egyptian',
+    subtitle: 'Tema Egípcio · Vales e Pirâmides de Mênfis',
+    bpm: 104,
+    rootHz: 207.65,
+    scale: [0, 1, 4, 5, 7, 8, 10, 12, 13, 16, 17, 19],
+    leadWave: 'sawtooth',
+    bassWave: 'triangle',
+    percussionStyle: 'nile',
+    melody: [4, 5, 7, 8, 7, 5, 4, 1, 0, 1, 4, 5, 4, 1, 0, -1],
+    arp: [0, 1, 4, 7, 8, 7, 4, 1, 0, 4, 5, 7, 5, 4, 1, 0],
+    bass: [0, 0, -1, 4, 1, -1, 0, -1, 4, -1, 1, -1, 0, -1, 1, -1],
+  },
+  the_niles_quiet_breath: {
+    id: 'the_niles_quiet_breath',
+    title: "The Nile's Quiet Breath",
+    category: 'civilization',
+    pantheon: 'egyptian',
+    subtitle: 'Tema Egípcio · The Nile’s Quiet Breath (Exclusivo)',
+    bpm: 92,
+    rootHz: 207.65,
+    scale: [0, 1, 4, 5, 7, 8, 10, 12, 13, 16, 17, 19],
+    leadWave: 'triangle',
+    bassWave: 'sine',
+    percussionStyle: 'nile',
+    melody: [0, 1, 4, 5, 7, 5, 4, 1, 0, 4, 5, 4, 1, 0, -1, -1],
+    arp: [0, 4, 5, 7, 8, 7, 5, 4, 1, 4, 7, 8, 7, 4, 1, 0],
+    bass: [0, -1, 1, -1, 4, -1, 1, -1, 0, -1, 4, -1, 1, -1, 0, -1],
+    audioUrl: '/assets/aistudio/The_Nile_s_Quiet_Breath_90ab5f25.mp3',
   },
   of_norse_not: {
     id: 'of_norse_not',
@@ -829,6 +880,7 @@ class SoundEngine {
   private audioBufferCache = new Map<string, AudioBuffer>();
   private loadingAudioUrls = new Set<string>();
   private speechQueueToken = 0;
+  private bgAudioElement: HTMLAudioElement | null = null;
 
   // Dynamic Hybrid Soundtrack State
   private musicMasterGain: GainNode | null = null;
@@ -897,6 +949,16 @@ class SoundEngine {
   }
 
   private updateMusicBusGain() {
+    if (this.bgAudioElement) {
+      const scale = this.effectiveMusicScale;
+      const duckFactor = this.musicPausedDuck ? 0.3 : 1.0;
+      this.bgAudioElement.volume = Math.max(0, Math.min(1, scale * duckFactor * 0.9));
+      if (scale <= 0 || !this.musicEnabled) {
+        this.bgAudioElement.pause();
+      } else if (this.bgAudioElement.paused && this.musicEnabled && scale > 0) {
+        this.bgAudioElement.play().catch(() => {});
+      }
+    }
     if (!this.ctx || !this.musicMasterGain || !this.musicLowpass) return;
     const now = this.ctx.currentTime;
     const scale = this.effectiveMusicScale;
@@ -2318,7 +2380,11 @@ class SoundEngine {
   public previewPantheonTheme(pantheon: PantheonId) {
     this.musicPantheon = pantheon;
     if (this.musicScene === 'title') {
-      const civTrackId = PANTHEON_THEME_TRACK[pantheon] ?? 'greek_to_me';
+      let civTrackId = PANTHEON_THEME_TRACK[pantheon] ?? 'greek_to_me';
+      if (pantheon === 'egyptian') {
+        const egyptianTracks = ['serenidade_do_nilo', 'the_niles_quiet_breath', 'nd_nile', 'vales_de_memfis'];
+        civTrackId = egyptianTracks[Math.floor(Math.random() * egyptianTracks.length)];
+      }
       this.switchMusicTrack(civTrackId);
     }
   }
@@ -2332,12 +2398,17 @@ class SoundEngine {
     this.matchPlaylistIdx = Math.floor(Math.random() * MATCH_MUSIC_PLAYLIST.length);
 
     let initialTrackId = PANTHEON_THEME_TRACK[pantheon] ?? 'greek_to_me';
+    if (pantheon === 'egyptian') {
+      const egyptianTracks = ['serenidade_do_nilo', 'the_niles_quiet_breath', 'nd_nile', 'vales_de_memfis'];
+      initialTrackId = egyptianTracks[Math.floor(Math.random() * egyptianTracks.length)];
+    }
     if (scenarioTitle) {
       const lower = scenarioTitle.toLowerCase();
       if (lower.includes('titã') || lower.includes('atlânt')) {
         initialTrackId = 'hotlantis';
       } else if (lower.includes('egito') || lower.includes('nilo')) {
-        initialTrackId = 'nd_nile';
+        const egyptianTracks = ['serenidade_do_nilo', 'the_niles_quiet_breath', 'nd_nile', 'vales_de_memfis'];
+        initialTrackId = egyptianTracks[Math.floor(Math.random() * egyptianTracks.length)];
       } else if (lower.includes('nórdic') || lower.includes('midgard') || lower.includes('gigante')) {
         initialTrackId = 'of_norse_not';
       } else if (lower.includes('prólogo') || lower.includes('olimp')) {
@@ -2375,13 +2446,26 @@ class SoundEngine {
   public skipToNextMusicTrack() {
     if (this.musicScene === 'match') {
       this.campaignPinnedTrackId = null;
-      const nextId = MATCH_MUSIC_PLAYLIST[this.matchPlaylistIdx % MATCH_MUSIC_PLAYLIST.length];
-      this.matchPlaylistIdx = (this.matchPlaylistIdx + 1) % MATCH_MUSIC_PLAYLIST.length;
-      this.switchMusicTrack(nextId);
+      if (this.musicPantheon === 'egyptian' && Math.random() < 0.65) {
+        const egyptianTracks = ['serenidade_do_nilo', 'the_niles_quiet_breath', 'nd_nile', 'vales_de_memfis'];
+        const randomTrack = egyptianTracks[Math.floor(Math.random() * egyptianTracks.length)];
+        this.switchMusicTrack(randomTrack);
+      } else {
+        const nextId = MATCH_MUSIC_PLAYLIST[this.matchPlaylistIdx % MATCH_MUSIC_PLAYLIST.length];
+        this.matchPlaylistIdx = (this.matchPlaylistIdx + 1) % MATCH_MUSIC_PLAYLIST.length;
+        this.switchMusicTrack(nextId);
+      }
     } else if (this.musicScene === 'title') {
-      this.titleCycleIndex = (this.titleCycleIndex + 1) % 2;
-      const civTrack = PANTHEON_THEME_TRACK[this.musicPantheon] ?? 'greek_to_me';
-      this.switchMusicTrack(this.titleCycleIndex === 0 ? 'cat_mittens' : civTrack);
+      if (this.musicPantheon === 'egyptian') {
+        const egyptianTracks = ['serenidade_do_nilo', 'the_niles_quiet_breath', 'nd_nile', 'vales_de_memfis'];
+        const curIdx = egyptianTracks.indexOf(this.currentTrackId);
+        const nextIdx = curIdx >= 0 ? (curIdx + 1) % egyptianTracks.length : 0;
+        this.switchMusicTrack(egyptianTracks[nextIdx]);
+      } else {
+        this.titleCycleIndex = (this.titleCycleIndex + 1) % 2;
+        const civTrack = PANTHEON_THEME_TRACK[this.musicPantheon] ?? 'greek_to_me';
+        this.switchMusicTrack(this.titleCycleIndex === 0 ? 'cat_mittens' : civTrack);
+      }
     }
   }
 
@@ -2398,6 +2482,22 @@ class SoundEngine {
     this.currentTrackId = trackId;
     this.musicStep = 0;
     this.musicTrackStartedAt = performance.now();
+
+    if (this.bgAudioElement) {
+      this.bgAudioElement.pause();
+      this.bgAudioElement.currentTime = 0;
+      this.bgAudioElement = null;
+    }
+
+    const track = MUSIC_TRACKS[trackId];
+    if (track?.audioUrl && typeof window !== 'undefined' && this.effectiveMusicScale > 0 && this.musicEnabled) {
+      const audio = new window.Audio(track.audioUrl);
+      audio.loop = true;
+      audio.volume = Math.max(0, Math.min(1, this.effectiveMusicScale * (this.musicPausedDuck ? 0.3 : 1.0)));
+      audio.play().catch(() => {});
+      this.bgAudioElement = audio;
+    }
+
     if (this.ctx) {
       this.musicNextNoteTime = Math.max(this.ctx.currentTime + 0.04, this.musicNextNoteTime);
     }
