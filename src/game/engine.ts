@@ -495,6 +495,8 @@ export class AoMEngine {
   private relicsHeld = 0;
   private marketRates: { food: number; wood: number; gold: number } = { food: 1.0, wood: 1.0, gold: 1.0 };
   private regentUnitId: string | null = null;
+  private playerPharaohRespawnTimer = 0;
+  private enemyPharaohRespawnTimer = 0;
   private enemyAge: AgeLevel = 1;
   private tcFocusIndex = 0;
   private idleVillagerCycleIndex = 0;
@@ -1135,14 +1137,23 @@ export class AoMEngine {
       this.spawnBuilding('barracks', 'player', -26, 26, true);
       this.spawnBuilding('temple', 'player', -42, 39, true);
     }
+    this.playerPharaohRespawnTimer = 0;
+    this.enemyPharaohRespawnTimer = 0;
     this.spawnUnit('villager', 'player', -30, 38);
     this.spawnUnit('villager', 'player', -28, 34);
     this.spawnUnit('villager', 'player', -34, 40);
-    this.spawnUnit('hoplite', 'player', -27, 29);
-    this.spawnUnit('hoplite', 'player', -25, 31);
+    if (this.pantheon === 'egyptian') {
+      this.spawnUnit('pharaoh', 'player', -31, 31);
+      this.spawnUnit('priest', 'player', -29, 30);
+      this.spawnUnit('egypt_spearman', 'player', -27, 29);
+      this.spawnUnit('egypt_spearman', 'player', -25, 31);
+    } else {
+      this.spawnUnit('hoplite', 'player', -27, 29);
+      this.spawnUnit('hoplite', 'player', -25, 31);
+    }
 
     if (this.gameType === 'regicide') {
-      const regent = this.spawnUnit('hero', 'player', -32, 30);
+      const regent = this.spawnUnit(this.pantheon === 'egyptian' ? 'pharaoh' : 'hero', 'player', -32, 30);
       this.regentUnitId = regent.id;
     }
 
@@ -1155,8 +1166,14 @@ export class AoMEngine {
     }
     this.spawnUnit('villager', 'enemy', 31, -38);
     this.spawnUnit('villager', 'enemy', 38, -31);
-    this.spawnUnit('hoplite', 'enemy', 25, -26);
-    this.spawnUnit('hoplite', 'enemy', 27, -24);
+    if (this.enemyPantheon === 'egyptian') {
+      this.spawnUnit('pharaoh', 'enemy', 30, -30);
+      this.spawnUnit('egypt_spearman', 'enemy', 25, -26);
+      this.spawnUnit('egypt_spearman', 'enemy', 27, -24);
+    } else {
+      this.spawnUnit('hoplite', 'enemy', 25, -26);
+      this.spawnUnit('hoplite', 'enemy', 27, -24);
+    }
 
     // Neutral Settlement foundations (2 near player base, 2 near enemy base)
     const settlementSpots: [number, number][] = [
@@ -1654,7 +1671,13 @@ export class AoMEngine {
         kind === 'archer' ||
         kind === 'gastraphetes' ||
         kind === 'cavalry' ||
-        kind === 'prodromos'
+        kind === 'prodromos' ||
+        kind === 'egypt_spearman' ||
+        kind === 'slinger' ||
+        kind === 'axeman' ||
+        kind === 'chariot_archer' ||
+        kind === 'camel_rider' ||
+        kind === 'war_elephant'
       ) {
         if (has('medium_soldiers')) {
           hpMult += 0.15;
@@ -1670,7 +1693,7 @@ export class AoMEngine {
         }
       }
       const unitSpec = getCivUnitSpec(this.teamPantheon(team), kind);
-      if (kind === 'siege' || kind === 'ram' || unitSpec.isHero) {
+      if (kind === 'siege' || kind === 'ram' || kind === 'siege_tower' || kind === 'egypt_catapult' || unitSpec.isHero) {
         if (has('burning_pitch')) atkMult += 0.25;
         if (has('engineers')) {
           hpMult += 0.3;
@@ -1735,6 +1758,13 @@ export class AoMEngine {
         hpMult += 0.15;
         atkMult += 0.15;
       }
+    }
+    const isRa =
+      pantheon === 'egyptian' &&
+      (team === 'enemy' || this.majorGodName.toLowerCase().includes('rá') || this.majorGodName.toLowerCase().includes('ra'));
+    if (isRa && (kind === 'chariot_archer' || kind === 'camel_rider' || kind === 'war_elephant')) {
+      hpMult += kind === 'war_elephant' ? 0.12 : 0.18;
+      speedMult += kind === 'war_elephant' ? 0.08 : 0.12;
     }
 
     if (this.currentWeather === 'snow') {
@@ -2442,6 +2472,10 @@ export class AoMEngine {
       this.notifyStatus(`${stats.name} é um Deus Maior único e já está em campo ou em convocação!`);
       return;
     }
+    if (kind === 'pharaoh' && this.isGodSummonedOrQueued('pharaoh', 'player')) {
+      this.notifyStatus('Seu Faraó único já está em campo ou em processo de renascimento!');
+      return;
+    }
     const pop = this.getPopulation('player');
     if (pop.current + stats.popCost > pop.cap) {
       this.notifyStatus('Limite de população atingido! Construa mais Casas.');
@@ -2456,9 +2490,11 @@ export class AoMEngine {
     let targetBuilding: BuildingEntity | null = null;
     const matchesProducer = (bKind: BuildingKind) =>
       bKind === stats.producedAt ||
-      (stats.isHero && (bKind === 'town_center' || bKind === 'fortress')) ||
+      (kind === 'priest' && (bKind === 'temple' || bKind === 'town_center')) ||
+      (stats.isHero && kind !== 'priest' && (bKind === 'town_center' || bKind === 'fortress')) ||
       (kind === 'myrmidon' && (bKind === 'barracks' || bKind === 'fortress')) ||
-      ((kind === 'ram' || kind === 'siege') && (bKind === 'siege_works' || bKind === 'fortress'));
+      ((kind === 'ram' || kind === 'siege' || kind === 'siege_tower' || kind === 'egypt_catapult') &&
+        (bKind === 'siege_works' || bKind === 'fortress'));
 
     for (const b of this.buildings.values()) {
       if (b.team === 'player' && b.isConstructed && matchesProducer(b.kind) && b.selected) {
@@ -3214,6 +3250,9 @@ export class AoMEngine {
       case 'zeus':
       case 'poseidon':
       case 'hades':
+      case 'isis':
+      case 'set':
+      case 'ra':
       case 'atena':
       case 'ares':
       case 'hefesto':
@@ -3228,6 +3267,13 @@ export class AoMEngine {
       case 'hoplite':
       case 'hipaspist':
       case 'myrmidon':
+      case 'egypt_spearman':
+      case 'axeman':
+      case 'war_elephant':
+      case 'siege_tower':
+      case 'sphinx':
+      case 'scarab':
+      case 'avenger':
       case 'ram':
       case 'ajax':
       case 'jason':
@@ -3237,6 +3283,8 @@ export class AoMEngine {
         return 0;
       case 'cavalry':
       case 'prodromos':
+      case 'camel_rider':
+      case 'roc':
       case 'bellerophon':
       case 'pegasus':
         return 1;
@@ -3244,6 +3292,15 @@ export class AoMEngine {
       case 'apolo':
       case 'afrodite':
       case 'artemis':
+      case 'priest':
+      case 'pharaoh':
+      case 'son_of_osiris':
+      case 'slinger':
+      case 'chariot_archer':
+      case 'egypt_catapult':
+      case 'wadjet':
+      case 'petsuchos':
+      case 'mummy':
       case 'peltast':
       case 'archer':
       case 'gastraphetes':
@@ -6326,7 +6383,24 @@ export class AoMEngine {
       if (attackerTeam === 'player' && target.team === 'enemy') {
         this.stats.enemiesDefeated++;
       }
-      this.spawnRingVfx(target.mesh.position, 1.2, 0xf87171, 0.35);
+      if (target.kind === 'scarab') {
+        // Escaravelho de Sekhmet explode em sangue ácido/solar ao morrer!
+        const blastR = 3.8;
+        this.spawnRingVfx(target.mesh.position, blastR, 0x84cc16, 0.7);
+        this.spawnRingVfx(target.mesh.position, blastR * 0.65, 0xfacc15, 0.5);
+        for (const u of [...this.units.values()]) {
+          if (u.team !== target.team && u.hp > 0 && u.mesh.position.distanceTo(target.mesh.position) <= blastR) {
+            this.damageUnit(u, 85, target.team);
+          }
+        }
+        for (const b of [...this.buildings.values()]) {
+          if (b.team !== target.team && b.hp > 0 && b.mesh.position.distanceTo(target.mesh.position) - b.radius <= blastR) {
+            this.damageBuilding(b, 210);
+          }
+        }
+      } else {
+        this.spawnRingVfx(target.mesh.position, 1.2, 0xf87171, 0.35);
+      }
       if (target.id === this.regentUnitId) {
         this.checkVictoryOrDefeat();
       }
@@ -6487,25 +6561,42 @@ export class AoMEngine {
       case 'hoplite':
       case 'hipaspist':
       case 'gastraphetes':
+      case 'egypt_spearman':
+      case 'axeman':
+      case 'priest':
         return 0.48;
       case 'myrmidon':
       case 'nymph':
       case 'satyr':
       case 'iron_dwarf':
+      case 'pharaoh':
+      case 'mummy':
         return 0.52;
+      case 'son_of_osiris':
+      case 'avenger':
+        return 0.62;
       case 'peltast':
       case 'archer':
+      case 'slinger':
         return 0.45;
       case 'cavalry':
       case 'prodromos':
+      case 'camel_rider':
       case 'medusa':
       case 'automaton':
+      case 'wadjet':
         return 0.72;
+      case 'chariot_archer':
+      case 'sphinx':
+      case 'petsuchos':
       case 'manticore':
       case 'pegasus':
       case 'bellerophon':
       case 'phoenix':
         return 0.85;
+      case 'roc':
+      case 'scarab':
+        return 0.96;
       case 'ajax':
       case 'perseus':
         return 0.58;
@@ -6517,10 +6608,13 @@ export class AoMEngine {
         return 0.56;
       case 'ram':
       case 'siege':
+      case 'siege_tower':
+      case 'egypt_catapult':
         return 1.0;
       case 'minotaur':
       case 'centaur':
         return 0.82;
+      case 'war_elephant':
       case 'hydra':
         return 1.1;
       case 'cyclops':
@@ -6541,6 +6635,9 @@ export class AoMEngine {
       case 'zeus':
       case 'poseidon':
       case 'hades':
+      case 'isis':
+      case 'set':
+      case 'ra':
         return 2.95;
     }
   }
@@ -6820,9 +6917,55 @@ export class AoMEngine {
       if ((u.specialCooldown ?? 0) > 0) {
         u.specialCooldown = Math.max(0, (u.specialCooldown ?? 0) - dt);
       }
-      if ((u.kind === 'hydra' || u.kind === 'automaton' || u.kind === 'colossus') && u.hp < u.maxHp) {
+      if ((u.kind === 'hydra' || u.kind === 'automaton' || u.kind === 'colossus' || u.kind === 'wadjet') && u.hp < u.maxHp) {
         const regenRate = u.kind === 'colossus' ? 5.0 : u.kind === 'hydra' ? 4.0 : 3.5;
         u.hp = Math.min(u.maxHp, u.hp + regenRate * dt);
+      }
+      // Sacerdote Egípcio: cura automaticamente aliados feridos próximos
+      if (u.kind === 'priest' && u.hp > 0 && (u.specialCooldown ?? 0) <= 0) {
+        let woundedAlly: UnitEntity | null = null;
+        let bestMissing = 0;
+        for (const ally of this.units.values()) {
+          if (ally.team === u.team && ally.hp > 0 && ally.hp < ally.maxHp) {
+            const d = ally.mesh.position.distanceTo(u.mesh.position);
+            if (d <= 10.0 && ally.maxHp - ally.hp > bestMissing) {
+              bestMissing = ally.maxHp - ally.hp;
+              woundedAlly = ally;
+            }
+          }
+        }
+        if (woundedAlly) {
+          u.specialCooldown = 1.25;
+          woundedAlly.hp = Math.min(woundedAlly.maxHp, woundedAlly.hp + 15);
+          this.spawnRingVfx(woundedAlly.mesh.position, 0.85, 0x38bdf8, 0.35);
+        }
+      }
+      // Faraó / Filho de Osíris: Empodera edifícios próximos (+35% velocidade de produção e pesquisa)
+      if ((u.kind === 'pharaoh' || u.kind === 'son_of_osiris') && u.hp > 0) {
+        let empoweredAny = false;
+        for (const b of this.buildings.values()) {
+          if (b.team === u.team && b.isConstructed && b.mesh.position.distanceTo(u.mesh.position) <= b.radius + 9.0) {
+            if (b.trainingQueue.length > 0) {
+              b.trainingQueue[0].progress += dt * 0.38;
+              empoweredAny = true;
+            }
+            if (b.team === 'player' && b.kind === 'town_center' && this.advancingToAge) {
+              this.ageAdvanceProgress = Math.min(this.ageAdvanceTotal, this.ageAdvanceProgress + dt * 0.32);
+              empoweredAny = true;
+            }
+            if (b.team === 'player' && this.activeTechResearch) {
+              this.activeTechResearch.progress = Math.min(
+                this.activeTechResearch.total,
+                this.activeTechResearch.progress + dt * 0.35
+              );
+              empoweredAny = true;
+            }
+          }
+        }
+        if (empoweredAny && (u.specialCooldown ?? 0) <= 0) {
+          u.specialCooldown = 2.4;
+          this.spawnRingVfx(u.mesh.position, 1.35, 0xfacc15, 0.45);
+        }
       }
       if ((u.chargeCooldown ?? 0) > 0) {
         u.chargeCooldown = Math.max(0, (u.chargeCooldown ?? 0) - dt);
@@ -6831,7 +6974,10 @@ export class AoMEngine {
         u.chargeBurstTimer = Math.max(0, (u.chargeBurstTimer ?? 0) - dt);
       }
       const furyStacks = u.kind === 'myrmidon' || u.kind === 'hydra' ? (u.combatFury ?? 0) : 0;
-      const burstMult = (u.kind === 'cavalry' || u.kind === 'bellerophon') && (u.chargeBurstTimer ?? 0) > 0 ? 1.35 : 1;
+      const burstMult =
+        (u.kind === 'cavalry' || u.kind === 'camel_rider' || u.kind === 'bellerophon') && (u.chargeBurstTimer ?? 0) > 0
+          ? 1.35
+          : 1;
       const effectiveSpeed = stats.speed * mods.speedMult * (1 + furyStacks * 0.07) * burstMult;
       const uRadius = this.getUnitRadius(u.kind);
       u.attackTimer = Math.max(0, u.attackTimer - dt);
@@ -7433,34 +7579,103 @@ export class AoMEngine {
               u.mesh.userData.rightArm.rotation.x = -0.95;
             }
             const computedDamage = this.computeUnitAttackDamage(u, targetU, targetB);
-            if ((u.kind === 'cavalry' || u.kind === 'bellerophon') && (u.chargeCooldown ?? 0) <= 0) {
+            if ((u.kind === 'cavalry' || u.kind === 'camel_rider' || u.kind === 'bellerophon') && (u.chargeCooldown ?? 0) <= 0) {
               u.chargeCooldown = 6.0;
               u.chargeBurstTimer = 1.4;
               this.spawnRingVfx(targetPos, 1.85, 0xfbbf24, 0.35);
             }
-            if (u.kind === 'zeus' || u.kind === 'hermes') {
-              // Instant sky lightning strike + divine AoE blast
-              const blastRadius = stats.splashRadius ?? (u.kind === 'zeus' ? 6.5 : 4.6);
+            if (u.kind === 'zeus' || u.kind === 'hermes' || u.kind === 'ra') {
+              // Instant sky lightning / solar strike + divine AoE blast
+              const blastRadius = stats.splashRadius ?? (u.kind === 'zeus' || u.kind === 'ra' ? 6.5 : 4.6);
               this.spawnLightningBoltVfx(targetPos, blastRadius * 0.75);
-              this.spawnRingVfx(targetPos, blastRadius, u.kind === 'zeus' ? 0xfacc15 : 0x38bdf8, 0.55);
+              this.spawnRingVfx(targetPos, blastRadius, u.kind === 'hermes' ? 0x38bdf8 : 0xfacc15, 0.55);
               soundEngine.playLightning?.();
               if (targetU) this.damageUnit(targetU, computedDamage, u.team);
               else if (targetB) this.damageBuilding(targetB, computedDamage);
               for (const splash of [...this.units.values()]) {
                 if (splash.team !== u.team && splash.id !== targetU?.id && splash.mesh.position.distanceTo(targetPos) <= blastRadius) {
-                  const splashDmg = Math.round(this.computeUnitAttackDamage(u, splash, undefined) * (u.kind === 'zeus' ? 0.7 : 0.55));
+                  const splashDmg = Math.round(
+                    this.computeUnitAttackDamage(u, splash, undefined) * (u.kind === 'hermes' ? 0.55 : 0.7)
+                  );
                   this.damageUnit(splash, splashDmg, u.team);
                 }
               }
+            } else if (u.kind === 'son_of_osiris') {
+              // Filho de Osíris: Raios em cadeia que saltam entre até 4 inimigos!
+              this.spawnLightningBoltVfx(targetPos, 1.9);
+              this.spawnRingVfx(targetPos, 2.2, 0x38bdf8, 0.45);
+              soundEngine.playLightning?.();
+              if (targetU) this.damageUnit(targetU, computedDamage, u.team);
+              else if (targetB) this.damageBuilding(targetB, computedDamage);
+
+              const hitIds = new Set<string>(targetU ? [targetU.id] : []);
+              let chainOrigin = targetPos.clone();
+              const chainMults = [0.75, 0.55, 0.4];
+              for (const mult of chainMults) {
+                let nextBounce: UnitEntity | null = null;
+                let bestD = 7.8;
+                for (const cand of this.units.values()) {
+                  if (cand.team !== u.team && cand.hp > 0 && !hitIds.has(cand.id)) {
+                    const d = cand.mesh.position.distanceTo(chainOrigin);
+                    if (d < bestD) {
+                      bestD = d;
+                      nextBounce = cand;
+                    }
+                  }
+                }
+                if (!nextBounce) break;
+                hitIds.add(nextBounce.id);
+                chainOrigin = nextBounce.mesh.position.clone();
+                this.spawnLightningBoltVfx(chainOrigin, 1.2);
+                this.spawnRingVfx(chainOrigin, 1.5, 0xfacc15, 0.35);
+                const bounceDmg = Math.max(8, Math.round(this.computeUnitAttackDamage(u, nextBounce, undefined) * mult));
+                this.damageUnit(nextBounce, bounceDmg, u.team);
+              }
+            } else if (u.kind === 'petsuchos') {
+              // Petsuchos: Raio solar concentrado de longo alcance!
+              this.spawnLightningBoltVfx(targetPos, 1.35);
+              this.spawnRingVfx(targetPos, 1.8, 0xfacc15, 0.4);
+              _vec3B.copy(u.mesh.position).setY(u.mesh.position.y + 1.45);
+              _vec3C.copy(targetPos).setY(targetPos.y + 1.0);
+              this.spawnProjectile(_vec3B, _vec3C, u.targetEntityId!, computedDamage, u.team, {
+                isFireball: true,
+              });
+              soundEngine.playArrow();
             } else if (stats.range > 4) {
-              const launchH = stats.isMajorGod ? 7.4 : stats.isGod ? 5.8 : u.kind === 'siege' ? 2.15 : u.kind === 'phoenix' || u.kind === 'manticore' ? 1.8 : 1.35;
+              const launchH =
+                stats.isMajorGod
+                  ? 7.4
+                  : stats.isGod
+                  ? 5.8
+                  : u.kind === 'siege' || u.kind === 'egypt_catapult'
+                  ? 2.15
+                  : u.kind === 'chariot_archer' || u.kind === 'phoenix' || u.kind === 'manticore'
+                  ? 1.8
+                  : 1.35;
               _vec3B.copy(u.mesh.position).setY(u.mesh.position.y + launchH);
               _vec3C.copy(targetPos).setY(targetPos.y + 1.0);
               this.spawnProjectile(_vec3B, _vec3C, u.targetEntityId!, computedDamage, u.team, {
                 splashRadius: stats.splashRadius,
-                isBoulder: u.kind === 'siege' || u.kind === 'ares' || u.kind === 'hefesto' || u.kind === 'poseidon',
-                isPetrify: u.kind === 'medusa' || u.kind === 'hades' || u.kind === 'afrodite' || u.kind === 'artemis',
-                isFireball: u.kind === 'phoenix' || u.kind === 'apolo' || u.kind === 'dionisio' || u.kind === 'atena',
+                isBoulder:
+                  u.kind === 'siege' ||
+                  u.kind === 'egypt_catapult' ||
+                  u.kind === 'ares' ||
+                  u.kind === 'hefesto' ||
+                  u.kind === 'poseidon' ||
+                  u.kind === 'set',
+                isPetrify:
+                  u.kind === 'medusa' ||
+                  u.kind === 'mummy' ||
+                  u.kind === 'hades' ||
+                  u.kind === 'afrodite' ||
+                  u.kind === 'artemis',
+                isFireball:
+                  u.kind === 'phoenix' ||
+                  u.kind === 'wadjet' ||
+                  u.kind === 'isis' ||
+                  u.kind === 'apolo' ||
+                  u.kind === 'dionisio' ||
+                  u.kind === 'atena',
               });
               soundEngine.playArrow();
             } else {
@@ -7491,8 +7706,18 @@ export class AoMEngine {
                 else if (targetB) this.damageBuilding(targetB, computedDamage);
               }
 
-              // Mythic / Titan cleave splash
-              if (u.kind === 'minotaur' || u.kind === 'cyclops' || u.kind === 'colossus' || u.kind === 'titan') {
+              // Mythic / Titan / War Elephant / Sphinx / Avenger cleave splash
+              if (
+                u.kind === 'minotaur' ||
+                u.kind === 'cyclops' ||
+                u.kind === 'colossus' ||
+                u.kind === 'titan' ||
+                u.kind === 'sphinx' ||
+                u.kind === 'avenger' ||
+                u.kind === 'war_elephant' ||
+                u.kind === 'scarab' ||
+                u.kind === 'roc'
+              ) {
                 const splashRadius = stats.splashRadius ?? (u.kind === 'titan' ? 5.2 : u.kind === 'cyclops' ? 3.2 : 2.5);
                 this.spawnRingVfx(targetPos, splashRadius, u.kind === 'titan' ? 0xa855f7 : 0xfbbf24, 0.35);
                 for (const splash of [...this.units.values()]) {
@@ -7780,6 +8005,48 @@ export class AoMEngine {
         this.resources.gold += this.relicsHeld * 3.0;
       }
       this.enemyResources.favor = Math.min(200, this.enemyResources.favor + 0.35 + enemyTemples * 1.4);
+    }
+
+    // Renascimento automático e gratuito do Faraó no Centro da Cidade caso caia em batalha
+    if (this.pantheon === 'egyptian') {
+      const hasPharaoh = [...this.units.values()].some(
+        (u) => u.team === 'player' && (u.kind === 'pharaoh' || u.kind === 'son_of_osiris')
+      );
+      if (!hasPharaoh && !this.isGodSummonedOrQueued('pharaoh', 'player')) {
+        this.playerPharaohRespawnTimer += dt;
+        if (this.playerPharaohRespawnTimer >= 20) {
+          this.playerPharaohRespawnTimer = 0;
+          const tc = [...this.buildings.values()].find(
+            (b) => b.team === 'player' && b.kind === 'town_center' && b.isConstructed
+          );
+          if (tc) {
+            const pUnit = this.spawnUnit('pharaoh', 'player', tc.mesh.position.x + 3.2, tc.mesh.position.z + 3.2);
+            this.spawnPillarVfx(pUnit.mesh.position, 0xfacc15, 1.2);
+            this.notifyStatus('☀️ O Faraó renasceu gratuitamente no Centro da Cidade sob a graça de Rá!');
+          }
+        }
+      } else {
+        this.playerPharaohRespawnTimer = 0;
+      }
+    }
+    if (this.enemyPantheon === 'egyptian') {
+      const hasEnemyPharaoh = [...this.units.values()].some(
+        (u) => u.team === 'enemy' && (u.kind === 'pharaoh' || u.kind === 'son_of_osiris')
+      );
+      if (!hasEnemyPharaoh) {
+        this.enemyPharaohRespawnTimer += dt;
+        if (this.enemyPharaohRespawnTimer >= 24) {
+          this.enemyPharaohRespawnTimer = 0;
+          const enemyTc = [...this.buildings.values()].find(
+            (b) => b.team === 'enemy' && b.kind === 'town_center' && b.isConstructed
+          );
+          if (enemyTc) {
+            this.spawnUnit('pharaoh', 'enemy', enemyTc.mesh.position.x - 3.2, enemyTc.mesh.position.z - 3.2);
+          }
+        }
+      } else {
+        this.enemyPharaohRespawnTimer = 0;
+      }
     }
   }
 
@@ -8219,7 +8486,14 @@ export class AoMEngine {
       }
 
       if (barracks && barracks.trainingQueue.length < 2 && enemyPop.current + 2 <= enemyPop.cap) {
-        const choices: UnitKind[] = this.enemyAge >= 2 ? ['hoplite', 'hipaspist'] : ['hoplite'];
+        const choices: UnitKind[] =
+          this.enemyPantheon === 'egyptian'
+            ? this.enemyAge >= 2
+              ? ['egypt_spearman', 'slinger', 'axeman']
+              : ['egypt_spearman']
+            : this.enemyAge >= 2
+            ? ['hoplite', 'hipaspist']
+            : ['hoplite'];
         const pick = choices[Math.floor(Math.random() * choices.length)];
         const pickStats = this.unitStats(pick, 'enemy');
         if (this.canAfford(this.enemyResources, pickStats.cost)) {
@@ -8229,7 +8503,14 @@ export class AoMEngine {
       }
 
       if (archeryRange && archeryRange.trainingQueue.length < 2 && this.enemyAge >= 2 && enemyPop.current + 2 <= enemyPop.cap) {
-        const archChoices: UnitKind[] = this.enemyAge >= 3 ? ['peltast', 'archer', 'gastraphetes'] : ['peltast', 'archer'];
+        const archChoices: UnitKind[] =
+          this.enemyPantheon === 'egyptian'
+            ? this.enemyAge >= 3
+              ? ['slinger', 'chariot_archer']
+              : ['slinger']
+            : this.enemyAge >= 3
+            ? ['peltast', 'archer', 'gastraphetes']
+            : ['peltast', 'archer'];
         const archPick = archChoices[Math.floor(Math.random() * archChoices.length)];
         const archStats = this.unitStats(archPick, 'enemy');
         if (this.canAfford(this.enemyResources, archStats.cost)) {
@@ -8239,7 +8520,10 @@ export class AoMEngine {
       }
 
       if (stable && stable.trainingQueue.length < 2 && this.enemyAge >= 2 && enemyPop.current + 3 <= enemyPop.cap) {
-        const cavChoices: UnitKind[] = ['cavalry', 'prodromos'];
+        const cavChoices: UnitKind[] =
+          this.enemyPantheon === 'egyptian' && this.enemyAge >= 3
+            ? ['chariot_archer', 'camel_rider']
+            : ['cavalry', 'prodromos'];
         const cavPick = cavChoices[Math.floor(Math.random() * cavChoices.length)];
         const cavStats = this.unitStats(cavPick, 'enemy');
         if (this.canAfford(this.enemyResources, cavStats.cost)) {
@@ -8249,7 +8533,14 @@ export class AoMEngine {
       }
 
       if (siegeWorks && siegeWorks.trainingQueue.length === 0 && this.enemyAge >= 3 && enemyPop.current + 4 <= enemyPop.cap) {
-        const siegePick: UnitKind = Math.random() < 0.5 ? 'ram' : 'siege';
+        const siegePick: UnitKind =
+          this.enemyPantheon === 'egyptian'
+            ? Math.random() < 0.5
+              ? 'siege_tower'
+              : 'egypt_catapult'
+            : Math.random() < 0.5
+            ? 'ram'
+            : 'siege';
         const siegeStats = this.unitStats(siegePick, 'enemy');
         if (this.canAfford(this.enemyResources, siegeStats.cost)) {
           this.deductCost(this.enemyResources, siegeStats.cost);
@@ -8261,6 +8552,8 @@ export class AoMEngine {
         const fortChoices: UnitKind[] =
           this.enemyPantheon === 'greek'
             ? ['jason', 'odysseus', 'perseus', 'hippolyta', 'theseus', 'bellerophon', 'siege']
+            : this.enemyPantheon === 'egyptian'
+            ? ['chariot_archer', 'camel_rider', 'war_elephant', 'priest']
             : ['hero', 'siege'];
         const fortPick = fortChoices[Math.floor(Math.random() * fortChoices.length)];
         const fortPickStats = this.unitStats(fortPick, 'enemy');
@@ -8273,7 +8566,15 @@ export class AoMEngine {
       if (temple && temple.trainingQueue.length === 0 && this.enemyAge >= 2 && enemyPop.current + 4 <= enemyPop.cap) {
         const enemyGodsAlive = [...this.units.values()].filter((u) => u.team === 'enemy' && this.unitStats(u.kind, 'enemy').isGod).length;
         const mythPool: UnitKind[] =
-          this.enemyAge >= 5 && enemyGodsAlive < 1 && Math.random() < 0.35
+          this.enemyPantheon === 'egyptian'
+            ? this.enemyAge >= 5 && enemyGodsAlive < 1 && Math.random() < 0.35
+              ? ['ra', 'isis', 'set']
+              : this.enemyAge >= 4
+              ? ['avenger', 'mummy', 'scarab', 'petsuchos']
+              : this.enemyAge >= 3
+              ? ['roc', 'petsuchos', 'scarab', 'sphinx']
+              : ['sphinx', 'wadjet', 'priest']
+            : this.enemyAge >= 5 && enemyGodsAlive < 1 && Math.random() < 0.35
             ? ['atena', 'ares', 'apolo', 'poseidon']
             : this.enemyAge >= 4
             ? ['cyclops', 'colossus', 'medusa', 'automaton', 'hydra']

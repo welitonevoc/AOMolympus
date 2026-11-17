@@ -21,6 +21,7 @@ import { buildHades, getCachedHadesTextures, animateHades } from '../civilizacao
 import { buildIsis, getCachedIsisTextures, animateIsis } from '../civilizacao/egipcios/isisModel';
 import { buildSet, getCachedSetTextures, animateSet } from '../civilizacao/egipcios/setModel';
 import { buildRa, getCachedRaTextures, animateRa } from '../civilizacao/egipcios/raModel';
+import { createEgyptianUnitMesh, getEgyptianUnitMarkerSpec } from '../civilizacao/egipcios/egipciosModels';
 import { createAoMOakTreeMesh, getFaunaCoatMaterial } from '../TEXTURA';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
@@ -1613,6 +1614,67 @@ export function createUnitMesh(
     root.add(m);
     return m;
   };
+
+  const isExplicitEgyptianUnit =
+    kind === 'priest' ||
+    kind === 'pharaoh' ||
+    kind === 'son_of_osiris' ||
+    kind === 'egypt_spearman' ||
+    kind === 'slinger' ||
+    kind === 'axeman' ||
+    kind === 'chariot_archer' ||
+    kind === 'camel_rider' ||
+    kind === 'war_elephant' ||
+    kind === 'siege_tower' ||
+    kind === 'egypt_catapult' ||
+    kind === 'sphinx' ||
+    kind === 'wadjet' ||
+    kind === 'roc' ||
+    kind === 'petsuchos' ||
+    kind === 'scarab' ||
+    kind === 'avenger' ||
+    kind === 'mummy';
+
+  const isGodKind =
+    kind === 'zeus' ||
+    kind === 'poseidon' ||
+    kind === 'hades' ||
+    kind === 'atena' ||
+    kind === 'ares' ||
+    kind === 'hermes' ||
+    kind === 'apolo' ||
+    kind === 'dionisio' ||
+    kind === 'afrodite' ||
+    kind === 'hefesto' ||
+    kind === 'artemis' ||
+    kind === 'isis' ||
+    kind === 'set' ||
+    kind === 'ra';
+
+  if (isExplicitEgyptianUnit || (look.style === 'egyptian' && !isGodKind)) {
+    const egyptMesh = createEgyptianUnitMesh(kind, team, pal, enableShadows);
+    root.add(egyptMesh);
+    root.userData.egyptMesh = egyptMesh;
+    root.userData.animatePose = egyptMesh.userData.animatePose;
+    root.userData.leftLeg = egyptMesh.userData.leftLeg;
+    root.userData.rightLeg = egyptMesh.userData.rightLeg;
+    root.userData.leftArm = egyptMesh.userData.leftArm;
+    root.userData.rightArm = egyptMesh.userData.rightArm;
+    root.userData.updateBrg = (dt: number, state: string) => {
+      egyptMesh.userData.animatePose?.(
+        dt,
+        state === 'move',
+        3.2,
+        state === 'attack' ? 0.5 : null,
+        state,
+        'wood'
+      );
+    };
+    const mSpec = getEgyptianUnitMarkerSpec(kind);
+    attachGroundMarkers(root, mSpec.markerRadius, pal, team);
+    attachHealthBar(root, mSpec.barHeight, mSpec.barWidth);
+    return root;
+  }
 
   if (kind === 'villager') {
     const villagerMesh = createRiggedVillagerMesh(team, pal, enableShadows);

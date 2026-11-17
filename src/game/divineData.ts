@@ -536,15 +536,15 @@ export const MINOR_GODS: Record<string, MinorGodSpec> = {
   Artemis: { id: 'Artemis', name: 'Ártemis', age: 4, pantheon: 'greek', godPower: 'tremor', mythUnit: 'medusa', mythUnitTitle: 'Medusa / Mantícora', passiveBonusLabel: '+20% Dano Arqueiros & Cerco', attackBonusPct: 18 },
 
   // Egyptian
-  Bast: { id: 'Bast', name: 'Bast', age: 2, pantheon: 'egyptian', godPower: 'darkest_night', mythUnit: 'minotaur', mythUnitTitle: 'Esfinge', passiveBonusLabel: '+18% Coleta de Ouro & Alimento', gatherBonusPct: 18 },
-  Ptah: { id: 'Ptah', name: 'Ptá', age: 2, pantheon: 'egyptian', godPower: 'sandstorm', mythUnit: 'minotaur', mythUnitTitle: 'Wadjet', passiveBonusLabel: '+15% HP de Construções', hpBonusPct: 12 },
-  Anubis: { id: 'Anubis', name: 'Anúbis', age: 2, pantheon: 'egyptian', godPower: 'disease', mythUnit: 'minotaur', mythUnitTitle: 'Anubita', passiveBonusLabel: '+16% Ataque Infantaria & Míticos', attackBonusPct: 16 },
-  Hathor: { id: 'Hathor', name: 'Hathor', age: 3, pantheon: 'egyptian', godPower: 'locust_swarm', mythUnit: 'centaur', mythUnitTitle: 'Roc / Esfinge', passiveBonusLabel: '+15% HP Geral', hpBonusPct: 15 },
-  Nephthys: { id: 'Nephthys', name: 'Néftis', age: 3, pantheon: 'egyptian', godPower: 'necromancy', mythUnit: 'centaur', mythUnitTitle: 'Escorpião Gigante', passiveBonusLabel: '+20% Regeneração & Favor', hpBonusPct: 14 },
-  Sekhmet: { id: 'Sekhmet', name: 'Sekhmet', age: 3, pantheon: 'egyptian', godPower: 'undermine', mythUnit: 'centaur', mythUnitTitle: 'Escaravelho', passiveBonusLabel: '+18% Ataque de Cerco & Funda', attackBonusPct: 18 },
-  Horus: { id: 'Horus', name: 'Hórus', age: 4, pantheon: 'egyptian', godPower: 'tornado', mythUnit: 'cyclops', mythUnitTitle: 'Vingador', passiveBonusLabel: '+22% Ataque da Infantaria', attackBonusPct: 20 },
-  Osiris: { id: 'Osiris', name: 'Osíris', age: 4, pantheon: 'egyptian', godPower: 'lightning_storm', mythUnit: 'cyclops', mythUnitTitle: 'Múmia / Filho de Osíris', passiveBonusLabel: '+20% Coleta & Favor', gatherBonusPct: 20 },
-  Thoth: { id: 'Thoth', name: 'Thoth', age: 4, pantheon: 'egyptian', godPower: 'meteor', mythUnit: 'cyclops', mythUnitTitle: 'Fênix / Elefante', passiveBonusLabel: '+20% Dano Mítico & Heróis', attackBonusPct: 20 },
+  Bast: { id: 'Bast', name: 'Bast', age: 2, pantheon: 'egyptian', godPower: 'darkest_night', mythUnit: 'sphinx', mythUnitTitle: 'Esfinge', passiveBonusLabel: '+18% Coleta de Ouro & Alimento', gatherBonusPct: 18 },
+  Ptah: { id: 'Ptah', name: 'Ptá', age: 2, pantheon: 'egyptian', godPower: 'sandstorm', mythUnit: 'wadjet', mythUnitTitle: 'Wadjet', passiveBonusLabel: '+15% HP de Construções', hpBonusPct: 12 },
+  Anubis: { id: 'Anubis', name: 'Anúbis', age: 2, pantheon: 'egyptian', godPower: 'disease', mythUnit: 'sphinx', mythUnitTitle: 'Anubita / Esfinge', passiveBonusLabel: '+16% Ataque Infantaria & Míticos', attackBonusPct: 16 },
+  Hathor: { id: 'Hathor', name: 'Hator', age: 3, pantheon: 'egyptian', godPower: 'locust_swarm', mythUnit: 'petsuchos', mythUnitTitle: 'Roca & Petsuchos', passiveBonusLabel: '+15% HP Geral · Libera Roca & Petsuchos', hpBonusPct: 15 },
+  Nephthys: { id: 'Nephthys', name: 'Néftis', age: 3, pantheon: 'egyptian', godPower: 'necromancy', mythUnit: 'petsuchos', mythUnitTitle: 'Escorpião Gigante', passiveBonusLabel: '+20% Regeneração & Favor', hpBonusPct: 14 },
+  Sekhmet: { id: 'Sekhmet', name: 'Sekhmet', age: 3, pantheon: 'egyptian', godPower: 'undermine', mythUnit: 'scarab', mythUnitTitle: 'Escaravelho', passiveBonusLabel: '+18% Ataque de Cerco & Funda', attackBonusPct: 18 },
+  Horus: { id: 'Horus', name: 'Hórus', age: 4, pantheon: 'egyptian', godPower: 'tornado', mythUnit: 'avenger', mythUnitTitle: 'Vingador', passiveBonusLabel: '+22% Ataque da Infantaria', attackBonusPct: 20 },
+  Osiris: { id: 'Osiris', name: 'Osíris', age: 4, pantheon: 'egyptian', godPower: 'lightning_storm', mythUnit: 'mummy', mythUnitTitle: 'Múmia & Filho de Osíris', passiveBonusLabel: '+20% Coleta & Favor · Desbloqueia Filho de Osíris', gatherBonusPct: 20 },
+  Thoth: { id: 'Thoth', name: 'Thoth', age: 4, pantheon: 'egyptian', godPower: 'meteor', mythUnit: 'phoenix', mythUnitTitle: 'Fênix / Elefante', passiveBonusLabel: '+20% Dano Mítico & Heróis', attackBonusPct: 20 },
 
   // Norse
   Forseti: { id: 'Forseti', name: 'Forseti', age: 2, pantheon: 'norse', godPower: 'healing', mythUnit: 'minotaur', mythUnitTitle: 'Troll', passiveBonusLabel: '+14% Velocidade & Vida Ulfsark', speedBonusPct: 14 },
@@ -806,16 +806,98 @@ const CIV_UNIT_NAMES: Partial<Record<PantheonId, Partial<Record<UnitKind, { name
     },
   },
   egyptian: {
-    villager: { name: 'Trabalhador' },
-    hoplite: { name: 'Lanceiro' },
-    archer: { name: 'Fundeiro' },
-    cavalry: { name: 'Cavaleiro Camelo' },
-    hero: { name: 'Faraó Sagrado' },
-    siege: { name: 'Catapulta do Nilo' },
-    minotaur: { name: 'Anubita' },
-    centaur: { name: 'Esfinge' },
-    cyclops: { name: 'Escaravelho' },
-    titan: { name: 'Titã Solar' },
+    villager: {
+      name: 'Trabalhador',
+      role: 'Unidade civil do Egito — coleta alimentos, madeira e ouro e ergue construções do império.',
+    },
+    priest: {
+      name: 'Sacerdote',
+      role: 'Herói do Templo/Centro — cura tropas aliadas próximas, coleta relíquias e causa 3.2x contra Míticas.',
+    },
+    pharaoh: {
+      name: 'Faraó',
+      role: 'Herói Único Gratuito — empodera construções (+35% velocidade de produção), coleta relíquias e destrói Míticas (3.6x).',
+    },
+    son_of_osiris: {
+      name: 'Filho de Osíris',
+      role: 'Semideus de Osíris (Era IV) — dispara relâmpagos sagrados que saltam em cadeia entre múltiplos inimigos!',
+    },
+    egypt_spearman: {
+      name: 'Lanceiro',
+      role: 'Infantaria rápida e econômica do Quartel — especialista letal contra cavalaria inimiga.',
+    },
+    slinger: {
+      name: 'Fundeiro',
+      role: 'Atirador ágil de baixo custo do Quartel — excelente para eliminar arqueiros à distância.',
+    },
+    axeman: {
+      name: 'Homem-Machado',
+      role: 'Infantaria pesada do Quartel com machado épsilon — devastador contra outras tropas de infantaria.',
+    },
+    chariot_archer: {
+      name: 'Arqueiro de Biga',
+      role: 'Fortaleza Migdol (Era III) — arqueiro montado muito veloz contra infantaria (Bônus Rá: +15% HP e +12% Velocidade).',
+    },
+    camel_rider: {
+      name: 'Cavaleiro de Camelo',
+      role: 'Fortaleza Migdol (Era III) — cavalaria ágil contra arqueiros e montarias (Bônus Rá: +15% HP e +12% Velocidade).',
+    },
+    war_elephant: {
+      name: 'Elefante de Guerra',
+      role: 'Fortaleza Migdol (Era III) — colosso blindado de altíssima resistência, esmaga tropas em área e derruba edifícios.',
+    },
+    siege_tower: {
+      name: 'Torre de Cerco',
+      role: 'Oficina de Cerco (Era III) — torre blindada demolidora de muralhas e fortalezas inimigas.',
+    },
+    egypt_catapult: {
+      name: 'Catapulta',
+      role: 'Oficina de Cerco (Era III) — artilharia solar de longo alcance devastadora contra construções e grupos lentos.',
+    },
+    sphinx: {
+      name: 'Esfinge (Bast)',
+      role: 'Templo (Era II) — criatura terrestre veloz com ataque giratório em área letal contra arqueiros e coletores.',
+    },
+    wadjet: {
+      name: 'Wadjet (Ptá)',
+      role: 'Templo (Era II) — serpente sagrada gigante que cospe veneno à distância.',
+    },
+    roc: {
+      name: 'Roca (Hator)',
+      role: 'Templo (Era III) — pássaro gigante dos desertos capaz de sobrevoar linhas com alta visão e ataque mergulhante.',
+    },
+    petsuchos: {
+      name: 'Petsuchos (Hator)',
+      role: 'Templo (Era III) — crocodilo sagrado que dispara um raio solar concentrado de longo alcance.',
+    },
+    scarab: {
+      name: 'Escaravelho (Sekhmet)',
+      role: 'Templo (Era III) — besouro gigante blindado demolidor de edifícios que explode em área ao morrer!',
+    },
+    avenger: {
+      name: 'Vingador (Hórus)',
+      role: 'Templo (Era IV) — guerreiro de elite com cabeça de falcão e giro duplo de khopeshes em área.',
+    },
+    mummy: {
+      name: 'Múmia (Osíris)',
+      role: 'Templo (Era IV) — conjurador amaldiçoado à distância que abate inimigos com maldições do Duat.',
+    },
+    ra: {
+      name: 'Rá — Avatar Solar Supremo',
+      role: 'Deus Maior do Egito (Era V) — Rei do Sol; lança raios solares devastadores em área.',
+    },
+    isis: {
+      name: 'Ísis — Soberana do Nilo',
+      role: 'Deusa Maior do Egito (Era V) — Senhora da Magia e da Vida.',
+    },
+    set: {
+      name: 'Set — Senhor das Tempestades',
+      role: 'Deus Maior do Egito (Era V) — Deus do Caos e das Tempestades de Areia.',
+    },
+    titan: {
+      name: 'Titã Solar de Hórus',
+      role: 'Colosso de ouro e granito de Hórus-Rá invocado pelo Portão do Titã (Era V).',
+    },
   },
   norse: {
     villager: { name: 'Coletor Nórdico' },
@@ -966,6 +1048,29 @@ export function getCivBuildingSpec(pantheon: PantheonId, kind: BuildingKind): Bu
   }
   if (kind === 'temple') {
     return { ...base, name: `Templo de ${p.deity}` };
+  }
+  if (pantheon === 'egyptian') {
+    if (kind === 'fortress') {
+      return {
+        ...base,
+        name: 'Fortaleza Migdol',
+        role: 'Cidadela do Deserto — treina Arqueiro de Biga, Cavaleiro de Camelo e Elefante de Guerra.',
+      };
+    }
+    if (kind === 'barracks') {
+      return {
+        ...base,
+        name: 'Quartel Egípcio',
+        role: 'Treina Lanceiro, Fundeiro e Homem-Machado a partir da Era Clássica.',
+      };
+    }
+    if (kind === 'siege_works') {
+      return {
+        ...base,
+        name: 'Oficina de Cerco',
+        role: 'Constrói Torre de Cerco e Catapulta (Era Heroica+).',
+      };
+    }
   }
   return base;
 }

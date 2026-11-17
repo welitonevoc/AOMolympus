@@ -340,53 +340,87 @@ export function GameHUD({
     'fortress',
     ...(hud.titansEnabled ? (['titan_gate'] as BuildingKind[]) : []),
   ];
-  const unitKinds: UnitKind[] = [
-    'villager',
-    'hoplite',
-    'hipaspist',
-    ...(hud.pantheon === 'greek' && hud.majorGodName.toLowerCase().includes('zeus')
-      ? (['myrmidon'] as UnitKind[])
-      : []),
-    'peltast',
-    'archer',
-    'gastraphetes',
-    'cavalry',
-    'prodromos',
-    ...(hud.pantheon === 'greek'
-      ? (['jason', 'ajax', 'odysseus', 'hippolyta', 'theseus', 'perseus', 'bellerophon'] as UnitKind[])
-      : []),
-    'hero',
-    'ram',
-    'siege',
-    'cyclops',
-    'minotaur',
-    'centaur',
-    ...(hud.pantheon === 'greek'
-      ? ([
-          'nymph',
-          'pegasus',
-          'manticore',
-          'hydra',
-          'satyr',
-          'phoenix',
-          'colossus',
-          'automaton',
-          'iron_dwarf',
-          'medusa',
-        ] as UnitKind[])
-      : []),
-    'zeus',
-    'poseidon',
-    'hades',
-    'atena',
-    'ares',
-    'hermes',
-    'apolo',
-    'dionisio',
-    'afrodite',
-    'hefesto',
-    'artemis',
-  ];
+  const unitKinds: UnitKind[] =
+    hud.pantheon === 'egyptian'
+      ? [
+          'villager',
+          'priest',
+          'pharaoh',
+          'son_of_osiris',
+          'egypt_spearman',
+          'slinger',
+          'axeman',
+          'chariot_archer',
+          'camel_rider',
+          'war_elephant',
+          'siege_tower',
+          'egypt_catapult',
+          'sphinx',
+          'wadjet',
+          'roc',
+          'petsuchos',
+          'scarab',
+          'avenger',
+          'mummy',
+          'ra',
+          'isis',
+          'set',
+          'atena',
+          'ares',
+          'hermes',
+          'apolo',
+          'dionisio',
+          'afrodite',
+          'hefesto',
+          'artemis',
+        ]
+      : [
+          'villager',
+          'hoplite',
+          'hipaspist',
+          ...(hud.pantheon === 'greek' && hud.majorGodName.toLowerCase().includes('zeus')
+            ? (['myrmidon'] as UnitKind[])
+            : []),
+          'peltast',
+          'archer',
+          'gastraphetes',
+          'cavalry',
+          'prodromos',
+          ...(hud.pantheon === 'greek'
+            ? (['jason', 'ajax', 'odysseus', 'hippolyta', 'theseus', 'perseus', 'bellerophon'] as UnitKind[])
+            : []),
+          'hero',
+          'ram',
+          'siege',
+          'cyclops',
+          'minotaur',
+          'centaur',
+          ...(hud.pantheon === 'greek'
+            ? ([
+                'nymph',
+                'pegasus',
+                'manticore',
+                'hydra',
+                'satyr',
+                'phoenix',
+                'colossus',
+                'automaton',
+                'iron_dwarf',
+                'medusa',
+              ] as UnitKind[])
+            : []),
+          'zeus',
+          'poseidon',
+          'hades',
+          'atena',
+          'ares',
+          'hermes',
+          'apolo',
+          'dionisio',
+          'afrodite',
+          'hefesto',
+          'artemis',
+        ];
   const powerIds = Array.from(new Set(hud.unlockedPowers));
 
   const buildingList = buildingKinds.map((kind) => getCivBuildingSpec(hud.pantheon, kind));
@@ -1347,9 +1381,13 @@ export function GameHUD({
                     const buildingUnits = unitList.filter(
                       (u) =>
                         u.producedAt === selectedPlayerBuildingKind ||
-                        (u.isHero && (selectedPlayerBuildingKind === 'town_center' || selectedPlayerBuildingKind === 'fortress')) ||
+                        (u.kind === 'priest' &&
+                          (selectedPlayerBuildingKind === 'temple' || selectedPlayerBuildingKind === 'town_center')) ||
+                        (u.isHero &&
+                          u.kind !== 'priest' &&
+                          (selectedPlayerBuildingKind === 'town_center' || selectedPlayerBuildingKind === 'fortress')) ||
                         (u.kind === 'myrmidon' && (selectedPlayerBuildingKind === 'barracks' || selectedPlayerBuildingKind === 'fortress')) ||
-                        ((u.kind === 'ram' || u.kind === 'siege') &&
+                        ((u.kind === 'ram' || u.kind === 'siege' || u.kind === 'siege_tower' || u.kind === 'egypt_catapult') &&
                           (selectedPlayerBuildingKind === 'siege_works' || selectedPlayerBuildingKind === 'fortress'))
                     );
                     const buildingTechs = techList.filter((t) => {

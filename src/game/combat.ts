@@ -80,16 +80,44 @@ export class CombatManager {
     if (target.isMythic && attackerStats.bonusVsMyth) {
       finalDmg *= attackerStats.bonusVsMyth;
     }
-    if ((target.kind === 'cavalry' || target.kind === 'prodromos') && attackerStats.bonusVsCavalry) {
+    if (
+      (target.kind === 'cavalry' ||
+        target.kind === 'prodromos' ||
+        target.kind === 'camel_rider' ||
+        target.kind === 'chariot_archer') &&
+      attackerStats.bonusVsCavalry
+    ) {
       finalDmg *= attackerStats.bonusVsCavalry;
     }
-    if ((target.kind === 'hoplite' || target.kind === 'hipaspist' || target.kind === 'myrmidon' || target.kind === 'villager') && attackerStats.bonusVsInfantry) {
+    if (
+      (target.kind === 'hoplite' ||
+        target.kind === 'hipaspist' ||
+        target.kind === 'myrmidon' ||
+        target.kind === 'egypt_spearman' ||
+        target.kind === 'axeman' ||
+        target.kind === 'villager') &&
+      attackerStats.bonusVsInfantry
+    ) {
       finalDmg *= attackerStats.bonusVsInfantry;
     }
-    if ((target.kind === 'archer' || target.kind === 'peltast' || target.kind === 'gastraphetes') && attackerStats.bonusVsArcher) {
+    if (
+      (target.kind === 'archer' ||
+        target.kind === 'peltast' ||
+        target.kind === 'gastraphetes' ||
+        target.kind === 'slinger' ||
+        target.kind === 'chariot_archer') &&
+      attackerStats.bonusVsArcher
+    ) {
       finalDmg *= attackerStats.bonusVsArcher;
     }
-    if ((target.isSiege || target.kind === 'siege' || target.kind === 'ram') && attackerStats.bonusVsSiege) {
+    if (
+      (target.isSiege ||
+        target.kind === 'siege' ||
+        target.kind === 'ram' ||
+        target.kind === 'siege_tower' ||
+        target.kind === 'egypt_catapult') &&
+      attackerStats.bonusVsSiege
+    ) {
       finalDmg *= attackerStats.bonusVsSiege;
     }
 

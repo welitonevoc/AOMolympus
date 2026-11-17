@@ -154,6 +154,112 @@ export function AnimatedPortrait({ selection, pantheon, primaryColor }: Animated
           ctx.closePath();
           ctx.fill();
           ctx.restore();
+        } else if (uk === 'pharaoh' || uk === 'son_of_osiris' || uk === 'priest' || uk === 'ra' || uk === 'isis' || uk === 'set') {
+          // Royal Egyptian Nemes / Falcon / Ankh Portrait
+          const isFalcon = uk === 'son_of_osiris' || uk === 'ra';
+          // Striped Nemes Headdress lappets
+          ctx.fillStyle = '#1e3a8a';
+          ctx.strokeStyle = '#d4af37';
+          ctx.lineWidth = 2.5;
+          ctx.beginPath();
+          ctx.moveTo(-24, -22);
+          ctx.lineTo(0, -38);
+          ctx.lineTo(24, -22);
+          ctx.lineTo(20, 12);
+          ctx.lineTo(-20, 12);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+
+          // Gold solar disk overhead for Ra / Son of Osiris / Pharaoh
+          ctx.fillStyle = '#facc15';
+          ctx.beginPath();
+          ctx.arc(0, -38, isFalcon ? 11 : 7, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+
+          // Head / Falcon visage
+          ctx.fillStyle = isFalcon ? '#d4af37' : '#c68652';
+          ctx.beginPath();
+          ctx.arc(0, -14, 14, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+
+          if (isFalcon) {
+            // Curved Horus beak & glowing eyes
+            ctx.fillStyle = '#0f172a';
+            ctx.beginPath();
+            ctx.moveTo(-3, -14);
+            ctx.lineTo(8, -10);
+            ctx.lineTo(0, -6);
+            ctx.closePath();
+            ctx.fill();
+            ctx.fillStyle = '#38bdf8';
+            ctx.fillRect(-7, -18, 4, 3);
+            ctx.fillRect(3, -18, 4, 3);
+          } else {
+            // Ceremonial braided gold beard
+            ctx.fillStyle = '#d4af37';
+            ctx.fillRect(-3, -2, 6, 14);
+          }
+
+          // Glowing Ankh / Was Scepter on right
+          ctx.save();
+          ctx.translate(25, 10);
+          ctx.rotate(sway * 1.1);
+          ctx.strokeStyle = uk === 'son_of_osiris' ? '#38bdf8' : '#facc15';
+          ctx.lineWidth = 3.5;
+          ctx.beginPath();
+          ctx.arc(0, -22, 7, 0, Math.PI * 2);
+          ctx.moveTo(0, -15);
+          ctx.lineTo(0, 14);
+          ctx.moveTo(-9, -8);
+          ctx.lineTo(9, -8);
+          ctx.stroke();
+          ctx.restore();
+        } else if (uk === 'sphinx' || uk === 'wadjet' || uk === 'roc' || uk === 'petsuchos' || uk === 'scarab' || uk === 'avenger' || uk === 'mummy') {
+          // Egyptian Myth Creature Portraits
+          ctx.fillStyle =
+            uk === 'scarab'
+              ? '#0f172a'
+              : uk === 'petsuchos' || uk === 'wadjet'
+              ? '#15803d'
+              : uk === 'mummy'
+              ? '#e5dcc5'
+              : '#d4af37';
+          ctx.beginPath();
+          ctx.arc(0, -14, 18, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+
+          // Glowing mythic eyes + solar crest
+          ctx.fillStyle = uk === 'mummy' || uk === 'avenger' ? '#38bdf8' : '#facc15';
+          ctx.fillRect(-8, -18, 5, 4);
+          ctx.fillRect(3, -18, 5, 4);
+
+          ctx.fillStyle = '#facc15';
+          ctx.beginPath();
+          ctx.arc(0, -34, 7, 0, Math.PI * 2);
+          ctx.fill();
+        } else if (uk === 'war_elephant' || uk === 'camel_rider' || uk === 'chariot_archer') {
+          // Egyptian Migdol Stronghold Mounts
+          ctx.fillStyle = uk === 'war_elephant' ? '#64748b' : '#d97706';
+          ctx.beginPath();
+          ctx.arc(0, -10, 19, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+          // Ivory tusks / gold frontlet
+          ctx.fillStyle = '#fef3c7';
+          ctx.beginPath();
+          ctx.moveTo(-12, -2);
+          ctx.quadraticCurveTo(-24, 10, -18, 22);
+          ctx.lineTo(-12, 16);
+          ctx.fill();
+          ctx.beginPath();
+          ctx.moveTo(12, -2);
+          ctx.quadraticCurveTo(24, 10, 18, 22);
+          ctx.lineTo(12, 16);
+          ctx.fill();
         } else if (uk === 'cyclops' || uk === 'minotaur' || uk === 'titan') {
           // Monstrous horned or single-eyed head
           ctx.fillStyle = uk === 'titan' ? '#475569' : uk === 'cyclops' ? '#c28b5a' : '#78350f';
@@ -189,7 +295,7 @@ export function AnimatedPortrait({ selection, pantheon, primaryColor }: Animated
             ctx.fillRect(-9, -20, 5, 4);
             ctx.fillRect(4, -20, 5, 4);
           }
-        } else if (uk === 'archer' || uk === 'peltast' || uk === 'gastraphetes' || uk === 'hippolyta' || uk === 'odysseus') {
+        } else if (uk === 'archer' || uk === 'peltast' || uk === 'slinger' || uk === 'gastraphetes' || uk === 'hippolyta' || uk === 'odysseus') {
           // Archer head + hood + curved bow
           ctx.fillStyle = '#e4b88d';
           ctx.beginPath();
@@ -219,7 +325,7 @@ export function AnimatedPortrait({ selection, pantheon, primaryColor }: Animated
           ctx.lineTo(0, 24);
           ctx.stroke();
           ctx.restore();
-        } else if (uk === 'ram' || uk === 'siege') {
+        } else if (uk === 'ram' || uk === 'siege' || uk === 'siege_tower' || uk === 'egypt_catapult') {
           // Timber siege machine silhouette
           ctx.fillStyle = '#78350f';
           ctx.fillRect(-34, -6, 68, 34);

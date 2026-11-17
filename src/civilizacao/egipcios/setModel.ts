@@ -148,7 +148,7 @@ function group(parent: THREE.Group | null, x = 0, y = 0, z = 0): THREE.Group {
 }
 
 function sculpt(
-  parent: THREE.Group | null,
+  parent: THREE.Object3D | null,
   geo: THREE.BufferGeometry,
   mat: THREE.Material,
   pos: [number, number, number] = [0, 0, 0],

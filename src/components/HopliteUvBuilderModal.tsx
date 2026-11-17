@@ -504,34 +504,99 @@ export function getUnitsForCivAndGod(civ: PantheonId, majorGod: string): CivEnti
     return [
       ...godOption,
       {
-        id: 'hoplite',
-        name: isRa ? 'Lanceiro Solar de Rá' : isIsis ? 'Guardião do Nilo de Ísis' : 'Homem de Armas do Caos (Set)',
-        role: isRa ? 'Infantaria pesada com couraça dourada refletora da luz solar' : isIsis ? 'Guerreiro com proteção mágica do Nilo' : 'Soldado de assalto imbuído pela tempestade de areia',
-      },
-      {
-        id: 'archer',
-        name: isRa ? 'Arqueiro Solar de Rá' : isIsis ? 'Arqueiro Protetor de Ísis' : 'Arqueiro do Vento Escuro (Set)',
-        role: 'Arqueiro veloz do deserto com arco composto e flechas incendiárias',
-      },
-      {
-        id: 'cavalry',
-        name: isRa ? 'Carruagem Sagrada de Rá' : isIsis ? 'Carruagem Real de Ísis' : 'Carruagem de Ataque de Set',
-        role: 'Cavalaria ligeira móvel de assédio e ataque em movimento',
-      },
-      {
-        id: 'hero',
-        name: isRa ? 'Faraó de Rá' : isIsis ? 'Sacerdotisa de Ísis' : 'Sumo Sacerdote de Set',
-        role: 'Líder espiritual consagrado capaz de abençoar monumentos e erguer feitiços',
-      },
-      {
         id: 'villager',
-        name: isRa ? 'Construtor Solar de Rá' : isIsis ? 'Agricultor Fértil de Ísis' : 'Coletor Nômade de Set',
-        role: 'Aldeão trabalhador e construtor dedicado às grandes maravilhas',
+        name: '👷 Trabalhador Egípcio',
+        role: 'Unidade civil de economia — coleta comida, madeira e ouro e ergue todos os edifícios monumentais',
       },
       {
-        id: 'minotaur',
-        name: isRa ? 'Anubita Solar' : isIsis ? 'Esfinge Sagrada' : 'Besta Chacal do Caos',
-        role: 'Criatura mítica ágil dotada de saltos fulminantes e garras mortais',
+        id: 'priest',
+        name: '☥ Sacerdote de Rá',
+        role: 'Unidade heroica básica (Templo / Centro) — cura aliados, ergue Obeliscos e dispara feixes solares contra Míticas',
+      },
+      {
+        id: 'pharaoh',
+        name: '👑 Faraó',
+        role: 'Herói único e gratuito que renasce caso morra — empodera edifícios, recolhe relíquias e destrói criaturas míticas',
+      },
+      {
+        id: 'son_of_osiris',
+        name: '⚡ Filho de Osíris (Era Mítica)',
+        role: 'Versão semideus do Faraó (Cabeça de Falcão Solar) — dispara raios em cadeia que saltam entre múltiplos inimigos',
+      },
+      {
+        id: 'egypt_spearman',
+        name: '🔱 Lanceiro (Quartel)',
+        role: 'Infantaria rápida e barata com escudo egípcio — especialista em derrotar cavalaria inimiga',
+      },
+      {
+        id: 'slinger',
+        name: '🪨 Fundeiro (Quartel)',
+        role: 'Atirador de funda de baixo custo — especializado em eliminar outros arqueiros à distância',
+      },
+      {
+        id: 'axeman',
+        name: '🪓 Homem-Machado (Quartel)',
+        role: 'Infantaria pesada com machado épsilon de bronze — letal contra outras unidades de infantaria',
+      },
+      {
+        id: 'chariot_archer',
+        name: '🏹 Arqueiro de Biga (Fortaleza Migdol)',
+        role: 'Arqueiro montado muito rápido em biga solar — forte contra infantaria (Recebe bônus especiais de Rá)',
+      },
+      {
+        id: 'camel_rider',
+        name: '🐪 Cavaleiro de Camelo (Fortaleza Migdol)',
+        role: 'Cavalaria ágil com espada Khopesh — excelente contra arqueiros e cavalaria (Recebe bônus especiais de Rá)',
+      },
+      {
+        id: 'war_elephant',
+        name: '🐘 Elefante de Guerra (Fortaleza Migdol)',
+        role: 'Unidade pesada de altíssima resistência — absorve dano massivo e esmaga construções inimigas',
+      },
+      {
+        id: 'siege_tower',
+        name: '🗼 Torre de Cerco (Oficina de Cerco)',
+        role: 'Veículo blindado revestido de linho e ouro que avança sob flechas e demole muralhas e fortalezas de perto',
+      },
+      {
+        id: 'egypt_catapult',
+        name: '☄️ Catapulta Egípcia (Oficina de Cerco)',
+        role: 'Artilharia de longo alcance com projéteis incendiários contra construções e grupos lentos de tropas',
+      },
+      {
+        id: 'sphinx',
+        name: '🦁 Esfinge (Bast — Era Clássica)',
+        role: 'Criatura leonina veloz com toucado Nemes e ataque giratório de areia em área contra aldeões e arqueiros',
+      },
+      {
+        id: 'wadjet',
+        name: '🐍 Wadjet (Ptá — Era Clássica)',
+        role: 'Serpente naja gigante alada que cospe veneno corrosivo à distância e regenera pontos de vida',
+      },
+      {
+        id: 'roc',
+        name: '🦅 Roca (Hator / Sobek — Era Heroica)',
+        role: 'Pássaro soberano gigante capaz de cruzar céus, rios e montanhas em velocidade extrema',
+      },
+      {
+        id: 'petsuchos',
+        name: '🐊 Petsuchos (Hator / Sobek — Era Heroica)',
+        role: 'Crocodilo sagrado adornado em ouro e disco solar que dispara um feixe solar concentrado de longo alcance',
+      },
+      {
+        id: 'scarab',
+        name: '🪲 Escaravelho (Sekhmet — Era Heroica)',
+        role: 'Besouro real blindado especializado em demolir edifícios e que explode em ácido ao morrer',
+      },
+      {
+        id: 'avenger',
+        name: '⚔️ Vingador (Hórus — Era Mítica)',
+        role: 'Guerreiro de elite com cabeça de falcão e duas lâminas Khopesh que executa ataques giratórios devastadores',
+      },
+      {
+        id: 'mummy',
+        name: '📜 Múmia (Osíris — Era Mítica)',
+        role: 'Sacerdote imortal envolto em bandagens reais que lança maldições à distância e converte inimigos caídos',
       },
       {
         id: 'titan',
@@ -1846,7 +1911,10 @@ export function HopliteUvBuilderModal({
             const m = raModeRef.current;
             animateRa(raGod, dt, simTime, m);
           };
-        } else if (selectedUnit === 'hoplite' || selectedUnit === 'hipaspist' || selectedUnit === 'myrmidon') {
+        } else if (
+          selectedCiv === 'greek' &&
+          (selectedUnit === 'hoplite' || selectedUnit === 'hipaspist' || selectedUnit === 'myrmidon')
+        ) {
           // ===============================
           // CENÁRIO PADRÃO (PEDESTAL)
           // ===============================
@@ -2270,10 +2338,26 @@ export function HopliteUvBuilderModal({
       } else {
         const isBuilding = entityType === 'building';
         const isTitan = selectedUnit === 'titan';
-        const isGiantMyth = selectedUnit === 'cyclops' || selectedUnit === 'colossus' || selectedUnit === 'hydra';
+        const isGiantMyth =
+          selectedUnit === 'cyclops' ||
+          selectedUnit === 'colossus' ||
+          selectedUnit === 'hydra' ||
+          selectedUnit === 'war_elephant' ||
+          selectedUnit === 'roc' ||
+          selectedUnit === 'siege_tower';
         const isMountedOrSiege =
           selectedUnit === 'cavalry' ||
           selectedUnit === 'prodromos' ||
+          selectedUnit === 'chariot_archer' ||
+          selectedUnit === 'camel_rider' ||
+          selectedUnit === 'sphinx' ||
+          selectedUnit === 'wadjet' ||
+          selectedUnit === 'petsuchos' ||
+          selectedUnit === 'scarab' ||
+          selectedUnit === 'avenger' ||
+          selectedUnit === 'mummy' ||
+          selectedUnit === 'son_of_osiris' ||
+          selectedUnit === 'egypt_catapult' ||
           selectedUnit === 'bellerophon' ||
           selectedUnit === 'pegasus' ||
           selectedUnit === 'manticore' ||
