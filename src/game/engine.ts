@@ -1,12 +1,14 @@
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { soundEngine } from './audio';
+import { soundManager } from './audio/SoundManager';
 import { CombatManager } from './combat';
 import {
   createBuildingMesh,
   createFaunaMesh,
   createMaterialPalette,
   createOrderMarkerMesh,
+  createPlentyVaultMesh,
   createRelicMesh,
   createResourceMesh,
   createSettlementMesh,
@@ -17,6 +19,13 @@ import {
   OrderMarkerKind,
   PLAYABLE_HALF_SIZE,
 } from './models';
+import {
+  buildMapResourceProfile,
+  getEffectiveMapConfig,
+  getMapBiomeVisuals,
+  resolveEffectiveMapId,
+  rollUnknownMapVariant,
+} from './mapGeography';
 import { NavigationGrid, ObstacleCircle, WATER_WALK_LIMIT } from './navigation';
 import {
   createContactShadowTexture,
@@ -504,6 +513,12 @@ export class AoMEngine {
   private regentUnitId: string | null = null;
   private playerPharaohRespawnTimer = 0;
   private enemyPharaohRespawnTimer = 0;
+  private kothVaultMesh: THREE.Group | null = null;
+  private kothOwner: TeamId | 'neutral' = 'neutral';
+  private kothPlayerHold = 0;
+  private kothEnemyHold = 0;
+  private kothTrickleTimer = 0;
+  private treeVariantCounter = 0;
   private enemyAge: AgeLevel = 1;
   private tcFocusIndex = 0;
   private idleVillagerCycleIndex = 0;
@@ -775,11 +790,13 @@ export class AoMEngine {
 
   private rebuildTerrainForMap(mapId: MapId) {
     this.mapId = mapId;
-    const mapCfg = MAPS[mapId];
+    const mapCfg = getEffectiveMapConfig(mapId);
+    const bio = getMapBiomeVisuals(mapId);
+    const effId = resolveEffectiveMapId(mapId);
 
     // Sync sky, fog and biome foliage palette
     this.scene.background = new THREE.Color(mapCfg.skyColorHex);
-    this.scene.fog = new THREE.FogExp2(mapCfg.skyColorHex, mapId === 'erebus' ? 0.0062 : 0.0044);
+    this.scene.fog = new THREE.FogExp2(mapCfg.skyColorHex, effId === 'erebus' ? 0.0062 : 0.0044);
     this.palette.foliagePine.color.setHex(mapCfg.foliageHex);
     this.palette.foliageDark.color.setHex(mapCfg.foliageDarkHex);
 
@@ -822,25 +839,13 @@ export class AoMEngine {
     const norm = geo.attributes.normal;
     const colors = new Float32Array(pos.count * 3);
 
-    const basePalette: Record<MapId, [number, number, number, number]> = {
-      mediterranean: [0x557540, 0x9d8a64, 0xcab688, 0x6b7c4f],
-      alfheim: [0x7c968d, 0x7c756c, 0x94a3b8, 0xe2e8f0],
-      nile: [0xd4b475, 0xb5955a, 0xc29e61, 0xe0c489],
-      acropolis: [0x627c47, 0xb3ab9b, 0xcab688, 0x948d7f],
-      ghost_lake: [0x9cb1c2, 0x64748b, 0xcbd5e1, 0xf1f5f9],
-      oasis: [0xd9b370, 0xb88f4c, 0xe2c78c, 0xc79248],
-      jotunheim: [0x8b9dad, 0x5b6778, 0xcbd5e1, 0xf8fafc],
-      erebus: [0x3d302f, 0x524542, 0x262121, 0x573b2f],
-      yucatan: [0x3f6e34, 0x7a6946, 0xa89467, 0x567d46],
-      yellow_river: [0x747c3e, 0xa38c54, 0xbca468, 0x8a7d4a],
-    };
-    const [bHex, rHex, sHex, hHex] = basePalette[mapId];
+    const [bHex, rHex, sHex, hHex] = bio.terrainPalette;
     const cBase = new THREE.Color(bHex);
     const cRoad = new THREE.Color(rHex);
     const cSand = new THREE.Color(sHex);
     const cHigh = new THREE.Color(hHex);
     const cCliff = new THREE.Color(mapCfg.cliffHex);
-    const cFertile = new THREE.Color(0x5f8738);
+    const cFertile = new THREE.Color(bio.fertileHex);
     const tmp = new THREE.Color();
 
     for (let i = 0; i < pos.count; i++) {
@@ -855,13 +860,15 @@ export class AoMEngine {
       const roadBlend = Math.max(0, 1 - diagDist / 6.5) * (Math.hypot(x, z) < 52 ? 0.58 : 0);
 
       tmp.copy(cBase);
-      if (mapId === 'nile' || mapId === 'yellow_river') {
+      if (effId === 'nile' || effId === 'yellow_river' || effId === 'highland') {
         const riverDist = Math.abs(x - z) / Math.SQRT2;
         if (riverDist < 12) {
           tmp.lerp(cFertile, Math.max(0, 1 - riverDist / 12) * 0.85);
         }
-      } else if (mapId === 'oasis' && Math.hypot(x, z) < 16) {
+      } else if (effId === 'oasis' && Math.hypot(x, z) < 16) {
         tmp.lerp(cFertile, (1 - Math.hypot(x, z) / 16) * 0.85);
+      } else if (effId === 'watering_hole' && y < 0.25) {
+        tmp.lerp(cFertile, 0.72);
       }
       if (y > 1.05) {
         tmp.lerp(cHigh, Math.min(1, (y - 1.05) * 0.65));
@@ -899,9 +906,9 @@ export class AoMEngine {
     waterGeo.rotateX(-Math.PI / 2);
     const waterMat = new THREE.MeshStandardMaterial({
       color: mapCfg.waterColorHex,
-      emissive: mapId === 'erebus' ? 0x7f1d1d : 0x000000,
-      emissiveIntensity: mapId === 'erebus' ? 0.55 : 0,
-      roughness: mapId === 'ghost_lake' ? 0.08 : 0.18,
+      emissive: bio.waterEmissiveHex ?? 0x000000,
+      emissiveIntensity: bio.waterEmissiveIntensity ?? 0,
+      roughness: effId === 'ghost_lake' || effId === 'tundra' ? 0.08 : 0.18,
       metalness: 0.35,
       transparent: true,
       opacity: 0.9,
@@ -991,6 +998,10 @@ export class AoMEngine {
     this.commandDragWaypoints = [];
     this.commandDragPreviewKind = null;
     this.clearPlacementGhost();
+    if (this.kothVaultMesh) {
+      this.scene.remove(this.kothVaultMesh);
+      this.kothVaultMesh = null;
+    }
     if (this.godPowerRing) this.godPowerRing.visible = false;
     this.hideAllOrderVisuals();
   }
@@ -1051,12 +1062,23 @@ export class AoMEngine {
     this.dayTimeLabel = 'Dia';
     this.titansEnabled = extras?.titansEnabled !== undefined ? extras.titansEnabled : true;
     this.treatyRemaining = isTitlePreview ? 0 : Math.max(0, (extras?.treatyMinutes ?? 0) * 60);
+    if (mapId === 'nomad' && !isTitlePreview) {
+      this.treatyRemaining = Math.max(this.treatyRemaining, 90);
+    }
     this.eclipseTimer = 0;
     this.flamingWeaponsTimer = 0;
     this.lastSelectedVillagerIds = [];
     this.peakPopulation = 0;
     this.combatCueCooldown = 0;
     this.musicCheckTimer = 0;
+    this.treeVariantCounter = 0;
+    this.kothOwner = 'neutral';
+    this.kothPlayerHold = 0;
+    this.kothEnemyHold = 0;
+    this.kothTrickleTimer = 0;
+    if (!isTitlePreview) {
+      rollUnknownMapVariant(mapId);
+    }
     this.scenarioTitle = isTitlePreview ? undefined : extras?.scenarioTitle;
     if (extras?.gameSpeed) {
       this.gameSpeed = Math.max(0.5, Math.min(2.0, extras.gameSpeed));
@@ -1064,6 +1086,8 @@ export class AoMEngine {
       this.gameSpeed = 1.8;
     }
     this.rebuildTerrainForMap(mapId);
+    this.weatherTimer = 0;
+    this.setWeather(isTitlePreview ? 'clear' : getMapBiomeVisuals(mapId).weatherPool[0] ?? 'clear');
     this.palette.tunicPlayer.color.setHex(PANTHEONS[pantheon].bannerHex);
 
     this.elapsedSeconds = 0;
@@ -1141,39 +1165,82 @@ export class AoMEngine {
       favor: Math.round(25 * (resMult > 1 ? 2.5 : 1)),
     };
 
-    // Player base (-34, 34)
-    this.spawnBuilding('town_center', 'player', -34, 34, true);
-    this.spawnBuilding('house', 'player', -41, 28, true);
-    if (isDeathmatch) {
-      this.spawnBuilding('barracks', 'player', -26, 26, true);
-      this.spawnBuilding('temple', 'player', -42, 39, true);
+    const isNomad = mapId === 'nomad';
+    const isMegalopolis = mapId === 'megalopolis';
+    const isSuddenDeath = mapId === 'sudden_death';
+    const isSeaOfWorms = mapId === 'sea_of_worms';
+
+    if (isNomad) {
+      this.resources.food += 140;
+      this.resources.wood += 220;
+      this.enemyResources.food += 140;
+      this.enemyResources.wood += 220;
     }
+
+    // Player base (-34, 34) — skipped in Nomad so players choose their own Town Center site
+    if (!isNomad) {
+      const playerTc = this.spawnBuilding('town_center', 'player', -34, 34, true);
+      if (isSuddenDeath) {
+        playerTc.maxHp = Math.round(playerTc.maxHp * 1.5);
+        playerTc.hp = playerTc.maxHp;
+      }
+      this.spawnBuilding('house', 'player', -41, 28, true);
+      if (isMegalopolis) {
+        this.spawnBuilding('town_center', 'player', -15, 42, true);
+        this.spawnBuilding('tower', 'player', -24, 24, true);
+        this.spawnBuilding('tower', 'player', -38, 19, true);
+        this.spawnBuilding('barracks', 'player', -27, 30, true);
+        this.spawnBuilding('house', 'player', -42, 36, true);
+        this.spawnBuilding('armory', 'player', -30, 41, true);
+      } else if (isSeaOfWorms) {
+        this.spawnBuilding('fortress', 'player', -23, 27, true);
+      }
+      if (isDeathmatch) {
+        this.spawnBuilding('barracks', 'player', -26, 26, true);
+        this.spawnBuilding('temple', 'player', -42, 39, true);
+      }
+    }
+
     this.playerPharaohRespawnTimer = 0;
     this.enemyPharaohRespawnTimer = 0;
     if (this.pantheon === 'atlantean') {
       this.spawnUnit('citizen', 'player', -30, 38);
       this.spawnUnit('citizen', 'player', -28, 34);
       this.spawnUnit('citizen', 'player', -34, 40);
+      if (isNomad) {
+        this.spawnUnit('citizen', 'player', -22, 36);
+        this.spawnUnit('citizen', 'player', -36, 24);
+      }
       this.spawnUnit('oracle', 'player', -31, 31);
       this.spawnUnit('oracle', 'player', -29, 30);
-      this.spawnUnit('murmillo', 'player', -27, 29);
-      this.spawnUnit('murmillo', 'player', -25, 31);
+      if (!isNomad) {
+        this.spawnUnit('murmillo', 'player', -27, 29);
+        this.spawnUnit('murmillo', 'player', -25, 31);
+      }
     } else {
       this.spawnUnit('villager', 'player', -30, 38);
       this.spawnUnit('villager', 'player', -28, 34);
       this.spawnUnit('villager', 'player', -34, 40);
+      if (isNomad) {
+        this.spawnUnit('villager', 'player', -22, 36);
+        this.spawnUnit('villager', 'player', -36, 24);
+      }
       if (this.pantheon === 'egyptian') {
         this.spawnUnit('pharaoh', 'player', -31, 31);
         this.spawnUnit('priest', 'player', -29, 30);
-        this.spawnUnit('egypt_spearman', 'player', -27, 29);
-        this.spawnUnit('egypt_spearman', 'player', -25, 31);
+        if (!isNomad) {
+          this.spawnUnit('egypt_spearman', 'player', -27, 29);
+          this.spawnUnit('egypt_spearman', 'player', -25, 31);
+        }
       } else if (this.pantheon === 'norse' || this.pantheon === 'jotunn') {
         this.spawnUnit('ox_cart', 'player', -31, 35);
         this.spawnUnit('norse_dwarf', 'player', -32, 37);
         this.spawnUnit('hersir', 'player', -29, 30);
-        this.spawnUnit('ulfsark', 'player', -27, 29);
-        this.spawnUnit('ulfsark', 'player', -25, 31);
-      } else {
+        if (!isNomad) {
+          this.spawnUnit('ulfsark', 'player', -27, 29);
+          this.spawnUnit('ulfsark', 'player', -25, 31);
+        }
+      } else if (!isNomad) {
         this.spawnUnit('hoplite', 'player', -27, 29);
         this.spawnUnit('hoplite', 'player', -25, 31);
       }
@@ -1195,136 +1262,128 @@ export class AoMEngine {
       this.regentUnitId = regent.id;
     }
 
-    // Enemy base (34, -34)
-    this.spawnBuilding('town_center', 'enemy', 34, -34, true);
-    this.spawnBuilding('barracks', 'enemy', 26, -29, true);
-    this.spawnBuilding('house', 'enemy', 41, -28, true);
-    if (difficulty !== 'normal' && difficulty !== 'easy') {
-      this.spawnBuilding('tower', 'enemy', 24, -22, true);
+    // Enemy base (34, -34) — skipped in Nomad
+    if (!isNomad) {
+      const enemyTc = this.spawnBuilding('town_center', 'enemy', 34, -34, true);
+      if (isSuddenDeath) {
+        enemyTc.maxHp = Math.round(enemyTc.maxHp * 1.5);
+        enemyTc.hp = enemyTc.maxHp;
+      }
+      this.spawnBuilding('barracks', 'enemy', 26, -29, true);
+      this.spawnBuilding('house', 'enemy', 41, -28, true);
+      if (isMegalopolis) {
+        this.spawnBuilding('town_center', 'enemy', 15, -42, true);
+        this.spawnBuilding('tower', 'enemy', 24, -24, true);
+        this.spawnBuilding('tower', 'enemy', 38, -19, true);
+        this.spawnBuilding('house', 'enemy', 42, -36, true);
+      } else if (isSeaOfWorms) {
+        this.spawnBuilding('fortress', 'enemy', 23, -27, true);
+      }
+      if (difficulty !== 'normal' && difficulty !== 'easy') {
+        this.spawnBuilding('tower', 'enemy', 24, -22, true);
+      }
     }
+
     if (this.enemyPantheon === 'atlantean') {
       this.spawnUnit('citizen', 'enemy', 31, -38);
       this.spawnUnit('citizen', 'enemy', 38, -31);
+      if (isNomad) {
+        this.spawnUnit('citizen', 'enemy', 23, -35);
+        this.spawnUnit('citizen', 'enemy', 36, -24);
+      }
       this.spawnUnit('oracle', 'enemy', 30, -30);
-      this.spawnUnit('murmillo', 'enemy', 25, -26);
-      this.spawnUnit('murmillo', 'enemy', 27, -24);
+      if (!isNomad) {
+        this.spawnUnit('murmillo', 'enemy', 25, -26);
+        this.spawnUnit('murmillo', 'enemy', 27, -24);
+      }
     } else {
       this.spawnUnit('villager', 'enemy', 31, -38);
       this.spawnUnit('villager', 'enemy', 38, -31);
+      if (isNomad) {
+        this.spawnUnit('villager', 'enemy', 23, -35);
+        this.spawnUnit('villager', 'enemy', 36, -24);
+      }
       if (this.enemyPantheon === 'egyptian') {
         this.spawnUnit('pharaoh', 'enemy', 30, -30);
-        this.spawnUnit('egypt_spearman', 'enemy', 25, -26);
-        this.spawnUnit('egypt_spearman', 'enemy', 27, -24);
+        if (!isNomad) {
+          this.spawnUnit('egypt_spearman', 'enemy', 25, -26);
+          this.spawnUnit('egypt_spearman', 'enemy', 27, -24);
+        }
       } else if (this.enemyPantheon === 'norse' || this.enemyPantheon === 'jotunn') {
         this.spawnUnit('ox_cart', 'enemy', 32, -35);
         this.spawnUnit('hersir', 'enemy', 29, -29);
-        this.spawnUnit('ulfsark', 'enemy', 25, -26);
-        this.spawnUnit('ulfsark', 'enemy', 27, -24);
-      } else {
+        if (!isNomad) {
+          this.spawnUnit('ulfsark', 'enemy', 25, -26);
+          this.spawnUnit('ulfsark', 'enemy', 27, -24);
+        }
+      } else if (!isNomad) {
         this.spawnUnit('hoplite', 'enemy', 25, -26);
         this.spawnUnit('hoplite', 'enemy', 27, -24);
       }
     }
 
-    // Neutral Settlement foundations (2 near player base, 2 near enemy base)
-    const settlementSpots: [number, number][] = [
-      [-15, 42],
-      [-42, 12],
-      [15, -42],
-      [42, -12],
-    ];
-    for (const [sx, sz] of settlementSpots) {
-      this.spawnSettlement(sx, sz);
+    // Map-authentic Settlements, Berries, Gold, Biome Trees & Fauna
+    const mapProfile = buildMapResourceProfile(mapId, this.worldSize);
+    for (const [sx, sz] of mapProfile.settlementSpots) {
+      if (isMegalopolis && ((sx === -15 && sz === 42) || (sx === 15 && sz === -42))) {
+        continue;
+      }
+      if (groundHeightAt(sx, sz, mapId) >= WATER_WALK_LIMIT) {
+        this.spawnSettlement(sx, sz);
+      }
     }
 
-    // Resource layout scaled by worldSize
-    const berrySpots: [number, number][] = [
-      [-41, 38],
-      [-39, 41],
-      [41, -38],
-      [39, -41],
-      [-6, 8],
-      [6, -8],
-    ];
-    if (this.worldSize !== 'normal') {
-      berrySpots.push([-14, 22], [14, -22]);
+    for (const [bx, bz] of mapProfile.berrySpots) {
+      if (groundHeightAt(bx, bz, mapId) >= WATER_WALK_LIMIT && this.isClearOfSettlements(bx, bz, 3.6)) {
+        this.spawnNode('berry', bx, bz);
+      }
     }
-    for (const [bx, bz] of berrySpots) this.spawnNode('berry', bx, bz);
 
-    const goldSpots: [number, number][] = [
-      [-26, 43],
-      [-43, 22],
-      [26, -43],
-      [43, -22],
-      [-8, -10],
-      [8, 10],
-      [0, 0],
-    ];
-    if (this.worldSize === 'large' || this.worldSize === 'giant') {
-      goldSpots.push([-20, -24], [20, 24]);
+    for (const [gx, gz, customAmount] of mapProfile.goldSpots) {
+      if (groundHeightAt(gx, gz, mapId) >= WATER_WALK_LIMIT && this.isClearOfSettlements(gx, gz, 3.6)) {
+        const gNode = this.spawnNode('gold_mine', gx, gz);
+        if (customAmount) {
+          gNode.amount = customAmount;
+          gNode.maxAmount = customAmount;
+        }
+      }
     }
-    if (this.worldSize === 'giant') {
-      goldSpots.push([-32, -8], [32, 8]);
-    }
-    for (const [gx, gz] of goldSpots) this.spawnNode('gold_mine', gx, gz);
 
-    // Pine/olive groves
-    const treeClusters: [number, number, number][] = [
-      [-47, 34, 6],
-      [-24, 49, 5],
-      [47, -34, 6],
-      [24, -49, 5],
-      [-24, -20, 7],
-      [24, 20, 7],
-      [-12, 16, 4],
-      [12, -16, 4],
-    ];
-    if (this.worldSize !== 'normal') {
-      treeClusters.push([-34, -34, 6], [34, 34, 6]);
-    }
     let tIdx = 0;
-    for (const [cx, cz, count] of treeClusters) {
+    for (const [cx, cz, count] of mapProfile.treeClusters) {
       for (let i = 0; i < count; i++) {
         const ang = (i / count) * Math.PI * 2 + tIdx * 0.4;
         const rad = 2.2 + (i % 3) * 1.9;
         const tx = cx + Math.cos(ang) * rad;
         const tz = cz + Math.sin(ang) * rad;
-        if (this.isClearOfSettlements(tx, tz, 4.8)) {
+        if (groundHeightAt(tx, tz, mapId) >= WATER_WALK_LIMIT && this.isClearOfSettlements(tx, tz, 4.8)) {
           this.spawnNode('tree', tx, tz);
         }
         tIdx++;
       }
     }
 
-    // Rich animated Fauna herds across the map (including close herds right by player base)
-    const faunaSpawns: [FaunaKind, number, number][] = [
-      ['gazelle', -28, 27],
-      ['gazelle', -26, 25],
-      ['deer', -39, 25],
-      ['gazelle', -25, 22],
-      ['gazelle', -23, 20],
-      ['gazelle', -27, 19],
-      ['deer', -46, 23],
-      ['deer', -48, 25],
-      ['boar', -18, 28],
-      ['gazelle', 25, -22],
-      ['gazelle', 23, -20],
-      ['gazelle', 27, -19],
-      ['deer', 46, -23],
-      ['deer', 48, -25],
-      ['boar', 18, -28],
-      ['aurochs', -4, -4],
-      ['aurochs', -7, -2],
-      ['wolf', 11, 5],
-      ['wolf', -11, -5],
-    ];
-    if (this.worldSize !== 'normal') {
-      faunaSpawns.push(['aurochs', 6, 18], ['aurochs', -6, -18], ['deer', -28, -28], ['deer', 28, 28]);
-    }
-    for (const [fKind, fx, fz] of faunaSpawns) {
+    for (const [fKind, fx, fz] of mapProfile.faunaSpawns) {
       if (groundHeightAt(fx, fz, mapId) >= WATER_WALK_LIMIT && this.isClearOfSettlements(fx, fz, 3.6)) {
         this.spawnFauna(fKind, fx, fz);
       }
+    }
+
+    if (mapId === 'king_of_the_hill') {
+      const vaultMesh = createPlentyVaultMesh(this.palette, !this.isSoftwareGl);
+      vaultMesh.position.set(0, groundHeightAt(0, 0, mapId), 0);
+      this.scene.add(vaultMesh);
+      this.kothVaultMesh = vaultMesh;
+    }
+
+    if (isNomad && !isTitlePreview) {
+      this.notifyStatus('🏕️ Modo Nômade: Trégua de 90s ativa — guie seus Aldeões até um Assentamento para fundar sua capital!');
+    } else if (isMegalopolis && !isTitlePreview) {
+      this.notifyStatus('🏛️ Megalópole: Sua metrópole fortificada está erguida com múltiplos Centros e Torres!');
+    } else if (isSuddenDeath && !isTitlePreview) {
+      this.notifyStatus('💀 Morte Súbita: Apenas uma Cidadela reforçada por jogador — proteja-a a todo custo!');
+    } else if (mapId === 'king_of_the_hill' && !isTitlePreview) {
+      this.notifyStatus('👑 Rei da Colina: Capture e segure o Cofre da Abundância no monte central por 90s para vencer!');
     }
 
     // Collectible Relics scattered across map flanks
@@ -1623,8 +1682,8 @@ export class AoMEngine {
     this.weatherTimer += dt;
     if (this.weatherTimer > 95) {
       this.weatherTimer = 0;
-      const types: ('clear' | 'rain' | 'snow' | 'sandstorm')[] = ['clear', 'rain', 'snow', 'sandstorm'];
-      const next = types[Math.floor(Math.random() * types.length)];
+      const pool = getMapBiomeVisuals(this.mapId).weatherPool;
+      const next = pool[Math.floor(Math.random() * pool.length)] ?? 'clear';
       this.setWeather(next);
       const labels = { clear: 'Céu Limpo', rain: 'Chuva Intensa', snow: 'Nevasca Fria', sandstorm: 'Tempestade de Areia' };
       this.notifyStatus(`Sistema Climático: ${labels[next]}`);
@@ -2137,7 +2196,7 @@ export class AoMEngine {
 
   private spawnNode(kind: ResourceNodeKind, x: number, z: number, fixedId?: string): ResourceNodeEntity {
     const id = fixedId ?? `n_${this.nextId++}`;
-    const mesh = createResourceMesh(kind, this.palette, !this.isSoftwareGl);
+    const mesh = createResourceMesh(kind, this.palette, !this.isSoftwareGl, this.mapId, this.treeVariantCounter++);
     mesh.position.set(x, groundHeightAt(x, z, this.mapId), z);
     mesh.rotation.y = ((x * 13 + z * 7) % 6.28);
     mesh.userData.entityType = 'node';
@@ -2250,13 +2309,11 @@ export class AoMEngine {
       units.find((u) => !this.isWorkerKind(u.kind)) ??
       units[0];
     const culture = leader.team === 'player' ? this.pantheon : this.enemyPantheon;
-    const line = soundEngine.playUnitVoiceLine(
-      culture,
-      leader.kind,
-      action,
-      units.length,
-      Boolean(leader.isPromotedHero)
-    );
+    const line = soundManager.speak(leader.kind, action, {
+      pantheon: culture,
+      groupSize: units.length,
+      isPromotedHero: Boolean(leader.isPromotedHero),
+    });
     if (line) {
       this.lastVoiceLine = line;
       this.voiceLineTimer = 4.0;
@@ -3047,7 +3104,8 @@ export class AoMEngine {
       soundEngine.playFanfare(false);
       this.spawnPillarVfx(worldPos, 0xfb923c, 1.6);
       this.spawnRingVfx(worldPos, spec.radius, 0xfacc15, 1.5);
-      const huntKinds: FaunaKind[] = ['deer', 'boar', 'deer', 'gazelle'];
+      const huntPool = buildMapResourceProfile(this.mapId, this.worldSize).huntPool;
+      const huntKinds: FaunaKind[] = [huntPool[0], huntPool[1] ?? huntPool[0], huntPool[0], huntPool[2] ?? huntPool[0]];
       let spawned = 0;
       for (let i = 0; i < huntKinds.length; i++) {
         const ang = (i / huntKinds.length) * Math.PI * 2;
@@ -4036,7 +4094,18 @@ export class AoMEngine {
       this.titansEnabled = data.titansEnabled !== undefined ? data.titansEnabled : true;
       this.treatyRemaining = data.treatyRemaining ?? 0;
       this.formation = data.formation && FORMATIONS[data.formation] ? data.formation : 'box';
+      this.treeVariantCounter = 0;
+      this.kothOwner = 'neutral';
+      this.kothPlayerHold = 0;
+      this.kothEnemyHold = 0;
+      this.kothTrickleTimer = 0;
       this.rebuildTerrainForMap(savedMap);
+      if (savedMap === 'king_of_the_hill') {
+        const vaultMesh = createPlentyVaultMesh(this.palette, !this.isSoftwareGl);
+        vaultMesh.position.set(0, groundHeightAt(0, 0, savedMap), 0);
+        this.scene.add(vaultMesh);
+        this.kothVaultMesh = vaultMesh;
+      }
       this.palette.tunicPlayer.color.setHex(PANTHEONS[this.pantheon].bannerHex);
       this.elapsedSeconds = data.elapsedSeconds;
       this.age = data.age;
@@ -6815,19 +6884,26 @@ export class AoMEngine {
       }
     }
 
+    let playerWorkersAlive = 0;
+    let enemyWorkersAlive = 0;
     let enemyUnitsAlive = 0;
-    if (this.gameType === 'conquest') {
-      for (const u of this.units.values()) {
-        if (u.team === 'enemy') enemyUnitsAlive++;
+    for (const u of this.units.values()) {
+      if (u.team === 'player' && this.isWorkerKind(u.kind)) playerWorkersAlive++;
+      if (u.team === 'enemy') {
+        enemyUnitsAlive++;
+        if (this.isWorkerKind(u.kind)) enemyWorkersAlive++;
       }
     }
 
-    if (!playerTcAlive) {
+    const nomadGracePlayer = this.mapId === 'nomad' && playerWorkersAlive > 0 && this.elapsedSeconds < 240;
+    const nomadGraceEnemy = this.mapId === 'nomad' && enemyWorkersAlive > 0 && this.elapsedSeconds < 240;
+
+    if (!playerTcAlive && !nomadGracePlayer) {
       this.phase = 'defeat';
       soundEngine.playMeteor();
       soundEngine.setMusicScene('defeat');
       this.emitHudSnapshot();
-    } else if (!enemyTcAlive && enemyBuildings === 0 && (this.gameType !== 'conquest' || enemyUnitsAlive === 0)) {
+    } else if (!enemyTcAlive && !nomadGraceEnemy && enemyBuildings === 0 && (this.gameType !== 'conquest' || enemyUnitsAlive === 0)) {
       this.phase = 'victory';
       soundEngine.playFanfare(true);
       soundEngine.setMusicScene('victory');
@@ -8822,6 +8898,71 @@ export class AoMEngine {
     }
   }
 
+  private updateKingOfTheHill(dt: number) {
+    if (this.mapId !== 'king_of_the_hill' || this.phase !== 'playing' || !this.kothVaultMesh) return;
+
+    const beacon = this.kothVaultMesh.userData.beaconCrystal as THREE.Object3D | undefined;
+    if (beacon) {
+      beacon.rotation.y += dt * 1.45;
+      beacon.position.y = 4.25 + Math.sin(this.elapsedSeconds * 2.4) * 0.16;
+    }
+
+    let playerNear = 0;
+    let enemyNear = 0;
+    for (const u of this.units.values()) {
+      if (u.hp <= 0) continue;
+      const d = Math.hypot(u.mesh.position.x, u.mesh.position.z);
+      if (d <= 9.5) {
+        if (u.team === 'player') playerNear++;
+        else enemyNear++;
+      }
+    }
+
+    const prevOwner = this.kothOwner;
+    const targetHoldSeconds = 90;
+
+    if (playerNear > 0 && enemyNear === 0) {
+      this.kothOwner = 'player';
+      this.kothPlayerHold = Math.min(targetHoldSeconds, this.kothPlayerHold + dt);
+      if (prevOwner !== 'player') {
+        this.notifyStatus('👑 Você capturou o Cofre da Abundância! Segure a colina por 90s para vencer!');
+      }
+    } else if (enemyNear > 0 && playerNear === 0) {
+      this.kothOwner = 'enemy';
+      this.kothEnemyHold = Math.min(targetHoldSeconds, this.kothEnemyHold + dt);
+      if (prevOwner !== 'enemy') {
+        this.notifyStatus('⚠️ O inimigo capturou o Cofre da Abundância central!');
+      }
+    }
+
+    if (this.kothOwner !== 'neutral' && !(playerNear > 0 && enemyNear > 0)) {
+      this.kothTrickleTimer += dt;
+      if (this.kothTrickleTimer >= 2.0) {
+        this.kothTrickleTimer -= 2.0;
+        const pool = this.kothOwner === 'player' ? this.resources : this.enemyResources;
+        pool.food += 4;
+        pool.wood += 4;
+        pool.gold += 4;
+        pool.favor += 1;
+      }
+    }
+
+    if (this.kothPlayerHold >= targetHoldSeconds) {
+      this.phase = 'victory';
+      soundEngine.playFanfare(true);
+      soundEngine.setMusicScene('victory');
+      this.grantMythicVerdictReward();
+      this.notifyStatus('🏆 Vitória por Supremacia da Colina! O Cofre da Abundância consagrou seu império!');
+      this.emitHudSnapshot();
+    } else if (this.kothEnemyHold >= targetHoldSeconds) {
+      this.phase = 'defeat';
+      soundEngine.playMeteor();
+      soundEngine.setMusicScene('defeat');
+      this.notifyStatus('💀 O inimigo manteve o Cofre da Abundância por 90s e conquistou a vitória.');
+      this.emitHudSnapshot();
+    }
+  }
+
   private updateSettlements(dt: number) {
     for (const s of this.settlements.values()) {
       if (s.mesh.userData.beaconCrystal) {
@@ -9245,16 +9386,22 @@ export class AoMEngine {
         }
       }
 
-      // Enemy expands up to 3 Town Centers onto nearby neutral Settlements in Age 2+
-      if (this.enemyAge >= 2 && this.getTownCenterCount('enemy') < MAX_TOWN_CENTERS) {
+      // Enemy expands up to 3 Town Centers onto nearby neutral Settlements (immediately in Nomad if enemy has 0 TCs)
+      const enemyTcCount = this.getTownCenterCount('enemy');
+      if ((this.enemyAge >= 2 || enemyTcCount === 0) && enemyTcCount < MAX_TOWN_CENTERS) {
         const enemyTcCost = this.buildingStats('town_center', 'enemy').cost;
-        if (this.canAfford(this.enemyResources, enemyTcCost)) {
-          const settlement = this.findNearestSettlement(34, -34, 46);
+        if (enemyTcCount === 0 || this.canAfford(this.enemyResources, enemyTcCost)) {
+          const settlement = this.findNearestSettlement(34, -34, 52);
           if (settlement) {
             const enemyBuilders = [...this.units.values()]
               .filter((u) => u.team === 'enemy' && this.isWorkerKind(u.kind))
               .slice(0, 2);
             if (enemyBuilders.length > 0) {
+              if (enemyTcCount === 0) {
+                // Ensure Nomad AI has enough to found its capital cleanly
+                this.enemyResources.wood = Math.max(this.enemyResources.wood, enemyTcCost.wood ?? 0);
+                this.enemyResources.gold = Math.max(this.enemyResources.gold, enemyTcCost.gold ?? 0);
+              }
               this.beginTownCenterOnSettlement(settlement, 'enemy', enemyBuilders);
             }
           }
@@ -9748,9 +9895,10 @@ export class AoMEngine {
 
     if (selNodes.length > 0) {
       const n = selNodes[0];
+      const mapCfg = getEffectiveMapConfig(this.mapId);
       const labelMap: Record<ResourceNodeKind, string> = {
-        berry: 'Pomar Frutífero',
-        tree: 'Bosque de Pinheiros',
+        berry: 'Fonte Frutífera',
+        tree: `Floresta (${mapCfg.floraLabel.split(' e ')[0]})`,
         gold_mine: 'Veio de Ouro',
       };
       const resLabel: Record<ResourceType, string> = {
@@ -10064,6 +10212,27 @@ export class AoMEngine {
         fauna: this.globalScaleConfig.faunaMultiplier,
         resource: this.globalScaleConfig.resourceMultiplier,
       },
+      kothState:
+        this.mapId === 'king_of_the_hill'
+          ? {
+              owner: this.kothOwner,
+              playerHold: Math.round(this.kothPlayerHold),
+              enemyHold: Math.round(this.kothEnemyHold),
+              targetHold: 90,
+            }
+          : undefined,
+      mapRuleTag:
+        this.mapId === 'nomad'
+          ? 'Nômade'
+          : this.mapId === 'sudden_death'
+          ? 'Morte Súbita'
+          : this.mapId === 'megalopolis'
+          ? 'Megalópole'
+          : this.mapId === 'king_of_the_hill'
+          ? 'Rei da Colina'
+          : this.mapId === 'valley_of_the_kings'
+          ? 'Vale dos Reis'
+          : undefined,
     });
   }
 
@@ -10420,6 +10589,7 @@ export class AoMEngine {
       this.updateFauna(simDt);
       this.updateProjectiles(simDt);
       this.updateEnemyAI(simDt);
+      this.updateKingOfTheHill(simDt);
       this.updateFogOfWar(simDt);
     }
 

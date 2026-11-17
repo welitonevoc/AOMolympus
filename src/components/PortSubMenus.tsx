@@ -63,6 +63,7 @@ import {
   DifficultyId,
   GameOptionsConfig,
   GameTypeId,
+  MapConfig,
   MapId,
   MAPS,
   MatchStartOptions,
@@ -169,6 +170,7 @@ export function PortSubMenus({
   const [esoNotice, setEsoNotice] = useState<string | null>(null);
   const [showAdvancedRules, setShowAdvancedRules] = useState(false);
   const [musicTrackTick, setMusicTrackTick] = useState(0);
+  const [mapFilter, setMapFilter] = useState<'all' | 'titans' | 'base' | 'bonus'>('all');
 
   const clickSound = () => {
     soundEngine.unlock();
@@ -212,6 +214,111 @@ export function PortSubMenus({
       </div>
     </div>
   );
+
+  const SPECIAL_RULE_LABELS: Record<NonNullable<MapConfig['specialRule']>, string> = {
+    nomad: 'Nômade',
+    megalopolis: 'Megalópole',
+    sudden_death: 'Morte Súbita',
+    koth_vault: 'Cofre Central',
+    land_unknown: 'Aleatório',
+    the_unknown: 'Aleatório',
+    valley_guardians: 'Guardiões do Vale',
+    sea_of_worms: 'Mar de Vermes',
+  };
+
+  const renderMapPicker = (
+    selectedMapId: MapId,
+    onSelectMap: (id: MapId) => void,
+    compact = false
+  ) => {
+    const allMaps = Object.values(MAPS);
+    const filteredMaps =
+      mapFilter === 'all' ? allMaps : allMaps.filter((m) => m.expansion === mapFilter);
+    const selectedCfg = MAPS[selectedMapId];
+    const filterTabs: { id: 'all' | 'titans' | 'base' | 'bonus'; label: string }[] = [
+      { id: 'all', label: `Todos (${allMaps.length})` },
+      { id: 'titans', label: `The Titans (${allMaps.filter((m) => m.expansion === 'titans').length})` },
+      { id: 'base', label: `Originais (${allMaps.filter((m) => m.expansion === 'base').length})` },
+      { id: 'bonus', label: `Extras (${allMaps.filter((m) => m.expansion === 'bonus').length})` },
+    ];
+
+    return (
+      <div className="flex flex-col gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+          <span className="flex items-center gap-1.5 font-semibold text-[#f3d27a]">
+            <MapIcon className="h-3.5 w-3.5 shrink-0" />
+            <span>Mapa: {selectedCfg.name}</span>
+            {selectedCfg.specialRule && (
+              <span className="rounded border border-[#d4af37]/45 bg-[#1f2838] px-1.5 py-0.5 text-[10px] text-[#fde68a]">
+                {SPECIAL_RULE_LABELS[selectedCfg.specialRule]}
+              </span>
+            )}
+          </span>
+          <div className="flex flex-wrap items-center gap-1">
+            {filterTabs.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => {
+                  clickSound();
+                  setMapFilter(t.id);
+                }}
+                className={`rounded border px-2 py-0.5 text-[10px] font-semibold transition-colors cursor-pointer ${
+                  mapFilter === t.id
+                    ? 'border-[#d4af37] bg-[#d4af37] text-[#0b0e14]'
+                    : 'border-white/10 bg-[#0e131c] text-[#cbd5e1] hover:border-[#d4af37]/45'
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div
+          className={`grid gap-1.5 overflow-y-auto pr-1 ${
+            compact
+              ? 'grid-cols-2 sm:grid-cols-3 max-h-40'
+              : 'grid-cols-2 sm:grid-cols-4 max-h-44'
+          }`}
+        >
+          {filteredMaps.map((m) => {
+            const active = selectedMapId === m.id;
+            return (
+              <button
+                key={m.id}
+                type="button"
+                onClick={() => {
+                  clickSound();
+                  onSelectMap(m.id);
+                }}
+                title={`${m.name} — ${m.biomeLabel} (${m.floraLabel} · ${m.faunaLabel})`}
+                className={`flex items-center justify-between gap-1 rounded border px-2 py-1.5 text-left text-[11px] font-medium transition-colors cursor-pointer ${
+                  active
+                    ? 'border-[#d4af37] bg-[#1f2838] text-white font-semibold'
+                    : 'border-white/8 bg-[#161c28] text-[#cbd5e1] hover:border-[#d4af37]/40'
+                }`}
+              >
+                <span className="truncate">{m.name}</span>
+                {m.expansion === 'titans' && (
+                  <span className="shrink-0 text-[9px] font-bold text-[#38bdf8]">TT</span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="rounded border border-white/8 bg-[#0e131c] px-2.5 py-2 text-[11px] text-[#cbd5e1]">
+          <div className="text-[#94a3b8] leading-snug">{selectedCfg.subtitle}</div>
+          <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[10px] text-[#e2e8f0]">
+            <span><strong className="text-[#f3d27a]">Bioma:</strong> {selectedCfg.biomeLabel}</span>
+            <span><strong className="text-[#86efac]">Flora:</strong> {selectedCfg.floraLabel}</span>
+            <span><strong className="text-[#fdba74]">Fauna:</strong> {selectedCfg.faunaLabel}</span>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   // ── 1. UI_CAMPAIGN (uicampaign.xmb) ──
   if (menuState === 'UI_CAMPAIGN') {
@@ -483,9 +590,7 @@ export function PortSubMenus({
   // ── 3. UI_SINGLE_PLAYER_SETUP ──
   if (menuState === 'UI_SINGLE_PLAYER_SETUP') {
     const pantheonList = Object.values(PANTHEONS);
-    const mapList = Object.values(MAPS);
     const currentPantheon = PANTHEONS[skirmish.pantheon];
-    const currentMap = MAPS[skirmish.mapId];
     const gameTypeOptions: { id: GameTypeId; label: string }[] = [
       { id: 'supremacy', label: 'Supremacia' },
       { id: 'conquest', label: 'Conquista' },
@@ -611,37 +716,11 @@ export function PortSubMenus({
               </div>
             </div>
 
-            {/* Map Picker (10 Maps) */}
+            {/* Map Picker (29 Maps) */}
             <div className="rounded-lg border border-white/10 bg-[#131823] p-3.5">
-              <div className="mb-2 flex items-center justify-between gap-2 text-xs">
-                <span className="flex items-center gap-1.5 font-semibold text-[#f3d27a]">
-                  <MapIcon className="h-3.5 w-3.5" />
-                  <span>Mapa: {currentMap.name}</span>
-                </span>
-                <span className="text-[11px] text-[#94a3b8] truncate">{currentMap.subtitle}</span>
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5">
-                {mapList.map((m) => {
-                  const active = skirmish.mapId === m.id;
-                  return (
-                    <button
-                      key={m.id}
-                      type="button"
-                      onClick={() => {
-                        clickSound();
-                        onUpdateSkirmish({ ...skirmish, mapId: m.id });
-                      }}
-                      className={`rounded border px-2.5 py-1.5 text-left text-[11px] font-medium transition-colors cursor-pointer truncate ${
-                        active
-                          ? 'border-[#d4af37] bg-[#1f2838] text-white font-semibold'
-                          : 'border-white/8 bg-[#161c28] text-[#cbd5e1] hover:border-[#d4af37]/40'
-                      }`}
-                    >
-                      {m.name}
-                    </button>
-                  );
-                })}
-              </div>
+              {renderMapPicker(skirmish.mapId, (id) =>
+                onUpdateSkirmish({ ...skirmish, mapId: id })
+              )}
             </div>
           </div>
 
@@ -1561,21 +1640,12 @@ export function PortSubMenus({
               <span className="text-[#86efac]">PRONTO</span>
             </div>
 
-            <div className="mt-2 flex flex-wrap gap-2">
-              {Object.values(MAPS).map((m) => (
-                <button
-                  key={m.id}
-                  type="button"
-                  onClick={() => onUpdateSkirmish({ ...skirmish, mapId: m.id })}
-                  className={`rounded border px-2.5 py-1 text-[11px] cursor-pointer ${
-                    skirmish.mapId === m.id
-                      ? 'border-[#f3d27a] bg-[#262f40] text-[#f3d27a]'
-                      : 'border-white/10 bg-[#171c26] text-[#cbd5e1]'
-                  }`}
-                >
-                  {m.name}
-                </button>
-              ))}
+            <div className="mt-2">
+              {renderMapPicker(
+                skirmish.mapId,
+                (id) => onUpdateSkirmish({ ...skirmish, mapId: id }),
+                true
+              )}
             </div>
           </div>
 
@@ -1992,23 +2062,7 @@ export function PortSubMenus({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 rounded border border-[#d4af37]/25 bg-[#131822] p-4">
           <div>
             <div className="mb-1.5 text-xs font-bold text-[#f3d27a]">Terreno Base</div>
-            <div className="grid grid-cols-2 gap-2">
-              {Object.values(MAPS).map((m) => (
-                <button
-                  key={m.id}
-                  type="button"
-                  onClick={() => {
-                    clickSound();
-                    setEditorMap(m.id);
-                  }}
-                  className={`rounded border px-3 py-2 text-xs font-semibold cursor-pointer ${
-                    editorMap === m.id ? 'border-[#f3d27a] bg-[#262f40] text-white' : 'border-white/10 bg-[#171c26] text-[#cbd5e1]'
-                  }`}
-                >
-                  {m.name}
-                </button>
-              ))}
-            </div>
+            {renderMapPicker(editorMap, setEditorMap, true)}
           </div>
           <div>
             <div className="mb-1.5 text-xs font-bold text-[#f3d27a]">Civilização de Teste</div>

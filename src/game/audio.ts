@@ -491,14 +491,15 @@ export const PANTHEON_THEME_TRACK: Record<PantheonId, string> = {
   jotunn: 'jotunn_frost',
 };
 
-interface CulturalVoiceEntry {
+export interface CulturalVoiceEntry {
   phrase: string;
   pt: string;
   spoken: string;
   syllables: number[];
+  audioUrl?: string;
 }
 
-interface CultureVoiceProfile {
+export interface CultureVoiceProfile {
   cultureLabel: string;
   basePitch: number;
   formantF1: number;
@@ -510,7 +511,7 @@ interface CultureVoiceProfile {
   work: CulturalVoiceEntry[];
 }
 
-const CULTURE_VOICE_BANK: Record<PantheonId, CultureVoiceProfile> = {
+export const CULTURE_VOICE_BANK: Record<PantheonId, CultureVoiceProfile> = {
   greek: {
     cultureLabel: 'Helenos (Grego Antigo)',
     basePitch: 128,
@@ -824,7 +825,9 @@ class SoundEngine {
   public musicEnabled = true;
   public sfxEnabled = true;
   private lastSoundAt: Record<string, number> = {};
-  private voiceCycleIndex = 0;
+  private lastPhraseByKey: Record<string, string> = {};
+  private audioBufferCache = new Map<string, AudioBuffer>();
+  private loadingAudioUrls = new Set<string>();
   private speechQueueToken = 0;
 
   // Dynamic Hybrid Soundtrack State
@@ -1121,6 +1124,144 @@ class SoundEngine {
     osc.stop(now + 0.11);
   }
 
+  private pickRandomVoiceEntry(bank: CulturalVoiceEntry[], cacheKey: string): CulturalVoiceEntry {
+    if (bank.length <= 1) return bank[0];
+    const lastPhrase = this.lastPhraseByKey[cacheKey];
+    const candidates = lastPhrase ? bank.filter((entry) => entry.phrase !== lastPhrase) : bank;
+    const pool = candidates.length > 0 ? candidates : bank;
+    const picked = pool[Math.floor(Math.random() * pool.length)];
+    this.lastPhraseByKey[cacheKey] = picked.phrase;
+    return picked;
+  }
+
+  public preloadAudioClip(url: string) {
+    if (!url || this.audioBufferCache.has(url) || this.loadingAudioUrls.has(url)) return;
+    if (typeof fetch === 'undefined') return;
+    const ctx = this.getOrCreateRawContext();
+    if (!ctx) return;
+    this.loadingAudioUrls.add(url);
+    fetch(url)
+      .then((res) => (res.ok ? res.arrayBuffer() : Promise.reject(new Error('HTTP error'))))
+      .then((buf) => ctx.decodeAudioData(buf))
+      .then((decoded) => {
+        this.audioBufferCache.set(url, decoded);
+      })
+      .catch(() => {})
+      .finally(() => {
+        this.loadingAudioUrls.delete(url);
+      });
+  }
+
+  public performVoiceClip(opts: {
+    phrase: string;
+    translation: string;
+    spoken: string;
+    cultureLabel: string;
+    action: UnitVoiceAction;
+    syllables: number[];
+    basePitch: number;
+    formantF1: number;
+    formantF2: number;
+    hornPitch: number;
+    kindPitchMult: number;
+    speechRate: number;
+    isFemale: boolean;
+    isDarkTone: boolean;
+    groupSize: number;
+    audioUrl?: string;
+    respectCooldown?: boolean;
+  }): UnitVoiceLineInfo {
+    const result: UnitVoiceLineInfo = {
+      phrase: opts.phrase,
+      translation: opts.translation,
+      cultureLabel: opts.cultureLabel,
+      action: opts.action,
+    };
+
+    if (opts.respectCooldown !== false && !this.canPlay('unit_voice', 220)) {
+      return result;
+    }
+
+    const scale = this.effectiveSfxScale;
+    if (scale <= 0) {
+      return result;
+    }
+
+    // 0. Play registered real audio clip URL if decoded and cached
+    let playedRegisteredClip = false;
+    if (opts.audioUrl) {
+      const ctx = this.ensureContext();
+      const cached = this.audioBufferCache.get(opts.audioUrl);
+      if (ctx && cached) {
+        const src = ctx.createBufferSource();
+        const gain = ctx.createGain();
+        src.buffer = cached;
+        src.playbackRate.value = Math.max(0.75, Math.min(1.25, opts.speechRate));
+        gain.gain.value = Math.min(1.0, 0.85 * scale);
+        src.connect(gain);
+        gain.connect(ctx.destination);
+        src.start(ctx.currentTime);
+        playedRegisteredClip = true;
+      } else {
+        this.preloadAudioClip(opts.audioUrl);
+      }
+    }
+
+    // 1. Try real browser SpeechSynthesis with phonetic pronunciation
+    const speechPitch = Math.max(0.45, Math.min(1.5, opts.kindPitchMult));
+    const spokeLive = playedRegisteredClip
+      ? true
+      : this.speakSpokenText(opts.spoken, {
+          pitch: speechPitch,
+          rate: opts.speechRate,
+          isFemale: opts.isFemale,
+        });
+
+    const ctx = this.ensureContext();
+    if (!ctx) {
+      return result;
+    }
+
+    const now = ctx.currentTime;
+    // 2. If neither audio clip nor SpeechSynthesis is active, synthesize expressive 3-formant vocal syllables
+    if (!spokeLive) {
+      this.playVowelFormantCadence(
+        ctx,
+        scale,
+        opts.spoken,
+        opts.basePitch * opts.kindPitchMult,
+        opts.formantF1,
+        opts.formantF2,
+        opts.syllables,
+        opts.action,
+        opts.groupSize,
+        opts.isDarkTone
+      );
+    }
+
+    if (opts.action === 'attack') {
+      const hornOsc = ctx.createOscillator();
+      const hornGain = ctx.createGain();
+      hornOsc.type = opts.groupSize > 1 ? 'sawtooth' : 'triangle';
+      const hornFreq = opts.hornPitch * (opts.groupSize > 2 ? 1.0 : 0.85);
+      hornOsc.frequency.setValueAtTime(hornFreq, now);
+      hornOsc.frequency.exponentialRampToValueAtTime(hornFreq * 1.25, now + 0.22);
+      hornGain.gain.setValueAtTime(0.001, now);
+      hornGain.gain.linearRampToValueAtTime((spokeLive ? 0.045 : 0.08) * scale, now + 0.03);
+      hornGain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+      hornOsc.connect(hornGain);
+      hornGain.connect(ctx.destination);
+      hornOsc.start(now);
+      hornOsc.stop(now + 0.26);
+    } else if (opts.action === 'select') {
+      this.playSelect();
+    } else {
+      this.playCommand();
+    }
+
+    return result;
+  }
+
   /**
    * Plays a culturally localized unit voice line (Web Speech API phonetic pronunciation
    * with multi-formant vocal cadence fallback) when units or main characters are selected or ordered.
@@ -1134,8 +1275,7 @@ class SoundEngine {
   ): UnitVoiceLineInfo {
     const profile = CULTURE_VOICE_BANK[pantheon] ?? CULTURE_VOICE_BANK.greek;
     const bank = profile[action] && profile[action].length > 0 ? profile[action] : profile.select;
-    const chosen = bank[this.voiceCycleIndex % bank.length];
-    this.voiceCycleIndex = (this.voiceCycleIndex + 1) % 997;
+    const chosen = this.pickRandomVoiceEntry(bank, `${pantheon}:${action}`);
 
     let phrase = chosen.phrase;
     let translation = chosen.pt;

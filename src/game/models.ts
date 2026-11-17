@@ -25,7 +25,13 @@ import { createEgyptianUnitMesh, getEgyptianUnitMarkerSpec } from '../civilizaca
 import { createNorseUnitMesh, getNorseUnitMarkerSpec } from '../civilizacao/nordicos/nordicosModels';
 import { createAtlanteanUnitMesh, getAtlanteanUnitMarkerSpec } from '../civilizacao/atlantes/atlantesModels';
 import { createNorseBuildingMesh } from '../civilizacao/nordicos/norseBuildingModels';
-import { createAoMOakTreeMesh, getFaunaCoatMaterial } from '../TEXTURA';
+import {
+  createAoMOakTreeMesh,
+  createBiomeTreeMesh,
+  getFaunaAccentMaterial,
+  getFaunaCoatMaterial,
+} from '../TEXTURA';
+import { getMapBiomeVisuals, groundHeightAt as computeGeoGroundHeightAt } from './mapGeography';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 export const MAP_HALF_SIZE = 74;
@@ -33,91 +39,10 @@ export const PLAYABLE_HALF_SIZE = 58;
 
 /**
  * Deterministic heightfield per AoM map biome.
- * Flat plateaus around player base (-34, 34) and enemy base (34, -34),
- * map-specific terrain topography, and shoreline drop beyond PLAYABLE_HALF_SIZE.
+ * Delegates to shared mapGeography engine so Mesh, Minimap, NavGrid & Spawners match 100%.
  */
 export function groundHeightAt(x: number, z: number, mapId: MapId = 'mediterranean'): number {
-  const distPlayer = Math.hypot(x + 34, z - 34);
-  const distEnemy = Math.hypot(x - 34, z + 34);
-  const baseFlatten =
-    Math.min(1, Math.max(0, (distPlayer - 11) / 10)) *
-    Math.min(1, Math.max(0, (distEnemy - 11) / 10));
-
-  const edgeDist = Math.max(Math.abs(x), Math.abs(z));
-  let shoreDrop = 0;
-  if (edgeDist > PLAYABLE_HALF_SIZE) {
-    const t = Math.min(1, (edgeDist - PLAYABLE_HALF_SIZE) / (MAP_HALF_SIZE - PLAYABLE_HALF_SIZE));
-    shoreDrop = -t * t * 4.2;
-  }
-
-  if (mapId === 'acropolis') {
-    const pPlateau = Math.max(0, 1 - Math.max(0, (distPlayer - 15) / 12)) * 2.1;
-    const ePlateau = Math.max(0, 1 - Math.max(0, (distEnemy - 15) / 12)) * 2.1;
-    const centerBasin = Math.sin(x * 0.05) * Math.cos(z * 0.05) * 0.55 * baseFlatten;
-    return Math.max(-3.6, 0.35 + pPlateau + ePlateau + centerBasin + shoreDrop);
-  }
-
-  if (mapId === 'nile' || mapId === 'yellow_river') {
-    const dunes = (Math.sin(x * 0.05 + z * 0.03) * 0.8 + Math.cos(z * 0.07) * 0.35) * baseFlatten;
-    const riverDist = Math.abs(x - z) / Math.SQRT2;
-    const fordRadius = mapId === 'yellow_river' ? 10.5 : 7.5;
-    const fordBlend = Math.min(1, Math.max(0, (Math.hypot(x, z) - fordRadius) / 8));
-    const riverDip = riverDist < 8 ? -Math.cos((riverDist / 8) * (Math.PI / 2)) * 1.45 * fordBlend : 0;
-    return Math.max(-3.6, 0.42 + dunes + riverDip + shoreDrop);
-  }
-
-  if (mapId === 'ghost_lake') {
-    const r = Math.hypot(x, z);
-    // Flat frozen central lake (walkable ice sheet y ~ 0.12) surrounded by rolling snowy rim
-    const rim = Math.max(0, Math.min(1, (r - 19) / 12));
-    const hills = (Math.sin(x * 0.07) * Math.cos(z * 0.07) * 1.35 + 0.55) * rim * baseFlatten;
-    return Math.max(-3.6, 0.12 + hills + shoreDrop);
-  }
-
-  if (mapId === 'oasis') {
-    const r = Math.hypot(x, z);
-    // Sacred oasis pool in dead center (r < 9.5) with fertile shelf & sand dunes outside
-    const pondDip = r < 9.5 ? -Math.cos((r / 9.5) * (Math.PI / 2)) * 1.55 : 0;
-    const dunes = (Math.sin(x * 0.06 + z * 0.04) * 0.9 + Math.cos(x * 0.08 - z * 0.05) * 0.4) * baseFlatten;
-    return Math.max(-3.6, 0.45 + dunes + pondDip + shoreDrop);
-  }
-
-  if (mapId === 'jotunheim') {
-    // High snowy mountain ridges flanking the NE-SW valley pass
-    const valleyDist = Math.abs(x + z) / Math.SQRT2;
-    const ridgeWall = valleyDist > 21 ? Math.min(3.1, (valleyDist - 21) * 0.24) * baseFlatten : 0;
-    const frostHills = Math.sin(x * 0.08) * Math.cos(z * 0.08) * 0.9 * baseFlatten;
-    return Math.max(-3.6, 0.42 + ridgeWall + frostHills + shoreDrop);
-  }
-
-  if (mapId === 'erebus') {
-    const riverDist = Math.abs(x - z) / Math.SQRT2;
-    const bridgeBlend = Math.min(1, Math.max(0, (Math.hypot(x, z) - 9.5) / 6));
-    const lavaTrench = riverDist < 6.5 ? -Math.cos((riverDist / 6.5) * (Math.PI / 2)) * 1.65 * bridgeBlend : 0;
-    const crags = (Math.sin(x * 0.09) * Math.cos(z * 0.08) * 1.45) * baseFlatten;
-    return Math.max(-3.6, 0.48 + crags + lavaTrench + shoreDrop);
-  }
-
-  if (mapId === 'yucatan') {
-    const jungleTerrace =
-      (Math.sin(x * 0.06) * Math.cos(z * 0.06) * 1.15 + Math.cos((x - z) * 0.08) * 0.5) * baseFlatten;
-    return Math.max(-3.6, 0.4 + jungleTerrace + shoreDrop);
-  }
-
-  if (mapId === 'alfheim') {
-    const ridges =
-      (Math.sin(x * 0.075) * Math.cos(z * 0.075) * 1.9 +
-        Math.sin((x - z) * 0.08) * 0.75) *
-      baseFlatten;
-    return Math.max(-3.6, 0.48 + ridges + shoreDrop);
-  }
-
-  const hill =
-    (Math.sin(x * 0.065) * Math.cos(z * 0.065) * 1.35 +
-      Math.sin((x + z) * 0.09) * 0.55) *
-    baseFlatten;
-
-  return Math.max(-3.6, 0.35 + hill + shoreDrop);
+  return computeGeoGroundHeightAt(x, z, mapId);
 }
 
 export interface MaterialPalette {
@@ -3116,9 +3041,12 @@ export function createUnitMesh(
 export function createResourceMesh(
   kind: ResourceNodeKind,
   pal: MaterialPalette,
-  enableShadows: boolean
+  enableShadows: boolean,
+  mapId: MapId = 'mediterranean',
+  variantSeed = 0
 ): THREE.Group {
   const root = new THREE.Group();
+  const bio = getMapBiomeVisuals(mapId);
 
   const add = (m: THREE.Mesh, x: number, y: number, z: number) => {
     m.position.set(x, y, z);
@@ -3131,17 +3059,34 @@ export function createResourceMesh(
   };
 
   if (kind === 'tree') {
-    const oakGroup = createAoMOakTreeMesh(pal, enableShadows);
-    root.add(oakGroup);
-    root.userData.oakCanopyGroup = oakGroup.userData.oakCanopyGroup;
-    root.userData.oakVariant = oakGroup.userData.oakVariant;
+    const useSecondary = Boolean(bio.secondaryTreeStyle && variantSeed % 3 === 1);
+    const style = useSecondary ? bio.secondaryTreeStyle! : bio.treeStyle;
+    const treeGroup = createBiomeTreeMesh(style, pal, enableShadows, variantSeed);
+    root.add(treeGroup);
+    root.userData.oakCanopyGroup = treeGroup.userData.oakCanopyGroup;
+    root.userData.oakVariant = treeGroup.userData.oakVariant;
     attachGroundMarkers(root, 0.98, pal, 'neutral');
     attachHealthBar(root, 5.9, 1.75);
   } else if (kind === 'berry') {
-    add(new THREE.Mesh(new THREE.DodecahedronGeometry(0.72, 1), pal.foliagePine), 0, 0.48, 0);
+    const bushMat =
+      bio.berryStyle === 'erebus_fungus'
+        ? pal.ember
+        : bio.berryStyle === 'frost_berry'
+        ? pal.iceBlue
+        : pal.foliagePine;
+    const fruitMat =
+      bio.berryStyle === 'desert_date'
+        ? pal.goldOre
+        : bio.berryStyle === 'frost_berry'
+        ? pal.lapis
+        : bio.berryStyle === 'jungle_fruit'
+        ? pal.gold
+        : pal.berryRed;
+
+    add(new THREE.Mesh(new THREE.DodecahedronGeometry(0.72, 1), bushMat), 0, 0.48, 0);
     add(new THREE.Mesh(new THREE.DodecahedronGeometry(0.55, 1), pal.foliageDark), 0.48, 0.4, 0.22);
-    add(new THREE.Mesh(new THREE.DodecahedronGeometry(0.52, 1), pal.foliagePine), -0.42, 0.38, -0.18);
-    const berryGeo = new THREE.SphereGeometry(0.1, 6, 6);
+    add(new THREE.Mesh(new THREE.DodecahedronGeometry(0.52, 1), bushMat), -0.42, 0.38, -0.18);
+    const berryGeo = new THREE.SphereGeometry(0.11, 6, 6);
     for (const [bx, by, bz] of [
       [0.22, 0.85, 0.48],
       [-0.3, 0.72, 0.42],
@@ -3149,16 +3094,33 @@ export function createResourceMesh(
       [-0.08, 0.92, -0.3],
       [0.12, 0.62, -0.5],
     ]) {
-      add(new THREE.Mesh(berryGeo, pal.berryRed), bx, by, bz);
+      add(new THREE.Mesh(berryGeo, fruitMat), bx, by, bz);
     }
     attachGroundMarkers(root, 0.95, pal, 'neutral');
     attachHealthBar(root, 1.55, 1.35);
   } else {
-    // Gold Mine (3.8 x 3.8 rocky outcropping with golden crystalline veins)
-    const rockBase = add(new THREE.Mesh(new THREE.DodecahedronGeometry(1.5, 0), pal.obsidian), 0, 0.55, 0);
+    // Gold Mine (biome-tinted rocky outcropping with golden crystalline veins)
+    const rockOuterMat =
+      bio.rockStyle === 'sandstone'
+        ? pal.sandstoneDark
+        : bio.rockStyle === 'ice'
+        ? pal.iceBlue
+        : bio.rockStyle === 'obsidian'
+        ? pal.obsidian
+        : bio.rockStyle === 'mossy'
+        ? pal.foliageDark
+        : pal.stoneDark;
+    const rockCoreMat =
+      bio.rockStyle === 'sandstone'
+        ? pal.sandstone
+        : bio.rockStyle === 'ice'
+        ? pal.marble
+        : pal.obsidian;
+
+    const rockBase = add(new THREE.Mesh(new THREE.DodecahedronGeometry(1.5, 0), rockCoreMat), 0, 0.55, 0);
     rockBase.scale.set(1.25, 0.62, 1.15);
-    add(new THREE.Mesh(new THREE.DodecahedronGeometry(0.95, 0), pal.stoneDark), -0.95, 0.38, 0.55);
-    add(new THREE.Mesh(new THREE.DodecahedronGeometry(0.82, 0), pal.stoneDark), 0.92, 0.35, -0.45);
+    add(new THREE.Mesh(new THREE.DodecahedronGeometry(0.95, 0), rockOuterMat), -0.95, 0.38, 0.55);
+    add(new THREE.Mesh(new THREE.DodecahedronGeometry(0.82, 0), rockOuterMat), 0.92, 0.35, -0.45);
 
     const mainLode = add(new THREE.Mesh(new THREE.DodecahedronGeometry(0.92, 0), pal.goldOre), 0.15, 1.05, 0.08);
     mainLode.scale.set(1.1, 1.25, 0.95);
@@ -3174,6 +3136,35 @@ export function createResourceMesh(
     attachHealthBar(root, 2.45, 2.0);
   }
 
+  return root;
+}
+
+export function createPlentyVaultMesh(
+  pal: MaterialPalette,
+  enableShadows: boolean
+): THREE.Group {
+  const root = new THREE.Group();
+  const add = (m: THREE.Mesh, x: number, y: number, z: number) => {
+    m.position.set(x, y, z);
+    if (enableShadows) {
+      m.castShadow = true;
+      m.receiveShadow = true;
+    }
+    root.add(m);
+    return m;
+  };
+
+  add(new THREE.Mesh(new THREE.CylinderGeometry(2.6, 3.0, 0.45, 8), pal.stoneDark), 0, 0.22, 0);
+  add(new THREE.Mesh(new THREE.CylinderGeometry(2.05, 2.35, 0.35, 8), pal.marble), 0, 0.62, 0);
+  for (let i = 0; i < 4; i++) {
+    const a = (i / 4) * Math.PI * 2 + Math.PI / 4;
+    add(new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.28, 2.6, 8), pal.marble), Math.cos(a) * 1.45, 1.9, Math.sin(a) * 1.45);
+  }
+  add(new THREE.Mesh(new THREE.CylinderGeometry(1.75, 1.85, 0.3, 8), pal.gold), 0, 3.25, 0);
+  const chest = add(new THREE.Mesh(new THREE.BoxGeometry(1.15, 0.85, 0.85), pal.goldOre), 0, 1.25, 0);
+  chest.rotation.y = Math.PI / 4;
+  const beacon = add(new THREE.Mesh(new THREE.OctahedronGeometry(0.55, 0), pal.crystalGlow), 0, 4.25, 0);
+  root.userData.beaconCrystal = beacon;
   return root;
 }
 
@@ -3270,6 +3261,7 @@ export function createFaunaMesh(
   root.userData.bodyGroup = bodyGroup;
 
   const coatMat = getFaunaCoatMaterial(kind);
+  const accentMat = getFaunaAccentMaterial(kind);
 
   const part = (geo: THREE.BufferGeometry, mat: THREE.Material, x: number, y: number, z: number) => {
     const m = new THREE.Mesh(geo, mat);
@@ -3279,32 +3271,33 @@ export function createFaunaMesh(
     return m;
   };
 
-  if (kind === 'gazelle' || kind === 'deer') {
-    const scale = kind === 'deer' ? 1.08 : 0.88;
+  if (kind === 'gazelle' || kind === 'deer' || kind === 'reindeer' || kind === 'goat') {
+    const scale = kind === 'deer' ? 1.08 : kind === 'reindeer' ? 1.12 : kind === 'goat' ? 0.78 : 0.88;
     const leftLeg = part(new THREE.BoxGeometry(0.1, 0.52 * scale, 0.1), coatMat, -0.14, 0.26 * scale, 0.32);
     const rightLeg = part(new THREE.BoxGeometry(0.1, 0.52 * scale, 0.1), coatMat, 0.14, 0.26 * scale, 0.32);
     const backLeftLeg = part(new THREE.BoxGeometry(0.1, 0.52 * scale, 0.1), coatMat, -0.14, 0.26 * scale, -0.32);
     const backRightLeg = part(new THREE.BoxGeometry(0.1, 0.52 * scale, 0.1), coatMat, 0.14, 0.26 * scale, -0.32);
     part(new THREE.BoxGeometry(0.36 * scale, 0.36 * scale, 0.92 * scale), coatMat, 0, 0.68 * scale, 0);
     part(new THREE.BoxGeometry(0.3 * scale, 0.14 * scale, 0.68 * scale), pal.ivory, 0, 0.54 * scale, 0);
-    const neck = part(new THREE.BoxGeometry(0.16, 0.46 * scale, 0.18), coatMat, 0, 0.98 * scale, 0.4);
+    const neck = part(new THREE.BoxGeometry(0.16, 0.46 * scale, 0.18), kind === 'reindeer' ? pal.ivory : coatMat, 0, 0.98 * scale, 0.4);
     neck.rotation.x = 0.32;
     part(new THREE.BoxGeometry(0.18, 0.2, 0.34), coatMat, 0, 1.2 * scale, 0.56);
-    const hornMat = kind === 'deer' ? pal.ivory : pal.stoneDark;
-    const hL = part(new THREE.ConeGeometry(0.038, kind === 'deer' ? 0.46 : 0.34, 5), hornMat, -0.1, 1.44 * scale, 0.48);
-    hL.rotation.z = 0.32;
-    hL.rotation.x = -0.35;
-    const hR = part(new THREE.ConeGeometry(0.038, kind === 'deer' ? 0.46 : 0.34, 5), hornMat, 0.1, 1.44 * scale, 0.48);
-    hR.rotation.z = -0.32;
-    hR.rotation.x = -0.35;
+    const hornMat = kind === 'deer' || kind === 'reindeer' ? pal.ivory : accentMat;
+    const hornLen = kind === 'reindeer' ? 0.56 : kind === 'deer' ? 0.46 : 0.32;
+    const hL = part(new THREE.ConeGeometry(0.038, hornLen, 5), hornMat, -0.1, 1.44 * scale, 0.48);
+    hL.rotation.z = 0.35;
+    hL.rotation.x = -0.38;
+    const hR = part(new THREE.ConeGeometry(0.038, hornLen, 5), hornMat, 0.1, 1.44 * scale, 0.48);
+    hR.rotation.z = -0.35;
+    hR.rotation.x = -0.38;
     part(new THREE.BoxGeometry(0.09, 0.11, 0.15), pal.ivory, 0, 0.76 * scale, -0.5);
 
     root.userData.leftLeg = leftLeg;
     root.userData.rightLeg = rightLeg;
     root.userData.backLeftLeg = backLeftLeg;
     root.userData.backRightLeg = backRightLeg;
-    attachGroundMarkers(root, kind === 'deer' ? 0.50 : 0.45, pal, 'neutral');
-    attachHealthBar(root, kind === 'deer' ? 1.85 : 1.5, 1.05, true);
+    attachGroundMarkers(root, kind === 'reindeer' ? 0.52 : kind === 'deer' ? 0.5 : kind === 'goat' ? 0.42 : 0.45, pal, 'neutral');
+    attachHealthBar(root, 1.75 * scale, 1.05, true);
   } else if (kind === 'boar') {
     const leftLeg = part(new THREE.BoxGeometry(0.13, 0.32, 0.13), coatMat, -0.18, 0.16, 0.3);
     const rightLeg = part(new THREE.BoxGeometry(0.13, 0.32, 0.13), coatMat, 0.18, 0.16, 0.3);
@@ -3327,13 +3320,14 @@ export function createFaunaMesh(
     root.userData.backRightLeg = backRightLeg;
     attachGroundMarkers(root, 0.55, pal, 'neutral');
     attachHealthBar(root, 1.35, 1.1, true);
-  } else if (kind === 'aurochs') {
+  } else if (kind === 'aurochs' || kind === 'musk_ox') {
+    const isMusk = kind === 'musk_ox';
     const leftLeg = part(new THREE.BoxGeometry(0.16, 0.52, 0.16), coatMat, -0.26, 0.26, 0.46);
     const rightLeg = part(new THREE.BoxGeometry(0.16, 0.52, 0.16), coatMat, 0.26, 0.26, 0.46);
     const backLeftLeg = part(new THREE.BoxGeometry(0.16, 0.52, 0.16), coatMat, -0.26, 0.26, -0.46);
     const backRightLeg = part(new THREE.BoxGeometry(0.16, 0.52, 0.16), coatMat, 0.26, 0.26, -0.46);
-    part(new THREE.BoxGeometry(0.72, 0.65, 1.32), coatMat, 0, 0.82, 0);
-    part(new THREE.BoxGeometry(0.64, 0.26, 0.62), pal.furBrown, 0, 1.18, 0.26);
+    part(new THREE.BoxGeometry(isMusk ? 0.82 : 0.72, isMusk ? 0.72 : 0.65, 1.32), coatMat, 0, 0.82, 0);
+    part(new THREE.BoxGeometry(0.68, 0.3, 0.68), isMusk ? accentMat : pal.furBrown, 0, 1.18, 0.26);
     part(new THREE.BoxGeometry(0.46, 0.44, 0.46), coatMat, 0, 0.92, 0.8);
     const hL = part(new THREE.ConeGeometry(0.06, 0.42, 6), pal.ivory, -0.3, 1.15, 0.84);
     hL.rotation.z = 1.05;
@@ -3348,6 +3342,114 @@ export function createFaunaMesh(
     root.userData.backRightLeg = backRightLeg;
     attachGroundMarkers(root, 0.72, pal, 'neutral');
     attachHealthBar(root, 1.95, 1.35, true);
+  } else if (kind === 'camel') {
+    const leftLeg = part(new THREE.BoxGeometry(0.12, 0.78, 0.12), coatMat, -0.2, 0.39, 0.44);
+    const rightLeg = part(new THREE.BoxGeometry(0.12, 0.78, 0.12), coatMat, 0.2, 0.39, 0.44);
+    const backLeftLeg = part(new THREE.BoxGeometry(0.12, 0.78, 0.12), coatMat, -0.2, 0.39, -0.44);
+    const backRightLeg = part(new THREE.BoxGeometry(0.12, 0.78, 0.12), coatMat, 0.2, 0.39, -0.44);
+    part(new THREE.BoxGeometry(0.52, 0.48, 1.15), coatMat, 0, 0.96, 0);
+    // Hump
+    part(new THREE.SphereGeometry(0.36, 8, 6), accentMat, 0, 1.34, -0.05);
+    const neck = part(new THREE.BoxGeometry(0.18, 0.65, 0.2), coatMat, 0, 1.32, 0.58);
+    neck.rotation.x = 0.42;
+    part(new THREE.BoxGeometry(0.22, 0.24, 0.4), coatMat, 0, 1.62, 0.82);
+
+    root.userData.leftLeg = leftLeg;
+    root.userData.rightLeg = rightLeg;
+    root.userData.backLeftLeg = backLeftLeg;
+    root.userData.backRightLeg = backRightLeg;
+    attachGroundMarkers(root, 0.62, pal, 'neutral');
+    attachHealthBar(root, 2.05, 1.35, true);
+  } else if (kind === 'elephant_wild') {
+    const leftLeg = part(new THREE.CylinderGeometry(0.18, 0.21, 0.76, 7), coatMat, -0.36, 0.38, 0.56);
+    const rightLeg = part(new THREE.CylinderGeometry(0.18, 0.21, 0.76, 7), coatMat, 0.36, 0.38, 0.56);
+    const backLeftLeg = part(new THREE.CylinderGeometry(0.18, 0.21, 0.76, 7), coatMat, -0.36, 0.38, -0.56);
+    const backRightLeg = part(new THREE.CylinderGeometry(0.18, 0.21, 0.76, 7), coatMat, 0.36, 0.38, -0.56);
+    part(new THREE.BoxGeometry(0.98, 0.88, 1.56), coatMat, 0, 1.14, 0);
+    part(new THREE.BoxGeometry(0.68, 0.66, 0.64), coatMat, 0, 1.32, 0.96);
+    // Large ears
+    part(new THREE.BoxGeometry(0.12, 0.62, 0.48), coatMat, -0.44, 1.34, 0.88);
+    part(new THREE.BoxGeometry(0.12, 0.62, 0.48), coatMat, 0.44, 1.34, 0.88);
+    // Trunk
+    const trunk = part(new THREE.CylinderGeometry(0.09, 0.14, 0.86, 6), coatMat, 0, 0.96, 1.36);
+    trunk.rotation.x = 0.28;
+    // Ivory tusks
+    const tL = part(new THREE.ConeGeometry(0.06, 0.58, 6), accentMat, -0.22, 1.08, 1.38);
+    tL.rotation.x = Math.PI / 2.2;
+    const tR = part(new THREE.ConeGeometry(0.06, 0.58, 6), accentMat, 0.22, 1.08, 1.38);
+    tR.rotation.x = Math.PI / 2.2;
+
+    root.userData.leftLeg = leftLeg;
+    root.userData.rightLeg = rightLeg;
+    root.userData.backLeftLeg = backLeftLeg;
+    root.userData.backRightLeg = backRightLeg;
+    attachGroundMarkers(root, 0.94, pal, 'neutral');
+    attachHealthBar(root, 2.35, 1.65, true);
+  } else if (kind === 'hippo') {
+    const leftLeg = part(new THREE.CylinderGeometry(0.15, 0.16, 0.36, 7), coatMat, -0.28, 0.18, 0.46);
+    const rightLeg = part(new THREE.CylinderGeometry(0.15, 0.16, 0.36, 7), coatMat, 0.28, 0.18, 0.46);
+    const backLeftLeg = part(new THREE.CylinderGeometry(0.15, 0.16, 0.36, 7), coatMat, -0.28, 0.18, -0.46);
+    const backRightLeg = part(new THREE.CylinderGeometry(0.15, 0.16, 0.36, 7), coatMat, 0.28, 0.18, -0.46);
+    part(new THREE.BoxGeometry(0.84, 0.62, 1.38), coatMat, 0, 0.62, 0);
+    part(new THREE.BoxGeometry(0.56, 0.44, 0.54), coatMat, 0, 0.66, 0.84);
+    part(new THREE.BoxGeometry(0.44, 0.24, 0.28), accentMat, 0, 0.54, 1.12);
+
+    root.userData.leftLeg = leftLeg;
+    root.userData.rightLeg = rightLeg;
+    root.userData.backLeftLeg = backLeftLeg;
+    root.userData.backRightLeg = backRightLeg;
+    attachGroundMarkers(root, 0.78, pal, 'neutral');
+    attachHealthBar(root, 1.55, 1.35, true);
+  } else if (kind === 'crocodile') {
+    const leftLeg = part(new THREE.BoxGeometry(0.16, 0.14, 0.16), coatMat, -0.28, 0.08, 0.36);
+    const rightLeg = part(new THREE.BoxGeometry(0.16, 0.14, 0.16), coatMat, 0.28, 0.08, 0.36);
+    const backLeftLeg = part(new THREE.BoxGeometry(0.16, 0.14, 0.16), coatMat, -0.28, 0.08, -0.36);
+    const backRightLeg = part(new THREE.BoxGeometry(0.16, 0.14, 0.16), coatMat, 0.28, 0.08, -0.36);
+    part(new THREE.BoxGeometry(0.42, 0.2, 1.18), coatMat, 0, 0.18, 0);
+    part(new THREE.BoxGeometry(0.28, 0.14, 0.62), coatMat, 0, 0.16, 0.82);
+    part(new THREE.ConeGeometry(0.16, 0.95, 5), accentMat, 0, 0.15, -0.98).rotation.x = -Math.PI / 2;
+
+    root.userData.leftLeg = leftLeg;
+    root.userData.rightLeg = rightLeg;
+    root.userData.backLeftLeg = backLeftLeg;
+    root.userData.backRightLeg = backRightLeg;
+    attachGroundMarkers(root, 0.62, pal, 'neutral');
+    attachHealthBar(root, 0.95, 1.15, true);
+  } else if (kind === 'lion') {
+    const leftLeg = part(new THREE.BoxGeometry(0.11, 0.44, 0.11), coatMat, -0.15, 0.22, 0.36);
+    const rightLeg = part(new THREE.BoxGeometry(0.11, 0.44, 0.11), coatMat, 0.15, 0.22, 0.36);
+    const backLeftLeg = part(new THREE.BoxGeometry(0.11, 0.44, 0.11), coatMat, -0.15, 0.22, -0.36);
+    const backRightLeg = part(new THREE.BoxGeometry(0.11, 0.44, 0.11), coatMat, 0.15, 0.22, -0.36);
+    part(new THREE.BoxGeometry(0.42, 0.4, 0.98), coatMat, 0, 0.62, 0);
+    // Mane & Head
+    part(new THREE.DodecahedronGeometry(0.32, 0), accentMat, 0, 0.78, 0.56);
+    part(new THREE.BoxGeometry(0.26, 0.24, 0.28), coatMat, 0, 0.76, 0.72);
+    const tail = part(new THREE.BoxGeometry(0.08, 0.08, 0.54), coatMat, 0, 0.64, -0.66);
+    tail.rotation.x = -0.35;
+
+    root.userData.leftLeg = leftLeg;
+    root.userData.rightLeg = rightLeg;
+    root.userData.backLeftLeg = backLeftLeg;
+    root.userData.backRightLeg = backRightLeg;
+    attachGroundMarkers(root, 0.54, pal, 'neutral');
+    attachHealthBar(root, 1.5, 1.15, true);
+  } else if (kind === 'bear') {
+    const leftLeg = part(new THREE.BoxGeometry(0.18, 0.44, 0.18), coatMat, -0.24, 0.22, 0.42);
+    const rightLeg = part(new THREE.BoxGeometry(0.18, 0.44, 0.18), coatMat, 0.24, 0.22, 0.42);
+    const backLeftLeg = part(new THREE.BoxGeometry(0.18, 0.44, 0.18), coatMat, -0.24, 0.22, -0.42);
+    const backRightLeg = part(new THREE.BoxGeometry(0.18, 0.44, 0.18), coatMat, 0.24, 0.22, -0.42);
+    part(new THREE.BoxGeometry(0.68, 0.58, 1.18), coatMat, 0, 0.72, 0);
+    part(new THREE.BoxGeometry(0.42, 0.36, 0.44), coatMat, 0, 0.84, 0.72);
+    part(new THREE.BoxGeometry(0.22, 0.18, 0.22), accentMat, 0, 0.76, 0.96);
+    part(new THREE.SphereGeometry(0.09, 6, 5), coatMat, -0.16, 1.04, 0.68);
+    part(new THREE.SphereGeometry(0.09, 6, 5), coatMat, 0.16, 1.04, 0.68);
+
+    root.userData.leftLeg = leftLeg;
+    root.userData.rightLeg = rightLeg;
+    root.userData.backLeftLeg = backLeftLeg;
+    root.userData.backRightLeg = backRightLeg;
+    attachGroundMarkers(root, 0.66, pal, 'neutral');
+    attachHealthBar(root, 1.65, 1.25, true);
   } else {
     // Wolf
     const leftLeg = part(new THREE.BoxGeometry(0.1, 0.38, 0.1), coatMat, -0.13, 0.19, 0.32);

@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Castle, Crosshair, Eye, Maximize2, Minimize2, Swords, Trees } from 'lucide-react';
 import { groundHeightAt, MAP_HALF_SIZE, PLAYABLE_HALF_SIZE } from '../game/models';
-import { MapId, MAPS, MinimapBlip, PANTHEONS, PantheonId } from '../game/types';
+import { getActiveUnknownState, getEffectiveMapConfig, getMapBiomeVisuals, resolveEffectiveMapId } from '../game/mapGeography';
+import { MapId, MinimapBlip, PANTHEONS, PantheonId } from '../game/types';
 
 export type MinimapFilterMode = 'all' | 'combat' | 'economy';
 
@@ -43,7 +44,16 @@ function createTerrainBackdrop(mapId: MapId): HTMLCanvasElement {
   const img = ctx.createImageData(CANVAS_SIZE, CANVAS_SIZE);
   const data = img.data;
 
-  const [wr, wg, wb] = hexToRgb(MAPS[mapId].waterColorHex);
+  const cfg = getEffectiveMapConfig(mapId);
+  const bio = getMapBiomeVisuals(mapId);
+  const eff = resolveEffectiveMapId(mapId);
+
+  const [wr, wg, wb] = hexToRgb(cfg.waterColorHex);
+  const [br, bg, bb] = hexToRgb(bio.terrainPalette[0]);
+  const [rr, rg, rb] = hexToRgb(bio.terrainPalette[1]);
+  const [sr, sg, sb] = hexToRgb(bio.terrainPalette[2]);
+  const [hr, hg, hb] = hexToRgb(bio.terrainPalette[3]);
+  const [fr, fg, fb] = hexToRgb(bio.fertileHex);
 
   for (let py = 0; py < CANVAS_SIZE; py++) {
     const wz = ((py / CANVAS_SIZE) * 2 - 1) * MAP_HALF_SIZE;
@@ -55,117 +65,44 @@ function createTerrainBackdrop(mapId: MapId): HTMLCanvasElement {
       let g = wg;
       let b = wb;
 
-      if (h < -0.15) {
-        const depth = Math.min(1, Math.max(0, (-h - 0.15) / 2.2));
+      if (h < -0.34) {
+        const depth = Math.min(1, Math.max(0, (-h - 0.34) / 2.2));
         r = Math.round(wr * (1 - depth * 0.35));
         g = Math.round(wg * (1 - depth * 0.35));
         b = Math.round(wb * (1 - depth * 0.3));
+      } else if (h < 0.08) {
+        // Walkable shallow reefs / fords / wet banks
+        r = Math.round(sr * 0.65 + wr * 0.35);
+        g = Math.round(sg * 0.65 + wg * 0.35);
+        b = Math.round(sb * 0.65 + wb * 0.35);
       } else if (h < 0.22) {
-        if (mapId === 'alfheim' || mapId === 'ghost_lake') {
-          r = 148;
-          g = 163;
-          b = 184;
-        } else if (mapId === 'erebus') {
-          r = 72;
-          g = 38;
-          b = 34;
-        } else if (mapId === 'jotunheim') {
-          r = 165;
-          g = 180;
-          b = 200;
-        } else {
-          r = 178;
-          g = 156;
-          b = 112;
-        }
+        r = sr;
+        g = sg;
+        b = sb;
       } else {
         const diagDist = Math.abs(wx + wz) / Math.SQRT2;
         const onRoad = diagDist < 4.5 && Math.hypot(wx, wz) < 50;
         const hillShade = Math.max(-20, Math.min(28, (h - 0.5) * 16));
 
-        if (mapId === 'alfheim' || mapId === 'ghost_lake' || mapId === 'jotunheim') {
-          if (onRoad) {
-            r = 120 + hillShade * 0.5;
-            g = 116 + hillShade * 0.5;
-            b = 110 + hillShade * 0.5;
-          } else if (h > 1.25) {
-            r = 195 + hillShade * 0.8;
-            g = 212 + hillShade * 0.8;
-            b = 228 + hillShade * 0.7;
-          } else {
-            r = 96 + hillShade;
-            g = 122 + hillShade;
-            b = 118 + hillShade;
-          }
-        } else if (mapId === 'nile' || mapId === 'oasis') {
-          const nearWater = mapId === 'oasis' ? Math.hypot(wx, wz) < 18 : Math.abs(wx - wz) / Math.SQRT2 < 10.5;
-          if (nearWater) {
-            r = 88 + hillShade * 0.8;
-            g = 124 + hillShade;
-            b = 58 + hillShade * 0.6;
-          } else if (onRoad) {
-            r = 164 + hillShade * 0.6;
-            g = 136 + hillShade * 0.6;
-            b = 88 + hillShade * 0.5;
-          } else {
-            r = 194 + hillShade * 0.7;
-            g = 166 + hillShade * 0.7;
-            b = 112 + hillShade * 0.5;
-          }
-        } else if (mapId === 'erebus') {
-          if (onRoad) {
-            r = 90 + hillShade * 0.6;
-            g = 62 + hillShade * 0.5;
-            b = 58 + hillShade * 0.5;
-          } else {
-            r = 70 + hillShade * 0.7;
-            g = 52 + hillShade * 0.6;
-            b = 54 + hillShade * 0.6;
-          }
-        } else if (mapId === 'yucatan') {
-          if (onRoad) {
-            r = 122 + hillShade * 0.5;
-            g = 112 + hillShade * 0.5;
-            b = 84 + hillShade * 0.4;
-          } else {
-            r = 46 + hillShade;
-            g = 94 + hillShade * 1.1;
-            b = 44 + hillShade * 0.6;
-          }
-        } else if (mapId === 'yellow_river') {
-          if (onRoad) {
-            r = 148 + hillShade * 0.6;
-            g = 132 + hillShade * 0.6;
-            b = 94 + hillShade * 0.5;
-          } else {
-            r = 116 + hillShade;
-            g = 128 + hillShade;
-            b = 72 + hillShade * 0.6;
-          }
-        } else if (mapId === 'acropolis') {
-          if (onRoad) {
-            r = 154 + hillShade * 0.6;
-            g = 148 + hillShade * 0.6;
-            b = 134 + hillShade * 0.6;
-          } else if (h > 1.7) {
-            r = 128 + hillShade * 0.6;
-            g = 124 + hillShade * 0.6;
-            b = 114 + hillShade * 0.6;
-          } else {
-            r = 76 + hillShade;
-            g = 104 + hillShade;
-            b = 60 + hillShade * 0.7;
-          }
+        if (onRoad) {
+          r = rr + hillShade * 0.55;
+          g = rg + hillShade * 0.55;
+          b = rb + hillShade * 0.55;
+        } else if (h > 1.35) {
+          r = hr + hillShade * 0.75;
+          g = hg + hillShade * 0.75;
+          b = hb + hillShade * 0.7;
+        } else if (
+          ((eff === 'nile' || eff === 'yellow_river' || eff === 'highland') && Math.abs(wx - wz) / Math.SQRT2 < 10.5) ||
+          (eff === 'oasis' && Math.hypot(wx, wz) < 17)
+        ) {
+          r = fr + hillShade * 0.8;
+          g = fg + hillShade * 0.9;
+          b = fb + hillShade * 0.6;
         } else {
-          if (onRoad) {
-            r = 128 + hillShade * 0.6;
-            g = 115 + hillShade * 0.6;
-            b = 84 + hillShade * 0.5;
-          } else {
-            r = 56 + hillShade;
-            g = 88 + hillShade * 1.1;
-            b = 48 + hillShade * 0.7;
-          }
+          r = br + hillShade * 0.85;
+          g = bg + hillShade * 0.95;
+          b = bb + hillShade * 0.75;
         }
       }
 
@@ -209,7 +146,8 @@ export function Minimap({
   const [hoverInfo, setHoverInfo] = useState<string | null>(null);
   const [pings, setPings] = useState<MinimapPing[]>([]);
 
-  const terrainBackdrop = useMemo(() => createTerrainBackdrop(mapId), [mapId]);
+  const unknownSeed = getActiveUnknownState(mapId)?.seed ?? 0;
+  const terrainBackdrop = useMemo(() => createTerrainBackdrop(mapId), [mapId, unknownSeed]);
   const playerColor = PANTHEONS[pantheon].primaryColor;
 
   // Summarize allied buildings, allied units, and revealed enemies (buildings + units)

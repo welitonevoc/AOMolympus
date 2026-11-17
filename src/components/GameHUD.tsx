@@ -519,15 +519,33 @@ export function GameHUD({
     <>
       {/* TOP-LEFT: Quiet Minimalist Match Indicators & AoM-style Floating Notices */}
       <div className="pointer-events-none fixed top-2 left-3 z-20 flex flex-col items-start gap-1 max-w-[min(360px,42vw)]">
-        {(options.showFps || hud.treatyRemaining > 0) && (
-          <div className="flex items-center gap-2 text-[11px] font-mono-num text-[#f3efe6] drop-shadow-[0_1px_2px_rgba(0,0,0,0.95)]">
+        {(options.showFps || hud.treatyRemaining > 0 || hud.kothState || hud.mapRuleTag) && (
+          <div className="flex flex-wrap items-center gap-2 text-[11px] font-mono-num text-[#f3efe6] drop-shadow-[0_1px_2px_rgba(0,0,0,0.95)]">
             {options.showFps && hud.fps !== undefined && (
               <span className="text-emerald-300 font-semibold">{hud.fps} FPS</span>
+            )}
+            {hud.mapRuleTag && (
+              <span className="rounded border border-[#d4af37]/45 bg-[#0d111a]/80 px-1.5 py-0.5 text-[10px] font-semibold text-[#f3d27a]">
+                {hud.mapRuleTag}
+              </span>
             )}
             {hud.treatyRemaining > 0 && (
               <span className="flex items-center gap-1 text-emerald-300 font-semibold">
                 <Clock className="h-3 w-3" />
                 <span>Tratado {formatClock(hud.treatyRemaining)}</span>
+              </span>
+            )}
+            {hud.kothState && (
+              <span
+                className={`rounded border px-1.5 py-0.5 text-[10px] font-semibold ${
+                  hud.kothState.owner === 'player'
+                    ? 'border-emerald-400/50 bg-emerald-950/75 text-emerald-200'
+                    : hud.kothState.owner === 'enemy'
+                    ? 'border-rose-400/50 bg-rose-950/75 text-rose-200'
+                    : 'border-amber-400/45 bg-[#0d111a]/85 text-amber-200'
+                }`}
+              >
+                Cofre: Você {hud.kothState.playerHold}/{hud.kothState.targetHold}s · IA {hud.kothState.enemyHold}/{hud.kothState.targetHold}s
               </span>
             )}
           </div>

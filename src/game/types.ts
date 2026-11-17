@@ -18,14 +18,36 @@ export type ArchStyleId = 'greek' | 'egyptian' | 'norse' | 'atlantean';
 export type DifficultyId = 'easy' | 'normal' | 'hard' | 'titan';
 
 export type MapId =
-  | 'mediterranean'
-  | 'alfheim'
-  | 'nile'
+  // 6 Novos Mapas de The Titans
+  | 'highland'
+  | 'islands'
+  | 'land_unknown'
+  | 'marsh'
+  | 'megalopolis'
+  | 'tundra'
+  // 21 Mapas Originais (Jogo Base)
   | 'acropolis'
-  | 'ghost_lake'
-  | 'oasis'
-  | 'jotunheim'
+  | 'alfheim'
+  | 'anatolia'
+  | 'archipelago'
   | 'erebus'
+  | 'ghost_lake'
+  | 'jotunheim'
+  | 'king_of_the_hill'
+  | 'mediterranean'
+  | 'midgard'
+  | 'nile'
+  | 'nomad'
+  | 'oasis'
+  | 'savannah'
+  | 'sea_of_worms'
+  | 'sudden_death'
+  | 'team_migration'
+  | 'the_unknown'
+  | 'valley_of_the_kings'
+  | 'vinlandsaga'
+  | 'watering_hole'
+  // Mapas Bônus Preservados
   | 'yucatan'
   | 'yellow_river';
 
@@ -288,10 +310,28 @@ export const FORMATIONS: Record<FormationId, FormationSpec> = {
   },
 };
 
+export type MapExpansion = 'titans' | 'base' | 'bonus';
+export type MapSpecialRule =
+  | 'koth_vault'
+  | 'nomad'
+  | 'sudden_death'
+  | 'megalopolis'
+  | 'valley_guardians'
+  | 'land_unknown'
+  | 'the_unknown'
+  | 'sea_of_worms';
+export type MapWeatherKind = 'clear' | 'rain' | 'snow' | 'sandstorm';
+
 export interface MapConfig {
   id: MapId;
   name: string;
   subtitle: string;
+  expansion: MapExpansion;
+  biomeLabel: string;
+  floraLabel: string;
+  faunaLabel: string;
+  specialRule?: MapSpecialRule;
+  weatherPool: MapWeatherKind[];
   waterColorHex: number;
   skyColorHex: number;
   foliageHex: number;
@@ -303,49 +343,128 @@ export interface MapConfig {
 }
 
 export const MAPS: Record<MapId, MapConfig> = {
-  mediterranean: {
-    id: 'mediterranean',
-    name: 'Mediterrâneo',
-    subtitle: 'Ilha verdejante cercada pelo Mar Egeu',
+  // ── OS 6 NOVOS MAPAS DE THE TITANS ──
+  highland: {
+    id: 'highland',
+    name: 'Terras Altas',
+    subtitle: 'Rio central caudaloso dividindo platôs e duas pontes de pedra',
+    expansion: 'titans',
+    biomeLabel: 'Montanha & Rio',
+    floraLabel: 'Carvalhos e Bétulas Alpinas',
+    faunaLabel: 'Cabra Montesa, Cervo e Urso',
+    weatherPool: ['clear', 'rain'],
+    waterColorHex: 0x165f82,
+    skyColorHex: 0xb7cde0,
+    foliageHex: 0x3b6f3b,
+    foliageDarkHex: 0x264b29,
+    cliffHex: 0x736f65,
+    terrainTint: '#4f6d43',
+    terrainPatchA: 'rgba(98, 128, 72, 0.24)',
+    terrainPatchB: 'rgba(110, 102, 86, 0.22)',
+  },
+  islands: {
+    id: 'islands',
+    name: 'Ilhas',
+    subtitle: 'Bases em ilhas separadas conectadas por recifes e passagens costeiras',
+    expansion: 'titans',
+    biomeLabel: 'Arquipélago Egeu',
+    floraLabel: 'Palmeiras e Carvalhos Costeiros',
+    faunaLabel: 'Javali, Cabra Montesa e Cervo',
+    weatherPool: ['clear', 'rain'],
+    waterColorHex: 0x0f7490,
+    skyColorHex: 0xbae6fd,
+    foliageHex: 0x3b7a3c,
+    foliageDarkHex: 0x235229,
+    cliffHex: 0xb09e79,
+    terrainTint: '#597848',
+    terrainPatchA: 'rgba(182, 166, 118, 0.22)',
+    terrainPatchB: 'rgba(54, 96, 52, 0.22)',
+  },
+  land_unknown: {
+    id: 'land_unknown',
+    name: 'Terra Desconhecida',
+    subtitle: 'Roleta continental aleatória a cada partida (sem grandes oceanos)',
+    expansion: 'titans',
+    biomeLabel: 'Aleatório Terrestre',
+    floraLabel: 'Flora Variável por Semente',
+    faunaLabel: 'Fauna Aleatória do Bioma',
+    specialRule: 'land_unknown',
+    weatherPool: ['clear', 'rain', 'sandstorm'],
     waterColorHex: 0x1a6885,
-    skyColorHex: 0xbcd0e2,
-    foliageHex: 0x2e5e32,
-    foliageDarkHex: 0x204726,
-    cliffHex: 0x6b7c4f,
-    terrainTint: '#4e6b3b',
-    terrainPatchA: 'rgba(98, 128, 62, 0.22)',
-    terrainPatchB: 'rgba(56, 82, 42, 0.22)',
-  },
-  alfheim: {
-    id: 'alfheim',
-    name: 'Alfheim',
-    subtitle: 'Planícies nórdicas com bosques nevados',
-    waterColorHex: 0x1e4a6b,
     skyColorHex: 0xcbd5e1,
-    foliageHex: 0x2b5344,
-    foliageDarkHex: 0xdbeafe,
+    foliageHex: 0x4b7438,
+    foliageDarkHex: 0x2d4d24,
+    cliffHex: 0x78716c,
+    terrainTint: '#63754d',
+    terrainPatchA: 'rgba(145, 138, 104, 0.24)',
+    terrainPatchB: 'rgba(62, 84, 52, 0.22)',
+  },
+  marsh: {
+    id: 'marsh',
+    name: 'Pântano',
+    subtitle: 'Terras alagadas com águas rasas navegáveis, florestas densas e emboscadas',
+    expansion: 'titans',
+    biomeLabel: 'Brejo Denso',
+    floraLabel: 'Ciprestes e Salgueiros do Brejo',
+    faunaLabel: 'Crocodilo, Hipopótamo e Javali',
+    weatherPool: ['rain', 'rain', 'clear'],
+    waterColorHex: 0x2f5a44,
+    skyColorHex: 0x99b1a3,
+    foliageHex: 0x2e5e38,
+    foliageDarkHex: 0x1b3b23,
+    cliffHex: 0x4b5548,
+    terrainTint: '#3e593e',
+    terrainPatchA: 'rgba(72, 104, 62, 0.26)',
+    terrainPatchB: 'rgba(42, 62, 46, 0.28)',
+  },
+  megalopolis: {
+    id: 'megalopolis',
+    name: 'Megalópole',
+    subtitle: 'Início com cidade avançada, torres de vigia, quartéis e múltiplos Centros',
+    expansion: 'titans',
+    biomeLabel: 'Metrópole Antiga',
+    floraLabel: 'Carvalhos Imperiais e Ciprestes',
+    faunaLabel: 'Cervo, Auroque e Javali',
+    specialRule: 'megalopolis',
+    weatherPool: ['clear', 'rain'],
+    waterColorHex: 0x1b6382,
+    skyColorHex: 0xc8daf0,
+    foliageHex: 0x3b7137,
+    foliageDarkHex: 0x264c26,
+    cliffHex: 0x9c9282,
+    terrainTint: '#5d7346',
+    terrainPatchA: 'rgba(176, 166, 144, 0.24)',
+    terrainPatchB: 'rgba(66, 94, 54, 0.22)',
+  },
+  tundra: {
+    id: 'tundra',
+    name: 'Tundra',
+    subtitle: 'Estepe congelada aberta com madeira escassa, nevascas e rebanhos árticos',
+    expansion: 'titans',
+    biomeLabel: 'Estepe Ártica',
+    floraLabel: 'Pinheiros Nevados Esparsos',
+    faunaLabel: 'Rena Ártica, Boi-Almiscarado e Lobo',
+    weatherPool: ['snow', 'snow', 'clear'],
+    waterColorHex: 0x3b6e8c,
+    skyColorHex: 0xdbeafe,
+    foliageHex: 0x2b4d44,
+    foliageDarkHex: 0xe2e8f0,
     cliffHex: 0x64748b,
-    terrainTint: '#5b6c5a',
-    terrainPatchA: 'rgba(195, 210, 224, 0.22)',
-    terrainPatchB: 'rgba(52, 74, 62, 0.22)',
+    terrainTint: '#a6b5c4',
+    terrainPatchA: 'rgba(241, 245, 249, 0.34)',
+    terrainPatchB: 'rgba(100, 116, 139, 0.24)',
   },
-  nile: {
-    id: 'nile',
-    name: 'Rio Nilo',
-    subtitle: 'Dunas douradas divididas pelo vale turquesa',
-    waterColorHex: 0x0e8da8,
-    skyColorHex: 0xe6d5b8,
-    foliageHex: 0x4d7c2b,
-    foliageDarkHex: 0x3b6121,
-    cliffHex: 0xb48a5a,
-    terrainTint: '#b9935a',
-    terrainPatchA: 'rgba(222, 186, 122, 0.24)',
-    terrainPatchB: 'rgba(138, 102, 54, 0.20)',
-  },
+
+  // ── OS 21 MAPAS ORIGINAIS (JOGO BASE) ──
   acropolis: {
     id: 'acropolis',
     name: 'Acrópole',
-    subtitle: 'Platôs elevados com vale central contestado',
+    subtitle: 'Platôs elevados defensáveis com ouro disputado nas planícies centrais',
+    expansion: 'base',
+    biomeLabel: 'Colina Helênica',
+    floraLabel: 'Carvalhos e Oliveiras da Arcádia',
+    faunaLabel: 'Cabra Montesa, Cervo e Javali',
+    weatherPool: ['clear', 'clear', 'rain'],
     waterColorHex: 0x18587a,
     skyColorHex: 0xc2d4e4,
     foliageHex: 0x366938,
@@ -355,49 +474,69 @@ export const MAPS: Record<MapId, MapConfig> = {
     terrainPatchA: 'rgba(136, 132, 118, 0.22)',
     terrainPatchB: 'rgba(65, 92, 52, 0.20)',
   },
-  ghost_lake: {
-    id: 'ghost_lake',
-    name: 'Lago Fantasma',
-    subtitle: 'Lago congelado central cercado por pinheiros gélidos',
-    waterColorHex: 0x7dd3fc,
-    skyColorHex: 0xdbeafe,
-    foliageHex: 0x29483e,
-    foliageDarkHex: 0xe2e8f0,
-    cliffHex: 0x94a3b8,
-    terrainTint: '#7e8f9c',
-    terrainPatchA: 'rgba(226, 232, 240, 0.28)',
-    terrainPatchB: 'rgba(64, 84, 96, 0.22)',
+  alfheim: {
+    id: 'alfheim',
+    name: 'Alfheim',
+    subtitle: 'Florestas nórdicas exuberantes cercadas por cadeias de montanhas e neve',
+    expansion: 'base',
+    biomeLabel: 'Bosque Nórdico',
+    floraLabel: 'Pinheiros Nórdicos e Bétulas',
+    faunaLabel: 'Cervo, Auroque, Urso e Javali',
+    weatherPool: ['clear', 'snow', 'rain'],
+    waterColorHex: 0x1e4a6b,
+    skyColorHex: 0xcbd5e1,
+    foliageHex: 0x2b5344,
+    foliageDarkHex: 0xdbeafe,
+    cliffHex: 0x64748b,
+    terrainTint: '#5b6c5a',
+    terrainPatchA: 'rgba(195, 210, 224, 0.22)',
+    terrainPatchB: 'rgba(52, 74, 62, 0.22)',
   },
-  oasis: {
-    id: 'oasis',
-    name: 'Oásis',
-    subtitle: 'Deserto árido com palmeiras e água sagrada no centro',
-    waterColorHex: 0x0ea5e9,
-    skyColorHex: 0xf3d9b1,
-    foliageHex: 0x4d7c2b,
-    foliageDarkHex: 0x365314,
-    cliffHex: 0xa16207,
-    terrainTint: '#c2995d',
-    terrainPatchA: 'rgba(234, 194, 130, 0.25)',
-    terrainPatchB: 'rgba(146, 105, 52, 0.20)',
+  anatolia: {
+    id: 'anatolia',
+    name: 'Anatólia',
+    subtitle: 'Corredor central árido flanqueado por dois mares piscosos nos extremos',
+    expansion: 'base',
+    biomeLabel: 'Planalto Costeiro',
+    floraLabel: 'Acácias e Carvalhos Secos',
+    faunaLabel: 'Cabra Montesa, Gazela e Javali',
+    weatherPool: ['clear', 'sandstorm'],
+    waterColorHex: 0x0e7490,
+    skyColorHex: 0xe9d8bc,
+    foliageHex: 0x5c7432,
+    foliageDarkHex: 0x3f5222,
+    cliffHex: 0x9a7b56,
+    terrainTint: '#9a8455',
+    terrainPatchA: 'rgba(196, 168, 112, 0.24)',
+    terrainPatchB: 'rgba(110, 108, 62, 0.22)',
   },
-  jotunheim: {
-    id: 'jotunheim',
-    name: 'Jotunheim',
-    subtitle: 'Desfiladeiro glacial guardado por picos nevados',
-    waterColorHex: 0x0c4a6e,
-    skyColorHex: 0x94a3b8,
-    foliageHex: 0x1e3a34,
-    foliageDarkHex: 0xf1f5f9,
-    cliffHex: 0x475569,
-    terrainTint: '#9aa7b4',
-    terrainPatchA: 'rgba(241, 245, 249, 0.30)',
-    terrainPatchB: 'rgba(71, 85, 105, 0.24)',
+  archipelago: {
+    id: 'archipelago',
+    name: 'Arquipélago',
+    subtitle: 'Conjunto fragmentado de ilhotas rasas e passagens costeiras estratégicas',
+    expansion: 'base',
+    biomeLabel: 'Ilhotas Tropicais',
+    floraLabel: 'Palmeiras e Arbustos Marinhos',
+    faunaLabel: 'Javali, Gazela e Crocodilo',
+    weatherPool: ['clear', 'rain'],
+    waterColorHex: 0x0284c7,
+    skyColorHex: 0xbae6fd,
+    foliageHex: 0x3c7d3b,
+    foliageDarkHex: 0x1f522c,
+    cliffHex: 0xbfa87e,
+    terrainTint: '#657e4a',
+    terrainPatchA: 'rgba(218, 198, 142, 0.26)',
+    terrainPatchB: 'rgba(54, 102, 54, 0.20)',
   },
   erebus: {
     id: 'erebus',
     name: 'Érebo',
-    subtitle: 'Terras vulcânicas do submundo com rios de obsidiana',
+    subtitle: 'Terras vulcânicas do submundo com rios de lava e vegetação carbonizada',
+    expansion: 'base',
+    biomeLabel: 'Submundo Vulcânico',
+    floraLabel: 'Árvores Petrificadas e Cinzas',
+    faunaLabel: 'Lobo das Colinas e Javali',
+    weatherPool: ['clear', 'sandstorm'],
     waterColorHex: 0x991b1b,
     skyColorHex: 0x2e1f27,
     foliageHex: 0x451a03,
@@ -407,10 +546,311 @@ export const MAPS: Record<MapId, MapConfig> = {
     terrainPatchA: 'rgba(120, 53, 15, 0.25)',
     terrainPatchB: 'rgba(24, 24, 27, 0.32)',
   },
+  ghost_lake: {
+    id: 'ghost_lake',
+    name: 'Lago Fantasma',
+    subtitle: 'Grande lago congelado plano no centro cercado por pinheiros gélidos',
+    expansion: 'base',
+    biomeLabel: 'Glaciar Congelado',
+    floraLabel: 'Pinheiros Nevados do Norte',
+    faunaLabel: 'Rena Ártica, Lobo e Urso',
+    weatherPool: ['snow', 'clear'],
+    waterColorHex: 0x7dd3fc,
+    skyColorHex: 0xdbeafe,
+    foliageHex: 0x29483e,
+    foliageDarkHex: 0xe2e8f0,
+    cliffHex: 0x94a3b8,
+    terrainTint: '#7e8f9c',
+    terrainPatchA: 'rgba(226, 232, 240, 0.28)',
+    terrainPatchB: 'rgba(64, 84, 96, 0.22)',
+  },
+  jotunheim: {
+    id: 'jotunheim',
+    name: 'Jotunheim',
+    subtitle: 'Desfiladeiros estreitos entre muralhas glaciais propícios à fortificação',
+    expansion: 'base',
+    biomeLabel: 'Cordilheira Glacial',
+    floraLabel: 'Pinheiros Nevados e Abetos',
+    faunaLabel: 'Urso Polar, Boi-Almiscarado e Lobo',
+    weatherPool: ['snow', 'snow', 'clear'],
+    waterColorHex: 0x0c4a6e,
+    skyColorHex: 0x94a3b8,
+    foliageHex: 0x1e3a34,
+    foliageDarkHex: 0xf1f5f9,
+    cliffHex: 0x475569,
+    terrainTint: '#9aa7b4',
+    terrainPatchA: 'rgba(241, 245, 249, 0.30)',
+    terrainPatchB: 'rgba(71, 85, 105, 0.24)',
+  },
+  king_of_the_hill: {
+    id: 'king_of_the_hill',
+    name: 'Rei da Colina',
+    subtitle: 'Colina central coroada por um Cofre da Abundância que decide a vitória',
+    expansion: 'base',
+    biomeLabel: 'Planalto Monumental',
+    floraLabel: 'Carvalhos Olímpicos',
+    faunaLabel: 'Auroque, Cervo e Javali',
+    specialRule: 'koth_vault',
+    weatherPool: ['clear', 'rain'],
+    waterColorHex: 0x1c5d7d,
+    skyColorHex: 0xcfe0f2,
+    foliageHex: 0x356934,
+    foliageDarkHex: 0x224924,
+    cliffHex: 0x8c8273,
+    terrainTint: '#557042',
+    terrainPatchA: 'rgba(164, 152, 114, 0.22)',
+    terrainPatchB: 'rgba(58, 86, 46, 0.22)',
+  },
+  mediterranean: {
+    id: 'mediterranean',
+    name: 'Mediterrâneo',
+    subtitle: 'Planície fértil cercada pelas águas cristalinas do Mar Egeu',
+    expansion: 'base',
+    biomeLabel: 'Costa Mediterrânea',
+    floraLabel: 'Carvalhos Gregos e Oliveiras',
+    faunaLabel: 'Cervo, Cabra Montesa e Javali',
+    weatherPool: ['clear', 'clear', 'rain'],
+    waterColorHex: 0x1a6885,
+    skyColorHex: 0xbcd0e2,
+    foliageHex: 0x2e5e32,
+    foliageDarkHex: 0x204726,
+    cliffHex: 0x6b7c4f,
+    terrainTint: '#4e6b3b',
+    terrainPatchA: 'rgba(98, 128, 62, 0.22)',
+    terrainPatchB: 'rgba(56, 82, 42, 0.22)',
+  },
+  midgard: {
+    id: 'midgard',
+    name: 'Midgard',
+    subtitle: 'Grande massa continental cercada por fiordes e águas costeiras',
+    expansion: 'base',
+    biomeLabel: 'Terra Média Nórdica',
+    floraLabel: 'Pinheiros Nórdicos e Bétulas',
+    faunaLabel: 'Auroque, Cervo, Rena e Lobo',
+    weatherPool: ['clear', 'rain', 'snow'],
+    waterColorHex: 0x174e6d,
+    skyColorHex: 0xbfd0de,
+    foliageHex: 0x2f5b43,
+    foliageDarkHex: 0x1e3f2d,
+    cliffHex: 0x64748b,
+    terrainTint: '#526b54',
+    terrainPatchA: 'rgba(138, 154, 134, 0.22)',
+    terrainPatchB: 'rgba(48, 72, 54, 0.24)',
+  },
+  nile: {
+    id: 'nile',
+    name: 'Rio Nilo',
+    subtitle: 'Dunas douradas divididas por um vale fértil de palmeiras e águas turquesa',
+    expansion: 'base',
+    biomeLabel: 'Deserto & Vale Fluvial',
+    floraLabel: 'Palmeiras do Nilo e Tamareiras',
+    faunaLabel: 'Crocodilo, Hipopótamo, Gazela e Camelo',
+    weatherPool: ['clear', 'sandstorm'],
+    waterColorHex: 0x0e8da8,
+    skyColorHex: 0xe6d5b8,
+    foliageHex: 0x4d7c2b,
+    foliageDarkHex: 0x3b6121,
+    cliffHex: 0xb48a5a,
+    terrainTint: '#b9935a',
+    terrainPatchA: 'rgba(222, 186, 122, 0.24)',
+    terrainPatchB: 'rgba(138, 102, 54, 0.20)',
+  },
+  nomad: {
+    id: 'nomad',
+    name: 'Nômade',
+    subtitle: 'Sem Centro da Cidade inicial — explore com aldeões dispersos e funde sua capital',
+    expansion: 'base',
+    biomeLabel: 'Fronteira Selvagem',
+    floraLabel: 'Bétulas e Carvalhos Dispersos',
+    faunaLabel: 'Gazela, Cervo, Javali e Lobo',
+    specialRule: 'nomad',
+    weatherPool: ['clear', 'rain'],
+    waterColorHex: 0x1e6b85,
+    skyColorHex: 0xcddde8,
+    foliageHex: 0x427038,
+    foliageDarkHex: 0x2c4f26,
+    cliffHex: 0x857866,
+    terrainTint: '#6b7749',
+    terrainPatchA: 'rgba(156, 148, 106, 0.24)',
+    terrainPatchB: 'rgba(72, 92, 54, 0.20)',
+  },
+  oasis: {
+    id: 'oasis',
+    name: 'Oásis',
+    subtitle: 'Deserto árido com madeira concentrada ao redor do lago sagrado central',
+    expansion: 'base',
+    biomeLabel: 'Deserto com Oásis',
+    floraLabel: 'Palmeiras Concentradas no Centro',
+    faunaLabel: 'Camelo, Gazela, Leão e Elefante',
+    weatherPool: ['clear', 'sandstorm', 'sandstorm'],
+    waterColorHex: 0x0ea5e9,
+    skyColorHex: 0xf3d9b1,
+    foliageHex: 0x4d7c2b,
+    foliageDarkHex: 0x365314,
+    cliffHex: 0xa16207,
+    terrainTint: '#c2995d',
+    terrainPatchA: 'rgba(234, 194, 130, 0.25)',
+    terrainPatchB: 'rgba(146, 105, 52, 0.20)',
+  },
+  savannah: {
+    id: 'savannah',
+    name: 'Savana',
+    subtitle: 'Planícies douradas abertas e poucas colinas — foco total em caça e cavalaria',
+    expansion: 'base',
+    biomeLabel: 'Savana Africana',
+    floraLabel: 'Acácias de Copa Larga',
+    faunaLabel: 'Elefante Selvagem, Gazela, Leão e Hipopótamo',
+    weatherPool: ['clear', 'sandstorm'],
+    waterColorHex: 0x267580,
+    skyColorHex: 0xf6deb5,
+    foliageHex: 0x65802d,
+    foliageDarkHex: 0x455a1d,
+    cliffHex: 0xa16f3b,
+    terrainTint: '#b48c4c',
+    terrainPatchA: 'rgba(218, 182, 104, 0.26)',
+    terrainPatchB: 'rgba(124, 114, 52, 0.22)',
+  },
+  sea_of_worms: {
+    id: 'sea_of_worms',
+    name: 'Mar de Vermes',
+    subtitle: 'Início protegido por Fortaleza próxima e lagoas sinuosas no centro',
+    expansion: 'base',
+    biomeLabel: 'Lagoa Serpenteante',
+    floraLabel: 'Ciprestes e Carvalhos Costeiros',
+    faunaLabel: 'Crocodilo, Cabra Montesa e Javali',
+    specialRule: 'sea_of_worms',
+    weatherPool: ['clear', 'rain'],
+    waterColorHex: 0x0d7a8c,
+    skyColorHex: 0xb7dbe8,
+    foliageHex: 0x346b3c,
+    foliageDarkHex: 0x20472a,
+    cliffHex: 0x877b68,
+    terrainTint: '#557249',
+    terrainPatchA: 'rgba(154, 148, 108, 0.22)',
+    terrainPatchB: 'rgba(54, 88, 52, 0.22)',
+  },
+  sudden_death: {
+    id: 'sudden_death',
+    name: 'Morte Súbita',
+    subtitle: 'Apenas uma Cidadela central reforçada por jogador — perdeu o Centro, perdeu!',
+    expansion: 'base',
+    biomeLabel: 'Cidadela Única',
+    floraLabel: 'Carvalhos e Pinheiros Antigos',
+    faunaLabel: 'Auroque, Javali e Lobo',
+    specialRule: 'sudden_death',
+    weatherPool: ['clear', 'rain'],
+    waterColorHex: 0x195370,
+    skyColorHex: 0xc7d2e0,
+    foliageHex: 0x346233,
+    foliageDarkHex: 0x214223,
+    cliffHex: 0x736e67,
+    terrainTint: '#566945',
+    terrainPatchA: 'rgba(130, 128, 110, 0.24)',
+    terrainPatchB: 'rgba(58, 76, 48, 0.22)',
+  },
+  team_migration: {
+    id: 'team_migration',
+    name: 'Migração em Equipe',
+    subtitle: 'Ilha inicial pobre em ouro — atravesse os bancos de areia rumo ao continente rico',
+    expansion: 'base',
+    biomeLabel: 'Costa & Continente Rico',
+    floraLabel: 'Bétulas e Palmeiras Costeiras',
+    faunaLabel: 'Gazela, Cervo e Urso',
+    weatherPool: ['clear', 'rain'],
+    waterColorHex: 0x0f7694,
+    skyColorHex: 0xc2e2f2,
+    foliageHex: 0x3c763a,
+    foliageDarkHex: 0x254f28,
+    cliffHex: 0x998e75,
+    terrainTint: '#5c7848',
+    terrainPatchA: 'rgba(196, 178, 128, 0.24)',
+    terrainPatchB: 'rgba(60, 96, 52, 0.22)',
+  },
+  the_unknown: {
+    id: 'the_unknown',
+    name: 'O Desconhecido',
+    subtitle: 'Mapa imprevisível: gera geografias, mares, ilhas e biomas surpresa por partida',
+    expansion: 'base',
+    biomeLabel: 'Caos Procedural',
+    floraLabel: 'Mistura Imprevista de Biomas',
+    faunaLabel: 'Fauna Surpresa a Cada Partida',
+    specialRule: 'the_unknown',
+    weatherPool: ['clear', 'rain', 'snow', 'sandstorm'],
+    waterColorHex: 0x166b8a,
+    skyColorHex: 0xc7d2fe,
+    foliageHex: 0x3b6f45,
+    foliageDarkHex: 0x24472d,
+    cliffHex: 0x78716c,
+    terrainTint: '#5b7256',
+    terrainPatchA: 'rgba(148, 152, 134, 0.24)',
+    terrainPatchB: 'rgba(58, 78, 62, 0.24)',
+  },
+  valley_of_the_kings: {
+    id: 'valley_of_the_kings',
+    name: 'Vale dos Reis',
+    subtitle: 'Ricas minas de ouro no desfiladeiro central protegidas por feras guardiãs',
+    expansion: 'base',
+    biomeLabel: 'Cânion Dourado Egípcio',
+    floraLabel: 'Palmeiras do Deserto',
+    faunaLabel: 'Leão, Crocodilo e Camelo',
+    specialRule: 'valley_guardians',
+    weatherPool: ['clear', 'sandstorm'],
+    waterColorHex: 0x168099,
+    skyColorHex: 0xf1d29e,
+    foliageHex: 0x527d2e,
+    foliageDarkHex: 0x38591e,
+    cliffHex: 0xa86c32,
+    terrainTint: '#c89b56',
+    terrainPatchA: 'rgba(232, 190, 118, 0.26)',
+    terrainPatchB: 'rgba(140, 88, 38, 0.24)',
+  },
+  vinlandsaga: {
+    id: 'vinlandsaga',
+    name: 'Vinlandsaga',
+    subtitle: 'Comece numa ilha nórdica pequena e marche até o rico continente de Vinland',
+    expansion: 'base',
+    biomeLabel: 'Fiorde & Vinland',
+    floraLabel: 'Bétulas e Pinheiros Nórdicos',
+    faunaLabel: 'Urso, Rena Ártica e Boi-Almiscarado',
+    weatherPool: ['clear', 'snow', 'rain'],
+    waterColorHex: 0x145070,
+    skyColorHex: 0xc6d8e8,
+    foliageHex: 0x2f6142,
+    foliageDarkHex: 0x1e402b,
+    cliffHex: 0x64748b,
+    terrainTint: '#587255',
+    terrainPatchA: 'rgba(182, 198, 208, 0.24)',
+    terrainPatchB: 'rgba(48, 78, 52, 0.22)',
+  },
+  watering_hole: {
+    id: 'watering_hole',
+    name: "Poço d'Água",
+    subtitle: 'Planalto seco pontilhado por lagoas rasas ricas em vida selvagem e caça',
+    expansion: 'base',
+    biomeLabel: 'Savana & Lagoas',
+    floraLabel: 'Acácias e Palmeiras nas Lagoas',
+    faunaLabel: 'Elefante Selvagem, Hipopótamo, Gazela e Leão',
+    weatherPool: ['clear', 'sandstorm'],
+    waterColorHex: 0x1c8da6,
+    skyColorHex: 0xf0d6a8,
+    foliageHex: 0x5d7d30,
+    foliageDarkHex: 0x3f591f,
+    cliffHex: 0x9c6e3d,
+    terrainTint: '#b88f52',
+    terrainPatchA: 'rgba(222, 184, 116, 0.24)',
+    terrainPatchB: 'rgba(110, 120, 56, 0.22)',
+  },
+
+  // ── MAPAS BÔNUS PRESERVADOS ──
   yucatan: {
     id: 'yucatan',
     name: 'Yucatán',
-    subtitle: 'Selva tropical densa rica em caça e templos antigos',
+    subtitle: 'Selva tropical densa rica em caça, jaguares e templos antigos',
+    expansion: 'bonus',
+    biomeLabel: 'Selva Mesoamericana',
+    floraLabel: 'Árvores Tropicais e Palmeiral',
+    faunaLabel: 'Crocodilo, Javali e Cervo',
+    weatherPool: ['rain', 'clear'],
     waterColorHex: 0x0d9488,
     skyColorHex: 0xa7f3d0,
     foliageHex: 0x15803d,
@@ -423,7 +863,12 @@ export const MAPS: Record<MapId, MapConfig> = {
   yellow_river: {
     id: 'yellow_river',
     name: 'Rio Amarelo',
-    subtitle: 'Planícies férteis orientais cortadas por rio dourado',
+    subtitle: 'Planícies férteis orientais cortadas por rio dourado e bambuzais',
+    expansion: 'bonus',
+    biomeLabel: 'Vale Oriental',
+    floraLabel: 'Salgueiros e Bambus Orientais',
+    faunaLabel: 'Cervo, Javali e Auroque',
+    weatherPool: ['clear', 'rain'],
     waterColorHex: 0x856404,
     skyColorHex: 0xfde68a,
     foliageHex: 0x4d7c0f,
@@ -3857,7 +4302,21 @@ export const BUILDING_STATS: Record<BuildingKind, BuildingStats> = {
   },
 };
 
-export type FaunaKind = 'gazelle' | 'deer' | 'boar' | 'aurochs' | 'wolf';
+export type FaunaKind =
+  | 'gazelle'
+  | 'deer'
+  | 'boar'
+  | 'aurochs'
+  | 'wolf'
+  | 'reindeer'
+  | 'musk_ox'
+  | 'camel'
+  | 'lion'
+  | 'crocodile'
+  | 'goat'
+  | 'hippo'
+  | 'elephant_wild'
+  | 'bear';
 
 export interface FaunaStats {
   kind: FaunaKind;
@@ -3925,6 +4384,105 @@ export const FAUNA_STATS: Record<FaunaKind, FaunaStats> = {
     attack: 7,
     speed: 4.5,
     radius: 0.45,
+    retaliates: true,
+  },
+  reindeer: {
+    kind: 'reindeer',
+    name: 'Rena Ártica',
+    role: 'Rebanho da tundra nevada — caça rápida abundante em Alimento',
+    maxHp: 50,
+    foodAmount: 215,
+    attack: 0,
+    speed: 4.5,
+    radius: 0.52,
+    retaliates: false,
+  },
+  musk_ox: {
+    kind: 'musk_ox',
+    name: 'Boi-Almiscarado',
+    role: 'Bovino lanudo das terras gélidas — defende o rebanho',
+    maxHp: 140,
+    foodAmount: 350,
+    attack: 11,
+    speed: 3.4,
+    radius: 0.72,
+    retaliates: true,
+  },
+  camel: {
+    kind: 'camel',
+    name: 'Camelo Selvagem',
+    role: 'Fauna resistente do deserto e oásis — boa reserva de Alimento',
+    maxHp: 75,
+    foodAmount: 240,
+    attack: 0,
+    speed: 4.0,
+    radius: 0.62,
+    retaliates: false,
+  },
+  lion: {
+    kind: 'lion',
+    name: 'Leão da Savana',
+    role: 'Predador territorial feroz das planícies e cânions',
+    maxHp: 90,
+    foodAmount: 165,
+    attack: 12,
+    speed: 4.7,
+    radius: 0.54,
+    retaliates: true,
+  },
+  crocodile: {
+    kind: 'crocodile',
+    name: 'Crocodilo do Nilo',
+    role: 'Predador anfíbio de rios, lagos e pântanos',
+    maxHp: 95,
+    foodAmount: 185,
+    attack: 11,
+    speed: 3.8,
+    radius: 0.62,
+    retaliates: true,
+  },
+  goat: {
+    kind: 'goat',
+    name: 'Cabra Montesa',
+    role: 'Animal dócil das encostas e ilhas — abate seguro para Alimento',
+    maxHp: 38,
+    foodAmount: 150,
+    attack: 0,
+    speed: 3.6,
+    radius: 0.42,
+    retaliates: false,
+  },
+  hippo: {
+    kind: 'hippo',
+    name: 'Hipopótamo',
+    role: 'Besta pesada de rios e brejos — rende muito Alimento',
+    maxHp: 155,
+    foodAmount: 365,
+    attack: 13,
+    speed: 3.2,
+    radius: 0.78,
+    retaliates: true,
+  },
+  elephant_wild: {
+    kind: 'elephant_wild',
+    name: 'Elefante Selvagem',
+    role: 'Colosso da savana — maior fonte de Alimento entre toda a fauna',
+    maxHp: 230,
+    foodAmount: 480,
+    attack: 16,
+    speed: 3.1,
+    radius: 0.94,
+    retaliates: true,
+  },
+  bear: {
+    kind: 'bear',
+    name: 'Urso Selvagem',
+    role: 'Urso forte das florestas frias e montanhas — revida ataques',
+    maxHp: 135,
+    foodAmount: 250,
+    attack: 13,
+    speed: 3.8,
+    radius: 0.66,
     retaliates: true,
   },
 };
@@ -4082,6 +4640,13 @@ export interface GameHudSnapshot {
     fauna: number;
     resource: number;
   };
+  kothState?: {
+    owner: TeamId | 'neutral';
+    playerHold: number;
+    enemyHold: number;
+    targetHold: number;
+  };
+  mapRuleTag?: string;
 }
 
 export interface MatchStartOptions {

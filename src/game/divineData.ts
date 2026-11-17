@@ -1459,11 +1459,21 @@ export function getMinorGodChoicesForAge(majorGodName: string, pantheon: Pantheo
 }
 
 export function getRivalPantheon(playerPantheon: PantheonId, mapId: MapId = 'mediterranean'): PantheonId {
-  if (mapId === 'nile' || mapId === 'oasis') return playerPantheon === 'egyptian' ? 'greek' : 'egyptian';
-  if (mapId === 'alfheim' || mapId === 'jotunheim') return playerPantheon === 'norse' ? 'jotunn' : 'norse';
+  if (mapId === 'nile' || mapId === 'oasis' || mapId === 'valley_of_the_kings') {
+    return playerPantheon === 'egyptian' ? 'greek' : 'egyptian';
+  }
+  if (mapId === 'alfheim' || mapId === 'jotunheim' || mapId === 'tundra' || mapId === 'midgard' || mapId === 'vinlandsaga' || mapId === 'ghost_lake') {
+    return playerPantheon === 'norse' ? 'jotunn' : 'norse';
+  }
+  if (mapId === 'islands' || mapId === 'archipelago' || mapId === 'megalopolis' || mapId === 'sea_of_worms') {
+    return playerPantheon === 'atlantean' ? 'greek' : 'atlantean';
+  }
   if (mapId === 'yucatan') return playerPantheon === 'aztec' ? 'roman' : 'aztec';
   if (mapId === 'yellow_river') return playerPantheon === 'chinese' ? 'japanese' : 'chinese';
   if (mapId === 'erebus') return playerPantheon === 'eldritch' ? 'greek' : 'eldritch';
+  if (mapId === 'savannah' || mapId === 'watering_hole' || mapId === 'anatolia') {
+    return playerPantheon === 'egyptian' ? 'babylonian' : 'egyptian';
+  }
   const defaultRival: Record<PantheonId, PantheonId> = {
     greek: 'egyptian',
     egyptian: 'norse',
