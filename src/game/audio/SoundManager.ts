@@ -209,6 +209,10 @@ const UNIT_AUDIO_PROFILES: Record<UnitKind, UnitAudioProfile> = {
   lampades: { unitType: 'lampades', defaultPantheon: 'atlantean', voiceRole: 'myth', isFemale: true, pitchScale: 1.2, rateScale: 1.02 },
   carnivora: { unitType: 'carnivora', defaultPantheon: 'atlantean', voiceRole: 'myth', pitchScale: 0.72, rateScale: 0.94, isDarkTone: true },
   tartarian_spawn: { unitType: 'tartarian_spawn', defaultPantheon: 'atlantean', voiceRole: 'myth', pitchScale: 0.7, rateScale: 0.94, isDarkTone: true },
+
+  // Navais
+  fishing_ship: { unitType: 'fishing_ship', defaultPantheon: 'greek', voiceRole: 'citizen', pitchScale: 0.98, rateScale: 1.0 },
+  war_trireme: { unitType: 'war_trireme', defaultPantheon: 'greek', voiceRole: 'siege', pitchScale: 0.85, rateScale: 0.98 },
 };
 
 /**

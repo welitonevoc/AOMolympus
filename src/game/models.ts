@@ -28,6 +28,7 @@ import { createNorseBuildingMesh } from '../civilizacao/nordicos/norseBuildingMo
 import { createEgyptianBuildingMesh } from '../civilizacao/egipcios/egyptianBuildingModels';
 import { createGreekBuildingMesh } from '../civilizacao/gregos/greekBuildingModels';
 import { createAtlanteanBuildingMesh } from '../civilizacao/atlantes/atlanteanBuildingModels';
+import { createExpandedBuildingMesh, isExpandedBuildingKind } from './expandedBuildingModels';
 import {
   createAoMOakTreeMesh,
   createBiomeTreeMesh,
@@ -1053,6 +1054,20 @@ export function createBuildingMesh(
   const teamMat = team === 'player' ? pal.tunicPlayer : pal.tunicEnemy;
   const look = getCivLook(pantheon, pal, majorGod);
 
+  if (isExpandedBuildingKind(kind)) {
+    const built = createExpandedBuildingMesh(kind, team, pal, enableShadows, pantheon, majorGod, age);
+    root.add(built.group);
+    if (built.beaconCrystal) {
+      root.userData.beaconCrystal = built.beaconCrystal;
+    }
+    if (built.vortexRing) {
+      root.userData.vortexRing = built.vortexRing;
+    }
+    attachGroundMarkers(root, built.markerRadius, pal, team);
+    attachHealthBar(root, built.barHeight, built.barWidth);
+    return root;
+  }
+
   if (look.style === 'norse') {
     const built = createNorseBuildingMesh(kind, team, pal, enableShadows, age, pantheon);
     root.add(built.group);
@@ -1497,6 +1512,91 @@ export function createUnitMesh(
     root.add(m);
     return m;
   };
+
+  if (kind === 'fishing_ship' || kind === 'war_trireme') {
+    const isWar = kind === 'war_trireme';
+    const hullLen = isWar ? 2.55 : 1.75;
+    const hullW = isWar ? 0.88 : 0.72;
+    const hullGroup = new THREE.Group();
+    root.add(hullGroup);
+
+    const addShipPart = (
+      geo: THREE.BufferGeometry,
+      mat: THREE.Material,
+      x: number,
+      y: number,
+      z: number,
+      rx = 0,
+      ry = 0,
+      rz = 0
+    ) => {
+      const m = new THREE.Mesh(geo, mat);
+      m.position.set(x, y, z);
+      if (rx || ry || rz) m.rotation.set(rx, ry, rz);
+      if (enableShadows) m.castShadow = true;
+      hullGroup.add(m);
+      return m;
+    };
+
+    // Main curved hull + deck
+    addShipPart(new THREE.BoxGeometry(hullW, 0.36, hullLen), pal.timber, 0, 0.32, 0);
+    addShipPart(new THREE.BoxGeometry(hullW * 0.86, 0.08, hullLen * 0.9), look.wallMat, 0, 0.52, 0);
+    // Prow + bronze ram (for war_trireme) or fishing net boom (for fishing_ship)
+    addShipPart(
+      new THREE.ConeGeometry(hullW * 0.44, 0.72, 4),
+      pal.timber,
+      0,
+      0.42,
+      hullLen * 0.5 + 0.25,
+      Math.PI / 2,
+      Math.PI / 4,
+      0
+    );
+    if (isWar) {
+      addShipPart(
+        new THREE.ConeGeometry(0.18, 0.55, 6),
+        pal.bronze,
+        0,
+        0.28,
+        hullLen * 0.5 + 0.56,
+        Math.PI / 2,
+        0,
+        0
+      );
+      // Side shield rows
+      for (const sz of [-0.65, -0.2, 0.25, 0.7]) {
+        addShipPart(new THREE.CylinderGeometry(0.14, 0.14, 0.05, 8), look.trimMat, -hullW * 0.52, 0.54, sz, 0, 0, Math.PI / 2);
+        addShipPart(new THREE.CylinderGeometry(0.14, 0.14, 0.05, 8), look.trimMat, hullW * 0.52, 0.54, sz, 0, 0, Math.PI / 2);
+      }
+    } else {
+      // Fishing net & basket on stern
+      addShipPart(new THREE.CylinderGeometry(0.22, 0.16, 0.32, 8), pal.bronze, 0, 0.68, -0.45);
+      addShipPart(new THREE.BoxGeometry(0.45, 0.14, 0.42), pal.goldOre, 0, 0.72, 0.42);
+    }
+    // Mast + Square Billowing Sail + Banner Pennant
+    addShipPart(new THREE.CylinderGeometry(0.055, 0.07, isWar ? 2.15 : 1.65, 6), pal.timber, 0, isWar ? 1.5 : 1.25, 0);
+    addShipPart(new THREE.BoxGeometry(isWar ? 1.48 : 1.05, 0.06, 0.06), pal.timber, 0, isWar ? 2.18 : 1.78, 0);
+    addShipPart(
+      new THREE.BoxGeometry(isWar ? 1.4 : 0.98, isWar ? 1.15 : 0.85, 0.06),
+      teamMat,
+      0,
+      isWar ? 1.58 : 1.32,
+      0.08
+    );
+    addShipPart(new THREE.BoxGeometry(0.45, 0.24, 0.05), look.trimMat, 0.22, isWar ? 2.48 : 2.02, 0);
+
+    let waveT = Math.random() * 6.28;
+    root.userData.animatePose = (dt: number, moving: boolean) => {
+      waveT += dt * (moving ? 4.2 : 2.1);
+      hullGroup.position.y = Math.sin(waveT) * 0.06;
+      hullGroup.rotation.z = Math.cos(waveT * 0.8) * 0.05;
+      hullGroup.rotation.x = moving ? -0.05 : Math.sin(waveT * 0.6) * 0.025;
+    };
+
+    attachGroundMarkers(root, isWar ? 1.25 : 1.05, pal, team);
+    attachHealthBar(root, isWar ? 2.85 : 2.35, isWar ? 1.85 : 1.45);
+    return root;
+  }
 
   const isExplicitEgyptianUnit =
     kind === 'priest' ||

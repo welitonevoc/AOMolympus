@@ -92,7 +92,7 @@ interface UnitEntity {
   hp: number;
   maxHp: number;
   selected: boolean;
-  state: 'idle' | 'move' | 'gather' | 'hunt' | 'return' | 'build' | 'attack';
+  state: 'idle' | 'move' | 'gather' | 'hunt' | 'return' | 'build' | 'attack' | 'pray' | 'empower';
   targetPos: THREE.Vector3 | null;
   targetEntityId: string | null;
   targetNodeId: string | null;
@@ -117,6 +117,7 @@ interface UnitEntity {
   chargeBurstTimer?: number;
   specialCooldown?: number;
   isPromotedHero?: boolean;
+  trainedAtGreatHall?: boolean;
   tradeTargetBuildingId?: string | null;
   tradePhase?: 'to_tc' | 'to_market';
   poisonTimer?: number;
@@ -140,6 +141,8 @@ interface BuildingEntity {
   rallyPoint: THREE.Vector3 | null;
   attackTimer: number;
   settlementId?: string;
+  empoweredTimer?: number;
+  empoweredBy?: 'pharaoh' | 'priest';
 }
 
 interface ResourceNodeEntity {
@@ -204,6 +207,8 @@ interface ProjectileVfx {
   isFireArrow?: boolean;
   isPoisonArrow?: boolean;
   targetRadius?: number;
+  attackerKind?: UnitKind;
+  fromGreatHall?: boolean;
 }
 
 interface TransientVfx {
@@ -316,6 +321,9 @@ const MAX_CAM_DISTANCE = 84;
 const FOG_GRID_SIZE = 64;
 const MINIMAP_FOG_SIZE = 32;
 const MAX_TOWN_CENTERS = 3;
+const MAX_VILLAGE_CENTERS = 3;
+const MAX_MONUMENTS = 5;
+const MAX_WONDERS = 1;
 
 // Zero-GC Day / Night cycle math helpers & orbital keyframes
 const _sunColorA = new THREE.Color();
@@ -469,6 +477,10 @@ export class AoMEngine {
   private lastTime = performance.now();
   private hudSyncTimer = 0;
   private favorTimer = 0;
+  private recentPlayerCombatFavor = 0;
+  private recentEnemyCombatFavor = 0;
+  private playerCombatFavorRate = 0;
+  private enemyCombatFavorRate = 0;
   private enemyAiTimer = 0;
   private enemyWaveTimer = 38;
   private nextId = 1;
@@ -1116,6 +1128,10 @@ export class AoMEngine {
     this.enemyDestroyedValue = 0;
     this.activeTechResearch = null;
     this.relicsHeld = 0;
+    this.recentPlayerCombatFavor = 0;
+    this.recentEnemyCombatFavor = 0;
+    this.playerCombatFavorRate = 0;
+    this.enemyCombatFavorRate = 0;
     this.marketRates = { food: 1.0, wood: 1.0, gold: 1.0 };
     this.regentUnitId = null;
 
@@ -1447,6 +1463,21 @@ export class AoMEngine {
     return count;
   }
 
+  private getBuildingCount(kind: BuildingKind, team: TeamId): number {
+    let count = 0;
+    for (const b of this.buildings.values()) {
+      if (b.team === team && b.kind === kind) count++;
+    }
+    return count;
+  }
+
+  private hasTeamWonder(team: TeamId): boolean {
+    for (const b of this.buildings.values()) {
+      if (b.team === team && b.kind === 'wonder' && b.isConstructed) return true;
+    }
+    return false;
+  }
+
   private findNearestSettlement(x: number, z: number, maxRange: number): SettlementEntity | null {
     let best: SettlementEntity | null = null;
     let bestD = maxRange;
@@ -1603,15 +1634,29 @@ export class AoMEngine {
     for (const u of this.units.values()) {
       if (u.team === 'player') {
         let sight = this.unitStats(u.kind, 'player').los ?? (u.kind === 'archer' || u.kind === 'centaur' ? 16 : 14);
-        if (u.kind === 'oracle' && u.state === 'idle') {
-          sight += 10;
+        if (u.kind === 'oracle') {
+          if (this.researchedTechs.includes('perception')) sight += 4;
+          if (u.state === 'idle') sight += 10;
         }
         this.revealFogCircle(u.mesh.position.x, u.mesh.position.z, sight);
       }
     }
     for (const b of this.buildings.values()) {
       if (b.team === 'player') {
-        const sight = b.kind === 'town_center' ? 22 : b.kind === 'tower' || b.kind === 'fortress' ? 22 : 16;
+        const sight =
+          b.kind === 'lighthouse'
+            ? 52
+            : b.kind === 'obelisk'
+            ? 32
+            : b.kind === 'wonder'
+            ? 28
+            : b.kind === 'mirror_tower'
+            ? 24
+            : b.kind === 'town_center' || b.kind === 'tower' || b.kind === 'fortress' || b.kind === 'asgard_hill_fort'
+            ? 22
+            : b.kind === 'village_center'
+            ? 20
+            : 16;
         this.revealFogCircle(b.mesh.position.x, b.mesh.position.z, sight);
       }
     }
@@ -1766,7 +1811,9 @@ export class AoMEngine {
   }
 
   private buildingStats(kind: BuildingKind, team: TeamId = 'player') {
-    return getCivBuildingSpec(this.teamPantheon(team), kind);
+    const teamAge: AgeLevel = team === 'player' ? this.age : this.enemyAge;
+    const majorGod = team === 'player' ? this.majorGodName : undefined;
+    return getCivBuildingSpec(this.teamPantheon(team), kind, majorGod, teamAge);
   }
 
   private isWorkerKind(k: UnitKind): boolean {
@@ -1788,12 +1835,18 @@ export class AoMEngine {
       this.isWorkerKind(u.kind) ||
       u.kind === 'ox_cart' ||
       u.kind === 'llama_caravan' ||
+      u.kind === 'fishing_ship' ||
       u.kind === 'caladria' ||
       (u.kind === 'oracle' && !u.isPromotedHero)
     );
   }
 
-  private getHeroPromotionCost(kind: UnitKind): ResourceCost {
+  private isHeroPromotionFree(team: TeamId): boolean {
+    return team === 'player' && this.chosenMinorGods.includes('Hyperion');
+  }
+
+  private getHeroPromotionCost(kind: UnitKind, team: TeamId = 'player'): ResourceCost {
+    if (this.isHeroPromotionFree(team)) return {};
     if (kind === 'citizen') return { food: 55, wood: 20, favor: 2 };
     if (kind === 'oracle') return { gold: 60, favor: 2 };
     if (kind === 'turma' || kind === 'contarius') return { food: 60, gold: 55, favor: 3 };
@@ -1824,9 +1877,10 @@ export class AoMEngine {
     );
     if (candidates.length === 0) return;
 
+    const isFree = this.isHeroPromotionFree('player');
     let promoted = 0;
     for (const u of candidates) {
-      const cost = this.getHeroPromotionCost(u.kind);
+      const cost = this.getHeroPromotionCost(u.kind, 'player');
       if (!this.canAfford(this.resources, cost)) {
         if (promoted === 0) {
           this.notifyStatus(
@@ -1843,10 +1897,11 @@ export class AoMEngine {
     }
     if (promoted > 0) {
       soundEngine.playFanfare(false);
+      const freeNote = isFree ? ' (Promoção Gratuita de Hipérion!)' : '';
       this.notifyStatus(
         promoted === 1
-          ? `${this.unitStats(candidates[0].kind, 'player').name} promovido a Herói Atlante (★)!`
-          : `${promoted} unidades atlantes promovidas a Heróis!`
+          ? `${this.unitStats(candidates[0].kind, 'player').name} promovido a Herói Atlante (★)!${freeNote}`
+          : `${promoted} unidades atlantes promovidas a Heróis!${freeNote}`
       );
       this.emitHudSnapshot();
     }
@@ -1979,6 +2034,10 @@ export class AoMEngine {
       if (has('mythic_rejuvenation')) {
         hpMult += 0.25;
         speedMult += 0.15;
+      }
+      if (this.hasTeamWonder(team)) {
+        hpMult += 0.2;
+        atkMult += 0.2;
       }
     }
 
@@ -2277,10 +2336,18 @@ export class AoMEngine {
     const tierMaxHp = Math.round(this.getTownCenterTierMaxHp(team, newAge) * suddenDeathMult);
 
     for (const b of this.buildings.values()) {
-      if (b.team !== team || b.kind !== 'town_center') continue;
+      const isAgeEvolving =
+        b.kind === 'town_center' || b.kind === 'tower' || b.kind === 'wall' || b.kind === 'gate';
+      if (b.team !== team || !isAgeEvolving) continue;
 
       const prevMax = b.maxHp;
-      b.maxHp = tierMaxHp;
+      if (b.kind === 'town_center') {
+        b.maxHp = tierMaxHp;
+      } else {
+        const evolvedSpec = getCivBuildingSpec(pantheon, b.kind, majorGod, newAge);
+        const towerTechBonus = b.kind === 'tower' && (team === 'player' ? this.researchedTechs : this.enemyResearchedTechs).includes('watch_tower') ? 1.35 : 1;
+        b.maxHp = Math.round(evolvedSpec.maxHp * towerTechBonus);
+      }
       if (b.isConstructed) {
         b.hp = Math.min(b.maxHp, b.hp + Math.max(0, b.maxHp - prevMax));
       } else {
@@ -2289,7 +2356,7 @@ export class AoMEngine {
 
       const oldMesh = b.mesh;
       const newMesh = createBuildingMesh(
-        'town_center',
+        b.kind,
         b.team,
         this.palette,
         !this.isSoftwareGl,
@@ -2312,7 +2379,7 @@ export class AoMEngine {
       b.mesh = newMesh;
       this.updateHealthBarVisual(b.mesh, b.hp, b.maxHp, b.selected);
 
-      if (b.isConstructed) {
+      if (b.isConstructed && b.kind === 'town_center') {
         const ringColor = newAge >= 5 ? 0xfacc15 : team === 'player' ? 0x38bdf8 : 0xf97316;
         this.spawnRingVfx(b.mesh.position, 9.5 + newAge * 0.8, ringColor, 1.25);
         this.spawnPillarVfx(b.mesh.position, newAge >= 5 ? 0xfde047 : ringColor, newAge >= 5 ? 2.1 : 1.35);
@@ -2332,7 +2399,8 @@ export class AoMEngine {
     const id = fixedId ?? `b_${this.nextId++}`;
     const pantheon = this.teamPantheon(team);
     const teamAge: AgeLevel = team === 'player' ? this.age : this.enemyAge;
-    const stats = getCivBuildingSpec(pantheon, kind);
+    const majorGod = team === 'player' ? this.majorGodName : undefined;
+    const stats = getCivBuildingSpec(pantheon, kind, majorGod, teamAge);
     const maxHp = kind === 'town_center' ? this.getTownCenterTierMaxHp(team, teamAge) : stats.maxHp;
     const mesh = createBuildingMesh(
       kind,
@@ -2340,8 +2408,8 @@ export class AoMEngine {
       this.palette,
       !this.isSoftwareGl,
       pantheon,
-      team === 'player' ? this.majorGodName : undefined,
-      kind === 'town_center' ? teamAge : 1
+      majorGod,
+      teamAge
     );
     mesh.position.set(x, groundHeightAt(x, z, this.mapId), z);
     mesh.userData.entityType = 'building';
@@ -2835,6 +2903,31 @@ export class AoMEngine {
         return;
       }
     }
+    if (kind === 'village_center' && this.getBuildingCount('village_center', 'player') >= MAX_VILLAGE_CENTERS) {
+      this.notifyStatus(`Limite máximo de ${MAX_VILLAGE_CENTERS} Centros da Vila atingido.`);
+      return;
+    }
+    if (kind === 'monument' && this.getBuildingCount('monument', 'player') >= MAX_MONUMENTS) {
+      this.notifyStatus(`Limite máximo de ${MAX_MONUMENTS} Monumentos Sagrados atingido.`);
+      return;
+    }
+    if (kind === 'wonder' && this.getBuildingCount('wonder', 'player') >= MAX_WONDERS) {
+      this.notifyStatus('Você já possui uma Maravilha monumental erguida.');
+      return;
+    }
+    const godKey = this.majorGodName.toLowerCase();
+    if (kind === 'asgard_hill_fort' && godKey !== 'freyr') {
+      this.notifyStatus('O Forte de Asgard é exclusivo do deus Freyr.');
+      return;
+    }
+    if (kind === 'sky_passage' && godKey !== 'urano' && godKey !== 'oranos') {
+      this.notifyStatus('A Passagem Celeste é exclusiva do titã Urano.');
+      return;
+    }
+    if (kind === 'mirror_tower' && !this.chosenMinorGods.includes('Helios')) {
+      this.notifyStatus('A Torre Espelho requer adorar Hélios na Era Mítica.');
+      return;
+    }
     const stats = this.buildingStats(kind, 'player');
     if (this.age < stats.minAge) {
       this.notifyStatus(
@@ -2860,7 +2953,7 @@ export class AoMEngine {
       false,
       this.pantheon,
       this.majorGodName,
-      kind === 'town_center' ? this.age : 1
+      this.age
     );
     ghost.scale.copy(this.getBuildingScale(kind));
     ghost.traverse((obj) => {
@@ -2879,6 +2972,10 @@ export class AoMEngine {
     soundEngine.playSelect();
     if (kind === 'town_center') {
       this.notifyStatus('Posicione sobre um Assentamento Neutro para erguer um novo Centro da Cidade (máx. 3).');
+    } else if (kind === 'village_center') {
+      this.notifyStatus('Construa o Centro da Vila em qualquer terreno livre fora dos assentamentos.');
+    } else if (kind === 'sky_passage') {
+      this.notifyStatus('Posicione uma Passagem Celeste para criar portais de teletransporte aliados.');
     }
     this.emitHudSnapshot();
   }
@@ -2938,19 +3035,35 @@ export class AoMEngine {
     let targetBuilding: BuildingEntity | null = null;
     const matchesProducer = (bKind: BuildingKind) =>
       bKind === stats.producedAt ||
-      (kind === 'priest' && (bKind === 'temple' || bKind === 'town_center')) ||
-      (kind === 'oracle' && (bKind === 'town_center' || bKind === 'temple')) ||
-      (stats.isHero && kind !== 'priest' && kind !== 'oracle' && (bKind === 'town_center' || bKind === 'fortress')) ||
+      (stats.producedAt === 'town_center' && bKind === 'village_center') ||
+      (kind === 'priest' && (bKind === 'temple' || bKind === 'town_center' || bKind === 'village_center')) ||
+      (kind === 'oracle' && (bKind === 'town_center' || bKind === 'village_center' || bKind === 'temple')) ||
+      (stats.isHero &&
+        kind !== 'priest' &&
+        kind !== 'oracle' &&
+        kind !== 'hersir' &&
+        kind !== 'godi' &&
+        (bKind === 'town_center' || bKind === 'fortress' || bKind === 'asgard_hill_fort')) ||
+      ((kind === 'hersir' || kind === 'godi') &&
+        (bKind === 'barracks' || bKind === 'great_hall' || bKind === 'temple' || bKind === 'fortress' || bKind === 'asgard_hill_fort')) ||
+      ((kind === 'raiding_cavalry' || kind === 'jarl') &&
+        (bKind === 'great_hall' || bKind === 'stable' || bKind === 'fortress' || bKind === 'asgard_hill_fort')) ||
+      (kind === 'huskarl' && (bKind === 'barracks' || bKind === 'fortress' || bKind === 'asgard_hill_fort')) ||
       (kind === 'myrmidon' && (bKind === 'barracks' || bKind === 'fortress')) ||
-      ((kind === 'turma' || kind === 'contarius') && (bKind === 'stable' || bKind === 'barracks' || bKind === 'archery_range')) ||
+      ((kind === 'katapeltes' || kind === 'turma' || kind === 'cheiroballista') &&
+        (bKind === 'counter_barracks' || bKind === 'archery_range' || bKind === 'stable' || bKind === 'fortress')) ||
+      (kind === 'contarius' && (bKind === 'barracks' || bKind === 'stable' || bKind === 'fortress')) ||
+      ((kind === 'fishing_ship' || kind === 'war_trireme') && bKind === 'dock') ||
       ((kind === 'ram' ||
         kind === 'siege' ||
         kind === 'siege_tower' ||
         kind === 'egypt_catapult' ||
+        kind === 'portable_ram' ||
+        kind === 'norse_ballista' ||
         kind === 'cheiroballista' ||
         kind === 'fire_siphon' ||
         kind === 'onager') &&
-        (bKind === 'siege_works' || bKind === 'fortress' || (kind === 'cheiroballista' && bKind === 'archery_range')));
+        (bKind === 'siege_works' || bKind === 'fortress' || bKind === 'asgard_hill_fort' || (kind === 'cheiroballista' && (bKind === 'archery_range' || bKind === 'counter_barracks'))));
 
     for (const b of this.buildings.values()) {
       if (b.team === 'player' && b.isConstructed && matchesProducer(b.kind) && b.selected) {
@@ -3118,7 +3231,14 @@ export class AoMEngine {
     const spec = TECH_SPECS[techId];
     if (!spec) return;
     if (spec.pantheons && !spec.pantheons.includes(this.pantheon)) {
-      this.notifyStatus(`${spec.name} é exclusiva do panteão Grego.`);
+      this.notifyStatus(`${spec.name} é exclusiva de outro panteão.`);
+      return;
+    }
+    if (
+      spec.requiresMajorGod &&
+      !spec.requiresMajorGod.some((mg) => mg.toLowerCase() === this.majorGodName.toLowerCase())
+    ) {
+      this.notifyStatus(`${spec.name} é exclusiva do Deus Maior ${spec.requiresMajorGodLabel ?? spec.requiresMajorGod.join(', ')}.`);
       return;
     }
     if (spec.requiresMinorGod && !spec.requiresMinorGod.some((mg) => this.chosenMinorGods.includes(mg))) {
@@ -3142,6 +3262,9 @@ export class AoMEngine {
       return;
     }
     const validBuildings: BuildingKind[] = [spec.building, ...(spec.secondaryBuildings ?? [])];
+    if (validBuildings.includes('fortress') && !validBuildings.includes('asgard_hill_fort')) {
+      validBuildings.push('asgard_hill_fort');
+    }
     let hasBuilding = false;
     for (const b of this.buildings.values()) {
       if (b.team === 'player' && b.isConstructed && validBuildings.includes(b.kind)) {
@@ -3236,8 +3359,45 @@ export class AoMEngine {
     this.emitHudSnapshot();
   }
 
+  private isTeamIsis(team: TeamId): boolean {
+    if (this.teamPantheon(team) !== 'egyptian') return false;
+    const godName = team === 'player' ? this.majorGodName : PANTHEONS[this.enemyPantheon].deity;
+    return godName.toLowerCase().includes('ísis') || godName.toLowerCase().includes('isis');
+  }
+
+  private isTeamRa(team: TeamId): boolean {
+    if (this.teamPantheon(team) !== 'egyptian') return false;
+    const godName = team === 'player' ? this.majorGodName : PANTHEONS[this.enemyPantheon].deity;
+    return godName.toLowerCase() === 'rá' || godName.toLowerCase() === 'ra';
+  }
+
+  private isProtectedByIsisMonument(defendingTeam: TeamId, worldPos: THREE.Vector3): BuildingEntity | null {
+    if (!this.isTeamIsis(defendingTeam)) return null;
+    for (const b of this.buildings.values()) {
+      if (b.team === defendingTeam && b.isConstructed && b.kind === 'monument') {
+        if (b.mesh.position.distanceTo(worldPos) <= b.radius + 16) {
+          return b;
+        }
+      }
+    }
+    return null;
+  }
+
   private executeGodPower(id: GodPowerId, worldPos: THREE.Vector3) {
     const spec = getCivGodPowerSpec(this.pantheon, id);
+    if (spec.targeted && spec.category === 'Ofensivo') {
+      const shieldMonument = this.isProtectedByIsisMonument('enemy', worldPos);
+      if (shieldMonument) {
+        this.activeGodPowerMode = null;
+        if (this.godPowerRing) this.godPowerRing.visible = false;
+        this.spawnPillarVfx(shieldMonument.mesh.position, 0x38bdf8, 1.8);
+        this.spawnRingVfx(shieldMonument.mesh.position, shieldMonument.radius + 16, 0x38bdf8, 1.4);
+        this.spawnRingVfx(worldPos, spec.radius, 0xfacc15, 0.9);
+        this.notifyStatus(`🛡️ Monumento de Ísis bloqueou ${spec.name} nesta área! Favor preservado.`);
+        this.emitHudSnapshot();
+        return;
+      }
+    }
     this.resources.favor -= spec.favorCost;
     const cdMult = PANTHEONS[this.pantheon].favoredGodPower === id ? 0.78 : 1;
     this.godPowerCooldowns[id] = spec.cooldown * cdMult;
@@ -3873,11 +4033,16 @@ export class AoMEngine {
       case 'argus':
       case 'lampades':
         return 2;
+      case 'war_trireme':
+        return 2;
       case 'villager':
       case 'norse_dwarf':
       case 'ox_cart':
       case 'citizen':
+      case 'fishing_ship':
         return 3;
+      default:
+        return 1;
     }
   }
 
@@ -4995,18 +5160,32 @@ export class AoMEngine {
 
   private canPlaceBuildingAt(kind: BuildingKind, x: number, z: number, team: TeamId = 'player'): boolean {
     if (Math.abs(x) > PLAYABLE_HALF_SIZE - 4 || Math.abs(z) > PLAYABLE_HALF_SIZE - 4) return false;
-    if (groundHeightAt(x, z, this.mapId) < -0.1) return false;
-    if (!this.navGrid.isTerrainWalkable(x, z)) return false;
+    const gh = groundHeightAt(x, z, this.mapId);
+    if (kind === 'dock') {
+      if (gh < -1.1) return false;
+    } else {
+      if (gh < -0.1) return false;
+      if (!this.navGrid.isTerrainWalkable(x, z)) return false;
+    }
 
     if (kind === 'town_center') {
       if (this.getTownCenterCount(team) >= MAX_TOWN_CENTERS) return false;
       const settlement = this.findNearestSettlement(x, z, 3.2);
       if (!settlement) return false;
+    } else if (kind === 'village_center') {
+      if (this.getBuildingCount('village_center', team) >= MAX_VILLAGE_CENTERS) return false;
+    } else if (kind === 'monument') {
+      if (this.getBuildingCount('monument', team) >= MAX_MONUMENTS) return false;
+    } else if (kind === 'wonder') {
+      if (this.getBuildingCount('wonder', team) >= MAX_WONDERS) return false;
     }
 
     const rad = this.buildingStats(kind, team).radius;
+    const isWallLike = kind === 'wall' || kind === 'gate';
     for (const b of this.buildings.values()) {
-      if (Math.hypot(b.mesh.position.x - x, b.mesh.position.z - z) < b.radius + rad + 1.2) {
+      const bothWalls = isWallLike && (b.kind === 'wall' || b.kind === 'gate');
+      const margin = bothWalls ? 0.15 : 1.2;
+      if (Math.hypot(b.mesh.position.x - x, b.mesh.position.z - z) < b.radius + rad + margin) {
         return false;
       }
     }
@@ -5023,6 +5202,59 @@ export class AoMEngine {
       }
     }
     return true;
+  }
+
+  public teleportSkyPassage(buildingId: string) {
+    if (this.phase !== 'playing') return;
+    const source = this.buildings.get(buildingId);
+    if (!source || source.team !== 'player' || source.kind !== 'sky_passage' || !source.isConstructed) {
+      return;
+    }
+    const passages = [...this.buildings.values()]
+      .filter((b) => b.team === 'player' && b.kind === 'sky_passage' && b.isConstructed)
+      .sort((a, b) => a.id.localeCompare(b.id));
+    if (passages.length < 2) {
+      this.notifyStatus('Construa outra Passagem Celeste para criar um elo de teletransporte!');
+      return;
+    }
+    const srcIdx = passages.findIndex((p) => p.id === source.id);
+    const dest = passages[(srcIdx + 1) % passages.length];
+
+    const candidates = [...this.units.values()]
+      .filter((u) => {
+        if (u.team !== 'player' || u.hp <= 0) return false;
+        const spec = this.unitStats(u.kind, 'player');
+        if (spec.isGod || u.kind === 'titan') return false;
+        return u.mesh.position.distanceTo(source.mesh.position) <= source.radius + 9.5;
+      })
+      .slice(0, 18);
+
+    if (candidates.length === 0) {
+      this.notifyStatus('Aproxime tropas aliadas desta Passagem Celeste para teleportá-las.');
+      return;
+    }
+
+    this.spawnRingVfx(source.mesh.position, source.radius + 2.2, 0x38bdf8, 0.85);
+    this.spawnPillarVfx(source.mesh.position, 0x7dd3fc, 1.2);
+    this.spawnRingVfx(dest.mesh.position, dest.radius + 2.5, 0xfacc15, 1.0);
+    this.spawnPillarVfx(dest.mesh.position, 0x38bdf8, 1.5);
+
+    candidates.forEach((u, idx) => {
+      const ang = (idx / Math.max(1, candidates.length)) * Math.PI * 2;
+      const ringR = dest.radius + 2.2 + Math.floor(idx / 8) * 1.3;
+      const tx = THREE.MathUtils.clamp(dest.mesh.position.x + Math.cos(ang) * ringR, -PLAYABLE_HALF_SIZE + 2, PLAYABLE_HALF_SIZE - 2);
+      const tz = THREE.MathUtils.clamp(dest.mesh.position.z + Math.sin(ang) * ringR, -PLAYABLE_HALF_SIZE + 2, PLAYABLE_HALF_SIZE - 2);
+      u.mesh.position.set(tx, groundHeightAt(tx, tz, this.mapId), tz);
+      u.state = 'idle';
+      u.targetPos = null;
+      u.waypoints = [];
+      u.rallyFlagPos = null;
+      u.repathTimer = 0;
+    });
+
+    soundEngine.playFanfare(false);
+    this.notifyStatus(`🌀 ${candidates.length} unidades teleportadas pela Passagem Celeste!`);
+    this.emitHudSnapshot();
   }
 
   private beginTownCenterOnSettlement(
@@ -5547,6 +5779,177 @@ export class AoMEngine {
     this.emitHudSnapshot();
   }
 
+  public orderVillagersToPrayAtTemple(templeId?: string) {
+    if (this.phase !== 'playing') return;
+    if (this.pantheon !== 'greek') {
+      this.notifyStatus('Apenas os Gregos geram Favor enviando Aldeões para orar no Templo.');
+      return;
+    }
+    const targetTemple =
+      (templeId ? this.buildings.get(templeId) : undefined) ??
+      [...this.buildings.values()].find(
+        (b) => b.team === 'player' && b.isConstructed && b.kind === 'temple'
+      );
+    if (!targetTemple || targetTemple.team !== 'player' || !targetTemple.isConstructed || targetTemple.kind !== 'temple') {
+      this.notifyStatus('Construa um Templo Grego primeiro para enviar Aldeões para orar.');
+      return;
+    }
+
+    let vills = [...this.units.values()].filter(
+      (u) => u.team === 'player' && this.isWorkerKind(u.kind) && u.selected
+    );
+    if (vills.length === 0) {
+      vills = [...this.units.values()]
+        .filter((u) => u.team === 'player' && this.isWorkerKind(u.kind) && u.state === 'idle')
+        .slice(0, 1);
+    }
+    if (vills.length === 0) {
+      vills = [...this.units.values()]
+        .filter((u) => u.team === 'player' && this.isWorkerKind(u.kind) && u.state !== 'pray')
+        .sort(
+          (a, b) =>
+            a.mesh.position.distanceTo(targetTemple.mesh.position) -
+            b.mesh.position.distanceTo(targetTemple.mesh.position)
+        )
+        .slice(0, 1);
+    }
+    if (vills.length === 0) {
+      this.notifyStatus('Nenhum Aldeão disponível para orar no Templo.');
+      return;
+    }
+
+    for (const u of vills) {
+      u.state = 'pray';
+      u.targetEntityId = targetTemple.id;
+      u.targetNodeId = null;
+      u.targetFaunaId = null;
+      u.waypoints = [];
+      u.rallyFlagPos = null;
+      u.repathTimer = 0;
+      u.gatherTimer = 0;
+    }
+    this.spawnPillarVfx(targetTemple.mesh.position, 0x38bdf8, 1.15);
+    this.spawnRingVfx(targetTemple.mesh.position, targetTemple.radius + 1.4, 0xfacc15, 0.65);
+    this.triggerUnitVoice(vills, 'work');
+    this.notifyStatus(`${vills.length} Aldeão(ões) enviados para orar no Templo por Favor Divino!`);
+    this.emitHudSnapshot();
+  }
+
+  public orderEmpowerMonument(buildingId?: string) {
+    if (this.phase !== 'playing') return;
+    if (this.pantheon !== 'egyptian') {
+      this.notifyStatus('Apenas os Egípcios abençoam e energizam Monumentos.');
+      return;
+    }
+    const targetBuilding =
+      (buildingId ? this.buildings.get(buildingId) : undefined) ??
+      [...this.buildings.values()].find(
+        (b) => b.team === 'player' && b.isConstructed && b.kind === 'monument'
+      );
+    if (!targetBuilding || targetBuilding.team !== 'player' || !targetBuilding.isConstructed) {
+      this.notifyStatus('Construa um Monumento Egípcio para abençoá-lo e acelerar o Favor Divino.');
+      return;
+    }
+
+    let casters = [...this.units.values()].filter(
+      (u) =>
+        u.team === 'player' &&
+        u.selected &&
+        (u.kind === 'pharaoh' || u.kind === 'son_of_osiris' || u.kind === 'priest')
+    );
+    if (casters.length === 0) {
+      casters = [...this.units.values()]
+        .filter(
+          (u) =>
+            u.team === 'player' &&
+            u.hp > 0 &&
+            (u.kind === 'pharaoh' || u.kind === 'son_of_osiris' || u.kind === 'priest')
+        )
+        .sort((a, b) => {
+          const ap = a.kind === 'priest' ? 1 : 0;
+          const bp = b.kind === 'priest' ? 1 : 0;
+          if (ap !== bp) return ap - bp;
+          return (
+            a.mesh.position.distanceTo(targetBuilding.mesh.position) -
+            b.mesh.position.distanceTo(targetBuilding.mesh.position)
+          );
+        })
+        .slice(0, 1);
+    }
+    if (casters.length === 0) {
+      this.notifyStatus('Treine um Sacerdote ou use o Faraó para energizar o Monumento.');
+      return;
+    }
+
+    for (const u of casters) {
+      u.state = 'empower';
+      u.targetEntityId = targetBuilding.id;
+      u.targetNodeId = null;
+      u.targetFaunaId = null;
+      u.waypoints = [];
+      u.rallyFlagPos = null;
+      u.repathTimer = 0;
+    }
+    this.spawnRingVfx(targetBuilding.mesh.position, targetBuilding.radius + 1.5, 0xfacc15, 0.7);
+    this.triggerUnitVoice(casters, 'work');
+    this.notifyStatus(
+      `${this.unitStats(casters[0].kind, 'player').name} enviado para energizar ${this.buildingStats(targetBuilding.kind, 'player').name}!`
+    );
+    this.emitHudSnapshot();
+  }
+
+  public orderOraclesToSpread() {
+    if (this.phase !== 'playing') return;
+    let oracles = [...this.units.values()].filter(
+      (u) => u.team === 'player' && u.kind === 'oracle' && u.hp > 0 && u.selected
+    );
+    if (oracles.length === 0) {
+      oracles = [...this.units.values()].filter(
+        (u) => u.team === 'player' && u.kind === 'oracle' && u.hp > 0
+      );
+    }
+    if (oracles.length === 0) {
+      this.notifyStatus('Nenhum Oráculo Atlante vivo encontrado. Treine Oráculos no Templo ou Centro da Cidade.');
+      return;
+    }
+
+    const tc = this.findNearestTownCenter('player', oracles[0].mesh.position);
+    const originX = tc ? tc.mesh.position.x : -32;
+    const originZ = tc ? tc.mesh.position.z : 32;
+    const ringRadius = 24;
+    let moved = 0;
+    for (let i = 0; i < oracles.length; i++) {
+      const o = oracles[i];
+      const ang = (i / Math.max(1, oracles.length)) * Math.PI * 2 + 0.45;
+      const destX = THREE.MathUtils.clamp(
+        originX + Math.cos(ang) * (ringRadius + (i % 2) * 14),
+        -PLAYABLE_HALF_SIZE + 5,
+        PLAYABLE_HALF_SIZE - 5
+      );
+      const destZ = THREE.MathUtils.clamp(
+        originZ + Math.sin(ang) * (ringRadius + (i % 2) * 14),
+        -PLAYABLE_HALF_SIZE + 5,
+        PLAYABLE_HALF_SIZE - 5
+      );
+      if (this.isWalkableTerrainPoint(destX, destZ)) {
+        const path = this.navGrid.findPath(o.mesh.position.x, o.mesh.position.z, destX, destZ);
+        o.state = 'move';
+        o.waypoints = path;
+        o.targetPos = o.waypoints.shift() ?? new THREE.Vector3(destX, groundHeightAt(destX, destZ, this.mapId), destZ);
+        o.targetEntityId = null;
+        o.formationYaw = null;
+        o.formationSpeed = null;
+        this.spawnRingVfx(o.targetPos, 1.8, 0x38bdf8, 0.65);
+        moved++;
+      }
+    }
+    if (moved > 0) {
+      this.triggerUnitVoice(oracles, 'move');
+      this.notifyStatus(`${moved} Oráculo(s) enviados para pontos distintos (evitando sobreposição de visão)!`);
+      this.emitHudSnapshot();
+    }
+  }
+
   private commitCommandOrderAt(clientX: number, clientY: number, customWaypoints: THREE.Vector3[]) {
     let selectedPlayerUnits = [...this.units.values()].filter((u) => u.team === 'player' && u.selected);
     const picked = this.pickEntityFromEvent(clientX, clientY);
@@ -5667,6 +6070,52 @@ export class AoMEngine {
         if (orderedFarm) {
           this.spawnRingVfx(targetB.mesh.position, targetB.radius, 0x4ade80, 0.5);
           this.triggerUnitVoice(farmers, 'work');
+          this.emitHudSnapshot();
+          return;
+        }
+      }
+      if (targetB && targetB.team === 'player' && targetB.isConstructed && targetB.kind === 'temple' && this.pantheon === 'greek') {
+        const prayingVills = selectedPlayerUnits.filter((u) => this.isWorkerKind(u.kind));
+        if (prayingVills.length > 0) {
+          for (const u of prayingVills) {
+            u.state = 'pray';
+            u.targetEntityId = targetB.id;
+            u.targetNodeId = null;
+            u.targetFaunaId = null;
+            u.waypoints = [];
+            u.rallyFlagPos = null;
+            u.repathTimer = 0;
+            u.gatherTimer = 0;
+          }
+          this.spawnRingVfx(targetB.mesh.position, targetB.radius + 1.2, 0x38bdf8, 0.6);
+          this.triggerUnitVoice(prayingVills, 'work');
+          this.notifyStatus(`${prayingVills.length} Aldeão(ões) enviados para orar no Templo!`);
+          this.emitHudSnapshot();
+          return;
+        }
+      }
+      if (targetB && targetB.team === 'player' && targetB.isConstructed && this.pantheon === 'egyptian') {
+        const empowerCasters = selectedPlayerUnits.filter(
+          (u) =>
+            u.kind === 'pharaoh' ||
+            u.kind === 'son_of_osiris' ||
+            (u.kind === 'priest' && targetB.kind === 'monument')
+        );
+        if (empowerCasters.length > 0) {
+          for (const u of empowerCasters) {
+            u.state = 'empower';
+            u.targetEntityId = targetB.id;
+            u.targetNodeId = null;
+            u.targetFaunaId = null;
+            u.waypoints = [];
+            u.rallyFlagPos = null;
+            u.repathTimer = 0;
+          }
+          this.spawnRingVfx(targetB.mesh.position, targetB.radius + 1.2, 0xfacc15, 0.6);
+          this.triggerUnitVoice(empowerCasters, 'work');
+          this.notifyStatus(
+            `${this.unitStats(empowerCasters[0].kind, 'player').name} energizando ${this.buildingStats(targetB.kind, 'player').name}!`
+          );
           this.emitHudSnapshot();
           return;
         }
@@ -6849,6 +7298,247 @@ export class AoMEngine {
     }
   }
 
+  private getOracleVisionMetrics(u: UnitEntity): {
+    los: number;
+    efficiency: number;
+    isFullVision: boolean;
+    favorPerSec: number;
+  } {
+    const techs = u.team === 'player' ? this.researchedTechs : this.enemyResearchedTechs;
+    const baseLos = this.unitStats('oracle', u.team).los ?? 14;
+    const techLos = techs.includes('perception') ? 4 : 0;
+    const idleLos = u.state === 'idle' ? 10 : 0;
+    const los = baseLos + techLos + idleLos;
+    if (u.hp <= 0 || u.state !== 'idle') {
+      return { los, efficiency: 0, isFullVision: false, favorPerSec: 0 };
+    }
+
+    let efficiency = 1.0;
+    for (const other of this.units.values()) {
+      if (other.id === u.id || other.team !== u.team || other.kind !== 'oracle' || other.hp <= 0 || other.state !== 'idle') {
+        continue;
+      }
+      const otherLos = (this.unitStats('oracle', other.team).los ?? 14) + techLos + 10;
+      const combined = los + otherLos;
+      const d = Math.hypot(u.mesh.position.x - other.mesh.position.x, u.mesh.position.z - other.mesh.position.z);
+      if (d < combined) {
+        const overlapRatio = 1 - d / Math.max(1, combined);
+        efficiency -= overlapRatio * 0.55;
+      }
+    }
+
+    for (const b of this.buildings.values()) {
+      const d = Math.hypot(u.mesh.position.x - b.mesh.position.x, u.mesh.position.z - b.mesh.position.z);
+      if (d < los * 0.42 + b.radius) {
+        efficiency -= 0.14;
+      }
+    }
+
+    efficiency = THREE.MathUtils.clamp(efficiency, 0.2, 1.0);
+    const isFullVision = efficiency >= 0.96;
+    const baseRate = u.isPromotedHero ? 0.90 : 0.48;
+    let mult = 1.0;
+    if (techs.includes('perception')) mult *= 1.15;
+    if (techs.includes('horns_of_consecration')) mult *= 1.25;
+    const hasTheia =
+      u.team === 'player'
+        ? this.chosenMinorGods.includes('Theia')
+        : this.teamPantheon('enemy') === 'atlantean' && this.enemyAge >= 4;
+    if (hasTheia && isFullVision) mult *= 1.10;
+
+    return {
+      los,
+      efficiency,
+      isFullVision,
+      favorPerSec: baseRate * efficiency * mult,
+    };
+  }
+
+  private awardNorseCombatFavor(
+    team: TeamId,
+    kind: UnitKind | undefined,
+    fromGreatHall: boolean | undefined,
+    damageDealt: number
+  ) {
+    if (!kind || damageDealt <= 0) return;
+    if (this.teamPantheon(team) !== 'norse') return;
+    if (this.isWorkerKind(kind) || kind === 'ox_cart' || kind === 'llama_caravan') return;
+
+    const godName = team === 'player' ? this.majorGodName : PANTHEONS[this.enemyPantheon].deity;
+    let gain = Math.min(1.5, damageDealt * 0.011);
+    if (kind === 'hersir') gain *= 3.4;
+    if (godName.toLowerCase().includes('odin') && fromGreatHall) {
+      gain *= 1.25;
+    }
+    if (gain <= 0) return;
+
+    const pool = team === 'player' ? this.resources : this.enemyResources;
+    pool.favor = Math.min(200, pool.favor + gain);
+    if (team === 'player') {
+      this.recentPlayerCombatFavor += gain;
+    } else {
+      this.recentEnemyCombatFavor += gain;
+    }
+  }
+
+  private computeTeamFavorBreakdown(team: TeamId): {
+    totalRate: number;
+    breakdown: { label: string; rate: number; detail?: string }[];
+    prayingCount: number;
+    empoweredMonuments: number;
+    templeRates: Map<string, number>;
+    oracleSummary: { count: number; avgEfficiencyPct: number; fullVisionCount: number };
+  } {
+    const pant = this.teamPantheon(team);
+    const techs = team === 'player' ? this.researchedTechs : this.enemyResearchedTechs;
+    const godName = team === 'player' ? this.majorGodName : PANTHEONS[this.enemyPantheon].deity;
+    const breakdown: { label: string; rate: number; detail?: string }[] = [];
+    const templeRates = new Map<string, number>();
+
+    let totalRate = 0.1;
+    breakdown.push({ label: 'Altar Ancestral', rate: 0.1 });
+
+    let prayingCount = 0;
+    let empoweredMonuments = 0;
+    let oracleCount = 0;
+    let oracleEffSum = 0;
+    let oracleIdleCount = 0;
+    let oracleFullCount = 0;
+
+    if (pant === 'greek') {
+      const isZeus = godName.toLowerCase().includes('zeus');
+      const hasGoldenApples = techs.includes('golden_apples');
+      const prayerMult = (isZeus ? 1.2 : 1.0) * (hasGoldenApples ? 1.2 : 1.0);
+      let prayerRate = 0;
+      for (const u of this.units.values()) {
+        if (u.team !== team || u.hp <= 0 || u.state !== 'pray' || !u.targetEntityId || !this.isWorkerKind(u.kind)) {
+          continue;
+        }
+        const temple = this.buildings.get(u.targetEntityId);
+        if (!temple || !temple.isConstructed || temple.team !== team || temple.kind !== 'temple') continue;
+        const d = u.mesh.position.distanceTo(temple.mesh.position) - temple.radius - this.getUnitRadius(u.kind);
+        if (d > 2.6) continue;
+        const r = (0.24 / (1 + 0.14 * prayingCount)) * prayerMult;
+        prayingCount++;
+        prayerRate += r;
+        templeRates.set(temple.id, (templeRates.get(temple.id) ?? 0) + r);
+      }
+      totalRate += prayerRate;
+      const mods: string[] = [];
+      if (isZeus) mods.push('Zeus +20%');
+      if (hasGoldenApples) mods.push('Maçãs de Ouro +20%');
+      breakdown.push({
+        label: `Oração nos Templos (${prayingCount} ald.)`,
+        rate: Number(prayerRate.toFixed(2)),
+        detail: mods.length > 0 ? mods.join(' · ') : 'Envie aldeões aos Templos',
+      });
+    } else if (pant === 'egyptian') {
+      const isIsis = this.isTeamIsis(team);
+      const isRa = this.isTeamRa(team);
+      const hasNecropolis = techs.includes('necropolis');
+      let monumentRate = 0;
+      let monumentCount = 0;
+      for (const b of this.buildings.values()) {
+        if (b.team !== team || !b.isConstructed || b.kind !== 'monument') continue;
+        if (monumentCount >= 5) break;
+        monumentCount++;
+        let r = 0.75;
+        if (isIsis) r *= 1.25;
+        if (hasNecropolis) r *= 1.25;
+        if ((b.empoweredTimer ?? 0) > 0) {
+          empoweredMonuments++;
+          if (b.empoweredBy === 'pharaoh') {
+            r *= isRa ? 1.9 : 1.65;
+          } else {
+            r *= isRa ? 1.55 : 1.35;
+          }
+        }
+        monumentRate += r;
+      }
+      totalRate += monumentRate;
+      const mods: string[] = [];
+      if (isIsis) mods.push('Ísis +25%');
+      if (hasNecropolis) mods.push('Necrópole +25%');
+      if (empoweredMonuments > 0) mods.push(`${empoweredMonuments} Energizado(s)`);
+      breakdown.push({
+        label: `Monumentos (${monumentCount}/5)`,
+        rate: Number(monumentRate.toFixed(2)),
+        detail: mods.length > 0 ? mods.join(' · ') : 'Faraó e Sacerdotes aumentam a taxa',
+      });
+    } else if (pant === 'norse') {
+      const combatRate = team === 'player' ? this.playerCombatFavorRate : this.enemyCombatFavorRate;
+      totalRate += combatRate;
+      const isOdin = godName.toLowerCase().includes('odin');
+      breakdown.push({
+        label: 'Combate & Bravura',
+        rate: Number(combatRate.toFixed(2)),
+        detail: isOdin ? 'Hersir 3,4× · Odin +25% Grande Salão' : 'Tropas & navios geram favor em combate (Hersir 3,4×)',
+      });
+      if (techs.includes('hammer_of_the_gods')) {
+        let hersirCount = 0;
+        for (const u of this.units.values()) {
+          if (u.team === team && u.hp > 0 && u.kind === 'hersir') hersirCount++;
+        }
+        const hammerRate = hersirCount * 0.48;
+        totalRate += hammerRate;
+        breakdown.push({
+          label: `Martelo dos Deuses (${hersirCount} Hersirs)`,
+          rate: Number(hammerRate.toFixed(2)),
+          detail: 'Thor: Hersirs geram favor passivo',
+        });
+      }
+    } else if (pant === 'atlantean') {
+      let oracleRate = 0;
+      for (const u of this.units.values()) {
+        if (u.team !== team || u.hp <= 0 || u.kind !== 'oracle') continue;
+        oracleCount++;
+        if (u.state === 'idle') {
+          const m = this.getOracleVisionMetrics(u);
+          oracleIdleCount++;
+          oracleEffSum += m.efficiency * 100;
+          if (m.isFullVision) oracleFullCount++;
+          oracleRate += m.favorPerSec;
+        }
+      }
+      totalRate += oracleRate;
+      const avgPct = oracleIdleCount > 0 ? Math.round(oracleEffSum / oracleIdleCount) : 0;
+      breakdown.push({
+        label: `Oráculos em Vigília (${oracleIdleCount}/${oracleCount})`,
+        rate: Number(oracleRate.toFixed(2)),
+        detail: oracleIdleCount > 0 ? `Visão média ${avgPct}% (${oracleFullCount} plenos)` : 'Deixe Oráculos parados e espaçados',
+      });
+    }
+
+    let wonders = 0;
+    for (const b of this.buildings.values()) {
+      if (b.team === team && b.isConstructed && b.kind === 'wonder') wonders++;
+    }
+    if (wonders > 0) {
+      const wonderRate = wonders * 3.5;
+      totalRate += wonderRate;
+      breakdown.push({ label: 'Maravilha Divina', rate: Number(wonderRate.toFixed(2)) });
+    }
+
+    if (team === 'player' && this.relicsHeld > 0) {
+      const relicRate = this.relicsHeld * 0.45;
+      totalRate += relicRate;
+      breakdown.push({ label: `Relíquias (${this.relicsHeld})`, rate: Number(relicRate.toFixed(2)) });
+    }
+
+    return {
+      totalRate,
+      breakdown,
+      prayingCount,
+      empoweredMonuments,
+      templeRates,
+      oracleSummary: {
+        count: oracleCount,
+        avgEfficiencyPct: oracleIdleCount > 0 ? Math.round(oracleEffSum / oracleIdleCount) : 0,
+        fullVisionCount: oracleFullCount,
+      },
+    };
+  }
+
   private spawnProjectile(
     start: THREE.Vector3,
     end: THREE.Vector3,
@@ -6864,6 +7554,8 @@ export class AoMEngine {
       isFireArrow?: boolean;
       isPoisonArrow?: boolean;
       targetRadius?: number;
+      attackerKind?: UnitKind;
+      fromGreatHall?: boolean;
     }
   ) {
     const isBoulder = Boolean(opts?.isBoulder);
@@ -6906,6 +7598,8 @@ export class AoMEngine {
       isFireArrow,
       isPoisonArrow,
       targetRadius: opts?.targetRadius,
+      attackerKind: opts?.attackerKind,
+      fromGreatHall: opts?.fromGreatHall,
     });
   }
 
@@ -7017,6 +7711,19 @@ export class AoMEngine {
       soundEngine.playUnitDeath();
       if (attackerTeam === 'player' && target.team === 'enemy') {
         this.stats.enemiesDefeated++;
+      }
+      // Bragi (Nórdicos): Morte de unidades Berserker (Ulfsark) concede +1 Favor Divino
+      if (target.kind === 'ulfsark') {
+        const hasBragi =
+          target.team === 'player'
+            ? this.chosenMinorGods.includes('Bragi')
+            : this.teamPantheon('enemy') === 'norse' && this.enemyAge >= 3;
+        if (hasBragi) {
+          const pool = target.team === 'player' ? this.resources : this.enemyResources;
+          pool.favor = Math.min(200, pool.favor + 1);
+          this.spawnPillarVfx(target.mesh.position, 0xfacc15, 0.75);
+          this.spawnRingVfx(target.mesh.position, 1.8, 0x38bdf8, 0.55);
+        }
       }
       if (target.kind === 'scarab') {
         // Escaravelho de Sekhmet explode em sangue ácido/solar ao morrer!
@@ -7195,20 +7902,37 @@ export class AoMEngine {
 
   /**
    * Resolves the closest valid resource drop-off point for a team:
-   * Either a constructed Town Center OR a living Norse Ox Cart (`ox_cart`).
+   * Town Center, Village Center, resource-specific Granary/Storehouse/Lumber Camp/Mining Camp, or living Norse Ox Cart (`ox_cart`).
    */
   private findNearestDropOff(
     team: TeamId,
-    pos: THREE.Vector3
+    pos: THREE.Vector3,
+    resourceType?: ResourceType
   ): { pos: THREE.Vector3; radius: number; dist: number; oxCart?: UnitEntity; townCenter?: BuildingEntity } | null {
-    const tc = this.findNearestTownCenter(team, pos);
-    let bestPos: THREE.Vector3 | null = tc ? tc.mesh.position : null;
-    let bestRadius = tc ? tc.radius : 2.2;
-    let bestDist = tc
-      ? Math.hypot(tc.mesh.position.x - pos.x, tc.mesh.position.z - pos.z)
-      : Infinity;
+    let bestPos: THREE.Vector3 | null = null;
+    let bestRadius = 2.2;
+    let bestDist = Infinity;
     let bestOxCart: UnitEntity | undefined;
-    let bestTc: BuildingEntity | undefined = tc ?? undefined;
+    let bestTc: BuildingEntity | undefined;
+
+    for (const b of this.buildings.values()) {
+      if (b.team !== team || !b.isConstructed) continue;
+      const accepts =
+        b.kind === 'town_center' ||
+        b.kind === 'village_center' ||
+        (b.kind === 'granary' && (!resourceType || resourceType === 'food')) ||
+        (b.kind === 'lumber_camp' && (!resourceType || resourceType === 'wood')) ||
+        (b.kind === 'mining_camp' && (!resourceType || resourceType === 'gold')) ||
+        (b.kind === 'storehouse' && (!resourceType || resourceType === 'wood' || resourceType === 'gold'));
+      if (!accepts) continue;
+      const d = Math.hypot(b.mesh.position.x - pos.x, b.mesh.position.z - pos.z);
+      if (d < bestDist) {
+        bestDist = d;
+        bestPos = b.mesh.position;
+        bestRadius = b.radius;
+        bestTc = b.kind === 'town_center' || b.kind === 'village_center' ? b : undefined;
+      }
+    }
 
     for (const other of this.units.values()) {
       if (other.team === team && other.kind === 'ox_cart' && other.hp > 0) {
@@ -7439,6 +8163,10 @@ export class AoMEngine {
         return 1.25;
       case 'titan':
         return 2.2;
+      case 'fishing_ship':
+        return 1.05;
+      case 'war_trireme':
+        return 1.25;
       case 'atena':
       case 'ares':
       case 'hermes':
@@ -7472,6 +8200,8 @@ export class AoMEngine {
   private syncNavObstacles() {
     const obstacles: ObstacleCircle[] = [];
     for (const b of this.buildings.values()) {
+      // Gates allow allied troops to march cleanly through while enemy units are blocked per-unit
+      if (b.kind === 'gate') continue;
       obstacles.push({
         x: b.mesh.position.x,
         z: b.mesh.position.z,
@@ -7493,8 +8223,21 @@ export class AoMEngine {
     let nx = THREE.MathUtils.clamp(oldX + _vec3A.x * step, -PLAYABLE_HALF_SIZE, PLAYABLE_HALF_SIZE);
     let nz = THREE.MathUtils.clamp(oldZ + _vec3A.z * step, -PLAYABLE_HALF_SIZE, PLAYABLE_HALF_SIZE);
 
-    const canStepTo = (x: number, z: number) =>
-      groundHeightAt(x, z, this.mapId) >= WATER_WALK_LIMIT && this.navGrid.isTerrainWalkable(x, z);
+    const uRad = this.getUnitRadius(u.kind);
+    const canStepTo = (x: number, z: number) => {
+      if (groundHeightAt(x, z, this.mapId) < WATER_WALK_LIMIT || !this.navGrid.isTerrainWalkable(x, z)) {
+        return false;
+      }
+      for (const b of this.buildings.values()) {
+        if (b.kind === 'gate' && this.getDiplomacy(u.team, b.team) === 'enemy') {
+          const minGateR = b.radius + uRad + 0.25;
+          if (Math.hypot(x - b.mesh.position.x, z - b.mesh.position.z) < minGateR) {
+            return false;
+          }
+        }
+      }
+      return true;
+    };
 
     if (!canStepTo(nx, nz)) {
       if (canStepTo(nx, oldZ)) {
@@ -7603,6 +8346,8 @@ export class AoMEngine {
 
         for (let bi = 0; bi < buildingList.length; bi++) {
           const b = buildingList[bi];
+          // Gates allow allied troops to pass through while blocking enemy units
+          if (b.kind === 'gate' && this.getDiplomacy(u.team, b.team) !== 'enemy') continue;
           const minDist = b.radius + rU + 0.25;
           let dx = ux - b.mesh.position.x;
           let dz = uz - b.mesh.position.z;
@@ -7776,11 +8521,16 @@ export class AoMEngine {
           this.spawnRingVfx(woundedAlly.mesh.position, 0.85, 0x38bdf8, 0.35);
         }
       }
-      // Faraó / Filho de Osíris: Empodera edifícios próximos (+35% velocidade de produção e pesquisa)
+      // Faraó / Filho de Osíris: Empodera edifícios próximos (+35% velocidade de produção e pesquisa + Monumentos)
       if ((u.kind === 'pharaoh' || u.kind === 'son_of_osiris') && u.hp > 0) {
         let empoweredAny = false;
         for (const b of this.buildings.values()) {
           if (b.team === u.team && b.isConstructed && b.mesh.position.distanceTo(u.mesh.position) <= b.radius + 9.0) {
+            if (b.kind === 'monument') {
+              b.empoweredTimer = Math.max(b.empoweredTimer ?? 0, 1.4);
+              b.empoweredBy = 'pharaoh';
+              empoweredAny = true;
+            }
             if (b.trainingQueue.length > 0) {
               b.trainingQueue[0].progress += dt * 0.38;
               empoweredAny = true;
@@ -7801,6 +8551,17 @@ export class AoMEngine {
         if (empoweredAny && (u.specialCooldown ?? 0) <= 0) {
           u.specialCooldown = 2.4;
           this.spawnRingVfx(u.mesh.position, 1.35, 0xfacc15, 0.45);
+        }
+      }
+      // Sacerdote de Rá: abençoa Monumentos próximos aumentando a geração de Favor Divino
+      if (u.kind === 'priest' && u.hp > 0 && u.state !== 'move' && u.state !== 'attack' && this.isTeamRa(u.team)) {
+        for (const b of this.buildings.values()) {
+          if (b.team === u.team && b.isConstructed && b.kind === 'monument' && b.mesh.position.distanceTo(u.mesh.position) <= b.radius + 7.5) {
+            b.empoweredTimer = Math.max(b.empoweredTimer ?? 0, 1.4);
+            if (b.empoweredBy !== 'pharaoh') {
+              b.empoweredBy = 'priest';
+            }
+          }
         }
       }
       if ((u.chargeCooldown ?? 0) > 0) {
@@ -7932,6 +8693,12 @@ export class AoMEngine {
         if (u.mesh.userData.rightArm && u.manualAttackTimer <= 0) {
           u.mesh.userData.rightArm.rotation.x = -0.2 + Math.sin(u.animPhase * 8) * 0.22;
         }
+      } else if (u.state === 'pray' || u.state === 'empower') {
+        if (u.mesh.userData.leftLeg) u.mesh.userData.leftLeg.rotation.x *= 0.85;
+        if (u.mesh.userData.rightLeg) u.mesh.userData.rightLeg.rotation.x *= 0.85;
+        const chantWave = -0.95 + Math.sin(u.animPhase * 1.4) * 0.14;
+        if (u.mesh.userData.rightArm) u.mesh.userData.rightArm.rotation.x = chantWave;
+        if (u.mesh.userData.leftArm) u.mesh.userData.leftArm.rotation.x = chantWave;
       }
 
       // While manualAttackTimer > 0 (`atacar()`), lock movement and play the attack animation
@@ -8302,7 +9069,8 @@ export class AoMEngine {
           }
         }
       } else if (u.state === 'return') {
-        const dropOff = this.findNearestDropOff(u.team, u.mesh.position);
+        const dropType = u.carryType ?? u.gatherResourceType ?? undefined;
+        const dropOff = this.findNearestDropOff(u.team, u.mesh.position, dropType);
         if (!dropOff) {
           u.state = 'idle';
           u.waypoints = [];
@@ -8426,6 +9194,15 @@ export class AoMEngine {
               this.spawnPillarVfx(b.mesh.position, 0xa855f7, 2.0);
               soundEngine.playFanfare(true);
               this.notifyStatus('O PORTÃO DO TITÃ SE ABRIU! Um Titã ancestral emergiu no campo de batalha!');
+            } else if (b.kind === 'wonder') {
+              this.spawnPillarVfx(b.mesh.position, 0xfacc15, 2.4);
+              this.spawnRingVfx(b.mesh.position, 11, 0xfacc15, 1.4);
+              soundEngine.playFanfare(true);
+              if (b.team === 'player') {
+                this.notifyStatus(`🏛️ ERA DAS MARAVILHAS! ${bStats.name} erguida (+3.5 Favor/s, -20% recarga divina, +20% Míticos)!`);
+              } else {
+                this.notifyStatus(`⚠️ O inimigo ergueu uma Maravilha (${bStats.name})!`);
+              }
             } else if (b.kind === 'farm') {
               u.state = 'gather';
               u.targetEntityId = b.id;
@@ -8445,6 +9222,54 @@ export class AoMEngine {
             } else {
               u.state = 'idle';
               u.targetEntityId = null;
+            }
+          }
+        }
+      } else if (u.state === 'pray') {
+        const temple = u.targetEntityId ? this.buildings.get(u.targetEntityId) : undefined;
+        if (!temple || !temple.isConstructed || temple.team !== u.team || temple.kind !== 'temple') {
+          u.state = 'idle';
+          u.targetEntityId = null;
+        } else {
+          const dist = u.mesh.position.distanceTo(temple.mesh.position) - temple.radius - uRadius;
+          if (dist > 1.8) {
+            this.steerUnitAroundObstacles(u, temple.mesh.position, effectiveSpeed, dt);
+          } else {
+            u.mesh.rotation.y = Math.atan2(
+              temple.mesh.position.x - u.mesh.position.x,
+              temple.mesh.position.z - u.mesh.position.z
+            );
+            u.animPhase += dt * 2.2;
+            u.gatherTimer += dt;
+            if (u.gatherTimer >= 2.6) {
+              u.gatherTimer = 0;
+              this.spawnRingVfx(u.mesh.position, 0.95, 0x38bdf8, 0.45);
+            }
+          }
+        }
+      } else if (u.state === 'empower') {
+        const targetB = u.targetEntityId ? this.buildings.get(u.targetEntityId) : undefined;
+        if (!targetB || !targetB.isConstructed || targetB.team !== u.team) {
+          u.state = 'idle';
+          u.targetEntityId = null;
+        } else {
+          const dist = u.mesh.position.distanceTo(targetB.mesh.position) - targetB.radius - uRadius;
+          if (dist > 2.2) {
+            this.steerUnitAroundObstacles(u, targetB.mesh.position, effectiveSpeed, dt);
+          } else {
+            u.mesh.rotation.y = Math.atan2(
+              targetB.mesh.position.x - u.mesh.position.x,
+              targetB.mesh.position.z - u.mesh.position.z
+            );
+            targetB.empoweredTimer = Math.max(targetB.empoweredTimer ?? 0, 1.5);
+            if (u.kind === 'pharaoh' || u.kind === 'son_of_osiris' || targetB.empoweredBy !== 'pharaoh') {
+              targetB.empoweredBy = u.kind === 'priest' ? 'priest' : 'pharaoh';
+            }
+            u.animPhase += dt * 2.5;
+            u.gatherTimer += dt;
+            if (u.gatherTimer >= 1.9) {
+              u.gatherTimer = 0;
+              this.spawnRingVfx(targetB.mesh.position, targetB.radius + 0.8, 0xfacc15, 0.5);
             }
           }
         }
@@ -8532,12 +9357,14 @@ export class AoMEngine {
               soundEngine.playLightning?.();
               if (targetU) this.damageUnit(targetU, computedDamage, u.team);
               else if (targetB) this.damageBuilding(targetB, computedDamage);
+              this.awardNorseCombatFavor(u.team, u.kind, u.trainedAtGreatHall, computedDamage);
               for (const splash of [...this.units.values()]) {
                 if (splash.team !== u.team && splash.id !== targetU?.id && splash.mesh.position.distanceTo(targetPos) <= blastRadius) {
                   const splashDmg = Math.round(
                     this.computeUnitAttackDamage(u, splash, undefined) * (u.kind === 'hermes' ? 0.55 : 0.7)
                   );
                   this.damageUnit(splash, splashDmg, u.team);
+                  this.awardNorseCombatFavor(u.team, u.kind, u.trainedAtGreatHall, splashDmg);
                 }
               }
             } else if (u.kind === 'son_of_osiris') {
@@ -8593,6 +9420,8 @@ export class AoMEngine {
                 this.spawnProjectile(_vec3B, _vec3C, u.targetEntityId!, computedDamage, u.team, {
                   splashRadius: splashR,
                   isFireball: true,
+                  attackerKind: u.kind,
+                  fromGreatHall: u.trainedAtGreatHall,
                 });
               }
               soundEngine.playArrow();
@@ -8604,6 +9433,8 @@ export class AoMEngine {
               _vec3C.copy(targetPos).setY(targetPos.y + 1.0);
               this.spawnProjectile(_vec3B, _vec3C, u.targetEntityId!, computedDamage, u.team, {
                 isFireball: true,
+                attackerKind: u.kind,
+                fromGreatHall: u.trainedAtGreatHall,
               });
               soundEngine.playArrow();
             } else if (stats.range > 4) {
@@ -8628,6 +9459,8 @@ export class AoMEngine {
                 isFireArrow: !stats.isSiege && attackerTechs.includes('burning_pitch'),
                 isPoisonArrow: attackerPantheon === 'greek' && isArcherUnit && attackerTechs.includes('shafts_of_plague'),
                 targetRadius: targetU ? this.getUnitRadius(targetU.kind) : targetB?.radius,
+                attackerKind: u.kind,
+                fromGreatHall: u.trainedAtGreatHall,
                 isBoulder:
                   u.kind === 'siege' ||
                   u.kind === 'egypt_catapult' ||
@@ -8674,12 +9507,14 @@ export class AoMEngine {
                   }
                   targetU.frozenTimer = Math.max(targetU.frozenTimer, 0.85);
                   this.damageUnit(targetU, computedDamage + 35, u.team);
+                  this.awardNorseCombatFavor(u.team, u.kind, u.trainedAtGreatHall, computedDamage + 35);
                   this.spawnRingVfx(targetU.mesh.position, 2.4, 0xf59e0b, 0.45);
                 }
               }
               if (!threwTarget) {
                 if (targetU) this.damageUnit(targetU, computedDamage, u.team);
                 else if (targetB) this.damageBuilding(targetB, computedDamage);
+                this.awardNorseCombatFavor(u.team, u.kind, u.trainedAtGreatHall, computedDamage);
               }
 
               // Mythic / Titan / War Elephant / Sphinx / Avenger / Norse Giants & Atlantean Giants cleave splash
@@ -8713,6 +9548,7 @@ export class AoMEngine {
                   if (splash.team !== u.team && splash.id !== targetU?.id && splash.mesh.position.distanceTo(targetPos) < splashRadius) {
                     const splashDmg = Math.round(this.computeUnitAttackDamage(u, splash, undefined) * (u.kind === 'titan' ? 0.65 : 0.45));
                     this.damageUnit(splash, splashDmg, u.team);
+                    this.awardNorseCombatFavor(u.team, u.kind, u.trainedAtGreatHall, splashDmg);
                   }
                 }
               }
@@ -8766,6 +9602,16 @@ export class AoMEngine {
             pool.gold += 5;
           }
         }
+      } else if (u.state === 'idle' && u.kind === 'fishing_ship') {
+        u.gatherTimer += dt;
+        if (u.gatherTimer >= 2.0) {
+          u.gatherTimer = 0;
+          const pool = u.team === 'player' ? this.resources : this.enemyResources;
+          pool.food += 5;
+          if (u.team === 'player' && Math.random() < 0.35) {
+            this.spawnRingVfx(u.mesh.position, 1.4, 0x38bdf8, 0.35);
+          }
+        }
       } else if (
         u.state === 'idle' &&
         (!this.isNonCombatEconUnit(u) || Boolean(u.isPromotedHero)) &&
@@ -8795,7 +9641,10 @@ export class AoMEngine {
   private updateBuildings(dt: number) {
     let playerTemples = 0;
     let enemyTemples = 0;
-    const hasWatchTower = this.researchedTechs.includes('watch_tower');
+    let playerMonuments = 0;
+    let enemyMonuments = 0;
+    let playerWonders = 0;
+    let enemyWonders = 0;
 
     for (const b of [...this.buildings.values()]) {
       const stats = this.buildingStats(b.kind, b.team);
@@ -8838,6 +9687,55 @@ export class AoMEngine {
         if (b.mesh.userData.beaconCrystal) {
           b.mesh.userData.beaconCrystal.rotation.y += dt * 1.4;
           b.mesh.userData.beaconCrystal.position.y = 5.15 + Math.sin(this.elapsedSeconds * 2.5) * 0.12;
+        }
+      }
+
+      if ((b.empoweredTimer ?? 0) > 0) {
+        b.empoweredTimer = Math.max(0, (b.empoweredTimer ?? 0) - dt);
+        if ((b.empoweredTimer ?? 0) <= 0) {
+          b.empoweredBy = undefined;
+        }
+      }
+
+      if (b.isConstructed && b.kind === 'monument') {
+        if (b.team === 'player') playerMonuments++;
+        else enemyMonuments++;
+        // Ísis: Monumentos curam unidades aliadas próximas e protegem contra Poderes Divinos inimigos
+        if (this.isTeamIsis(b.team)) {
+          const healR = b.radius + 12;
+          for (const ally of this.units.values()) {
+            if (ally.team === b.team && ally.hp > 0 && ally.hp < ally.maxHp && ally.mesh.position.distanceTo(b.mesh.position) <= healR) {
+              ally.hp = Math.min(ally.maxHp, ally.hp + 2.8 * dt);
+            }
+          }
+        }
+      }
+
+      if (b.isConstructed && b.kind === 'wonder') {
+        if (b.team === 'player') playerWonders++;
+        else enemyWonders++;
+      }
+
+      if (
+        b.isConstructed &&
+        (b.kind === 'wonder' ||
+          b.kind === 'sky_passage' ||
+          b.kind === 'monument' ||
+          b.kind === 'lighthouse' ||
+          b.kind === 'obelisk' ||
+          b.kind === 'mirror_tower' ||
+          b.kind === 'economic_guild')
+      ) {
+        const crystal = b.mesh.userData.beaconCrystal as THREE.Object3D | undefined;
+        if (crystal) {
+          crystal.rotation.y += dt * 1.5;
+          const baseY = (crystal.userData.baseY as number | undefined) ?? crystal.position.y;
+          if (crystal.userData.baseY === undefined) crystal.userData.baseY = baseY;
+          crystal.position.y = baseY + Math.sin(this.elapsedSeconds * 2.4) * 0.1;
+        }
+        const vortex = b.mesh.userData.vortexRing as THREE.Object3D | undefined;
+        if (vortex) {
+          vortex.rotation.z += dt * 1.8;
         }
       }
 
@@ -8893,6 +9791,9 @@ export class AoMEngine {
           }
 
           const spawned = this.spawnUnit(job.kind, b.team, sx, sz);
+          if (b.kind === 'great_hall') {
+            spawned.trainedAtGreatHall = true;
+          }
           const spawnedStats = this.unitStats(job.kind, b.team);
           if (spawnedStats.isGod) {
             this.spawnPillarVfx(spawned.mesh.position, spawnedStats.isMajorGod ? 0xfacc15 : 0xc084fc, spawnedStats.isMajorGod ? 2.4 : 1.7);
@@ -9056,7 +9957,7 @@ export class AoMEngine {
         }
       }
 
-      // Defensive tower / fortress / TC fire
+      // Defensive tower / fortress / mirror_tower / asgard_hill_fort / TC / village_center fire
       if (this.treatyRemaining <= 0 && b.isConstructed && stats.attack && stats.range) {
         b.attackTimer = Math.max(0, b.attackTimer - dt);
         if (b.attackTimer <= 0) {
@@ -9064,20 +9965,39 @@ export class AoMEngine {
           if (enemy && !enemy.isBuilding) {
             const targetU = this.units.get(enemy.id);
             if (targetU) {
-              b.attackTimer = b.kind === 'fortress' ? 1.15 : 1.4;
+              b.attackTimer =
+                b.kind === 'mirror_tower'
+                  ? 1.05
+                  : b.kind === 'fortress' || b.kind === 'asgard_hill_fort'
+                  ? 1.15
+                  : 1.4;
               const bTechs = b.team === 'player' ? this.researchedTechs : this.enemyResearchedTechs;
               let bAtkMult = 1;
               if (bTechs.includes('copper_weapons')) bAtkMult += 0.10;
               if (bTechs.includes('bronze_weapons')) bAtkMult += 0.10;
               if (bTechs.includes('iron_weapons')) bAtkMult += 0.10;
-              if (bTechs.includes('watch_tower') && (b.kind === 'tower' || b.kind === 'fortress')) bAtkMult += 0.30;
+              if (
+                bTechs.includes('watch_tower') &&
+                (b.kind === 'tower' || b.kind === 'mirror_tower' || b.kind === 'fortress' || b.kind === 'asgard_hill_fort')
+              ) {
+                bAtkMult += 0.30;
+              }
               if (bTechs.includes('burning_pitch')) bAtkMult += 0.15;
-              const launchY = b.kind === 'tower' ? 4.4 : b.kind === 'fortress' ? 4.8 : 3.5;
+              const launchY =
+                b.kind === 'tower' || b.kind === 'mirror_tower'
+                  ? 4.6
+                  : b.kind === 'fortress' || b.kind === 'asgard_hill_fort'
+                  ? 4.8
+                  : 3.5;
               _vec3B.copy(b.mesh.position).setY(b.mesh.position.y + launchY);
               _vec3C.copy(targetU.mesh.position).setY(targetU.mesh.position.y + 1.0);
+              if (b.kind === 'mirror_tower') {
+                this.spawnRingVfx(targetU.mesh.position, 1.5, 0xfacc15, 0.35);
+              }
               this.spawnProjectile(_vec3B, _vec3C, targetU.id, Math.round(stats.attack * bAtkMult), b.team, {
                 hasBallistics: bTechs.includes('ballistics'),
                 isFireArrow: bTechs.includes('burning_pitch'),
+                isFireball: b.kind === 'mirror_tower',
                 targetRadius: this.getUnitRadius(targetU.kind),
               });
               soundEngine.playArrow();
@@ -9092,25 +10012,31 @@ export class AoMEngine {
       this.updateHealthBarVisual(b.mesh, b.hp, b.maxHp, b.selected || !b.isConstructed);
     }
 
-    // Passive Favor income from Temples + Idle Atlantean Oracles + Relic tribute trickle
+    // Favor Divino income tick: Greeks (prayer), Egyptians (monuments/Pharaoh/Isis/Ra), Norse (combat/Thor/Bragi), Atlanteans (Oracles)
     this.favorTimer += dt;
     if (this.favorTimer >= 1) {
       this.favorTimer -= 1;
-      let playerOracleFavor = 0;
-      let enemyOracleFavor = 0;
-      for (const u of this.units.values()) {
-        if (u.kind === 'oracle' && u.hp > 0 && u.state === 'idle') {
-          if (u.team === 'player') playerOracleFavor += u.isPromotedHero ? 0.65 : 0.45;
-          else if (u.team === 'enemy') enemyOracleFavor += 0.4;
-        }
-      }
-      this.resources.favor = Math.min(200, this.resources.favor + 0.35 + playerTemples * 1.6 + playerOracleFavor + this.relicsHeld * 0.45);
+      this.playerCombatFavorRate = Number(
+        (this.playerCombatFavorRate * 0.65 + this.recentPlayerCombatFavor * 0.35).toFixed(2)
+      );
+      this.enemyCombatFavorRate = Number(
+        (this.enemyCombatFavorRate * 0.65 + this.recentEnemyCombatFavor * 0.35).toFixed(2)
+      );
+      this.recentPlayerCombatFavor = 0;
+      this.recentEnemyCombatFavor = 0;
+
+      const playerFavorInfo = this.computeTeamFavorBreakdown('player');
+      const enemyFavorInfo = this.computeTeamFavorBreakdown('enemy');
+      const playerNonCombatGain = Math.max(0, playerFavorInfo.totalRate - this.playerCombatFavorRate);
+      const enemyNonCombatGain = Math.max(0, enemyFavorInfo.totalRate - this.enemyCombatFavorRate);
+
+      this.resources.favor = Math.min(200, this.resources.favor + playerNonCombatGain);
       if (this.relicsHeld > 0) {
         this.resources.food += this.relicsHeld * 2.5;
         this.resources.wood += this.relicsHeld * 2.5;
         this.resources.gold += this.relicsHeld * 3.0;
       }
-      this.enemyResources.favor = Math.min(200, this.enemyResources.favor + 0.35 + enemyTemples * 1.4 + enemyOracleFavor);
+      this.enemyResources.favor = Math.min(200, this.enemyResources.favor + enemyNonCombatGain);
     }
 
     // Renascimento automático e gratuito do Faraó no Centro da Cidade caso caia em batalha
@@ -9449,6 +10375,7 @@ export class AoMEngine {
                 this.spawnRingVfx(targetU.mesh.position, 0.7, 0xf97316, 0.25);
               }
               this.damageUnit(targetU, p.damage, p.team);
+              this.awardNorseCombatFavor(p.team, p.attackerKind, p.fromGreatHall, p.damage);
             }
           } else {
             const targetB = this.buildings.get(p.targetId);
@@ -9457,6 +10384,7 @@ export class AoMEngine {
                 this.spawnRingVfx(p.end, 1.15, 0xf97316, 0.35);
               }
               this.damageBuilding(targetB, p.damage);
+              this.awardNorseCombatFavor(p.team, p.attackerKind, p.fromGreatHall, p.damage);
             }
           }
 
@@ -9470,6 +10398,7 @@ export class AoMEngine {
                 splashU.mesh.position.distanceTo(p.end) <= p.splashRadius
               ) {
                 this.damageUnit(splashU, splashDmg, p.team);
+                this.awardNorseCombatFavor(p.team, p.attackerKind, p.fromGreatHall, splashDmg);
               }
             }
             for (const splashB of [...this.buildings.values()]) {
@@ -10011,9 +10940,13 @@ export class AoMEngine {
         hunt: 'Caçando fauna',
         return: 'Depositando carga',
         build: 'Construindo',
+        pray: 'Orando por Favor Divino',
+        empower: 'Energizando Monumento',
         attack: 'Em combate',
       };
       let unitTaskLabel = taskMap[primary.state];
+      let oracleVisionPct: number | undefined;
+      let oracleFavorPerSec: number | undefined;
       if (primary.kind === 'ox_cart') {
         let nearbyGatherers = 0;
         for (const other of this.units.values()) {
@@ -10039,12 +10972,15 @@ export class AoMEngine {
       } else if (primary.kind === 'citizen' && (primary.state === 'gather' || primary.state === 'hunt')) {
         unitTaskLabel = 'Coleta Direta Atlante (+55% velocidade, sem retorno a depósito)';
       } else if (primary.kind === 'oracle') {
+        const om = this.getOracleVisionMetrics(primary);
+        oracleVisionPct = Math.round(om.efficiency * 100);
+        oracleFavorPerSec = Number(om.favorPerSec.toFixed(2));
         unitTaskLabel =
           primary.state === 'idle'
-            ? `Vidente Ativo: +10 Visão & +${primary.isPromotedHero ? '0.65' : '0.45'} Favor/s`
+            ? `Vigília ${oracleVisionPct}% · +${oracleFavorPerSec.toFixed(2)} Favor/s${om.isFullVision ? ' (Visão Plena)' : ' (Sobreposto)'}`
             : primary.isPromotedHero
             ? `${taskMap[primary.state]} (Oráculo Herói ★)`
-            : 'Reposicionando Oráculo (pare para ampliar visão e gerar Favor)';
+            : 'Reposicionando Oráculo (pare longe de outros Oráculos para visão plena)';
       } else if (primary.kind === 'llama_caravan') {
         unitTaskLabel =
           primary.tradePhase === 'to_tc'
@@ -10054,6 +10990,8 @@ export class AoMEngine {
             : 'Caravana Comercial Atlante (gera Ouro contínuo)';
       } else if (primary.kind === 'caladria') {
         unitTaskLabel = 'Espírito Curador Alado (cura aliados feridos automaticamente)';
+      } else if (primary.kind === 'hersir' && this.researchedTechs.includes('hammer_of_the_gods')) {
+        unitTaskLabel = `${taskMap[primary.state]} · Martelo dos Deuses (+0,48 Favor/s)`;
       }
       const countsMap = new Map<UnitKind, { kind: UnitKind; name: string; count: number }>();
       let heroPromoteCount = 0;
@@ -10068,13 +11006,24 @@ export class AoMEngine {
         }
         if (u.team === 'player' && !u.isPromotedHero && uSpec.canPromoteHero) {
           heroPromoteCount++;
-          const pCost = this.getHeroPromotionCost(u.kind);
+          const pCost = this.getHeroPromotionCost(u.kind, 'player');
           heroPromoteCost.food = (heroPromoteCost.food ?? 0) + (pCost.food ?? 0);
           heroPromoteCost.wood = (heroPromoteCost.wood ?? 0) + (pCost.wood ?? 0);
           heroPromoteCost.gold = (heroPromoteCost.gold ?? 0) + (pCost.gold ?? 0);
           heroPromoteCost.favor = (heroPromoteCost.favor ?? 0) + (pCost.favor ?? 0);
         }
       }
+      const hasHyperionFree = this.chosenMinorGods.includes('Hyperion');
+      const canPrayAtTemple =
+        this.pantheon === 'greek' &&
+        selUnits.some((u) => u.team === 'player' && this.isWorkerKind(u.kind));
+      const canEmpowerMonument =
+        this.pantheon === 'egyptian' &&
+        selUnits.some(
+          (u) =>
+            u.team === 'player' &&
+            (u.kind === 'pharaoh' || u.kind === 'son_of_osiris' || (u.kind === 'priest' && this.isTeamRa('player')))
+        );
       const primaryAttack = primary.isPromotedHero && stats.attack === 0 ? 16 : stats.attack;
       return {
         count: selUnits.length,
@@ -10104,7 +11053,12 @@ export class AoMEngine {
         taskLabel: unitTaskLabel,
         screenPos: this.projectWorldToScreen(primary.mesh.position, 2.2),
         hasVillagerSelected: selUnits.some((u) => u.team === 'player' && this.isBuilderKind(u.kind)),
+        canPrayAtTemple,
+        canEmpowerMonument,
+        oracleVisionPct,
+        oracleFavorPerSec,
         canPromoteToHero: heroPromoteCount > 0,
+        heroPromoteIsFree: heroPromoteCount > 0 && hasHyperionFree,
         heroPromoteCount: heroPromoteCount > 0 ? heroPromoteCount : undefined,
         heroPromoteCost: heroPromoteCount > 0 ? heroPromoteCost : undefined,
         selectedCounts: Array.from(countsMap.values()),
@@ -10131,9 +11085,30 @@ export class AoMEngine {
         if (bTechs.includes('copper_weapons')) bAtkMult += 0.10;
         if (bTechs.includes('bronze_weapons')) bAtkMult += 0.10;
         if (bTechs.includes('iron_weapons')) bAtkMult += 0.10;
-        if (bTechs.includes('watch_tower') && (b.kind === 'tower' || b.kind === 'fortress')) bAtkMult += 0.30;
+        if (bTechs.includes('watch_tower') && (b.kind === 'tower' || b.kind === 'mirror_tower' || b.kind === 'fortress' || b.kind === 'asgard_hill_fort')) bAtkMult += 0.30;
         if (bTechs.includes('burning_pitch')) bAtkMult += 0.15;
       }
+      const favorInfo = b.team === 'player' && b.isConstructed ? this.computeTeamFavorBreakdown('player') : null;
+      let prayingHere = 0;
+      if (b.kind === 'temple' && b.isConstructed) {
+        for (const u of this.units.values()) {
+          if (u.team === b.team && u.hp > 0 && u.state === 'pray' && u.targetEntityId === b.id) {
+            prayingHere++;
+          }
+        }
+      }
+      const isEmpowered = (b.empoweredTimer ?? 0) > 0;
+      const empoweredByLabel = isEmpowered
+        ? b.empoweredBy === 'priest'
+          ? 'Abençoado por Sacerdote'
+          : 'Energizado pelo Faraó'
+        : undefined;
+      const canCallVillagersToPray =
+        b.team === 'player' && b.isConstructed && b.kind === 'temple' && this.pantheon === 'greek';
+      const canEmpowerSelectedMonument =
+        b.team === 'player' && b.isConstructed && b.kind === 'monument' && this.pantheon === 'egyptian';
+      const isisProtected = b.team === 'player' && b.kind === 'monument' && b.isConstructed && this.isTeamIsis('player');
+
       return {
         count: 1,
         primaryType: 'building',
@@ -10159,6 +11134,14 @@ export class AoMEngine {
         repeatTraining: b.repeatTraining,
         rallyPoint: b.rallyPoint ? { x: Math.round(b.rallyPoint.x), z: Math.round(b.rallyPoint.z) } : null,
         hasVillagerSelected: false,
+        canCallVillagersToPray,
+        canEmpowerMonument: canEmpowerSelectedMonument,
+        prayingCount: b.kind === 'temple' ? prayingHere : undefined,
+        templePrayerRatePerSec:
+          b.kind === 'temple' && favorInfo ? Number((favorInfo.templeRates.get(b.id) ?? 0).toFixed(2)) : undefined,
+        isEmpowered,
+        empoweredByLabel,
+        isisProtected,
       };
     }
 
@@ -10298,10 +11281,17 @@ export class AoMEngine {
       const val = this.costValue(bStats.cost);
       if (
         b.kind === 'town_center' ||
+        b.kind === 'village_center' ||
         b.kind === 'house' ||
         b.kind === 'farm' ||
         b.kind === 'market' ||
-        b.kind === 'armory'
+        b.kind === 'armory' ||
+        b.kind === 'granary' ||
+        b.kind === 'storehouse' ||
+        b.kind === 'lumber_camp' ||
+        b.kind === 'mining_camp' ||
+        b.kind === 'economic_guild' ||
+        b.kind === 'dock'
       ) {
         economy += val * 0.2;
       } else {
@@ -10309,8 +11299,14 @@ export class AoMEngine {
       }
       if (b.kind === 'town_center') {
         society += 150;
-      } else if (b.kind === 'fortress') {
+      } else if (b.kind === 'village_center') {
         society += 90;
+      } else if (b.kind === 'fortress' || b.kind === 'asgard_hill_fort') {
+        society += 90;
+      } else if (b.kind === 'monument') {
+        society += 45;
+      } else if (b.kind === 'wonder') {
+        society += 500;
       } else if (b.kind === 'titan_gate') {
         society += 300;
       }
@@ -10437,9 +11433,20 @@ export class AoMEngine {
         category: 'building',
         team: b.team,
         color: b.team === 'player' ? '#3b82f6' : '#dc2626',
-        size: b.kind === 'town_center' || b.kind === 'titan_gate' ? 6.2 : b.kind === 'fortress' ? 5.4 : 4.5,
+        size:
+          b.kind === 'town_center' || b.kind === 'titan_gate' || b.kind === 'wonder'
+            ? 6.2
+            : b.kind === 'fortress' || b.kind === 'asgard_hill_fort' || b.kind === 'village_center'
+            ? 5.4
+            : 4.5,
         selected: b.selected,
-        isMajor: b.kind === 'town_center' || b.kind === 'fortress' || b.kind === 'titan_gate',
+        isMajor:
+          b.kind === 'town_center' ||
+          b.kind === 'village_center' ||
+          b.kind === 'fortress' ||
+          b.kind === 'asgard_hill_fort' ||
+          b.kind === 'wonder' ||
+          b.kind === 'titan_gate',
         subKind: b.kind,
         isConstructed: b.isConstructed,
         label: `${bSpec.name} (${b.team === 'player' ? 'Aliado' : 'Inimigo'})`,
@@ -10462,6 +11469,8 @@ export class AoMEngine {
         label: `${uSpec.name} (${u.team === 'player' ? 'Aliado' : 'Inimigo'})`,
       });
     }
+
+    const favorSummary = this.computeTeamFavorBreakdown('player');
 
     this.onHudUpdate({
       phase: this.phase,
@@ -10486,6 +11495,11 @@ export class AoMEngine {
         gold: Math.floor(this.resources.gold),
         favor: Math.floor(this.resources.favor),
       },
+      favorRatePerSec: Number(favorSummary.totalRate.toFixed(2)),
+      favorBreakdown: favorSummary.breakdown,
+      prayingVillagerCount: favorSummary.prayingCount,
+      empoweredMonumentCount: favorSummary.empoweredMonuments,
+      oracleVisionSummary: favorSummary.oracleSummary,
       age: this.age,
       advancingToAge: this.advancingToAge,
       ageAdvanceProgress: this.ageAdvanceProgress,
@@ -10513,6 +11527,10 @@ export class AoMEngine {
       populationCap: pop.cap,
       playerTownCenterCount: this.getTownCenterCount('player'),
       maxTownCenters: MAX_TOWN_CENTERS,
+      skyPassageCount: this.getBuildingCount('sky_passage', 'player'),
+      monumentCount: this.getBuildingCount('monument', 'player'),
+      wonderCount: this.getBuildingCount('wonder', 'player'),
+      wonderBonusActive: this.hasTeamWonder('player'),
       idleVillagerCount,
       idleMilitaryCount,
       combatUnitCount,
@@ -10633,9 +11651,10 @@ export class AoMEngine {
       if (this.flamingWeaponsTimer > 0) {
         this.flamingWeaponsTimer = Math.max(0, this.flamingWeaponsTimer - simDt);
       }
+      const gpCdMult = this.hasTeamWonder('player') ? 1.25 : 1.0;
       for (const key of Object.keys(this.godPowerCooldowns) as GodPowerId[]) {
         if (this.godPowerCooldowns[key] > 0) {
-          this.godPowerCooldowns[key] = Math.max(0, this.godPowerCooldowns[key] - simDt);
+          this.godPowerCooldowns[key] = Math.max(0, this.godPowerCooldowns[key] - simDt * gpCdMult);
         }
       }
       if (this.statusTimeout > 0) {
@@ -10757,7 +11776,10 @@ export class AoMEngine {
             }
           } else if (doneId === 'watch_tower') {
             for (const b of this.buildings.values()) {
-              if (b.team === 'player' && (b.kind === 'tower' || b.kind === 'fortress')) {
+              if (
+                b.team === 'player' &&
+                (b.kind === 'tower' || b.kind === 'mirror_tower' || b.kind === 'fortress' || b.kind === 'asgard_hill_fort')
+              ) {
                 const newMax = Math.round(this.buildingStats(b.kind, 'player').maxHp * 1.35);
                 const diff = Math.max(0, newMax - b.maxHp);
                 b.maxHp = newMax;
@@ -11271,7 +12293,7 @@ export class AoMEngine {
         if (farmB && farmB.kind === 'farm') {
           if (u.selected) {
             if (u.state === 'return') {
-              const drop = this.findNearestDropOff('player', u.mesh.position);
+              const drop = this.findNearestDropOff('player', u.mesh.position, 'food');
               if (drop) addTrailPath([u.mesh.position, drop.pos], 0x38bdf8, false);
             } else {
               addTrailPath([u.mesh.position, farmB.mesh.position], 0x4ade80, false);
@@ -11287,7 +12309,7 @@ export class AoMEngine {
         if (node) {
           if (u.selected) {
             if (u.state === 'return') {
-              const drop = this.findNearestDropOff('player', u.mesh.position);
+              const drop = this.findNearestDropOff('player', u.mesh.position, node.resourceType);
               if (drop) addTrailPath([u.mesh.position, drop.pos], 0x38bdf8, false);
             } else {
               addTrailPath(
@@ -11313,6 +12335,21 @@ export class AoMEngine {
           if (!markedTargetIds.has(b.id)) {
             markedTargetIds.add(b.id);
             placeMarker('build', b.mesh.position.x, b.mesh.position.z, 3.2);
+          }
+        }
+      } else if ((u.state === 'pray' || u.state === 'empower') && u.targetEntityId) {
+        const targetB = this.buildings.get(u.targetEntityId);
+        if (targetB && targetB.isConstructed) {
+          if (u.selected) {
+            addTrailPath(
+              [u.mesh.position, targetB.mesh.position],
+              u.state === 'pray' ? 0x38bdf8 : 0xfacc15,
+              false
+            );
+          }
+          if (!markedTargetIds.has(targetB.id)) {
+            markedTargetIds.add(targetB.id);
+            placeMarker('flag', targetB.mesh.position.x, targetB.mesh.position.z, targetB.radius + 0.6);
           }
         }
       } else if (

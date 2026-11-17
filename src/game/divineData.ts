@@ -1,5 +1,6 @@
 import { getXmbNumber, XMB_GOD_POWERS } from '../god powers';
 import {
+  AgeLevel,
   BUILDING_STATS,
   BuildingKind,
   BuildingStats,
@@ -359,6 +360,7 @@ export const TECH_SPECS: Record<TechId, TechSpec> = {
     description: '+20% na velocidade de coleta de Madeira pelos aldeões.',
     minAge: 1,
     building: 'town_center',
+    secondaryBuildings: ['storehouse', 'lumber_camp', 'economic_guild', 'village_center'],
     cost: { food: 100, gold: 50 },
     researchTime: 10,
     category: 'economy',
@@ -369,6 +371,7 @@ export const TECH_SPECS: Record<TechId, TechSpec> = {
     description: '+20% na velocidade de mineração de Ouro pelos aldeões.',
     minAge: 1,
     building: 'town_center',
+    secondaryBuildings: ['storehouse', 'mining_camp', 'economic_guild', 'village_center'],
     cost: { food: 100, wood: 50 },
     researchTime: 10,
     category: 'economy',
@@ -379,6 +382,7 @@ export const TECH_SPECS: Record<TechId, TechSpec> = {
     description: '+20% na coleta de Alimento (arbustos, caça e fazendas).',
     minAge: 2,
     building: 'town_center',
+    secondaryBuildings: ['granary', 'economic_guild', 'village_center'],
     cost: { wood: 75, gold: 100 },
     researchTime: 11,
     category: 'economy',
@@ -390,6 +394,7 @@ export const TECH_SPECS: Record<TechId, TechSpec> = {
     description: '+10% de ataque para soldados humanos, heróis, navios e construções defensivas.',
     minAge: 2,
     building: 'armory',
+    secondaryBuildings: ['barracks', 'fortress'],
     cost: { food: 120, gold: 120 },
     researchTime: 12,
     category: 'armory_weapon',
@@ -400,6 +405,7 @@ export const TECH_SPECS: Record<TechId, TechSpec> = {
     description: '+10% de ataque adicional para soldados humanos, heróis, navios e construções defensivas (acumulativo).',
     minAge: 3,
     building: 'armory',
+    secondaryBuildings: ['barracks', 'fortress'],
     cost: { food: 220, gold: 220 },
     researchTime: 14,
     requires: 'copper_weapons',
@@ -411,6 +417,7 @@ export const TECH_SPECS: Record<TechId, TechSpec> = {
     description: '+10% de ataque adicional para soldados humanos, heróis, navios e construções defensivas (acumulativo).',
     minAge: 4,
     building: 'armory',
+    secondaryBuildings: ['fortress'],
     cost: { food: 360, gold: 360 },
     researchTime: 16,
     requires: 'bronze_weapons',
@@ -422,6 +429,7 @@ export const TECH_SPECS: Record<TechId, TechSpec> = {
     description: 'Reduz a vulnerabilidade a corte em -10% (humanos/navios) e -15% (heróis); -10% vulnerabilidade a esmagamento para navios.',
     minAge: 2,
     building: 'armory',
+    secondaryBuildings: ['barracks', 'fortress'],
     cost: { food: 110, gold: 130 },
     researchTime: 12,
     category: 'armory_armor',
@@ -432,6 +440,7 @@ export const TECH_SPECS: Record<TechId, TechSpec> = {
     description: 'Reduz a vulnerabilidade a corte em -10% (humanos/navios) e -15% (heróis); acumulativo com Armadura de Cobre.',
     minAge: 3,
     building: 'armory',
+    secondaryBuildings: ['barracks', 'fortress'],
     cost: { food: 210, gold: 240 },
     researchTime: 14,
     requires: 'copper_mail',
@@ -443,6 +452,7 @@ export const TECH_SPECS: Record<TechId, TechSpec> = {
     description: 'Reduz a vulnerabilidade a corte em -10% (humanos/navios) e -15% (heróis); acumulativo com Armadura de Bronze.',
     minAge: 4,
     building: 'armory',
+    secondaryBuildings: ['fortress'],
     cost: { food: 350, gold: 390 },
     researchTime: 16,
     requires: 'bronze_mail',
@@ -454,6 +464,7 @@ export const TECH_SPECS: Record<TechId, TechSpec> = {
     description: 'Reduz a vulnerabilidade a perfuração (flechas) em -10% (humanos/navios) e -15% (heróis).',
     minAge: 2,
     building: 'armory',
+    secondaryBuildings: ['barracks', 'fortress'],
     cost: { wood: 110, gold: 130 },
     researchTime: 12,
     category: 'armory_shield',
@@ -464,6 +475,7 @@ export const TECH_SPECS: Record<TechId, TechSpec> = {
     description: 'Reduz a vulnerabilidade a perfuração em -10% (humanos/navios) e -15% (heróis); acumulativo com Escudos de Cobre.',
     minAge: 3,
     building: 'armory',
+    secondaryBuildings: ['barracks', 'fortress'],
     cost: { wood: 210, gold: 240 },
     researchTime: 14,
     requires: 'copper_shields',
@@ -475,6 +487,7 @@ export const TECH_SPECS: Record<TechId, TechSpec> = {
     description: 'Reduz a vulnerabilidade a perfuração em -10% (humanos/navios) e -15% (heróis); acumulativo com Escudos de Bronze.',
     minAge: 4,
     building: 'armory',
+    secondaryBuildings: ['fortress'],
     cost: { wood: 350, gold: 390 },
     researchTime: 16,
     requires: 'bronze_shields',
@@ -486,6 +499,7 @@ export const TECH_SPECS: Record<TechId, TechSpec> = {
     description: 'Aumenta a precisão e velocidade de unidades à distância, navios e construções contra alvos em movimento.',
     minAge: 3,
     building: 'armory',
+    secondaryBuildings: ['fortress', 'tower'],
     cost: { wood: 200, gold: 200 },
     researchTime: 14,
     category: 'armory_utility',
@@ -496,7 +510,7 @@ export const TECH_SPECS: Record<TechId, TechSpec> = {
     description: 'Unidades à distância causam 3x de dano contra construções e 1,5x contra navios; defesas e navios arqueiros ganham +15% de ataque.',
     minAge: 4,
     building: 'armory',
-    secondaryBuildings: ['fortress', 'tower'],
+    secondaryBuildings: ['fortress', 'tower', 'asgard_hill_fort'],
     cost: { wood: 240, gold: 220 },
     researchTime: 15,
     category: 'armory_utility',
@@ -634,6 +648,7 @@ export const TECH_SPECS: Record<TechId, TechSpec> = {
     description: '+15% de Vida Máxima e +10% de ataque para Infantaria, Arqueiros e Cavalaria.',
     minAge: 2,
     building: 'barracks',
+    secondaryBuildings: ['great_hall', 'counter_barracks', 'archery_range', 'stable'],
     cost: { food: 150, gold: 150 },
     researchTime: 12,
     category: 'military',
@@ -644,6 +659,7 @@ export const TECH_SPECS: Record<TechId, TechSpec> = {
     description: '+15% de Vida e +12% de ataque para soldados humanos.',
     minAge: 3,
     building: 'barracks',
+    secondaryBuildings: ['great_hall', 'counter_barracks', 'archery_range', 'stable'],
     cost: { food: 260, gold: 260 },
     researchTime: 14,
     requires: 'medium_soldiers',
@@ -655,6 +671,7 @@ export const TECH_SPECS: Record<TechId, TechSpec> = {
     description: '+20% de Vida e +15% de ataque para soldados humanos de elite.',
     minAge: 4,
     building: 'barracks',
+    secondaryBuildings: ['great_hall', 'counter_barracks', 'archery_range', 'stable'],
     cost: { food: 420, gold: 420 },
     researchTime: 16,
     requires: 'heavy_soldiers',
@@ -666,6 +683,7 @@ export const TECH_SPECS: Record<TechId, TechSpec> = {
     description: '+35% de Vida e +30% de ataque para Torres e Fortalezas.',
     minAge: 2,
     building: 'town_center',
+    secondaryBuildings: ['tower', 'fortress', 'asgard_hill_fort', 'village_center'],
     cost: { wood: 180, gold: 120 },
     researchTime: 12,
     category: 'military',
@@ -676,6 +694,7 @@ export const TECH_SPECS: Record<TechId, TechSpec> = {
     description: '+30% de Vida e +20% de dano contra construções para Armas de Cerco e Heróis.',
     minAge: 4,
     building: 'fortress',
+    secondaryBuildings: ['siege_works', 'asgard_hill_fort'],
     cost: { wood: 300, gold: 320 },
     researchTime: 15,
     category: 'military',
@@ -711,6 +730,73 @@ export const TECH_SPECS: Record<TechId, TechSpec> = {
     researchTime: 24,
     category: 'temple',
   },
+  // ── TECNOLOGIAS DE FAVOR DIVINO POR CIVILIZAÇÃO ──
+  golden_apples: {
+    id: 'golden_apples',
+    name: 'Maçãs de Ouro',
+    description: 'Afrodite (Heroica): Aumenta em +20% a taxa de geração de Favor Divino dos Aldeões orando nos Templos.',
+    minAge: 3,
+    building: 'temple',
+    cost: { food: 180, favor: 10 },
+    researchTime: 12,
+    requiresMinorGod: ['Aphrodite'],
+    requiresMinorGodLabel: 'Afrodite',
+    pantheons: ['greek'],
+    category: 'temple',
+  },
+  necropolis: {
+    id: 'necropolis',
+    name: 'Necrópole',
+    description: 'Anúbis (Clássica): Aumenta em +25% a geração de Favor Divino de todos os Monumentos Egípcios.',
+    minAge: 2,
+    building: 'temple',
+    cost: { wood: 140, gold: 140 },
+    researchTime: 12,
+    requiresMinorGod: ['Anubis'],
+    requiresMinorGodLabel: 'Anúbis',
+    pantheons: ['egyptian'],
+    category: 'temple',
+  },
+  hammer_of_the_gods: {
+    id: 'hammer_of_the_gods',
+    name: 'Martelo dos Deuses',
+    description: 'Thor (Era Arcaica): Faz com que os heróis Hersir gerem Favor Divino automaticamente (+0,48/s), mesmo fora de combate.',
+    minAge: 1,
+    building: 'temple',
+    secondaryBuildings: ['town_center', 'great_hall'],
+    cost: { food: 100, gold: 80 },
+    researchTime: 10,
+    requiresMajorGod: ['Thor'],
+    requiresMajorGodLabel: 'Thor',
+    pantheons: ['norse'],
+    category: 'temple',
+  },
+  perception: {
+    id: 'perception',
+    name: 'Percepção',
+    description: 'Leto (Clássica): Amplia o alcance de visão dos Oráculos (+4 LOS) e aumenta em +15% a geração de Favor.',
+    minAge: 2,
+    building: 'temple',
+    cost: { food: 120, gold: 90 },
+    researchTime: 11,
+    requiresMinorGod: ['Leto'],
+    requiresMinorGodLabel: 'Leto',
+    pantheons: ['atlantean'],
+    category: 'temple',
+  },
+  horns_of_consecration: {
+    id: 'horns_of_consecration',
+    name: 'Chifres da Consagração',
+    description: 'Réia (Heroica): Aumenta em +25% a taxa de geração de Favor Divino dos Oráculos Atlantes.',
+    minAge: 3,
+    building: 'temple',
+    cost: { wood: 180, gold: 160 },
+    researchTime: 13,
+    requiresMinorGod: ['Rheia'],
+    requiresMinorGodLabel: 'Réia',
+    pantheons: ['atlantean'],
+    category: 'temple',
+  },
 };
 
 export function getEffectiveTechCost(spec: TechSpec, researchedTechs: TechId[]): ResourceCost {
@@ -739,7 +825,7 @@ export const MINOR_GODS: Record<string, MinorGodSpec> = {
   Hermes: { id: 'Hermes', name: 'Hermes', age: 2, pantheon: 'greek', godPower: 'prosperity', mythUnit: 'centaur', mythUnitTitle: 'Centauro / Pégaso', passiveBonusLabel: '+15% Velocidade da Cavalaria', speedBonusPct: 15 },
   Apollo: { id: 'Apollo', name: 'Apolo', age: 3, pantheon: 'greek', godPower: 'solar_beam', mythUnit: 'manticore', mythUnitTitle: 'Mantícora / Fênix', passiveBonusLabel: '+15% Alcance & Dano à Distância · Desbloqueia Gastraphetes', attackBonusPct: 12 },
   Dionysos: { id: 'Dionysos', name: 'Dionísio', age: 3, pantheon: 'greek', godPower: 'walking_woods', mythUnit: 'hydra', mythUnitTitle: 'Hidra / Sátiro', passiveBonusLabel: '+18% Vida da Cavalaria', hpBonusPct: 15 },
-  Aphrodite: { id: 'Aphrodite', name: 'Afrodite', age: 3, pantheon: 'greek', godPower: 'prosperity', mythUnit: 'nymph', mythUnitTitle: 'Ninfa (Dríade) / Minotauro', passiveBonusLabel: '+20% Coleta dos Aldeões', gatherBonusPct: 20 },
+  Aphrodite: { id: 'Aphrodite', name: 'Afrodite', age: 3, pantheon: 'greek', godPower: 'prosperity', mythUnit: 'nymph', mythUnitTitle: 'Ninfa (Dríade) / Minotauro', passiveBonusLabel: '+20% Coleta · Maçãs de Ouro (+20% Favor)', gatherBonusPct: 20 },
   Hephaestus: { id: 'Hephaestus', name: 'Hefesto', age: 4, pantheon: 'greek', godPower: 'volcanic_eruption', mythUnit: 'colossus', mythUnitTitle: 'Colosso / Autômato / Anão de Ferro', passiveBonusLabel: '+20% Ataque & Armadura', attackBonusPct: 18, hpBonusPct: 12 },
   Hera: { id: 'Hera', name: 'Hera', age: 4, pantheon: 'greek', godPower: 'lightning_storm', mythUnit: 'medusa', mythUnitTitle: 'Medusa / Ciclope', passiveBonusLabel: '+25% Vida Mítica', hpBonusPct: 22 },
   Artemis: { id: 'Artemis', name: 'Ártemis', age: 4, pantheon: 'greek', godPower: 'tremor', mythUnit: 'medusa', mythUnitTitle: 'Medusa / Mantícora', passiveBonusLabel: '+20% Dano Arqueiros & Cerco', attackBonusPct: 18 },
@@ -747,7 +833,7 @@ export const MINOR_GODS: Record<string, MinorGodSpec> = {
   // Egyptian
   Bast: { id: 'Bast', name: 'Bast', age: 2, pantheon: 'egyptian', godPower: 'darkest_night', mythUnit: 'sphinx', mythUnitTitle: 'Esfinge', passiveBonusLabel: '+18% Coleta de Ouro & Alimento', gatherBonusPct: 18 },
   Ptah: { id: 'Ptah', name: 'Ptá', age: 2, pantheon: 'egyptian', godPower: 'sandstorm', mythUnit: 'wadjet', mythUnitTitle: 'Wadjet', passiveBonusLabel: '+15% HP de Construções', hpBonusPct: 12 },
-  Anubis: { id: 'Anubis', name: 'Anúbis', age: 2, pantheon: 'egyptian', godPower: 'disease', mythUnit: 'sphinx', mythUnitTitle: 'Anubita / Esfinge', passiveBonusLabel: '+16% Ataque Infantaria & Míticos', attackBonusPct: 16 },
+  Anubis: { id: 'Anubis', name: 'Anúbis', age: 2, pantheon: 'egyptian', godPower: 'disease', mythUnit: 'sphinx', mythUnitTitle: 'Anubita / Esfinge', passiveBonusLabel: '+16% Ataque Mítico · Necrópole (+25% Favor)', attackBonusPct: 16 },
   Hathor: { id: 'Hathor', name: 'Hator', age: 3, pantheon: 'egyptian', godPower: 'locust_swarm', mythUnit: 'petsuchos', mythUnitTitle: 'Roca & Petsuchos', passiveBonusLabel: '+15% HP Geral · Libera Roca & Petsuchos', hpBonusPct: 15 },
   Nephthys: { id: 'Nephthys', name: 'Néftis', age: 3, pantheon: 'egyptian', godPower: 'necromancy', mythUnit: 'petsuchos', mythUnitTitle: 'Escorpião Gigante', passiveBonusLabel: '+20% Regeneração & Favor', hpBonusPct: 14 },
   Sekhmet: { id: 'Sekhmet', name: 'Sekhmet', age: 3, pantheon: 'egyptian', godPower: 'undermine', mythUnit: 'scarab', mythUnitTitle: 'Escaravelho', passiveBonusLabel: '+18% Ataque de Cerco & Funda', attackBonusPct: 18 },
@@ -760,7 +846,7 @@ export const MINOR_GODS: Record<string, MinorGodSpec> = {
   Freyja: { id: 'Freyja', name: 'Freyja', age: 2, pantheon: 'norse', godPower: 'walking_woods', mythUnit: 'valkyrie', mythUnitTitle: 'Valquíria', passiveBonusLabel: '+15% Vida Cavalaria & Valquírias', hpBonusPct: 15 },
   Heimdall: { id: 'Heimdall', name: 'Heimdall', age: 2, pantheon: 'norse', godPower: 'undermine', mythUnit: 'einherjar', mythUnitTitle: 'Einherjar', passiveBonusLabel: '+18% Dano vs Construções', attackBonusPct: 14 },
   Skadi: { id: 'Skadi', name: 'Skadi', age: 3, pantheon: 'norse', godPower: 'frost', mythUnit: 'frost_giant', mythUnitTitle: 'Gigante de Gelo', passiveBonusLabel: '+18% Coleta de Caça & Fazendas', gatherBonusPct: 18 },
-  Bragi: { id: 'Bragi', name: 'Bragi', age: 3, pantheon: 'norse', godPower: 'flaming_weapons', mythUnit: 'battle_boar', mythUnitTitle: 'Javali de Batalha (Gullinbursti)', passiveBonusLabel: '+16% Ataque de Ulfsark', attackBonusPct: 16 },
+  Bragi: { id: 'Bragi', name: 'Bragi', age: 3, pantheon: 'norse', godPower: 'flaming_weapons', mythUnit: 'battle_boar', mythUnitTitle: 'Javali de Batalha (Gullinbursti)', passiveBonusLabel: '+16% Ataque Ulfsark · +1 Favor por morte Berserker', attackBonusPct: 16 },
   Njord: { id: 'Njord', name: 'Njord', age: 3, pantheon: 'norse', godPower: 'walking_woods', mythUnit: 'mountain_giant', mythUnitTitle: 'Gigante da Montanha & Kraken', passiveBonusLabel: '+18% HP Mítico · Libera Gigante da Montanha & Kraken', hpBonusPct: 18 },
   Aegir: { id: 'Aegir', name: 'Aegir', age: 3, pantheon: 'norse', godPower: 'tremor', mythUnit: 'rock_troll', mythUnitTitle: 'Troll da Rocha', passiveBonusLabel: '+18% Armadura & Resistência a Projéteis (Retold)', hpBonusPct: 18 },
   Baldr: { id: 'Baldr', name: 'Baldr', age: 4, pantheon: 'norse', godPower: 'meteor', mythUnit: 'fire_giant', mythUnitTitle: 'Gigante de Fogo', passiveBonusLabel: '+20% Ataque & Cerco', attackBonusPct: 20 },
@@ -771,10 +857,10 @@ export const MINOR_GODS: Record<string, MinorGodSpec> = {
   // Atlantean
   Prometheus: { id: 'Prometheus', name: 'Prometeu', age: 2, pantheon: 'atlantean', godPower: 'necromancy', mythUnit: 'promethean', mythUnitTitle: 'Prometeico', passiveBonusLabel: '+14% Vida dos Heróis', hpBonusPct: 14 },
   Okeanus: { id: 'Okeanus', name: 'Oceano', age: 2, pantheon: 'atlantean', godPower: 'restoration', mythUnit: 'caladria', mythUnitTitle: 'Caládria & Carnívora', passiveBonusLabel: '+14% Velocidade & Coleta', speedBonusPct: 12, gatherBonusPct: 12 },
-  Leto: { id: 'Leto', name: 'Leto', age: 2, pantheon: 'atlantean', godPower: 'spiders', mythUnit: 'automaton', mythUnitTitle: 'Autômato', passiveBonusLabel: '+14% Armadura de Autômatos', hpBonusPct: 14 },
-  Hyperion: { id: 'Hyperion', name: 'Hipérion', age: 3, pantheon: 'atlantean', godPower: 'chaos', mythUnit: 'satyr', mythUnitTitle: 'Sátiro', passiveBonusLabel: '+18% Ataque Heroico', attackBonusPct: 18 },
-  Theia: { id: 'Theia', name: 'Teia', age: 3, pantheon: 'atlantean', godPower: 'walking_woods', mythUnit: 'stymphalian_bird', mythUnitTitle: 'Ave do Estínfalo & Dríade', passiveBonusLabel: '+18% Velocidade da Cavalaria', speedBonusPct: 18 },
-  Rheia: { id: 'Rheia', name: 'Réia', age: 3, pantheon: 'atlantean', godPower: 'traitors', mythUnit: 'behemoth', mythUnitTitle: 'Beemote', passiveBonusLabel: '+20% Coleta Econômica', gatherBonusPct: 20 },
+  Leto: { id: 'Leto', name: 'Leto', age: 2, pantheon: 'atlantean', godPower: 'spiders', mythUnit: 'automaton', mythUnitTitle: 'Autômato', passiveBonusLabel: '+14% Armadura Autômato · Percepção (Oráculo)', hpBonusPct: 14 },
+  Hyperion: { id: 'Hyperion', name: 'Hipérion', age: 3, pantheon: 'atlantean', godPower: 'chaos', mythUnit: 'satyr', mythUnitTitle: 'Sátiro', passiveBonusLabel: '+18% Ataque Heroico · Promoção Gratuita p/ Herói', attackBonusPct: 18 },
+  Theia: { id: 'Theia', name: 'Teia', age: 3, pantheon: 'atlantean', godPower: 'walking_woods', mythUnit: 'stymphalian_bird', mythUnitTitle: 'Ave do Estínfalo & Dríade', passiveBonusLabel: '+18% Vel. Cavalaria · +10% Favor (Oráculo Visão Total)', speedBonusPct: 18 },
+  Rheia: { id: 'Rheia', name: 'Réia', age: 3, pantheon: 'atlantean', godPower: 'traitors', mythUnit: 'behemoth', mythUnitTitle: 'Beemote', passiveBonusLabel: '+20% Coleta · Chifres (+25% Favor Oráculo)', gatherBonusPct: 20 },
   Helios: { id: 'Helios', name: 'Hélios', age: 4, pantheon: 'atlantean', godPower: 'solar_beam', mythUnit: 'hekagigantes', mythUnitTitle: 'Hecatônquiro (Centimano)', passiveBonusLabel: '+22% Ataque de Cerco', attackBonusPct: 22 },
   Hekate: { id: 'Hekate', name: 'Hécate', age: 4, pantheon: 'atlantean', godPower: 'black_hole', mythUnit: 'lampades', mythUnitTitle: 'Lâmpade & Cria do Tártaro', passiveBonusLabel: '+22% Recarga & Poder Mítico', hpBonusPct: 20 },
   Atlas: { id: 'Atlas', name: 'Atlas', age: 4, pantheon: 'atlantean', godPower: 'tremor', mythUnit: 'argus', mythUnitTitle: 'Argos', passiveBonusLabel: '+25% Vida Mítica', hpBonusPct: 25 },
@@ -1483,6 +1569,8 @@ const CIV_UNIT_NAMES: Partial<Record<PantheonId, Partial<Record<UnitKind, { name
       name: 'Ártemis — Deusa da Caça',
       role: 'Deus Menor (Era V) — Maior que os Titãs; flechas lunares sísmicas de longo alcance.',
     },
+    fishing_ship: { name: 'Barco Pesqueiro Grego' },
+    war_trireme: { name: 'Trirreme Helênico' },
   },
   egyptian: {
     villager: {
@@ -1577,6 +1665,8 @@ const CIV_UNIT_NAMES: Partial<Record<PantheonId, Partial<Record<UnitKind, { name
       name: 'Titã Solar de Hórus',
       role: 'Colosso de ouro e granito de Hórus-Rá invocado pelo Portão do Titã (Era V).',
     },
+    fishing_ship: { name: 'Barco Pesqueiro do Nilo' },
+    war_trireme: { name: 'Barco de Guerra Kebent' },
   },
   norse: {
     villager: {
@@ -1691,6 +1781,8 @@ const CIV_UNIT_NAMES: Partial<Record<PantheonId, Partial<Record<UnitKind, { name
       name: 'Titã Ymir — Gigante de Gelo Primordial',
       role: 'O colossal Ymir, o gigante de gelo primordial armado com um machado de gelo colossal, invocado após pesquisar o Segredo dos Titãs.',
     },
+    fishing_ship: { name: 'Barco Pesqueiro Nórdico' },
+    war_trireme: { name: 'Dracar (Longboat)' },
   },
   atlantean: {
     citizen: {
@@ -1810,6 +1902,8 @@ const CIV_UNIT_NAMES: Partial<Record<PantheonId, Partial<Record<UnitKind, { name
       name: 'Titã Atlante',
       role: 'Unidade colossal invocada pelo Portão do Titã na Idade Mítica (Cronos, Urano ou Gaia).',
     },
+    fishing_ship: { name: 'Barco Pesqueiro de Oricalco' },
+    war_trireme: { name: 'Birreme Atlante' },
   },
   chinese: {
     villager: { name: 'Camponês Chinês' },
@@ -1931,122 +2025,272 @@ export function getCivUnitSpec(pantheon: PantheonId, kind: UnitKind): UnitStats 
   return { ...base, ...ov };
 }
 
-export function getCivBuildingSpec(pantheon: PantheonId, kind: BuildingKind): BuildingStats {
+export interface WonderSpec {
+  name: string;
+  subtitle: string;
+  bonusLabel: string;
+}
+
+const WONDER_BY_GOD: Record<string, WonderSpec> = {
+  zeus: { name: 'Estátua de Zeus no Olimpo', subtitle: 'Colosso de ouro e marfim consagrado ao Rei dos Deuses', bonusLabel: '+3.5 Favor/s · Recarga Divina -20% · +20% Míticos' },
+  poseidon: { name: 'Templo de Poseidon em Súnion', subtitle: 'Santuário marítimo de colunas dóricas sobre o mar', bonusLabel: '+3.5 Favor/s · Recarga Divina -20% · +20% Míticos' },
+  hades: { name: 'Necromanteion de Hades', subtitle: 'Mausoléu sombrio de obsidiana e mármore do submundo', bonusLabel: '+3.5 Favor/s · Recarga Divina -20% · +20% Míticos' },
+  deméter: { name: 'Santuário de Elêusis (Deméter)', subtitle: 'Grande salão misterioso cercado por colheitas sagradas', bonusLabel: '+3.5 Favor/s · Recarga Divina -20% · +20% Míticos' },
+  rá: { name: 'Grande Pirâmide de Gizé (Rá)', subtitle: 'Pirâmide solar de pedra calcária com cume em ouro puro', bonusLabel: '+3.5 Favor/s · Recarga Divina -20% · +20% Míticos' },
+  ísis: { name: 'Templo de Filas (Ísis)', subtitle: 'Complexo sagrado de obeliscos e pilares de lótus de Ísis', bonusLabel: '+3.5 Favor/s · Recarga Divina -20% · +20% Míticos' },
+  set: { name: 'Monumento da Tempestade (Set)', subtitle: 'Pirâmide negra de Set entre areias e relâmpagos', bonusLabel: '+3.5 Favor/s · Recarga Divina -20% · +20% Míticos' },
+  odin: { name: 'Salão Dourado de Valhalla (Odin)', subtitle: 'Templo monumental de escudos dourados e troncos de Yggdrasil', bonusLabel: '+3.5 Favor/s · Recarga Divina -20% · +20% Míticos' },
+  thor: { name: 'Grande Forja de Mjölnir (Thor)', subtitle: 'Pedestal titânico com o martelo de Thor incandescente', bonusLabel: '+3.5 Favor/s · Recarga Divina -20% · +20% Míticos' },
+  loki: { name: 'Árvore de Yggdrasil Sombria (Loki)', subtitle: 'Monólito rúnico envolto em runas ardentes de ilusão', bonusLabel: '+3.5 Favor/s · Recarga Divina -20% · +20% Míticos' },
+  freyr: { name: 'Grande Bosque de Alfheim (Freyr)', subtitle: 'Santuário de luz dourada e runas de prosperidade', bonusLabel: '+3.5 Favor/s · Recarga Divina -20% · +20% Míticos' },
+  cronos: { name: 'Torre do Tempo de Cronos', subtitle: 'Zigurates concêntricos de oricalco com anel temporal suspenso', bonusLabel: '+3.5 Favor/s · Recarga Divina -20% · +20% Míticos' },
+  urano: { name: 'Observatório Celestial de Urano', subtitle: 'Cúpula estelar flutuante com prismas de energia cósmica', bonusLabel: '+3.5 Favor/s · Recarga Divina -20% · +20% Míticos' },
+  gaia: { name: 'Árvore-Mãe de Atlântida (Gaia)', subtitle: 'Palácio cristalino entrelaçado com raízes vivas sagradas', bonusLabel: '+3.5 Favor/s · Recarga Divina -20% · +20% Míticos' },
+};
+
+export function getWonderSpec(pantheon: PantheonId, majorGodName?: string): WonderSpec {
+  const key = (majorGodName ?? '').trim().toLowerCase();
+  if (WONDER_BY_GOD[key]) return WONDER_BY_GOD[key];
+  const p = PANTHEONS[pantheon];
+  return {
+    name: `Maravilha de ${p.deity}`,
+    subtitle: `Monumento supremo da civilização ${p.name}`,
+    bonusLabel: '+3.5 Favor/s · Recarga Divina -20% · +20% Míticos',
+  };
+}
+
+export function getCivBuildingSpec(
+  pantheon: PantheonId,
+  kind: BuildingKind,
+  majorGodName?: string,
+  age: AgeLevel = 1
+): BuildingStats {
   const base = BUILDING_STATS[kind];
   const p = PANTHEONS[pantheon];
+
+  // Progressão comum de Torres por Era
+  if (kind === 'tower') {
+    const tierName =
+      age >= 4 ? 'Torre de Balista' : age >= 3 ? 'Torre de Guarda' : 'Torre de Vigia';
+    const hpMult = age >= 4 ? 1.55 : age >= 3 ? 1.25 : 1.0;
+    const atkMult = age >= 4 ? 1.55 : age >= 3 ? 1.25 : 1.0;
+    const rangeAdd = age >= 4 ? 3.5 : age >= 3 ? 1.5 : 0;
+    const cultureSuffix =
+      pantheon === 'norse' || pantheon === 'jotunn'
+        ? ' Viking'
+        : pantheon === 'egyptian'
+          ? ' do Deserto'
+          : pantheon === 'atlantean'
+            ? ' de Oricalco'
+            : '';
+    return {
+      ...base,
+      name: `${tierName}${cultureSuffix}`,
+      maxHp: Math.round(base.maxHp * hpMult),
+      attack: Math.round((base.attack ?? 19) * atkMult),
+      range: (base.range ?? 16.5) + rangeAdd,
+      role: `Evolui automaticamente por Era (Vigia → Guarda → Balista). Atual: ${tierName}.`,
+    };
+  }
+
+  // Progressão comum e cultural de Muralhas & Portões por Era
+  if (kind === 'wall' || kind === 'gate') {
+    const isGate = kind === 'gate';
+    let tierLabel = age >= 4 ? 'Fortificada' : age >= 3 ? 'de Pedra' : 'de Madeira';
+    let hpMult = age >= 4 ? 1.75 : age >= 3 ? 1.35 : 1.0;
+    if (pantheon === 'egyptian' && age >= 4) {
+      tierLabel = 'da Cidadela';
+      hpMult = 2.05;
+    } else if (pantheon === 'atlantean') {
+      tierLabel = age >= 4 ? 'de Oricalco' : age >= 3 ? 'de Ferro' : 'de Bronze';
+      hpMult = age >= 4 ? 2.1 : age >= 3 ? 1.55 : 1.2;
+    }
+    return {
+      ...base,
+      name: `${isGate ? 'Portão' : 'Muralha'} ${tierLabel}`,
+      maxHp: Math.round(base.maxHp * hpMult),
+      role: isGate
+        ? `Portão ${tierLabel}: permite passagem livre de aliados e barra inimigos.`
+        : `Muralha ${tierLabel}: bloqueia o avanço inimigo e evolui com sua Era.`,
+    };
+  }
+
+  if (kind === 'wonder') {
+    const w = getWonderSpec(pantheon, majorGodName);
+    return {
+      ...base,
+      name: w.name,
+      role: `${w.subtitle} · ${w.bonusLabel}`,
+    };
+  }
+
+  // Regras econômicas de Fazenda (Egípcios na Era I)
+  if (kind === 'farm') {
+    if (pantheon === 'egyptian') {
+      return {
+        ...base,
+        minAge: 1,
+        cost: { gold: 65 },
+        name: 'Fazenda do Nilo',
+        role: 'Disponível desde a Era Arcaica para Egípcios — fonte infinita de Alimento.',
+      };
+    }
+    return base;
+  }
+
   if (pantheon === 'norse' || pantheon === 'jotunn') {
     if (kind === 'town_center') {
       return {
         ...base,
-        name: `Grande Casa Longa (${p.name})`,
-        role: 'Salão principal de madeira e pedra rúnica — treina Coletores, Anões, Carroças de Bois e Ulfsarks.',
+        name: `Casa Comunal / Longhouse (${p.name})`,
+        role: 'Salão principal de madeira e pedra rúnica — treina Coletores, Anões Mineradores e Carros de Boi.',
+      };
+    }
+    if (kind === 'village_center') {
+      return {
+        ...base,
+        name: 'Salão da Vila Nórdica',
+        role: 'Posto avançado construível fora de assentamentos — treina Coletores, Anões e Carros de Boi.',
+      };
+    }
+    if (kind === 'armory') {
+      return {
+        ...base,
+        minAge: 1,
+        name: 'Arsenal dos Anões',
+        role: 'Disponível desde a Era Arcaica — pesquisa melhorias de armas, armaduras e escudos rúnicos.',
       };
     }
     if (kind === 'barracks') {
       return {
         ...base,
-        name: 'Salão de Hidromel (Quartel)',
-        role: 'Salão Comunal Viking — treina Ulfsarks, Guerreiros de Machado, Hersirs e Cavalaria de Incursão.',
+        name: 'Casa Comunal (Longhouse)',
+        role: 'Treina infantaria básica nórdica: Ulfsark (Berserker), Lançador de Machado e Huskarl.',
       };
     }
-    if (kind === 'archery_range') {
+    if (kind === 'great_hall') {
       return {
         ...base,
-        name: 'Salão de Lançadores de Machado',
-        role: 'Pátio de guerra nórdico — treina Guerreiros de Machado de Arremesso e Batedores.',
-      };
-    }
-    if (kind === 'stable') {
-      return {
-        ...base,
-        name: 'Salão de Incursão Montada',
-        role: 'Estábulo Viking — treina Cavalaria de Incursão e Jarls.',
-      };
-    }
-    if (kind === 'temple') {
-      return {
-        ...base,
-        name: `Templo Nórdico Hof (${p.deity})`,
-        role: 'Igreja de madeira em camadas (Stave Hof) cercada por pedras rúnicas — invoca Hersirs, Godis e criaturas míticas.',
+        name: 'Grande Salão',
+        role: 'Nova construção de Retold — treina Cavalaria de Incursão, Jarls e heróis Hersir.',
       };
     }
     if (kind === 'fortress') {
       return {
         ...base,
         name: 'Forte da Colina',
-        role: 'Fortaleza paliçada de madeira e granito — treina Huskarls, Jarls, Aríetes e Balistas.',
+        role: 'Fortaleza da Era Heroica — treina Huskarls, Jarls, heróis Hersir e armas de cerco.',
       };
     }
-    if (kind === 'armory') {
+    if (kind === 'asgard_hill_fort') {
       return {
         ...base,
-        name: 'Forja Anã de Nidavellir',
-        role: 'Forja rúnica de pedra e madeira — pesquisa melhorias de armas e armaduras nórdicas.',
+        name: 'Forte de Asgard (Freyr)',
+        role: 'Versão abençoada invocada por Freyr — maior resistência, fogo defensivo e produção nórdica.',
+      };
+    }
+    if (kind === 'archery_range') {
+      return {
+        ...base,
+        name: 'Salão de Lançadores',
+        role: 'Treina Guerreiros de Machado de Arremesso e Caçadores Rúnicos.',
+      };
+    }
+    if (kind === 'stable') {
+      return {
+        ...base,
+        name: 'Estábulo de Incursão',
+        role: 'Treina Cavalaria de Incursão e Jarls.',
+      };
+    }
+    if (kind === 'temple') {
+      return {
+        ...base,
+        name: `Templo Nórdico Hof (${p.deity})`,
+        role: 'Igreja de madeira em camadas cercada por runas — invoca Hersirs, Godis e criaturas míticas.',
       };
     }
     if (kind === 'house') {
       return {
         ...base,
-        name: 'Casa Longa Nórdica',
-        role: 'Habitação viking de madeira entalhada e base de pedra (+10 de população).',
-      };
-    }
-    if (kind === 'tower') {
-      return {
-        ...base,
-        name: 'Torre de Vigia Viking',
-        role: 'Torre defensiva de madeira e pedra com escudos nórdicos.',
+        name: 'Casa Nórdica',
+        role: 'Habitação viking de madeira entalhada e base de pedra (+8 de população).',
+        popBonus: 8,
       };
     }
   }
+
   if (pantheon === 'atlantean') {
     if (kind === 'town_center') {
       return {
         ...base,
         name: `Cidadela Atlante (${p.name})`,
-        role: 'Centro imperial de oricalco — treina Cidadãos Atlantes e Oráculos batedores.',
+        role: 'Centro imperial de oricalco — treina Cidadãos Atlantes (sem depósito) e Oráculos.',
+      };
+    }
+    if (kind === 'village_center') {
+      return {
+        ...base,
+        name: 'Centro da Vila Atlante',
+        role: 'Base avançada construível em qualquer terreno livre — treina Cidadãos e Oráculos.',
+      };
+    }
+    if (kind === 'house') {
+      return {
+        ...base,
+        name: 'Mansão Atlante',
+        role: 'Substitui a Casa comum — oferece +10 de população e estrutura reforçada em oricalco.',
+        maxHp: 680,
+        popBonus: 10,
+      };
+    }
+    if (kind === 'economic_guild') {
+      return {
+        ...base,
+        name: 'Guilda Econômica',
+        role: 'Substitui pontos de coleta — pesquisa Machado de Mão, Picareta e Arado.',
       };
     }
     if (kind === 'barracks') {
       return {
         ...base,
         name: 'Quartel Militar Atlante',
-        role: 'Treina Murmillo (Clássica), Arcus e Contarius (Heroica). Todas podem ser promovidas a Heróis.',
+        role: 'Treina soldados principais: Murmillo, Arcus e Contarius.',
       };
     }
-    if (kind === 'archery_range') {
+    if (kind === 'counter_barracks') {
       return {
         ...base,
-        name: 'Contra-Quartel Atlante',
-        role: 'Treina tropas táticas contra-unidade: Katapeltes, Turma e Cheiroballista.',
-      };
-    }
-    if (kind === 'stable') {
-      return {
-        ...base,
-        name: 'Pátio de Cavalaria Atlante',
-        role: 'Treina Turma (Clássica) e cavalaria pesada Contarius (Heroica).',
+        name: 'Quartel de Contra-Ataque',
+        role: 'Treina tropas especializadas: Katapeltes (vs Cavalaria), Turma (vs Arqueiros) e Cheiroballista.',
       };
     }
     if (kind === 'fortress') {
       return {
         ...base,
         name: 'Palácio Atlante',
-        role: 'Fortaleza real — treina Destruidor (Heroica), Fanático, Sifão de Fogo e Onagro (Mítica).',
+        role: 'Fortaleza real da Era Heroica — treina Destruidor, Fanático, Sifão de Fogo e Onagro.',
       };
     }
-    if (kind === 'siege_works') {
+    if (kind === 'sky_passage') {
       return {
         ...base,
-        name: 'Oficina de Cerco Atlante',
-        role: 'Constrói Cheiroballista, Sifão de Fogo e Onagro.',
+        name: 'Passagem Celeste (Urano)',
+        role: 'Portal exclusivo de Urano — teleporta tropas aliadas próximas para outra Passagem Celeste.',
+      };
+    }
+    if (kind === 'mirror_tower') {
+      return {
+        ...base,
+        name: 'Torre Espelho (Hélios)',
+        role: 'Torre defensiva exclusiva de Hélios — concentra feixes de luz solar com altíssimo dano.',
       };
     }
     if (kind === 'market') {
       return {
         ...base,
         name: 'Mercado Atlante',
-        role: 'Treina Caravanas de Lhama para rotas automáticas de Ouro e comércio de recursos.',
+        role: 'Treina Caravanas de Lhama para rotas automáticas de Ouro e troca de recursos.',
       };
     }
     if (kind === 'temple') {
@@ -2056,44 +2300,209 @@ export function getCivBuildingSpec(pantheon: PantheonId, kind: BuildingKind): Bu
         role: 'Treina Oráculos e invoca Unidades Míticas concedidas pelos Deuses Menores Atlantes.',
       };
     }
+  }
+
+  if (pantheon === 'egyptian') {
+    if (kind === 'town_center') {
+      return { ...base, name: `Palácio do Nilo (${p.name})` };
+    }
+    if (kind === 'village_center') {
+      return { ...base, name: 'Centro da Vila Egípcia' };
+    }
     if (kind === 'house') {
+      return { ...base, cost: { gold: 55 }, name: 'Casa Egípcia' };
+    }
+    if (kind === 'granary') {
+      return { ...base, cost: { gold: 45 }, name: 'Celeiro Egípcio', role: 'Ponto de entrega de Alimento e pesquisa de Arado.' };
+    }
+    if (kind === 'lumber_camp') {
+      return { ...base, cost: { gold: 45 }, name: 'Campo Madeireiro', role: 'Ponto de coleta de Madeira e pesquisa de Machado de Mão.' };
+    }
+    if (kind === 'mining_camp') {
+      return { ...base, cost: { gold: 50 }, name: 'Campo de Mineração', role: 'Ponto de coleta de Ouro e pesquisa de Picareta.' };
+    }
+    if (kind === 'monument') {
+      return { ...base, name: 'Monumento Sagrado', role: 'Até 5 monumentos que geram Favor Divino continuamente ao serem erguidos.' };
+    }
+    if (kind === 'obelisk') {
+      return { ...base, name: 'Obelisco Vigia', role: 'Estrutura barata de granito que revela ampla visão do mapa.' };
+    }
+    if (kind === 'lighthouse') {
+      return { ...base, name: 'Farol do Nilo', role: 'Estrutura monumental da Era Mítica que ilumina vastas áreas do mapa.' };
+    }
+    if (kind === 'barracks') {
       return {
         ...base,
-        name: 'Mansão de Oricalco',
-        role: 'Habitação atlante de mármore branco e cúpula turquesa (+10 de população).',
+        minAge: 2,
+        cost: { gold: 110 },
+        name: 'Quartel Egípcio',
+        role: 'Treina Lanceiros, Fundeiros e Homens-Machado e pesquisa melhorias militares.',
       };
     }
+    if (kind === 'siege_works') {
+      return {
+        ...base,
+        cost: { gold: 185 },
+        name: 'Oficina de Cerco',
+        role: 'Produz Torres de Cerco e Catapultas solares.',
+      };
+    }
+    if (kind === 'fortress') {
+      return {
+        ...base,
+        cost: { gold: 320 },
+        name: 'Fortaleza Migdol',
+        role: 'Castelo egípcio da Era Heroica — treina Arqueiros de Biga, Camelos, Elefantes e pesquisa upgrades de elite.',
+      };
+    }
+    if (kind === 'temple') {
+      return { ...base, cost: { gold: 180 }, name: `Templo Solar de ${p.deity}` };
+    }
   }
+
+  // Gregos & Padrão
+  if (pantheon === 'greek') {
+    if (kind === 'town_center') return { ...base, name: `Ágora / Centro Helênico (${p.name})` };
+    if (kind === 'village_center') return { ...base, name: 'Centro da Vila Helênica' };
+    if (kind === 'granary') return { ...base, name: 'Celeiro (Granary)' };
+    if (kind === 'storehouse') return { ...base, name: 'Armazém (Storehouse)' };
+    if (kind === 'barracks') return { ...base, name: 'Academia Militar', role: 'Treina infantaria grega (Hoplita e Hipaspista).' };
+    if (kind === 'archery_range') return { ...base, name: 'Campo de Arquearia', role: 'Treina arqueiros e fundeiros (Toxotes, Peltasta e Gastraphetes).' };
+    if (kind === 'stable') return { ...base, name: 'Estábulo', role: 'Treina cavalaria helênica (Hippikon e Pródromo).' };
+    if (kind === 'fortress') return { ...base, name: 'Fortaleza Grega', role: 'Construção defensiva da Era Heroica — treina Mirmidões, Heróis e Cerco.' };
+    if (kind === 'temple') return { ...base, name: `Templo de ${p.deity}` };
+  }
+
   if (kind === 'town_center') {
     return { ...base, name: `Cidadela (${p.name})` };
   }
   if (kind === 'temple') {
     return { ...base, name: `Templo de ${p.deity}` };
   }
-  if (pantheon === 'egyptian') {
-    if (kind === 'fortress') {
-      return {
-        ...base,
-        name: 'Fortaleza Migdol',
-        role: 'Cidadela do Deserto — treina Arqueiro de Biga, Cavaleiro de Camelo e Elefante de Guerra.',
-      };
-    }
-    if (kind === 'barracks') {
-      return {
-        ...base,
-        name: 'Quartel Egípcio',
-        role: 'Treina Lanceiro, Fundeiro e Homem-Machado a partir da Era Clássica.',
-      };
-    }
-    if (kind === 'siege_works') {
-      return {
-        ...base,
-        name: 'Oficina de Cerco',
-        role: 'Constrói Torre de Cerco e Catapulta (Era Heroica+).',
-      };
-    }
-  }
   return base;
+}
+
+export function getAvailableBuildingKinds(
+  pantheon: PantheonId,
+  majorGodName: string,
+  chosenMinorGods: string[],
+  titansEnabled: boolean
+): BuildingKind[] {
+  const godKey = (majorGodName ?? '').trim().toLowerCase();
+  const list: BuildingKind[] = [];
+
+  if (pantheon === 'greek') {
+    list.push(
+      'house',
+      'granary',
+      'storehouse',
+      'farm',
+      'village_center',
+      'barracks',
+      'archery_range',
+      'stable',
+      'armory',
+      'market',
+      'temple',
+      'dock',
+      'tower',
+      'wall',
+      'gate',
+      'fortress',
+      'siege_works',
+      'wonder'
+    );
+  } else if (pantheon === 'egyptian') {
+    // Egípcios não constroem Arsenal comum; usam Monumentos, Obelisco, Farol, Campos e Migdol
+    list.push(
+      'house',
+      'farm',
+      'granary',
+      'lumber_camp',
+      'mining_camp',
+      'village_center',
+      'monument',
+      'obelisk',
+      'barracks',
+      'market',
+      'temple',
+      'dock',
+      'tower',
+      'wall',
+      'gate',
+      'siege_works',
+      'fortress',
+      'lighthouse',
+      'wonder'
+    );
+  } else if (pantheon === 'norse' || pantheon === 'jotunn') {
+    // Nórdicos usam Carro de Boi no lugar de depósitos fixos, Arsenal dos Anões na Era I, Grande Salão e Forte da Colina
+    list.push(
+      'house',
+      'farm',
+      'village_center',
+      'armory',
+      'barracks',
+      'great_hall',
+      'market',
+      'temple',
+      'dock',
+      'tower',
+      'wall',
+      'gate',
+      'fortress',
+      ...(godKey === 'freyr' ? (['asgard_hill_fort'] as BuildingKind[]) : []),
+      'siege_works',
+      'wonder'
+    );
+  } else if (pantheon === 'atlantean') {
+    // Atlantes usam Mansão, Guilda Econômica, Quartel Militar, Quartel de Contra-Ataque, Palácio + exclusivos
+    list.push(
+      'house',
+      'economic_guild',
+      'farm',
+      'village_center',
+      'barracks',
+      'counter_barracks',
+      'armory',
+      'market',
+      'temple',
+      'dock',
+      'tower',
+      'wall',
+      'gate',
+      'fortress',
+      ...(godKey === 'urano' || godKey === 'oranos' ? (['sky_passage'] as BuildingKind[]) : []),
+      ...(chosenMinorGods.includes('Helios') ? (['mirror_tower'] as BuildingKind[]) : []),
+      'wonder'
+    );
+  } else {
+    list.push(
+      'house',
+      'farm',
+      'granary',
+      'storehouse',
+      'village_center',
+      'barracks',
+      'archery_range',
+      'stable',
+      'armory',
+      'market',
+      'temple',
+      'dock',
+      'tower',
+      'wall',
+      'gate',
+      'fortress',
+      'siege_works',
+      'wonder'
+    );
+  }
+
+  if (titansEnabled) {
+    list.push('titan_gate');
+  }
+  return list;
 }
 
 export function getCivGodPowerSpec(pantheon: PantheonId, id: GodPowerId): GodPowerSpec {

@@ -237,6 +237,10 @@ export default function App() {
           onOrderVillagersToTarget={() => engineRef.current?.commandVillagersToSelectedTarget()}
           onOrderVillagerTask={(task) => engineRef.current?.orderSelectedVillagersToTask(task)}
           onPromoteToHero={() => engineRef.current?.promoteSelectedUnitsToHero()}
+          onTeleportSkyPassage={(id) => engineRef.current?.teleportSkyPassage(id)}
+          onOrderPrayTemple={(templeId) => engineRef.current?.orderVillagersToPrayAtTemple(templeId)}
+          onOrderEmpowerMonument={(buildingId) => engineRef.current?.orderEmpowerMonument(buildingId)}
+          onSpreadOracles={() => engineRef.current?.orderOraclesToSpread()}
           onRestart={() => {
             if (hudSnapshot) {
               handleStartMatch(hudSnapshot.pantheon, hudSnapshot.difficulty, hudSnapshot.mapId, hudSnapshot.revealedMap);

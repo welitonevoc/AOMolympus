@@ -30,6 +30,21 @@ import mapErebusLavaImg from '../assets/images/map_erebus_lava_1794935965953.jpg
 import mapSavannahJungleImg from '../assets/images/map_savannah_jungle_1794935883522.jpg';
 import mapAegeanIslandsImg from '../assets/images/map_aegean_islands_1794935967469.jpg';
 
+import minorAthenaImg from '../assets/images/minor_athena_1794937402617.jpg';
+import minorAresImg from '../assets/images/minor_ares_1794937402307.jpg';
+import minorHermesImg from '../assets/images/minor_hermes_1794937403008.jpg';
+import minorApolloImg from '../assets/images/minor_apollo_1794937404955.jpg';
+import minorAphroditeImg from '../assets/images/minor_aphrodite_1794937403667.jpg';
+import minorHephaestusImg from '../assets/images/minor_hephaestus_1794937404551.jpg';
+import minorArtemisImg from '../assets/images/minor_artemis_1794937404585.jpg';
+import minorBastImg from '../assets/images/minor_bast_1794937406303.jpg';
+import minorAnubisImg from '../assets/images/minor_anubis_1794937406339.jpg';
+import minorHorusImg from '../assets/images/minor_horus_1794937407134.jpg';
+import minorFreyjaImg from '../assets/images/minor_freyja_1794937408099.jpg';
+import minorSkadiImg from '../assets/images/minor_skadi_1794937409845.jpg';
+import minorHelImg from '../assets/images/minor_hel_1794937408846.jpg';
+import minorPrometheusImg from '../assets/images/minor_prometheus_1794937410006.jpg';
+
 import { MapId, PantheonId } from './types';
 
 const GOD_PORTRAITS_BY_KEY: Record<string, string> = {
@@ -69,9 +84,66 @@ const PANTHEON_PORTRAITS: Record<PantheonId, string> = {
   jotunn: civJotunnImg,
 };
 
+const MINOR_GOD_PORTRAITS: Record<string, string> = {
+  // Gregos
+  athena: minorAthenaImg,
+  ares: minorAresImg,
+  hermes: minorHermesImg,
+  apollo: minorApolloImg,
+  dionysos: minorAphroditeImg,
+  aphrodite: minorAphroditeImg,
+  hephaestus: minorHephaestusImg,
+  hera: minorAthenaImg,
+  artemis: minorArtemisImg,
+  // Egípcios
+  bast: minorBastImg,
+  ptah: minorHephaestusImg,
+  anubis: minorAnubisImg,
+  hathor: minorBastImg,
+  nephthys: minorAnubisImg,
+  sekhmet: minorAresImg,
+  horus: minorHorusImg,
+  osiris: minorHorusImg,
+  thoth: minorApolloImg,
+  // Nórdicos
+  forseti: minorHermesImg,
+  freyja: minorFreyjaImg,
+  heimdall: minorAthenaImg,
+  skadi: minorSkadiImg,
+  bragi: minorFreyjaImg,
+  njord: godPoseidonImg,
+  aegir: godPoseidonImg,
+  baldr: minorApolloImg,
+  tyr: minorAresImg,
+  hel: minorHelImg,
+  vidar: minorSkadiImg,
+  // Atlantes
+  prometheus: minorPrometheusImg,
+  okeanus: godPoseidonImg,
+  leto: minorArtemisImg,
+  hyperion: minorApolloImg,
+  theia: minorAphroditeImg,
+  rheia: godGaiaImg,
+  helios: minorApolloImg,
+  hekate: minorHelImg,
+  atlas: godCronosImg,
+  // Expansões
+  divine_war2: minorAresImg,
+  divine_eco2: godDemeterImg,
+  divine_storm3: godThorImg,
+  divine_shadow3: minorHelImg,
+  divine_apocalypse4: minorPrometheusImg,
+  divine_abyss4: minorAnubisImg,
+};
+
 export function getMajorGodPortrait(godIdOrName: string, pantheon: PantheonId): string {
   const key = godIdOrName.trim().toLowerCase();
   return GOD_PORTRAITS_BY_KEY[key] ?? PANTHEON_PORTRAITS[pantheon] ?? godZeusImg;
+}
+
+export function getMinorGodPortrait(minorGodId: string, pantheon: PantheonId): string {
+  const key = minorGodId.trim().toLowerCase();
+  return MINOR_GOD_PORTRAITS[key] ?? PANTHEON_PORTRAITS[pantheon] ?? minorAthenaImg;
 }
 
 export function getPantheonCoverPortrait(pantheon: PantheonId): string {

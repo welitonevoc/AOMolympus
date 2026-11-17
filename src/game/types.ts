@@ -173,22 +173,42 @@ export type UnitKind =
   | 'argus'
   | 'lampades'
   | 'carnivora'
-  | 'tartarian_spawn';
+  | 'tartarian_spawn'
+  | 'fishing_ship'
+  | 'war_trireme';
 
 export type BuildingKind =
   | 'town_center'
+  | 'village_center'
   | 'house'
   | 'farm'
+  | 'granary'
+  | 'storehouse'
+  | 'lumber_camp'
+  | 'mining_camp'
+  | 'economic_guild'
   | 'barracks'
   | 'archery_range'
+  | 'counter_barracks'
   | 'stable'
+  | 'great_hall'
   | 'siege_works'
   | 'armory'
   | 'market'
   | 'temple'
+  | 'dock'
+  | 'monument'
+  | 'obelisk'
+  | 'lighthouse'
+  | 'wall'
+  | 'gate'
   | 'tower'
+  | 'mirror_tower'
   | 'fortress'
-  | 'titan_gate';
+  | 'asgard_hill_fort'
+  | 'sky_passage'
+  | 'titan_gate'
+  | 'wonder';
 
 export type ResourceNodeKind = 'berry' | 'tree' | 'gold_mine';
 
@@ -258,20 +278,27 @@ export type TechId =
   | 'sun_ray'
   | 'shafts_of_plague'
   | 'forge_of_olympus'
-  | 'olympian_weapons';
+  | 'olympian_weapons'
+  | 'golden_apples'
+  | 'necropolis'
+  | 'hammer_of_the_gods'
+  | 'perception'
+  | 'horns_of_consecration';
 
 export interface TechSpec {
   id: TechId;
   name: string;
   description: string;
   minAge: AgeLevel;
-  building: 'armory' | 'barracks' | 'archery_range' | 'town_center' | 'temple' | 'fortress';
+  building: BuildingKind;
   secondaryBuildings?: BuildingKind[];
   cost: ResourceCost;
   researchTime: number;
   requires?: TechId;
   requiresMinorGod?: string[];
   requiresMinorGodLabel?: string;
+  requiresMajorGod?: string[];
+  requiresMajorGodLabel?: string;
   pantheons?: PantheonId[];
   category?: 'armory_weapon' | 'armory_armor' | 'armory_shield' | 'armory_utility' | 'mythic' | 'economy' | 'military' | 'temple';
 }
@@ -960,13 +987,18 @@ export interface UnitStats {
   canPromoteHero?: boolean;
   producedAt:
     | 'town_center'
+    | 'village_center'
     | 'barracks'
     | 'archery_range'
+    | 'counter_barracks'
     | 'stable'
+    | 'great_hall'
     | 'siege_works'
     | 'market'
     | 'temple'
+    | 'dock'
     | 'fortress'
+    | 'asgard_hill_fort'
     | 'titan_gate';
 }
 
@@ -2905,11 +2937,59 @@ export const ATLANTEAN_ROSTER_STATS = {
   },
 };
 
+export const NAVAL_ROSTER_STATS = {
+  fishing_ship: {
+    kind: 'fishing_ship' as const,
+    name: 'Barco Pesqueiro',
+    role: 'Embarcação econômica da Doca — colhe cardumes e gera Alimento continuamente para a civilização',
+    minAge: 1 as AgeLevel,
+    cost: { wood: 75 },
+    popCost: 1,
+    trainTime: 6.0,
+    maxHp: 185,
+    attack: 0,
+    damageType: 'pierce' as DamageType,
+    hackArmor: 0.15,
+    pierceArmor: 0.45,
+    crushArmor: 0.12,
+    range: 1.5,
+    attackCooldown: 1.5,
+    speed: 6.2,
+    los: 18,
+    isMythic: false,
+    producedAt: 'dock' as const,
+  },
+  war_trireme: {
+    kind: 'war_trireme' as const,
+    name: 'Trirreme de Guerra',
+    role: 'Navio de guerra arqueiro da Doca (Era Clássica) — dispara rajadas de flechas contra inimigos costeiros',
+    minAge: 2 as AgeLevel,
+    cost: { wood: 110, gold: 65 },
+    popCost: 2,
+    trainTime: 7.5,
+    maxHp: 390,
+    attack: 24,
+    damageType: 'pierce' as DamageType,
+    hackArmor: 0.25,
+    pierceArmor: 0.52,
+    crushArmor: 0.2,
+    bonusVsMyth: 1.3,
+    bonusVsBuilding: 1.4,
+    range: 15.0,
+    attackCooldown: 1.25,
+    speed: 6.8,
+    los: 22,
+    isMythic: false,
+    producedAt: 'dock' as const,
+  },
+};
+
 export const CIVILIZATION_UNITS: CivilizationUnitMap = {
   gregos: {
     ...EGYPTIAN_ROSTER_STATS,
     ...NORSE_ROSTER_STATS,
     ...ATLANTEAN_ROSTER_STATS,
+    ...NAVAL_ROSTER_STATS,
     villager: {
       kind: 'villager',
       name: 'Aldeão',
@@ -3954,6 +4034,7 @@ export const CIVILIZATION_UNITS: CivilizationUnitMap = {
     ...EGYPTIAN_ROSTER_STATS,
     ...NORSE_ROSTER_STATS,
     ...ATLANTEAN_ROSTER_STATS,
+    ...NAVAL_ROSTER_STATS,
     villager: { kind: 'villager', name: 'Trabalhador', role: 'Coleta recursos (comida, madeira e ouro) e constrói todos os edifícios', minAge: 1, cost: { food: 50 }, popCost: 1, trainTime: 5.5, maxHp: 75, attack: 6, damageType: 'hack', hackArmor: 0.1, pierceArmor: 0.15, crushArmor: 0.1, range: 1.6, attackCooldown: 1.3, speed: 4.8, los: 14, isMythic: false, producedAt: 'town_center' },
     hoplite: { kind: 'hoplite', name: 'Lanceiro Egípcio', role: 'Infantaria anti-cavalaria', minAge: 1, cost: { food: 55, gold: 40 }, popCost: 2, trainTime: 6.5, maxHp: 150, attack: 14, damageType: 'pierce', hackArmor: 0.3, pierceArmor: 0.3, crushArmor: 0.1, bonusVsCavalry: 1.5, range: 2.0, attackCooldown: 1.1, speed: 4.5, los: 16, isMythic: false, producedAt: 'barracks' },
     hipaspist: { kind: 'hipaspist', name: 'Espadachim do Nilo', role: 'Infantaria ágil', minAge: 2, cost: { food: 60, gold: 35 }, popCost: 2, trainTime: 6.0, maxHp: 160, attack: 15, damageType: 'hack', hackArmor: 0.35, pierceArmor: 0.2, crushArmor: 0.15, range: 1.8, attackCooldown: 1.0, speed: 4.8, los: 17, isMythic: false, producedAt: 'barracks' },
@@ -4004,6 +4085,7 @@ export const CIVILIZATION_UNITS: CivilizationUnitMap = {
     ...EGYPTIAN_ROSTER_STATS,
     ...NORSE_ROSTER_STATS,
     ...ATLANTEAN_ROSTER_STATS,
+    ...NAVAL_ROSTER_STATS,
     villager: { kind: 'villager', name: 'Anão / Coletor Nórdico', role: 'Coleta minérios e madeira', minAge: 1, cost: { food: 50 }, popCost: 1, trainTime: 5.5, maxHp: 80, attack: 6, damageType: 'hack', hackArmor: 0.15, pierceArmor: 0.15, crushArmor: 0.1, range: 1.6, attackCooldown: 1.3, speed: 4.8, los: 14, isMythic: false, producedAt: 'town_center' },
     hoplite: { kind: 'hoplite', name: 'Ulfsark', role: 'Guerreiro berserker', minAge: 1, cost: { food: 50, gold: 35 }, popCost: 2, trainTime: 6.0, maxHp: 160, attack: 16, damageType: 'hack', hackArmor: 0.25, pierceArmor: 0.2, crushArmor: 0.15, bonusVsBuilding: 1.3, range: 1.8, attackCooldown: 1.0, speed: 4.8, los: 16, isMythic: false, producedAt: 'barracks' },
     hipaspist: { kind: 'hipaspist', name: 'Guerreiro com Machado', role: 'Infantaria com machado de arremesso', minAge: 2, cost: { food: 55, gold: 35 }, popCost: 2, trainTime: 6.0, maxHp: 155, attack: 17, damageType: 'hack', hackArmor: 0.3, pierceArmor: 0.2, crushArmor: 0.15, range: 3.5, attackCooldown: 1.1, speed: 4.7, los: 17, isMythic: false, producedAt: 'barracks' },
@@ -4054,6 +4136,7 @@ export const CIVILIZATION_UNITS: CivilizationUnitMap = {
     ...EGYPTIAN_ROSTER_STATS,
     ...NORSE_ROSTER_STATS,
     ...ATLANTEAN_ROSTER_STATS,
+    ...NAVAL_ROSTER_STATS,
     villager: { ...ATLANTEAN_ROSTER_STATS.citizen, kind: 'villager', name: 'Cidadão Atlante', producedAt: 'town_center' },
     hoplite: { ...ATLANTEAN_ROSTER_STATS.murmillo, kind: 'hoplite', name: 'Murmillo' },
     hipaspist: { ...ATLANTEAN_ROSTER_STATS.katapeltes, kind: 'hipaspist', name: 'Katapeltes' },
@@ -4165,6 +4248,22 @@ export const BUILDING_STATS: Record<BuildingKind, BuildingStats> = {
     attack: 14,
     range: 14,
   },
+  village_center: {
+    kind: 'village_center',
+    name: 'Centro da Vila',
+    role: 'Base avançada construível fora dos assentamentos — treina coletores, recebe recursos e garante +5 de população',
+    minAge: 1,
+    cost: { wood: 165, gold: 95 },
+    buildTime: 11,
+    maxHp: 1150,
+    radius: 3.1,
+    popBonus: 5,
+    hackArmor: 0.25,
+    pierceArmor: 0.8,
+    crushArmor: 0.1,
+    attack: 10,
+    range: 11,
+  },
   house: {
     kind: 'house',
     name: 'Casa',
@@ -4182,8 +4281,8 @@ export const BUILDING_STATS: Record<BuildingKind, BuildingStats> = {
   farm: {
     kind: 'farm',
     name: 'Fazenda',
-    role: 'Fonte renovável infinita de Alimento para aldeões',
-    minAge: 1,
+    role: 'Fonte renovável infinita de Alimento para aldeões (Era Clássica; Egípcios na Era Arcaica)',
+    minAge: 2,
     cost: { wood: 75 },
     buildTime: 6.5,
     maxHp: 380,
@@ -4192,6 +4291,76 @@ export const BUILDING_STATS: Record<BuildingKind, BuildingStats> = {
     hackArmor: 0.1,
     pierceArmor: 0.6,
     crushArmor: 0.05,
+  },
+  granary: {
+    kind: 'granary',
+    name: 'Celeiro',
+    role: 'Ponto de entrega de Alimento e pesquisa de melhorias agrícolas (Arado)',
+    minAge: 1,
+    cost: { wood: 70 },
+    buildTime: 6,
+    maxHp: 540,
+    radius: 1.75,
+    popBonus: 0,
+    hackArmor: 0.2,
+    pierceArmor: 0.72,
+    crushArmor: 0.08,
+  },
+  storehouse: {
+    kind: 'storehouse',
+    name: 'Armazém',
+    role: 'Ponto de entrega de Madeira e Ouro e melhorias de coleta',
+    minAge: 1,
+    cost: { wood: 75 },
+    buildTime: 6,
+    maxHp: 560,
+    radius: 1.8,
+    popBonus: 0,
+    hackArmor: 0.2,
+    pierceArmor: 0.74,
+    crushArmor: 0.08,
+  },
+  lumber_camp: {
+    kind: 'lumber_camp',
+    name: 'Campo Madeireiro',
+    role: 'Depósito egípcio para entrega rápida de Madeira e melhorias florestais',
+    minAge: 1,
+    cost: { gold: 45 },
+    buildTime: 5.5,
+    maxHp: 520,
+    radius: 1.7,
+    popBonus: 0,
+    hackArmor: 0.2,
+    pierceArmor: 0.72,
+    crushArmor: 0.08,
+  },
+  mining_camp: {
+    kind: 'mining_camp',
+    name: 'Campo de Mineração',
+    role: 'Depósito egípcio para entrega rápida de Ouro e melhorias de mineração',
+    minAge: 1,
+    cost: { gold: 50 },
+    buildTime: 5.5,
+    maxHp: 540,
+    radius: 1.7,
+    popBonus: 0,
+    hackArmor: 0.2,
+    pierceArmor: 0.72,
+    crushArmor: 0.08,
+  },
+  economic_guild: {
+    kind: 'economic_guild',
+    name: 'Guilda Econômica',
+    role: 'Centro atlante de tecnologias econômicas — pesquisa Machado, Picareta e Arado',
+    minAge: 1,
+    cost: { wood: 110, gold: 40 },
+    buildTime: 7.5,
+    maxHp: 720,
+    radius: 2.35,
+    popBonus: 0,
+    hackArmor: 0.24,
+    pierceArmor: 0.78,
+    crushArmor: 0.1,
   },
   barracks: {
     kind: 'barracks',
@@ -4209,8 +4378,8 @@ export const BUILDING_STATS: Record<BuildingKind, BuildingStats> = {
   },
   archery_range: {
     kind: 'archery_range',
-    name: 'Campo de Tiro',
-    role: 'Treina Peltasta, Toxota e Fundibulário (Gastraphetes)',
+    name: 'Campo de Arquearia',
+    role: 'Treina Peltasta, Toxotes e Fundibulário (Gastraphetes)',
     minAge: 2,
     cost: { wood: 120, gold: 45 },
     buildTime: 8.5,
@@ -4219,6 +4388,20 @@ export const BUILDING_STATS: Record<BuildingKind, BuildingStats> = {
     popBonus: 0,
     hackArmor: 0.22,
     pierceArmor: 0.78,
+    crushArmor: 0.1,
+  },
+  counter_barracks: {
+    kind: 'counter_barracks',
+    name: 'Quartel de Contra-Ataque',
+    role: 'Treina tropas atlantes especializadas contra tipos inimigos: Katapeltes, Turma e Cheiroballista',
+    minAge: 2,
+    cost: { wood: 125, gold: 50 },
+    buildTime: 8.5,
+    maxHp: 860,
+    radius: 2.6,
+    popBonus: 0,
+    hackArmor: 0.25,
+    pierceArmor: 0.8,
     crushArmor: 0.1,
   },
   stable: {
@@ -4235,10 +4418,24 @@ export const BUILDING_STATS: Record<BuildingKind, BuildingStats> = {
     pierceArmor: 0.78,
     crushArmor: 0.1,
   },
+  great_hall: {
+    kind: 'great_hall',
+    name: 'Grande Salão',
+    role: 'Construção nórdica de Retold que treina Cavalaria de Incursão, Jarls e heróis Hersir',
+    minAge: 2,
+    cost: { wood: 135, gold: 55 },
+    buildTime: 8.5,
+    maxHp: 940,
+    radius: 2.75,
+    popBonus: 0,
+    hackArmor: 0.26,
+    pierceArmor: 0.8,
+    crushArmor: 0.12,
+  },
   siege_works: {
     kind: 'siege_works',
     name: 'Oficina de Cerco',
-    role: 'Constrói máquinas de cerco (Aríete e Catapulta Helepolis)',
+    role: 'Constrói máquinas de cerco (Torre de Cerco e Catapulta)',
     minAge: 3,
     cost: { wood: 170, gold: 120 },
     buildTime: 11,
@@ -4251,7 +4448,7 @@ export const BUILDING_STATS: Record<BuildingKind, BuildingStats> = {
   },
   armory: {
     kind: 'armory',
-    name: 'Armaria',
+    name: 'Arsenal',
     role: 'Pesquisa armas e armaduras de Cobre, Bronze e Ferro',
     minAge: 2,
     cost: { wood: 140, gold: 60 },
@@ -4266,7 +4463,7 @@ export const BUILDING_STATS: Record<BuildingKind, BuildingStats> = {
   market: {
     kind: 'market',
     name: 'Mercado',
-    role: 'Troca Alimento, Madeira e Ouro com taxas dinâmicas',
+    role: 'Troca Alimento, Madeira e Ouro e treina Caravanas comerciais',
     minAge: 2,
     cost: { wood: 150, gold: 50 },
     buildTime: 8.5,
@@ -4291,10 +4488,94 @@ export const BUILDING_STATS: Record<BuildingKind, BuildingStats> = {
     pierceArmor: 0.82,
     crushArmor: 0.1,
   },
+  dock: {
+    kind: 'dock',
+    name: 'Doca',
+    role: 'Constrói Barcos Pesqueiros (renda contínua de Alimento) e Trirremes de Guerra',
+    minAge: 1,
+    cost: { wood: 115, gold: 35 },
+    buildTime: 8,
+    maxHp: 920,
+    radius: 2.7,
+    popBonus: 0,
+    hackArmor: 0.22,
+    pierceArmor: 0.78,
+    crushArmor: 0.1,
+  },
+  monument: {
+    kind: 'monument',
+    name: 'Monumento',
+    role: 'Estrutura sagrada egípcia (até 5) que gera Favor Divino continuamente após construída',
+    minAge: 1,
+    cost: { food: 45, gold: 80 },
+    buildTime: 7.5,
+    maxHp: 850,
+    radius: 1.85,
+    popBonus: 0,
+    hackArmor: 0.3,
+    pierceArmor: 0.84,
+    crushArmor: 0.14,
+  },
+  obelisk: {
+    kind: 'obelisk',
+    name: 'Obelisco',
+    role: 'Estrutura egípcia barata de vigia que revela ampla área do mapa ao redor',
+    minAge: 1,
+    cost: { gold: 35 },
+    buildTime: 4.5,
+    maxHp: 380,
+    radius: 1.1,
+    popBonus: 0,
+    hackArmor: 0.22,
+    pierceArmor: 0.78,
+    crushArmor: 0.08,
+  },
+  lighthouse: {
+    kind: 'lighthouse',
+    name: 'Farol',
+    role: 'Torre monumental egípcia da Era Mítica que revela vastas regiões do campo de batalha',
+    minAge: 4,
+    cost: { wood: 140, gold: 160 },
+    buildTime: 11,
+    maxHp: 1350,
+    radius: 2.2,
+    popBonus: 0,
+    hackArmor: 0.32,
+    pierceArmor: 0.88,
+    crushArmor: 0.15,
+  },
+  wall: {
+    kind: 'wall',
+    name: 'Muralha',
+    role: 'Barreira defensiva que evolui por Era (Madeira → Pedra → Fortificada / Cidadela / Oricalco)',
+    minAge: 1,
+    cost: { gold: 25 },
+    buildTime: 3.5,
+    maxHp: 620,
+    radius: 1.45,
+    popBonus: 0,
+    hackArmor: 0.35,
+    pierceArmor: 0.92,
+    crushArmor: 0.15,
+  },
+  gate: {
+    kind: 'gate',
+    name: 'Portão',
+    role: 'Portão fortificado da muralha — permite passagem livre de aliados e bloqueia tropas inimigas',
+    minAge: 1,
+    cost: { gold: 45 },
+    buildTime: 4.5,
+    maxHp: 780,
+    radius: 1.65,
+    popBonus: 0,
+    hackArmor: 0.35,
+    pierceArmor: 0.9,
+    crushArmor: 0.15,
+  },
   tower: {
     kind: 'tower',
     name: 'Torre de Vigia',
-    role: 'Defesa automática contra invasores',
+    role: 'Defesa automática que evolui de Torre de Vigia → Guarda → Balista conforme sua Era',
     minAge: 2,
     cost: { wood: 110, gold: 80 },
     buildTime: 8,
@@ -4307,10 +4588,26 @@ export const BUILDING_STATS: Record<BuildingKind, BuildingStats> = {
     attack: 19,
     range: 16.5,
   },
+  mirror_tower: {
+    kind: 'mirror_tower',
+    name: 'Torre Espelho (Hélios)',
+    role: 'Torre solar atlante exclusiva de Hélios — dispara feixes térmicos contínuos devastadores',
+    minAge: 4,
+    cost: { wood: 130, gold: 170, favor: 12 },
+    buildTime: 9.5,
+    maxHp: 1120,
+    radius: 1.8,
+    popBonus: 0,
+    hackArmor: 0.36,
+    pierceArmor: 0.9,
+    crushArmor: 0.16,
+    attack: 44,
+    range: 19.5,
+  },
   fortress: {
     kind: 'fortress',
     name: 'Fortaleza',
-    role: 'Bastilha pesada que treina Heróis e Armas de Cerco',
+    role: 'Bastilha pesada que treina Heróis, tropas de elite e Armas de Cerco',
     minAge: 3,
     cost: { wood: 200, gold: 220 },
     buildTime: 14,
@@ -4322,6 +4619,36 @@ export const BUILDING_STATS: Record<BuildingKind, BuildingStats> = {
     crushArmor: 0.15,
     attack: 24,
     range: 18,
+  },
+  asgard_hill_fort: {
+    kind: 'asgard_hill_fort',
+    name: 'Forte de Asgard (Freyr)',
+    role: 'Fortaleza asgardiana reforçada invocada com bênção de Freyr — alta defesa e produção de elite',
+    minAge: 3,
+    cost: { wood: 180, gold: 200, favor: 15 },
+    buildTime: 11,
+    maxHp: 2700,
+    radius: 3.6,
+    popBonus: 8,
+    hackArmor: 0.46,
+    pierceArmor: 0.92,
+    crushArmor: 0.22,
+    attack: 30,
+    range: 19.5,
+  },
+  sky_passage: {
+    kind: 'sky_passage',
+    name: 'Passagem Celeste (Urano)',
+    role: 'Portal atlante exclusivo de Urano — teleporta tropas aliadas próximas entre Passagens Celestes',
+    minAge: 2,
+    cost: { wood: 140, gold: 140, favor: 10 },
+    buildTime: 9.5,
+    maxHp: 1100,
+    radius: 2.3,
+    popBonus: 0,
+    hackArmor: 0.32,
+    pierceArmor: 0.85,
+    crushArmor: 0.14,
   },
   titan_gate: {
     kind: 'titan_gate',
@@ -4336,6 +4663,20 @@ export const BUILDING_STATS: Record<BuildingKind, BuildingStats> = {
     hackArmor: 0.4,
     pierceArmor: 0.9,
     crushArmor: 0.2,
+  },
+  wonder: {
+    kind: 'wonder',
+    name: 'Maravilha',
+    role: 'Monumento supremo da Era Mítica que ativa a Era das Maravilhas (+Favor/s, recarga divina -20% e +20% poder mítico)',
+    minAge: 4,
+    cost: { food: 650, wood: 650, gold: 650, favor: 40 },
+    buildTime: 32,
+    maxHp: 4600,
+    radius: 4.4,
+    popBonus: 10,
+    hackArmor: 0.45,
+    pierceArmor: 0.94,
+    crushArmor: 0.25,
   },
 };
 
@@ -4588,7 +4929,18 @@ export interface SelectionSummary {
   repeatTraining?: boolean;
   rallyPoint?: { x: number; z: number } | null;
   hasVillagerSelected: boolean;
+  canPrayAtTemple?: boolean;
+  canCallVillagersToPray?: boolean;
+  canEmpowerMonument?: boolean;
+  prayingCount?: number;
+  templePrayerRatePerSec?: number;
+  oracleVisionPct?: number;
+  oracleFavorPerSec?: number;
+  isEmpowered?: boolean;
+  empoweredByLabel?: string;
+  isisProtected?: boolean;
   canPromoteToHero?: boolean;
+  heroPromoteIsFree?: boolean;
   heroPromoteCount?: number;
   heroPromoteCost?: ResourceCost;
   selectedCounts?: { kind: UnitKind; name: string; count: number }[];
@@ -4685,6 +5037,15 @@ export interface GameHudSnapshot {
     targetHold: number;
   };
   mapRuleTag?: string;
+  skyPassageCount?: number;
+  monumentCount?: number;
+  wonderCount?: number;
+  wonderBonusActive?: boolean;
+  favorRatePerSec: number;
+  favorBreakdown: { label: string; rate: number; detail?: string }[];
+  prayingVillagerCount?: number;
+  empoweredMonumentCount?: number;
+  oracleVisionSummary?: { count: number; avgEfficiencyPct: number; fullVisionCount: number };
 }
 
 export interface MatchStartOptions {

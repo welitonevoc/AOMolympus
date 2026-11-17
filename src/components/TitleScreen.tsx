@@ -197,22 +197,6 @@ export function TitleScreen({
       <div className="fixed top-3 right-3 z-40 flex items-center gap-1.5 rounded-lg border border-white/10 bg-[#0f141e]/95 p-1 shadow-lg">
         <button
           type="button"
-          onClick={() => {
-            soundEngine.unlock();
-            soundEngine.playSelect();
-            setUvModalOpen(true);
-          }}
-          title="Abrir Galeria 3D / 2.5D de Deuses, Unidades e Edificações"
-          className="flex h-7 items-center gap-1.5 rounded px-2.5 text-xs font-medium text-[#cbd5e1] hover:bg-[#1b2230] hover:text-[#f3d27a] cursor-pointer transition-colors"
-        >
-          <Shield className="h-3.5 w-3.5 text-[#d4af37]" />
-          <span className="hidden sm:inline">Galeria 3D</span>
-        </button>
-
-        <div className="h-4 w-px bg-white/10" />
-
-        <button
-          type="button"
           onClick={() => nav('UI_PROFILE_SELECT')}
           title="Selecionar Perfil de Jogador"
           className="flex h-7 items-center gap-1.5 rounded px-2.5 text-xs font-medium text-[#f3d27a] hover:bg-[#1b2230] cursor-pointer transition-colors"
@@ -306,6 +290,15 @@ export function TitleScreen({
                   'Opções',
                   () => nav('UI_OPTIONS_AUDIO'),
                   <SlidersHorizontal className="h-4 w-4 text-[#d4af37]" />
+                )}
+                {renderMenuBtn(
+                  'Galeria 3D',
+                  () => {
+                    soundEngine.unlock();
+                    soundEngine.playSelect();
+                    setUvModalOpen(true);
+                  },
+                  <Shield className="h-4 w-4 text-[#d4af37]" />
                 )}
                 {renderMenuBtn(
                   'Mais',

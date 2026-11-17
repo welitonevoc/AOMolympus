@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import {
   ArrowRightLeft,
   BookOpen,
-  Box,
   BoxSelect,
   Castle,
   Check,
@@ -12,6 +11,7 @@ import {
   Coins,
   Crosshair,
   Crown,
+  Eye,
   Flame,
   Flag,
   Gem,
@@ -54,6 +54,7 @@ import {
   ZoomOut,
 } from 'lucide-react';
 import {
+  getAvailableBuildingKinds,
   getCivBuildingSpec,
   getCivGodPowerSpec,
   getCivUnitSpec,
@@ -63,6 +64,7 @@ import {
   GOD_POWERS,
   TECH_SPECS,
 } from '../game/divineData';
+import { getMinorGodPortrait } from '../game/mediaAssets';
 import {
   AGE_COSTS,
   AGE_NAMES,
@@ -82,10 +84,12 @@ import {
 } from '../game/types';
 import { soundEngine } from '../game/audio';
 import { AnimatedPortrait } from './AnimatedPortrait';
+import { BuildingIcon } from './BuildingIcon';
 import { EraIcon, getEraSubtitle } from './EraIcon';
-import { HopliteUvBuilderModal } from './HopliteUvBuilderModal';
 import { Minimap } from './Minimap';
+import { ResourceIcon } from './ResourceIcon';
 import { TechIcon } from './TechIcon';
+import { UnitIcon } from './UnitIcon';
 
 const GAME_TYPE_LABELS: Record<GameTypeId, string> = {
   supremacy: 'Supremacia',
@@ -138,6 +142,10 @@ interface GameHUDProps {
   onOrderVillagersToTarget?: () => void;
   onOrderVillagerTask?: (task: 'wood' | 'food' | 'gold' | 'hunt' | 'build') => void;
   onPromoteToHero?: () => void;
+  onTeleportSkyPassage?: (buildingId: string) => void;
+  onOrderPrayTemple?: (templeId?: string) => void;
+  onOrderEmpowerMonument?: (buildingId?: string) => void;
+  onSpreadOracles?: () => void;
   onRestart: () => void;
   onReturnTitle: () => void;
 }
@@ -255,20 +263,25 @@ export function GameHUD({
   onOrderVillagersToTarget,
   onOrderVillagerTask,
   onPromoteToHero,
+  onTeleportSkyPassage,
+  onOrderPrayTemple,
+  onOrderEmpowerMonument,
+  onSpreadOracles,
   onRestart,
   onReturnTitle,
 }: GameHUDProps) {
   const [dockCollapsed, setDockCollapsed] = useState(false);
   const [showAgeBonuses, setShowAgeBonuses] = useState(false);
+  const [showFavorPanel, setShowFavorPanel] = useState(false);
   const [showDuelScore, setShowDuelScore] = useState(true);
   const [showCameraBar, setShowCameraBar] = useState(false);
   const [activeDialog, setActiveDialog] = useState<InGameDialog>('none');
-  const [uvBuilderOpen, setUvBuilderOpen] = useState(false);
   const [pausePrompt, setPausePrompt] = useState<PausePrompt>('menu');
   const [postGameTab, setPostGameTab] = useState<PostGameTab>('summary');
   const [tributeFrom, setTributeFrom] = useState<ResourceType>('food');
   const [tributeTo, setTributeTo] = useState<ResourceType>('gold');
   const [musicTrackTick, setMusicTrackTick] = useState(0);
+  const [failedMinorPortraits, setFailedMinorPortraits] = useState<Record<string, boolean>>({});
 
   // Keyboard shortcuts: H toggles bottom dock, F4 toggles Duel Scoreboard (AoM), F10 opens Menu
   useEffect(() => {
@@ -332,25 +345,18 @@ export function GameHUD({
     return Math.round((ratios.reduce((a, b) => a + b, 0) / ratios.length) * 100);
   })();
 
-  const buildingKinds: BuildingKind[] = [
-    'town_center',
-    'house',
-    'farm',
-    'barracks',
-    'archery_range',
-    'stable',
-    'siege_works',
-    'armory',
-    'market',
-    'temple',
-    'tower',
-    'fortress',
-    ...(hud.titansEnabled ? (['titan_gate'] as BuildingKind[]) : []),
-  ];
+  const buildingKinds: BuildingKind[] = getAvailableBuildingKinds(
+    hud.pantheon,
+    hud.majorGodName,
+    hud.chosenMinorGods,
+    hud.titansEnabled
+  );
   const unitKinds: UnitKind[] =
     hud.pantheon === 'egyptian'
       ? [
           'villager',
+          'fishing_ship',
+          'war_trireme',
           'priest',
           'pharaoh',
           'son_of_osiris',
@@ -386,6 +392,8 @@ export function GameHUD({
           'villager',
           'norse_dwarf',
           'ox_cart',
+          'fishing_ship',
+          'war_trireme',
           'hersir',
           'godi',
           'ulfsark',
@@ -422,6 +430,8 @@ export function GameHUD({
           'citizen',
           'oracle',
           'llama_caravan',
+          'fishing_ship',
+          'war_trireme',
           'murmillo',
           'katapeltes',
           'turma',
@@ -447,6 +457,8 @@ export function GameHUD({
         ]
       : [
           'villager',
+          'fishing_ship',
+          'war_trireme',
           'hoplite',
           'hipaspist',
           ...(hud.pantheon === 'greek' && hud.majorGodName.toLowerCase().includes('zeus')
@@ -494,7 +506,9 @@ export function GameHUD({
         ];
   const powerIds = Array.from(new Set(hud.unlockedPowers));
 
-  const buildingList = buildingKinds.map((kind) => getCivBuildingSpec(hud.pantheon, kind));
+  const buildingList = buildingKinds.map((kind) =>
+    getCivBuildingSpec(hud.pantheon, kind, hud.majorGodName, hud.age)
+  );
   const unitList = unitKinds.map((kind) => getCivUnitSpec(hud.pantheon, kind));
   const powerList = powerIds.map((id) => getCivGodPowerSpec(hud.pantheon, id));
   const techList = Object.values(TECH_SPECS);
@@ -505,13 +519,18 @@ export function GameHUD({
     hud.selection.team === 'player' &&
     hud.selection.isConstructed &&
     (hud.selection.buildingKind === 'town_center' ||
+      hud.selection.buildingKind === 'village_center' ||
       hud.selection.buildingKind === 'barracks' ||
       hud.selection.buildingKind === 'archery_range' ||
+      hud.selection.buildingKind === 'counter_barracks' ||
       hud.selection.buildingKind === 'stable' ||
+      hud.selection.buildingKind === 'great_hall' ||
       hud.selection.buildingKind === 'siege_works' ||
       hud.selection.buildingKind === 'market' ||
       hud.selection.buildingKind === 'temple' ||
-      hud.selection.buildingKind === 'fortress');
+      hud.selection.buildingKind === 'dock' ||
+      hud.selection.buildingKind === 'fortress' ||
+      hud.selection.buildingKind === 'asgard_hill_fort');
 
   const selectedPlayerBuildingKind =
     hud.selection.primaryType === 'building' && hud.selection.team === 'player'
@@ -520,338 +539,13 @@ export function GameHUD({
 
   return (
     <>
-      {/* TOP-LEFT: Quiet Minimalist Match Indicators & AoM-style Floating Notices */}
-      <div className="pointer-events-none fixed top-2 left-3 z-20 flex flex-col items-start gap-1 max-w-[min(360px,42vw)]">
-        {(options.showFps || hud.treatyRemaining > 0 || hud.kothState || hud.mapRuleTag) && (
-          <div className="flex flex-wrap items-center gap-2 text-[11px] font-mono-num text-[#f3efe6] drop-shadow-[0_1px_2px_rgba(0,0,0,0.95)]">
-            {options.showFps && hud.fps !== undefined && (
-              <span className="text-emerald-300 font-semibold">{hud.fps} FPS</span>
-            )}
-            {hud.mapRuleTag && (
-              <span className="rounded border border-[#d4af37]/45 bg-[#0d111a]/80 px-1.5 py-0.5 text-[10px] font-semibold text-[#f3d27a]">
-                {hud.mapRuleTag}
-              </span>
-            )}
-            {hud.treatyRemaining > 0 && (
-              <span className="flex items-center gap-1 text-emerald-300 font-semibold">
-                <Clock className="h-3 w-3" />
-                <span>Tratado {formatClock(hud.treatyRemaining)}</span>
-              </span>
-            )}
-            {hud.kothState && (
-              <span
-                className={`rounded border px-1.5 py-0.5 text-[10px] font-semibold ${
-                  hud.kothState.owner === 'player'
-                    ? 'border-emerald-400/50 bg-emerald-950/75 text-emerald-200'
-                    : hud.kothState.owner === 'enemy'
-                    ? 'border-rose-400/50 bg-rose-950/75 text-rose-200'
-                    : 'border-amber-400/45 bg-[#0d111a]/85 text-amber-200'
-                }`}
-              >
-                Cofre: Você {hud.kothState.playerHold}/{hud.kothState.targetHold}s · IA {hud.kothState.enemyHold}/{hud.kothState.targetHold}s
-              </span>
-            )}
-          </div>
-        )}
-
-        {(hud.statusMessage || hud.activeBuildMode || hud.activeGodPowerMode) && (
-          <div className="flex items-center gap-2 rounded border border-[#c8a962]/40 bg-[#0d111a]/88 px-2.5 py-1 text-[11px] font-medium text-[#f8f4ea] shadow-md">
-            <span className="truncate">
-              {hud.activeBuildMode
-                ? `Construindo ${getCivBuildingSpec(hud.pantheon, hud.activeBuildMode).name} — Clique no mapa`
-                : hud.activeGodPowerMode
-                ? `Alvejando ${getCivGodPowerSpec(hud.pantheon, hud.activeGodPowerMode).name} — Clique no mapa`
-                : hud.statusMessage}
-            </span>
-            {(hud.activeBuildMode || hud.activeGodPowerMode) && (
-              <button
-                type="button"
-                onClick={onCancelMode}
-                className="pointer-events-auto rounded bg-white/15 px-1.5 py-0.5 text-[10px] font-semibold text-white hover:bg-white/25 cursor-pointer shrink-0"
-              >
-                Cancelar
-              </button>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* TOP-CENTER: AoM Age Pediment (Progress + Era Bonuses), Match Timer, Duel Scoreboard & Idle Banners */}
-      <header
-        aria-label="Era Atual, Tempo da Partida, Placar do Duelo e Estandartes"
-        className="fixed top-0 left-1/2 z-20 -translate-x-1/2 flex items-start gap-2"
-      >
-        {/* Center Age, Progress, God Powers & Match Timer Plaque */}
-        <div className="relative flex flex-col items-center rounded-b-md border-x border-b border-[#c8a962]/65 bg-[#141821]/95 px-2.5 pb-1.5 pt-1 shadow-[0_6px_18px_rgba(0,0,0,0.75)]">
-          {/* Pediment Header: Era Indicator + 5-Era Pips + Progress & Advance Control */}
-          <div className="flex w-full items-center justify-between gap-2.5 border-b border-[#c8a962]/30 pb-1">
-            <button
-              type="button"
-              onClick={() => setShowAgeBonuses((v) => !v)}
-              title={`${AGE_NAMES[hud.age]} (${getEraSubtitle(hud.age, hud.pantheon)}) — Ver progresso e bônus de cada Era`}
-              className="flex items-center gap-1.5 min-w-0 rounded px-1 py-0.5 -ml-1 hover:bg-white/8 transition-colors cursor-pointer"
-            >
-              <EraIcon age={hud.age} pantheon={hud.pantheon} size={22} active />
-              <span className="font-display text-xs font-bold tracking-wide text-[#f5e3b0] truncate">
-                {AGE_NAMES[hud.age]}
-              </span>
-              <span className="hidden sm:flex items-center gap-1 ml-0.5">
-                {([1, 2, 3, 4, 5] as AgeLevel[]).map((eraNum) => {
-                  const active = eraNum === hud.age;
-                  const unlocked = eraNum <= hud.age;
-                  return (
-                    <span
-                      key={eraNum}
-                      title={`${AGE_NAMES[eraNum]} · ${getEraSubtitle(eraNum, hud.pantheon)}`}
-                      className={`inline-flex items-center rounded-sm transition-transform ${
-                        active ? 'scale-110 ring-1 ring-[#fde047]/80' : ''
-                      }`}
-                    >
-                      <EraIcon age={eraNum} pantheon={hud.pantheon} size={14} active={active} locked={!unlocked} />
-                    </span>
-                  );
-                })}
-              </span>
-              {showAgeBonuses ? (
-                <ChevronUp className="h-3 w-3 text-[#cbd5e1] shrink-0" />
-              ) : (
-                <ChevronDown className="h-3 w-3 text-[#cbd5e1] shrink-0" />
-              )}
-            </button>
-
-            <div className="flex items-center gap-1.5 shrink-0">
-              {isAdvancingAge ? (
-                <div className="flex items-center gap-1.5" title="Progresso de evolução de Era">
-                  <div className="h-1.5 w-14 overflow-hidden rounded-full bg-white/10">
-                    <div
-                      className="h-full bg-[#d4af37] transition-[width] duration-150"
-                      style={{ width: `${ageAdvancePct}%` }}
-                    />
-                  </div>
-                  <span className="font-mono-num text-[10px] font-semibold text-[#fde68a]">
-                    {Math.round(ageAdvancePct)}%
-                  </span>
-                </div>
-              ) : nextAge && nextAgeCost ? (
-                <>
-                  <div
-                    className="hidden sm:flex items-center gap-1"
-                    title={`Prontidão de recursos para ${AGE_NAMES[nextAge]}: ${ageReadinessPct}%`}
-                  >
-                    <div className="h-1 w-10 overflow-hidden rounded-full bg-white/10">
-                      <div
-                        className="h-full bg-[#d4af37]/80 transition-[width] duration-150"
-                        style={{ width: `${ageReadinessPct}%` }}
-                      />
-                    </div>
-                    <span className="font-mono-num text-[9px] text-[#94a3b8]">{ageReadinessPct}%</span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={onAdvanceAge}
-                    disabled={!canAffordNextAge}
-                    title={`Avançar para ${AGE_NAMES[nextAge]} — ${getEraSubtitle(nextAge, hud.pantheon)} (${formatCost(nextAgeCost)})`}
-                    className={`flex items-center gap-1 rounded px-2 py-0.5 text-[10px] font-bold transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
-                      canAffordNextAge
-                        ? 'bg-[#d4af37] text-[#0b0e14] hover:bg-[#e5c45e]'
-                        : 'bg-[#1b2230] text-[#94a3b8] opacity-75 cursor-not-allowed'
-                    }`}
-                  >
-                    <EraIcon age={nextAge} pantheon={hud.pantheon} size={14} locked={!canAffordNextAge} />
-                    <span>{AGE_NAMES[nextAge]}</span>
-                  </button>
-                </>
-              ) : (
-                <span className="font-mono-num text-[10px] font-semibold text-[#fde68a] whitespace-nowrap shrink-0">
-                  Deuses {activeMajorGodCount}/3
-                </span>
-              )}
-            </div>
-          </div>
-
-          {/* 4-Slot Classical God Power Tray */}
-          <div className="mt-1 flex items-center justify-center gap-1">
-            {powerList.map((p) => {
-              const locked = hud.age < p.minAge;
-              const cd = Math.ceil(hud.godPowerCooldowns[p.id] ?? 0);
-              const maxCd = Math.max(1, p.cooldown);
-              const cdRatio = cd > 0 ? Math.min(1, (hud.godPowerCooldowns[p.id] ?? 0) / maxCd) : 0;
-              const active = hud.activeGodPowerMode === p.id;
-              const cantAfford = hud.resources.favor < p.favorCost;
-              const Icon = getGodPowerIcon(p.id);
-
-              return (
-                <button
-                  key={p.id}
-                  type="button"
-                  disabled={locked || cd > 0}
-                  onClick={() => onActivateGodPower(p.id)}
-                  title={`${p.name} — ${p.description} · Custo: ${p.favorCost} Favor`}
-                  className={`relative flex h-9 w-11 flex-col items-center justify-center overflow-hidden rounded-sm border transition-colors cursor-pointer shrink-0 ${
-                    active
-                      ? 'border-[#facc15] bg-[#30260f] text-white'
-                      : locked || cd > 0
-                      ? 'border-white/10 bg-[#10141c] text-[#64748b] cursor-not-allowed'
-                      : cantAfford
-                      ? 'border-white/15 bg-[#181e2b] text-[#94a3b8] hover:border-[#c8a962]/50'
-                      : 'border-[#c8a962]/55 bg-[#1b2230] text-[#f3efe6] hover:border-[#f3d27a] hover:bg-[#242d40]'
-                  }`}
-                >
-                  {cd > 0 && (
-                    <div
-                      className="pointer-events-none absolute inset-x-0 top-0 bg-black/75 transition-[height] duration-150"
-                      style={{ height: `${cdRatio * 100}%` }}
-                    />
-                  )}
-                  <Icon
-                    className={`relative z-10 h-3.5 w-3.5 shrink-0 ${
-                      locked || cd > 0 ? 'text-[#64748b]' : 'text-[#d4af37]'
-                    }`}
-                  />
-                  <span className="relative z-10 font-mono-num text-[9px] font-semibold leading-none mt-0.5">
-                    {locked ? `E${p.minAge}` : cd > 0 ? `${cd}s` : `${p.favorCost}F`}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Match Timer directly below Age & God Powers (AoM F11 style) */}
-          <div className="mt-1 flex w-full items-center justify-center gap-2 border-t border-white/10 pt-0.5 text-[10px] text-[#cbd5e1]">
-            <span className="flex items-center gap-1 font-mono-num font-bold text-[#f3efe6]" title="Tempo da partida">
-              <Clock className="h-2.5 w-2.5 text-[#d4af37]" />
-              <span>{formatClock(hud.elapsedSeconds)}</span>
-            </span>
-            <span aria-hidden="true" className="text-[#64748b]">·</span>
-            <span className="text-[#94a3b8] truncate">{hud.dayTimeLabel}</span>
-          </div>
-
-          {/* Minimalist Expandable Era Bonuses & Progress Popover */}
-          {showAgeBonuses && (
-            <div
-              role="region"
-              aria-label="Progresso e Bônus das Eras"
-              className="absolute top-full left-1/2 mt-1.5 -translate-x-1/2 w-[min(92vw,420px)] rounded border border-[#c8a962]/65 bg-[#11151e]/98 p-3 text-xs text-[#f3efe6] shadow-2xl"
-            >
-              <div className="flex items-center justify-between gap-2 border-b border-white/10 pb-2">
-                <div className="min-w-0">
-                  <div className="font-display text-xs font-bold text-[#f5e3b0] truncate">
-                    Bônus das Eras · {playerPantheon.name} ({hud.majorGodName})
-                  </div>
-                  <div className="text-[10px] text-[#94a3b8] truncate">{playerPantheon.bonusLabel}</div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setShowAgeBonuses(false)}
-                  aria-label="Fechar bônus das Eras"
-                  className="rounded p-1 text-[#94a3b8] hover:bg-white/10 hover:text-white cursor-pointer shrink-0"
-                >
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              </div>
-
-              <div className="mt-2 divide-y divide-white/8">
-                {([1, 2, 3, 4, 5] as AgeLevel[]).map((era) => {
-                  const unlocked = hud.age >= era;
-                  const current = hud.age === era;
-                  const advancingToThis =
-                    hud.advancingToAge === era || (era === 5 && hud.activeTechResearch?.id === 'secrets_of_titans');
-                  const minorGodForEra =
-                    era >= 2 && era <= 4
-                      ? hud.chosenMinorGods
-                          .map((id) => getMinorGodSpec(id))
-                          .find((mg) => mg.age === era)
-                      : undefined;
-                  const themeInfo = soundEngine.getAgeThemeInfo(era, hud.pantheon);
-
-                  let bonusText = '';
-                  if (era === 1) {
-                    const basePower = powerList[0] ? getCivGodPowerSpec(hud.pantheon, powerList[0].id).name : 'Inicial';
-                    bonusText = `Base: Aldeões, Quartel, Casas, Fazendas e Poder ${basePower}.`;
-                  } else if (era === 2) {
-                    bonusText = minorGodForEra
-                      ? `${minorGodForEra.name}: ${minorGodForEra.passiveBonusLabel} · ${minorGodForEra.mythUnitTitle}`
-                      : 'Desbloqueia Campo de Tiro, Estábulo, Armaria, Templo, Mercado e Deus Menor.';
-                  } else if (era === 3) {
-                    bonusText = minorGodForEra
-                      ? `${minorGodForEra.name}: ${minorGodForEra.passiveBonusLabel} · ${minorGodForEra.mythUnitTitle}`
-                      : 'Desbloqueia Oficina de Cerco, Fortaleza, Heróis de elite e Deus Menor.';
-                  } else if (era === 4) {
-                    bonusText = minorGodForEra
-                      ? `${minorGodForEra.name}: ${minorGodForEra.passiveBonusLabel} · ${minorGodForEra.mythUnitTitle}`
-                      : 'Desbloqueia Soldados Campeões, Forja de Ferro, Mirmidões e Deus Menor.';
-                  } else {
-                    bonusText = hud.titansEnabled
-                      ? 'Convocação de Deuses Maiores e Menores no Templo + Portão do Titã.'
-                      : 'Convocação de Deuses Maiores e Menores no Templo.';
-                  }
-
-                  return (
-                    <div key={era} className="py-1.5 flex items-start justify-between gap-2">
-                      <div className="flex items-start gap-2 min-w-0">
-                        <EraIcon
-                          age={era}
-                          pantheon={hud.pantheon}
-                          size={30}
-                          active={current}
-                          locked={!unlocked}
-                          className="mt-0.5"
-                        />
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            <span
-                              className={`text-[11px] font-bold ${
-                                current ? 'text-[#fde68a]' : unlocked ? 'text-[#d4af37]' : 'text-[#64748b]'
-                              }`}
-                            >
-                              {AGE_NAMES[era]}
-                            </span>
-                            <span className="text-[10px] text-[#94a3b8] font-medium">
-                              · {getEraSubtitle(era, hud.pantheon)}
-                            </span>
-                            <span className="text-[10px] text-[#94a3b8]">
-                              {current ? '· Atual' : unlocked ? '· Concluída' : advancingToThis ? `· ${Math.round(ageAdvancePct)}%` : ''}
-                            </span>
-                            <span className="text-[9px] text-[#c8a962]/85 font-medium">
-                              ({themeInfo.intensityLabel})
-                            </span>
-                          </div>
-                          <p className={`text-[10px] leading-snug ${unlocked ? 'text-[#cbd5e1]' : 'text-[#64748b]'}`}>
-                            {bonusText}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        {!unlocked && era === nextAge && nextAgeCost && (
-                          <span className="font-mono-num text-[9px] text-[#94a3b8] text-right">
-                            {ageReadinessPct}%
-                          </span>
-                        )}
-                        <button
-                          type="button"
-                          onClick={() => soundEngine.playAgeTransitionComplete(era, hud.pantheon, false)}
-                          title={`${themeInfo.title} — ${themeInfo.description} (Clique para ouvir)`}
-                          aria-label={`Ouvir ${themeInfo.title}`}
-                          className="flex items-center gap-1 rounded border border-[#c8a962]/40 bg-[#1a2232] px-1.5 py-0.5 text-[9px] font-semibold text-[#f5e3b0] hover:border-[#facc15] hover:bg-[#c8a962]/20 cursor-pointer transition"
-                        >
-                          <Volume2 className="h-2.5 w-2.5 text-[#facc15]" />
-                          <span>Tema {era}</span>
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* AoM Duel Scoreboard (F4) — Placed beside Age Plaque showing Duelists & Live Score */}
+      {/* TOP-LEFT: AoM Duel Scoreboard (F4) & Quiet Match Indicators */}
+      <div className="pointer-events-none fixed top-0 left-2.5 z-20 flex flex-col items-start gap-1.5 max-w-[min(300px,34vw)]">
         {showDuelScore ? (
           <div
             aria-label="Placar do Duelo (F4)"
             title="Pontuação ao estilo Age of Mythology: Economia (Recursos, Aldeões e Centros) + Militar (Exército e Baixas) + Evolução/Tecnologias + Sociedade (F4 para ocultar)"
-            className="flex flex-col justify-center rounded-b-md border-x border-b border-[#c8a962]/55 bg-[#141821]/95 px-2.5 py-1.5 shadow-[0_6px_18px_rgba(0,0,0,0.75)] min-w-[168px]"
+            className="pointer-events-auto flex flex-col justify-center rounded-b-md border-x border-b border-[#c8a962]/60 bg-[#10141e]/95 px-2.5 py-1.5 shadow-[0_8px_20px_rgba(0,0,0,0.75)] min-w-[186px]"
           >
             {(() => {
               const duelists = [
@@ -876,8 +570,11 @@ export function GameHUD({
               const tied = duelists[0].score === duelists[1].score;
               return (
                 <div className="flex flex-col gap-0.5">
-                  <div className="flex items-center justify-between gap-2 text-[10px] font-medium text-[#94a3b8] border-b border-white/10 pb-0.5 mb-0.5">
-                    <span>Duelo</span>
+                  <div className="flex items-center justify-between gap-3 text-[10px] font-semibold tracking-wide text-[#c8a962] border-b border-white/10 pb-0.5 mb-0.5">
+                    <span className="flex items-center gap-1 uppercase">
+                      <Swords className="h-2.5 w-2.5 text-[#d4af37]" />
+                      <span>Duelo</span>
+                    </span>
                     <button
                       type="button"
                       onClick={() => setShowDuelScore(false)}
@@ -893,7 +590,7 @@ export function GameHUD({
                       <div
                         key={d.id}
                         title={`${d.label} · Era ${d.age} | Econ ${d.breakdown.economy} · Mil ${d.breakdown.military} · Evol/Tech ${d.breakdown.technology} · Centros/Soc ${d.breakdown.society}`}
-                        className="flex items-center justify-between gap-3 text-[11px] whitespace-nowrap"
+                        className="flex items-center justify-between gap-2.5 text-[11px] whitespace-nowrap"
                       >
                         <div className="flex items-center gap-1 min-w-0">
                           <span
@@ -905,10 +602,13 @@ export function GameHUD({
                             {isLeader ? '▲' : '·'}
                           </span>
                           <span
-                            className="font-semibold truncate max-w-[120px]"
+                            className="font-semibold truncate max-w-[125px]"
                             style={{ color: d.color }}
                           >
                             {d.label}
+                          </span>
+                          <span className="font-mono-num text-[9px] text-[#94a3b8] shrink-0">
+                            E{d.age}
                           </span>
                         </div>
                         <span
@@ -930,52 +630,410 @@ export function GameHUD({
             type="button"
             onClick={() => setShowDuelScore(true)}
             title="Mostrar Placar do Duelo (F4)"
-            className="rounded-b-md border-x border-b border-[#c8a962]/45 bg-[#141821]/92 px-2 py-1 text-[10px] font-semibold text-[#cbd5e1] hover:text-[#fde68a] cursor-pointer shadow-md whitespace-nowrap"
+            className="pointer-events-auto rounded-b-md border-x border-b border-[#c8a962]/45 bg-[#10141e]/92 px-2.5 py-1 text-[10px] font-semibold text-[#cbd5e1] hover:text-[#fde68a] cursor-pointer shadow-md whitespace-nowrap"
           >
             Duelo (F4)
           </button>
         )}
 
-        {/* AoM: The Titans Hanging Vertical Banners ("Estandartes") — Appear Immediately When Units Go Idle */}
-        {(hud.idleVillagerCount > 0 || hud.idleMilitaryCount > 0) && (
-          <div className="flex items-start gap-1.5 pt-0" aria-label="Estandartes de unidades ociosas">
-            {hud.idleVillagerCount > 0 && (
-              <button
-                type="button"
-                onClick={onSelectIdleVillager}
-                title={`Aldeão ocioso (${hud.idleVillagerCount}) — Clique ou pressione '.' para selecionar`}
-                aria-label={`Selecionar aldeão ocioso (${hud.idleVillagerCount})`}
-                style={{ clipPath: 'polygon(0 0, 100% 0, 100% 100%, 50% 82%, 0 100%)' }}
-                className="group relative flex h-16 w-10 flex-col items-center justify-start border-x border-t-2 border-[#d4af37] bg-gradient-to-b from-[#efe3c6] via-[#d7c08e] to-[#a98b4e] pt-1.5 text-[#1b1408] shadow-[0_6px_14px_rgba(0,0,0,0.75)] transition-transform hover:translate-y-0.5 cursor-pointer"
-              >
-                <div className="absolute inset-x-0 top-0 h-1 bg-[#8a6a2a]" />
-                <Users className="h-4 w-4 text-[#2b1f0b]" />
-                <span className="font-mono-num mt-0.5 text-xs font-extrabold leading-none text-[#1b1408]">
-                  {hud.idleVillagerCount}
-                </span>
-                <span className="mt-0.5 text-[8px] font-bold tracking-tight uppercase opacity-80">
-                  Aldeão
-                </span>
-              </button>
+        {(options.showFps || hud.treatyRemaining > 0 || hud.kothState || hud.mapRuleTag) && (
+          <div className="flex flex-wrap items-center gap-2 text-[11px] font-mono-num text-[#f3efe6] drop-shadow-[0_1px_2px_rgba(0,0,0,0.95)] pl-0.5">
+            {options.showFps && hud.fps !== undefined && (
+              <span className="text-emerald-300 font-semibold">{hud.fps} FPS</span>
             )}
+            {hud.mapRuleTag && (
+              <span className="text-[10px] font-semibold text-[#f3d27a]">
+                {hud.mapRuleTag}
+              </span>
+            )}
+            {hud.treatyRemaining > 0 && (
+              <span className="flex items-center gap-1 text-emerald-300 font-semibold">
+                <Clock className="h-3 w-3" />
+                <span>Tratado {formatClock(hud.treatyRemaining)}</span>
+              </span>
+            )}
+            {hud.kothState && (
+              <span
+                className={`rounded border px-1.5 py-0.5 text-[10px] font-semibold ${
+                  hud.kothState.owner === 'player'
+                    ? 'border-emerald-400/50 bg-emerald-950/75 text-emerald-200'
+                    : hud.kothState.owner === 'enemy'
+                    ? 'border-rose-400/50 bg-rose-950/75 text-rose-200'
+                    : 'border-amber-400/45 bg-[#0d111a]/85 text-amber-200'
+                }`}
+              >
+                Cofre: Você {hud.kothState.playerHold}/{hud.kothState.targetHold}s · IA {hud.kothState.enemyHold}/{hud.kothState.targetHold}s
+              </span>
+            )}
+          </div>
+        )}
+      </div>
 
-            {hud.idleMilitaryCount > 0 && (
+      {/* TOP-CENTER: Redesigned AoM Retold Era Pediment, God Powers, Clock, Below-Clock Notices & Idle Banners */}
+      <header
+        aria-label="Painel das Eras, Poderes Divinos, Relógio e Estandartes"
+        className="pointer-events-none fixed top-0 left-1/2 z-20 -translate-x-1/2 flex flex-col items-center"
+      >
+        <div className="flex items-start gap-2">
+          {/* Redesigned Era Pediment Plaque */}
+          <div className="pointer-events-auto relative flex flex-col items-center rounded-b-lg border-x border-b border-[#c8a962]/75 bg-gradient-to-b from-[#171d2c]/98 via-[#121722]/96 to-[#0c1018]/98 px-3 pb-1.5 pt-1.5 shadow-[0_10px_26px_rgba(0,0,0,0.85)] min-w-[320px] sm:min-w-[404px]">
+            <div className="pointer-events-none absolute inset-x-3 top-0 h-[2px] bg-gradient-to-r from-transparent via-[#f3d27a]/85 to-transparent" />
+
+            {/* Tier 1: Active Era Emblem + Connected 5-Era Track + Evolution Control */}
+            <div className="flex w-full items-center justify-between gap-3 border-b border-[#c8a962]/25 pb-1.5">
               <button
                 type="button"
-                onClick={onSelectIdleMilitary}
-                title={`Guerreiro / unidade ociosa (${hud.idleMilitaryCount}) — Clique ou pressione ',' para selecionar`}
-                aria-label={`Selecionar guerreiro ocioso (${hud.idleMilitaryCount})`}
-                style={{ clipPath: 'polygon(0 0, 100% 0, 100% 100%, 50% 82%, 0 100%)' }}
-                className="group relative flex h-16 w-10 flex-col items-center justify-start border-x border-t-2 border-[#e0b861] bg-gradient-to-b from-[#a6302d] via-[#7f1d1d] to-[#521212] pt-1.5 text-[#fef3c7] shadow-[0_6px_14px_rgba(0,0,0,0.75)] transition-transform hover:translate-y-0.5 cursor-pointer"
+                onClick={() => setShowAgeBonuses((v) => !v)}
+                title={`${AGE_NAMES[hud.age]} (${getEraSubtitle(hud.age, hud.pantheon)}) — Ver bônus e progresso das Eras`}
+                className="flex items-center gap-2 min-w-0 rounded px-1 py-0.5 -ml-1 hover:bg-white/8 transition-colors cursor-pointer"
               >
-                <div className="absolute inset-x-0 top-0 h-1 bg-[#c8a962]" />
-                <Swords className="h-4 w-4 text-[#fde68a]" />
-                <span className="font-mono-num mt-0.5 text-xs font-extrabold leading-none text-white">
-                  {hud.idleMilitaryCount}
+                <div className="flex h-7 w-7 items-center justify-center rounded border border-[#d4af37]/65 bg-[#1b2232] shadow-inner shrink-0">
+                  <EraIcon age={hud.age} pantheon={hud.pantheon} size={22} active />
+                </div>
+                <div className="min-w-0 text-left">
+                  <div className="flex items-center gap-1">
+                    <span className="font-display text-xs font-bold tracking-wide text-[#f5e3b0] truncate">
+                      {AGE_NAMES[hud.age]}
+                    </span>
+                    {showAgeBonuses ? (
+                      <ChevronUp className="h-3 w-3 text-[#d4af37] shrink-0" />
+                    ) : (
+                      <ChevronDown className="h-3 w-3 text-[#d4af37] shrink-0" />
+                    )}
+                  </div>
+                  <div className="text-[9px] font-medium text-[#94a3b8] leading-none truncate">
+                    {getEraSubtitle(hud.age, hud.pantheon)}
+                  </div>
+                </div>
+              </button>
+
+              {/* Connected 5-Era Stepper */}
+              <div className="hidden md:flex items-center relative px-1" aria-label="Linha do tempo das cinco eras">
+                <div className="pointer-events-none absolute left-2.5 right-2.5 top-1/2 -translate-y-1/2 h-[2px] bg-white/10" />
+                <div
+                  className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 h-[2px] bg-gradient-to-r from-[#c8a962] to-[#fde047] transition-[width] duration-300"
+                  style={{ width: `${Math.max(0, Math.min(100, ((hud.age - 1) / 4) * 86))}%` }}
+                />
+                <div className="relative z-10 flex items-center gap-1.5">
+                  {([1, 2, 3, 4, 5] as AgeLevel[]).map((eraNum) => {
+                    const active = eraNum === hud.age;
+                    const unlocked = eraNum <= hud.age;
+                    const roman = ['I', 'II', 'III', 'IV', 'V'][eraNum - 1];
+                    return (
+                      <button
+                        key={eraNum}
+                        type="button"
+                        onClick={() => setShowAgeBonuses(true)}
+                        title={`${AGE_NAMES[eraNum]} (${roman}) · ${getEraSubtitle(eraNum, hud.pantheon)}`}
+                        className={`flex h-5 w-5 items-center justify-center rounded-sm border transition-transform cursor-pointer ${
+                          active
+                            ? 'scale-110 border-[#fde047] bg-[#2a210c] shadow-[0_0_8px_rgba(250,204,21,0.35)]'
+                            : unlocked
+                            ? 'border-[#c8a962]/65 bg-[#1b2232]'
+                            : 'border-white/12 bg-[#0f141f] opacity-75'
+                        }`}
+                      >
+                        <EraIcon age={eraNum} pantheon={hud.pantheon} size={13} active={active} locked={!unlocked} />
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Right: Next Era Advance / Progress */}
+              <div className="flex items-center gap-1.5 shrink-0">
+                {isAdvancingAge ? (
+                  <div className="flex items-center gap-1.5 rounded border border-[#d4af37]/50 bg-[#1e1a10] px-2 py-1" title="Progresso de evolução de Era">
+                    <div className="h-1.5 w-14 overflow-hidden rounded-full bg-white/10">
+                      <div
+                        className="h-full bg-[#d4af37] transition-[width] duration-150"
+                        style={{ width: `${ageAdvancePct}%` }}
+                      />
+                    </div>
+                    <span className="font-mono-num text-[10px] font-bold text-[#fde68a]">
+                      {Math.round(ageAdvancePct)}%
+                    </span>
+                  </div>
+                ) : nextAge && nextAgeCost ? (
+                  <button
+                    type="button"
+                    onClick={onAdvanceAge}
+                    disabled={!canAffordNextAge}
+                    title={`Avançar para ${AGE_NAMES[nextAge]} — ${getEraSubtitle(nextAge, hud.pantheon)} (${formatCost(nextAgeCost)})`}
+                    className={`flex items-center gap-1.5 rounded border px-2 py-1 text-[10px] font-bold transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                      canAffordNextAge
+                        ? 'border-[#fde047]/80 bg-gradient-to-b from-[#e5c45e] to-[#c4972c] text-[#0b0e14] hover:from-[#f3d27a] hover:to-[#d4af37] shadow-sm'
+                        : 'border-white/12 bg-[#171e2c] text-[#94a3b8] hover:border-[#c8a962]/40 cursor-not-allowed'
+                    }`}
+                  >
+                    <EraIcon age={nextAge} pantheon={hud.pantheon} size={14} locked={!canAffordNextAge} />
+                    <span>{AGE_NAMES[nextAge]}</span>
+                    {!canAffordNextAge && (
+                      <span className="font-mono-num text-[9px] text-[#cbd5e1]/80">{ageReadinessPct}%</span>
+                    )}
+                  </button>
+                ) : (
+                  <span className="font-mono-num text-[10px] font-semibold text-[#fde68a] whitespace-nowrap shrink-0">
+                    Deuses {activeMajorGodCount}/3
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Tier 2: Centered God Power Slots + Integrated Clock Plinth */}
+            <div className="mt-1.5 flex w-full items-center justify-between gap-3">
+              <div className="flex items-center gap-1">
+                {powerList.map((p) => {
+                  const locked = hud.age < p.minAge;
+                  const cd = Math.ceil(hud.godPowerCooldowns[p.id] ?? 0);
+                  const maxCd = Math.max(1, p.cooldown);
+                  const cdRatio = cd > 0 ? Math.min(1, (hud.godPowerCooldowns[p.id] ?? 0) / maxCd) : 0;
+                  const active = hud.activeGodPowerMode === p.id;
+                  const cantAfford = hud.resources.favor < p.favorCost;
+                  const Icon = getGodPowerIcon(p.id);
+
+                  return (
+                    <button
+                      key={p.id}
+                      type="button"
+                      disabled={locked || cd > 0}
+                      onClick={() => onActivateGodPower(p.id)}
+                      title={`${p.name} — ${p.description} · Custo: ${p.favorCost} Favor`}
+                      className={`relative flex h-8 w-10 flex-col items-center justify-center overflow-hidden rounded-sm border transition-colors cursor-pointer shrink-0 ${
+                        active
+                          ? 'border-[#facc15] bg-[#30260f] text-white'
+                          : locked || cd > 0
+                          ? 'border-white/10 bg-[#10141c] text-[#64748b] cursor-not-allowed'
+                          : cantAfford
+                          ? 'border-white/15 bg-[#181e2b] text-[#94a3b8] hover:border-[#c8a962]/50'
+                          : 'border-[#c8a962]/55 bg-[#1b2230] text-[#f3efe6] hover:border-[#f3d27a] hover:bg-[#242d40]'
+                      }`}
+                    >
+                      {cd > 0 && (
+                        <div
+                          className="pointer-events-none absolute inset-x-0 top-0 bg-black/75 transition-[height] duration-150"
+                          style={{ height: `${cdRatio * 100}%` }}
+                        />
+                      )}
+                      <Icon
+                        className={`relative z-10 h-3 w-3 shrink-0 ${
+                          locked || cd > 0 ? 'text-[#64748b]' : 'text-[#d4af37]'
+                        }`}
+                      />
+                      <span className="relative z-10 font-mono-num text-[9px] font-semibold leading-none mt-0.5">
+                        {locked ? `E${p.minAge}` : cd > 0 ? `${cd}s` : `${p.favorCost}F`}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Compact Clock & Day-Time Plinth */}
+              <div className="flex items-center gap-1.5 rounded border border-[#c8a962]/30 bg-[#0d111a]/85 px-2.5 py-1 text-[10px] text-[#cbd5e1] shrink-0">
+                <Clock className="h-3 w-3 text-[#d4af37] shrink-0" />
+                <span className="font-mono-num font-bold text-[#f3efe6]" title="Tempo da partida">
+                  {formatClock(hud.elapsedSeconds)}
                 </span>
-                <span className="mt-0.5 text-[8px] font-bold tracking-tight uppercase opacity-85">
-                  Tropa
-                </span>
+                <span aria-hidden="true" className="text-[#64748b]">·</span>
+                <span className="text-[#94a3b8] whitespace-nowrap">{hud.dayTimeLabel}</span>
+              </div>
+            </div>
+
+            {/* Expandable Era Bonuses & Progress Popover */}
+            {showAgeBonuses && (
+              <div
+                role="region"
+                aria-label="Progresso e Bônus das Eras"
+                className="absolute top-full left-1/2 mt-1.5 -translate-x-1/2 w-[min(92vw,430px)] rounded border border-[#c8a962]/65 bg-[#11151e]/98 p-3 text-xs text-[#f3efe6] shadow-2xl z-30"
+              >
+                <div className="flex items-center justify-between gap-2 border-b border-white/10 pb-2">
+                  <div className="min-w-0">
+                    <div className="font-display text-xs font-bold text-[#f5e3b0] truncate">
+                      Bônus das Eras · {playerPantheon.name} ({hud.majorGodName})
+                    </div>
+                    <div className="text-[10px] text-[#94a3b8] truncate">{playerPantheon.bonusLabel}</div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowAgeBonuses(false)}
+                    aria-label="Fechar bônus das Eras"
+                    className="rounded p-1 text-[#94a3b8] hover:bg-white/10 hover:text-white cursor-pointer shrink-0"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+
+                <div className="mt-2 divide-y divide-white/8">
+                  {([1, 2, 3, 4, 5] as AgeLevel[]).map((era) => {
+                    const unlocked = hud.age >= era;
+                    const current = hud.age === era;
+                    const advancingToThis =
+                      hud.advancingToAge === era || (era === 5 && hud.activeTechResearch?.id === 'secrets_of_titans');
+                    const minorGodForEra =
+                      era >= 2 && era <= 4
+                        ? hud.chosenMinorGods
+                            .map((id) => getMinorGodSpec(id))
+                            .find((mg) => mg.age === era)
+                        : undefined;
+                    const themeInfo = soundEngine.getAgeThemeInfo(era, hud.pantheon);
+
+                    let bonusText = '';
+                    if (era === 1) {
+                      const basePower = powerList[0] ? getCivGodPowerSpec(hud.pantheon, powerList[0].id).name : 'Inicial';
+                      bonusText = `Base: Aldeões, Quartel, Casas, Fazendas e Poder ${basePower}.`;
+                    } else if (era === 2) {
+                      bonusText = minorGodForEra
+                        ? `${minorGodForEra.name}: ${minorGodForEra.passiveBonusLabel} · ${minorGodForEra.mythUnitTitle}`
+                        : 'Desbloqueia Campo de Tiro, Estábulo, Armaria, Templo, Mercado e Deus Menor.';
+                    } else if (era === 3) {
+                      bonusText = minorGodForEra
+                        ? `${minorGodForEra.name}: ${minorGodForEra.passiveBonusLabel} · ${minorGodForEra.mythUnitTitle}`
+                        : 'Desbloqueia Oficina de Cerco, Fortaleza, Heróis de elite e Deus Menor.';
+                    } else if (era === 4) {
+                      bonusText = minorGodForEra
+                        ? `${minorGodForEra.name}: ${minorGodForEra.passiveBonusLabel} · ${minorGodForEra.mythUnitTitle}`
+                        : 'Desbloqueia Soldados Campeões, Forja de Ferro, Mirmidões e Deus Menor.';
+                    } else {
+                      bonusText = hud.titansEnabled
+                        ? 'Convocação de Deuses Maiores e Menores no Templo + Portão do Titã.'
+                        : 'Convocação de Deuses Maiores e Menores no Templo.';
+                    }
+
+                    return (
+                      <div key={era} className="py-1.5 flex items-start justify-between gap-2">
+                        <div className="flex items-start gap-2 min-w-0">
+                          {minorGodForEra && !failedMinorPortraits[minorGodForEra.id] ? (
+                            <img
+                              src={getMinorGodPortrait(minorGodForEra.id, hud.pantheon)}
+                              alt={minorGodForEra.name}
+                              referrerPolicy="no-referrer"
+                              onError={() =>
+                                setFailedMinorPortraits((prev) => ({ ...prev, [minorGodForEra.id]: true }))
+                              }
+                              className="mt-0.5 h-8 w-8 rounded border border-[#c8a962]/70 object-cover shrink-0"
+                            />
+                          ) : (
+                            <EraIcon
+                              age={era}
+                              pantheon={hud.pantheon}
+                              size={30}
+                              active={current}
+                              locked={!unlocked}
+                              className="mt-0.5"
+                            />
+                          )}
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span
+                                className={`text-[11px] font-bold ${
+                                  current ? 'text-[#fde68a]' : unlocked ? 'text-[#d4af37]' : 'text-[#64748b]'
+                                }`}
+                              >
+                                {AGE_NAMES[era]}
+                              </span>
+                              <span className="text-[10px] text-[#94a3b8] font-medium">
+                                · {getEraSubtitle(era, hud.pantheon)}
+                              </span>
+                              <span className="text-[10px] text-[#94a3b8]">
+                                {current ? '· Atual' : unlocked ? '· Concluída' : advancingToThis ? `· ${Math.round(ageAdvancePct)}%` : ''}
+                              </span>
+                              <span className="text-[9px] text-[#c8a962]/85 font-medium">
+                                ({themeInfo.intensityLabel})
+                              </span>
+                            </div>
+                            <p className={`text-[10px] leading-snug ${unlocked ? 'text-[#cbd5e1]' : 'text-[#64748b]'}`}>
+                              {bonusText}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          {!unlocked && era === nextAge && nextAgeCost && (
+                            <span className="font-mono-num text-[9px] text-[#94a3b8] text-right">
+                              {ageReadinessPct}%
+                            </span>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => soundEngine.playAgeTransitionComplete(era, hud.pantheon, false)}
+                            title={`${themeInfo.title} — ${themeInfo.description} (Clique para ouvir)`}
+                            aria-label={`Ouvir ${themeInfo.title}`}
+                            className="flex items-center gap-1 rounded border border-[#c8a962]/40 bg-[#1a2232] px-1.5 py-0.5 text-[9px] font-semibold text-[#f5e3b0] hover:border-[#facc15] hover:bg-[#c8a962]/20 cursor-pointer transition"
+                          >
+                            <Volume2 className="h-2.5 w-2.5 text-[#facc15]" />
+                            <span>Tema {era}</span>
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* AoM: The Titans Hanging Vertical Banners ("Estandartes") */}
+          {(hud.idleVillagerCount > 0 || hud.idleMilitaryCount > 0) && (
+            <div className="pointer-events-auto flex items-start gap-1.5 pt-0" aria-label="Estandartes de unidades ociosas">
+              {hud.idleVillagerCount > 0 && (
+                <button
+                  type="button"
+                  onClick={onSelectIdleVillager}
+                  title={`Aldeão ocioso (${hud.idleVillagerCount}) — Clique ou pressione '.' para selecionar`}
+                  aria-label={`Selecionar aldeão ocioso (${hud.idleVillagerCount})`}
+                  style={{ clipPath: 'polygon(0 0, 100% 0, 100% 100%, 50% 82%, 0 100%)' }}
+                  className="group relative flex h-16 w-10 flex-col items-center justify-start border-x border-t-2 border-[#d4af37] bg-gradient-to-b from-[#efe3c6] via-[#d7c08e] to-[#a98b4e] pt-1.5 text-[#1b1408] shadow-[0_6px_14px_rgba(0,0,0,0.75)] transition-transform hover:translate-y-0.5 cursor-pointer"
+                >
+                  <div className="absolute inset-x-0 top-0 h-1 bg-[#8a6a2a]" />
+                  <Users className="h-4 w-4 text-[#2b1f0b]" />
+                  <span className="font-mono-num mt-0.5 text-xs font-extrabold leading-none text-[#1b1408]">
+                    {hud.idleVillagerCount}
+                  </span>
+                  <span className="mt-0.5 text-[8px] font-bold tracking-tight uppercase opacity-80">
+                    Aldeão
+                  </span>
+                </button>
+              )}
+
+              {hud.idleMilitaryCount > 0 && (
+                <button
+                  type="button"
+                  onClick={onSelectIdleMilitary}
+                  title={`Guerreiro / unidade ociosa (${hud.idleMilitaryCount}) — Clique ou pressione ',' para selecionar`}
+                  aria-label={`Selecionar guerreiro ocioso (${hud.idleMilitaryCount})`}
+                  style={{ clipPath: 'polygon(0 0, 100% 0, 100% 100%, 50% 82%, 0 100%)' }}
+                  className="group relative flex h-16 w-10 flex-col items-center justify-start border-x border-t-2 border-[#e0b861] bg-gradient-to-b from-[#a6302d] via-[#7f1d1d] to-[#521212] pt-1.5 text-[#fef3c7] shadow-[0_6px_14px_rgba(0,0,0,0.75)] transition-transform hover:translate-y-0.5 cursor-pointer"
+                >
+                  <div className="absolute inset-x-0 top-0 h-1 bg-[#c8a962]" />
+                  <Swords className="h-4 w-4 text-[#fde68a]" />
+                  <span className="font-mono-num mt-0.5 text-xs font-extrabold leading-none text-white">
+                    {hud.idleMilitaryCount}
+                  </span>
+                  <span className="mt-0.5 text-[8px] font-bold tracking-tight uppercase opacity-85">
+                    Tropa
+                  </span>
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Transient Notices (Weather / Sky / Build / God Power) Centered Below the Clock */}
+        {(hud.statusMessage || hud.activeBuildMode || hud.activeGodPowerMode) && (
+          <div className="pointer-events-auto mt-1.5 flex items-center gap-2 rounded border border-[#c8a962]/50 bg-[#0d111a]/92 px-3 py-1 text-[11px] font-medium text-[#f8f4ea] shadow-[0_6px_18px_rgba(0,0,0,0.75)] max-w-[min(460px,84vw)]">
+            <span className="truncate">
+              {hud.activeBuildMode
+                ? `Construindo ${getCivBuildingSpec(hud.pantheon, hud.activeBuildMode, hud.majorGodName, hud.age).name} — Clique no mapa`
+                : hud.activeGodPowerMode
+                ? `Alvejando ${getCivGodPowerSpec(hud.pantheon, hud.activeGodPowerMode).name} — Clique no mapa`
+                : hud.statusMessage}
+            </span>
+            {(hud.activeBuildMode || hud.activeGodPowerMode) && (
+              <button
+                type="button"
+                onClick={onCancelMode}
+                className="rounded bg-white/15 px-1.5 py-0.5 text-[10px] font-semibold text-white hover:bg-white/25 cursor-pointer shrink-0"
+              >
+                Cancelar
               </button>
             )}
           </div>
@@ -1052,15 +1110,6 @@ export function GameHUD({
             }`}
           >
             <Orbit className="h-3.5 w-3.5" />
-          </button>
-          <button
-            type="button"
-            onClick={() => setUvBuilderOpen(true)}
-            title="Galeria 3D / 2.5D"
-            aria-label="Galeria 3D"
-            className="flex h-7 w-7 items-center justify-center rounded text-[#d4af37] hover:bg-white/10 hover:text-[#f3d27a] cursor-pointer transition-colors"
-          >
-            <Shield className="h-3.5 w-3.5" />
           </button>
           <button
             type="button"
@@ -1278,7 +1327,7 @@ export function GameHUD({
           </div>
         )}
 
-      {/* AoM: THE TITANS MINIMALIST ANCHORED BOTTOM BAR */}
+      {/* AoM: RETOLD ANCHORED COMMAND DOCK (PAINEL H) */}
       <div
         className={`fixed bottom-0 inset-x-0 z-20 pointer-events-none transition-transform duration-200 ${
           dockCollapsed ? 'translate-y-[calc(100%-24px)]' : 'translate-y-0'
@@ -1289,71 +1338,191 @@ export function GameHUD({
           <button
             type="button"
             onClick={() => setDockCollapsed((p) => !p)}
-            className="pointer-events-auto flex items-center gap-1 rounded-t border border-b-0 border-[#c8a962]/45 bg-[#12161f]/95 px-2.5 py-0.5 text-[10px] font-medium text-[#d4af37] hover:text-white cursor-pointer whitespace-nowrap"
+            className="pointer-events-auto flex items-center gap-1.5 rounded-t border border-b-0 border-[#c8a962]/65 bg-[#0d111a]/96 px-3 py-0.5 text-[10px] font-semibold tracking-wide text-[#f3d27a] shadow hover:bg-[#161e2e] hover:text-white cursor-pointer whitespace-nowrap"
           >
             {dockCollapsed ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-            <span>{dockCollapsed ? 'Mostrar Painel (H)' : 'Ocultar (H)'}</span>
+            <span>{dockCollapsed ? 'Painel H — Expandir' : 'Ocultar Painel (H)'}</span>
           </button>
         </div>
 
-        {/* Main AoM: The Titans Bottom Strip (Flush Left Resources + Slim Center Frame + Diamond Minimap) */}
+        {/* Main AoM: Retold Bottom Strip (Bronze/Obsidian Resource Ledger + Command Dock + Diamond Minimap) */}
         <div className="pointer-events-auto flex flex-col md:flex-row items-stretch md:items-end justify-between gap-2 px-1.5 pb-1.5">
-          {/* ZONE 1 (BOTTOM-LEFT): Classic AoM Vertical Resource & Population Box */}
-          <div className="md:w-[132px] shrink-0 rounded border-2 border-[#c8a962]/60 bg-[#12161f]/95 px-2.5 py-2 text-xs shadow-2xl">
+          {/* ZONE 1 (BOTTOM-LEFT): AoM Retold Resource & Population Ledger */}
+          <div className="relative md:w-[164px] shrink-0 rounded-md border-2 border-[#c8a962]/70 bg-[#0d111a]/96 px-2.5 py-2 text-xs shadow-[0_10px_28px_rgba(0,0,0,0.85)]">
+            {showFavorPanel && (
+              <div className="absolute bottom-full left-0 mb-2 w-72 rounded-md border-2 border-[#38bdf8]/65 bg-[#0b101b]/98 p-2.5 text-[11px] text-[#f3efe6] shadow-[0_12px_32px_rgba(0,0,0,0.9)] z-30">
+                <div className="flex items-center justify-between gap-2 border-b border-[#38bdf8]/30 pb-1.5">
+                  <div className="flex items-center gap-1.5 font-display text-xs font-bold text-[#7dd3fc]">
+                    <ResourceIcon kind="favor" size={16} />
+                    <span>Favor Divino</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-mono-num text-[10px] font-bold text-[#38bdf8]">
+                      +{(hud.favorRatePerSec ?? 0).toFixed(2)}/s
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setShowFavorPanel(false)}
+                      className="rounded p-0.5 text-[#94a3b8] hover:bg-white/10 hover:text-white cursor-pointer"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
+
+                <p className="mt-1.5 text-[10px] leading-snug text-[#cbd5e1]">
+                  {hud.pantheon === 'greek'
+                    ? 'Gregos: Envie aldeões para orar nos Templos (Zeus +20%, Afrodite/Maçãs de Ouro +20%).'
+                    : hud.pantheon === 'egyptian'
+                    ? 'Egípcios: Construa até 5 Monumentos passivos. Faraó e Sacerdotes de Rá energizam; Ísis cura e protege.'
+                    : hud.pantheon === 'norse'
+                    ? 'Nórdicos: Unidades e navios geram favor em combate (Hersir 3,4×, Odin +25% no Grande Salão, Bragi +1 por Ulfsark abatido).'
+                    : 'Atlantes: Oráculos parados e espaçados geram favor conforme alcance de visão (Leto +15%, Réia +25%, Teia +10%).'}
+                </p>
+
+                <div className="mt-2 space-y-1 border-t border-white/10 pt-1.5">
+                  {(hud.favorBreakdown ?? []).map((item, idx) => (
+                    <div key={`${item.label}-${idx}`} className="flex items-start justify-between gap-2 text-[10px]">
+                      <div className="min-w-0">
+                        <div className="font-semibold text-[#e2e8f0] truncate">{item.label}</div>
+                        {item.detail && (
+                          <div className="text-[9px] text-[#94a3b8] leading-tight">{item.detail}</div>
+                        )}
+                      </div>
+                      <span className="font-mono-num font-bold text-[#7dd3fc] shrink-0">
+                        +{item.rate.toFixed(2)}/s
+                      </span>
+                    </div>
+                  ))}
+                </div>
+
+                {hud.pantheon === 'greek' && onOrderPrayTemple && (
+                  <button
+                    type="button"
+                    onClick={() => onOrderPrayTemple()}
+                    className="mt-2 flex w-full items-center justify-center gap-1.5 rounded border border-[#38bdf8]/60 bg-[#0d2638] px-2 py-1 text-[10px] font-bold text-[#bae6fd] hover:bg-[#13354e] cursor-pointer"
+                  >
+                    <Sparkles className="h-3 w-3 text-[#38bdf8]" />
+                    <span>Enviar Aldeão p/ Orar no Templo</span>
+                  </button>
+                )}
+                {hud.pantheon === 'egyptian' && onOrderEmpowerMonument && (
+                  <button
+                    type="button"
+                    onClick={() => onOrderEmpowerMonument()}
+                    className="mt-2 flex w-full items-center justify-center gap-1.5 rounded border border-[#facc15]/60 bg-[#26200b] px-2 py-1 text-[10px] font-bold text-[#fef08a] hover:bg-[#362c0e] cursor-pointer"
+                  >
+                    <Sun className="h-3 w-3 text-[#facc15]" />
+                    <span>Energizar Monumento (Faraó/Sacerdote)</span>
+                  </button>
+                )}
+                {hud.pantheon === 'atlantean' && onSpreadOracles && (
+                  <button
+                    type="button"
+                    onClick={onSpreadOracles}
+                    className="mt-2 flex w-full items-center justify-center gap-1.5 rounded border border-[#38bdf8]/60 bg-[#0d2638] px-2 py-1 text-[10px] font-bold text-[#bae6fd] hover:bg-[#13354e] cursor-pointer"
+                  >
+                    <Eye className="h-3 w-3 text-[#38bdf8]" />
+                    <span>Espalhar Oráculos p/ Visão Plena</span>
+                  </button>
+                )}
+              </div>
+            )}
+
             <div className="flex md:flex-col justify-between gap-1.5 overflow-x-auto">
               <div className="flex items-center justify-between gap-2 whitespace-nowrap" title="Alimento">
-                <Wheat className="h-3.5 w-3.5 text-[#ef4444] shrink-0" />
+                <div className="flex items-center gap-1.5">
+                  <ResourceIcon kind="food" size={18} />
+                  <span className="hidden md:inline text-[10px] font-medium text-[#cbd5e1]">Alim</span>
+                </div>
                 <span className="font-mono-num font-bold text-white">{hud.resources.food}</span>
               </div>
               <div className="flex items-center justify-between gap-2 whitespace-nowrap" title="Madeira">
-                <Trees className="h-3.5 w-3.5 text-[#4ade80] shrink-0" />
+                <div className="flex items-center gap-1.5">
+                  <ResourceIcon kind="wood" size={18} />
+                  <span className="hidden md:inline text-[10px] font-medium text-[#cbd5e1]">Mad</span>
+                </div>
                 <span className="font-mono-num font-bold text-white">{hud.resources.wood}</span>
               </div>
               <div className="flex items-center justify-between gap-2 whitespace-nowrap" title="Ouro">
-                <Coins className="h-3.5 w-3.5 text-[#facc15] shrink-0" />
-                <span className="font-mono-num font-bold text-white">{hud.resources.gold}</span>
+                <div className="flex items-center gap-1.5">
+                  <ResourceIcon kind="gold" size={18} />
+                  <span className="hidden md:inline text-[10px] font-medium text-[#cbd5e1]">Ouro</span>
+                </div>
+                <span className="font-mono-num font-bold text-[#fde68a]">{hud.resources.gold}</span>
               </div>
-              <div className="flex items-center justify-between gap-2 whitespace-nowrap" title="Favor Divino">
-                <Sparkles className="h-3.5 w-3.5 text-[#38bdf8] shrink-0" />
-                <span className="font-mono-num font-bold text-[#7dd3fc]">{hud.resources.favor}</span>
-              </div>
+              <button
+                type="button"
+                onClick={() => setShowFavorPanel((v) => !v)}
+                title="Favor Divino — Clique para ver fontes e comandos de geração de Favor"
+                className={`flex items-center justify-between gap-1.5 rounded px-1 -mx-1 py-0.5 whitespace-nowrap cursor-pointer transition-colors ${
+                  showFavorPanel ? 'bg-[#0e2638] ring-1 ring-[#38bdf8]/60' : 'hover:bg-white/8'
+                }`}
+              >
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <ResourceIcon kind="favor" size={18} />
+                  <span className="hidden md:inline text-[10px] font-medium text-[#7dd3fc]">Favor</span>
+                </div>
+                <div className="flex items-baseline gap-1">
+                  <span className="font-mono-num text-[9px] text-[#38bdf8]">
+                    +{(hud.favorRatePerSec ?? 0).toFixed(1)}
+                  </span>
+                  <span className="font-mono-num font-bold text-[#7dd3fc]">{hud.resources.favor}</span>
+                </div>
+              </button>
               <div className="flex items-center justify-between gap-2 whitespace-nowrap" title="População">
-                <Users className="h-3.5 w-3.5 text-[#e2e8f0] shrink-0" />
+                <div className="flex items-center gap-1.5">
+                  <ResourceIcon kind="pop" size={18} />
+                  <span className="hidden md:inline text-[10px] font-medium text-[#cbd5e1]">Pop</span>
+                </div>
                 <span className="font-mono-num font-bold text-white">
                   {hud.population}/{hud.populationCap}
                 </span>
               </div>
             </div>
 
-            <div className="mt-1.5 hidden md:flex items-center justify-between gap-1 border-t border-white/10 pt-1 text-[10px] text-[#94a3b8]">
-              <span className="font-mono-num">{formatClock(hud.elapsedSeconds)}</span>
+            <div className="mt-1.5 hidden md:flex items-center justify-between gap-1 border-t border-[#c8a962]/25 pt-1.5 text-[10px] text-[#94a3b8]">
               <button
                 type="button"
                 onClick={onSelectCombat}
                 title={`Selecionar todo o Exército (${hud.combatUnitCount})`}
                 className="flex items-center gap-1 text-[#cbd5e1] hover:text-[#f3d27a] cursor-pointer"
               >
-                <Swords className="h-3 w-3 text-[#60a5fa]" />
-                <span className="font-mono-num">{hud.combatUnitCount}</span>
+                <ResourceIcon kind="army" size={16} />
+                <span className="font-mono-num font-semibold">{hud.combatUnitCount}</span>
               </button>
-              <span className="font-mono-num" title="Relíquias">
-                <Gem className="inline h-2.5 w-2.5 text-[#38bdf8] mr-0.5" />
-                {hud.relicsHeld}
+              <span className="flex items-center gap-1 font-mono-num" title="Relíquias">
+                <ResourceIcon kind="relic" size={16} />
+                <span>{hud.relicsHeld}</span>
               </span>
+              {hud.wonderBonusActive ? (
+                <span
+                  title="Era das Maravilhas Ativa (+Favor, +20% Unidades Míticas, -20% Recarga)"
+                  className="flex items-center gap-0.5 rounded bg-[#2d2207] px-1 py-0.5 text-[9px] font-bold text-[#fde047] border border-[#facc15]/50"
+                >
+                  <Crown className="h-2.5 w-2.5" />
+                  <span>Marav.</span>
+                </span>
+              ) : (
+                <span className="font-mono-num">{formatClock(hud.elapsedSeconds)}</span>
+              )}
             </div>
           </div>
 
-          {/* CENTER STONE/BRONZE AoM COMMAND PANEL + ANIMATED PORTRAIT/SPECS + QUEUE */}
-          <div className="flex-1 max-w-[960px] grid grid-cols-1 md:grid-cols-12 gap-2 rounded border-2 border-[#c8a962]/55 bg-[#12161f]/95 p-2 shadow-2xl">
-            {/* ZONE 2 (LEFT-CENTER): Context-Strict Command Panel (No generic tabs) */}
-            <div className="md:col-span-5 flex flex-col justify-between gap-1.5 md:border-r border-white/10 md:pr-2">
-              <div className="flex items-center justify-between gap-1.5 border-b border-white/10 pb-1">
+          {/* CENTER STONE/BRONZE AoM: RETOLD COMMAND PANEL + PORTRAIT/SPECS + QUEUE */}
+          <div className="flex-1 max-w-[990px] grid grid-cols-1 md:grid-cols-12 gap-2 rounded-md border-2 border-[#c8a962]/70 bg-[#0d111a]/96 p-2 shadow-[0_10px_28px_rgba(0,0,0,0.85)]">
+            {/* ZONE 2 (LEFT-CENTER): Retold Context-Strict Command Grid */}
+            <div className="md:col-span-5 flex flex-col justify-between gap-1.5 md:border-r border-[#c8a962]/20 md:pr-2">
+              <div className="flex items-center justify-between gap-1.5 border-b border-[#c8a962]/25 pb-1">
                 <div className="flex items-center gap-1.5 min-w-0">
-                  <span className="text-[10px] font-semibold uppercase tracking-wider text-[#d4af37] truncate">
+                  {selectedPlayerBuildingKind && !hud.selection.hasVillagerSelected && (
+                    <BuildingIcon kind={selectedPlayerBuildingKind} pantheon={hud.pantheon} size={20} />
+                  )}
+                  <span className="font-display text-[11px] font-bold uppercase tracking-wider text-[#f3d27a] truncate">
                     {hud.selection.hasVillagerSelected
                       ? 'Construções & Tarefas'
                       : selectedPlayerBuildingKind
-                      ? getCivBuildingSpec(hud.pantheon, selectedPlayerBuildingKind).name
+                      ? getCivBuildingSpec(hud.pantheon, selectedPlayerBuildingKind, hud.majorGodName, hud.age).name
                       : hud.selection.primaryType === 'unit' && hud.selection.team === 'player'
                       ? 'Ordens & Formações'
                       : 'Comandos'}
@@ -1374,6 +1543,16 @@ export function GameHUD({
                       {hud.selection.townCenterTier >= 5 ? 'T5 METRÓPOLE' : `T${hud.selection.townCenterTier}`}
                     </span>
                   )}
+                  {selectedPlayerBuildingKind === 'monument' && hud.monumentCount !== undefined && (
+                    <span className="shrink-0 rounded border border-[#c8a962]/45 bg-[#192030] px-1 py-0.5 font-mono-num text-[9px] font-bold text-[#fde68a]">
+                      {hud.monumentCount}/5
+                    </span>
+                  )}
+                  {selectedPlayerBuildingKind === 'sky_passage' && hud.skyPassageCount !== undefined && (
+                    <span className="shrink-0 rounded border border-[#22d3ee]/45 bg-[#0e2230] px-1 py-0.5 font-mono-num text-[9px] font-bold text-[#67e8f9]">
+                      {hud.skyPassageCount} Portais
+                    </span>
+                  )}
                 </div>
                 {isProductionBuilding && hud.selection.buildingId && (
                   <button
@@ -1383,7 +1562,7 @@ export function GameHUD({
                     className={`flex items-center gap-1 rounded border px-1.5 py-0.5 text-[10px] font-semibold whitespace-nowrap cursor-pointer ${
                       hud.selection.repeatTraining
                         ? 'border-emerald-400/60 bg-emerald-950/60 text-emerald-300'
-                        : 'border-white/15 bg-[#161c28] text-[#cbd5e1] hover:border-[#d4af37]/50'
+                        : 'border-[#c8a962]/30 bg-[#141a27] text-[#cbd5e1] hover:border-[#f3d27a]'
                     }`}
                   >
                     <Repeat className="h-3 w-3" />
@@ -1392,7 +1571,7 @@ export function GameHUD({
                 )}
               </div>
 
-              {/* CASE A: Villager Selected -> Quick gather tasks + Building Construction Grid */}
+              {/* CASE A: Villager Selected -> Retold Quick Gather Icons + Visual Building Tiles */}
               {hud.selection.hasVillagerSelected ? (
                 <div className="flex flex-1 flex-col justify-between gap-1.5">
                   {onOrderVillagerTask && (
@@ -1401,48 +1580,63 @@ export function GameHUD({
                         type="button"
                         onClick={() => onOrderVillagerTask('wood')}
                         title="Colher Madeira"
-                        className="flex items-center justify-center gap-1 rounded border border-white/10 bg-[#141a26] py-1 text-[10px] font-semibold text-[#cbd5e1] hover:border-[#4ade80] hover:text-white cursor-pointer"
+                        className="flex items-center justify-center gap-1 rounded border border-[#c8a962]/25 bg-[#121927] py-1 text-[10px] font-semibold text-[#cbd5e1] hover:border-[#4ade80] hover:bg-[#16261d] hover:text-white cursor-pointer"
                       >
-                        <Trees className="h-3 w-3 text-[#4ade80]" />
+                        <ResourceIcon kind="wood" size={16} />
                         <span className="hidden sm:inline">Mad</span>
                       </button>
                       <button
                         type="button"
                         onClick={() => onOrderVillagerTask('gold')}
                         title="Minerar Ouro"
-                        className="flex items-center justify-center gap-1 rounded border border-white/10 bg-[#141a26] py-1 text-[10px] font-semibold text-[#cbd5e1] hover:border-[#facc15] hover:text-white cursor-pointer"
+                        className="flex items-center justify-center gap-1 rounded border border-[#c8a962]/25 bg-[#121927] py-1 text-[10px] font-semibold text-[#cbd5e1] hover:border-[#facc15] hover:bg-[#26200d] hover:text-white cursor-pointer"
                       >
-                        <Coins className="h-3 w-3 text-[#facc15]" />
+                        <ResourceIcon kind="gold" size={16} />
                         <span className="hidden sm:inline">Ouro</span>
                       </button>
                       <button
                         type="button"
                         onClick={() => onOrderVillagerTask('food')}
                         title="Colher Alimento"
-                        className="flex items-center justify-center gap-1 rounded border border-white/10 bg-[#141a26] py-1 text-[10px] font-semibold text-[#cbd5e1] hover:border-[#fb923c] hover:text-white cursor-pointer"
+                        className="flex items-center justify-center gap-1 rounded border border-[#c8a962]/25 bg-[#121927] py-1 text-[10px] font-semibold text-[#cbd5e1] hover:border-[#ef4444] hover:bg-[#261215] hover:text-white cursor-pointer"
                       >
-                        <Wheat className="h-3 w-3 text-[#fb923c]" />
+                        <ResourceIcon kind="food" size={16} />
                         <span className="hidden sm:inline">Alim</span>
                       </button>
                       <button
                         type="button"
                         onClick={() => onOrderVillagerTask('hunt')}
                         title="Caçar Animais"
-                        className="flex items-center justify-center gap-1 rounded border border-white/10 bg-[#141a26] py-1 text-[10px] font-semibold text-[#cbd5e1] hover:border-[#f59e0b] hover:text-white cursor-pointer"
+                        className="flex items-center justify-center gap-1 rounded border border-[#c8a962]/25 bg-[#121927] py-1 text-[10px] font-semibold text-[#cbd5e1] hover:border-[#f59e0b] hover:bg-[#26190d] hover:text-white cursor-pointer"
                       >
-                        <Swords className="h-3 w-3 text-[#f59e0b]" />
+                        <ResourceIcon kind="hunt" size={16} />
                         <span className="hidden sm:inline">Caça</span>
                       </button>
                       <button
                         type="button"
                         onClick={() => onOrderVillagerTask('build')}
                         title="Concluir / Reparar Construção Próxima"
-                        className="flex items-center justify-center gap-1 rounded border border-[#d4af37]/40 bg-[#1b2232] py-1 text-[10px] font-semibold text-[#fde68a] hover:border-[#d4af37] cursor-pointer"
+                        className="flex items-center justify-center gap-1 rounded border border-[#d4af37]/50 bg-[#1d2230] py-1 text-[10px] font-semibold text-[#fde68a] hover:border-[#fde047] hover:bg-[#2a2715] cursor-pointer"
                       >
-                        <Hammer className="h-3 w-3 text-[#facc15]" />
+                        <Hammer className="h-3.5 w-3.5 text-[#facc15]" />
                         <span className="hidden sm:inline">Obra</span>
                       </button>
                     </div>
+                  )}
+
+                  {hud.selection.canPrayAtTemple && onOrderPrayTemple && (
+                    <button
+                      type="button"
+                      onClick={() => onOrderPrayTemple()}
+                      title="Enviar aldeões selecionados para orar no Templo e gerar Favor Divino"
+                      className="flex items-center justify-between gap-2 rounded border border-[#38bdf8]/55 bg-[#0e2234] px-2 py-1 text-[10px] font-bold text-[#bae6fd] hover:border-[#7dd3fc] hover:bg-[#143047] cursor-pointer"
+                    >
+                      <span className="flex items-center gap-1.5">
+                        <Sparkles className="h-3 w-3 text-[#38bdf8] shrink-0" />
+                        <span>Orar no Templo (Favor Divino)</span>
+                      </span>
+                      <span className="font-mono-num text-[9px] text-[#7dd3fc]">+Favor</span>
+                    </button>
                   )}
 
                   {hud.selection.canPromoteToHero && onPromoteToHero && (
@@ -1459,56 +1653,71 @@ export function GameHUD({
                           {(hud.selection.heroPromoteCount ?? 0) > 1 ? ` (×${hud.selection.heroPromoteCount})` : ''}
                         </span>
                       </span>
-                      {hud.selection.heroPromoteCost && (
+                      {hud.selection.heroPromoteIsFree ? (
+                        <span className="font-mono-num text-[9px] font-bold text-emerald-300 shrink-0">
+                          GRÁTIS (Hipérion)
+                        </span>
+                      ) : hud.selection.heroPromoteCost ? (
                         <span className="font-mono-num text-[9px] text-[#fef08a] shrink-0">
                           {formatCost(hud.selection.heroPromoteCost)}
                         </span>
-                      )}
+                      ) : null}
                     </button>
                   )}
 
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-1 max-h-[118px] overflow-y-auto pr-0.5">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-1 max-h-[124px] overflow-y-auto pr-0.5">
                     {buildingList.map((b) => {
                       const tcAtMax =
                         b.kind === 'town_center' && hud.playerTownCenterCount >= hud.maxTownCenters;
-                      const locked = hud.age < b.minAge || tcAtMax;
+                      const monAtMax = b.kind === 'monument' && (hud.monumentCount ?? 0) >= 5;
+                      const wonderAtMax = b.kind === 'wonder' && (hud.wonderCount ?? 0) >= 1;
+                      const locked = hud.age < b.minAge || tcAtMax || monAtMax || wonderAtMax;
                       const active = hud.activeBuildMode === b.kind;
+                      const countTag =
+                        b.kind === 'town_center'
+                          ? `${hud.playerTownCenterCount}/${hud.maxTownCenters}`
+                          : b.kind === 'monument'
+                          ? `${hud.monumentCount ?? 0}/5`
+                          : b.kind === 'wonder'
+                          ? `${hud.wonderCount ?? 0}/1`
+                          : null;
                       return (
                         <button
                           key={b.kind}
                           type="button"
                           disabled={locked}
                           onClick={() => onStartBuild(b.kind)}
-                          title={
-                            b.kind === 'town_center'
-                              ? `${b.role} — Assentamentos Neutros (${hud.playerTownCenterCount}/${hud.maxTownCenters})`
-                              : b.role
-                          }
-                          className={`flex flex-col items-start rounded border px-1.5 py-1 text-left transition-colors cursor-pointer ${
+                          title={`${b.name} — ${b.role}${formatCost(b.cost) ? ` (${formatCost(b.cost)})` : ''}`}
+                          className={`group flex items-center gap-1.5 rounded border px-1.5 py-1 text-left transition-colors cursor-pointer ${
                             active
-                              ? 'border-emerald-400 bg-emerald-950/70 text-white'
+                              ? 'border-emerald-400 bg-emerald-950/80 text-white'
                               : locked
-                              ? 'border-white/5 bg-[#121620] text-[#64748b] cursor-not-allowed'
-                              : b.kind === 'titan_gate'
-                              ? 'border-[#f59e0b]/45 bg-[#22190c] text-[#fde68a] hover:border-[#f59e0b]'
-                              : 'border-white/8 bg-[#141925] text-[#f3efe6] hover:border-[#d4af37]/55 hover:bg-[#1c2333]'
+                              ? 'border-white/8 bg-[#10141e] text-[#64748b] opacity-65 cursor-not-allowed'
+                              : b.kind === 'titan_gate' || b.kind === 'wonder'
+                              ? 'border-[#f59e0b]/55 bg-[#22190b] text-[#fde68a] hover:border-[#facc15] hover:bg-[#2d210e]'
+                              : 'border-[#c8a962]/28 bg-[#131926] text-[#f3efe6] hover:border-[#f3d27a] hover:bg-[#1c2438]'
                           }`}
                         >
-                          <div className="flex w-full items-center justify-between gap-1">
-                            <span className="text-[11px] font-semibold truncate">{b.name}</span>
-                            {b.kind === 'town_center' && (
-                              <span className="font-mono-num text-[9px] text-[#e5c45e] shrink-0">
-                                {hud.playerTownCenterCount}/{hud.maxTownCenters}
-                              </span>
-                            )}
+                          <BuildingIcon kind={b.kind} pantheon={hud.pantheon} size={24} />
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center justify-between gap-1">
+                              <span className="text-[10px] font-semibold leading-tight truncate">{b.name}</span>
+                              {countTag && (
+                                <span className="font-mono-num text-[8px] text-[#e5c45e] shrink-0">{countTag}</span>
+                              )}
+                            </div>
+                            <span className="block font-mono-num text-[9px] text-[#94a3b8] leading-tight truncate">
+                              {tcAtMax
+                                ? 'Máx. 3 TCs'
+                                : monAtMax
+                                ? 'Máx. 5 Mon.'
+                                : wonderAtMax
+                                ? '1 Maravilha'
+                                : hud.age < b.minAge
+                                ? AGE_NAMES[b.minAge]
+                                : formatCost(b.cost)}
+                            </span>
                           </div>
-                          <span className="font-mono-num text-[9px] text-[#94a3b8] truncate w-full">
-                            {tcAtMax
-                              ? 'Máx. 3 TCs'
-                              : hud.age < b.minAge
-                              ? AGE_NAMES[b.minAge]
-                              : formatCost(b.cost)}
-                          </span>
                         </button>
                       );
                     })}
@@ -1517,9 +1726,10 @@ export function GameHUD({
               ) : selectedPlayerBuildingKind ? (
                 /* CASE B: Player Building Selected -> Strictly Units & Techs of THAT Building */
                 !hud.selection.isConstructed ? (
-                  <div className="flex flex-1 flex-col justify-center gap-2 rounded border border-[#f59e0b]/30 bg-[#1a1610] p-2.5">
-                    <div className="text-[11px] font-semibold text-[#fbbf24]">
-                      Estrutura em construção ({Math.round((hud.selection.buildProgress ?? 0) * 100)}%)
+                  <div className="flex flex-1 flex-col justify-center gap-2 rounded border border-[#f59e0b]/35 bg-[#1a1610] p-2.5">
+                    <div className="flex items-center gap-2 text-[11px] font-semibold text-[#fbbf24]">
+                      <BuildingIcon kind={selectedPlayerBuildingKind} pantheon={hud.pantheon} size={24} />
+                      <span>Estrutura em construção ({Math.round((hud.selection.buildProgress ?? 0) * 100)}%)</span>
                     </div>
                     {onOrderVillagersToTarget && (
                       <button
@@ -1537,26 +1747,44 @@ export function GameHUD({
                     const buildingUnits = unitList.filter(
                       (u) =>
                         u.producedAt === selectedPlayerBuildingKind ||
+                        ((selectedPlayerBuildingKind === 'town_center' || selectedPlayerBuildingKind === 'village_center') &&
+                          u.producedAt === 'town_center') ||
                         (u.kind === 'priest' &&
-                          (selectedPlayerBuildingKind === 'temple' || selectedPlayerBuildingKind === 'town_center')) ||
+                          (selectedPlayerBuildingKind === 'temple' ||
+                            selectedPlayerBuildingKind === 'town_center' ||
+                            selectedPlayerBuildingKind === 'village_center')) ||
                         (u.kind === 'oracle' &&
-                          (selectedPlayerBuildingKind === 'temple' || selectedPlayerBuildingKind === 'town_center')) ||
+                          (selectedPlayerBuildingKind === 'temple' ||
+                            selectedPlayerBuildingKind === 'town_center' ||
+                            selectedPlayerBuildingKind === 'village_center')) ||
                         ((u.kind === 'hersir' || u.kind === 'godi') &&
                           (selectedPlayerBuildingKind === 'barracks' ||
+                            selectedPlayerBuildingKind === 'great_hall' ||
                             selectedPlayerBuildingKind === 'temple' ||
-                            selectedPlayerBuildingKind === 'fortress')) ||
-                        (u.kind === 'raiding_cavalry' &&
-                          (selectedPlayerBuildingKind === 'barracks' || selectedPlayerBuildingKind === 'stable')) ||
-                        ((u.kind === 'turma' || u.kind === 'contarius') &&
-                          (selectedPlayerBuildingKind === 'stable' ||
-                            selectedPlayerBuildingKind === 'barracks' ||
-                            selectedPlayerBuildingKind === 'archery_range')) ||
+                            selectedPlayerBuildingKind === 'fortress' ||
+                            selectedPlayerBuildingKind === 'asgard_hill_fort')) ||
+                        ((u.kind === 'raiding_cavalry' || u.kind === 'jarl') &&
+                          (selectedPlayerBuildingKind === 'great_hall' ||
+                            selectedPlayerBuildingKind === 'stable' ||
+                            selectedPlayerBuildingKind === 'fortress' ||
+                            selectedPlayerBuildingKind === 'asgard_hill_fort')) ||
+                        ((u.kind === 'ulfsark' || u.kind === 'throwing_axeman' || u.kind === 'huskarl') &&
+                          (selectedPlayerBuildingKind === 'barracks' ||
+                            selectedPlayerBuildingKind === 'fortress' ||
+                            selectedPlayerBuildingKind === 'asgard_hill_fort')) ||
+                        ((u.kind === 'katapeltes' || u.kind === 'turma' || u.kind === 'cheiroballista') &&
+                          selectedPlayerBuildingKind === 'counter_barracks') ||
+                        (u.kind === 'contarius' &&
+                          (selectedPlayerBuildingKind === 'stable' || selectedPlayerBuildingKind === 'barracks')) ||
                         (u.isHero &&
                           u.kind !== 'priest' &&
                           u.kind !== 'hersir' &&
                           u.kind !== 'godi' &&
-                          (selectedPlayerBuildingKind === 'town_center' || selectedPlayerBuildingKind === 'fortress')) ||
-                        (u.kind === 'myrmidon' && (selectedPlayerBuildingKind === 'barracks' || selectedPlayerBuildingKind === 'fortress')) ||
+                          (selectedPlayerBuildingKind === 'town_center' ||
+                            selectedPlayerBuildingKind === 'fortress' ||
+                            selectedPlayerBuildingKind === 'asgard_hill_fort')) ||
+                        (u.kind === 'myrmidon' &&
+                          (selectedPlayerBuildingKind === 'barracks' || selectedPlayerBuildingKind === 'fortress')) ||
                         ((u.kind === 'ram' ||
                           u.kind === 'siege' ||
                           u.kind === 'siege_tower' ||
@@ -1566,22 +1794,42 @@ export function GameHUD({
                           u.kind === 'cheiroballista' ||
                           u.kind === 'fire_siphon' ||
                           u.kind === 'onager') &&
-                          (selectedPlayerBuildingKind === 'siege_works' || selectedPlayerBuildingKind === 'fortress'))
+                          (selectedPlayerBuildingKind === 'siege_works' ||
+                            selectedPlayerBuildingKind === 'fortress' ||
+                            selectedPlayerBuildingKind === 'asgard_hill_fort'))
                     );
                     const buildingTechs = techList.filter((t) => {
                       if (t.pantheons && !t.pantheons.includes(hud.pantheon)) return false;
                       if (t.requiresMinorGod && !t.requiresMinorGod.some((mg) => hud.chosenMinorGods.includes(mg))) return false;
+                      if (
+                        t.requiresMajorGod &&
+                        !t.requiresMajorGod.some((mg) => mg.toLowerCase() === hud.majorGodName.toLowerCase())
+                      ) {
+                        return false;
+                      }
                       if (t.building === selectedPlayerBuildingKind) return true;
                       if (t.secondaryBuildings?.includes(selectedPlayerBuildingKind)) return true;
+                      if (
+                        selectedPlayerBuildingKind === 'asgard_hill_fort' &&
+                        (t.building === 'fortress' || t.secondaryBuildings?.includes('fortress'))
+                      ) {
+                        return true;
+                      }
                       if (selectedPlayerBuildingKind === 'fortress' && t.id === 'watch_tower') return true;
-                      if (selectedPlayerBuildingKind === 'tower' && (t.id === 'watch_tower' || t.id === 'burning_pitch')) return true;
+                      if (
+                        (selectedPlayerBuildingKind === 'tower' || selectedPlayerBuildingKind === 'mirror_tower') &&
+                        (t.id === 'watch_tower' || t.id === 'burning_pitch')
+                      ) {
+                        return true;
+                      }
                       return false;
                     });
                     const showAgeUp = selectedPlayerBuildingKind === 'town_center' && nextAge && nextAgeCost;
                     const showMarket = selectedPlayerBuildingKind === 'market';
+                    const showSkyPassage = selectedPlayerBuildingKind === 'sky_passage';
 
                     return (
-                      <div className="flex flex-1 flex-col gap-1.5 max-h-[146px] overflow-y-auto pr-0.5">
+                      <div className="flex flex-1 flex-col gap-1.5 max-h-[148px] overflow-y-auto pr-0.5">
                         {showAgeUp && nextAge && nextAgeCost && (
                           <button
                             type="button"
@@ -1601,35 +1849,126 @@ export function GameHUD({
                           </button>
                         )}
 
+                        {hud.selection.canCallVillagersToPray && onOrderPrayTemple && (
+                          <button
+                            type="button"
+                            onClick={() => onOrderPrayTemple(hud.selection.buildingId)}
+                            className="flex items-center justify-between gap-2 rounded border border-[#38bdf8]/65 bg-[#0d2638] px-2.5 py-1.5 text-[11px] font-bold text-[#bae6fd] hover:border-[#7dd3fc] hover:bg-[#13364f] cursor-pointer"
+                          >
+                            <span className="flex items-center gap-1.5 truncate">
+                              <Sparkles className="h-3.5 w-3.5 text-[#38bdf8] shrink-0" />
+                              <span>Chamar Aldeão p/ Orar</span>
+                            </span>
+                            <span className="font-mono-num text-[9px] text-[#7dd3fc] shrink-0">
+                              {hud.selection.prayingCount ?? 0} ald. · +{(hud.selection.templePrayerRatePerSec ?? 0).toFixed(2)}/s
+                            </span>
+                          </button>
+                        )}
+
+                        {selectedPlayerBuildingKind === 'monument' && (
+                          <div className="flex flex-col gap-1 rounded border border-[#facc15]/35 bg-[#1b170d] p-2">
+                            <div className="flex flex-wrap items-center justify-between gap-1 text-[10px]">
+                              <span
+                                className={`font-semibold ${
+                                  hud.selection.isEmpowered ? 'text-[#fde047]' : 'text-[#94a3b8]'
+                                }`}
+                              >
+                                {hud.selection.isEmpowered ? hud.selection.empoweredByLabel : 'Aguardando Energização'}
+                              </span>
+                              {hud.selection.isisProtected && (
+                                <span className="rounded border border-emerald-400/50 bg-emerald-950/60 px-1.5 py-0.5 text-[9px] font-bold text-emerald-300">
+                                  Ísis: Cura & Escudo Divino
+                                </span>
+                              )}
+                            </div>
+                            {hud.selection.canEmpowerMonument && onOrderEmpowerMonument && (
+                              <button
+                                type="button"
+                                onClick={() => onOrderEmpowerMonument(hud.selection.buildingId)}
+                                className="flex items-center justify-center gap-1.5 rounded border border-[#facc15]/65 bg-[#2d230c] px-2 py-1 text-[10px] font-bold text-[#fef08a] hover:bg-[#3e3010] cursor-pointer"
+                              >
+                                <Sun className="h-3.5 w-3.5 text-[#facc15]" />
+                                <span>Energizar Monumento (Faraó / Sacerdote)</span>
+                              </button>
+                            )}
+                          </div>
+                        )}
+
+                        {showSkyPassage && hud.selection.buildingId && onTeleportSkyPassage && (
+                          <button
+                            type="button"
+                            disabled={(hud.skyPassageCount ?? 0) < 2}
+                            onClick={() => onTeleportSkyPassage(hud.selection.buildingId!)}
+                            title={
+                              (hud.skyPassageCount ?? 0) < 2
+                                ? 'Construa ao menos 2 Passagens Celestes para teleportar tropas'
+                                : 'Teletransportar tropas aliadas próximas para outra Passagem Celeste'
+                            }
+                            className={`flex items-center justify-between gap-2 rounded border px-2.5 py-1.5 text-[11px] font-bold cursor-pointer ${
+                              (hud.skyPassageCount ?? 0) >= 2
+                                ? 'border-[#22d3ee]/70 bg-[#0d2838] text-[#bae6fd] hover:border-[#67e8f9] hover:bg-[#12384e]'
+                                : 'border-white/10 bg-[#121620] text-[#64748b] cursor-not-allowed'
+                            }`}
+                          >
+                            <span className="flex items-center gap-1.5">
+                              <BuildingIcon kind="sky_passage" pantheon={hud.pantheon} size={20} />
+                              <span>Teletransportar Tropas</span>
+                            </span>
+                            <span className="font-mono-num text-[9px]">
+                              {(hud.skyPassageCount ?? 0) >= 2 ? 'Ativo' : 'Requer 2 Portais'}
+                            </span>
+                          </button>
+                        )}
+
                         {showMarket && (
                           <div className="grid grid-cols-2 gap-1">
                             <button
                               type="button"
                               onClick={() => onExchangeTribute('food', 'gold', 100)}
-                              className="rounded border border-white/10 bg-[#141925] px-2 py-1 text-[10px] font-semibold text-[#f3efe6] hover:border-[#d4af37] cursor-pointer"
+                              className="flex items-center justify-between gap-1 rounded border border-[#c8a962]/25 bg-[#131926] px-2 py-1 text-[10px] font-semibold text-[#f3efe6] hover:border-[#f3d27a] cursor-pointer"
                             >
-                              100 Alim → Ouro
+                              <span className="flex items-center gap-1">
+                                <ResourceIcon kind="food" size={14} />
+                                <span>100 →</span>
+                                <ResourceIcon kind="gold" size={14} />
+                              </span>
+                              <span className="text-[#fde68a]">Ouro</span>
                             </button>
                             <button
                               type="button"
                               onClick={() => onExchangeTribute('wood', 'gold', 100)}
-                              className="rounded border border-white/10 bg-[#141925] px-2 py-1 text-[10px] font-semibold text-[#f3efe6] hover:border-[#d4af37] cursor-pointer"
+                              className="flex items-center justify-between gap-1 rounded border border-[#c8a962]/25 bg-[#131926] px-2 py-1 text-[10px] font-semibold text-[#f3efe6] hover:border-[#f3d27a] cursor-pointer"
                             >
-                              100 Mad → Ouro
+                              <span className="flex items-center gap-1">
+                                <ResourceIcon kind="wood" size={14} />
+                                <span>100 →</span>
+                                <ResourceIcon kind="gold" size={14} />
+                              </span>
+                              <span className="text-[#fde68a]">Ouro</span>
                             </button>
                             <button
                               type="button"
                               onClick={() => onExchangeTribute('gold', 'food', 100)}
-                              className="rounded border border-white/10 bg-[#141925] px-2 py-1 text-[10px] font-semibold text-[#f3efe6] hover:border-[#d4af37] cursor-pointer"
+                              className="flex items-center justify-between gap-1 rounded border border-[#c8a962]/25 bg-[#131926] px-2 py-1 text-[10px] font-semibold text-[#f3efe6] hover:border-[#f3d27a] cursor-pointer"
                             >
-                              100 Ouro → Alim
+                              <span className="flex items-center gap-1">
+                                <ResourceIcon kind="gold" size={14} />
+                                <span>100 →</span>
+                                <ResourceIcon kind="food" size={14} />
+                              </span>
+                              <span className="text-[#fca5a5]">Alim</span>
                             </button>
                             <button
                               type="button"
                               onClick={() => onExchangeTribute('gold', 'wood', 100)}
-                              className="rounded border border-white/10 bg-[#141925] px-2 py-1 text-[10px] font-semibold text-[#f3efe6] hover:border-[#d4af37] cursor-pointer"
+                              className="flex items-center justify-between gap-1 rounded border border-[#c8a962]/25 bg-[#131926] px-2 py-1 text-[10px] font-semibold text-[#f3efe6] hover:border-[#f3d27a] cursor-pointer"
                             >
-                              100 Ouro → Mad
+                              <span className="flex items-center gap-1">
+                                <ResourceIcon kind="gold" size={14} />
+                                <span>100 →</span>
+                                <ResourceIcon kind="wood" size={14} />
+                              </span>
+                              <span className="text-[#86efac]">Mad</span>
                             </button>
                           </div>
                         )}
@@ -1650,35 +1989,40 @@ export function GameHUD({
                                   type="button"
                                   disabled={locked}
                                   onClick={() => onTrainUnit(u.kind)}
-                                  title={`${u.name} — ${u.role}`}
-                                  className={`flex flex-col items-start rounded border px-1.5 py-1 text-left transition-colors cursor-pointer ${
+                                  title={`${u.name} — ${u.role}${formatCost(u.cost) ? ` (${formatCost(u.cost)})` : ''}`}
+                                  className={`flex items-center gap-1.5 rounded border px-1.5 py-1 text-left transition-colors cursor-pointer ${
                                     alreadyActive
                                       ? 'border-[#facc15]/50 bg-[#231d0c] text-[#fde68a] cursor-default'
                                       : locked
-                                      ? 'border-white/5 bg-[#121620] text-[#64748b] cursor-not-allowed'
+                                      ? 'border-white/8 bg-[#10141e] text-[#64748b] opacity-65 cursor-not-allowed'
                                       : u.isMajorGod
-                                      ? 'border-[#facc15]/55 bg-[#241c0b] text-[#fef08a] hover:border-[#fde047]'
+                                      ? 'border-[#facc15]/60 bg-[#241c0b] text-[#fef08a] hover:border-[#fde047]'
                                       : u.isGod
-                                      ? 'border-[#c084fc]/45 bg-[#1d152b] text-[#f3e8ff] hover:border-[#c084fc]'
+                                      ? 'border-[#c084fc]/50 bg-[#1d152b] text-[#f3e8ff] hover:border-[#c084fc]'
                                       : u.isMythic
-                                      ? 'border-[#38bdf8]/35 bg-[#13202e] text-[#f3efe6] hover:border-[#38bdf8]'
+                                      ? 'border-[#38bdf8]/40 bg-[#10202e] text-[#f3efe6] hover:border-[#38bdf8]'
                                       : u.isHero
-                                      ? 'border-[#f59e0b]/35 bg-[#221910] text-[#fde68a] hover:border-[#f59e0b]'
-                                      : 'border-white/8 bg-[#141925] text-[#f3efe6] hover:border-[#d4af37]/55 hover:bg-[#1c2333]'
+                                      ? 'border-[#f59e0b]/40 bg-[#221910] text-[#fde68a] hover:border-[#f59e0b]'
+                                      : 'border-[#c8a962]/28 bg-[#131926] text-[#f3efe6] hover:border-[#f3d27a] hover:bg-[#1c2438]'
                                   }`}
                                 >
-                                  <span className="text-[11px] font-semibold truncate w-full">{u.name}</span>
-                                  <span className="font-mono-num text-[9px] text-[#94a3b8] truncate w-full">
-                                    {ageLocked
-                                      ? AGE_NAMES[u.minAge]
-                                      : minorGodLocked
-                                      ? `Req: ${u.requiresMinorGodLabel ?? 'Deus'}`
-                                      : alreadyActive
-                                      ? 'Em Campo'
-                                      : alreadyQueued
-                                      ? 'Invocando...'
-                                      : formatCost(u.cost)}
-                                  </span>
+                                  <UnitIcon kind={u.kind} pantheon={hud.pantheon} size={24} />
+                                  <div className="min-w-0 flex-1">
+                                    <span className="block text-[10px] font-semibold leading-tight truncate">
+                                      {u.name}
+                                    </span>
+                                    <span className="block font-mono-num text-[9px] text-[#94a3b8] leading-tight truncate">
+                                      {ageLocked
+                                        ? AGE_NAMES[u.minAge]
+                                        : minorGodLocked
+                                        ? `Req: ${u.requiresMinorGodLabel ?? 'Deus'}`
+                                        : alreadyActive
+                                        ? 'Em Campo'
+                                        : alreadyQueued
+                                        ? 'Invocando...'
+                                        : formatCost(u.cost)}
+                                    </span>
+                                  </div>
                                 </button>
                               );
                             })}
@@ -1708,17 +2052,17 @@ export function GameHUD({
                                       : activeNow
                                       ? 'border-[#facc15] bg-[#262010] text-[#fde68a]'
                                       : disabled
-                                      ? 'border-white/5 bg-[#121620] text-[#64748b] cursor-not-allowed'
+                                      ? 'border-white/8 bg-[#10141e] text-[#64748b] cursor-not-allowed'
                                       : t.category === 'mythic'
                                       ? 'border-[#a855f7]/45 bg-[#1c1528] text-[#f3e8ff] hover:border-[#c084fc] hover:bg-[#261c36]'
                                       : 'border-[#c8a962]/30 bg-[#171d2c] text-[#f3efe6] hover:border-[#d4af37] hover:bg-[#20293d]'
                                   }`}
                                 >
                                   <div className="flex items-center gap-1.5 min-w-0">
-                                    <TechIcon techId={t.id} size={26} className="shrink-0" />
+                                    <TechIcon techId={t.id} size={24} className="shrink-0" />
                                     <div className="min-w-0">
-                                      <div className="text-[10px] font-semibold truncate">{t.name}</div>
-                                      <div className="font-mono-num text-[9px] text-[#94a3b8] truncate">
+                                      <div className="text-[10px] font-semibold leading-tight truncate">{t.name}</div>
+                                      <div className="font-mono-num text-[9px] text-[#94a3b8] leading-tight truncate">
                                         {researched
                                           ? 'Concluída'
                                           : ageLocked
@@ -1740,15 +2084,40 @@ export function GameHUD({
                           </div>
                         )}
 
-                        {buildingUnits.length === 0 && buildingTechs.length === 0 && !showMarket && !showAgeUp && (
-                          <div className="rounded border border-white/5 bg-[#141924] px-2.5 py-2 text-[11px] text-[#94a3b8]">
-                            {selectedPlayerBuildingKind === 'house'
-                              ? 'Habitação civil: +6 de Limite Populacional.'
-                              : selectedPlayerBuildingKind === 'farm'
-                              ? 'Fonte contínua de Alimento para seus Aldeões.'
-                              : selectedPlayerBuildingKind === 'titan_gate'
-                              ? 'Portal do Titã: libera o Titã quando concluído.'
-                              : 'Estrutura defensiva e de apoio territorial.'}
+                        {buildingUnits.length === 0 && buildingTechs.length === 0 && !showMarket && !showAgeUp && !showSkyPassage && (
+                          <div className="flex items-center gap-2 rounded border border-[#c8a962]/20 bg-[#121824] px-2.5 py-2 text-[11px] text-[#cbd5e1]">
+                            <BuildingIcon kind={selectedPlayerBuildingKind} pantheon={hud.pantheon} size={26} />
+                            <span className="leading-snug">
+                              {selectedPlayerBuildingKind === 'house'
+                                ? hud.pantheon === 'atlantean'
+                                  ? 'Mansão Atlante: +10 de Limite Populacional com alta resistência.'
+                                  : hud.pantheon === 'norse'
+                                  ? 'Casa Nórdica: +8 de Limite Populacional.'
+                                  : 'Habitação civil: +6 de Limite Populacional.'
+                                : selectedPlayerBuildingKind === 'farm'
+                                ? 'Fonte infinita de Alimento para Aldeões.'
+                                : selectedPlayerBuildingKind === 'granary'
+                                ? 'Ponto de entrega de Alimento e melhorias de caça/fazenda.'
+                                : selectedPlayerBuildingKind === 'storehouse'
+                                ? 'Ponto de entrega de Madeira e Ouro.'
+                                : selectedPlayerBuildingKind === 'lumber_camp'
+                                ? 'Campo Madeireiro egípcio: entrega de Madeira.'
+                                : selectedPlayerBuildingKind === 'mining_camp'
+                                ? 'Campo de Mineração egípcio: entrega de Ouro.'
+                                : selectedPlayerBuildingKind === 'monument'
+                                ? 'Monumento Sagrado: gera Favor Divino continuamente (+0,85/s).'
+                                : selectedPlayerBuildingKind === 'obelisk'
+                                ? 'Obelisco Vigia: revela ampla área do mapa ao redor.'
+                                : selectedPlayerBuildingKind === 'lighthouse'
+                                ? 'Farol do Nilo: ilumina vasta extensão do mapa contra névoa de guerra.'
+                                : selectedPlayerBuildingKind === 'wonder'
+                                ? 'Maravilha Divina: ativa a Era das Maravilhas (+Favor, +20% Míticas e -20% Recarga).'
+                                : selectedPlayerBuildingKind === 'wall' || selectedPlayerBuildingKind === 'gate'
+                                ? 'Fortificação perimetral: evolui por Era (Madeira → Pedra → Fortificada / Cidadela / Oricalco).'
+                                : selectedPlayerBuildingKind === 'titan_gate'
+                                ? 'Portal do Titã: libera o Titã quando concluído.'
+                                : 'Estrutura defensiva e de apoio territorial.'}
+                            </span>
                           </div>
                         )}
                       </div>
@@ -1778,7 +2147,7 @@ export function GameHUD({
                             className={`flex flex-col items-center justify-center gap-0.5 rounded border px-1.5 py-1.5 text-[10px] font-semibold transition-colors cursor-pointer ${
                               active
                                 ? 'border-[#d4af37] bg-[#d4af37] text-[#0b0e14]'
-                                : 'border-white/10 bg-[#141925] text-[#cbd5e1] hover:border-[#d4af37]/50 hover:text-white'
+                                : 'border-[#c8a962]/25 bg-[#131926] text-[#cbd5e1] hover:border-[#f3d27a] hover:text-white'
                             }`}
                           >
                             <Icon className="h-3.5 w-3.5 shrink-0" />
@@ -1788,6 +2157,46 @@ export function GameHUD({
                       })}
                     </div>
                   </div>
+
+                  {hud.selection.canEmpowerMonument && onOrderEmpowerMonument && (
+                    <button
+                      type="button"
+                      onClick={() => onOrderEmpowerMonument()}
+                      title="Enviar Faraó ou Sacerdote de Rá para energizar um Monumento e acelerar Favor Divino"
+                      className="flex items-center justify-between gap-2 rounded border border-[#facc15]/65 bg-[#29200b] px-2.5 py-1 text-[10px] font-bold text-[#fef08a] hover:border-[#fde047] hover:bg-[#3a2d0e] cursor-pointer"
+                    >
+                      <span className="flex items-center gap-1.5">
+                        <Sun className="h-3.5 w-3.5 text-[#facc15] shrink-0" />
+                        <span>Energizar Monumento</span>
+                      </span>
+                      <span className="font-mono-num text-[9px] text-[#fde68a]">+Favor</span>
+                    </button>
+                  )}
+
+                  {hud.selection.unitKind === 'oracle' && (
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center justify-between rounded border border-[#38bdf8]/40 bg-[#0d1e2e] px-2 py-1 text-[10px]">
+                        <span className="flex items-center gap-1 text-[#bae6fd] font-semibold">
+                          <Eye className="h-3 w-3 text-[#38bdf8]" />
+                          <span>Visão do Oráculo</span>
+                        </span>
+                        <span className="font-mono-num font-bold text-[#7dd3fc]">
+                          {hud.selection.oracleVisionPct ?? 0}% · +{(hud.selection.oracleFavorPerSec ?? 0).toFixed(2)}/s
+                        </span>
+                      </div>
+                      {onSpreadOracles && (
+                        <button
+                          type="button"
+                          onClick={onSpreadOracles}
+                          title="Posicionar Oráculos em pontos estratégicos sem sobreposição de visão para Favor máximo"
+                          className="flex items-center justify-center gap-1.5 rounded border border-[#38bdf8]/60 bg-[#0f293d] px-2 py-1 text-[10px] font-bold text-[#bae6fd] hover:border-[#7dd3fc] hover:bg-[#153954] cursor-pointer"
+                        >
+                          <Eye className="h-3.5 w-3.5 text-[#38bdf8]" />
+                          <span>Espalhar Oráculos (Visão Plena)</span>
+                        </button>
+                      )}
+                    </div>
+                  )}
 
                   {hud.selection.canPromoteToHero && onPromoteToHero && (
                     <button
@@ -1803,11 +2212,15 @@ export function GameHUD({
                           {(hud.selection.heroPromoteCount ?? 0) > 1 ? ` (×${hud.selection.heroPromoteCount})` : ''}
                         </span>
                       </span>
-                      {hud.selection.heroPromoteCost && (
+                      {hud.selection.heroPromoteIsFree ? (
+                        <span className="font-mono-num text-[9px] font-bold text-emerald-300 shrink-0">
+                          GRÁTIS (Hipérion)
+                        </span>
+                      ) : hud.selection.heroPromoteCost ? (
                         <span className="font-mono-num text-[9px] text-[#fde68a] shrink-0">
                           {formatCost(hud.selection.heroPromoteCost)}
                         </span>
-                      )}
+                      ) : null}
                     </button>
                   )}
 
@@ -1825,18 +2238,18 @@ export function GameHUD({
                       type="button"
                       onClick={onSelectCombat}
                       title="Selecionar todo o Exército"
-                      className="flex items-center justify-center gap-1 rounded border border-white/10 bg-[#141925] px-2 py-1.5 text-[11px] font-semibold text-[#cbd5e1] hover:border-[#d4af37]/50 hover:text-white cursor-pointer"
+                      className="flex items-center justify-center gap-1 rounded border border-[#c8a962]/25 bg-[#131926] px-2 py-1.5 text-[11px] font-semibold text-[#cbd5e1] hover:border-[#f3d27a] hover:text-white cursor-pointer"
                     >
-                      <Swords className="h-3 w-3 shrink-0 text-[#60a5fa]" />
+                      <ResourceIcon kind="army" size={16} />
                       <span>Exército</span>
                     </button>
                     <button
                       type="button"
                       onClick={onFocusTownCenter}
                       title="Ir para o Centro da Cidade"
-                      className="flex items-center justify-center gap-1 rounded border border-white/10 bg-[#141925] px-2 py-1.5 text-[11px] font-semibold text-[#cbd5e1] hover:border-[#d4af37]/50 hover:text-white cursor-pointer"
+                      className="flex items-center justify-center gap-1 rounded border border-[#c8a962]/25 bg-[#131926] px-2 py-1.5 text-[11px] font-semibold text-[#cbd5e1] hover:border-[#f3d27a] hover:text-white cursor-pointer"
                     >
-                      <Castle className="h-3 w-3 shrink-0 text-[#d4af37]" />
+                      <BuildingIcon kind="town_center" pantheon={hud.pantheon} size={16} />
                       <span>Centro</span>
                     </button>
                   </div>
@@ -1873,17 +2286,17 @@ export function GameHUD({
                     <button
                       type="button"
                       onClick={onFocusTownCenter}
-                      className="flex flex-1 items-center justify-center gap-1.5 rounded border border-white/12 bg-[#141925] px-2.5 py-1.5 text-[11px] font-semibold text-[#e2e8f0] hover:border-[#d4af37]/60 cursor-pointer"
+                      className="flex flex-1 items-center justify-center gap-1.5 rounded border border-[#c8a962]/30 bg-[#131926] px-2.5 py-1.5 text-[11px] font-semibold text-[#e2e8f0] hover:border-[#f3d27a] cursor-pointer"
                     >
-                      <Castle className="h-3.5 w-3.5 text-[#d4af37]" />
+                      <BuildingIcon kind="town_center" pantheon={hud.pantheon} size={16} />
                       <span>Centro</span>
                     </button>
                     <button
                       type="button"
                       onClick={onSelectCombat}
-                      className="flex flex-1 items-center justify-center gap-1.5 rounded border border-white/12 bg-[#141925] px-2.5 py-1.5 text-[11px] font-semibold text-[#e2e8f0] hover:border-[#d4af37]/60 cursor-pointer"
+                      className="flex flex-1 items-center justify-center gap-1.5 rounded border border-[#c8a962]/30 bg-[#131926] px-2.5 py-1.5 text-[11px] font-semibold text-[#e2e8f0] hover:border-[#f3d27a] cursor-pointer"
                     >
-                      <Swords className="h-3.5 w-3.5 text-[#60a5fa]" />
+                      <ResourceIcon kind="army" size={16} />
                       <span>Exército</span>
                     </button>
                   </div>
@@ -1892,8 +2305,8 @@ export function GameHUD({
             </div>
 
             {/* ZONE 3A (CENTER): AoM Player/God Header + Animated Portrait + Unit/Building Specifications */}
-            <div className="md:col-span-4 flex flex-col justify-between gap-1.5 md:border-r border-white/10 md:pr-2">
-              <div className="flex items-center justify-between gap-1.5 border-b border-white/10 pb-1">
+            <div className="md:col-span-4 flex flex-col justify-between gap-1.5 md:border-r border-[#c8a962]/20 md:pr-2">
+              <div className="flex items-center justify-between gap-1.5 border-b border-[#c8a962]/25 pb-1">
                 <span className="text-[10px] font-semibold text-[#f3d27a] truncate">
                   {options.playerName} · {hud.majorGodName}
                 </span>
@@ -2026,7 +2439,7 @@ export function GameHUD({
 
             {/* ZONE 3B (RIGHT): AoM Production Queue (Cancel & Refund) / Squad Roster */}
             <div className="md:col-span-3 flex flex-col justify-between gap-1.5">
-              <div className="flex items-center justify-between gap-1 border-b border-white/10 pb-1">
+              <div className="flex items-center justify-between gap-1 border-b border-[#c8a962]/25 pb-1">
                 <span className="text-[10px] font-semibold uppercase tracking-wider text-[#94a3b8] truncate">
                   {isProductionBuilding
                     ? 'Fila de Produção'
@@ -2090,11 +2503,14 @@ export function GameHUD({
                               type="button"
                               onClick={() => onCancelTrainingItem(hud.selection.buildingId!, idx)}
                               title="Clique para cancelar e reembolsar"
-                              className="group flex items-center justify-between gap-1 rounded border border-white/10 bg-[#151b28] px-1.5 py-0.5 text-left text-[10px] text-[#e2e8f0] hover:border-rose-400/60 hover:bg-rose-950/40 cursor-pointer"
+                              className="group flex items-center justify-between gap-1.5 rounded border border-white/10 bg-[#151b28] px-1.5 py-0.5 text-left text-[10px] text-[#e2e8f0] hover:border-rose-400/60 hover:bg-rose-950/40 cursor-pointer"
                             >
-                              <span className="truncate">
-                                {idx === 0 ? '▶ ' : `${idx + 1}. `}
-                                {getCivUnitSpec(hud.pantheon, item.kind).name}
+                              <span className="flex items-center gap-1.5 min-w-0">
+                                <UnitIcon kind={item.kind} pantheon={hud.pantheon} size={18} />
+                                <span className="truncate">
+                                  {idx === 0 ? '▶ ' : `${idx + 1}. `}
+                                  {getCivUnitSpec(hud.pantheon, item.kind).name}
+                                </span>
                               </span>
                               <X className="h-3 w-3 text-[#94a3b8] group-hover:text-rose-300 shrink-0" />
                             </button>
@@ -2102,7 +2518,7 @@ export function GameHUD({
                         </div>
                       </div>
                     ) : (
-                      <div className="rounded border border-white/5 bg-[#141924] px-2 py-2 text-[10px] text-[#64748b]">
+                      <div className="rounded border border-white/5 bg-[#121722] px-2 py-2 text-[10px] text-[#64748b]">
                         Fila vazia. Escolha uma unidade à esquerda para treinar.
                       </div>
                     )}
@@ -2121,9 +2537,12 @@ export function GameHUD({
                     {hud.selection.selectedCounts.map((entry) => (
                       <div
                         key={entry.kind}
-                        className="flex items-center justify-between gap-1 rounded border border-white/8 bg-[#141925] px-2 py-0.5 text-[10px] text-[#e2e8f0]"
+                        className="flex items-center justify-between gap-1.5 rounded border border-[#c8a962]/20 bg-[#131926] px-1.5 py-0.5 text-[10px] text-[#e2e8f0]"
                       >
-                        <span className="truncate">{entry.name}</span>
+                        <span className="flex items-center gap-1.5 min-w-0">
+                          <UnitIcon kind={entry.kind} pantheon={hud.pantheon} size={18} />
+                          <span className="truncate">{entry.name}</span>
+                        </span>
                         <span className="font-mono-num font-bold text-[#f3d27a] shrink-0">×{entry.count}</span>
                       </div>
                     ))}
@@ -2134,7 +2553,7 @@ export function GameHUD({
                       type="button"
                       onClick={() => setShowAgeBonuses((v) => !v)}
                       title="Ver progresso e bônus de cada Era"
-                      className="flex flex-col gap-1 rounded border border-white/8 bg-[#141925] px-2 py-1 text-left hover:border-[#d4af37]/55 cursor-pointer"
+                      className="flex flex-col gap-1 rounded border border-[#c8a962]/25 bg-[#131926] px-2 py-1 text-left hover:border-[#f3d27a] cursor-pointer"
                     >
                       <div className="flex items-center justify-between gap-1">
                         <span className="flex items-center gap-1.5 text-[#e5c45e] font-semibold truncate">
@@ -2204,67 +2623,136 @@ export function GameHUD({
         </div>
       )}
 
-      {/* MINOR GOD AGE-UP SELECTION MODAL */}
+      {/* MINOR GOD AGE-UP SELECTION MODAL (RETOLD PORTRAITS & BENEFITS) */}
       {hud.pendingMinorGodAge !== null && hud.phase === 'playing' && (
-        <div className="fixed inset-0 z-30 flex items-center justify-center bg-[#0b0e13]/78 p-4">
-          <div className="w-full max-w-xl rounded-xl border border-[#d4af37]/60 bg-[#12161f] p-5 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-[#d4af37]/25 pb-2.5">
-              <div className="flex items-center gap-2.5">
-                <EraIcon age={hud.pendingMinorGodAge} pantheon={hud.pantheon} size={34} active />
+        <div className="fixed inset-0 z-30 flex items-center justify-center bg-[#0b0e13]/82 p-4">
+          <div className="w-full max-w-3xl rounded-xl border-2 border-[#c8a962]/70 bg-[#0d111a] p-5 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-[#c8a962]/30 pb-3">
+              <div className="flex items-center gap-3">
+                <EraIcon age={hud.pendingMinorGodAge} pantheon={hud.pantheon} size={38} active />
                 <div>
                   <h3 className="font-display text-lg font-bold text-[#f3d27a]">
                     Avançar para a {AGE_NAMES[hud.pendingMinorGodAge]} · {getEraSubtitle(hud.pendingMinorGodAge, hud.pantheon)}
                   </h3>
                   <p className="text-xs text-[#9ca3af]">
-                    Escolha uma divindade menor para guiar {playerPantheon.name} ({hud.majorGodName})
+                    Escolha o Deus Menor que concederá Poder Divino, Unidade Mítica e Tecnologias para {playerPantheon.name} ({hud.majorGodName})
                   </p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={onCancelMinorGod}
-                className="rounded border border-white/15 bg-[#181e29] px-3 py-1 text-xs font-semibold text-[#e6dfd1] hover:border-[#f3d27a] cursor-pointer"
+                className="rounded border border-[#c8a962]/35 bg-[#151b28] px-3 py-1.5 text-xs font-semibold text-[#e6dfd1] hover:border-[#f3d27a] cursor-pointer"
               >
                 Cancelar
               </button>
             </div>
 
-            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[75vh] overflow-y-auto pr-0.5">
               {getMinorGodChoicesForAge(hud.majorGodName, hud.pantheon, hud.pendingMinorGodAge).map((mg) => {
                 const gp = GOD_POWERS[mg.godPower];
                 const PowerIcon = getGodPowerIcon(mg.godPower);
+                const portraitSrc = getMinorGodPortrait(mg.id, hud.pantheon);
+                const portraitFailed = Boolean(failedMinorPortraits[mg.id]);
+                const exclusiveTechs = Object.values(TECH_SPECS).filter((t) =>
+                  t.requiresMinorGod?.includes(mg.id)
+                );
+
                 return (
                   <button
                     key={mg.id}
                     type="button"
                     onClick={() => onChooseMinorGod(mg.id)}
-                    className="flex flex-col justify-between gap-2 rounded-lg border border-[#d4af37]/40 bg-[#171c26] p-4 text-left transition-all hover:border-[#f3d27a] hover:bg-[#1e2636] cursor-pointer"
+                    className="group flex flex-col justify-between gap-3 rounded-lg border-2 border-[#c8a962]/45 bg-[#131926] p-3.5 text-left transition-all hover:border-[#fde047] hover:bg-[#192235] cursor-pointer"
                   >
-                    <div>
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="font-display text-base font-bold text-[#f3d27a]">{mg.name}</span>
-                        <span className="rounded bg-[#242c3d] px-2 py-0.5 text-[10px] font-semibold text-[#cbd5e1]">
-                          Era {mg.age}
-                        </span>
-                      </div>
-
-                      <div className="mt-2.5 flex items-start gap-2 rounded bg-[#11151d] p-2 border border-white/5">
-                        <PowerIcon className="h-4 w-4 text-[#facc15] shrink-0 mt-0.5" />
-                        <div>
-                          <div className="text-[11px] font-semibold text-white">Poder: {gp.name}</div>
-                          <div className="text-[10px] text-[#9ca3af]">{gp.description}</div>
+                    <div className="space-y-2.5">
+                      {/* Divine Portrait & Title Banner */}
+                      <div className="flex items-center gap-3">
+                        <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-md border-2 border-[#c8a962]/75 bg-[#090d14] shadow-inner">
+                          {!portraitFailed ? (
+                            <img
+                              src={portraitSrc}
+                              alt={mg.name}
+                              referrerPolicy="no-referrer"
+                              onError={() =>
+                                setFailedMinorPortraits((prev) => ({ ...prev, [mg.id]: true }))
+                              }
+                              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                            />
+                          ) : (
+                            <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#2a200d] to-[#111827] font-display text-2xl font-bold text-[#f3d27a]">
+                              {mg.name.slice(0, 2).toUpperCase()}
+                            </div>
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="font-display text-lg font-bold text-[#f3d27a] truncate">
+                              {mg.name}
+                            </span>
+                            <span className="rounded border border-[#c8a962]/35 bg-[#1b2234] px-2 py-0.5 text-[10px] font-bold text-[#fde68a] shrink-0">
+                              Era {mg.age}
+                            </span>
+                          </div>
+                          <div className="mt-0.5 text-xs font-medium text-[#cbd5e1]">
+                            {playerPantheon.name} · {gp.category}
+                          </div>
+                          <div className="mt-1.5 inline-flex items-center gap-1 rounded bg-[#0f2419] border border-emerald-400/35 px-2 py-0.5 text-[10px] font-semibold text-emerald-300">
+                            <Shield className="h-3 w-3 shrink-0" />
+                            <span>{mg.passiveBonusLabel}</span>
+                          </div>
                         </div>
                       </div>
 
-                      <div className="mt-2 text-xs text-[#38bdf8] font-medium">
-                        Unidade Mítica: {mg.mythUnitTitle}
+                      {/* God Power Block */}
+                      <div className="flex items-start gap-2.5 rounded border border-[#facc15]/25 bg-[#0e131d] p-2.5">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded border border-[#c8a962]/50 bg-[#1e190b]">
+                          <PowerIcon className="h-4 w-4 text-[#facc15]" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-xs font-bold text-white truncate">Poder: {gp.name}</span>
+                            <span className="font-mono-num text-[10px] text-[#7dd3fc] shrink-0">
+                              {gp.favorCost}F · {gp.cooldown}s
+                            </span>
+                          </div>
+                          <p className="mt-0.5 text-[11px] leading-snug text-[#9ca3af]">{gp.description}</p>
+                        </div>
                       </div>
-                      <div className="mt-1 text-[11px] text-[#86efac]">
-                        Bônus Passivo: {mg.passiveBonusLabel}
+
+                      {/* Mythic Unit Block */}
+                      <div className="flex items-center gap-2.5 rounded border border-[#38bdf8]/25 bg-[#0d1824] px-2.5 py-2">
+                        <UnitIcon kind={mg.mythUnit} pantheon={hud.pantheon} size={28} />
+                        <div className="min-w-0 flex-1">
+                          <div className="text-[10px] uppercase tracking-wider text-[#7dd3fc] font-semibold">
+                            Unidade Mítica
+                          </div>
+                          <div className="text-xs font-bold text-white truncate">{mg.mythUnitTitle}</div>
+                        </div>
                       </div>
+
+                      {/* Exclusive Minor God Technologies */}
+                      {exclusiveTechs.length > 0 && (
+                        <div className="space-y-1 rounded border border-[#a855f7]/25 bg-[#141022] p-2">
+                          <div className="text-[10px] uppercase tracking-wider font-semibold text-[#d8b4fe]">
+                            Tecnologias Exclusivas
+                          </div>
+                          <div className="grid grid-cols-1 gap-1">
+                            {exclusiveTechs.map((t) => (
+                              <div key={t.id} className="flex items-center gap-2 text-[11px] text-[#e2e8f0]">
+                                <TechIcon techId={t.id} size={20} />
+                                <div className="min-w-0">
+                                  <span className="font-semibold text-[#f3e8ff]">{t.name}: </span>
+                                  <span className="text-[10px] text-[#cbd5e1]">{t.description}</span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
 
-                    <div className="mt-2 w-full rounded bg-[#d4af37] py-1.5 text-center text-xs font-bold text-[#0b0e13]">
+                    <div className="w-full rounded bg-gradient-to-r from-[#c8a962] via-[#e5c45e] to-[#c8a962] py-2 text-center text-xs font-bold uppercase tracking-wider text-[#0b0e13] shadow group-hover:brightness-110">
                       Adorar {mg.name}
                     </div>
                   </button>
@@ -2333,8 +2821,13 @@ export function GameHUD({
                   <div className="mb-2 font-bold text-[#f3d27a]">Edificações ({playerPantheon.name})</div>
                   <div className="space-y-1.5">
                     {buildingList.map((b) => (
-                      <div key={b.kind} className="flex items-center justify-between gap-2 rounded bg-[#10141c] px-2.5 py-1.5">
-                        <span className={hud.age >= b.minAge ? 'text-white font-semibold truncate' : 'text-[#64748b] truncate'}>{b.name}</span>
+                      <div key={b.kind} className="flex items-center justify-between gap-2 rounded bg-[#10141c] px-2 py-1.5">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <BuildingIcon kind={b.kind} pantheon={hud.pantheon} size={20} />
+                          <span className={hud.age >= b.minAge ? 'text-white font-semibold truncate' : 'text-[#64748b] truncate'}>
+                            {b.name}
+                          </span>
+                        </div>
                         <span className="flex items-center gap-1 text-[11px] text-[#e5c45e] shrink-0">
                           <EraIcon age={b.minAge} pantheon={hud.pantheon} size={15} locked={hud.age < b.minAge} />
                           <span>{AGE_NAMES[b.minAge].replace('Era ', '')}</span>
@@ -2347,10 +2840,21 @@ export function GameHUD({
                   <div className="mb-2 font-bold text-[#f3d27a]">Tropas & Bestas Míticas</div>
                   <div className="space-y-1.5">
                     {[...unitList, ...(hud.titansEnabled ? [getCivUnitSpec(hud.pantheon, 'titan')] : [])].map((u) => (
-                      <div key={u.kind} className="flex items-center justify-between gap-2 rounded bg-[#10141c] px-2.5 py-1.5">
-                        <span className={hud.age >= u.minAge ? (u.isMythic ? 'text-[#38bdf8] font-semibold truncate' : 'text-white font-semibold truncate') : 'text-[#64748b] truncate'}>
-                          {u.name}
-                        </span>
+                      <div key={u.kind} className="flex items-center justify-between gap-2 rounded bg-[#10141c] px-2 py-1.5">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <UnitIcon kind={u.kind} pantheon={hud.pantheon} size={20} />
+                          <span
+                            className={
+                              hud.age >= u.minAge
+                                ? u.isMythic
+                                  ? 'text-[#38bdf8] font-semibold truncate'
+                                  : 'text-white font-semibold truncate'
+                                : 'text-[#64748b] truncate'
+                            }
+                          >
+                            {u.name}
+                          </span>
+                        </div>
                         <span className="flex items-center gap-1 text-[11px] text-[#e5c45e] shrink-0">
                           <EraIcon age={u.minAge} pantheon={hud.pantheon} size={15} locked={hud.age < u.minAge} />
                           <span>Atq {u.attack}</span>
@@ -2751,17 +3255,6 @@ export function GameHUD({
                   </button>
                   <button
                     type="button"
-                    onClick={() => {
-                      onTogglePause();
-                      setUvBuilderOpen(true);
-                    }}
-                    className="flex items-center justify-center gap-2 rounded border border-[#38bdf8]/40 bg-[#171c26] px-4 py-2 text-xs font-semibold text-[#38bdf8] hover:bg-[#222938] cursor-pointer"
-                  >
-                    <Box className="h-3.5 w-3.5 text-[#38bdf8]" />
-                    <span>Modelo 3D/2.5D</span>
-                  </button>
-                  <button
-                    type="button"
                     onClick={onSaveMatch}
                     className="flex items-center justify-center gap-2 rounded border border-white/15 bg-[#171c26] px-4 py-2 text-xs font-semibold text-[#f3efe6] hover:bg-[#222938] cursor-pointer"
                   >
@@ -2997,21 +3490,6 @@ export function GameHUD({
           </div>
         </div>
       )}
-
-      <HopliteUvBuilderModal
-        isOpen={uvBuilderOpen}
-        onClose={() => setUvBuilderOpen(false)}
-        activeMode={hud.hopliteRenderMode ?? '3d'}
-        activeTier={hud.hopliteArmorTier ?? 3}
-        onSelectMode={(mode) => {
-          onSetHopliteMode?.(mode);
-          onUpdateOptions({ ...options, hopliteRenderMode: mode });
-        }}
-        onSelectTier={(tier) => {
-          onSetHopliteArmorTier?.(tier);
-          onUpdateOptions({ ...options, hopliteArmorTier: tier });
-        }}
-      />
     </>
   );
 }

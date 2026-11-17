@@ -76,7 +76,15 @@ function getTechTheme(techId: TechId): PaletteTheme {
     case 'omniscience':
     case 'mythic_rejuvenation':
     case 'secrets_of_titans':
+    case 'perception':
+    case 'horns_of_consecration':
       return THEMES.temple;
+    case 'golden_apples':
+      return THEMES.apollo;
+    case 'necropolis':
+      return THEMES.military;
+    case 'hammer_of_the_gods':
+      return THEMES.hephaestus;
   }
 }
 
@@ -448,6 +456,57 @@ function renderArtwork(techId: TechId) {
           {/* Titan Portal Starburst */}
           <circle cx="16" cy="16" r="8.5" fill="none" stroke="#facc15" strokeWidth="1.6" strokeDasharray="3 2" />
           <path d="M16 6.5 L18.5 13.5 L25.5 16 L18.5 18.5 L16 25.5 L13.5 18.5 L6.5 16 L13.5 13.5 Z" fill="#facc15" stroke="#fffbeb" strokeWidth="1" />
+        </g>
+      );
+
+    // ── TECNOLOGIAS DE FAVOR DIVINO ──
+    case 'golden_apples':
+      return (
+        <g>
+          {/* Maçã Dourada de Afrodite com folha esmeralda */}
+          <path d="M16 10.5 C12.5 10.5 9.5 13 9.5 17.5 C9.5 22 12.5 25.5 16 25 C19.5 25.5 22.5 22 22.5 17.5 C22.5 13 19.5 10.5 16 10.5 Z" fill="#facc15" stroke="#fef9c3" strokeWidth="1.3" />
+          <path d="M16 10.5 C16 8.5 17 7 18.5 6.5" fill="none" stroke="#a16207" strokeWidth="1.6" strokeLinecap="round" />
+          <path d="M16.5 9.5 C19 7.5 22 8 22.5 10.5 C20 11 18 10.8 16.5 9.5 Z" fill="#4ade80" />
+          <circle cx="13.5" cy="15" r="1.4" fill="#fef08a" />
+        </g>
+      );
+
+    case 'necropolis':
+      return (
+        <g>
+          {/* Obelisco e Ankh Dourado de Anúbis */}
+          <path d="M16 5.5 L19.5 11 L20.5 25.5 H11.5 L12.5 11 Z" fill="#6b21a8" stroke="#facc15" strokeWidth="1.3" />
+          <circle cx="16" cy="14" r="2.2" fill="none" stroke="#fde047" strokeWidth="1.4" />
+          <path d="M16 16.2 V22.5 M13.5 18.5 H18.5" stroke="#fde047" strokeWidth="1.4" strokeLinecap="round" />
+        </g>
+      );
+
+    case 'hammer_of_the_gods':
+      return (
+        <g>
+          {/* Mjölnir — Martelo de Thor com faíscas elétricas */}
+          <path d="M16 15 V26" stroke="#b45309" strokeWidth="2.8" strokeLinecap="round" />
+          <path d="M9.5 8.5 H22.5 L24 12.5 L22.5 15.5 H9.5 L8 12.5 Z" fill="#cbd5e1" stroke="#38bdf8" strokeWidth="1.3" />
+          <path d="M7 10 L10 7 M25 10 L22 7 M23.5 20 L26 23" stroke="#7dd3fc" strokeWidth="1.5" strokeLinecap="round" />
+        </g>
+      );
+
+    case 'perception':
+      return (
+        <g>
+          {/* Olho do Oráculo com anéis de visão */}
+          <circle cx="16" cy="16" r="9.5" fill="none" stroke="#38bdf8" strokeWidth="1.2" strokeDasharray="2.5 2" />
+          <path d="M8 16 Q16 10 24 16 Q16 22 8 16 Z" fill="#0e7490" stroke="#7dd3fc" strokeWidth="1.4" />
+          <circle cx="16" cy="16" r="2.6" fill="#fef08a" />
+        </g>
+      );
+
+    case 'horns_of_consecration':
+      return (
+        <g>
+          {/* Chifres Atlantes da Consagração com chama sagrada */}
+          <path d="M7.5 10 C7.5 21 12 24.5 16 24.5 C20 24.5 24.5 21 24.5 10 C22.5 16 20 19.5 16 19.5 C12 19.5 9.5 16 7.5 10 Z" fill="#d4af37" stroke="#fef3c7" strokeWidth="1.2" />
+          <path d="M16 7.5 C18.5 10.5 19 13.5 16 16 C13 13.5 13.5 10.5 16 7.5 Z" fill="#38bdf8" stroke="#e0f2fe" strokeWidth="0.9" />
         </g>
       );
   }
