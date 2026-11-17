@@ -35,6 +35,7 @@ import {
   getRivalPantheon,
 } from './divineData';
 import {
+  AGE_ADVANCE_TIMES,
   AGE_COSTS,
   AGE_NAMES,
   AgeLevel,
@@ -1693,6 +1694,11 @@ export class AoMEngine {
     }
 
     const pantheon = this.teamPantheon(team);
+    const unitSpec = this.unitStats(kind, team);
+    if (unitSpec.isMajorGod && unitSpec.name.toLowerCase().includes(this.majorGodName.toLowerCase())) {
+      hpMult += 0.15;
+      atkMult += 0.15;
+    }
     const isZeus = pantheon === 'greek' && team === 'player' && this.majorGodName.toLowerCase().includes('zeus');
     if (isZeus) {
       if (kind === 'hoplite') {
@@ -1727,7 +1733,17 @@ export class AoMEngine {
     const furyStacks = attacker.kind === 'myrmidon' || attacker.kind === 'hydra' ? (attacker.combatFury ?? 0) : 0;
     const chargeMult =
       (attacker.kind === 'cavalry' || attacker.kind === 'bellerophon') && (attacker.chargeCooldown ?? 0) <= 0 ? 1.45 : 1;
-    let baseDmg = aSpec.attack * mods.atkMult * (1 + furyStacks * 0.08) * chargeMult;
+    let divineAuraMult = 1;
+    if (!aSpec.isMajorGod) {
+      for (const ally of this.units.values()) {
+        if (ally.team !== attacker.team || ally.hp <= 0) continue;
+        if (this.unitStats(ally.kind, ally.team).isMajorGod && ally.mesh.position.distanceTo(attacker.mesh.position) <= 16) {
+          divineAuraMult = 1.2;
+          break;
+        }
+      }
+    }
+    let baseDmg = aSpec.attack * mods.atkMult * (1 + furyStacks * 0.08) * chargeMult * divineAuraMult;
 
     if (targetUnit) {
       const tSpec = this.unitStats(targetUnit.kind, targetUnit.team);
@@ -2373,6 +2389,16 @@ export class AoMEngine {
     this.emitHudSnapshot();
   }
 
+  private isGodSummonedOrQueued(kind: UnitKind, team: TeamId): boolean {
+    for (const u of this.units.values()) {
+      if (u.team === team && u.hp > 0 && u.kind === kind) return true;
+    }
+    for (const b of this.buildings.values()) {
+      if (b.team === team && b.trainingQueue.some((q) => q.kind === kind)) return true;
+    }
+    return false;
+  }
+
   public trainUnit(kind: UnitKind) {
     if (this.phase !== 'playing') return;
     if (kind === 'myrmidon' && this.pantheon === 'greek' && !this.majorGodName.toLowerCase().includes('zeus')) {
@@ -2386,6 +2412,10 @@ export class AoMEngine {
     }
     if (stats.requiresMinorGod && !stats.requiresMinorGod.some((mg) => this.chosenMinorGods.includes(mg))) {
       this.notifyStatus(`Requer adorar ${stats.requiresMinorGodLabel ?? 'um Deus Menor compatível'}!`);
+      return;
+    }
+    if (stats.isMajorGod && this.isGodSummonedOrQueued(kind, 'player')) {
+      this.notifyStatus(`${stats.name} é um Deus Maior único e já está em campo ou em convocação!`);
       return;
     }
     const pop = this.getPopulation('player');
@@ -2431,22 +2461,66 @@ export class AoMEngine {
 
     this.deductCost(this.resources, stats.cost);
     targetBuilding.trainingQueue.push({ kind, progress: 0, total: stats.trainTime });
-    soundEngine.playSelect();
+    if (stats.isMajorGod) {
+      this.spawnPillarVfx(targetBuilding.mesh.position, 0xfacc15, 1.3);
+      soundEngine.playFanfare(false);
+      this.notifyStatus(`Iniciando ritual de convocação de ${stats.name} no Templo!`);
+    } else {
+      soundEngine.playSelect();
+    }
     this.emitHudSnapshot();
   }
 
   public advanceAge() {
-    if (this.phase !== 'playing' || this.age >= 4) return;
+    if (this.phase !== 'playing' || this.age >= 5) return;
     if (this.advancingToAge) {
       this.notifyStatus(`Já avançando para a ${AGE_NAMES[this.advancingToAge]}...`);
       return;
     }
-    const nextAge = (this.age + 1) as 2 | 3 | 4;
-    const cost = AGE_COSTS[nextAge];
-    if (!this.canAfford(this.resources, cost)) {
-      this.notifyStatus(`Recursos insuficientes para avançar à ${AGE_NAMES[nextAge]}.`);
+    const nextAge = (this.age + 1) as 2 | 3 | 4 | 5;
+    if (nextAge === 5 && this.activeTechResearch?.id === 'secrets_of_titans') {
+      this.notifyStatus(`Ascensão para a ${AGE_NAMES[5]} já está em andamento no Templo!`);
       return;
     }
+    const cost = AGE_COSTS[nextAge];
+    if (!this.canAfford(this.resources, cost)) {
+      const parts: string[] = [];
+      if (cost.food) parts.push(`${cost.food} Alim`);
+      if (cost.wood) parts.push(`${cost.wood} Mad`);
+      if (cost.gold) parts.push(`${cost.gold} Ouro`);
+      if (cost.favor) parts.push(`${cost.favor} Favor`);
+      this.notifyStatus(`Recursos insuficientes para ${AGE_NAMES[nextAge]} (${parts.join(', ')}).`);
+      return;
+    }
+
+    if (nextAge === 5) {
+      let hasTownCenter = false;
+      for (const b of this.buildings.values()) {
+        if (b.team === 'player' && b.isConstructed && b.kind === 'town_center') {
+          hasTownCenter = true;
+          break;
+        }
+      }
+      if (!hasTownCenter) {
+        this.notifyStatus('Necessário um Centro da Cidade construído para iniciar a Era V.');
+        return;
+      }
+      this.deductCost(this.resources, cost);
+      this.advancingToAge = 5;
+      this.ageAdvanceProgress = 0;
+      this.ageAdvanceTotal = AGE_ADVANCE_TIMES[5];
+      soundEngine.playFanfare(false);
+      for (const b of this.buildings.values()) {
+        if (b.team === 'player' && b.isConstructed && (b.kind === 'town_center' || b.kind === 'temple')) {
+          this.spawnPillarVfx(b.mesh.position, 0xfacc15, 1.4);
+          this.spawnRingVfx(b.mesh.position, 7, 0xc084fc, 1.0);
+        }
+      }
+      this.notifyStatus(`Ascendendo à ${AGE_NAMES[5]}! Os Deuses Maiores preparam sua descida...`);
+      this.emitHudSnapshot();
+      return;
+    }
+
     this.pendingMinorGodAge = nextAge;
     soundEngine.playSelect();
     this.emitHudSnapshot();
@@ -2478,7 +2552,7 @@ export class AoMEngine {
     }
     this.advancingToAge = nextAge;
     this.ageAdvanceProgress = 0;
-    this.ageAdvanceTotal = nextAge === 2 ? 10 : nextAge === 3 ? 14 : 18;
+    this.ageAdvanceTotal = AGE_ADVANCE_TIMES[nextAge] || 14;
     soundEngine.playFanfare(false);
     this.notifyStatus(`Adorando ${minorSpec.name}! Avançando para a ${AGE_NAMES[nextAge]}...`);
     this.emitHudSnapshot();
@@ -2486,6 +2560,10 @@ export class AoMEngine {
 
   public researchTech(techId: TechId) {
     if (this.phase !== 'playing') return;
+    if (techId === 'secrets_of_titans' && (this.advancingToAge === 5 || this.age >= 5)) {
+      this.notifyStatus(this.age >= 5 ? `${AGE_NAMES[5]} já alcançada!` : `Ascensão para a ${AGE_NAMES[5]} já está em andamento!`);
+      return;
+    }
     const spec = TECH_SPECS[techId];
     if (!spec) return;
     if (this.researchedTechs.includes(techId)) {
@@ -2881,7 +2959,8 @@ export class AoMEngine {
       this.spawnRingVfx(worldPos, spec.radius, 0xc084fc, 1.4);
       let converted = 0;
       for (const u of this.units.values()) {
-        if (u.team !== 'player' && u.kind !== 'titan' && u.mesh.position.distanceTo(worldPos) <= spec.radius) {
+        const uSpec = this.unitStats(u.kind, u.team);
+        if (u.team !== 'player' && u.kind !== 'titan' && !uSpec.isGod && u.mesh.position.distanceTo(worldPos) <= spec.radius) {
           u.team = 'player';
           u.state = 'idle';
           u.targetEntityId = null;
@@ -5936,6 +6015,10 @@ export class AoMEngine {
     for (const u of [...this.units.values()]) {
       const stats = this.unitStats(u.kind, u.team);
       const mods = this.computeUnitModifiers(u.kind, u.team);
+      if (stats.isGod && u.hp > 0 && u.hp < u.maxHp) {
+        const regenRate = stats.isMajorGod ? 10 : 5;
+        u.hp = Math.min(u.maxHp, u.hp + regenRate * dt);
+      }
       if (u.kind === 'myrmidon' || u.kind === 'hydra') {
         if ((u.combatFuryDecayTimer ?? 0) > 0) {
           u.combatFuryDecayTimer = Math.max(0, (u.combatFuryDecayTimer ?? 0) - dt);
@@ -6596,7 +6679,7 @@ export class AoMEngine {
               let threwTarget = false;
               if (u.kind === 'cyclops' && targetU && (u.specialCooldown ?? 0) <= 0) {
                 const tSpec = this.unitStats(targetU.kind, targetU.team);
-                if (!tSpec.isSiege && targetU.kind !== 'titan' && targetU.kind !== 'cyclops' && targetU.kind !== 'colossus') {
+                if (!tSpec.isSiege && !tSpec.isGod && targetU.kind !== 'titan' && targetU.kind !== 'cyclops' && targetU.kind !== 'colossus') {
                   u.specialCooldown = 8.0;
                   threwTarget = true;
                   const dx = targetU.mesh.position.x - u.mesh.position.x;
@@ -6740,6 +6823,27 @@ export class AoMEngine {
           }
 
           const spawned = this.spawnUnit(job.kind, b.team, sx, sz);
+          const spawnedStats = this.unitStats(job.kind, b.team);
+          if (spawnedStats.isGod) {
+            this.spawnPillarVfx(spawned.mesh.position, spawnedStats.isMajorGod ? 0xfacc15 : 0xc084fc, spawnedStats.isMajorGod ? 2.4 : 1.7);
+            this.spawnRingVfx(spawned.mesh.position, spawnedStats.isMajorGod ? 9.5 : 6.5, spawnedStats.isMajorGod ? 0xfacc15 : 0xc084fc, 1.2);
+            if (spawnedStats.isMajorGod) {
+              soundEngine.playFanfare(true);
+              soundEngine.playLightning?.();
+            } else {
+              soundEngine.playFanfare(false);
+            }
+            if (b.team === 'player') {
+              this.triggerUnitVoice([spawned], 'select');
+              this.notifyStatus(
+                spawnedStats.isMajorGod
+                  ? `⚡ INVOCAÇÃO DIVINA! ${spawnedStats.name} desceu ao campo de batalha!`
+                  : `✨ ${spawnedStats.name} respondeu ao chamado no Templo!`
+              );
+            } else if (spawnedStats.isMajorGod) {
+              this.notifyStatus(`⚠️ O inimigo invocou ${spawnedStats.name} no campo de batalha!`);
+            }
+          }
           if (b.rallyPoint) {
             spawned.mesh.rotation.y = Math.atan2(
               b.rallyPoint.x - b.mesh.position.x,
@@ -6816,7 +6920,7 @@ export class AoMEngine {
               }
             }
 
-            // Repeat Button support: keep training the same unit type when queue finishes
+            // Repeat Button support: keep training the same unit type when queue finishes (skip unique Major Gods)
             if (b.repeatTraining && b.trainingQueue.length === 0) {
               const repeatSpec = this.unitStats(job.kind, 'player');
               const pop = this.getPopulation('player');
@@ -6824,6 +6928,7 @@ export class AoMEngine {
                 !repeatSpec.requiresMinorGod ||
                 repeatSpec.requiresMinorGod.some((mg) => this.chosenMinorGods.includes(mg));
               if (
+                !repeatSpec.isMajorGod &&
                 this.age >= repeatSpec.minAge &&
                 hasMinorGod &&
                 pop.current + repeatSpec.popCost <= pop.cap &&
@@ -7717,6 +7822,13 @@ export class AoMEngine {
       unlockedPowers: [...this.unlockedPowers],
       researchedTechs: [...this.researchedTechs],
       activeTechResearch: this.activeTechResearch ? { ...this.activeTechResearch } : null,
+      activeGodKinds: [...this.units.values()]
+        .filter((u) => u.team === 'player' && u.hp > 0 && this.unitStats(u.kind, 'player').isGod)
+        .map((u) => u.kind),
+      queuedGodKinds: [...this.buildings.values()]
+        .filter((b) => b.team === 'player')
+        .flatMap((b) => b.trainingQueue.map((q) => q.kind))
+        .filter((k) => this.unitStats(k, 'player').isGod),
       relicsHeld: this.relicsHeld,
       marketRates: { ...this.marketRates },
       enemyAge: this.enemyAge,
@@ -7847,11 +7959,31 @@ export class AoMEngine {
           this.advancingToAge = null;
           this.ageAdvanceProgress = 0;
           this.ageAdvanceTotal = 0;
-          soundEngine.playFanfare(false);
-          this.notifyStatus(`Avançou para a ${AGE_NAMES[this.age]}!`);
-          for (const b of this.buildings.values()) {
-            if (b.team === 'player' && b.kind === 'town_center') {
-              this.spawnRingVfx(b.mesh.position, 9, 0xfacc15, 1.1);
+          soundEngine.playFanfare(this.age === 5);
+          if (this.age === 5) {
+            if (!this.researchedTechs.includes('secrets_of_titans')) {
+              this.researchedTechs.push('secrets_of_titans');
+              this.stats.techsResearched += 1;
+            }
+            if (this.activeTechResearch?.id === 'secrets_of_titans') {
+              this.activeTechResearch = null;
+            }
+            soundEngine.playLightning?.();
+            this.notifyStatus(
+              '⚡ ERA V: ERA DOS DEUSES ALCANÇADA! Convocação de Deuses Maiores e Menores habilitada no Templo!'
+            );
+            for (const b of this.buildings.values()) {
+              if (b.team === 'player' && (b.kind === 'town_center' || b.kind === 'temple')) {
+                this.spawnPillarVfx(b.mesh.position, 0xfacc15, 2.0);
+                this.spawnRingVfx(b.mesh.position, 10, 0xc084fc, 1.3);
+              }
+            }
+          } else {
+            this.notifyStatus(`Avançou para a ${AGE_NAMES[this.age]}!`);
+            for (const b of this.buildings.values()) {
+              if (b.team === 'player' && b.kind === 'town_center') {
+                this.spawnRingVfx(b.mesh.position, 9, 0xfacc15, 1.1);
+              }
             }
           }
         }

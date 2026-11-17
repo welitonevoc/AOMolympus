@@ -328,24 +328,20 @@ export function GameHUD({
     }
   }, [hud.selection.primaryType, hud.selection.buildingId, buildingPopupDismissedId]);
 
-  const nextAge = hud.age < 4 ? ((hud.age + 1) as AgeLevel) : null;
+  const nextAge = hud.age < 5 ? ((hud.age + 1) as AgeLevel) : null;
   const nextAgeCost = nextAge ? AGE_COSTS[nextAge] : null;
   const canAffordNextAge =
     !hud.advancingToAge &&
+    !(nextAge === 5 && hud.activeTechResearch?.id === 'secrets_of_titans') &&
     nextAgeCost != null &&
     hud.resources.food >= (nextAgeCost.food ?? 0) &&
+    hud.resources.wood >= (nextAgeCost.wood ?? 0) &&
     hud.resources.gold >= (nextAgeCost.gold ?? 0) &&
     hud.resources.favor >= (nextAgeCost.favor ?? 0);
 
-  const secretsSpec = TECH_SPECS.secrets_of_titans;
-  const canResearchTitans =
-    hud.age === 4 &&
-    !hud.activeTechResearch &&
-    !hud.researchedTechs.includes('secrets_of_titans') &&
-    hud.resources.food >= (secretsSpec.cost.food ?? 0) &&
-    hud.resources.wood >= (secretsSpec.cost.wood ?? 0) &&
-    hud.resources.gold >= (secretsSpec.cost.gold ?? 0) &&
-    hud.resources.favor >= (secretsSpec.cost.favor ?? 0);
+  const activeMajorGodCount = (hud.activeGodKinds ?? []).filter(
+    (k) => k === 'zeus' || k === 'poseidon' || k === 'hades'
+  ).length;
 
   const ageAdvancePct =
     hud.advancingToAge && hud.ageAdvanceTotal > 0
@@ -602,26 +598,9 @@ export function GameHUD({
                 ({formatCost(nextAgeCost)})
               </span>
             </button>
-          ) : hud.age === 4 ? (
-            <button
-              type="button"
-              onClick={() => onResearchTech('secrets_of_titans')}
-              disabled={!canResearchTitans}
-              title={`Despertar ${AGE_NAMES[5]} no Templo (${formatCost(secretsSpec.cost)})`}
-              className={`flex items-center gap-1.5 rounded px-2.5 py-1 text-[11px] font-bold transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
-                canResearchTitans
-                  ? 'border border-[#f5d77f] bg-gradient-to-b from-[#e0bc56] to-[#a87f20] text-[#0d1017] hover:brightness-110'
-                  : 'border border-white/10 bg-[#171c26] text-[#94a3b8] opacity-80 cursor-not-allowed'
-              }`}
-            >
-              <span>{AGE_NAMES[5]}</span>
-              <span className="font-mono-num text-[10px] hidden sm:inline">
-                ({formatCost(secretsSpec.cost)})
-              </span>
-            </button>
           ) : (
             <span className="font-display text-[11px] font-semibold text-[#fde68a] whitespace-nowrap shrink-0">
-              Era Máxima
+              Era Máxima · Deuses {activeMajorGodCount}/3
             </span>
           )}
         </div>
@@ -1284,12 +1263,18 @@ export function GameHUD({
                       const minorGodLocked = Boolean(
                         u.requiresMinorGod && !u.requiresMinorGod.some((mg) => hud.chosenMinorGods.includes(mg))
                       );
+                      const alreadyActive = Boolean(u.isMajorGod && hud.activeGodKinds?.includes(u.kind));
+                      const alreadyQueued = Boolean(u.isMajorGod && hud.queuedGodKinds?.includes(u.kind));
                       const notBuilt = !hud.selection.isConstructed;
-                      const disabled = ageLocked || minorGodLocked || notBuilt;
+                      const disabled = ageLocked || minorGodLocked || notBuilt || alreadyActive || alreadyQueued;
                       const lockText = ageLocked
                         ? `Requer ${AGE_NAMES[u.minAge]}`
                         : minorGodLocked
                         ? `Requer ${u.requiresMinorGodLabel ?? 'Deus Menor'}`
+                        : alreadyActive
+                        ? 'Já invocado no campo de batalha (Único)'
+                        : alreadyQueued
+                        ? 'Ritual de convocação em andamento...'
                         : null;
                       return (
                         <button
@@ -1298,8 +1283,14 @@ export function GameHUD({
                           disabled={disabled}
                           onClick={() => onTrainUnit(u.kind)}
                           className={`flex items-center justify-between gap-2 rounded border px-2.5 py-1.5 text-left transition-colors cursor-pointer ${
-                            disabled
+                            alreadyActive
+                              ? 'border-[#facc15]/60 bg-[#231d0c] text-[#fde68a] cursor-default'
+                              : disabled
                               ? 'border-white/5 bg-[#131720] text-[#64748b] cursor-not-allowed'
+                              : u.isMajorGod
+                              ? 'border-[#facc15]/65 bg-gradient-to-r from-[#2c200b] to-[#1a150b] text-[#fef08a] hover:border-[#fde047] hover:brightness-110'
+                              : u.isGod
+                              ? 'border-[#c084fc]/50 bg-[#1d152b] text-[#f3e8ff] hover:border-[#c084fc] hover:bg-[#261b3a]'
                               : u.isMythic
                               ? 'border-[#38bdf8]/40 bg-[#152230] text-[#f3efe6] hover:border-[#38bdf8] hover:bg-[#1b2d40]'
                               : u.isHero
@@ -1319,8 +1310,26 @@ export function GameHUD({
                               {lockText ?? formatCost(u.cost)}
                             </div>
                           </div>
-                          <span className="rounded bg-white/10 px-2 py-1 text-[10px] font-semibold text-white shrink-0">
-                            {ageLocked ? AGE_NAMES[u.minAge] : minorGodLocked ? (u.requiresMinorGodLabel ?? 'Deus') : 'Treinar'}
+                          <span
+                            className={`rounded px-2 py-1 text-[10px] font-semibold shrink-0 ${
+                              alreadyActive
+                                ? 'bg-[#facc15]/20 text-[#fde047]'
+                                : u.isMajorGod && !disabled
+                                ? 'bg-[#d4af37] text-[#0b0e13] font-bold'
+                                : 'bg-white/10 text-white'
+                            }`}
+                          >
+                            {ageLocked
+                              ? AGE_NAMES[u.minAge]
+                              : minorGodLocked
+                              ? (u.requiresMinorGodLabel ?? 'Deus')
+                              : alreadyActive
+                              ? 'Em Campo'
+                              : alreadyQueued
+                              ? 'Invocando'
+                              : u.isGod
+                              ? 'Invocar'
+                              : 'Treinar'}
                           </span>
                         </button>
                       );
@@ -1841,7 +1850,9 @@ export function GameHUD({
                     const minorGodLocked = Boolean(
                       u.requiresMinorGod && !u.requiresMinorGod.some((mg) => hud.chosenMinorGods.includes(mg))
                     );
-                    const locked = ageLocked || minorGodLocked;
+                    const alreadyActive = Boolean(u.isMajorGod && hud.activeGodKinds?.includes(u.kind));
+                    const alreadyQueued = Boolean(u.isMajorGod && hud.queuedGodKinds?.includes(u.kind));
+                    const locked = ageLocked || minorGodLocked || alreadyActive || alreadyQueued;
                     return (
                       <button
                         key={u.kind}
@@ -1850,8 +1861,14 @@ export function GameHUD({
                         onClick={() => onTrainUnit(u.kind)}
                         title={`${u.role} (${getCivBuildingSpec(hud.pantheon, u.producedAt).name})`}
                         className={`flex flex-col items-start rounded border px-2 py-1 text-left transition-colors cursor-pointer ${
-                          locked
+                          alreadyActive
+                            ? 'border-[#facc15]/55 bg-[#231d0c] text-[#fde68a] cursor-default'
+                            : locked
                             ? 'border-white/5 bg-[#131720] text-[#64748b] cursor-not-allowed'
+                            : u.isMajorGod
+                            ? 'border-[#facc15]/60 bg-gradient-to-r from-[#2c200b] to-[#1a150b] text-[#fef08a] hover:border-[#fde047]'
+                            : u.isGod
+                            ? 'border-[#c084fc]/45 bg-[#1d152b] text-[#f3e8ff] hover:border-[#c084fc]'
                             : u.isMythic
                             ? 'border-[#38bdf8]/35 bg-[#152230] text-[#f3efe6] hover:border-[#38bdf8] hover:bg-[#1b2d40]'
                             : u.isHero
@@ -1865,6 +1882,10 @@ export function GameHUD({
                             ? AGE_NAMES[u.minAge]
                             : minorGodLocked
                             ? `Requer ${u.requiresMinorGodLabel ?? 'Deus Menor'}`
+                            : alreadyActive
+                            ? 'Em Campo (Único)'
+                            : alreadyQueued
+                            ? 'Convocando...'
                             : formatCost(u.cost)}
                         </span>
                       </button>

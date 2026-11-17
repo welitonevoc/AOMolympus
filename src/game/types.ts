@@ -473,7 +473,15 @@ export const AGE_COSTS: Record<AgeLevel, ResourceCost> = {
   2: { food: 350, gold: 100 },
   3: { food: 650, gold: 350, favor: 15 },
   4: { food: 950, gold: 750, favor: 35 },
-  5: { food: 800, wood: 800, gold: 800, favor: 50 },
+  5: { food: 1200, wood: 800, gold: 1200, favor: 60 },
+};
+
+export const AGE_ADVANCE_TIMES: Record<AgeLevel, number> = {
+  1: 0,
+  2: 10,
+  3: 14,
+  4: 18,
+  5: 24,
 };
 
 export const PANTHEONS: Record<PantheonId, PantheonConfig> = {
@@ -2227,6 +2235,8 @@ export interface GameHudSnapshot {
   unlockedPowers: GodPowerId[];
   researchedTechs: TechId[];
   activeTechResearch: { id: TechId; progress: number; total: number } | null;
+  activeGodKinds?: UnitKind[];
+  queuedGodKinds?: UnitKind[];
   relicsHeld: number;
   marketRates: { food: number; wood: number; gold: number };
   enemyAge: AgeLevel;

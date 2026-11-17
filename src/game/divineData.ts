@@ -515,11 +515,11 @@ export const TECH_SPECS: Record<TechId, TechSpec> = {
   secrets_of_titans: {
     id: 'secrets_of_titans',
     name: 'Era V: Despertar dos Deuses',
-    description: 'Avança para a Era V (Era dos Deuses), liberando a invocação de Deuses Maiores e Menores no Templo e a construção do Portão do Titã.',
+    description: 'Avança para a Era V (Era dos Deuses), habilitando a convocação de Deuses Maiores e Menores no Templo e o Portão do Titã.',
     minAge: 4,
     building: 'temple',
-    cost: { food: 600, wood: 600, gold: 600, favor: 45 },
-    researchTime: 20,
+    cost: { food: 1200, wood: 800, gold: 1200, favor: 60 },
+    researchTime: 24,
   },
 };
 
