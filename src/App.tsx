@@ -181,7 +181,9 @@ export default function App() {
           onExchangeTribute={(f, t, a) => engineRef.current?.exchangeTribute(f, t, a)}
           onStartBuild={(kind) => engineRef.current?.startBuildMode(kind)}
           onTrainUnit={(kind) => engineRef.current?.trainUnit(kind)}
+          onCancelTrainingItem={(buildingId, index) => engineRef.current?.cancelTrainingItem(buildingId, index)}
           onToggleRepeatTraining={(id) => engineRef.current?.toggleRepeatTraining(id)}
+          onStopUnits={() => engineRef.current?.stopSelectedUnits()}
           onAdvanceAge={() => engineRef.current?.advanceAge()}
           onChooseMinorGod={(id) => engineRef.current?.chooseMinorGod(id)}
           onCancelMinorGod={() => engineRef.current?.cancelMinorGodChoice()}
@@ -204,6 +206,7 @@ export default function App() {
           onMinimapMoveOrder={(x, z) => engineRef.current?.issueMoveCommand(x, z)}
           onSelectCombat={() => engineRef.current?.selectAllCombatUnits()}
           onSelectIdleVillager={() => engineRef.current?.selectIdleVillager()}
+          onSelectIdleMilitary={() => engineRef.current?.selectIdleMilitary()}
           onOrderVillagersToTarget={() => engineRef.current?.commandVillagersToSelectedTarget()}
           onOrderVillagerTask={(task) => engineRef.current?.orderSelectedVillagersToTask(task)}
           onRestart={() => {

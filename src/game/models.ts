@@ -1336,15 +1336,14 @@ export function createBuildingMesh(
   // --- EGYPTIAN / AZTEC / BABYLONIAN ARCHITECTURE ---
   if (look.style === 'egyptian') {
     if (kind === 'house') {
-      addPart(new THREE.Mesh(new THREE.BoxGeometry(3.0, 0.3, 2.6), pal.sandstoneDark), 0, 0.15, 0);
-      addPart(new THREE.Mesh(new THREE.BoxGeometry(2.6, 1.8, 2.3), look.wallMat), 0, 1.2, 0);
-      addPart(new THREE.Mesh(new THREE.BoxGeometry(2.8, 0.22, 2.5), pal.sandstoneDark), 0, 2.2, 0);
-      addPart(new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.18, 2.1), look.trimMat), 0, 2.38, 0);
-      addPart(new THREE.Mesh(new THREE.BoxGeometry(0.85, 1.35, 0.22), pal.timber), 0, 0.98, 1.15);
-      addPart(new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.38, 0.08), teamMat), 0.95, 1.6, 1.18);
+      addPart(new THREE.Mesh(new THREE.BoxGeometry(1.90, 0.14, 1.65), pal.sandstoneDark), 0, 0.07, 0);
+      addPart(new THREE.Mesh(new THREE.BoxGeometry(1.68, 0.96, 1.44), look.wallMat), 0, 0.62, 0);
+      addPart(new THREE.Mesh(new THREE.BoxGeometry(1.78, 0.12, 1.54), look.trimMat), 0, 1.15, 0);
+      addPart(new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.68, 0.12), pal.timber), 0, 0.48, 0.73);
+      addPart(new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.24, 0.06), teamMat), 0.56, 0.88, 0.74);
 
-      attachGroundMarkers(root, 1.8, pal, team);
-      attachHealthBar(root, 3.2, 2.0);
+      attachGroundMarkers(root, 1.15, pal, team);
+      attachHealthBar(root, 2.05, 1.3);
       return root;
     }
     if (kind === 'barracks') {
@@ -1404,18 +1403,18 @@ export function createBuildingMesh(
   // --- NORSE / JAPANESE / CELTIC / LAKOTA / JOTUNN ARCHITECTURE ---
   if (look.style === 'norse') {
     if (kind === 'house') {
-      addPart(new THREE.Mesh(new THREE.BoxGeometry(3.0, 0.32, 2.6), pal.stoneDark), 0, 0.16, 0);
-      addPart(new THREE.Mesh(new THREE.BoxGeometry(2.6, 1.5, 2.2), look.wallMat), 0, 1.05, 0);
-      const roof = new THREE.Mesh(new THREE.ConeGeometry(2.4, 1.8, 4), look.roofMat);
+      addPart(new THREE.Mesh(new THREE.BoxGeometry(1.90, 0.16, 1.65), pal.stoneDark), 0, 0.08, 0);
+      addPart(new THREE.Mesh(new THREE.BoxGeometry(1.66, 0.82, 1.40), look.wallMat), 0, 0.57, 0);
+      const roof = new THREE.Mesh(new THREE.ConeGeometry(1.42, 0.88, 4), look.roofMat);
       roof.rotation.y = Math.PI / 4;
-      addPart(roof, 0, 2.65, 0);
-      addPart(new THREE.Mesh(new THREE.BoxGeometry(0.8, 1.1, 0.22), look.trimMat), 0, 0.85, 1.15);
-      const sh = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.32, 0.09, 10), teamMat);
+      addPart(roof, 0, 1.40, 0);
+      addPart(new THREE.Mesh(new THREE.BoxGeometry(0.40, 0.62, 0.12), look.trimMat), 0, 0.47, 0.71);
+      const sh = new THREE.Mesh(new THREE.CylinderGeometry(0.20, 0.20, 0.06, 10), teamMat);
       sh.rotation.x = Math.PI / 2;
-      addPart(sh, 0.95, 1.35, 1.15);
+      addPart(sh, 0.55, 0.76, 0.73);
 
-      attachGroundMarkers(root, 1.8, pal, team);
-      attachHealthBar(root, 3.2, 2.0);
+      attachGroundMarkers(root, 1.15, pal, team);
+      attachHealthBar(root, 2.05, 1.3);
       return root;
     }
     if (kind === 'barracks') {
@@ -1472,14 +1471,14 @@ export function createBuildingMesh(
   // --- ATLANTEAN / CHINESE / ELDRITCH ARCHITECTURE ---
   if (look.style === 'atlantean') {
     if (kind === 'house') {
-      addPart(new THREE.Mesh(new THREE.BoxGeometry(3.0, 0.32, 2.6), pal.stoneDark), 0, 0.16, 0);
-      addPart(new THREE.Mesh(new THREE.BoxGeometry(2.6, 1.5, 2.2), look.wallMat), 0, 1.05, 0);
-      addPart(new THREE.Mesh(new THREE.BoxGeometry(2.8, 0.2, 2.4), look.trimMat), 0, 1.88, 0);
-      addPart(new THREE.Mesh(new THREE.SphereGeometry(1.25, 14, 10, 0, Math.PI * 2, 0, Math.PI / 2), look.roofMat), 0, 1.98, 0);
-      addPart(new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.4, 0.08), teamMat), 0.9, 1.3, 1.15);
+      addPart(new THREE.Mesh(new THREE.BoxGeometry(1.90, 0.16, 1.65), pal.stoneDark), 0, 0.08, 0);
+      addPart(new THREE.Mesh(new THREE.BoxGeometry(1.66, 0.84, 1.40), look.wallMat), 0, 0.58, 0);
+      addPart(new THREE.Mesh(new THREE.BoxGeometry(1.74, 0.10, 1.48), look.trimMat), 0, 1.05, 0);
+      addPart(new THREE.Mesh(new THREE.SphereGeometry(0.76, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), look.roofMat), 0, 1.09, 0);
+      addPart(new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.24, 0.06), teamMat), 0.55, 0.78, 0.72);
 
-      attachGroundMarkers(root, 1.8, pal, team);
-      attachHealthBar(root, 3.2, 2.0);
+      attachGroundMarkers(root, 1.15, pal, team);
+      attachHealthBar(root, 2.05, 1.3);
       return root;
     }
     if (kind === 'barracks') {
@@ -1529,19 +1528,17 @@ export function createBuildingMesh(
 
   // --- GREEK / ROMAN ARCHITECTURE (Parthenon/Acropolis Grand Monuments) ---
   if (kind === 'house') {
-    // Mediterranean Domus: 3.0 x 2.6, Stucco walls, Arched door, Pitched roof at 2.8u
-    addPart(new THREE.Mesh(new THREE.BoxGeometry(3.0, 0.32, 2.6), pal.stoneDark), 0, 0.16, 0);
-    addPart(new THREE.Mesh(new THREE.BoxGeometry(2.6, 1.6, 2.2), look.wallMat), 0, 1.1, 0);
-    addPart(new THREE.Mesh(new THREE.BoxGeometry(2.7, 0.16, 2.3), pal.timber), 0, 1.95, 0);
-    const roof = new THREE.Mesh(new THREE.ConeGeometry(2.3, 1.35, 4), look.roofMat);
+    // Compact Mediterranean Cottage: 1.90 x 1.65, low stucco walls + simple pitched roof (~1.72u)
+    addPart(new THREE.Mesh(new THREE.BoxGeometry(1.90, 0.16, 1.65), pal.stoneDark), 0, 0.08, 0);
+    addPart(new THREE.Mesh(new THREE.BoxGeometry(1.68, 0.90, 1.42), look.wallMat), 0, 0.61, 0);
+    const roof = new THREE.Mesh(new THREE.ConeGeometry(1.42, 0.72, 4), look.roofMat);
     roof.rotation.y = Math.PI / 4;
-    addPart(roof, 0, 2.65, 0);
-    // Arched entrance (height 1.35u - perfect for 1.45u soldiers to enter)
-    addPart(new THREE.Mesh(new THREE.BoxGeometry(0.8, 1.25, 0.22), pal.timber), 0, 0.9, 1.12);
-    addPart(new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.38, 0.08), teamMat), 0.95, 1.45, 1.12);
+    addPart(roof, 0, 1.38, 0);
+    addPart(new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.68, 0.12), pal.timber), 0, 0.50, 0.72);
+    addPart(new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.24, 0.06), teamMat), 0.56, 0.84, 0.73);
 
-    attachGroundMarkers(root, 1.8, pal, team);
-    attachHealthBar(root, 3.2, 2.0);
+    attachGroundMarkers(root, 1.15, pal, team);
+    attachHealthBar(root, 2.05, 1.3);
   } else if (kind === 'barracks') {
     // Strategeion / Military Barracks: Footprint 4.6 x 4.2, Bastions Height 4.2u
     addPart(new THREE.Mesh(new THREE.BoxGeometry(4.6, 0.42, 4.2), pal.stoneDark), 0, 0.21, 0);

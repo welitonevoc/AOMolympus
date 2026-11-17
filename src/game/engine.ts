@@ -59,10 +59,12 @@ import {
   MinimapBlip,
   PANTHEONS,
   PantheonId,
+  ResourceCost,
   ResourceNodeKind,
   ResourceType,
   SelectionSummary,
   TeamId,
+  TeamScoreBreakdown,
   TechId,
   UnitKind,
   UnitVoiceAction,
@@ -218,6 +220,9 @@ export interface SerializedMatch {
   chosenMinorGods?: string[];
   unlockedPowers?: GodPowerId[];
   researchedTechs?: TechId[];
+  enemyResearchedTechs?: TechId[];
+  playerDestroyedValue?: number;
+  enemyDestroyedValue?: number;
   relicsHeld?: number;
   regentUnitId?: string | null;
   marketRates?: { food: number; wood: number; gold: number };
@@ -465,6 +470,7 @@ export class AoMEngine {
   private currentWeather: 'clear' | 'rain' | 'snow' | 'sandstorm' = 'clear';
   private weatherTimer = 0;
   private weatherParticles: THREE.Points | null = null;
+  private particleGlowTex: THREE.CanvasTexture | null = null;
   private mythicVerdictClaimed = false;
   private titansEnabled = true;
   private treatyRemaining = 0;
@@ -482,12 +488,17 @@ export class AoMEngine {
   private chosenMinorGods: string[] = [];
   private unlockedPowers: GodPowerId[] = ['lightning'];
   private researchedTechs: TechId[] = [];
+  private enemyResearchedTechs: TechId[] = [];
+  private playerDestroyedValue = 0;
+  private enemyDestroyedValue = 0;
   private activeTechResearch: { id: TechId; progress: number; total: number } | null = null;
   private relicsHeld = 0;
   private marketRates: { food: number; wood: number; gold: number } = { food: 1.0, wood: 1.0, gold: 1.0 };
   private regentUnitId: string | null = null;
   private enemyAge: AgeLevel = 1;
   private tcFocusIndex = 0;
+  private idleVillagerCycleIndex = 0;
+  private idleMilitaryCycleIndex = 0;
   private gameSpeed = 1.0;
   private cameraSensitivity = 1.0;
   private scenarioTitle: string | undefined = undefined;
@@ -947,7 +958,17 @@ export class AoMEngine {
     for (const r of this.relics.values()) this.scene.remove(r.mesh);
     for (const f of this.fauna.values()) this.scene.remove(f.mesh);
     for (const p of this.projectiles) this.scene.remove(p.mesh);
-    for (const v of this.transientVfx) this.scene.remove(v.object);
+    for (const v of this.transientVfx) {
+      this.scene.remove(v.object);
+      v.object.traverse((obj) => {
+        if ((obj as THREE.Mesh).isMesh || (obj as THREE.Line).isLine || (obj as THREE.Points).isPoints) {
+          const m = obj as THREE.Mesh | THREE.Line | THREE.Points;
+          m.geometry?.dispose();
+          if (Array.isArray(m.material)) m.material.forEach((mat) => mat.dispose());
+          else (m.material as THREE.Material | undefined)?.dispose();
+        }
+      });
+    }
 
     this.units.clear();
     this.buildings.clear();
@@ -1042,6 +1063,9 @@ export class AoMEngine {
     this.chosenMinorGods = [];
     this.unlockedPowers = [majorSpec.favoredPower];
     this.researchedTechs = [];
+    this.enemyResearchedTechs = [];
+    this.playerDestroyedValue = 0;
+    this.enemyDestroyedValue = 0;
     this.activeTechResearch = null;
     this.relicsHeld = 0;
     this.marketRates = { food: 1.0, wood: 1.0, gold: 1.0 };
@@ -2471,6 +2495,41 @@ export class AoMEngine {
     this.emitHudSnapshot();
   }
 
+  public cancelTrainingItem(buildingId: string, index: number) {
+    if (this.phase !== 'playing') return;
+    const b = this.buildings.get(buildingId);
+    if (!b || b.team !== 'player' || index < 0 || index >= b.trainingQueue.length) return;
+    const [removed] = b.trainingQueue.splice(index, 1);
+    const stats = this.unitStats(removed.kind, 'player');
+    if (stats.cost.food) this.resources.food += stats.cost.food;
+    if (stats.cost.wood) this.resources.wood += stats.cost.wood;
+    if (stats.cost.gold) this.resources.gold += stats.cost.gold;
+    if (stats.cost.favor) this.resources.favor += stats.cost.favor;
+    soundEngine.playSelect();
+    this.emitHudSnapshot();
+  }
+
+  public stopSelectedUnits() {
+    if (this.phase !== 'playing') return;
+    let changed = false;
+    for (const u of this.units.values()) {
+      if (u.team === 'player' && u.selected) {
+        u.state = 'idle';
+        u.targetPos = null;
+        u.targetEntityId = null;
+        u.targetNodeId = null;
+        u.targetFaunaId = null;
+        u.waypoints = [];
+        u.rallyFlagPos = null;
+        changed = true;
+      }
+    }
+    if (changed) {
+      soundEngine.playSelect();
+      this.emitHudSnapshot();
+    }
+  }
+
   public advanceAge() {
     if (this.phase !== 'playing' || this.age >= 5) return;
     if (this.advancingToAge) {
@@ -2977,6 +3036,7 @@ export class AoMEngine {
       );
     }
 
+    this.spawnGodPowerParticles(id, worldPos, spec.radius);
     this.emitHudSnapshot();
   }
 
@@ -3455,16 +3515,43 @@ export class AoMEngine {
     for (const r of this.relics.values()) r.selected = false;
     for (const f of this.fauna.values()) f.selected = false;
 
-    for (const u of this.units.values()) {
-      if (u.team === 'player' && u.kind === 'villager' && u.state === 'idle') {
-        u.selected = true;
-        this.jumpCameraTo(u.mesh.position.x, u.mesh.position.z);
-        this.triggerUnitVoice([u], 'select');
-        this.emitHudSnapshot();
-        return;
-      }
+    const idleVillagers = [...this.units.values()].filter(
+      (u) => u.team === 'player' && u.kind === 'villager' && u.state === 'idle' && u.hp > 0
+    );
+    if (idleVillagers.length > 0) {
+      const target = idleVillagers[this.idleVillagerCycleIndex % idleVillagers.length];
+      this.idleVillagerCycleIndex = (this.idleVillagerCycleIndex + 1) % idleVillagers.length;
+      target.selected = true;
+      this.jumpCameraTo(target.mesh.position.x, target.mesh.position.z);
+      this.triggerUnitVoice([target], 'select');
+      this.emitHudSnapshot();
+      return;
     }
     this.notifyStatus('Todos os aldeões estão trabalhando.');
+    this.emitHudSnapshot();
+  }
+
+  public selectIdleMilitary() {
+    for (const u of this.units.values()) u.selected = false;
+    for (const b of this.buildings.values()) b.selected = false;
+    for (const n of this.nodes.values()) n.selected = false;
+    for (const s of this.settlements.values()) s.selected = false;
+    for (const r of this.relics.values()) r.selected = false;
+    for (const f of this.fauna.values()) f.selected = false;
+
+    const idleMilitary = [...this.units.values()].filter(
+      (u) => u.team === 'player' && u.kind !== 'villager' && u.state === 'idle' && u.hp > 0
+    );
+    if (idleMilitary.length > 0) {
+      const target = idleMilitary[this.idleMilitaryCycleIndex % idleMilitary.length];
+      this.idleMilitaryCycleIndex = (this.idleMilitaryCycleIndex + 1) % idleMilitary.length;
+      target.selected = true;
+      this.jumpCameraTo(target.mesh.position.x, target.mesh.position.z);
+      this.triggerUnitVoice([target], 'select');
+      this.emitHudSnapshot();
+      return;
+    }
+    this.notifyStatus('Nenhum guerreiro ocioso.');
     this.emitHudSnapshot();
   }
 
@@ -3489,6 +3576,9 @@ export class AoMEngine {
       chosenMinorGods: [...this.chosenMinorGods],
       unlockedPowers: [...this.unlockedPowers],
       researchedTechs: [...this.researchedTechs],
+      enemyResearchedTechs: [...this.enemyResearchedTechs],
+      playerDestroyedValue: this.playerDestroyedValue,
+      enemyDestroyedValue: this.enemyDestroyedValue,
       relicsHeld: this.relicsHeld,
       regentUnitId: this.regentUnitId,
       marketRates: { ...this.marketRates },
@@ -3587,6 +3677,9 @@ export class AoMEngine {
       this.chosenMinorGods = data.chosenMinorGods ?? [];
       this.unlockedPowers = data.unlockedPowers ?? [getMajorGodSpec(this.majorGodName, this.pantheon).favoredPower];
       this.researchedTechs = data.researchedTechs ?? [];
+      this.enemyResearchedTechs = data.enemyResearchedTechs ?? [];
+      this.playerDestroyedValue = data.playerDestroyedValue ?? 0;
+      this.enemyDestroyedValue = data.enemyDestroyedValue ?? 0;
       this.activeTechResearch = null;
       this.relicsHeld = data.relicsHeld ?? 0;
       this.regentUnitId = data.regentUnitId ?? null;
@@ -5067,6 +5160,10 @@ export class AoMEngine {
         const order: FormationId[] = ['box', 'line', 'staggered'];
         const next = order[(order.indexOf(this.formation) + 1) % order.length];
         this.setFormation(next);
+      } else if (e.code === 'Period') {
+        this.selectIdleVillager();
+      } else if (e.code === 'Comma') {
+        this.selectIdleMilitary();
       } else if (e.code === 'Space') {
         const hasSelectedCombat = [...this.units.values()].some(
           (u) => u.team === 'player' && u.selected && u.kind !== 'villager'
@@ -5306,43 +5403,80 @@ export class AoMEngine {
         (flashMesh.material as THREE.MeshBasicMaterial).opacity = 0.75 * fade * fade;
       },
     });
+
+    // Electric plasma spark burst on ground impact
+    this.spawnDivineParticleBurst(center, {
+      behavior: 'shock',
+      count: 68,
+      radius: Math.max(2.5, radius * 0.6),
+      height: 5.5,
+      primaryColor: 0xe0f2fe,
+      secondaryColor: 0x38bdf8,
+      size: 1.15,
+      lifetime: 0.85,
+      speed: 1.55,
+    });
   }
 
   private spawnMeteorShowerVfx(center: THREE.Vector3, radius: number) {
-    for (let i = 0; i < 5; i++) {
-      const ang = (i / 5) * Math.PI * 2 + Math.random();
-      const r = (i === 0 ? 0 : 0.45 + Math.random() * 0.45) * radius * 0.7;
+    for (let i = 0; i < 7; i++) {
+      const ang = (i / 7) * Math.PI * 2 + Math.random() * 0.6;
+      const r = (i === 0 ? 0 : 0.35 + Math.random() * 0.55) * radius * 0.75;
       const tx = center.x + Math.cos(ang) * r;
       const tz = center.z + Math.sin(ang) * r;
       const ty = groundHeightAt(tx, tz, this.mapId);
 
-      const meteor = new THREE.Mesh(
-        new THREE.DodecahedronGeometry(1.1, 0),
+      const meteorGroup = new THREE.Group();
+      const coreMesh = new THREE.Mesh(
+        new THREE.DodecahedronGeometry(1.15, 0),
         new THREE.MeshBasicMaterial({ color: 0xf97316 })
       );
-      const startPos = new THREE.Vector3(tx - 10, ty + 28 + i * 3, tz - 8);
-      const endPos = new THREE.Vector3(tx, ty + 0.5, tz);
-      meteor.position.copy(startPos);
-      this.scene.add(meteor);
+      const auraMesh = new THREE.Mesh(
+        new THREE.SphereGeometry(1.55, 8, 8),
+        new THREE.MeshBasicMaterial({
+          color: 0xfde047,
+          transparent: true,
+          opacity: 0.42,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false,
+        })
+      );
+      meteorGroup.add(coreMesh, auraMesh);
+      const startPos = new THREE.Vector3(tx - 11, ty + 30 + i * 2.8, tz - 9);
+      const endPos = new THREE.Vector3(tx, ty + 0.45, tz);
+      meteorGroup.position.copy(startPos);
+      this.scene.add(meteorGroup);
 
       let exploded = false;
       this.transientVfx.push({
-        object: meteor,
-        age: -i * 0.12,
+        object: meteorGroup,
+        age: -i * 0.1,
         lifetime: 0.65,
         onUpdate: (t) => {
           if (t < 0) {
-            meteor.visible = false;
+            meteorGroup.visible = false;
             return;
           }
-          meteor.visible = true;
-          meteor.position.lerpVectors(startPos, endPos, t);
-          meteor.rotation.x += 0.18;
-          meteor.rotation.z += 0.15;
+          meteorGroup.visible = true;
+          meteorGroup.position.lerpVectors(startPos, endPos, t);
+          coreMesh.rotation.x += 0.18;
+          coreMesh.rotation.z += 0.15;
           if (t > 0.88 && !exploded) {
             exploded = true;
-            this.spawnRingVfx(endPos, 5.5, 0xf97316, 0.7);
+            this.spawnRingVfx(endPos, 5.8, 0xf97316, 0.75);
             this.spawnRingVfx(endPos, 3.8, 0x1c1917, 3.0);
+            this.spawnDivineParticleBurst(endPos, {
+              behavior: 'fountain',
+              count: 58,
+              radius: 3.8,
+              height: 11,
+              primaryColor: 0xfde047,
+              secondaryColor: 0xef4444,
+              size: 1.35,
+              lifetime: 1.2,
+              speed: 1.4,
+              gravity: 13.5,
+            });
           }
         },
       });
@@ -5403,6 +5537,645 @@ export class AoMEngine {
           mat.opacity = 0.95 * (1 - t);
         },
       });
+    }
+  }
+
+  private getParticleGlowTex(): THREE.CanvasTexture {
+    if (this.particleGlowTex) return this.particleGlowTex;
+    const canvas = document.createElement('canvas');
+    canvas.width = 64;
+    canvas.height = 64;
+    const ctx = canvas.getContext('2d')!;
+    const grad = ctx.createRadialGradient(32, 32, 2, 32, 32, 30);
+    grad.addColorStop(0, 'rgba(255,255,255,1)');
+    grad.addColorStop(0.28, 'rgba(255,255,255,0.88)');
+    grad.addColorStop(0.65, 'rgba(255,255,255,0.28)');
+    grad.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 64, 64);
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    this.particleGlowTex = tex;
+    return tex;
+  }
+
+  private spawnDivineParticleBurst(
+    pos: THREE.Vector3,
+    opts: {
+      behavior: 'vortex' | 'fountain' | 'ascend' | 'rain' | 'shock';
+      count: number;
+      radius: number;
+      height: number;
+      primaryColor: number;
+      secondaryColor: number;
+      size: number;
+      lifetime: number;
+      speed?: number;
+      gravity?: number;
+      swirl?: number;
+      inward?: boolean;
+      additive?: boolean;
+    }
+  ) {
+    const count = opts.count;
+    const radius = Math.max(1.5, opts.radius);
+    const height = Math.max(2.0, opts.height);
+    const speed = opts.speed ?? 1.0;
+    const gravity = opts.gravity ?? 10.5;
+    const swirl = opts.swirl ?? (opts.behavior === 'vortex' ? 4.2 : 1.1);
+    const groundY = groundHeightAt(pos.x, pos.z, this.mapId);
+
+    const positions = new Float32Array(count * 3);
+    const colors = new Float32Array(count * 3);
+    const vx = new Float32Array(count);
+    const vy = new Float32Array(count);
+    const vz = new Float32Array(count);
+    const radial = new Float32Array(count);
+    const angle = new Float32Array(count);
+
+    const c1 = new THREE.Color(opts.primaryColor);
+    const c2 = new THREE.Color(opts.secondaryColor);
+    const tmpC = new THREE.Color();
+
+    for (let i = 0; i < count; i++) {
+      const idx = i * 3;
+      const a = Math.random() * Math.PI * 2;
+      const rFrac = Math.pow(Math.random(), 0.65);
+      const r = rFrac * radius;
+      angle[i] = a;
+      radial[i] = r;
+
+      tmpC.copy(c1).lerp(c2, Math.random());
+      colors[idx] = tmpC.r;
+      colors[idx + 1] = tmpC.g;
+      colors[idx + 2] = tmpC.b;
+
+      if (opts.behavior === 'rain') {
+        positions[idx] = Math.cos(a) * r;
+        positions[idx + 1] = height * (0.45 + Math.random() * 0.95);
+        positions[idx + 2] = Math.sin(a) * r;
+        vx[i] = (Math.random() - 0.5) * 1.4 * speed;
+        vy[i] = -(height * (0.7 + Math.random() * 0.55)) * speed;
+        vz[i] = (Math.random() - 0.5) * 1.4 * speed;
+      } else if (opts.behavior === 'fountain') {
+        const launchR = Math.random() * Math.min(2.4, radius * 0.35);
+        positions[idx] = Math.cos(a) * launchR;
+        positions[idx + 1] = 0.25 + Math.random() * 0.5;
+        positions[idx + 2] = Math.sin(a) * launchR;
+        const outSpeed = (1.8 + Math.random() * (radius * 0.65)) * speed;
+        vx[i] = Math.cos(a) * outSpeed;
+        vy[i] = (height * 0.55 + Math.random() * height * 0.6) * speed;
+        vz[i] = Math.sin(a) * outSpeed;
+      } else if (opts.behavior === 'shock') {
+        positions[idx] = Math.cos(a) * (0.3 + Math.random() * 0.7);
+        positions[idx + 1] = 0.35 + Math.random() * 1.4;
+        positions[idx + 2] = Math.sin(a) * (0.3 + Math.random() * 0.7);
+        const burstSpd = (radius * (0.65 + Math.random() * 0.75)) * speed;
+        vx[i] = Math.cos(a) * burstSpd;
+        vy[i] = (1.5 + Math.random() * height) * speed;
+        vz[i] = Math.sin(a) * burstSpd;
+      } else if (opts.behavior === 'vortex') {
+        const y0 = Math.random() * height;
+        const coneR = opts.inward ? radius * (0.35 + Math.random() * 0.65) : 0.4 + (y0 / height) * radius * 0.85;
+        radial[i] = coneR;
+        positions[idx] = Math.cos(a) * coneR;
+        positions[idx + 1] = y0;
+        positions[idx + 2] = Math.sin(a) * coneR;
+        vy[i] = opts.inward ? (Math.random() - 0.35) * 2.2 : (3.0 + Math.random() * 5.5) * speed;
+      } else {
+        // ascend
+        positions[idx] = Math.cos(a) * r;
+        positions[idx + 1] = 0.15 + Math.random() * 1.8;
+        positions[idx + 2] = Math.sin(a) * r;
+        vx[i] = Math.cos(a) * 0.5 * speed;
+        vy[i] = (height * (0.45 + Math.random() * 0.65)) * speed;
+        vz[i] = Math.sin(a) * 0.5 * speed;
+      }
+    }
+
+    const geo = new THREE.BufferGeometry();
+    const posAttr = new THREE.BufferAttribute(positions, 3);
+    geo.setAttribute('position', posAttr);
+    geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+    const mat = new THREE.PointsMaterial({
+      size: opts.size,
+      map: this.getParticleGlowTex(),
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.95,
+      depthWrite: false,
+      blending: opts.additive === false ? THREE.NormalBlending : THREE.AdditiveBlending,
+    });
+
+    const points = new THREE.Points(geo, mat);
+    points.position.set(pos.x, groundY + 0.08, pos.z);
+    points.renderOrder = 8;
+    points.frustumCulled = false;
+    this.scene.add(points);
+
+    const baseOpacity = 0.95;
+    this.transientVfx.push({
+      object: points,
+      age: 0,
+      lifetime: opts.lifetime,
+      onUpdate: (t, dt) => {
+        const arr = posAttr.array as Float32Array;
+        const stepDt = Math.min(dt, 0.05);
+        for (let i = 0; i < count; i++) {
+          const idx = i * 3;
+          if (opts.behavior === 'vortex') {
+            angle[i] += swirl * speed * stepDt * (opts.inward ? 1.35 : 1.0);
+            if (opts.inward) {
+              radial[i] = Math.max(0.15, radial[i] - (radius / Math.max(0.4, opts.lifetime)) * stepDt * 1.15);
+              arr[idx + 1] += vy[i] * stepDt;
+              if (arr[idx + 1] < 0.2) arr[idx + 1] = 0.2;
+            } else {
+              radial[i] += (radius * 0.22) * stepDt;
+              arr[idx + 1] += vy[i] * stepDt;
+              if (arr[idx + 1] > height * 1.15) arr[idx + 1] = 0.25;
+            }
+            arr[idx] = Math.cos(angle[i]) * radial[i];
+            arr[idx + 2] = Math.sin(angle[i]) * radial[i];
+          } else if (opts.behavior === 'fountain') {
+            vy[i] -= gravity * stepDt;
+            arr[idx] += vx[i] * stepDt;
+            arr[idx + 1] += vy[i] * stepDt;
+            arr[idx + 2] += vz[i] * stepDt;
+            if (arr[idx + 1] < 0.08) {
+              arr[idx + 1] = 0.08;
+              vy[i] = Math.abs(vy[i]) * 0.28;
+              vx[i] *= 0.6;
+              vz[i] *= 0.6;
+            }
+          } else if (opts.behavior === 'rain') {
+            arr[idx] += (vx[i] + Math.sin(t * 6 + i) * swirl * 0.5) * stepDt;
+            arr[idx + 1] += vy[i] * stepDt;
+            arr[idx + 2] += (vz[i] + Math.cos(t * 6 + i) * swirl * 0.5) * stepDt;
+            if (arr[idx + 1] < 0.05) {
+              arr[idx + 1] = height * (0.85 + Math.random() * 0.4);
+            }
+          } else if (opts.behavior === 'shock') {
+            const drag = Math.max(0.84, 1 - 1.8 * stepDt);
+            vx[i] *= drag;
+            vz[i] *= drag;
+            vy[i] -= gravity * 0.35 * stepDt;
+            arr[idx] += vx[i] * stepDt;
+            arr[idx + 1] = Math.max(0.08, arr[idx + 1] + vy[i] * stepDt);
+            arr[idx + 2] += vz[i] * stepDt;
+          } else {
+            // ascend with gentle helical drift
+            angle[i] += swirl * stepDt;
+            arr[idx] += (vx[i] + Math.cos(angle[i]) * 0.6) * stepDt;
+            arr[idx + 1] += vy[i] * stepDt;
+            arr[idx + 2] += (vz[i] + Math.sin(angle[i]) * 0.6) * stepDt;
+          }
+        }
+        posAttr.needsUpdate = true;
+        mat.opacity = t < 0.7 ? baseOpacity : baseOpacity * (1 - (t - 0.7) / 0.3);
+      },
+    });
+  }
+
+  private spawnGodPowerParticles(id: GodPowerId, worldPos: THREE.Vector3, radius: number) {
+    const epicScale = this.age >= 5 ? 1.25 : 1.0;
+    const countScale = this.isSoftwareGl ? 0.65 : epicScale;
+    const n = (base: number) => Math.max(30, Math.round(base * countScale));
+
+    switch (id) {
+      case 'prosperity': {
+        for (const b of this.buildings.values()) {
+          if (b.team === 'player' && b.kind === 'town_center') {
+            this.spawnDivineParticleBurst(b.mesh.position, {
+              behavior: 'ascend',
+              count: n(130),
+              radius: 7.5,
+              height: 14,
+              primaryColor: 0xfacc15,
+              secondaryColor: 0xfef08a,
+              size: 1.35,
+              lifetime: 2.1,
+              swirl: 1.6,
+            });
+          }
+        }
+        break;
+      }
+      case 'rain': {
+        for (const b of this.buildings.values()) {
+          if (b.team === 'player' && (b.kind === 'town_center' || b.kind === 'farm')) {
+            this.spawnDivineParticleBurst(b.mesh.position, {
+              behavior: 'rain',
+              count: n(110),
+              radius: 9.0,
+              height: 18,
+              primaryColor: 0x38bdf8,
+              secondaryColor: 0xbae6fd,
+              size: 1.05,
+              lifetime: 2.2,
+              speed: 1.15,
+            });
+            this.spawnDivineParticleBurst(b.mesh.position, {
+              behavior: 'ascend',
+              count: n(55),
+              radius: 6.5,
+              height: 9,
+              primaryColor: 0x22c55e,
+              secondaryColor: 0x86efac,
+              size: 1.15,
+              lifetime: 1.9,
+            });
+          }
+        }
+        break;
+      }
+      case 'create_gold': {
+        this.spawnDivineParticleBurst(worldPos, {
+          behavior: 'fountain',
+          count: n(150),
+          radius: 6.5,
+          height: 14,
+          primaryColor: 0xffd700,
+          secondaryColor: 0xf59e0b,
+          size: 1.4,
+          lifetime: 2.0,
+          speed: 1.25,
+          gravity: 11.0,
+        });
+        break;
+      }
+      case 'great_hunt': {
+        this.spawnDivineParticleBurst(worldPos, {
+          behavior: 'ascend',
+          count: n(135),
+          radius,
+          height: 11,
+          primaryColor: 0xfb923c,
+          secondaryColor: 0xfde047,
+          size: 1.25,
+          lifetime: 2.0,
+          swirl: 1.8,
+        });
+        break;
+      }
+      case 'healing':
+      case 'restoration': {
+        this.spawnDivineParticleBurst(worldPos, {
+          behavior: 'ascend',
+          count: n(id === 'restoration' ? 190 : 140),
+          radius,
+          height: 14,
+          primaryColor: 0x34d399,
+          secondaryColor: 0xfef08a,
+          size: 1.35,
+          lifetime: 2.2,
+          swirl: 2.1,
+        });
+        if (id === 'restoration') {
+          this.spawnRingVfx(worldPos, radius * 0.72, 0xfef08a, 1.9);
+        }
+        break;
+      }
+      case 'flaming_weapons': {
+        let boosted = 0;
+        for (const u of this.units.values()) {
+          if (u.team === 'player' && u.kind !== 'villager') {
+            if (boosted < 16) {
+              this.spawnDivineParticleBurst(u.mesh.position, {
+                behavior: 'ascend',
+                count: n(28),
+                radius: 1.8,
+                height: 5.5,
+                primaryColor: 0xf97316,
+                secondaryColor: 0xfde047,
+                size: 1.1,
+                lifetime: 1.4,
+                swirl: 2.4,
+              });
+            }
+            boosted++;
+          }
+        }
+        this.spawnDivineParticleBurst(worldPos, {
+          behavior: 'vortex',
+          count: n(140),
+          radius: 9,
+          height: 12,
+          primaryColor: 0xf97316,
+          secondaryColor: 0xfef08a,
+          size: 1.4,
+          lifetime: 1.9,
+        });
+        break;
+      }
+      case 'sentinel': {
+        const tc = this.findNearestTownCenter('player', worldPos);
+        const center = tc ? tc.mesh.position : worldPos;
+        this.spawnDivineParticleBurst(center, {
+          behavior: 'fountain',
+          count: n(160),
+          radius: 8.5,
+          height: 11,
+          primaryColor: 0xd97706,
+          secondaryColor: 0xfde047,
+          size: 1.35,
+          lifetime: 1.9,
+          gravity: 9.0,
+        });
+        break;
+      }
+      case 'frost':
+      case 'blizzard': {
+        this.spawnDivineParticleBurst(worldPos, {
+          behavior: 'rain',
+          count: n(id === 'blizzard' ? 220 : 165),
+          radius,
+          height: 20,
+          primaryColor: 0xbae6fd,
+          secondaryColor: 0xffffff,
+          size: 1.3,
+          lifetime: 2.4,
+          speed: 1.25,
+          swirl: 2.8,
+        });
+        this.spawnDivineParticleBurst(worldPos, {
+          behavior: 'shock',
+          count: n(110),
+          radius: radius * 0.9,
+          height: 5.5,
+          primaryColor: 0x38bdf8,
+          secondaryColor: 0xe0f2fe,
+          size: 1.25,
+          lifetime: 1.4,
+        });
+        break;
+      }
+      case 'lightning':
+      case 'lightning_storm':
+      case 'solar_beam': {
+        const isSolar = id === 'solar_beam';
+        const isStorm = id === 'lightning_storm';
+        this.spawnDivineParticleBurst(worldPos, {
+          behavior: isStorm ? 'vortex' : 'shock',
+          count: n(isStorm ? 210 : 150),
+          radius,
+          height: isStorm ? 22 : 13,
+          primaryColor: isSolar ? 0xfde047 : 0x60a5fa,
+          secondaryColor: 0xffffff,
+          size: 1.45,
+          lifetime: isStorm ? 2.2 : 1.4,
+          speed: 1.45,
+          swirl: isStorm ? 4.8 : 1.5,
+        });
+        if (isSolar) {
+          this.spawnDivineParticleBurst(worldPos, {
+            behavior: 'rain',
+            count: n(120),
+            radius: radius * 0.55,
+            height: 26,
+            primaryColor: 0xfef08a,
+            secondaryColor: 0xf97316,
+            size: 1.5,
+            lifetime: 1.5,
+            speed: 1.9,
+          });
+        }
+        break;
+      }
+      case 'meteor':
+      case 'volcanic_eruption': {
+        const isVolcano = id === 'volcanic_eruption';
+        this.spawnDivineParticleBurst(worldPos, {
+          behavior: 'fountain',
+          count: n(isVolcano ? 240 : 180),
+          radius,
+          height: isVolcano ? 22 : 16,
+          primaryColor: 0xef4444,
+          secondaryColor: 0xfde047,
+          size: 1.65,
+          lifetime: 2.4,
+          speed: 1.35,
+          gravity: 11.5,
+        });
+        if (isVolcano) {
+          this.spawnDivineParticleBurst(worldPos, {
+            behavior: 'vortex',
+            count: n(140),
+            radius: radius * 0.8,
+            height: 20,
+            primaryColor: 0x44403c,
+            secondaryColor: 0xea580c,
+            size: 1.9,
+            lifetime: 2.6,
+            additive: false,
+          });
+        }
+        break;
+      }
+      case 'tornado': {
+        this.spawnDivineParticleBurst(worldPos, {
+          behavior: 'vortex',
+          count: n(250),
+          radius,
+          height: 24,
+          primaryColor: 0xe2e8f0,
+          secondaryColor: 0x94a3b8,
+          size: 1.55,
+          lifetime: 2.7,
+          speed: 1.45,
+          swirl: 6.2,
+          additive: false,
+        });
+        this.spawnDivineParticleBurst(worldPos, {
+          behavior: 'shock',
+          count: n(90),
+          radius,
+          height: 6,
+          primaryColor: 0xc2b280,
+          secondaryColor: 0xf1f5f9,
+          size: 1.3,
+          lifetime: 1.6,
+        });
+        break;
+      }
+      case 'tremor':
+      case 'undermine': {
+        this.spawnDivineParticleBurst(worldPos, {
+          behavior: 'fountain',
+          count: n(190),
+          radius,
+          height: 13,
+          primaryColor: 0xd97706,
+          secondaryColor: 0x57534e,
+          size: 1.55,
+          lifetime: 2.0,
+          speed: 1.3,
+          gravity: 14.0,
+          additive: false,
+        });
+        this.spawnDivineParticleBurst(worldPos, {
+          behavior: 'shock',
+          count: n(110),
+          radius,
+          height: 4.5,
+          primaryColor: 0xf59e0b,
+          secondaryColor: 0xfef3c7,
+          size: 1.25,
+          lifetime: 1.35,
+        });
+        break;
+      }
+      case 'darkest_night': {
+        this.spawnDivineParticleBurst(worldPos, {
+          behavior: 'ascend',
+          count: n(180),
+          radius: 16,
+          height: 20,
+          primaryColor: 0xa855f7,
+          secondaryColor: 0xf472b6,
+          size: 1.5,
+          lifetime: 2.5,
+          swirl: 2.2,
+        });
+        let glowCount = 0;
+        for (const u of this.units.values()) {
+          if (u.team === 'player' && glowCount < 14) {
+            this.spawnDivineParticleBurst(u.mesh.position, {
+              behavior: 'ascend',
+              count: n(24),
+              radius: 1.6,
+              height: 5.5,
+              primaryColor: 0xc084fc,
+              secondaryColor: 0xffffff,
+              size: 1.05,
+              lifetime: 1.5,
+            });
+            glowCount++;
+          }
+        }
+        break;
+      }
+      case 'disease':
+      case 'pestilence':
+      case 'locust_swarm': {
+        const isLocust = id === 'locust_swarm';
+        this.spawnDivineParticleBurst(worldPos, {
+          behavior: 'vortex',
+          count: n(isLocust ? 230 : 170),
+          radius,
+          height: isLocust ? 15 : 13,
+          primaryColor: isLocust ? 0xca8a04 : 0x84cc16,
+          secondaryColor: isLocust ? 0x713f12 : 0x365314,
+          size: isLocust ? 1.2 : 1.55,
+          lifetime: 2.5,
+          speed: isLocust ? 1.65 : 1.05,
+          swirl: isLocust ? 5.6 : 2.6,
+          additive: !isLocust,
+        });
+        break;
+      }
+      case 'sandstorm': {
+        this.spawnDivineParticleBurst(worldPos, {
+          behavior: 'vortex',
+          count: n(240),
+          radius,
+          height: 18,
+          primaryColor: 0xf59e0b,
+          secondaryColor: 0xfde68a,
+          size: 1.6,
+          lifetime: 2.5,
+          speed: 1.4,
+          swirl: 5.2,
+        });
+        break;
+      }
+      case 'maelstrom':
+      case 'black_hole': {
+        const isBh = id === 'black_hole';
+        this.spawnDivineParticleBurst(worldPos, {
+          behavior: 'vortex',
+          count: n(240),
+          radius: radius * 1.15,
+          height: isBh ? 14 : 18,
+          primaryColor: isBh ? 0x7e22ce : 0x0ea5e9,
+          secondaryColor: isBh ? 0xe879f9 : 0xe0f2fe,
+          size: 1.55,
+          lifetime: 2.5,
+          speed: 1.4,
+          swirl: isBh ? 5.4 : 4.8,
+          inward: isBh,
+        });
+        if (isBh) {
+          this.spawnDivineParticleBurst(worldPos, {
+            behavior: 'shock',
+            count: n(100),
+            radius,
+            height: 8,
+            primaryColor: 0xc084fc,
+            secondaryColor: 0x38bdf8,
+            size: 1.4,
+            lifetime: 1.7,
+          });
+        }
+        break;
+      }
+      case 'necromancy':
+      case 'walking_woods':
+      case 'spiders': {
+        const isNecro = id === 'necromancy';
+        const isSpiders = id === 'spiders';
+        this.spawnDivineParticleBurst(worldPos, {
+          behavior: isSpiders ? 'shock' : 'ascend',
+          count: n(165),
+          radius,
+          height: 12,
+          primaryColor: isNecro ? 0x9333ea : isSpiders ? 0xdc2626 : 0x22c55e,
+          secondaryColor: isNecro ? 0xe879f9 : isSpiders ? 0x84cc16 : 0xa3e635,
+          size: 1.35,
+          lifetime: 2.0,
+          swirl: 2.4,
+        });
+        break;
+      }
+      case 'chaos': {
+        this.spawnDivineParticleBurst(worldPos, {
+          behavior: 'shock',
+          count: n(170),
+          radius,
+          height: 12,
+          primaryColor: 0xef4444,
+          secondaryColor: 0xf97316,
+          size: 1.45,
+          lifetime: 1.8,
+          speed: 1.35,
+        });
+        this.spawnDivineParticleBurst(worldPos, {
+          behavior: 'vortex',
+          count: n(110),
+          radius: radius * 0.85,
+          height: 14,
+          primaryColor: 0xfacc15,
+          secondaryColor: 0xdc2626,
+          size: 1.25,
+          lifetime: 2.0,
+          swirl: 4.5,
+        });
+        break;
+      }
+      case 'traitors': {
+        this.spawnDivineParticleBurst(worldPos, {
+          behavior: 'vortex',
+          count: n(160),
+          radius,
+          height: 14,
+          primaryColor: 0xa855f7,
+          secondaryColor: 0xfacc15,
+          size: 1.35,
+          lifetime: 2.1,
+          swirl: 3.6,
+        });
+        break;
+      }
     }
   }
 
@@ -5539,6 +6312,14 @@ export class AoMEngine {
     target.hp -= amount;
     this.spawnSparkParticleVfx(target.mesh.position);
     if (target.hp <= 0) {
+      const deadCost = this.unitStats(target.kind, target.team).cost;
+      const deadVal =
+        (deadCost.food ?? 0) + (deadCost.wood ?? 0) + (deadCost.gold ?? 0) + (deadCost.favor ?? 0) * 10;
+      if (target.team === 'enemy') {
+        this.playerDestroyedValue += deadVal * 0.2;
+      } else if (target.team === 'player') {
+        this.enemyDestroyedValue += deadVal * 0.2;
+      }
       this.scene.remove(target.mesh);
       this.units.delete(target.id);
       soundEngine.playUnitDeath();
@@ -5555,6 +6336,15 @@ export class AoMEngine {
   private damageBuilding(target: BuildingEntity, amount: number) {
     target.hp -= amount;
     if (target.hp <= 0) {
+      if (target.isConstructed) {
+        const bCost = this.buildingStats(target.kind, target.team).cost;
+        const bVal = (bCost.food ?? 0) + (bCost.wood ?? 0) + (bCost.gold ?? 0) + (bCost.favor ?? 0) * 10;
+        if (target.team === 'enemy') {
+          this.playerDestroyedValue += bVal * 0.2;
+        } else if (target.team === 'player') {
+          this.enemyDestroyedValue += bVal * 0.2;
+        }
+      }
       this.scene.remove(target.mesh);
       this.buildings.delete(target.id);
       if (target.kind === 'town_center' && target.settlementId) {
@@ -6827,6 +7617,17 @@ export class AoMEngine {
           if (spawnedStats.isGod) {
             this.spawnPillarVfx(spawned.mesh.position, spawnedStats.isMajorGod ? 0xfacc15 : 0xc084fc, spawnedStats.isMajorGod ? 2.4 : 1.7);
             this.spawnRingVfx(spawned.mesh.position, spawnedStats.isMajorGod ? 9.5 : 6.5, spawnedStats.isMajorGod ? 0xfacc15 : 0xc084fc, 1.2);
+            this.spawnDivineParticleBurst(spawned.mesh.position, {
+              behavior: 'vortex',
+              count: this.isSoftwareGl ? 90 : spawnedStats.isMajorGod ? 200 : 125,
+              radius: spawnedStats.isMajorGod ? 8.5 : 5.5,
+              height: spawnedStats.isMajorGod ? 22 : 14,
+              primaryColor: spawnedStats.isMajorGod ? 0xfacc15 : 0xc084fc,
+              secondaryColor: spawnedStats.isMajorGod ? 0xffffff : 0x38bdf8,
+              size: spawnedStats.isMajorGod ? 1.5 : 1.2,
+              lifetime: spawnedStats.isMajorGod ? 2.4 : 1.8,
+              swirl: 3.4,
+            });
             if (spawnedStats.isMajorGod) {
               soundEngine.playFanfare(true);
               soundEngine.playLightning?.();
@@ -7243,10 +8044,11 @@ export class AoMEngine {
       if (v.age >= v.lifetime) {
         this.scene.remove(v.object);
         v.object.traverse((obj) => {
-          if ((obj as THREE.Mesh).isMesh || (obj as THREE.Line).isLine) {
-            const m = obj as THREE.Mesh | THREE.Line;
+          if ((obj as THREE.Mesh).isMesh || (obj as THREE.Line).isLine || (obj as THREE.Points).isPoints) {
+            const m = obj as THREE.Mesh | THREE.Line | THREE.Points;
             m.geometry.dispose();
-            (m.material as THREE.Material).dispose();
+            if (Array.isArray(m.material)) m.material.forEach((mat) => mat.dispose());
+            else (m.material as THREE.Material).dispose();
           }
         });
         this.transientVfx.splice(i, 1);
@@ -7485,6 +8287,37 @@ export class AoMEngine {
           temple.trainingQueue.push({ kind: mythPick, progress: 0, total: mythStats.trainTime });
         }
       }
+
+      // Periodically let enemy AI research economy/military upgrades if it owns the matching building
+      const enemyTechOrder: TechId[] = [
+        'hand_axe',
+        'pickaxe',
+        'medium_soldiers',
+        'copper_weapons',
+        'copper_mail',
+        'plow',
+        'omniscience',
+        'heavy_soldiers',
+        'bronze_weapons',
+        'bronze_mail',
+        'champion_soldiers',
+        'iron_weapons',
+        'iron_mail',
+      ];
+      for (const tid of enemyTechOrder) {
+        if (this.enemyResearchedTechs.includes(tid)) continue;
+        const tSpec = TECH_SPECS[tid];
+        if (this.enemyAge < tSpec.minAge) continue;
+        if (tSpec.requires && !this.enemyResearchedTechs.includes(tSpec.requires)) continue;
+        const hasBuilding = [...this.buildings.values()].some(
+          (b) => b.team === 'enemy' && b.isConstructed && b.kind === tSpec.building
+        );
+        if (hasBuilding && this.canAfford(this.enemyResources, tSpec.cost)) {
+          this.deductCost(this.enemyResources, tSpec.cost);
+          this.enemyResearchedTechs.push(tid);
+          break;
+        }
+      }
     }
 
     // Launch coordinated raid wave toward player TC (blocked during Treaty)
@@ -7540,20 +8373,42 @@ export class AoMEngine {
         build: 'Construindo',
         attack: 'Em combate',
       };
+      const countsMap = new Map<UnitKind, { kind: UnitKind; name: string; count: number }>();
+      for (const u of selUnits) {
+        const uSpec = this.unitStats(u.kind, u.team);
+        const existing = countsMap.get(u.kind);
+        if (existing) {
+          existing.count += 1;
+        } else {
+          countsMap.set(u.kind, { kind: u.kind, name: uSpec.name, count: 1 });
+        }
+      }
       return {
         count: selUnits.length,
         primaryType: 'unit',
         entityId: primary.id,
+        unitKind: primary.kind,
+        isHero: Boolean(stats.isHero),
+        isMythic: Boolean(stats.isMythic),
+        isGod: Boolean(stats.isGod),
+        isMajorGod: Boolean(stats.isMajorGod),
         kindLabel: selUnits.length > 1 ? `${stats.name} (${selUnits.length})` : isRegent ? `${stats.name} ★ Regente` : stats.name,
         roleLabel: stats.role,
         team: primary.team,
         hp: Math.round(totalHp),
         maxHp: Math.round(totalMaxHp),
         attack: Math.round(stats.attack * mods.atkMult),
+        hackArmorPct: hackPct,
+        pierceArmorPct: piercePct,
+        crushArmorPct: crushPct,
+        speed: Number((stats.speed * mods.speedMult).toFixed(1)),
+        range: Number(stats.range.toFixed(1)),
+        popCost: stats.popCost,
         armorLabel: `Corte ${hackPct}% · Perf ${piercePct}% · Esmag ${crushPct}%`,
         taskLabel: taskMap[primary.state],
         screenPos: this.projectWorldToScreen(primary.mesh.position, 2.2),
         hasVillagerSelected: selUnits.some((u) => u.team === 'player' && u.kind === 'villager'),
+        selectedCounts: Array.from(countsMap.values()),
         voiceLine: this.voiceLineTimer > 0 && this.lastVoiceLine ? this.lastVoiceLine : undefined,
       };
     }
@@ -7561,6 +8416,9 @@ export class AoMEngine {
     if (selBuildings.length > 0) {
       const b = selBuildings[0];
       const stats = this.buildingStats(b.kind, b.team);
+      const hackPct = Math.round(stats.hackArmor * 100);
+      const piercePct = Math.round(stats.pierceArmor * 100);
+      const crushPct = Math.round(stats.crushArmor * 100);
       return {
         count: 1,
         primaryType: 'building',
@@ -7571,7 +8429,11 @@ export class AoMEngine {
         hp: Math.round(b.hp),
         maxHp: b.maxHp,
         attack: stats.attack,
-        armorLabel: `Corte ${Math.round(stats.hackArmor * 100)}% · Perf ${Math.round(stats.pierceArmor * 100)}% · Esmag ${Math.round(stats.crushArmor * 100)}%`,
+        hackArmorPct: hackPct,
+        pierceArmorPct: piercePct,
+        crushArmorPct: crushPct,
+        range: stats.range,
+        armorLabel: `Corte ${hackPct}% · Perf ${piercePct}% · Esmag ${crushPct}%`,
         screenPos: this.projectWorldToScreen(b.mesh.position, 3.8),
         buildingId: b.id,
         buildingKind: b.kind,
@@ -7623,6 +8485,7 @@ export class AoMEngine {
         count: 1,
         primaryType: 'fauna',
         entityId: f.id,
+        faunaKind: f.kind,
         kindLabel: f.isCarcass ? `${fStats.name} (Carcaça)` : fStats.name,
         roleLabel: f.isCarcass
           ? 'Carcaça abatida — pronta para coleta contínua de Alimento por Aldeões.'
@@ -7631,6 +8494,7 @@ export class AoMEngine {
         hp: Math.round(f.isCarcass ? f.foodAmount : f.hp),
         maxHp: f.isCarcass ? f.maxFood : f.maxHp,
         attack: fStats.attack > 0 ? fStats.attack : undefined,
+        speed: fStats.speed,
         resourceType: 'food',
         resourceAmount: Math.round(f.foodAmount),
         resourceMaxAmount: f.maxFood,
@@ -7686,16 +8550,107 @@ export class AoMEngine {
     };
   }
 
+  private costValue(cost: ResourceCost): number {
+    return (cost.food ?? 0) + (cost.wood ?? 0) + (cost.gold ?? 0) + (cost.favor ?? 0) * 10;
+  }
+
+  private computeTeamScore(team: TeamId): TeamScoreBreakdown {
+    const res = team === 'player' ? this.resources : this.enemyResources;
+    const teamAge = team === 'player' ? this.age : this.enemyAge;
+    const techs = team === 'player' ? this.researchedTechs : this.enemyResearchedTechs;
+
+    let economy = (res.food + res.wood + res.gold) * 0.1 + res.favor * 1.0;
+    let military = team === 'player' ? this.playerDestroyedValue : this.enemyDestroyedValue;
+    let technology = 0;
+    let society = team === 'player' ? this.relicsHeld * 120 : 0;
+
+    for (const u of this.units.values()) {
+      if (u.team !== team || u.hp <= 0) continue;
+      const stats = this.unitStats(u.kind, team);
+      const val = u.kind === 'titan' ? 1200 : this.costValue(stats.cost);
+      if (u.kind === 'villager') {
+        economy += val * 0.2;
+      } else {
+        military += val * 0.2;
+      }
+    }
+
+    for (const b of this.buildings.values()) {
+      if (b.team !== team || !b.isConstructed) continue;
+      const bStats = this.buildingStats(b.kind, team);
+      const val = this.costValue(bStats.cost);
+      if (
+        b.kind === 'town_center' ||
+        b.kind === 'house' ||
+        b.kind === 'farm' ||
+        b.kind === 'market' ||
+        b.kind === 'armory'
+      ) {
+        economy += val * 0.2;
+      } else {
+        military += val * 0.2;
+      }
+      if (b.kind === 'town_center') {
+        society += 150;
+      } else if (b.kind === 'fortress') {
+        society += 90;
+      } else if (b.kind === 'titan_gate') {
+        society += 300;
+      }
+    }
+
+    for (let era = 2 as AgeLevel; era <= teamAge; era = (era + 1) as AgeLevel) {
+      technology += this.costValue(AGE_COSTS[era]) * 0.2 + 100;
+    }
+    if (team === 'player' && this.advancingToAge && this.ageAdvanceTotal > 0) {
+      technology += (this.ageAdvanceProgress / this.ageAdvanceTotal) * 60;
+    }
+    const minorCount = team === 'player' ? this.chosenMinorGods.length : Math.max(0, teamAge - 1);
+    technology += minorCount * 60;
+
+    for (const tid of techs) {
+      const spec = TECH_SPECS[tid];
+      if (spec) technology += this.costValue(spec.cost) * 0.2;
+    }
+
+    if (team === 'player') {
+      let explored = 0;
+      for (let i = 0; i < this.fogState.length; i++) {
+        if (this.fogState[i] > 0) explored++;
+      }
+      const exploredRatio = this.fogState.length > 0 ? explored / this.fogState.length : 0.2;
+      technology += Math.round(exploredRatio * 150);
+    } else {
+      technology += Math.min(150, Math.round(25 + this.elapsedSeconds * 0.24));
+    }
+
+    const econRounded = Math.round(economy);
+    const milRounded = Math.round(military);
+    const techRounded = Math.round(technology);
+    const socRounded = Math.round(society);
+    return {
+      economy: econRounded,
+      military: milRounded,
+      technology: techRounded,
+      society: socRounded,
+      total: econRounded + milRounded + techRounded + socRounded,
+    };
+  }
+
   private emitHudSnapshot() {
     const pop = this.getPopulation('player');
+    const playerScoreBreakdown = this.computeTeamScore('player');
+    const enemyScoreBreakdown = this.computeTeamScore('enemy');
     let idleVillagerCount = 0;
+    let idleMilitaryCount = 0;
     let combatUnitCount = 0;
     for (const u of this.units.values()) {
-      if (u.team === 'player') {
+      if (u.team === 'player' && u.hp > 0) {
         if (u.kind === 'villager') {
           if (u.state === 'idle') idleVillagerCount++;
         } else {
           combatUnitCount++;
+          if (u.state === 'idle') idleMilitaryCount++;
         }
       }
     }
@@ -7796,6 +8751,7 @@ export class AoMEngine {
       pantheon: this.pantheon,
       majorGodName: this.majorGodName,
       enemyPantheon: this.enemyPantheon,
+      enemyMajorGodName: PANTHEONS[this.enemyPantheon].deity,
       difficulty: this.difficulty,
       mapId: this.mapId,
       gameType: this.gameType,
@@ -7832,11 +8788,16 @@ export class AoMEngine {
       relicsHeld: this.relicsHeld,
       marketRates: { ...this.marketRates },
       enemyAge: this.enemyAge,
+      playerScore: playerScoreBreakdown.total,
+      enemyScore: enemyScoreBreakdown.total,
+      playerScoreBreakdown,
+      enemyScoreBreakdown,
       population: pop.current,
       populationCap: pop.cap,
       playerTownCenterCount: this.getTownCenterCount('player'),
       maxTownCenters: MAX_TOWN_CENTERS,
       idleVillagerCount,
+      idleMilitaryCount,
       combatUnitCount,
       godPowerCooldowns: { ...this.godPowerCooldowns },
       activeBuildMode: this.activeBuildMode,
@@ -8611,9 +9572,13 @@ export class AoMEngine {
     canvas.removeEventListener('webglcontextlost', this.onContextLost);
 
     this.clearEntities();
+    if (this.particleGlowTex) {
+      this.particleGlowTex.dispose();
+      this.particleGlowTex = null;
+    }
     this.scene.traverse((obj) => {
-      if ((obj as THREE.Mesh).isMesh || (obj as THREE.Line).isLine) {
-        const m = obj as THREE.Mesh | THREE.Line;
+      if ((obj as THREE.Mesh).isMesh || (obj as THREE.Line).isLine || (obj as THREE.Points).isPoints) {
+        const m = obj as THREE.Mesh | THREE.Line | THREE.Points;
         m.geometry?.dispose();
         if (Array.isArray(m.material)) m.material.forEach((mat) => mat.dispose());
         else m.material?.dispose();

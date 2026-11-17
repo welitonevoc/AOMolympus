@@ -4,6 +4,8 @@ import {
   Award,
   BookOpen,
   Check,
+  ChevronDown,
+  ChevronUp,
   Compass,
   Crown,
   Eye,
@@ -165,6 +167,7 @@ export function PortSubMenus({
   const [updateCheckMsg, setUpdateCheckMsg] = useState<string | null>(null);
   const [esoUser, setEsoUser] = useState(options.playerName);
   const [esoNotice, setEsoNotice] = useState<string | null>(null);
+  const [showAdvancedRules, setShowAdvancedRules] = useState(false);
 
   const clickSound = () => {
     soundEngine.unlock();
@@ -217,7 +220,7 @@ export function PortSubMenus({
 
     return (
       <div className="flex flex-col gap-4">
-        {renderPanelHeader('CAMPANHA', 'Selecione a campanha, cenário e dificuldade (uicampaign)')}
+        {renderPanelHeader('CAMPANHA', 'Selecione o livro, cenário e dificuldade da missão')}
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
           {/* Left: Campaign selector + Scenario list */}
@@ -304,7 +307,7 @@ export function PortSubMenus({
 
               <div>
                 <div className="mb-1.5 text-xs font-semibold text-[#e6dfd1]">Dificuldade da Missão</div>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {DIFFICULTIES.map((d) => (
                     <button
                       key={d.id}
@@ -474,7 +477,7 @@ export function PortSubMenus({
     );
   }
 
-  // ── 3. UI_SINGLE_PLAYER_SETUP (uisingleplayersetup.xmb) ──
+  // ── 3. UI_SINGLE_PLAYER_SETUP ──
   if (menuState === 'UI_SINGLE_PLAYER_SETUP') {
     const pantheonList = Object.values(PANTHEONS);
     const mapList = Object.values(MAPS);
@@ -487,40 +490,45 @@ export function PortSubMenus({
       { id: 'deathmatch', label: 'Combate Mortal' },
       { id: 'regicide', label: 'Regicídio' },
     ];
+    const worldSizeLabels: Record<WorldSizeId, string> = {
+      normal: 'Normal',
+      large: 'Grande',
+      giant: 'Gigante',
+    };
 
     return (
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-4">
         {renderPanelHeader(
-          'CONFIGURAÇÃO DE UM JOGADOR (MAPA ALEATÓRIO)',
-          '13 Panteões · 10 Mapas · Modos de Jogo, Visibilidade, Mundo, Tratado e Titãs',
+          'ESCARAMUÇA (UM JOGADOR)',
+          'Escolha sua civilização, oponente, mapa e regras da partida',
           'SUB_SINGLE_PLAYER'
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-          {/* Left: Player vs AI + Civilizations + Map */}
-          <div className="lg:col-span-7 flex flex-col gap-3">
-            {/* Player Slot Row */}
-            <div className="rounded border border-[#d4af37]/30 bg-[#131822] p-3">
-              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-2">
-                <div className="flex items-center gap-2">
-                  <Crown className="h-4 w-4 text-[#f3d27a]" />
-                  <span className="text-xs font-bold text-[#f8f4ea]">
-                    Jogador 1: {options.playerName}
+          {/* Left: Civilizations, Enemy & Map */}
+          <div className="lg:col-span-7 flex flex-col gap-3.5">
+            {/* Player Pantheon Card */}
+            <div className="rounded-lg border border-white/10 bg-[#131823] p-3.5">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/8 pb-2.5">
+                <div className="flex items-center gap-2 min-w-0">
+                  <Crown className="h-4 w-4 text-[#d4af37] shrink-0" />
+                  <span className="text-xs font-bold text-[#f8f4ea] truncate">
+                    {options.playerName}:
                   </span>
-                  <span className="rounded bg-[#1f293d] px-2 py-0.5 text-[11px] text-[#f3d27a]">
+                  <span className="text-xs font-semibold text-[#f3d27a] truncate">
                     {currentPantheon.name} · {skirmish.minorGod}
                   </span>
                 </div>
                 <button
                   type="button"
                   onClick={() => navTo('UI_GOD_PICKER')}
-                  className="rounded border border-[#d4af37]/50 bg-[#1d2536] px-2.5 py-1 text-[11px] font-semibold text-[#f3d27a] hover:bg-[#273147] cursor-pointer"
+                  className="rounded border border-[#d4af37]/45 bg-[#1b2232] px-3 py-1 text-[11px] font-semibold text-[#f3d27a] hover:border-[#f3d27a] hover:bg-[#232c40] cursor-pointer"
                 >
-                  Escolher Deus Maior
+                  Alterar Deus Maior
                 </button>
               </div>
 
-              <div className="mt-2 grid grid-cols-2 sm:grid-cols-4 gap-1.5 max-h-36 overflow-y-auto pr-1">
+              <div className="mt-2.5 grid grid-cols-2 sm:grid-cols-4 gap-1.5 max-h-36 overflow-y-auto pr-1">
                 {pantheonList.map((p) => {
                   const active = skirmish.pantheon === p.id;
                   return (
@@ -531,70 +539,82 @@ export function PortSubMenus({
                         clickSound();
                         onUpdateSkirmish({ ...skirmish, pantheon: p.id, minorGod: p.deity });
                       }}
-                      className={`flex flex-col items-start rounded border p-1.5 text-left transition-colors cursor-pointer ${
+                      className={`flex flex-col items-start rounded border px-2 py-1.5 text-left transition-colors cursor-pointer ${
                         active
-                          ? 'border-[#f3d27a] bg-[#262f40] text-white'
-                          : 'border-white/10 bg-[#151a24] text-[#cbd5e1] hover:border-[#d4af37]/45'
+                          ? 'border-[#d4af37] bg-[#1f2838] text-white'
+                          : 'border-white/8 bg-[#161c28] text-[#cbd5e1] hover:border-[#d4af37]/40'
                       }`}
                     >
-                      <div className="flex w-full items-center justify-between">
+                      <div className="flex w-full items-center justify-between gap-1">
                         <span className="font-display text-[11px] font-bold truncate">{p.name}</span>
-                        <span className="h-2 w-2 shrink-0 rounded-xs" style={{ backgroundColor: p.primaryColor }} />
+                        <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: p.primaryColor }} />
                       </div>
-                      <span className="text-[10px] text-[#e5c45e] truncate">{p.deity}</span>
+                      <span className="text-[10px] text-[#94a3b8] truncate">{p.deity}</span>
                     </button>
                   );
                 })}
               </div>
 
-              {/* Arsenal Preview */}
-              <div className="mt-2 rounded border border-white/10 bg-[#0e121a] px-2.5 py-1.5 text-[11px] text-[#cbd5e1]">
-                <span className="font-semibold text-[#f3d27a]">{currentPantheon.architectureLabel}: </span>
-                <span>
-                  {(['hoplite', 'hipaspist', 'myrmidon', 'peltast', 'archer', 'gastraphetes', 'cavalry', 'prodromos', 'ram', 'siege', 'jason', 'odysseus', 'perseus', 'bellerophon', 'hippolyta', 'ajax', 'theseus', 'cyclops', 'minotaur', 'centaur', 'manticore', 'hydra', 'colossus', 'medusa', 'phoenix'] as UnitKind[])
-                    .map((k) => getCivUnitSpec(skirmish.pantheon, k).name)
-                    .join(' · ')}
+              <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2 border-t border-white/8 pt-2 text-[11px] text-[#94a3b8]">
+                <span className="truncate">
+                  <strong className="text-[#e5c45e]">Bônus:</strong> {currentPantheon.bonusLabel}
+                </span>
+                <span className="text-[#38bdf8] shrink-0">
+                  Poder: {getCivGodPowerSpec(skirmish.pantheon, currentPantheon.favoredGodPower).name}
                 </span>
               </div>
             </div>
 
-            {/* Opponent AI Row */}
-            <div className="rounded border border-white/10 bg-[#131822] p-2.5">
-              <div className="mb-1.5 flex items-center justify-between">
-                <span className="text-xs font-semibold text-[#e6dfd1]">Oponente IA (Computador)</span>
-                <span className="text-[11px] text-[#fca5a5]">
-                  {PANTHEONS[skirmish.enemyPantheon].name} ({PANTHEONS[skirmish.enemyPantheon].deity})
-                </span>
-              </div>
-              <div className="flex flex-wrap gap-1 max-h-20 overflow-y-auto">
-                {pantheonList.map((p) => (
+            {/* Opponent AI Row — Clean Dropdown + Difficulty */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-lg border border-white/10 bg-[#131823] px-3.5 py-2.5">
+              <label className="flex items-center gap-2.5 text-xs">
+                <span className="font-semibold text-[#e6dfd1] whitespace-nowrap">Oponente IA</span>
+                <select
+                  value={skirmish.enemyPantheon}
+                  onChange={(e) => {
+                    clickSound();
+                    onUpdateSkirmish({ ...skirmish, enemyPantheon: e.target.value as PantheonId });
+                  }}
+                  className="rounded border border-white/15 bg-[#0e131c] px-2.5 py-1.5 text-xs font-medium text-[#fca5a5] focus:border-[#d4af37] focus:outline-none cursor-pointer"
+                >
+                  {pantheonList.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name} ({p.deity})
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <div className="flex items-center gap-1 rounded border border-white/10 bg-[#0e131c] p-0.5">
+                {DIFFICULTIES.map((d) => (
                   <button
-                    key={p.id}
+                    key={d.id}
                     type="button"
                     onClick={() => {
                       clickSound();
-                      onUpdateSkirmish({ ...skirmish, enemyPantheon: p.id });
+                      onUpdateSkirmish({ ...skirmish, difficulty: d.id });
                     }}
-                    className={`rounded border px-2 py-0.5 text-[10px] font-semibold cursor-pointer ${
-                      skirmish.enemyPantheon === p.id
-                        ? 'border-[#f3d27a] bg-[#262f40] text-[#f3d27a]'
-                        : 'border-white/10 bg-[#171c26] text-[#cbd5e1]'
+                    title={d.desc}
+                    className={`rounded px-2.5 py-1 text-[11px] font-semibold transition-colors cursor-pointer ${
+                      skirmish.difficulty === d.id
+                        ? 'bg-[#d4af37] text-[#0b0e14]'
+                        : 'text-[#cbd5e1] hover:text-white'
                     }`}
                   >
-                    {p.name}
+                    {d.label}
                   </button>
                 ))}
               </div>
             </div>
 
             {/* Map Picker (10 Maps) */}
-            <div className="flex flex-col gap-1.5">
-              <div className="flex items-center justify-between text-xs">
-                <span className="flex items-center gap-1.5 font-semibold text-[#e6dfd1]">
-                  <MapIcon className="h-3.5 w-3.5 text-[#e5c45e]" />
+            <div className="rounded-lg border border-white/10 bg-[#131823] p-3.5">
+              <div className="mb-2 flex items-center justify-between gap-2 text-xs">
+                <span className="flex items-center gap-1.5 font-semibold text-[#f3d27a]">
+                  <MapIcon className="h-3.5 w-3.5" />
                   <span>Mapa: {currentMap.name}</span>
                 </span>
-                <span className="text-[11px] text-[#9ca3af] truncate">{currentMap.subtitle}</span>
+                <span className="text-[11px] text-[#94a3b8] truncate">{currentMap.subtitle}</span>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5">
                 {mapList.map((m) => {
@@ -607,10 +627,10 @@ export function PortSubMenus({
                         clickSound();
                         onUpdateSkirmish({ ...skirmish, mapId: m.id });
                       }}
-                      className={`rounded border px-2 py-1.5 text-left text-[11px] font-semibold cursor-pointer truncate ${
+                      className={`rounded border px-2.5 py-1.5 text-left text-[11px] font-medium transition-colors cursor-pointer truncate ${
                         active
-                          ? 'border-[#f3d27a] bg-[#262f40] text-white'
-                          : 'border-white/10 bg-[#151a24] text-[#cbd5e1] hover:border-[#d4af37]/45'
+                          ? 'border-[#d4af37] bg-[#1f2838] text-white font-semibold'
+                          : 'border-white/8 bg-[#161c28] text-[#cbd5e1] hover:border-[#d4af37]/40'
                       }`}
                     >
                       {m.name}
@@ -621,12 +641,12 @@ export function PortSubMenus({
             </div>
           </div>
 
-          {/* Right: Game Rules, Difficulty, Visibility, World Size, Treaty, Launch */}
-          <div className="lg:col-span-5 flex flex-col justify-between gap-2.5 rounded border border-[#d4af37]/25 bg-[#131822] p-3">
-            <div className="flex flex-col gap-2.5">
+          {/* Right: Core Match Rules, Collapsible Advanced Rules & Launch */}
+          <div className="lg:col-span-5 flex flex-col justify-between gap-3 rounded-lg border border-white/10 bg-[#131823] p-3.5">
+            <div className="flex flex-col gap-3">
               <div>
-                <div className="mb-1 text-[11px] font-semibold text-[#e6dfd1]">Modo de Jogo</div>
-                <div className="flex flex-wrap gap-1">
+                <div className="mb-1.5 text-[11px] font-semibold text-[#cbd5e1]">Modo de Jogo</div>
+                <div className="flex flex-wrap gap-1.5">
                   {gameTypeOptions.map((gt) => (
                     <button
                       key={gt.id}
@@ -639,10 +659,10 @@ export function PortSubMenus({
                           startingResources: gt.id === 'deathmatch' ? 'abundant' : skirmish.startingResources,
                         });
                       }}
-                      className={`rounded border px-2 py-1 text-[10px] font-semibold cursor-pointer ${
+                      className={`rounded border px-2.5 py-1 text-[11px] font-semibold transition-colors cursor-pointer ${
                         skirmish.gameType === gt.id
-                          ? 'border-[#f3d27a] bg-[#262f40] text-[#f3d27a]'
-                          : 'border-white/10 bg-[#161b26] text-[#cbd5e1]'
+                          ? 'border-[#d4af37] bg-[#1f2838] text-[#f3d27a]'
+                          : 'border-white/8 bg-[#161c28] text-[#cbd5e1] hover:border-white/20'
                       }`}
                     >
                       {gt.label}
@@ -651,32 +671,32 @@ export function PortSubMenus({
                 </div>
               </div>
 
-              <div>
-                <div className="mb-1 text-[11px] font-semibold text-[#e6dfd1]">Dificuldade da IA</div>
-                <div className="grid grid-cols-4 gap-1">
-                  {DIFFICULTIES.map((d) => (
-                    <button
-                      key={d.id}
-                      type="button"
-                      onClick={() => {
-                        clickSound();
-                        onUpdateSkirmish({ ...skirmish, difficulty: d.id });
-                      }}
-                      className={`rounded border px-1.5 py-1 text-[11px] font-semibold cursor-pointer ${
-                        skirmish.difficulty === d.id
-                          ? 'border-[#f3d27a] bg-[#262f40] text-[#f3d27a]'
-                          : 'border-white/10 bg-[#161b26] text-[#cbd5e1]'
-                      }`}
-                    >
-                      {d.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-2.5">
                 <div>
-                  <div className="mb-1 text-[11px] font-semibold text-[#e6dfd1]">Visibilidade</div>
+                  <div className="mb-1.5 text-[11px] font-semibold text-[#cbd5e1]">Era Inicial</div>
+                  <div className="grid grid-cols-2 gap-1">
+                    {([1, 2, 3, 4] as AgeLevel[]).map((ageLv) => (
+                      <button
+                        key={ageLv}
+                        type="button"
+                        onClick={() => {
+                          clickSound();
+                          onUpdateSkirmish({ ...skirmish, startingAge: ageLv });
+                        }}
+                        className={`rounded border px-2 py-1 text-[10px] font-semibold cursor-pointer truncate ${
+                          skirmish.startingAge === ageLv
+                            ? 'border-[#d4af37] bg-[#1f2838] text-[#f3d27a]'
+                            : 'border-white/8 bg-[#161c28] text-[#cbd5e1]'
+                        }`}
+                      >
+                        {AGE_NAMES[ageLv].replace('Era ', '')}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="mb-1.5 text-[11px] font-semibold text-[#cbd5e1]">Visibilidade</div>
                   <div className="grid grid-cols-3 gap-1">
                     {(
                       [
@@ -698,8 +718,8 @@ export function PortSubMenus({
                         }}
                         className={`rounded border px-1 py-1 text-[10px] font-semibold cursor-pointer ${
                           skirmish.visibilityMode === v.id
-                            ? 'border-[#f3d27a] bg-[#262f40] text-[#f3d27a]'
-                            : 'border-white/10 bg-[#161b26] text-[#cbd5e1]'
+                            ? 'border-[#d4af37] bg-[#1f2838] text-[#f3d27a]'
+                            : 'border-white/8 bg-[#161c28] text-[#cbd5e1]'
                         }`}
                       >
                         {v.label}
@@ -707,118 +727,123 @@ export function PortSubMenus({
                     ))}
                   </div>
                 </div>
-                <div>
-                  <div className="mb-1 text-[11px] font-semibold text-[#e6dfd1]">Tamanho do Mundo</div>
-                  <div className="grid grid-cols-3 gap-1">
-                    {(
-                      [
-                        { id: 'normal', label: 'Normal' },
-                        { id: 'large', label: 'Grande' },
-                        { id: 'giant', label: 'Gigante' },
-                      ] as { id: WorldSizeId; label: string }[]
-                    ).map((ws) => (
-                      <button
-                        key={ws.id}
-                        type="button"
-                        onClick={() => {
-                          clickSound();
-                          onUpdateSkirmish({ ...skirmish, worldSize: ws.id });
-                        }}
-                        className={`rounded border px-1 py-1 text-[10px] font-semibold cursor-pointer ${
-                          skirmish.worldSize === ws.id
-                            ? 'border-[#f3d27a] bg-[#262f40] text-[#f3d27a]'
-                            : 'border-white/10 bg-[#161b26] text-[#cbd5e1]'
-                        }`}
-                      >
-                        {ws.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <div className="mb-1 text-[11px] font-semibold text-[#e6dfd1]">Era Inicial</div>
-                  <div className="grid grid-cols-2 gap-1">
-                    {([1, 2, 3, 4] as AgeLevel[]).map((ageLv) => (
-                      <button
-                        key={ageLv}
-                        type="button"
-                        onClick={() => {
-                          clickSound();
-                          onUpdateSkirmish({ ...skirmish, startingAge: ageLv });
-                        }}
-                        className={`rounded border px-1.5 py-1 text-[10px] font-semibold cursor-pointer truncate ${
-                          skirmish.startingAge === ageLv
-                            ? 'border-[#f3d27a] bg-[#262f40] text-[#f3d27a]'
-                            : 'border-white/10 bg-[#161b26] text-[#cbd5e1]'
-                        }`}
-                      >
-                        {AGE_NAMES[ageLv].replace('Era ', '')}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <div className="mb-1 text-[11px] font-semibold text-[#e6dfd1]">Tratado de Paz</div>
-                  <div className="grid grid-cols-3 gap-1">
-                    {[0, 5, 10].map((mins) => (
-                      <button
-                        key={mins}
-                        type="button"
-                        onClick={() => {
-                          clickSound();
-                          onUpdateSkirmish({ ...skirmish, treatyMinutes: mins });
-                        }}
-                        className={`rounded border px-1 py-1 text-[10px] font-semibold cursor-pointer ${
-                          skirmish.treatyMinutes === mins
-                            ? 'border-[#f3d27a] bg-[#262f40] text-[#f3d27a]'
-                            : 'border-white/10 bg-[#161b26] text-[#cbd5e1]'
-                        }`}
-                      >
-                        {mins === 0 ? 'Sem' : `${mins}m`}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-1.5">
+              {/* Collapsible Advanced Rules */}
+              <div className="border-t border-white/8 pt-2.5">
                 <button
                   type="button"
                   onClick={() => {
                     clickSound();
-                    onUpdateSkirmish({ ...skirmish, dayNightCycle: !skirmish.dayNightCycle });
+                    setShowAdvancedRules((prev) => !prev);
                   }}
-                  className={`flex items-center justify-between rounded border px-2.5 py-1.5 text-[11px] font-semibold cursor-pointer ${
-                    skirmish.dayNightCycle
-                      ? 'border-[#f3d27a] bg-[#262f40] text-[#f8f4ea]'
-                      : 'border-white/10 bg-[#161b26] text-[#94a3b8]'
-                  }`}
+                  className="flex w-full items-center justify-between gap-2 rounded border border-white/8 bg-[#101520] px-3 py-2 text-left text-xs cursor-pointer hover:border-[#d4af37]/40"
                 >
-                  <span>Dia / Noite</span>
-                  <span className="text-[#f3d27a]">{skirmish.dayNightCycle ? 'SIM' : 'NÃO'}</span>
+                  <div className="min-w-0">
+                    <div className="font-semibold text-[#e6dfd1]">Regras Avançadas</div>
+                    {!showAdvancedRules && (
+                      <div className="text-[10px] text-[#94a3b8] truncate">
+                        Mundo {worldSizeLabels[skirmish.worldSize]} · Tratado{' '}
+                        {skirmish.treatyMinutes === 0 ? 'Desligado' : `${skirmish.treatyMinutes}m`} ·{' '}
+                        {skirmish.dayNightCycle ? 'Dia/Noite' : 'Dia Fixo'} ·{' '}
+                        {skirmish.titansEnabled ? 'Titãs Ativos' : 'Sem Titãs'}
+                      </div>
+                    )}
+                  </div>
+                  {showAdvancedRules ? (
+                    <ChevronUp className="h-4 w-4 text-[#d4af37] shrink-0" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4 text-[#94a3b8] shrink-0" />
+                  )}
                 </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    clickSound();
-                    onUpdateSkirmish({ ...skirmish, titansEnabled: !skirmish.titansEnabled });
-                  }}
-                  className={`flex items-center justify-between rounded border px-2.5 py-1.5 text-[11px] font-semibold cursor-pointer ${
-                    skirmish.titansEnabled
-                      ? 'border-[#f3d27a] bg-[#262f40] text-[#f8f4ea]'
-                      : 'border-white/10 bg-[#161b26] text-[#94a3b8]'
-                  }`}
-                >
-                  <span>Titãs (Era V)</span>
-                  <span className="text-[#f3d27a]">{skirmish.titansEnabled ? 'SIM' : 'NÃO'}</span>
-                </button>
+
+                {showAdvancedRules && (
+                  <div className="mt-2.5 flex flex-col gap-2.5 text-xs">
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <div className="mb-1 text-[11px] font-semibold text-[#cbd5e1]">Tamanho do Mundo</div>
+                        <div className="grid grid-cols-3 gap-1">
+                          {(['normal', 'large', 'giant'] as WorldSizeId[]).map((ws) => (
+                            <button
+                              key={ws}
+                              type="button"
+                              onClick={() => {
+                                clickSound();
+                                onUpdateSkirmish({ ...skirmish, worldSize: ws });
+                              }}
+                              className={`rounded border px-1 py-1 text-[10px] font-semibold cursor-pointer ${
+                                skirmish.worldSize === ws
+                                  ? 'border-[#d4af37] bg-[#1f2838] text-[#f3d27a]'
+                                  : 'border-white/8 bg-[#161c28] text-[#cbd5e1]'
+                              }`}
+                            >
+                              {worldSizeLabels[ws]}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="mb-1 text-[11px] font-semibold text-[#cbd5e1]">Tratado de Paz</div>
+                        <div className="grid grid-cols-3 gap-1">
+                          {[0, 5, 10].map((mins) => (
+                            <button
+                              key={mins}
+                              type="button"
+                              onClick={() => {
+                                clickSound();
+                                onUpdateSkirmish({ ...skirmish, treatyMinutes: mins });
+                              }}
+                              className={`rounded border px-1 py-1 text-[10px] font-semibold cursor-pointer ${
+                                skirmish.treatyMinutes === mins
+                                  ? 'border-[#d4af37] bg-[#1f2838] text-[#f3d27a]'
+                                  : 'border-white/8 bg-[#161c28] text-[#cbd5e1]'
+                              }`}
+                            >
+                              {mins === 0 ? 'Sem' : `${mins}m`}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          clickSound();
+                          onUpdateSkirmish({ ...skirmish, dayNightCycle: !skirmish.dayNightCycle });
+                        }}
+                        className={`flex items-center justify-between rounded border px-2.5 py-1.5 text-[11px] font-semibold cursor-pointer ${
+                          skirmish.dayNightCycle
+                            ? 'border-[#d4af37] bg-[#1f2838] text-white'
+                            : 'border-white/8 bg-[#161c28] text-[#94a3b8]'
+                        }`}
+                      >
+                        <span>Dia / Noite</span>
+                        <span className="text-[#f3d27a]">{skirmish.dayNightCycle ? 'SIM' : 'NÃO'}</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          clickSound();
+                          onUpdateSkirmish({ ...skirmish, titansEnabled: !skirmish.titansEnabled });
+                        }}
+                        className={`flex items-center justify-between rounded border px-2.5 py-1.5 text-[11px] font-semibold cursor-pointer ${
+                          skirmish.titansEnabled
+                            ? 'border-[#d4af37] bg-[#1f2838] text-white'
+                            : 'border-white/8 bg-[#161c28] text-[#94a3b8]'
+                        }`}
+                      >
+                        <span>Titãs (Era V)</span>
+                        <span className="text-[#f3d27a]">{skirmish.titansEnabled ? 'SIM' : 'NÃO'}</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
-            <div className="flex flex-col gap-1.5 border-t border-white/10 pt-2.5">
+            <div className="flex flex-col gap-2 border-t border-white/8 pt-3">
               <button
                 type="button"
                 onClick={() =>
@@ -843,7 +868,7 @@ export function PortSubMenus({
                     }
                   )
                 }
-                className="flex h-10 w-full items-center justify-center gap-2 rounded border border-[#f5d77f] bg-gradient-to-b from-[#e0bc56] via-[#c79e34] to-[#98721b] px-5 text-sm font-bold text-[#0d1017] hover:brightness-110 cursor-pointer"
+                className="flex h-11 w-full items-center justify-center gap-2 rounded-md border border-[#e5c45e] bg-[#d4af37] px-5 text-sm font-bold text-[#0b0e14] hover:bg-[#e3c252] cursor-pointer transition-colors"
               >
                 <Swords className="h-4 w-4" />
                 <span>Iniciar Batalha</span>
@@ -855,9 +880,9 @@ export function PortSubMenus({
                     clickSound();
                     onLoadSavedMatch();
                   }}
-                  className="flex h-8 w-full items-center justify-center gap-2 rounded border border-[#d4af37]/40 bg-[#181e29] text-xs font-semibold text-[#e6dfd1] hover:bg-[#222a38] cursor-pointer"
+                  className="flex h-8 w-full items-center justify-center gap-2 rounded border border-white/10 bg-[#171d29] text-xs font-medium text-[#cbd5e1] hover:border-[#d4af37]/50 hover:text-white cursor-pointer"
                 >
-                  <Play className="h-3.5 w-3.5 text-[#e5c45e]" />
+                  <Play className="h-3.5 w-3.5 text-[#d4af37]" />
                   <span>Carregar Partida Salva</span>
                 </button>
               )}
@@ -888,10 +913,10 @@ export function PortSubMenus({
 
     return (
       <div className="flex flex-col gap-4">
-        {renderPanelHeader('CONFIGURAÇÕES', 'Áudio, Vídeo, Gameplay, Rede e Controles (engine_options_menu)')}
+        {renderPanelHeader('CONFIGURAÇÕES', 'Áudio, Vídeo, Gameplay, Rede e Controles')}
 
-        {/* 5 Port Tabs */}
-        <div className="flex flex-wrap gap-1.5 border-b border-[#d4af37]/25 pb-2">
+        {/* Tabs */}
+        <div className="flex flex-wrap gap-1.5 border-b border-white/10 pb-2.5">
           {tabs.map((t) => {
             const Icon = t.icon;
             const active = menuState === t.id;
@@ -902,7 +927,7 @@ export function PortSubMenus({
                 onClick={() => navTo(t.id)}
                 className={`flex items-center gap-1.5 rounded border px-3.5 py-2 text-xs font-bold tracking-wider transition-colors cursor-pointer ${
                   active
-                    ? 'border-[#f3d27a] bg-[#332211] text-[#f3d27a]'
+                    ? 'border-[#d4af37] bg-[#1f2838] text-[#f3d27a]'
                     : 'border-white/10 bg-[#151a24] text-[#cbd5e1] hover:border-[#d4af37]/45'
                 }`}
               >
@@ -914,7 +939,7 @@ export function PortSubMenus({
         </div>
 
         {/* Tab Content */}
-        <div className="mx-auto flex w-full max-w-xl flex-col gap-2.5 rounded border border-[#d4af37]/25 bg-[#11151e] p-4">
+        <div className="mx-auto flex w-full max-w-xl flex-col gap-2 rounded-lg border border-white/10 bg-[#131823] p-4">
           {menuState === 'UI_OPTIONS_AUDIO' && (
             <>
               <button
@@ -923,7 +948,7 @@ export function PortSubMenus({
                   onUpdateOptions({ ...options, masterVolume: stepPct(options.masterVolume) });
                   clickSound();
                 }}
-                className="flex h-11 items-center justify-between rounded border border-white/15 bg-[#1b1610] px-4 text-sm font-semibold text-[#f3d27a] hover:border-[#f3d27a]/60 cursor-pointer"
+                className="flex h-11 items-center justify-between rounded border border-white/15 bg-[#171d29] px-4 text-sm font-semibold text-[#f3d27a] hover:border-[#f3d27a]/60 cursor-pointer"
               >
                 <span>Volume Geral</span>
                 <span className="font-mono-num">{Math.round(options.masterVolume * 100)}%</span>
@@ -934,7 +959,7 @@ export function PortSubMenus({
                   onUpdateOptions({ ...options, musicVolume: stepPct(options.musicVolume) });
                   clickSound();
                 }}
-                className="flex h-11 items-center justify-between rounded border border-white/15 bg-[#1b1610] px-4 text-sm font-semibold text-[#f3d27a] hover:border-[#f3d27a]/60 cursor-pointer"
+                className="flex h-11 items-center justify-between rounded border border-white/15 bg-[#171d29] px-4 text-sm font-semibold text-[#f3d27a] hover:border-[#f3d27a]/60 cursor-pointer"
               >
                 <span>Volume da Música</span>
                 <span className="font-mono-num">{Math.round(options.musicVolume * 100)}%</span>
@@ -945,7 +970,7 @@ export function PortSubMenus({
                   onUpdateOptions({ ...options, sfxVolume: stepPct(options.sfxVolume) });
                   clickSound();
                 }}
-                className="flex h-11 items-center justify-between rounded border border-white/15 bg-[#1b1610] px-4 text-sm font-semibold text-[#f3d27a] hover:border-[#f3d27a]/60 cursor-pointer"
+                className="flex h-11 items-center justify-between rounded border border-white/15 bg-[#171d29] px-4 text-sm font-semibold text-[#f3d27a] hover:border-[#f3d27a]/60 cursor-pointer"
               >
                 <span>Volume dos Efeitos</span>
                 <span className="font-mono-num">{Math.round(options.sfxVolume * 100)}%</span>
@@ -956,7 +981,7 @@ export function PortSubMenus({
                   onUpdateOptions({ ...options, musicEnabled: !options.musicEnabled });
                   clickSound();
                 }}
-                className="flex h-11 items-center justify-between rounded border border-white/15 bg-[#1b1610] px-4 text-sm font-semibold cursor-pointer"
+                className="flex h-11 items-center justify-between rounded border border-white/15 bg-[#171d29] px-4 text-sm font-semibold cursor-pointer"
               >
                 <span className="text-[#e6dfd1]">Música Ativada</span>
                 <span className={options.musicEnabled ? 'text-[#86efac]' : 'text-[#fca5a5]'}>
@@ -970,7 +995,7 @@ export function PortSubMenus({
                   onUpdateOptions({ ...options, sfxEnabled: next });
                   if (next) soundEngine.playSelect();
                 }}
-                className="flex h-11 items-center justify-between rounded border border-white/15 bg-[#1b1610] px-4 text-sm font-semibold cursor-pointer"
+                className="flex h-11 items-center justify-between rounded border border-white/15 bg-[#171d29] px-4 text-sm font-semibold cursor-pointer"
               >
                 <span className="text-[#e6dfd1]">Efeitos Sonoros Ativados</span>
                 <span className={options.sfxEnabled ? 'text-[#86efac]' : 'text-[#fca5a5]'}>
@@ -994,7 +1019,7 @@ export function PortSubMenus({
                   onUpdateOptions({ ...options, graphicsQuality: next });
                   clickSound();
                 }}
-                className="flex h-11 items-center justify-between rounded border border-white/15 bg-[#1b1610] px-4 text-sm font-semibold text-[#f3d27a] cursor-pointer"
+                className="flex h-11 items-center justify-between rounded border border-white/15 bg-[#171d29] px-4 text-sm font-semibold text-[#f3d27a] cursor-pointer"
               >
                 <span>Qualidade Gráfica</span>
                 <span>
@@ -1011,7 +1036,7 @@ export function PortSubMenus({
                   onUpdateOptions({ ...options, showFps: !options.showFps });
                   clickSound();
                 }}
-                className="flex h-11 items-center justify-between rounded border border-white/15 bg-[#1b1610] px-4 text-sm font-semibold cursor-pointer"
+                className="flex h-11 items-center justify-between rounded border border-white/15 bg-[#171d29] px-4 text-sm font-semibold cursor-pointer"
               >
                 <span className="text-[#e6dfd1]">Exibir FPS</span>
                 <span className={options.showFps ? 'text-[#86efac]' : 'text-[#fca5a5]'}>
@@ -1025,7 +1050,7 @@ export function PortSubMenus({
                   onUpdateOptions({ ...options, projectionMode: next });
                   clickSound();
                 }}
-                className="flex h-11 items-center justify-between rounded border border-white/15 bg-[#1b1610] px-4 text-sm font-semibold cursor-pointer"
+                className="flex h-11 items-center justify-between rounded border border-white/15 bg-[#171d29] px-4 text-sm font-semibold cursor-pointer"
               >
                 <span className="text-[#e6dfd1]">Projeção da Câmera</span>
                 <span className={options.projectionMode === '2.5d' ? 'text-[#f3d27a]' : 'text-sky-400'}>
@@ -1047,7 +1072,7 @@ export function PortSubMenus({
                   onUpdateOptions({ ...options, hopliteRenderMode: next });
                   clickSound();
                 }}
-                className="flex h-11 items-center justify-between rounded border border-white/15 bg-[#1b1610] px-4 text-sm font-semibold cursor-pointer"
+                className="flex h-11 items-center justify-between rounded border border-white/15 bg-[#171d29] px-4 text-sm font-semibold cursor-pointer"
               >
                 <span className="text-[#e6dfd1]">Modo Visual do Hoplita</span>
                 <span
@@ -1078,7 +1103,7 @@ export function PortSubMenus({
                   onUpdateOptions({ ...options, hopliteArmorTier: next });
                   clickSound();
                 }}
-                className="flex h-11 items-center justify-between rounded border border-white/15 bg-[#1b1610] px-4 text-sm font-semibold cursor-pointer"
+                className="flex h-11 items-center justify-between rounded border border-white/15 bg-[#171d29] px-4 text-sm font-semibold cursor-pointer"
               >
                 <span className="text-[#e6dfd1]">Armadura &amp; UV Infantaria Grega (T1–T4)</span>
                 <span className="text-[#f3d27a]">
@@ -1106,7 +1131,7 @@ export function PortSubMenus({
                   });
                   clickSound();
                 }}
-                className="flex h-11 items-center justify-between rounded border border-white/15 bg-[#1b1610] px-4 text-sm font-semibold cursor-pointer"
+                className="flex h-11 items-center justify-between rounded border border-white/15 bg-[#171d29] px-4 text-sm font-semibold cursor-pointer"
               >
                 <span className="text-[#e6dfd1]">Proporção Global (Edifícios vs Unidades)</span>
                 <span className="text-[#f3d27a]">
@@ -1141,7 +1166,7 @@ export function PortSubMenus({
                   onUpdateSkirmish({ ...skirmish, difficulty: next });
                   clickSound();
                 }}
-                className="flex h-11 items-center justify-between rounded border border-white/15 bg-[#1b1610] px-4 text-sm font-semibold text-[#f3d27a] cursor-pointer"
+                className="flex h-11 items-center justify-between rounded border border-white/15 bg-[#171d29] px-4 text-sm font-semibold text-[#f3d27a] cursor-pointer"
               >
                 <span>Dificuldade Padrão</span>
                 <span>
@@ -1158,7 +1183,7 @@ export function PortSubMenus({
                   onUpdateOptions({ ...options, showTips: !options.showTips });
                   clickSound();
                 }}
-                className="flex h-11 items-center justify-between rounded border border-white/15 bg-[#1b1610] px-4 text-sm font-semibold cursor-pointer"
+                className="flex h-11 items-center justify-between rounded border border-white/15 bg-[#171d29] px-4 text-sm font-semibold cursor-pointer"
               >
                 <span className="text-[#e6dfd1]">Dicas de Jogo</span>
                 <span className={options.showTips ? 'text-[#86efac]' : 'text-[#fca5a5]'}>
@@ -1172,7 +1197,7 @@ export function PortSubMenus({
                   onUpdateOptions({ ...options, gameSpeed: next });
                   clickSound();
                 }}
-                className="flex h-11 items-center justify-between rounded border border-white/15 bg-[#1b1610] px-4 text-sm font-semibold text-[#f3d27a] cursor-pointer"
+                className="flex h-11 items-center justify-between rounded border border-white/15 bg-[#171d29] px-4 text-sm font-semibold text-[#f3d27a] cursor-pointer"
               >
                 <span>Velocidade do Jogo</span>
                 <span className="font-mono-num">{options.gameSpeed.toFixed(1)}x</span>
@@ -1188,7 +1213,7 @@ export function PortSubMenus({
                   onUpdateOptions({ ...options, upnpEnabled: !options.upnpEnabled });
                   clickSound();
                 }}
-                className="flex h-11 items-center justify-between rounded border border-white/15 bg-[#1b1610] px-4 text-sm font-semibold cursor-pointer"
+                className="flex h-11 items-center justify-between rounded border border-white/15 bg-[#171d29] px-4 text-sm font-semibold cursor-pointer"
               >
                 <span className="text-[#e6dfd1]">UPnP</span>
                 <span className={options.upnpEnabled ? 'text-[#86efac]' : 'text-[#fca5a5]'}>
@@ -1203,7 +1228,7 @@ export function PortSubMenus({
                   setLanPort(nextPort);
                   clickSound();
                 }}
-                className="flex h-11 items-center justify-between rounded border border-white/15 bg-[#1b1610] px-4 text-sm font-semibold text-[#f3d27a] cursor-pointer"
+                className="flex h-11 items-center justify-between rounded border border-white/15 bg-[#171d29] px-4 text-sm font-semibold text-[#f3d27a] cursor-pointer"
               >
                 <span>Porta Padrão</span>
                 <span className="font-mono-num">{options.networkPort}</span>
@@ -1227,7 +1252,7 @@ export function PortSubMenus({
                   onUpdateOptions({ ...options, virtualJoystick: !options.virtualJoystick });
                   clickSound();
                 }}
-                className="flex h-11 items-center justify-between rounded border border-white/15 bg-[#1b1610] px-4 text-sm font-semibold cursor-pointer"
+                className="flex h-11 items-center justify-between rounded border border-white/15 bg-[#171d29] px-4 text-sm font-semibold cursor-pointer"
               >
                 <span className="text-[#e6dfd1]">Joystick Virtual / Controle Touch</span>
                 <span className={options.virtualJoystick ? 'text-[#86efac]' : 'text-[#fca5a5]'}>
@@ -1242,7 +1267,7 @@ export function PortSubMenus({
                   onUpdateOptions({ ...options, cameraSensitivity: next });
                   clickSound();
                 }}
-                className="flex h-11 items-center justify-between rounded border border-white/15 bg-[#1b1610] px-4 text-sm font-semibold text-[#f3d27a] cursor-pointer"
+                className="flex h-11 items-center justify-between rounded border border-white/15 bg-[#171d29] px-4 text-sm font-semibold text-[#f3d27a] cursor-pointer"
               >
                 <span>Sensibilidade Touch / Câmera</span>
                 <span className="font-mono-num">{options.cameraSensitivity.toFixed(1)}x</span>
@@ -1268,7 +1293,7 @@ export function PortSubMenus({
       <div className="flex flex-col gap-4">
         {renderPanelHeader(
           'MULTIJOGADOR — LAN / IP DIRETO',
-          'Descoberta de salas locais, conexão por IP direto e criação de sala (uimplanip)',
+          'Descoberta de salas locais, conexão por IP direto e criação de sala',
           'SUB_MULTIPLAYER'
         )}
 
@@ -1647,7 +1672,7 @@ export function PortSubMenus({
       <div className="flex flex-col gap-4">
         {renderPanelHeader(
           'SELECIONAR PERFIL DE JOGADOR',
-          `Perfil ativo: ${options.playerName} (uiprofileselect)`,
+          `Perfil ativo: ${options.playerName}`,
           'SUB_MORE'
         )}
 
@@ -1754,7 +1779,7 @@ export function PortSubMenus({
         {renderPanelHeader(
           menuState === 'UI_GAME_LIST' ? 'CARREGAR JOGO SALVO' : 'CARREGAR CENÁRIO',
           menuState === 'UI_GAME_LIST'
-            ? 'Gerencie partidas salvas localmente no navegador (uigamelist)'
+            ? 'Gerencie partidas salvas localmente no navegador'
             : 'Cenários prontos inspirados nas campanhas e mapas clássicos',
           'SUB_SINGLE_PLAYER'
         )}
@@ -2068,7 +2093,7 @@ export function PortSubMenus({
       <div className="flex flex-col gap-4">
         {renderPanelHeader(
           menuState === 'UI_TECHTREE' ? 'ÁRVORE TECNOLÓGICA' : 'HISTÓRIA E MITOLOGIA',
-          '13 Panteões, 13 Edificações, 16 Tropas e 18 Tecnologias (uitechtree)',
+          'Panteões, Edificações, Tropas, Heróis, Unidades Míticas e Tecnologias',
           'SUB_MORE'
         )}
 
@@ -2195,14 +2220,13 @@ export function PortSubMenus({
   if (menuState === 'CREDITS') {
     return (
       <div className="flex flex-col gap-4">
-        {renderPanelHeader('CRÉDITOS', 'Age of Mythology: The Titans & Divine Edition', 'SUB_MOVIES')}
-        <div className="mx-auto flex w-full max-w-lg flex-col gap-2 rounded border border-[#d4af37]/30 bg-[#131822] p-5 text-center text-xs text-[#cbd5e1]">
+        {renderPanelHeader('CRÉDITOS', 'Age of Mythology: Olympus', 'SUB_MOVIES')}
+        <div className="mx-auto flex w-full max-w-lg flex-col gap-2 rounded border border-white/10 bg-[#131823] p-5 text-center text-xs text-[#cbd5e1]">
           <p className="font-display text-base font-bold text-[#f3d27a]">Age of Mythology: Olympus</p>
-          <p className="text-white">Baseado em Age of Mythology: The Titans & AoM Divine Edition</p>
-          <p className="text-[#f3d27a]">Estrutura de Menus e Estados baseada em AoM-Native-Port</p>
+          <p className="text-white">Estratégia em Tempo Real Mitológica 3D</p>
           <div className="my-2 h-px bg-white/10" />
-          <p>Motor 3D WebGL / Three.js · A* Pathfinding · Névoa de Guerra & Ciclo Dia/Noite</p>
-          <p>13 Panteões · 39 Deuses Maiores · 10 Mapas · 14 Poderes Divinos · 14 Tecnologias · Titãs</p>
+          <p>Motor 3D WebGL · Navegação A* · Névoa de Guerra &amp; Ciclo Dia/Noite</p>
+          <p>13 Panteões · 39 Deuses Maiores · 10 Mapas · Poderes Divinos · Era dos Deuses &amp; Titãs</p>
         </div>
       </div>
     );
@@ -2211,18 +2235,15 @@ export function PortSubMenus({
   if (menuState === 'UI_ABOUT') {
     return (
       <div className="flex flex-col gap-4">
-        {renderPanelHeader('SOBRE O AGE OF MYTHOLOGY', 'Informações da versão e licença (AboutBox)', 'SUB_MORE')}
-        <div className="mx-auto flex w-full max-w-lg flex-col gap-2.5 rounded border border-[#d4af37]/30 bg-[#131822] p-5 text-xs leading-relaxed text-[#cbd5e1]">
+        {renderPanelHeader('SOBRE O JOGO', 'Informações da versão', 'SUB_MORE')}
+        <div className="mx-auto flex w-full max-w-lg flex-col gap-2.5 rounded border border-white/10 bg-[#131823] p-5 text-xs leading-relaxed text-[#cbd5e1]">
           <div className="flex justify-between font-bold text-[#f3d27a]">
-            <span>Age of Mythology: Olympus (Titans UI Edition)</span>
+            <span>Age of Mythology: Olympus</span>
             <span className="font-mono-num">v1.0.0</span>
           </div>
           <p>
-            Implementação estratégica 3D em tempo real com suporte a campanhas, escaramuças, seletor de deuses,
+            Estratégia em tempo real 3D com campanhas, escaramuças, seletor de deuses,
             árvore tecnológica, editor sandbox e partidas salvas localmente.
-          </p>
-          <p className="text-[#9ca3af]">
-            Inspirado nos layouts clássicos do Age of Mythology: The Titans e na arquitetura de estados do AoM-Native-Port.
           </p>
         </div>
       </div>

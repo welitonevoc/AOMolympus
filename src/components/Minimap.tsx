@@ -457,9 +457,18 @@ export function Minimap({
   ]);
 
   const toWorldCoords = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const nx = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-    const nz = Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height));
+    const el = e.currentTarget;
+    const rect = el.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const dx = e.clientX - cx;
+    const dy = e.clientY - cy;
+    // Invert the CSS +45deg diamond rotation back into local canvas space
+    const lx = (dx + dy) * Math.SQRT1_2;
+    const ly = (-dx + dy) * Math.SQRT1_2;
+    const side = el.offsetWidth || rect.width / Math.SQRT2;
+    const nx = Math.max(0, Math.min(1, lx / side + 0.5));
+    const nz = Math.max(0, Math.min(1, ly / side + 0.5));
     return {
       wx: (nx * 2 - 1) * MAP_HALF_SIZE,
       wz: (nz * 2 - 1) * MAP_HALF_SIZE,
@@ -507,7 +516,7 @@ export function Minimap({
     if (hit?.label) {
       setHoverInfo(hit.label);
     } else {
-      setHoverInfo(`Mover Câmera (${Math.round(wx)}, ${Math.round(wz)})`);
+      setHoverInfo(`(${Math.round(wx)}, ${Math.round(wz)})`);
     }
   };
 
@@ -522,119 +531,124 @@ export function Minimap({
     setHoverInfo(null);
   };
 
-  const displaySizeClass = expanded ? 'h-[204px] w-[204px]' : 'h-[138px] w-[138px]';
+  const wrapperSizeClass = expanded ? 'h-[208px] w-[212px]' : 'h-[154px] w-[158px]';
+  const diamondSizeClass = expanded ? 'h-[144px] w-[144px]' : 'h-[106px] w-[106px]';
 
   return (
-    <div className="relative flex items-stretch gap-1.5 shrink-0 select-none">
+    <div className={`relative flex items-center justify-center shrink-0 select-none ${wrapperSizeClass}`}>
       {/* Floating Hover Tooltip above Minimap */}
       {hoverInfo && (
-        <div className="pointer-events-none absolute -top-7 right-0 z-30 flex items-center gap-1.5 rounded border border-[#d4af37]/60 bg-[#0d111a]/95 px-2 py-0.5 text-[10px] font-semibold text-[#f3d27a] shadow-lg whitespace-nowrap">
+        <div className="pointer-events-none absolute -top-7 right-1 z-30 flex items-center gap-1 rounded border border-[#c8a962]/65 bg-[#0e121a]/95 px-2 py-0.5 text-[10px] font-semibold text-[#f3d27a] shadow-lg whitespace-nowrap">
           <Crosshair className="h-3 w-3 text-[#facc15]" />
           <span>{hoverInfo}</span>
         </div>
       )}
 
-      {/* AoM: The Titans Side Filter, Town Center & Expand Strip */}
-      <div className="flex flex-col justify-between gap-1 py-0.5">
+      {/* AoM: The Titans 45-degree Diamond Map Frame */}
+      <div className="relative flex items-center justify-center">
+        <div
+          className={`${diamondSizeClass} rotate-45 overflow-hidden rounded-[4px] border-2 border-[#c8a962]/85 bg-[#0b1018] shadow-[0_0_18px_rgba(0,0,0,0.88)] ring-1 ring-black/70 transition-[width,height] duration-150`}
+        >
+          <canvas
+            ref={canvasRef}
+            width={CANVAS_SIZE}
+            height={CANVAS_SIZE}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onPointerCancel={handlePointerUp}
+            onPointerLeave={handlePointerLeave}
+            onContextMenu={(e) => e.preventDefault()}
+            title="Clique esquerdo ou arraste para mover a câmera · Clique direito para enviar tropas"
+            className="h-full w-full touch-none cursor-crosshair block"
+          />
+        </div>
+      </div>
+
+      {/* Top-Left Corner: Compact Ally / Enemy Entity Tally */}
+      <div
+        className="pointer-events-none absolute top-0.5 left-0.5 flex flex-col gap-0.5 text-[9px] text-[#cbd5e1]"
+        title="Resumo tático no mapa"
+      >
+        <span className="flex items-center gap-1 font-mono-num">
+          <span className="inline-block h-1.5 w-1.5 bg-[#60a5fa]" />
+          <span>{playerBuildings + playerUnits}</span>
+        </span>
+        {revealedEnemies > 0 && (
+          <span className="flex items-center gap-1 font-mono-num text-rose-300">
+            <span className="inline-block h-1.5 w-1.5 rotate-45 bg-[#ef4444]" />
+            <span>{revealedEnemies}</span>
+          </span>
+        )}
+      </div>
+
+      {/* Top-Right Corner Circular Button: Expand / Shrink */}
+      <button
+        type="button"
+        onClick={() => setExpanded((v) => !v)}
+        title={expanded ? 'Reduzir Minimapa' : 'Expandir Minimapa'}
+        aria-label="Alternar tamanho do minimapa"
+        className="absolute top-0.5 right-0.5 flex h-6 w-6 items-center justify-center rounded-full border border-[#c8a962]/70 bg-[#181d27] text-[#e5c45e] shadow hover:border-[#f3d27a] hover:bg-[#232b3a] cursor-pointer"
+      >
+        {expanded ? <Minimize2 className="h-3 w-3" /> : <Maximize2 className="h-3 w-3" />}
+      </button>
+
+      {/* Bottom-Left Corner Circular Buttons (AoM Style): Focus TC + All Filter */}
+      <div className="absolute bottom-0.5 left-0.5 flex items-center gap-1">
         {onFocusTownCenter && (
           <button
             type="button"
             onClick={onFocusTownCenter}
-            title="Focar próximo Centro da Cidade (Espaço / H)"
+            title="Focar Centro da Cidade"
             aria-label="Focar Centro da Cidade"
-            className="flex h-7 w-7 items-center justify-center rounded border border-[#d4af37]/40 bg-[#171c26] text-[#f3d27a] hover:border-[#f3d27a] hover:bg-[#222a38] cursor-pointer"
+            className="flex h-6 w-6 items-center justify-center rounded-full border border-[#c8a962]/75 bg-[#181d27] text-[#f3d27a] shadow hover:border-[#f5d77f] hover:bg-[#242c3d] cursor-pointer"
           >
-            <Castle className="h-3.5 w-3.5" />
+            <Castle className="h-3 w-3" />
           </button>
         )}
         <button
           type="button"
           onClick={() => setFilterMode('all')}
-          title="Filtro Padrão: exibir Edifícios, Unidades Aliadas, Inimigos e Recursos"
+          title="Mostrar tudo no minimapa"
           aria-label="Mostrar tudo no minimapa"
-          className={`flex h-7 w-7 items-center justify-center rounded border transition-colors cursor-pointer ${
+          className={`flex h-6 w-6 items-center justify-center rounded-full border shadow transition-colors cursor-pointer ${
             filterMode === 'all'
               ? 'border-[#f5d77f] bg-[#d4af37] text-[#0b0e13]'
-              : 'border-white/15 bg-[#171c26] text-[#cbd5e1] hover:bg-[#222938]'
+              : 'border-[#c8a962]/50 bg-[#181d27] text-[#cbd5e1] hover:bg-[#242c3d]'
           }`}
         >
-          <Eye className="h-3.5 w-3.5" />
+          <Eye className="h-3 w-3" />
         </button>
+      </div>
+
+      {/* Bottom-Right Corner Circular Buttons (AoM Style): Combat + Economy Filters */}
+      <div className="absolute bottom-0.5 right-0.5 flex items-center gap-1">
         <button
           type="button"
           onClick={() => setFilterMode('combat')}
-          title="Filtro Militar: destacar Unidades Aliadas, Inimigos Revelados e Fortificações"
+          title="Filtrar Combate no minimapa"
           aria-label="Filtrar combate no minimapa"
-          className={`flex h-7 w-7 items-center justify-center rounded border transition-colors cursor-pointer ${
+          className={`flex h-6 w-6 items-center justify-center rounded-full border shadow transition-colors cursor-pointer ${
             filterMode === 'combat'
               ? 'border-[#f5d77f] bg-[#d4af37] text-[#0b0e13]'
-              : 'border-white/15 bg-[#171c26] text-[#cbd5e1] hover:bg-[#222938]'
+              : 'border-[#c8a962]/50 bg-[#181d27] text-[#cbd5e1] hover:bg-[#242c3d]'
           }`}
         >
-          <Swords className="h-3.5 w-3.5" />
+          <Swords className="h-3 w-3" />
         </button>
         <button
           type="button"
           onClick={() => setFilterMode('economy')}
-          title="Filtro Econômico: destacar Minas de Ouro, Bosques e Fauna"
+          title="Filtrar Recursos no minimapa"
           aria-label="Filtrar recursos no minimapa"
-          className={`flex h-7 w-7 items-center justify-center rounded border transition-colors cursor-pointer ${
+          className={`flex h-6 w-6 items-center justify-center rounded-full border shadow transition-colors cursor-pointer ${
             filterMode === 'economy'
               ? 'border-[#f5d77f] bg-[#d4af37] text-[#0b0e13]'
-              : 'border-white/15 bg-[#171c26] text-[#cbd5e1] hover:bg-[#222938]'
+              : 'border-[#c8a962]/50 bg-[#181d27] text-[#cbd5e1] hover:bg-[#242c3d]'
           }`}
         >
-          <Trees className="h-3.5 w-3.5" />
+          <Trees className="h-3 w-3" />
         </button>
-        <button
-          type="button"
-          onClick={() => setExpanded((v) => !v)}
-          title={expanded ? 'Reduzir tamanho do Minimapa' : 'Expandir Minimapa Tático'}
-          aria-label="Alternar tamanho do minimapa"
-          className="flex h-7 w-7 items-center justify-center rounded border border-white/15 bg-[#171c26] text-[#e5c45e] hover:border-[#f3d27a] hover:bg-[#222938] cursor-pointer"
-        >
-          {expanded ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
-        </button>
-      </div>
-
-      {/* Minimap Canvas + Tactical Entity Legend (Buildings, Allies, Revealed Enemies) */}
-      <div className="flex flex-col gap-1">
-        <canvas
-          ref={canvasRef}
-          width={CANVAS_SIZE}
-          height={CANVAS_SIZE}
-          onPointerDown={handlePointerDown}
-          onPointerMove={handlePointerMove}
-          onPointerUp={handlePointerUp}
-          onPointerCancel={handlePointerUp}
-          onPointerLeave={handlePointerLeave}
-          onContextMenu={(e) => e.preventDefault()}
-          title="Clique esquerdo ou arraste para mover a câmera · Clique direito para enviar tropas"
-          className={`${displaySizeClass} touch-none cursor-crosshair rounded border-2 border-[#d4af37]/65 bg-[#0b1018] shadow-[0_0_16px_rgba(0,0,0,0.85)] transition-[width,height] duration-150`}
-        />
-        <div className="flex items-center justify-between gap-2 px-0.5 text-[10px] text-[#cbd5e1]">
-          <span
-            className="flex items-center gap-1 whitespace-nowrap"
-            title="Edifícios Aliados"
-          >
-            <span className="inline-block h-2 w-2 border border-white/70 bg-[#3b82f6]" />
-            <span className="font-mono-num font-semibold">{playerBuildings}</span>
-          </span>
-          <span
-            className="flex items-center gap-1 whitespace-nowrap"
-            title="Unidades Aliadas"
-          >
-            <span className="inline-block h-2 w-2 rounded-full bg-[#60a5fa]" />
-            <span className="font-mono-num font-semibold">{playerUnits}</span>
-          </span>
-          <span
-            className="flex items-center gap-1 whitespace-nowrap"
-            title="Inimigos Revelados (Unidades e Construções Visíveis)"
-          >
-            <span className="inline-block h-2 w-2 rotate-45 bg-[#ef4444]" />
-            <span className="font-mono-num font-semibold text-rose-300">{revealedEnemies}</span>
-          </span>
-        </div>
       </div>
     </div>
   );

@@ -1917,7 +1917,7 @@ export const BUILDING_STATS: Record<BuildingKind, BuildingStats> = {
     cost: { wood: 65 },
     buildTime: 6,
     maxHp: 450,
-    radius: 1.8,
+    radius: 1.15,
     popBonus: 6,
     hackArmor: 0.15,
     pierceArmor: 0.7,
@@ -2184,12 +2184,24 @@ export interface SelectionSummary {
   count: number;
   primaryType: 'unit' | 'building' | 'resource' | 'settlement' | 'fauna' | 'relic' | 'none';
   entityId?: string;
+  unitKind?: UnitKind;
+  faunaKind?: FaunaKind;
+  isHero?: boolean;
+  isMythic?: boolean;
+  isGod?: boolean;
+  isMajorGod?: boolean;
   kindLabel: string;
   roleLabel: string;
   team: TeamId | 'neutral';
   hp: number;
   maxHp: number;
   attack?: number;
+  hackArmorPct?: number;
+  pierceArmorPct?: number;
+  crushArmorPct?: number;
+  speed?: number;
+  range?: number;
+  popCost?: number;
   armorLabel?: string;
   taskLabel?: string;
   resourceType?: ResourceType;
@@ -2206,7 +2218,16 @@ export interface SelectionSummary {
   repeatTraining?: boolean;
   rallyPoint?: { x: number; z: number } | null;
   hasVillagerSelected: boolean;
+  selectedCounts?: { kind: UnitKind; name: string; count: number }[];
   voiceLine?: UnitVoiceLineInfo;
+}
+
+export interface TeamScoreBreakdown {
+  total: number;
+  economy: number;
+  military: number;
+  technology: number;
+  society: number;
 }
 
 export interface GameHudSnapshot {
@@ -2214,6 +2235,7 @@ export interface GameHudSnapshot {
   pantheon: PantheonId;
   majorGodName: string;
   enemyPantheon: PantheonId;
+  enemyMajorGodName: string;
   difficulty: DifficultyId;
   mapId: MapId;
   gameType: GameTypeId;
@@ -2240,11 +2262,16 @@ export interface GameHudSnapshot {
   relicsHeld: number;
   marketRates: { food: number; wood: number; gold: number };
   enemyAge: AgeLevel;
+  playerScore: number;
+  enemyScore: number;
+  playerScoreBreakdown: TeamScoreBreakdown;
+  enemyScoreBreakdown: TeamScoreBreakdown;
   population: number;
   populationCap: number;
   playerTownCenterCount: number;
   maxTownCenters: number;
   idleVillagerCount: number;
+  idleMilitaryCount: number;
   combatUnitCount: number;
   godPowerCooldowns: Record<GodPowerId, number>;
   activeBuildMode: BuildingKind | null;
