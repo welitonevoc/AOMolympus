@@ -813,6 +813,294 @@ function getCivLook(pantheon: PantheonId, pal: MaterialPalette, majorGod?: strin
   }
 }
 
+interface TownCenterVillageMats {
+  courtyardEarth: THREE.MeshStandardMaterial;
+  sandCourt: THREE.MeshStandardMaterial;
+  strawThatch: THREE.MeshStandardMaterial;
+  bambooRoof: THREE.MeshStandardMaterial;
+  waterBasin: THREE.MeshStandardMaterial;
+  flameGlow: THREE.MeshStandardMaterial;
+  friezeDark: THREE.MeshStandardMaterial;
+  cauldronDark: THREE.MeshStandardMaterial;
+}
+
+let cachedTownCenterVillageMats: TownCenterVillageMats | null = null;
+
+function getTownCenterVillageMats(): TownCenterVillageMats {
+  if (cachedTownCenterVillageMats) return cachedTownCenterVillageMats;
+  cachedTownCenterVillageMats = {
+    courtyardEarth: new THREE.MeshStandardMaterial({
+      color: 0x6b5338,
+      roughness: 0.94,
+      metalness: 0.02,
+    }),
+    sandCourt: new THREE.MeshStandardMaterial({
+      color: 0xa68959,
+      roughness: 0.92,
+      metalness: 0.02,
+    }),
+    strawThatch: new THREE.MeshStandardMaterial({
+      color: 0xc8a968,
+      roughness: 0.88,
+      metalness: 0.02,
+    }),
+    bambooRoof: new THREE.MeshStandardMaterial({
+      color: 0x9da632,
+      roughness: 0.72,
+      metalness: 0.08,
+    }),
+    waterBasin: new THREE.MeshStandardMaterial({
+      color: 0x2563eb,
+      roughness: 0.18,
+      metalness: 0.12,
+    }),
+    flameGlow: new THREE.MeshStandardMaterial({
+      color: 0xff7b1a,
+      emissive: 0xff4500,
+      emissiveIntensity: 1.45,
+      roughness: 0.3,
+      metalness: 0.05,
+    }),
+    friezeDark: new THREE.MeshStandardMaterial({
+      color: 0x2b241d,
+      roughness: 0.85,
+      metalness: 0.05,
+    }),
+    cauldronDark: new THREE.MeshStandardMaterial({
+      color: 0x2a2d34,
+      roughness: 0.55,
+      metalness: 0.65,
+    }),
+  };
+  return cachedTownCenterVillageMats;
+}
+
+function buildSimpleTownCenter(
+  root: THREE.Group,
+  team: TeamId,
+  pal: MaterialPalette,
+  look: CivLook,
+  enableShadows: boolean
+): void {
+  const village = getTownCenterVillageMats();
+  const teamMat = team === 'player' ? pal.tunicPlayer : pal.tunicEnemy;
+
+  const placeMesh = (
+    parent: THREE.Object3D,
+    mesh: THREE.Mesh,
+    x: number,
+    y: number,
+    z: number
+  ) => {
+    mesh.position.set(x, y, z);
+    if (enableShadows) {
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+    }
+    parent.add(mesh);
+    return mesh;
+  };
+
+  // 1. Low Packed-Earth / Sandy Courtyard Pad (height 0.08u, unobstructed view)
+  const courtMat = look.style === 'egyptian' ? village.sandCourt : village.courtyardEarth;
+  placeMesh(root, new THREE.Mesh(new THREE.CylinderGeometry(3.2, 3.35, 0.08, 18), courtMat), 0, 0.04, 0);
+  placeMesh(root, new THREE.Mesh(new THREE.CylinderGeometry(0.62, 0.68, 0.03, 10), pal.stoneDark), 0.05, 0.085, 0.15);
+
+  // 2. Rustic Wooden Perimeter Fence (12 segments) with 2 Open Gateways
+  const fenceRadius = 3.05;
+  const gateIndices = new Set([1, 6]);
+  for (let i = 0; i < 12; i++) {
+    const ang = (i / 12) * Math.PI * 2 + 0.18;
+    const fx = Math.cos(ang) * fenceRadius;
+    const fz = Math.sin(ang) * fenceRadius;
+    const segGroup = new THREE.Group();
+    segGroup.position.set(fx, 0, fz);
+    segGroup.rotation.y = -ang + Math.PI / 2;
+    root.add(segGroup);
+
+    if (gateIndices.has(i)) {
+      // Open gateway with tall timber posts + lintel crossbar
+      placeMesh(segGroup, new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.065, 1.52, 6), pal.timber), -0.62, 0.76, 0);
+      placeMesh(segGroup, new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.065, 1.52, 6), pal.timber), 0.62, 0.76, 0);
+      placeMesh(segGroup, new THREE.Mesh(new THREE.BoxGeometry(1.42, 0.09, 0.09), pal.timber), 0, 1.48, 0);
+      if (look.style === 'atlantean') {
+        const eaves = new THREE.Mesh(new THREE.BoxGeometry(1.48, 0.12, 0.42), village.bambooRoof);
+        eaves.rotation.x = 0.18;
+        placeMesh(segGroup, eaves, 0, 1.56, 0);
+      }
+      if (i === 1) {
+        // Neat low team banner hanging under the front-right gateway lintel
+        placeMesh(segGroup, new THREE.Mesh(new THREE.BoxGeometry(0.64, 0.34, 0.04), teamMat), 0, 1.24, 0);
+      }
+    } else {
+      // Three vertical fence stakes + two horizontal wooden rails
+      for (const px of [-0.55, 0, 0.55]) {
+        placeMesh(segGroup, new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.048, 0.74, 6), pal.timber), px, 0.37, 0);
+      }
+      placeMesh(segGroup, new THREE.Mesh(new THREE.BoxGeometry(1.38, 0.06, 0.05), pal.timber), 0, 0.56, 0);
+      placeMesh(segGroup, new THREE.Mesh(new THREE.BoxGeometry(1.38, 0.06, 0.05), pal.timber), 0, 0.30, 0);
+    }
+  }
+
+  // 3. Central Stone-Ring Campfire with 3-Pole / Crossbar Tripod & Cauldron
+  const fireX = 0.05;
+  const fireZ = 0.15;
+  for (let i = 0; i < 8; i++) {
+    const a = (i / 8) * Math.PI * 2;
+    placeMesh(
+      root,
+      new THREE.Mesh(new THREE.DodecahedronGeometry(0.11, 0), pal.stoneDark),
+      fireX + Math.cos(a) * 0.38,
+      0.12,
+      fireZ + Math.sin(a) * 0.38
+    );
+  }
+  placeMesh(root, new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.32, 0.08, 8), pal.ember), fireX, 0.11, fireZ);
+  placeMesh(root, new THREE.Mesh(new THREE.ConeGeometry(0.17, 0.40, 6), village.flameGlow), fireX, 0.32, fireZ);
+  placeMesh(root, new THREE.Mesh(new THREE.ConeGeometry(0.10, 0.28, 5), pal.ember), fireX + 0.04, 0.36, fireZ - 0.03);
+
+  const legL = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.038, 0.94, 6), pal.timber);
+  legL.rotation.z = -0.18;
+  placeMesh(root, legL, fireX - 0.34, 0.48, fireZ);
+  const legR = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.038, 0.94, 6), pal.timber);
+  legR.rotation.z = 0.18;
+  placeMesh(root, legR, fireX + 0.34, 0.48, fireZ);
+  const crossbar = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.028, 0.86, 6), pal.timber);
+  crossbar.rotation.z = Math.PI / 2;
+  placeMesh(root, crossbar, fireX, 0.88, fireZ);
+  placeMesh(root, new THREE.Mesh(new THREE.SphereGeometry(0.14, 8, 6), village.cauldronDark), fireX, 0.56, fireZ);
+
+  // 4. Back Main Low Hut (x = -0.35, z = -1.62, max height ~2.05u)
+  const mainHut = new THREE.Group();
+  mainHut.position.set(-0.35, 0, -1.62);
+  root.add(mainHut);
+
+  if (look.style === 'egyptian') {
+    placeMesh(mainHut, new THREE.Mesh(new THREE.BoxGeometry(2.34, 0.16, 1.48), pal.sandstoneDark), 0, 0.12, 0);
+    placeMesh(mainHut, new THREE.Mesh(new THREE.BoxGeometry(2.16, 1.04, 1.32), look.wallMat), 0, 0.70, 0);
+    placeMesh(mainHut, new THREE.Mesh(new THREE.BoxGeometry(2.22, 0.09, 1.36), pal.ivory), 0, 1.12, 0);
+    placeMesh(mainHut, new THREE.Mesh(new THREE.BoxGeometry(2.26, 0.08, 1.40), village.friezeDark), 0, 1.22, 0);
+    placeMesh(mainHut, new THREE.Mesh(new THREE.BoxGeometry(1.94, 0.10, 1.10), pal.timber), 0, 1.26, 0);
+    // Stepped mudbrick doorway buttress
+    placeMesh(mainHut, new THREE.Mesh(new THREE.BoxGeometry(0.76, 0.88, 0.26), look.wallMat), -0.05, 0.54, 0.68);
+    placeMesh(mainHut, new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.68, 0.12), pal.timber), -0.05, 0.44, 0.78);
+    // Small roof canopy & leaning wooden ladder + water trough
+    for (const [cx, cz] of [[0.38, -0.32], [0.92, -0.32], [0.38, 0.26], [0.92, 0.26]]) {
+      placeMesh(mainHut, new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.44, 5), pal.timber), cx, 1.48, cz);
+    }
+    const canopy = new THREE.Mesh(new THREE.BoxGeometry(0.68, 0.06, 0.72), village.strawThatch);
+    canopy.rotation.x = 0.14;
+    placeMesh(mainHut, canopy, 0.65, 1.72, -0.03);
+    const ladder = new THREE.Mesh(new THREE.BoxGeometry(0.24, 1.22, 0.06), pal.timber);
+    ladder.rotation.x = -0.32;
+    placeMesh(mainHut, ladder, 0.56, 0.70, 0.84);
+    placeMesh(mainHut, new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.30, 0.34), pal.sandstoneDark), 1.05, 0.22, 0.62);
+    placeMesh(mainHut, new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.04, 0.24), village.waterBasin), 1.05, 0.38, 0.62);
+  } else if (look.style === 'atlantean') {
+    placeMesh(mainHut, new THREE.Mesh(new THREE.BoxGeometry(2.36, 0.22, 1.44), look.wallMat), 0, 0.15, 0);
+    placeMesh(mainHut, new THREE.Mesh(new THREE.BoxGeometry(2.20, 0.86, 1.28), pal.timber), 0, 0.68, 0);
+    placeMesh(mainHut, new THREE.Mesh(new THREE.BoxGeometry(2.24, 0.64, 1.12), pal.ivory), 0, 0.66, 0);
+    placeMesh(mainHut, new THREE.Mesh(new THREE.BoxGeometry(2.28, 0.10, 1.34), look.trimMat), 0, 1.08, 0);
+    placeMesh(mainHut, new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.74, 0.10), pal.timber), 0, 0.48, 0.64);
+    const mainRoof = new THREE.Mesh(new THREE.ConeGeometry(1.0, 1.0, 4), village.bambooRoof);
+    mainRoof.rotation.y = Math.PI / 4;
+    mainRoof.scale.set(2.05, 0.84, 1.30);
+    placeMesh(mainHut, mainRoof, 0, 1.54, 0);
+    placeMesh(mainHut, new THREE.Mesh(new THREE.BoxGeometry(1.36, 0.08, 0.09), pal.timber), 0, 1.96, 0);
+    placeMesh(mainHut, new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.28, 0.42), pal.stoneDark), 1.15, 0.20, 0.48);
+    placeMesh(mainHut, new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.04, 0.32), village.waterBasin), 1.15, 0.35, 0.48);
+  } else {
+    const isNorse = look.style === 'norse';
+    const baseWallMat = isNorse ? look.wallMat : look.wallMat;
+    const roofMat = isNorse ? village.strawThatch : look.roofMat;
+    placeMesh(mainHut, new THREE.Mesh(new THREE.BoxGeometry(2.32, 0.16, 1.40), pal.stoneDark), 0, 0.12, 0);
+    placeMesh(mainHut, new THREE.Mesh(new THREE.BoxGeometry(2.16, 0.90, 1.26), baseWallMat), 0, 0.64, 0);
+    placeMesh(mainHut, new THREE.Mesh(new THREE.BoxGeometry(2.22, 0.10, 1.32), isNorse ? pal.timber : look.trimMat), 0, 1.08, 0);
+    placeMesh(mainHut, new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.74, 0.10), pal.timber), 0, 0.48, 0.64);
+    const mainRoof = new THREE.Mesh(new THREE.ConeGeometry(1.0, 1.0, 4), roofMat);
+    mainRoof.rotation.y = Math.PI / 4;
+    mainRoof.scale.set(2.05, 0.88, 1.30);
+    placeMesh(mainHut, mainRoof, 0, 1.56, 0);
+    placeMesh(mainHut, new THREE.Mesh(new THREE.BoxGeometry(1.32, 0.08, 0.09), pal.timber), 0, 1.98, 0);
+  }
+
+  // 5. Front-Left Secondary Storehouse Hut (x = -1.68, z = 1.05, rotated 0.52 rad)
+  const sideHut = new THREE.Group();
+  sideHut.position.set(-1.68, 0, 1.05);
+  sideHut.rotation.y = 0.52;
+  root.add(sideHut);
+
+  if (look.style === 'egyptian') {
+    placeMesh(sideHut, new THREE.Mesh(new THREE.BoxGeometry(1.66, 0.14, 1.16), pal.sandstoneDark), 0, 0.11, 0);
+    placeMesh(sideHut, new THREE.Mesh(new THREE.BoxGeometry(1.54, 0.84, 1.04), look.wallMat), 0, 0.58, 0);
+    placeMesh(sideHut, new THREE.Mesh(new THREE.BoxGeometry(1.58, 0.08, 1.08), pal.ivory), 0, 0.94, 0);
+    placeMesh(sideHut, new THREE.Mesh(new THREE.BoxGeometry(1.38, 0.08, 0.88), pal.timber), 0, 1.02, 0);
+    placeMesh(sideHut, new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.56, 0.10), pal.timber), 0, 0.38, 0.53);
+  } else {
+    const sideRoofMat =
+      look.style === 'atlantean'
+        ? village.bambooRoof
+        : look.style === 'norse'
+          ? village.strawThatch
+          : look.roofMat;
+    placeMesh(sideHut, new THREE.Mesh(new THREE.BoxGeometry(1.64, 0.14, 1.14), pal.stoneDark), 0, 0.11, 0);
+    placeMesh(sideHut, new THREE.Mesh(new THREE.BoxGeometry(1.52, 0.78, 1.02), look.style === 'atlantean' ? pal.ivory : look.wallMat), 0, 0.54, 0);
+    placeMesh(sideHut, new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.58, 0.10), pal.timber), 0, 0.38, 0.52);
+    const sideRoof = new THREE.Mesh(new THREE.ConeGeometry(1.0, 1.0, 4), sideRoofMat);
+    sideRoof.rotation.y = Math.PI / 4;
+    sideRoof.scale.set(1.44, 0.74, 1.04);
+    placeMesh(sideHut, sideRoof, 0, 1.30, 0);
+    placeMesh(sideHut, new THREE.Mesh(new THREE.BoxGeometry(0.90, 0.07, 0.08), pal.timber), 0, 1.66, 0);
+  }
+
+  // 6. Right-Side Compact Granary / Kiln / Pavilion (x = 1.82, z = -0.15)
+  const rightX = 1.82;
+  const rightZ = -0.15;
+  if (look.style === 'egyptian') {
+    placeMesh(root, new THREE.Mesh(new THREE.CylinderGeometry(0.56, 0.76, 0.96, 8), look.wallMat), rightX, 0.52, rightZ);
+    placeMesh(root, new THREE.Mesh(new THREE.CylinderGeometry(0.58, 0.60, 0.08, 8), pal.timber), rightX, 1.02, rightZ);
+    placeMesh(root, new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.56, 0.38, 8), look.wallMat), rightX, 1.24, rightZ);
+    placeMesh(root, new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.24, 0.12, 8), pal.sandstoneDark), rightX, 1.48, rightZ);
+    placeMesh(root, new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.36, 0.34), pal.sandstoneDark), rightX - 0.66, 0.24, rightZ + 0.36);
+    placeMesh(root, new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.18, 0.18), pal.ember), rightX - 0.66, 0.22, rightZ + 0.44);
+    // Side lean-to awning beside kiln
+    for (const [ax, az] of [[0.85, -0.95], [1.45, -0.95], [0.85, -0.52], [1.45, -0.52]]) {
+      placeMesh(root, new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.035, 0.82, 5), pal.timber), ax, 0.45, az);
+    }
+    const lean = new THREE.Mesh(new THREE.BoxGeometry(0.84, 0.06, 0.62), village.strawThatch);
+    lean.rotation.x = 0.22;
+    placeMesh(root, lean, 1.15, 0.88, -0.74);
+  } else if (look.style === 'atlantean') {
+    placeMesh(root, new THREE.Mesh(new THREE.CylinderGeometry(0.86, 0.92, 0.14, 8), pal.stoneDark), rightX, 0.11, rightZ);
+    for (let i = 0; i < 6; i++) {
+      const a = (i / 6) * Math.PI * 2;
+      placeMesh(
+        root,
+        new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.052, 0.92, 6), pal.timber),
+        rightX + Math.cos(a) * 0.68,
+        0.62,
+        rightZ + Math.sin(a) * 0.68
+      );
+    }
+    placeMesh(root, new THREE.Mesh(new THREE.ConeGeometry(1.04, 0.72, 8), village.bambooRoof), rightX, 1.42, rightZ);
+    placeMesh(root, new THREE.Mesh(new THREE.SphereGeometry(0.10, 8, 6), pal.ivory), rightX, 1.82, rightZ);
+    placeMesh(root, new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.26, 0.34, 10), pal.terracotta), 1.05, 0.24, -0.82);
+    placeMesh(root, new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 0.03, 10), village.waterBasin), 1.05, 0.41, -0.82);
+  } else {
+    placeMesh(root, new THREE.Mesh(new THREE.CylinderGeometry(0.70, 0.74, 0.84, 12), look.wallMat), rightX, 0.46, rightZ);
+    placeMesh(root, new THREE.Mesh(new THREE.ConeGeometry(0.94, 0.80, 12), village.strawThatch), rightX, 1.28, rightZ);
+    placeMesh(root, new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.15, 0.12, 8), pal.timber), rightX, 1.70, rightZ);
+  }
+
+  // 7. Small Courtyard Supply Props (barrels & crates)
+  placeMesh(root, new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.12, 0.32, 8), pal.timber), 0.72, 0.24, -1.24);
+  placeMesh(root, new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.24, 0.26), pal.timber), -1.28, 0.20, -1.16);
+  placeMesh(root, new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.11, 0.28, 8), pal.terracotta), -1.04, 0.22, -1.02);
+
+  attachGroundMarkers(root, 3.65, pal, team);
+  attachHealthBar(root, 3.15, 3.0);
+}
+
 export function createBuildingMesh(
   kind: BuildingKind,
   team: TeamId,
@@ -824,6 +1112,11 @@ export function createBuildingMesh(
   const root = new THREE.Group();
   const teamMat = team === 'player' ? pal.tunicPlayer : pal.tunicEnemy;
   const look = getCivLook(pantheon, pal, majorGod);
+
+  if (kind === 'town_center') {
+    buildSimpleTownCenter(root, team, pal, look, enableShadows);
+    return root;
+  }
 
   const addPart = (mesh: THREE.Mesh, x: number, y: number, z: number) => {
     mesh.position.set(x, y, z);
@@ -1042,30 +1335,6 @@ export function createBuildingMesh(
 
   // --- EGYPTIAN / AZTEC / BABYLONIAN ARCHITECTURE ---
   if (look.style === 'egyptian') {
-    if (kind === 'town_center') {
-      addPart(new THREE.Mesh(new THREE.BoxGeometry(7.0, 0.55, 7.0), pal.sandstoneDark), 0, 0.275, 0);
-      addPart(new THREE.Mesh(new THREE.BoxGeometry(6.2, 0.42, 6.2), look.wallMat), 0, 0.75, 0);
-      // Twin monumental gateway pylons (height 4.6u)
-      addPart(new THREE.Mesh(new THREE.BoxGeometry(1.9, 3.8, 5.0), look.wallMat), -2.1, 2.7, 0);
-      addPart(new THREE.Mesh(new THREE.BoxGeometry(1.9, 3.8, 5.0), look.wallMat), 2.1, 2.7, 0);
-      addPart(new THREE.Mesh(new THREE.BoxGeometry(2.8, 2.8, 4.0), pal.sandstoneDark), 0, 2.2, -0.2);
-      addPart(new THREE.Mesh(new THREE.BoxGeometry(6.2, 0.32, 5.2), look.trimMat), 0, 4.75, 0);
-      // Winged sun disc
-      const sunDisc = addPart(new THREE.Mesh(new THREE.CylinderGeometry(0.82, 0.82, 0.24, 16), look.roofMat), 0, 5.5, 2.0);
-      sunDisc.rotation.x = Math.PI / 2;
-      addPart(new THREE.Mesh(new THREE.BoxGeometry(3.0, 0.28, 0.16), look.roofMat), 0, 5.5, 2.0);
-      // Twin towering Egyptian obelisks (height 6.8u)
-      for (const ox of [-2.85, 2.85]) {
-        addPart(new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.38, 4.4, 4), look.wallMat), ox, 2.9, 2.6);
-        addPart(new THREE.Mesh(new THREE.ConeGeometry(0.26, 0.75, 4), look.roofMat), ox, 5.45, 2.6);
-      }
-      addPart(new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 2.6, 8), pal.gold), 2.8, 5.8, -2.4);
-      addPart(new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.8, 0.08), teamMat), 3.4, 6.6, -2.4);
-
-      attachGroundMarkers(root, 4.0, pal, team);
-      attachHealthBar(root, 7.2, 3.4);
-      return root;
-    }
     if (kind === 'house') {
       addPart(new THREE.Mesh(new THREE.BoxGeometry(3.0, 0.3, 2.6), pal.sandstoneDark), 0, 0.15, 0);
       addPart(new THREE.Mesh(new THREE.BoxGeometry(2.6, 1.8, 2.3), look.wallMat), 0, 1.2, 0);
@@ -1134,27 +1403,6 @@ export function createBuildingMesh(
 
   // --- NORSE / JAPANESE / CELTIC / LAKOTA / JOTUNN ARCHITECTURE ---
   if (look.style === 'norse') {
-    if (kind === 'town_center') {
-      addPart(new THREE.Mesh(new THREE.BoxGeometry(7.0, 0.55, 7.0), pal.stoneDark), 0, 0.275, 0);
-      addPart(new THREE.Mesh(new THREE.BoxGeometry(6.0, 2.4, 4.8), look.wallMat), 0, 1.75, 0);
-      const roof = new THREE.Mesh(new THREE.ConeGeometry(5.0, 3.2, 4), look.roofMat);
-      roof.rotation.y = Math.PI / 4;
-      addPart(roof, 0, 4.5, 0);
-      addPart(new THREE.Mesh(new THREE.BoxGeometry(5.4, 0.28, 0.4), look.trimMat), 0, 3.0, 2.45);
-      addPart(new THREE.Mesh(new THREE.BoxGeometry(5.4, 0.28, 0.4), look.trimMat), 0, 3.0, -2.45);
-      addPart(new THREE.Mesh(new THREE.OctahedronGeometry(0.55, 0), pal.gold), 0, 6.3, 0);
-      for (const sx of [-1.8, 0, 1.8]) {
-        const sh = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 0.12, 12), teamMat);
-        sh.rotation.x = Math.PI / 2;
-        addPart(sh, sx, 2.2, 2.46);
-      }
-      addPart(new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 2.6, 8), pal.timber), 2.8, 5.5, 2.4);
-      addPart(new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.8, 0.08), teamMat), 3.4, 6.3, 2.4);
-
-      attachGroundMarkers(root, 4.0, pal, team);
-      attachHealthBar(root, 7.2, 3.4);
-      return root;
-    }
     if (kind === 'house') {
       addPart(new THREE.Mesh(new THREE.BoxGeometry(3.0, 0.32, 2.6), pal.stoneDark), 0, 0.16, 0);
       addPart(new THREE.Mesh(new THREE.BoxGeometry(2.6, 1.5, 2.2), look.wallMat), 0, 1.05, 0);
@@ -1223,29 +1471,6 @@ export function createBuildingMesh(
 
   // --- ATLANTEAN / CHINESE / ELDRITCH ARCHITECTURE ---
   if (look.style === 'atlantean') {
-    if (kind === 'town_center') {
-      addPart(new THREE.Mesh(new THREE.CylinderGeometry(4.0, 4.3, 0.55, 8), pal.stoneDark), 0, 0.275, 0);
-      addPart(new THREE.Mesh(new THREE.CylinderGeometry(3.5, 3.7, 0.4, 8), look.wallMat), 0, 0.75, 0);
-      addPart(new THREE.Mesh(new THREE.CylinderGeometry(2.5, 2.7, 2.6, 8), look.wallMat), 0, 2.25, 0);
-      for (let i = 0; i < 8; i++) {
-        const ang = (i / 8) * Math.PI * 2;
-        addPart(
-          new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.26, 2.8, 8), look.trimMat),
-          Math.cos(ang) * 2.8,
-          2.35,
-          Math.sin(ang) * 2.8
-        );
-      }
-      addPart(new THREE.Mesh(new THREE.CylinderGeometry(3.1, 3.2, 0.35, 8), look.trimMat), 0, 3.75, 0);
-      addPart(new THREE.Mesh(new THREE.SphereGeometry(2.4, 16, 12, 0, Math.PI * 2, 0, Math.PI / 2), look.roofMat), 0, 3.9, 0);
-      addPart(new THREE.Mesh(new THREE.OctahedronGeometry(0.58, 0), pal.gold), 0, 6.5, 0);
-      addPart(new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 2.6, 8), look.trimMat), 2.8, 5.2, 2.8);
-      addPart(new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.8, 0.08), teamMat), 3.35, 6.1, 2.8);
-
-      attachGroundMarkers(root, 4.0, pal, team);
-      attachHealthBar(root, 7.2, 3.4);
-      return root;
-    }
     if (kind === 'house') {
       addPart(new THREE.Mesh(new THREE.BoxGeometry(3.0, 0.32, 2.6), pal.stoneDark), 0, 0.16, 0);
       addPart(new THREE.Mesh(new THREE.BoxGeometry(2.6, 1.5, 2.2), look.wallMat), 0, 1.05, 0);
@@ -1303,38 +1528,7 @@ export function createBuildingMesh(
   }
 
   // --- GREEK / ROMAN ARCHITECTURE (Parthenon/Acropolis Grand Monuments) ---
-  if (kind === 'town_center') {
-    // Grand 3-Tiered Marble Stylobate Base (Footprint 7.2 x 7.2)
-    addPart(new THREE.Mesh(new THREE.BoxGeometry(7.2, 0.35, 7.2), pal.stoneDark), 0, 0.175, 0);
-    addPart(new THREE.Mesh(new THREE.BoxGeometry(6.6, 0.30, 6.6), look.wallMat), 0, 0.50, 0);
-    addPart(new THREE.Mesh(new THREE.BoxGeometry(6.0, 0.25, 6.0), look.wallMat), 0, 0.775, 0);
-    // Classical Sanctuary Cella Walls
-    addPart(new THREE.Mesh(new THREE.BoxGeometry(4.2, 2.8, 4.2), look.wallMat), 0, 2.3, 0);
-    // Peristyle Colonnade: 8 Fluted Corinthian Columns (height 3.2u)
-    const colGeo = new THREE.CylinderGeometry(0.24, 0.28, 3.2, 10);
-    for (const [cx, cz] of [
-      [-2.6, 2.6], [0, 2.6], [2.6, 2.6],
-      [-2.6, -2.6], [0, -2.6], [2.6, -2.6],
-      [-2.6, 0], [2.6, 0]
-    ]) {
-      addPart(new THREE.Mesh(colGeo, look.wallMat), cx, 2.5, cz);
-    }
-    // Entablature Architrave & Frieze
-    addPart(new THREE.Mesh(new THREE.BoxGeometry(6.2, 0.38, 6.2), look.trimMat), 0, 4.25, 0);
-    // Classical Terracotta/Crimson Pitched Pediment Roof
-    const roof = new THREE.Mesh(new THREE.ConeGeometry(4.8, 2.2, 4), look.roofMat);
-    roof.rotation.y = Math.PI / 4;
-    addPart(roof, 0, 5.5, 0);
-    // Golden Lantern Rotunda & Acroterion / Zeus Eagle at 6.8u
-    addPart(new THREE.Mesh(new THREE.CylinderGeometry(0.65, 0.75, 0.85, 8), pal.gold), 0, 6.75, 0);
-    addPart(new THREE.Mesh(new THREE.OctahedronGeometry(0.55, 0), pal.gold), 0, 7.35, 0);
-    // Faction Banner Staff reaching 7.5u
-    addPart(new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 2.8, 8), look.trimMat), 2.8, 5.6, 2.8);
-    addPart(new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.85, 0.08), teamMat), 3.4, 6.5, 2.8);
-
-    attachGroundMarkers(root, 4.0, pal, team);
-    attachHealthBar(root, 7.2, 3.4);
-  } else if (kind === 'house') {
+  if (kind === 'house') {
     // Mediterranean Domus: 3.0 x 2.6, Stucco walls, Arched door, Pitched roof at 2.8u
     addPart(new THREE.Mesh(new THREE.BoxGeometry(3.0, 0.32, 2.6), pal.stoneDark), 0, 0.16, 0);
     addPart(new THREE.Mesh(new THREE.BoxGeometry(2.6, 1.6, 2.2), look.wallMat), 0, 1.1, 0);
@@ -2810,6 +3004,7 @@ export function createSettlementMesh(
   enableShadows: boolean
 ): THREE.Group {
   const root = new THREE.Group();
+  const village = getTownCenterVillageMats();
   const add = (m: THREE.Mesh, x: number, y: number, z: number) => {
     m.position.set(x, y, z);
     if (enableShadows) {
@@ -2820,26 +3015,41 @@ export function createSettlementMesh(
     return m;
   };
 
-  add(new THREE.Mesh(new THREE.CylinderGeometry(3.5, 3.8, 0.34, 12), pal.stoneDark), 0, 0.17, 0);
-  add(new THREE.Mesh(new THREE.CylinderGeometry(2.9, 3.1, 0.22, 12), pal.marble), 0, 0.44, 0);
-  add(new THREE.Mesh(new THREE.CylinderGeometry(1.4, 1.55, 0.18, 12), pal.bronze), 0, 0.56, 0);
+  // Humble, low-profile pre-construction clearing (max height ~1.05u)
+  add(new THREE.Mesh(new THREE.CylinderGeometry(3.05, 3.25, 0.08, 16), village.courtyardEarth), 0, 0.04, 0);
 
-  for (let i = 0; i < 6; i++) {
-    const ang = (i / 6) * Math.PI * 2 + 0.3;
-    const px = Math.cos(ang) * 2.65;
-    const pz = Math.sin(ang) * 2.65;
-    const h = i % 2 === 0 ? 1.55 : 0.95;
-    add(new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.26, h, 8), pal.marble), px, 0.55 + h * 0.5, pz);
-    if (i % 2 === 0) {
-      add(new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.16, 0.56), pal.bronze), px, 0.55 + h + 0.08, pz);
-    }
+  // 8 short wooden survey stakes marking the settlement boundary
+  for (let i = 0; i < 8; i++) {
+    const ang = (i / 8) * Math.PI * 2 + 0.2;
+    const px = Math.cos(ang) * 2.85;
+    const pz = Math.sin(ang) * 2.85;
+    add(new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.055, 0.62, 6), pal.timber), px, 0.31, pz);
   }
 
-  add(new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.65, 0.55, 8), pal.stoneDark), 0, 0.85, 0);
-  const beacon = add(new THREE.Mesh(new THREE.OctahedronGeometry(0.42, 0), pal.goldOre), 0, 1.65, 0);
+  // Stacked timber logs & foundation stones awaiting construction
+  for (const [lx, ly, lz] of [
+    [-1.25, 0.16, 0.95],
+    [-1.12, 0.16, 1.12],
+    [-1.18, 0.30, 1.04],
+  ]) {
+    const log = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 1.05, 6), pal.timber);
+    log.rotation.z = Math.PI / 2;
+    log.rotation.y = 0.45;
+    add(log, lx, ly, lz);
+  }
+  add(new THREE.Mesh(new THREE.DodecahedronGeometry(0.22, 0), pal.stoneDark), 1.28, 0.18, -0.88);
+  add(new THREE.Mesh(new THREE.DodecahedronGeometry(0.18, 0), pal.stoneDark), 1.54, 0.16, -0.70);
+
+  // Unlit central stone firepit ring + low floating beacon crystal
+  for (let i = 0; i < 8; i++) {
+    const a = (i / 8) * Math.PI * 2;
+    add(new THREE.Mesh(new THREE.DodecahedronGeometry(0.10, 0), pal.stoneDark), Math.cos(a) * 0.42, 0.11, Math.sin(a) * 0.42);
+  }
+  add(new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.32, 0.05, 8), pal.stoneDark), 0, 0.09, 0);
+  const beacon = add(new THREE.Mesh(new THREE.OctahedronGeometry(0.28, 0), pal.goldOre), 0, 0.85, 0);
   root.userData.beaconCrystal = beacon;
 
-  attachGroundMarkers(root, 3.8, pal, 'neutral');
+  attachGroundMarkers(root, 3.65, pal, 'neutral');
   return root;
 }
 
