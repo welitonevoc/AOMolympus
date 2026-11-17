@@ -23,6 +23,7 @@ import { buildSet, getCachedSetTextures, animateSet } from '../civilizacao/egipc
 import { buildRa, getCachedRaTextures, animateRa } from '../civilizacao/egipcios/raModel';
 import { createEgyptianUnitMesh, getEgyptianUnitMarkerSpec } from '../civilizacao/egipcios/egipciosModels';
 import { createNorseUnitMesh, getNorseUnitMarkerSpec } from '../civilizacao/nordicos/nordicosModels';
+import { createAtlanteanUnitMesh, getAtlanteanUnitMarkerSpec } from '../civilizacao/atlantes/atlantesModels';
 import { createNorseBuildingMesh } from '../civilizacao/nordicos/norseBuildingModels';
 import { createAoMOakTreeMesh, getFaunaCoatMaterial } from '../TEXTURA';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
@@ -1670,6 +1671,59 @@ export function createUnitMesh(
       );
     };
     const mSpec = getNorseUnitMarkerSpec(kind);
+    attachGroundMarkers(root, mSpec.markerRadius, pal, team);
+    attachHealthBar(root, mSpec.barHeight, mSpec.barWidth);
+    return root;
+  }
+
+  const isExplicitAtlanteanUnit =
+    kind === 'citizen' ||
+    kind === 'oracle' ||
+    kind === 'llama_caravan' ||
+    kind === 'murmillo' ||
+    kind === 'katapeltes' ||
+    kind === 'turma' ||
+    kind === 'cheiroballista' ||
+    kind === 'arcus' ||
+    kind === 'contarius' ||
+    kind === 'destroyer' ||
+    kind === 'fanatic' ||
+    kind === 'fire_siphon' ||
+    kind === 'onager' ||
+    kind === 'promethean' ||
+    kind === 'promethean_offspring' ||
+    kind === 'caladria' ||
+    kind === 'behemoth' ||
+    kind === 'stymphalian_bird' ||
+    kind === 'dryad' ||
+    kind === 'hekagigantes' ||
+    kind === 'argus' ||
+    kind === 'lampades' ||
+    kind === 'carnivora' ||
+    kind === 'tartarian_spawn' ||
+    ((kind === 'automaton' || kind === 'satyr') && look.style === 'atlantean');
+
+  if (isExplicitAtlanteanUnit || (look.style === 'atlantean' && !isGodKind && kind !== 'titan')) {
+    const atlMesh = createAtlanteanUnitMesh(kind, team, pal, enableShadows);
+    root.add(atlMesh);
+    root.userData.atlMesh = atlMesh;
+    root.userData.animatePose = atlMesh.userData.animatePose;
+    root.userData.setHeroVisual = atlMesh.userData.setHeroVisual;
+    root.userData.leftLeg = atlMesh.userData.leftLeg;
+    root.userData.rightLeg = atlMesh.userData.rightLeg;
+    root.userData.leftArm = atlMesh.userData.leftArm;
+    root.userData.rightArm = atlMesh.userData.rightArm;
+    root.userData.updateBrg = (dt: number, state: string) => {
+      atlMesh.userData.animatePose?.(
+        dt,
+        state === 'move',
+        3.2,
+        state === 'attack' ? 0.5 : null,
+        state,
+        'wood'
+      );
+    };
+    const mSpec = getAtlanteanUnitMarkerSpec(kind);
     attachGroundMarkers(root, mSpec.markerRadius, pal, team);
     attachHealthBar(root, mSpec.barHeight, mSpec.barWidth);
     return root;

@@ -93,6 +93,22 @@ export function TitleScreen({
     treatyMinutes: 0,
   });
 
+  // Sync title / credits soundtrack scene
+  useEffect(() => {
+    if (menuState === 'CREDITS') {
+      soundEngine.setMusicScene('credits');
+      return;
+    }
+    let savedPantheon: PantheonId = skirmish.pantheon;
+    try {
+      const stored = localStorage.getItem('aom_last_pantheon') as PantheonId | null;
+      if (stored && PANTHEONS[stored]) {
+        savedPantheon = stored;
+      }
+    } catch {}
+    soundEngine.setMusicScene('title', savedPantheon);
+  }, [menuState]);
+
   // Escape navigates back cleanly inside port menus
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {

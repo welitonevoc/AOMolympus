@@ -114,7 +114,7 @@ export function AnimatedPortrait({ selection, pantheon, primaryColor }: Animated
             ? '#d4af37'
             : selection.isMythic
             ? '#334155'
-            : uk === 'villager'
+            : uk === 'villager' || uk === 'citizen'
             ? '#b58d63'
             : '#94a3b8';
         ctx.beginPath();
@@ -125,7 +125,7 @@ export function AnimatedPortrait({ selection, pantheon, primaryColor }: Animated
         ctx.stroke();
 
         // Specific unit silhouette details
-        if (uk === 'villager') {
+        if (uk === 'villager' || uk === 'citizen') {
           // Head + warm straw/cloth hood + pickaxe bobbing
           ctx.fillStyle = '#e4b88d';
           ctx.beginPath();
@@ -133,7 +133,12 @@ export function AnimatedPortrait({ selection, pantheon, primaryColor }: Animated
           ctx.fill();
           ctx.stroke();
 
-          ctx.fillStyle = pantheon === 'egyptian' ? '#f5efe0' : '#7c5a38';
+          ctx.fillStyle =
+            uk === 'citizen'
+              ? '#0ea5e9'
+              : pantheon === 'egyptian'
+              ? '#f5efe0'
+              : '#7c5a38';
           ctx.beginPath();
           ctx.arc(0, -18, 16, Math.PI, Math.PI * 2);
           ctx.fill();
@@ -356,7 +361,117 @@ export function AnimatedPortrait({ selection, pantheon, primaryColor }: Animated
             ctx.fillRect(-9, -20, 5, 4);
             ctx.fillRect(4, -20, 5, 4);
           }
-        } else if (uk === 'archer' || uk === 'peltast' || uk === 'slinger' || uk === 'gastraphetes' || uk === 'hippolyta' || uk === 'odysseus') {
+        } else if (uk === 'oracle' || uk === 'caladria' || uk === 'lampades' || uk === 'dryad') {
+          // Atlantean Mystics, Winged Healers & Nymphs
+          ctx.fillStyle =
+            uk === 'caladria'
+              ? '#e0f2fe'
+              : uk === 'lampades'
+              ? '#7e22ce'
+              : uk === 'dryad'
+              ? '#15803d'
+              : '#e4b88d';
+          ctx.beginPath();
+          ctx.arc(0, -14, 15, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+
+          if (uk === 'caladria') {
+            ctx.fillStyle = '#bae6fd';
+            for (const dir of [-1, 1]) {
+              ctx.beginPath();
+              ctx.ellipse(dir * 26, -6, 14, 8, dir * 0.4, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.stroke();
+            }
+          }
+
+          ctx.fillStyle =
+            uk === 'oracle'
+              ? '#38bdf8'
+              : uk === 'lampades'
+              ? '#f43f5e'
+              : uk === 'dryad'
+              ? '#84cc16'
+              : '#7dd3fc';
+          ctx.fillRect(-7, -18, 4, 3);
+          ctx.fillRect(3, -18, 4, 3);
+
+          // Glowing staff / crown
+          ctx.strokeStyle = uk === 'lampades' ? '#c084fc' : '#facc15';
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.arc(0, -32, 7, 0, Math.PI * 2);
+          ctx.stroke();
+        } else if (uk === 'llama_caravan') {
+          // Atlantean Llama Caravan
+          ctx.fillStyle = '#e7d5b5';
+          ctx.beginPath();
+          ctx.ellipse(0, -8, 14, 17, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+          // Tall ears
+          for (const dir of [-1, 1]) {
+            ctx.beginPath();
+            ctx.ellipse(dir * 8, -28, 4, 10, dir * 0.2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+          }
+          // Gold merchant pack
+          ctx.fillStyle = '#d4af37';
+          ctx.fillRect(-16, 10, 32, 16);
+          ctx.strokeRect(-16, 10, 32, 16);
+        } else if (
+          uk === 'promethean' ||
+          uk === 'promethean_offspring' ||
+          uk === 'automaton' ||
+          uk === 'behemoth' ||
+          uk === 'stymphalian_bird' ||
+          uk === 'hekagigantes' ||
+          uk === 'argus' ||
+          uk === 'carnivora' ||
+          uk === 'tartarian_spawn'
+        ) {
+          // Atlantean Myth Creatures
+          ctx.fillStyle =
+            uk === 'promethean' || uk === 'promethean_offspring'
+              ? '#b45309'
+              : uk === 'automaton'
+              ? '#c28b3c'
+              : uk === 'behemoth'
+              ? '#475569'
+              : uk === 'stymphalian_bird'
+              ? '#d97706'
+              : uk === 'hekagigantes'
+              ? '#57534e'
+              : uk === 'argus'
+              ? '#0d9488'
+              : uk === 'carnivora'
+              ? '#166534'
+              : '#7f1d1d';
+          ctx.beginPath();
+          ctx.arc(0, -14, 19, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+
+          if (uk === 'argus') {
+            ctx.fillStyle = '#fde047';
+            for (const [ex, ey] of [[-9, -20], [0, -24], [9, -20], [-6, -11], [6, -11]]) {
+              ctx.beginPath();
+              ctx.arc(ex, ey, 3.2, 0, Math.PI * 2);
+              ctx.fill();
+            }
+          } else {
+            ctx.fillStyle =
+              uk === 'automaton' || uk === 'stymphalian_bird'
+                ? '#38bdf8'
+                : uk === 'tartarian_spawn' || uk === 'promethean'
+                ? '#fb923c'
+                : '#facc15';
+            ctx.fillRect(-8, -18, 5, 4);
+            ctx.fillRect(3, -18, 5, 4);
+          }
+        } else if (uk === 'archer' || uk === 'peltast' || uk === 'slinger' || uk === 'gastraphetes' || uk === 'hippolyta' || uk === 'odysseus' || uk === 'arcus' || uk === 'turma' || uk === 'satyr') {
           // Archer head + hood + curved bow
           ctx.fillStyle = '#e4b88d';
           ctx.beginPath();
@@ -386,12 +501,12 @@ export function AnimatedPortrait({ selection, pantheon, primaryColor }: Animated
           ctx.lineTo(0, 24);
           ctx.stroke();
           ctx.restore();
-        } else if (uk === 'ram' || uk === 'siege' || uk === 'siege_tower' || uk === 'egypt_catapult') {
+        } else if (uk === 'ram' || uk === 'siege' || uk === 'siege_tower' || uk === 'egypt_catapult' || uk === 'cheiroballista' || uk === 'fire_siphon' || uk === 'onager') {
           // Timber siege machine silhouette
-          ctx.fillStyle = '#78350f';
+          ctx.fillStyle = uk === 'fire_siphon' ? '#b45309' : '#78350f';
           ctx.fillRect(-34, -6, 68, 34);
           ctx.strokeRect(-34, -6, 68, 34);
-          ctx.fillStyle = '#d4af37';
+          ctx.fillStyle = uk === 'fire_siphon' ? '#fb923c' : '#d4af37';
           ctx.beginPath();
           ctx.moveTo(22, 4);
           ctx.lineTo(44, 11);

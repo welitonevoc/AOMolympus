@@ -105,6 +105,9 @@ interface UnitEntity {
   chargeCooldown?: number;
   chargeBurstTimer?: number;
   specialCooldown?: number;
+  isPromotedHero?: boolean;
+  tradeTargetBuildingId?: string | null;
+  tradePhase?: 'to_tc' | 'to_market';
 }
 
 interface BuildingEntity {
@@ -248,6 +251,7 @@ export interface SerializedMatch {
     x: number;
     z: number;
     hp: number;
+    isPromotedHero?: boolean;
   }[];
   nodes: {
     id: string;
@@ -479,6 +483,9 @@ export class AoMEngine {
   private lastSelectedVillagerIds: string[] = [];
   private lastVoiceLine: UnitVoiceLineInfo | null = null;
   private voiceLineTimer = 0;
+  private peakPopulation = 0;
+  private combatCueCooldown = 0;
+  private musicCheckTimer = 0;
   private elapsedSeconds = 0;
   private age: AgeLevel = 1;
   private advancingToAge: AgeLevel | null = null;
@@ -1005,6 +1012,7 @@ export class AoMEngine {
     soundEngine.unlock();
     soundEngine.playFanfare(false);
     this.setupMatchWorld(pantheon, difficulty, false, mapId, revealedMap, extras);
+    soundEngine.startMatchMusic(pantheon, extras?.scenarioTitle);
     this.phase = 'playing';
     const titlePrefix = extras?.scenarioTitle ? `[${extras.scenarioTitle}] ` : '';
     const visText =
@@ -1046,6 +1054,9 @@ export class AoMEngine {
     this.eclipseTimer = 0;
     this.flamingWeaponsTimer = 0;
     this.lastSelectedVillagerIds = [];
+    this.peakPopulation = 0;
+    this.combatCueCooldown = 0;
+    this.musicCheckTimer = 0;
     this.scenarioTitle = isTitlePreview ? undefined : extras?.scenarioTitle;
     if (extras?.gameSpeed) {
       this.gameSpeed = Math.max(0.5, Math.min(2.0, extras.gameSpeed));
@@ -1139,23 +1150,33 @@ export class AoMEngine {
     }
     this.playerPharaohRespawnTimer = 0;
     this.enemyPharaohRespawnTimer = 0;
-    this.spawnUnit('villager', 'player', -30, 38);
-    this.spawnUnit('villager', 'player', -28, 34);
-    this.spawnUnit('villager', 'player', -34, 40);
-    if (this.pantheon === 'egyptian') {
-      this.spawnUnit('pharaoh', 'player', -31, 31);
-      this.spawnUnit('priest', 'player', -29, 30);
-      this.spawnUnit('egypt_spearman', 'player', -27, 29);
-      this.spawnUnit('egypt_spearman', 'player', -25, 31);
-    } else if (this.pantheon === 'norse' || this.pantheon === 'jotunn') {
-      this.spawnUnit('ox_cart', 'player', -31, 35);
-      this.spawnUnit('norse_dwarf', 'player', -32, 37);
-      this.spawnUnit('hersir', 'player', -29, 30);
-      this.spawnUnit('ulfsark', 'player', -27, 29);
-      this.spawnUnit('ulfsark', 'player', -25, 31);
+    if (this.pantheon === 'atlantean') {
+      this.spawnUnit('citizen', 'player', -30, 38);
+      this.spawnUnit('citizen', 'player', -28, 34);
+      this.spawnUnit('citizen', 'player', -34, 40);
+      this.spawnUnit('oracle', 'player', -31, 31);
+      this.spawnUnit('oracle', 'player', -29, 30);
+      this.spawnUnit('murmillo', 'player', -27, 29);
+      this.spawnUnit('murmillo', 'player', -25, 31);
     } else {
-      this.spawnUnit('hoplite', 'player', -27, 29);
-      this.spawnUnit('hoplite', 'player', -25, 31);
+      this.spawnUnit('villager', 'player', -30, 38);
+      this.spawnUnit('villager', 'player', -28, 34);
+      this.spawnUnit('villager', 'player', -34, 40);
+      if (this.pantheon === 'egyptian') {
+        this.spawnUnit('pharaoh', 'player', -31, 31);
+        this.spawnUnit('priest', 'player', -29, 30);
+        this.spawnUnit('egypt_spearman', 'player', -27, 29);
+        this.spawnUnit('egypt_spearman', 'player', -25, 31);
+      } else if (this.pantheon === 'norse' || this.pantheon === 'jotunn') {
+        this.spawnUnit('ox_cart', 'player', -31, 35);
+        this.spawnUnit('norse_dwarf', 'player', -32, 37);
+        this.spawnUnit('hersir', 'player', -29, 30);
+        this.spawnUnit('ulfsark', 'player', -27, 29);
+        this.spawnUnit('ulfsark', 'player', -25, 31);
+      } else {
+        this.spawnUnit('hoplite', 'player', -27, 29);
+        this.spawnUnit('hoplite', 'player', -25, 31);
+      }
     }
 
     if (this.gameType === 'regicide') {
@@ -1164,8 +1185,13 @@ export class AoMEngine {
           ? 'pharaoh'
           : this.pantheon === 'norse' || this.pantheon === 'jotunn'
           ? 'hersir'
+          : this.pantheon === 'atlantean'
+          ? 'oracle'
           : 'hero';
       const regent = this.spawnUnit(regentKind, 'player', -32, 30);
+      if (this.pantheon === 'atlantean') {
+        this.applyHeroPromotionToUnit(regent);
+      }
       this.regentUnitId = regent.id;
     }
 
@@ -1176,20 +1202,28 @@ export class AoMEngine {
     if (difficulty !== 'normal' && difficulty !== 'easy') {
       this.spawnBuilding('tower', 'enemy', 24, -22, true);
     }
-    this.spawnUnit('villager', 'enemy', 31, -38);
-    this.spawnUnit('villager', 'enemy', 38, -31);
-    if (this.enemyPantheon === 'egyptian') {
-      this.spawnUnit('pharaoh', 'enemy', 30, -30);
-      this.spawnUnit('egypt_spearman', 'enemy', 25, -26);
-      this.spawnUnit('egypt_spearman', 'enemy', 27, -24);
-    } else if (this.enemyPantheon === 'norse' || this.enemyPantheon === 'jotunn') {
-      this.spawnUnit('ox_cart', 'enemy', 32, -35);
-      this.spawnUnit('hersir', 'enemy', 29, -29);
-      this.spawnUnit('ulfsark', 'enemy', 25, -26);
-      this.spawnUnit('ulfsark', 'enemy', 27, -24);
+    if (this.enemyPantheon === 'atlantean') {
+      this.spawnUnit('citizen', 'enemy', 31, -38);
+      this.spawnUnit('citizen', 'enemy', 38, -31);
+      this.spawnUnit('oracle', 'enemy', 30, -30);
+      this.spawnUnit('murmillo', 'enemy', 25, -26);
+      this.spawnUnit('murmillo', 'enemy', 27, -24);
     } else {
-      this.spawnUnit('hoplite', 'enemy', 25, -26);
-      this.spawnUnit('hoplite', 'enemy', 27, -24);
+      this.spawnUnit('villager', 'enemy', 31, -38);
+      this.spawnUnit('villager', 'enemy', 38, -31);
+      if (this.enemyPantheon === 'egyptian') {
+        this.spawnUnit('pharaoh', 'enemy', 30, -30);
+        this.spawnUnit('egypt_spearman', 'enemy', 25, -26);
+        this.spawnUnit('egypt_spearman', 'enemy', 27, -24);
+      } else if (this.enemyPantheon === 'norse' || this.enemyPantheon === 'jotunn') {
+        this.spawnUnit('ox_cart', 'enemy', 32, -35);
+        this.spawnUnit('hersir', 'enemy', 29, -29);
+        this.spawnUnit('ulfsark', 'enemy', 25, -26);
+        this.spawnUnit('ulfsark', 'enemy', 27, -24);
+      } else {
+        this.spawnUnit('hoplite', 'enemy', 25, -26);
+        this.spawnUnit('hoplite', 'enemy', 27, -24);
+      }
     }
 
     // Neutral Settlement foundations (2 near player base, 2 near enemy base)
@@ -1498,7 +1532,10 @@ export class AoMEngine {
     // Grant sight around all player units and buildings
     for (const u of this.units.values()) {
       if (u.team === 'player') {
-        const sight = this.unitStats(u.kind, 'player').los ?? (u.kind === 'archer' || u.kind === 'centaur' ? 16 : 14);
+        let sight = this.unitStats(u.kind, 'player').los ?? (u.kind === 'archer' || u.kind === 'centaur' ? 16 : 14);
+        if (u.kind === 'oracle' && u.state === 'idle') {
+          sight += 10;
+        }
         this.revealFogCircle(u.mesh.position.x, u.mesh.position.z, sight);
       }
     }
@@ -1640,7 +1677,7 @@ export class AoMEngine {
     const targetPantheonName = targetTeam === 'enemy' ? this.enemyPantheon : targetTeam;
     const res = CombatManager.processTaunt(tauntId, this.pantheon, targetPantheonName, currentRel);
 
-    soundEngine.playTaunt(res.message.soundTone);
+    soundEngine.playTaunt(res.message.soundTone, res.message.pt);
     this.notifyStatus(res.textAnnouncement);
 
     if (res.newRelation !== currentRel) {
@@ -1662,7 +1699,90 @@ export class AoMEngine {
     return getCivBuildingSpec(this.teamPantheon(team), kind);
   }
 
-  private computeUnitModifiers(kind: UnitKind, team: TeamId) {
+  private isWorkerKind(k: UnitKind): boolean {
+    return k === 'villager' || k === 'norse_dwarf' || k === 'citizen';
+  }
+
+  private isBuilderKind(k: UnitKind): boolean {
+    return (
+      this.isWorkerKind(k) ||
+      k === 'ulfsark' ||
+      k === 'hersir' ||
+      k === 'throwing_axeman' ||
+      k === 'huskarl'
+    );
+  }
+
+  private isNonCombatEconUnit(u: UnitEntity): boolean {
+    return (
+      this.isWorkerKind(u.kind) ||
+      u.kind === 'ox_cart' ||
+      u.kind === 'llama_caravan' ||
+      u.kind === 'caladria' ||
+      (u.kind === 'oracle' && !u.isPromotedHero)
+    );
+  }
+
+  private getHeroPromotionCost(kind: UnitKind): ResourceCost {
+    if (kind === 'citizen') return { food: 55, wood: 20, favor: 2 };
+    if (kind === 'oracle') return { gold: 60, favor: 2 };
+    if (kind === 'turma' || kind === 'contarius') return { food: 60, gold: 55, favor: 3 };
+    if (kind === 'destroyer' || kind === 'fanatic') return { food: 65, gold: 60, favor: 3 };
+    return { food: 45, gold: 40, favor: 2 };
+  }
+
+  private applyHeroPromotionToUnit(u: UnitEntity) {
+    if (u.isPromotedHero) return;
+    u.isPromotedHero = true;
+    const prevMax = Math.max(1, u.maxHp);
+    const hpRatio = Math.max(0.25, u.hp / prevMax);
+    const newMax = Math.round(prevMax * 1.35);
+    u.maxHp = newMax;
+    u.hp = Math.min(newMax, Math.round(newMax * hpRatio) + Math.round(newMax * 0.2));
+    u.mesh.userData.setHeroVisual?.(true);
+  }
+
+  public promoteSelectedUnitsToHero() {
+    if (this.phase !== 'playing') return;
+    const candidates = [...this.units.values()].filter(
+      (u) =>
+        u.team === 'player' &&
+        u.hp > 0 &&
+        u.selected &&
+        !u.isPromotedHero &&
+        Boolean(getCivUnitSpec(this.teamPantheon(u.team), u.kind).canPromoteHero)
+    );
+    if (candidates.length === 0) return;
+
+    let promoted = 0;
+    for (const u of candidates) {
+      const cost = this.getHeroPromotionCost(u.kind);
+      if (!this.canAfford(this.resources, cost)) {
+        if (promoted === 0) {
+          this.notifyStatus(
+            `Recursos insuficientes para promover a Herói (${cost.food ?? 0} Alim, ${cost.wood ?? 0} Mad, ${cost.gold ?? 0} Ouro, ${cost.favor ?? 0} Favor).`
+          );
+        }
+        break;
+      }
+      this.deductCost(this.resources, cost);
+      this.applyHeroPromotionToUnit(u);
+      this.spawnPillarVfx(u.mesh.position, 0xfacc15, 0.9);
+      this.spawnRingVfx(u.mesh.position, 1.5, 0xfde047, 0.65);
+      promoted++;
+    }
+    if (promoted > 0) {
+      soundEngine.playFanfare(false);
+      this.notifyStatus(
+        promoted === 1
+          ? `${this.unitStats(candidates[0].kind, 'player').name} promovido a Herói Atlante (★)!`
+          : `${promoted} unidades atlantes promovidas a Heróis!`
+      );
+      this.emitHudSnapshot();
+    }
+  }
+
+  private computeUnitModifiers(kind: UnitKind, team: TeamId, isPromotedHero = false) {
     let atkMult = 1;
     let hpMult = 1;
     let speedMult = 1;
@@ -1673,7 +1793,7 @@ export class AoMEngine {
 
     if (team === 'player') {
       const has = (id: TechId) => this.researchedTechs.includes(id);
-      if (kind !== 'villager') {
+      if (!this.isWorkerKind(kind) || isPromotedHero) {
         if (has('copper_weapons')) atkMult += 0.12;
         if (has('bronze_weapons')) atkMult += 0.14;
         if (has('iron_weapons')) atkMult += 0.16;
@@ -1700,7 +1820,14 @@ export class AoMEngine {
         kind === 'throwing_axeman' ||
         kind === 'raiding_cavalry' ||
         kind === 'huskarl' ||
-        kind === 'jarl'
+        kind === 'jarl' ||
+        kind === 'murmillo' ||
+        kind === 'katapeltes' ||
+        kind === 'turma' ||
+        kind === 'arcus' ||
+        kind === 'contarius' ||
+        kind === 'destroyer' ||
+        kind === 'fanatic'
       ) {
         if (has('medium_soldiers')) {
           hpMult += 0.15;
@@ -1723,7 +1850,11 @@ export class AoMEngine {
         kind === 'egypt_catapult' ||
         kind === 'portable_ram' ||
         kind === 'norse_ballista' ||
-        unitSpec.isHero
+        kind === 'cheiroballista' ||
+        kind === 'fire_siphon' ||
+        kind === 'onager' ||
+        unitSpec.isHero ||
+        isPromotedHero
       ) {
         if (has('burning_pitch')) atkMult += 0.25;
         if (has('engineers')) {
@@ -1750,6 +1881,10 @@ export class AoMEngine {
         gatherGoldMult += isThor ? 0.38 : 0.3;
         gatherWoodMult -= isThor ? 0.04 : 0.2;
         gatherFoodMult -= isThor ? 0.04 : 0.2;
+      } else if (kind === 'citizen') {
+        gatherWoodMult += 0.35;
+        gatherGoldMult += 0.35;
+        gatherFoodMult += 0.35;
       }
       if (has('hand_axe')) gatherWoodMult += 0.2;
       if (has('pickaxe')) gatherGoldMult += 0.2;
@@ -1757,7 +1892,7 @@ export class AoMEngine {
 
       for (const mgId of this.chosenMinorGods) {
         const mg = getMinorGodSpec(mgId);
-        if (mg.attackBonusPct && kind !== 'villager') atkMult += mg.attackBonusPct / 100;
+        if (mg.attackBonusPct && (!this.isWorkerKind(kind) || isPromotedHero)) atkMult += mg.attackBonusPct / 100;
         if (mg.hpBonusPct) hpMult += mg.hpBonusPct / 100;
         if (mg.speedBonusPct) speedMult += mg.speedBonusPct / 100;
         if (mg.gatherBonusPct) {
@@ -1770,7 +1905,7 @@ export class AoMEngine {
       if (this.eclipseTimer > 0 && getCivUnitSpec(this.pantheon, kind).isMythic) {
         atkMult += 0.35;
       }
-      if (this.flamingWeaponsTimer > 0 && kind !== 'villager') {
+      if (this.flamingWeaponsTimer > 0 && (!this.isWorkerKind(kind) || isPromotedHero)) {
         atkMult += 0.6;
       }
     } else if (this.difficulty === 'titan') {
@@ -1779,6 +1914,13 @@ export class AoMEngine {
     } else if (this.difficulty === 'easy') {
       atkMult = 0.85;
       hpMult = 0.88;
+    }
+
+    if (isPromotedHero) {
+      atkMult += 0.35;
+      hpMult += 0.35;
+      speedMult += 0.1;
+      armorBonus += 0.1;
     }
 
     const pantheon = this.teamPantheon(team);
@@ -1823,11 +1965,22 @@ export class AoMEngine {
   }
 
   private computeUnitAttackDamage(attacker: UnitEntity, targetUnit?: UnitEntity, targetBuilding?: BuildingEntity): number {
-    const aSpec = this.unitStats(attacker.kind, attacker.team);
-    const mods = this.computeUnitModifiers(attacker.kind, attacker.team);
+    const baseSpec = this.unitStats(attacker.kind, attacker.team);
+    const aSpec = attacker.isPromotedHero
+      ? {
+          ...baseSpec,
+          isHero: true,
+          bonusVsMyth: Math.max(baseSpec.bonusVsMyth ?? 1, 3.0),
+          attack: baseSpec.kind === 'oracle' ? Math.max(baseSpec.attack, 16) : baseSpec.attack,
+        }
+      : baseSpec;
+    const mods = this.computeUnitModifiers(attacker.kind, attacker.team, Boolean(attacker.isPromotedHero));
     const furyStacks = attacker.kind === 'myrmidon' || attacker.kind === 'hydra' ? (attacker.combatFury ?? 0) : 0;
     const chargeMult =
-      (attacker.kind === 'cavalry' || attacker.kind === 'bellerophon') && (attacker.chargeCooldown ?? 0) <= 0 ? 1.45 : 1;
+      (attacker.kind === 'cavalry' || attacker.kind === 'bellerophon' || attacker.kind === 'contarius') &&
+      (attacker.chargeCooldown ?? 0) <= 0
+        ? 1.45
+        : 1;
     let divineAuraMult = 1;
     if (!aSpec.isMajorGod) {
       for (const ally of this.units.values()) {
@@ -1842,7 +1995,7 @@ export class AoMEngine {
 
     if (targetUnit) {
       const tSpec = this.unitStats(targetUnit.kind, targetUnit.team);
-      const tMods = this.computeUnitModifiers(targetUnit.kind, targetUnit.team);
+      const tMods = this.computeUnitModifiers(targetUnit.kind, targetUnit.team, Boolean(targetUnit.isPromotedHero));
       const effectiveArmor = Math.min(
         0.82,
         (aSpec.damageType === 'hack'
@@ -2093,11 +2246,17 @@ export class AoMEngine {
       units.find((u) => this.unitStats(u.kind, u.team).isMajorGod) ??
       units.find((u) => this.unitStats(u.kind, u.team).isGod) ??
       units.find((u) => u.kind === 'titan') ??
-      units.find((u) => this.unitStats(u.kind, u.team).isHero) ??
-      units.find((u) => u.kind !== 'villager') ??
+      units.find((u) => this.unitStats(u.kind, u.team).isHero || u.isPromotedHero) ??
+      units.find((u) => !this.isWorkerKind(u.kind)) ??
       units[0];
     const culture = leader.team === 'player' ? this.pantheon : this.enemyPantheon;
-    const line = soundEngine.playUnitVoiceLine(culture, leader.kind, action, units.length);
+    const line = soundEngine.playUnitVoiceLine(
+      culture,
+      leader.kind,
+      action,
+      units.length,
+      Boolean(leader.isPromotedHero)
+    );
     if (line) {
       this.lastVoiceLine = line;
       this.voiceLineTimer = 4.0;
@@ -2383,6 +2542,7 @@ export class AoMEngine {
     if (this.phase === 'playing' || this.phase === 'paused') {
       this.phase = 'defeat';
       soundEngine.playFanfare(false);
+      soundEngine.setMusicScene('defeat');
       this.emitHudSnapshot();
     }
   }
@@ -2417,6 +2577,7 @@ export class AoMEngine {
   public togglePause() {
     if (this.phase === 'playing') this.phase = 'paused';
     else if (this.phase === 'paused') this.phase = 'playing';
+    soundEngine.setMusicPausedDuck(this.phase === 'paused');
     this.emitHudSnapshot();
   }
 
@@ -2532,10 +2693,18 @@ export class AoMEngine {
     const matchesProducer = (bKind: BuildingKind) =>
       bKind === stats.producedAt ||
       (kind === 'priest' && (bKind === 'temple' || bKind === 'town_center')) ||
-      (stats.isHero && kind !== 'priest' && (bKind === 'town_center' || bKind === 'fortress')) ||
+      (kind === 'oracle' && (bKind === 'town_center' || bKind === 'temple')) ||
+      (stats.isHero && kind !== 'priest' && kind !== 'oracle' && (bKind === 'town_center' || bKind === 'fortress')) ||
       (kind === 'myrmidon' && (bKind === 'barracks' || bKind === 'fortress')) ||
-      ((kind === 'ram' || kind === 'siege' || kind === 'siege_tower' || kind === 'egypt_catapult') &&
-        (bKind === 'siege_works' || bKind === 'fortress'));
+      ((kind === 'turma' || kind === 'contarius') && (bKind === 'stable' || bKind === 'barracks' || bKind === 'archery_range')) ||
+      ((kind === 'ram' ||
+        kind === 'siege' ||
+        kind === 'siege_tower' ||
+        kind === 'egypt_catapult' ||
+        kind === 'cheiroballista' ||
+        kind === 'fire_siphon' ||
+        kind === 'onager') &&
+        (bKind === 'siege_works' || bKind === 'fortress' || (kind === 'cheiroballista' && bKind === 'archery_range')));
 
     for (const b of this.buildings.values()) {
       if (b.team === 'player' && b.isConstructed && matchesProducer(b.kind) && b.selected) {
@@ -2818,6 +2987,7 @@ export class AoMEngine {
     this.stats.powersCast++;
     this.activeGodPowerMode = null;
     if (this.godPowerRing) this.godPowerRing.visible = false;
+    soundEngine.playGodPowerCue(id, this.pantheon);
 
     if (id === 'prosperity') {
       this.resources.food += 200;
@@ -2854,7 +3024,7 @@ export class AoMEngine {
       for (const u of this.units.values()) {
         if (
           u.team === 'player' &&
-          (u.kind === 'villager' || u.kind === 'norse_dwarf') &&
+          this.isWorkerKind(u.kind) &&
           u.state === 'idle' &&
           u.mesh.position.distanceTo(mine.mesh.position) <= 24
         ) {
@@ -2907,13 +3077,20 @@ export class AoMEngine {
             b.hp = Math.min(b.maxHp, b.hp + 450);
           }
         }
+        if (this.pantheon === 'atlantean' && this.isWalkableTerrainPoint(worldPos.x, worldPos.z)) {
+          this.spawnUnit('carnivora', 'player', worldPos.x, worldPos.z);
+        }
       }
-      this.notifyStatus(`${spec.name} restaurou ${healed} unidades e estruturas aliadas!`);
+      this.notifyStatus(
+        id === 'restoration' && this.pantheon === 'atlantean'
+          ? `${spec.name} restaurou ${healed} unidades e invocou uma Carnívora!`
+          : `${spec.name} restaurou ${healed} unidades e estruturas aliadas!`
+      );
     } else if (id === 'flaming_weapons') {
       this.flamingWeaponsTimer = 25;
       soundEngine.playFanfare(false);
       for (const u of this.units.values()) {
-        if (u.team === 'player' && u.kind !== 'villager') {
+        if (u.team === 'player' && (!this.isWorkerKind(u.kind) || u.isPromotedHero)) {
           this.spawnRingVfx(u.mesh.position, 2.2, 0xf97316, 1.3);
         }
       }
@@ -3064,19 +3241,39 @@ export class AoMEngine {
       this.spawnPillarVfx(worldPos, isBh ? 0x7e22ce : 0x0ea5e9, 2.0);
       this.spawnRingVfx(worldPos, spec.radius, isBh ? 0xc084fc : 0x38bdf8, 1.8);
       this.applyAreaDamage('player', worldPos, spec.radius, isBh ? 460 : 310, isBh ? 1.1 : 0.75, isBh ? -4.0 : 4.5);
-      this.notifyStatus(`${spec.name} dilacerou tudo na área de impacto!`);
+      if (isBh && this.pantheon === 'atlantean') {
+        for (let i = 0; i < 3; i++) {
+          const ang = (i / 3) * Math.PI * 2;
+          const sx = THREE.MathUtils.clamp(worldPos.x + Math.cos(ang) * 2.4, -PLAYABLE_HALF_SIZE + 2, PLAYABLE_HALF_SIZE - 2);
+          const sz = THREE.MathUtils.clamp(worldPos.z + Math.sin(ang) * 2.4, -PLAYABLE_HALF_SIZE + 2, PLAYABLE_HALF_SIZE - 2);
+          if (this.isWalkableTerrainPoint(sx, sz)) {
+            this.spawnUnit('tartarian_spawn', 'player', sx, sz);
+          }
+        }
+      }
+      this.notifyStatus(
+        isBh && this.pantheon === 'atlantean'
+          ? `${spec.name} abriu o Portal do Tártaro e invocou 3 Crias do Tártaro!`
+          : `${spec.name} dilacerou tudo na área de impacto!`
+      );
     } else if (id === 'necromancy' || id === 'walking_woods' || id === 'spiders') {
       soundEngine.playFanfare(false);
       const pColor = id === 'necromancy' ? 0x9333ea : id === 'spiders' ? 0xdc2626 : 0x22c55e;
       this.spawnPillarVfx(worldPos, pColor, 1.6);
       this.spawnRingVfx(worldPos, spec.radius, id === 'spiders' ? 0xf87171 : 0x4ade80, 1.4);
       const count = id === 'spiders' ? 4 : 3;
+      const summonKind: UnitKind =
+        id === 'walking_woods'
+          ? this.pantheon === 'atlantean'
+            ? 'dryad'
+            : 'hoplite'
+          : 'minotaur';
       for (let i = 0; i < count; i++) {
         const ang = (i / count) * Math.PI * 2;
         const sx = THREE.MathUtils.clamp(worldPos.x + Math.cos(ang) * 2.2, -PLAYABLE_HALF_SIZE + 2, PLAYABLE_HALF_SIZE - 2);
         const sz = THREE.MathUtils.clamp(worldPos.z + Math.sin(ang) * 2.2, -PLAYABLE_HALF_SIZE + 2, PLAYABLE_HALF_SIZE - 2);
         if (this.isWalkableTerrainPoint(sx, sz)) {
-          this.spawnUnit(id === 'walking_woods' ? 'hoplite' : 'minotaur', 'player', sx, sz);
+          this.spawnUnit(summonKind, 'player', sx, sz);
         }
       }
       if (id === 'spiders') {
@@ -3087,6 +3284,8 @@ export class AoMEngine {
           ? `${spec.name}! 3 guardiões míticos erguidos no campo!`
           : id === 'spiders'
           ? `${spec.name}! Ninho de Aranhas Gigantes emboscou os inimigos!`
+          : this.pantheon === 'atlantean'
+          ? `${spec.name}! 3 Dríades das Hespérides ergueram-se dos bosques!`
           : `${spec.name}! Guardiões dos bosques invocados!`
       );
     } else if (id === 'chaos') {
@@ -3349,6 +3548,17 @@ export class AoMEngine {
       case 'perseus':
       case 'theseus':
       case 'hero':
+      case 'murmillo':
+      case 'katapeltes':
+      case 'destroyer':
+      case 'fanatic':
+      case 'promethean':
+      case 'promethean_offspring':
+      case 'behemoth':
+      case 'dryad':
+      case 'hekagigantes':
+      case 'carnivora':
+      case 'tartarian_spawn':
         return 0;
       case 'cavalry':
       case 'prodromos':
@@ -3360,6 +3570,11 @@ export class AoMEngine {
       case 'roc':
       case 'bellerophon':
       case 'pegasus':
+      case 'contarius':
+      case 'turma':
+      case 'caladria':
+      case 'stymphalian_bird':
+      case 'llama_caravan':
         return 1;
       case 'hermes':
       case 'apolo':
@@ -3392,10 +3607,18 @@ export class AoMEngine {
       case 'odysseus':
       case 'hippolyta':
       case 'siege':
+      case 'oracle':
+      case 'arcus':
+      case 'cheiroballista':
+      case 'fire_siphon':
+      case 'onager':
+      case 'argus':
+      case 'lampades':
         return 2;
       case 'villager':
       case 'norse_dwarf':
       case 'ox_cart':
+      case 'citizen':
         return 3;
     }
   }
@@ -3630,11 +3853,7 @@ export class AoMEngine {
   public selectAllCombatUnits() {
     const selectedCombat: UnitEntity[] = [];
     for (const u of this.units.values()) {
-      const sel =
-        u.team === 'player' &&
-        u.kind !== 'villager' &&
-        u.kind !== 'norse_dwarf' &&
-        u.kind !== 'ox_cart';
+      const sel = u.team === 'player' && (!this.isNonCombatEconUnit(u) || Boolean(u.isPromotedHero));
       u.selected = sel;
       if (sel) selectedCombat.push(u);
     }
@@ -3660,7 +3879,7 @@ export class AoMEngine {
     const idleVillagers = [...this.units.values()].filter(
       (u) =>
         u.team === 'player' &&
-        (u.kind === 'villager' || u.kind === 'norse_dwarf') &&
+        this.isWorkerKind(u.kind) &&
         u.state === 'idle' &&
         u.hp > 0
     );
@@ -3673,7 +3892,7 @@ export class AoMEngine {
       this.emitHudSnapshot();
       return;
     }
-    this.notifyStatus('Todos os coletores e anões estão trabalhando.');
+    this.notifyStatus('Todos os coletores e cidadãos estão trabalhando.');
     this.emitHudSnapshot();
   }
 
@@ -3688,9 +3907,7 @@ export class AoMEngine {
     const idleMilitary = [...this.units.values()].filter(
       (u) =>
         u.team === 'player' &&
-        u.kind !== 'villager' &&
-        u.kind !== 'norse_dwarf' &&
-        u.kind !== 'ox_cart' &&
+        (!this.isNonCombatEconUnit(u) || Boolean(u.isPromotedHero)) &&
         u.state === 'idle' &&
         u.hp > 0
     );
@@ -3756,6 +3973,7 @@ export class AoMEngine {
         x: u.mesh.position.x,
         z: u.mesh.position.z,
         hp: u.hp,
+        isPromotedHero: u.isPromotedHero || undefined,
       })),
       nodes: [...this.nodes.values()].map((n) => ({
         id: n.id,
@@ -3859,7 +4077,10 @@ export class AoMEngine {
       }
       for (const u of data.units) {
         const ent = this.spawnUnit(u.kind, u.team, u.x, u.z, u.id);
-        ent.hp = u.hp;
+        if (u.isPromotedHero) {
+          this.applyHeroPromotionToUnit(ent);
+        }
+        ent.hp = Math.min(ent.maxHp, u.hp);
       }
       for (const n of data.nodes) {
         const ent = this.spawnNode(n.kind, n.x, n.z, n.id);
@@ -3903,9 +4124,13 @@ export class AoMEngine {
 
       this.syncNavObstacles();
       this.resolveUnitCollisions();
+      this.peakPopulation = 0;
+      this.combatCueCooldown = 0;
+      this.musicCheckTimer = 0;
       this.phase = 'playing';
       this.jumpCameraTo(-32, 32);
       soundEngine.playFanfare(false);
+      soundEngine.startMatchMusic(this.pantheon, this.scenarioTitle);
       this.notifyStatus('Partida carregada!');
       this.emitHudSnapshot();
       return true;
@@ -4337,9 +4562,7 @@ export class AoMEngine {
     const picked = this.pickEntityFromEvent(e.clientX, e.clientY);
     const additive = e.shiftKey;
     const selectedPlayerUnits = [...this.units.values()].filter((u) => u.team === 'player' && u.selected);
-    const currentVillagers = selectedPlayerUnits.filter(
-      (u) => u.kind === 'villager' || u.kind === 'norse_dwarf'
-    );
+    const currentVillagers = selectedPlayerUnits.filter((u) => this.isWorkerKind(u.kind));
     if (currentVillagers.length > 0) {
       this.lastSelectedVillagerIds = currentVillagers.map((u) => u.id);
     }
@@ -4399,14 +4622,9 @@ export class AoMEngine {
         } else {
           u.selected = true;
         }
-        if (u.team === 'player' && (u.kind === 'villager' || u.kind === 'norse_dwarf')) {
+        if (u.team === 'player' && this.isWorkerKind(u.kind)) {
           this.lastSelectedVillagerIds = [...this.units.values()]
-            .filter(
-              (v) =>
-                v.team === 'player' &&
-                (v.kind === 'villager' || v.kind === 'norse_dwarf') &&
-                v.selected
-            )
+            .filter((v) => v.team === 'player' && this.isWorkerKind(v.kind) && v.selected)
             .map((v) => v.id);
         }
         this.lastClickTime = now;
@@ -4482,7 +4700,7 @@ export class AoMEngine {
       u.selected = inside;
       if (inside) {
         selectedGroup.push(u);
-        if (u.kind === 'villager' || u.kind === 'norse_dwarf') selectedVills.push(u.id);
+        if (this.isWorkerKind(u.kind)) selectedVills.push(u.id);
       }
     }
     if (selectedVills.length > 0) {
@@ -4575,7 +4793,7 @@ export class AoMEngine {
     }
 
     for (const u of builders) {
-      if (u.team === team && u.kind === 'villager') {
+      if (u.team === team && this.isBuilderKind(u.kind)) {
         u.state = 'build';
         u.targetEntityId = b.id;
         u.targetNodeId = null;
@@ -4630,17 +4848,10 @@ export class AoMEngine {
     this.stats.buildingsBuilt++;
     soundEngine.playBuild();
 
-    // Assign selected builders (villager, norse_dwarf, or Norse infantry) to construct
-    const canBuildUnit = (kind: UnitKind) =>
-      kind === 'villager' ||
-      kind === 'norse_dwarf' ||
-      kind === 'ulfsark' ||
-      kind === 'hersir' ||
-      kind === 'throwing_axeman' ||
-      kind === 'huskarl';
+    // Assign selected builders (villager, citizen, norse_dwarf, or Norse infantry) to construct
     let assigned = 0;
     for (const u of this.units.values()) {
-      if (u.team === 'player' && canBuildUnit(u.kind) && u.selected) {
+      if (u.team === 'player' && this.isBuilderKind(u.kind) && u.selected) {
         u.state = 'build';
         u.targetEntityId = b.id;
         u.targetNodeId = null;
@@ -4656,7 +4867,7 @@ export class AoMEngine {
       let best: UnitEntity | null = null;
       let bestScore = Infinity;
       for (const u of this.units.values()) {
-        if (u.team === 'player' && canBuildUnit(u.kind)) {
+        if (u.team === 'player' && this.isBuilderKind(u.kind)) {
           const d = Math.hypot(u.mesh.position.x - b.mesh.position.x, u.mesh.position.z - b.mesh.position.z);
           const penalty = u.state === 'idle' ? 0 : u.state === 'build' ? 120 : 35;
           if (d + penalty < bestScore) {
@@ -4703,7 +4914,7 @@ export class AoMEngine {
   private updateCommandDragPreview(clientX: number, clientY: number) {
     const selectedPlayerUnits = [...this.units.values()].filter((u) => u.team === 'player' && u.selected);
     if (selectedPlayerUnits.length === 0) return;
-    const hasVillager = selectedPlayerUnits.some((u) => u.kind === 'villager');
+    const hasVillager = selectedPlayerUnits.some((u) => this.isBuilderKind(u.kind));
 
     const picked = this.pickEntityFromEvent(clientX, clientY);
     let targetPos: THREE.Vector3 | null = null;
@@ -4790,12 +5001,12 @@ export class AoMEngine {
     const remembered = this.lastSelectedVillagerIds
       .map((id) => this.units.get(id))
       .filter((u): u is UnitEntity =>
-        Boolean(u && u.team === 'player' && (u.kind === 'villager' || u.kind === 'norse_dwarf'))
+        Boolean(u && u.team === 'player' && this.isWorkerKind(u.kind))
       );
     if (remembered.length > 0) return remembered;
 
     const allVills = [...this.units.values()].filter(
-      (u) => u.team === 'player' && (u.kind === 'villager' || u.kind === 'norse_dwarf')
+      (u) => u.team === 'player' && this.isWorkerKind(u.kind)
     );
     const idleVills = allVills.filter((u) => u.state === 'idle');
     const pool = idleVills.length > 0 ? idleVills : allVills;
@@ -4889,12 +5100,12 @@ export class AoMEngine {
 
   public orderSelectedVillagersToTask(task: 'wood' | 'food' | 'gold' | 'hunt' | 'build') {
     if (this.phase !== 'playing') return;
-    let vills = [...this.units.values()].filter((u) => u.team === 'player' && u.kind === 'villager' && u.selected);
+    let vills = [...this.units.values()].filter((u) => u.team === 'player' && this.isWorkerKind(u.kind) && u.selected);
     if (vills.length === 0) {
-      vills = [...this.units.values()].filter((u) => u.team === 'player' && u.kind === 'villager' && u.state === 'idle');
+      vills = [...this.units.values()].filter((u) => u.team === 'player' && this.isWorkerKind(u.kind) && u.state === 'idle');
     }
     if (vills.length === 0) {
-      vills = [...this.units.values()].filter((u) => u.team === 'player' && u.kind === 'villager').slice(0, 2);
+      vills = [...this.units.values()].filter((u) => u.team === 'player' && this.isWorkerKind(u.kind)).slice(0, 2);
     }
     if (vills.length === 0) {
       this.notifyStatus('Nenhum Aldeão disponível.');
@@ -5138,13 +5349,11 @@ export class AoMEngine {
       }
       if (targetB && targetB.team === 'player' && !targetB.isConstructed) {
         let orderedBuild = false;
-        const isBuilderKind = (k: UnitKind) =>
-          k === 'villager' || k === 'norse_dwarf' || k === 'ulfsark' || k === 'hersir' || k === 'throwing_axeman' || k === 'huskarl';
-        const builders = selectedPlayerUnits.some((u) => isBuilderKind(u.kind))
+        const builders = selectedPlayerUnits.some((u) => this.isBuilderKind(u.kind))
           ? selectedPlayerUnits
           : this.getFallbackVillagers(targetB.mesh.position);
         for (const u of builders) {
-          if (isBuilderKind(u.kind)) {
+          if (this.isBuilderKind(u.kind)) {
             u.state = 'build';
             u.targetEntityId = targetB.id;
             u.targetNodeId = null;
@@ -5165,12 +5374,12 @@ export class AoMEngine {
       if (targetB && targetB.team === 'player' && targetB.isConstructed && targetB.kind === 'farm') {
         let orderedFarm = false;
         const farmers = selectedPlayerUnits.some(
-          (u) => u.kind === 'villager' || u.kind === 'norse_dwarf' || u.kind === 'ox_cart'
+          (u) => this.isWorkerKind(u.kind) || u.kind === 'ox_cart'
         )
           ? selectedPlayerUnits
           : this.getFallbackVillagers(targetB.mesh.position, 'food');
         for (const u of farmers) {
-          if (u.kind === 'villager' || u.kind === 'norse_dwarf') {
+          if (this.isWorkerKind(u.kind)) {
             u.state = 'gather';
             u.targetEntityId = targetB.id;
             u.targetNodeId = null;
@@ -5197,10 +5406,8 @@ export class AoMEngine {
 
     if (picked.type === 'settlement' && picked.id) {
       const settlement = this.settlements.get(picked.id);
-      const isBuilderKind = (k: UnitKind) =>
-        k === 'villager' || k === 'norse_dwarf' || k === 'ulfsark' || k === 'hersir' || k === 'throwing_axeman' || k === 'huskarl';
-      const villagers = selectedPlayerUnits.some((u) => isBuilderKind(u.kind))
-        ? selectedPlayerUnits.filter((u) => isBuilderKind(u.kind))
+      const villagers = selectedPlayerUnits.some((u) => this.isBuilderKind(u.kind))
+        ? selectedPlayerUnits.filter((u) => this.isBuilderKind(u.kind))
         : this.getFallbackVillagers(settlement?.mesh.position ?? new THREE.Vector3());
       if (settlement && villagers.length > 0) {
         if (this.beginTownCenterOnSettlement(settlement, 'player', villagers)) {
@@ -5228,7 +5435,7 @@ export class AoMEngine {
       if (animal) {
         let ordered = false;
         const hunters = selectedPlayerUnits.some(
-          (u) => u.kind === 'villager' || u.kind === 'norse_dwarf' || u.kind === 'ox_cart'
+          (u) => this.isWorkerKind(u.kind) || u.kind === 'ox_cart'
         )
           ? selectedPlayerUnits
           : selectedPlayerUnits.length > 0
@@ -5238,7 +5445,7 @@ export class AoMEngine {
           if (u.kind === 'ox_cart') {
             this.stationOxCartNearTarget(u, animal.mesh.position);
             ordered = true;
-          } else if (u.kind === 'villager' || u.kind === 'norse_dwarf' || !animal.isCarcass) {
+          } else if (this.isWorkerKind(u.kind) || !animal.isCarcass) {
             u.state = 'hunt';
             u.targetFaunaId = animal.id;
             u.targetNodeId = null;
@@ -5265,12 +5472,12 @@ export class AoMEngine {
       if (node) {
         let ordered = false;
         const gatherers = selectedPlayerUnits.some(
-          (u) => u.kind === 'villager' || u.kind === 'norse_dwarf' || u.kind === 'ox_cart'
+          (u) => this.isWorkerKind(u.kind) || u.kind === 'ox_cart'
         )
           ? selectedPlayerUnits
           : this.getFallbackVillagers(node.mesh.position, node.resourceType);
         for (const u of gatherers) {
-          if (u.kind === 'villager' || u.kind === 'norse_dwarf') {
+          if (this.isWorkerKind(u.kind)) {
             u.state = 'gather';
             u.targetNodeId = node.id;
             u.targetEntityId = null;
@@ -5360,7 +5567,7 @@ export class AoMEngine {
         this.selectIdleMilitary();
       } else if (e.code === 'Space') {
         const hasSelectedCombat = [...this.units.values()].some(
-          (u) => u.team === 'player' && u.selected && u.kind !== 'villager'
+          (u) => u.team === 'player' && u.selected && (!this.isNonCombatEconUnit(u) || Boolean(u.isPromotedHero))
         );
         if (hasSelectedCombat) {
           e.preventDefault();
@@ -5372,7 +5579,7 @@ export class AoMEngine {
 
   public triggerSelectedHopliteAttack(aimWorldPos?: THREE.Vector3) {
     const selectedCombat = [...this.units.values()].filter(
-      (u) => u.team === 'player' && u.selected && u.kind !== 'villager'
+      (u) => u.team === 'player' && u.selected && (!this.isNonCombatEconUnit(u) || Boolean(u.isPromotedHero))
     );
     if (selectedCombat.length === 0) return;
 
@@ -6033,7 +6240,7 @@ export class AoMEngine {
       case 'flaming_weapons': {
         let boosted = 0;
         for (const u of this.units.values()) {
-          if (u.team === 'player' && u.kind !== 'villager') {
+          if (u.team === 'player' && (!this.isNonCombatEconUnit(u) || Boolean(u.isPromotedHero))) {
             if (boosted < 16) {
               this.spawnDivineParticleBurst(u.mesh.position, {
                 behavior: 'ascend',
@@ -6535,6 +6742,23 @@ export class AoMEngine {
             this.damageBuilding(b, 210);
           }
         }
+      } else if (target.kind === 'promethean') {
+        // Prometeico se divide em dois Prometeicos Menores (Proles) ao morrer!
+        this.spawnRingVfx(target.mesh.position, 2.2, 0xd97706, 0.55);
+        this.spawnRingVfx(target.mesh.position, 1.4, 0xf59e0b, 0.45);
+        for (const dir of [-1, 1]) {
+          const sx = THREE.MathUtils.clamp(
+            target.mesh.position.x + dir * 0.95,
+            -PLAYABLE_HALF_SIZE + 1,
+            PLAYABLE_HALF_SIZE - 1
+          );
+          const sz = THREE.MathUtils.clamp(
+            target.mesh.position.z + (dir === 1 ? 0.55 : -0.55),
+            -PLAYABLE_HALF_SIZE + 1,
+            PLAYABLE_HALF_SIZE - 1
+          );
+          this.spawnUnit('promethean_offspring', target.team, sx, sz);
+        }
       } else {
         this.spawnRingVfx(target.mesh.position, 1.2, 0xf87171, 0.35);
       }
@@ -6573,6 +6797,7 @@ export class AoMEngine {
     if (this.gameType === 'regicide' && this.regentUnitId && !this.units.has(this.regentUnitId)) {
       this.phase = 'defeat';
       soundEngine.playMeteor();
+      soundEngine.setMusicScene('defeat');
       this.notifyStatus('Seu Regente caiu em batalha — Derrota!');
       this.emitHudSnapshot();
       return;
@@ -6600,10 +6825,12 @@ export class AoMEngine {
     if (!playerTcAlive) {
       this.phase = 'defeat';
       soundEngine.playMeteor();
+      soundEngine.setMusicScene('defeat');
       this.emitHudSnapshot();
     } else if (!enemyTcAlive && enemyBuildings === 0 && (this.gameType !== 'conquest' || enemyUnitsAlive === 0)) {
       this.phase = 'victory';
       soundEngine.playFanfare(true);
+      soundEngine.setMusicScene('victory');
       this.grantMythicVerdictReward();
       this.emitHudSnapshot();
     }
@@ -6747,7 +6974,7 @@ export class AoMEngine {
         for (const g of this.units.values()) {
           if (
             g.team === team &&
-            (g.kind === 'villager' || g.kind === 'norse_dwarf') &&
+            this.isWorkerKind(g.kind) &&
             (g.state === 'gather' || g.state === 'hunt' || g.state === 'return') &&
             g.mesh.position.distanceTo(u.mesh.position) <= 7.5
           ) {
@@ -6795,7 +7022,13 @@ export class AoMEngine {
     switch (kind) {
       case 'villager':
       case 'norse_dwarf':
+      case 'promethean_offspring':
         return 0.44;
+      case 'citizen':
+      case 'oracle':
+      case 'murmillo':
+      case 'katapeltes':
+        return 0.48;
       case 'hoplite':
       case 'hipaspist':
       case 'gastraphetes':
@@ -6815,15 +7048,23 @@ export class AoMEngine {
       case 'mummy':
       case 'hersir':
       case 'einherjar':
+      case 'destroyer':
+      case 'fanatic':
+      case 'caladria':
+      case 'dryad':
+      case 'lampades':
         return 0.52;
       case 'son_of_osiris':
       case 'avenger':
       case 'troll':
       case 'fenris_wolf':
-        return 0.62;
+      case 'promethean':
+      case 'tartarian_spawn':
+        return 0.65;
       case 'peltast':
       case 'archer':
       case 'slinger':
+      case 'arcus':
         return 0.45;
       case 'cavalry':
       case 'prodromos':
@@ -6835,6 +7076,9 @@ export class AoMEngine {
       case 'automaton':
       case 'wadjet':
       case 'ox_cart':
+      case 'llama_caravan':
+      case 'turma':
+      case 'contarius':
         return 0.72;
       case 'chariot_archer':
       case 'sphinx':
@@ -6845,11 +7089,15 @@ export class AoMEngine {
       case 'phoenix':
       case 'battle_boar':
       case 'rock_troll':
+      case 'stymphalian_bird':
+      case 'carnivora':
+      case 'cheiroballista':
         return 0.85;
       case 'roc':
       case 'scarab':
       case 'frost_giant':
       case 'fire_giant':
+      case 'argus':
         return 0.96;
       case 'ajax':
       case 'perseus':
@@ -6866,6 +7114,8 @@ export class AoMEngine {
       case 'egypt_catapult':
       case 'portable_ram':
       case 'norse_ballista':
+      case 'fire_siphon':
+      case 'onager':
         return 1.0;
       case 'minotaur':
       case 'centaur':
@@ -6874,6 +7124,7 @@ export class AoMEngine {
       case 'hydra':
       case 'mountain_giant':
       case 'jormungand':
+      case 'behemoth':
         return 1.1;
       case 'cyclops':
       case 'fafnir':
@@ -6881,6 +7132,7 @@ export class AoMEngine {
       case 'colossus':
       case 'kraken':
       case 'nidhogg':
+      case 'hekagigantes':
         return 1.25;
       case 'titan':
         return 2.2;
@@ -7162,7 +7414,7 @@ export class AoMEngine {
 
     for (const u of [...this.units.values()]) {
       const stats = this.unitStats(u.kind, u.team);
-      const mods = this.computeUnitModifiers(u.kind, u.team);
+      const mods = this.computeUnitModifiers(u.kind, u.team, Boolean(u.isPromotedHero));
       if (stats.isGod && u.hp > 0 && u.hp < u.maxHp) {
         const regenRate = stats.isMajorGod ? 10 : 5;
         u.hp = Math.min(u.maxHp, u.hp + regenRate * dt);
@@ -7178,26 +7430,46 @@ export class AoMEngine {
       if ((u.specialCooldown ?? 0) > 0) {
         u.specialCooldown = Math.max(0, (u.specialCooldown ?? 0) - dt);
       }
-      if ((u.kind === 'hydra' || u.kind === 'automaton' || u.kind === 'colossus' || u.kind === 'wadjet') && u.hp < u.maxHp) {
-        const regenRate = u.kind === 'colossus' ? 5.0 : u.kind === 'hydra' ? 4.0 : 3.5;
+      if ((u.kind === 'hydra' || u.kind === 'automaton' || u.kind === 'colossus' || u.kind === 'wadjet' || u.kind === 'behemoth') && u.hp < u.maxHp) {
+        const regenRate = u.kind === 'behemoth' ? 6.0 : u.kind === 'colossus' ? 5.0 : u.kind === 'hydra' || u.kind === 'automaton' ? 4.0 : 3.5;
         u.hp = Math.min(u.maxHp, u.hp + regenRate * dt);
       }
-      // Sacerdote Egípcio: cura automaticamente aliados feridos próximos
-      if (u.kind === 'priest' && u.hp > 0 && (u.specialCooldown ?? 0) <= 0) {
+      // Autômato Atlante: repara outros Autômatos aliados próximos
+      if (u.kind === 'automaton' && u.hp > 0 && (u.specialCooldown ?? 0) <= 0) {
+        let damagedAuto: UnitEntity | null = null;
+        let bestMissing = 0;
+        for (const ally of this.units.values()) {
+          if (ally.team === u.team && ally.id !== u.id && ally.kind === 'automaton' && ally.hp > 0 && ally.hp < ally.maxHp) {
+            const d = ally.mesh.position.distanceTo(u.mesh.position);
+            if (d <= 6.0 && ally.maxHp - ally.hp > bestMissing) {
+              bestMissing = ally.maxHp - ally.hp;
+              damagedAuto = ally;
+            }
+          }
+        }
+        if (damagedAuto) {
+          u.specialCooldown = 1.5;
+          damagedAuto.hp = Math.min(damagedAuto.maxHp, damagedAuto.hp + 12);
+          this.spawnRingVfx(damagedAuto.mesh.position, 0.9, 0xf59e0b, 0.35);
+        }
+      }
+      // Sacerdote Egípcio e Caládria Atlante: curam automaticamente aliados feridos próximos
+      if ((u.kind === 'priest' || u.kind === 'caladria') && u.hp > 0 && (u.specialCooldown ?? 0) <= 0) {
         let woundedAlly: UnitEntity | null = null;
         let bestMissing = 0;
+        const healRadius = u.kind === 'caladria' ? 11.0 : 10.0;
         for (const ally of this.units.values()) {
           if (ally.team === u.team && ally.hp > 0 && ally.hp < ally.maxHp) {
             const d = ally.mesh.position.distanceTo(u.mesh.position);
-            if (d <= 10.0 && ally.maxHp - ally.hp > bestMissing) {
+            if (d <= healRadius && ally.maxHp - ally.hp > bestMissing) {
               bestMissing = ally.maxHp - ally.hp;
               woundedAlly = ally;
             }
           }
         }
         if (woundedAlly) {
-          u.specialCooldown = 1.25;
-          woundedAlly.hp = Math.min(woundedAlly.maxHp, woundedAlly.hp + 15);
+          u.specialCooldown = u.kind === 'caladria' ? 1.1 : 1.25;
+          woundedAlly.hp = Math.min(woundedAlly.maxHp, woundedAlly.hp + (u.kind === 'caladria' ? 18 : 15));
           this.spawnRingVfx(woundedAlly.mesh.position, 0.85, 0x38bdf8, 0.35);
         }
       }
@@ -7236,7 +7508,7 @@ export class AoMEngine {
       }
       const furyStacks = u.kind === 'myrmidon' || u.kind === 'hydra' ? (u.combatFury ?? 0) : 0;
       const burstMult =
-        (u.kind === 'cavalry' || u.kind === 'camel_rider' || u.kind === 'bellerophon') && (u.chargeBurstTimer ?? 0) > 0
+        (u.kind === 'cavalry' || u.kind === 'camel_rider' || u.kind === 'bellerophon' || u.kind === 'contarius') && (u.chargeBurstTimer ?? 0) > 0
           ? 1.35
           : 1;
       const effectiveSpeed = stats.speed * mods.speedMult * (1 + furyStacks * 0.07) * burstMult;
@@ -7320,7 +7592,8 @@ export class AoMEngine {
       if (poseAnim) {
         const attackT = u.manualAttackTimer > 0 ? 1 - u.manualAttackTimer / (6 / 14) : null;
         const resType = u.gatherResourceType ?? u.carryType;
-        poseAnim(dt, u.state === 'move', effectiveSpeed, attackT, u.state, resType, u.carryAmount);
+        const isCaravanMoving = u.kind === 'llama_caravan' && u.state === 'idle' && Boolean(u.tradePhase);
+        poseAnim(dt, u.state === 'move' || isCaravanMoving, effectiveSpeed, attackT, u.state, resType, u.carryAmount);
       }
 
       // 3D Procedural Limb Animations (when in 3D mode)
@@ -7403,17 +7676,24 @@ export class AoMEngine {
             u.gatherTimer += dt * mods.gatherFoodMult;
             if (u.gatherTimer >= 1.1) {
               u.gatherTimer = 0;
-              if (u.carryType && u.carryType !== 'food' && u.carryAmount > 0) {
+              if (u.kind === 'citizen') {
                 const pool = u.team === 'player' ? this.resources : this.enemyResources;
-                pool[u.carryType] += u.carryAmount;
+                pool.food += 7;
+                u.carryType = 'food';
                 u.carryAmount = 0;
-              }
-              u.carryType = 'food';
-              u.carryAmount += 4;
-              if (u.carryAmount >= 12) {
-                u.state = 'return';
-                u.waypoints = [];
-                u.repathTimer = 0;
+              } else {
+                if (u.carryType && u.carryType !== 'food' && u.carryAmount > 0) {
+                  const pool = u.team === 'player' ? this.resources : this.enemyResources;
+                  pool[u.carryType] += u.carryAmount;
+                  u.carryAmount = 0;
+                }
+                u.carryType = 'food';
+                u.carryAmount += 4;
+                if (u.carryAmount >= 12) {
+                  u.state = 'return';
+                  u.waypoints = [];
+                  u.repathTimer = 0;
+                }
               }
             }
           }
@@ -7474,41 +7754,65 @@ export class AoMEngine {
             u.gatherTimer += dt * gatherRateMult;
             if (u.gatherTimer >= 1.1) {
               u.gatherTimer = 0;
-              if (u.carryType && u.carryType !== node.resourceType && u.carryAmount > 0) {
+              if (u.kind === 'citizen') {
+                const take = Math.min(8, node.amount);
+                node.amount -= take;
                 const pool = u.team === 'player' ? this.resources : this.enemyResources;
-                pool[u.carryType] += u.carryAmount;
+                pool[node.resourceType] += take;
+                u.carryType = node.resourceType;
                 u.carryAmount = 0;
-              }
-              const isDwarfGold = u.kind === 'norse_dwarf' && node.resourceType === 'gold';
-              const swingTake = isDwarfGold ? 6 : 5;
-              const maxCarry = isDwarfGold ? 20 : 15;
-              const take = Math.min(swingTake, node.amount);
-              node.amount -= take;
-              u.carryType = node.resourceType;
-              u.carryAmount += take;
-              if (node.amount <= 0) {
-                const depletedType = node.resourceType;
-                const depletedPos = node.mesh.position.clone();
-                this.scene.remove(node.mesh);
-                this.nodes.delete(node.id);
-                const replacement = this.findNextNodeOfType(depletedType, depletedPos, 75);
-                u.targetNodeId = replacement ? replacement.id : null;
-                if (replacement) {
-                  u.lastGatherPos = replacement.mesh.position.clone();
-                  this.repositionOxCartsNearResource(u.team, depletedPos, replacement.mesh.position);
+                if (node.amount <= 0) {
+                  const depletedType = node.resourceType;
+                  const depletedPos = node.mesh.position.clone();
+                  this.scene.remove(node.mesh);
+                  this.nodes.delete(node.id);
+                  const replacement = this.findNextNodeOfType(depletedType, depletedPos, 75);
+                  u.targetNodeId = replacement ? replacement.id : null;
+                  if (replacement) {
+                    u.lastGatherPos = replacement.mesh.position.clone();
+                  } else {
+                    u.state = 'idle';
+                    u.waypoints = [];
+                    u.repathTimer = 0;
+                  }
                 }
-              }
-              // Keep harvesting if carry bag isn't full and replacement node is right here, or return when full / no replacement
-              if (u.carryAmount >= maxCarry || !u.targetNodeId) {
-                u.state = 'return';
-                u.waypoints = [];
-                u.repathTimer = 0;
+              } else {
+                if (u.carryType && u.carryType !== node.resourceType && u.carryAmount > 0) {
+                  const pool = u.team === 'player' ? this.resources : this.enemyResources;
+                  pool[u.carryType] += u.carryAmount;
+                  u.carryAmount = 0;
+                }
+                const isDwarfGold = u.kind === 'norse_dwarf' && node.resourceType === 'gold';
+                const swingTake = isDwarfGold ? 6 : 5;
+                const maxCarry = isDwarfGold ? 20 : 15;
+                const take = Math.min(swingTake, node.amount);
+                node.amount -= take;
+                u.carryType = node.resourceType;
+                u.carryAmount += take;
+                if (node.amount <= 0) {
+                  const depletedType = node.resourceType;
+                  const depletedPos = node.mesh.position.clone();
+                  this.scene.remove(node.mesh);
+                  this.nodes.delete(node.id);
+                  const replacement = this.findNextNodeOfType(depletedType, depletedPos, 75);
+                  u.targetNodeId = replacement ? replacement.id : null;
+                  if (replacement) {
+                    u.lastGatherPos = replacement.mesh.position.clone();
+                    this.repositionOxCartsNearResource(u.team, depletedPos, replacement.mesh.position);
+                  }
+                }
+                // Keep harvesting if carry bag isn't full and replacement node is right here, or return when full / no replacement
+                if (u.carryAmount >= maxCarry || !u.targetNodeId) {
+                  u.state = 'return';
+                  u.waypoints = [];
+                  u.repathTimer = 0;
+                }
               }
             }
           }
         }
       } else if (u.state === 'hunt') {
-        const isEconomicWorker = u.kind === 'villager' || u.kind === 'norse_dwarf';
+        const isEconomicWorker = this.isWorkerKind(u.kind);
         const animal = u.targetFaunaId ? this.fauna.get(u.targetFaunaId) : undefined;
         if (!animal || animal.foodAmount <= 0) {
           if (!isEconomicWorker) {
@@ -7625,30 +7929,61 @@ export class AoMEngine {
           u.gatherTimer += dt * mods.gatherFoodMult;
           if (u.gatherTimer >= 0.9) {
             u.gatherTimer = 0;
-            if (u.carryType && u.carryType !== 'food' && u.carryAmount > 0) {
+            if (u.kind === 'citizen') {
+              const take = Math.min(9, animal.foodAmount);
+              animal.foodAmount -= take;
               const pool = u.team === 'player' ? this.resources : this.enemyResources;
-              pool[u.carryType] += u.carryAmount;
+              pool.food += take;
+              u.carryType = 'food';
               u.carryAmount = 0;
-            }
-            const take = Math.min(6, animal.foodAmount);
-            animal.foodAmount -= take;
-            u.carryType = 'food';
-            u.carryAmount += take;
-            if (animal.foodAmount <= 0) {
-              const carcassPos = animal.mesh.position.clone();
-              this.scene.remove(animal.mesh);
-              this.fauna.delete(animal.id);
-              const nextAnimal = this.findNextHuntableFauna(carcassPos, 45);
-              u.targetFaunaId = nextAnimal ? nextAnimal.id : null;
-              if (nextAnimal) {
-                u.lastGatherPos = nextAnimal.mesh.position.clone();
-                this.repositionOxCartsNearResource(u.team, carcassPos, nextAnimal.mesh.position);
+              if (animal.foodAmount <= 0) {
+                const carcassPos = animal.mesh.position.clone();
+                this.scene.remove(animal.mesh);
+                this.fauna.delete(animal.id);
+                const nextAnimal = this.findNextHuntableFauna(carcassPos, 45);
+                u.targetFaunaId = nextAnimal ? nextAnimal.id : null;
+                if (nextAnimal) {
+                  u.lastGatherPos = nextAnimal.mesh.position.clone();
+                } else {
+                  const fallbackBerry = this.findNextNodeOfType('food', carcassPos, 55);
+                  if (fallbackBerry) {
+                    u.state = 'gather';
+                    u.targetNodeId = fallbackBerry.id;
+                    u.gatherResourceType = 'food';
+                    u.lastGatherPos = fallbackBerry.mesh.position.clone();
+                  } else {
+                    u.state = 'idle';
+                  }
+                  u.waypoints = [];
+                  u.repathTimer = 0;
+                }
               }
-            }
-            if (u.carryAmount >= 15 || !u.targetFaunaId) {
-              u.state = 'return';
-              u.waypoints = [];
-              u.repathTimer = 0;
+            } else {
+              if (u.carryType && u.carryType !== 'food' && u.carryAmount > 0) {
+                const pool = u.team === 'player' ? this.resources : this.enemyResources;
+                pool[u.carryType] += u.carryAmount;
+                u.carryAmount = 0;
+              }
+              const take = Math.min(6, animal.foodAmount);
+              animal.foodAmount -= take;
+              u.carryType = 'food';
+              u.carryAmount += take;
+              if (animal.foodAmount <= 0) {
+                const carcassPos = animal.mesh.position.clone();
+                this.scene.remove(animal.mesh);
+                this.fauna.delete(animal.id);
+                const nextAnimal = this.findNextHuntableFauna(carcassPos, 45);
+                u.targetFaunaId = nextAnimal ? nextAnimal.id : null;
+                if (nextAnimal) {
+                  u.lastGatherPos = nextAnimal.mesh.position.clone();
+                  this.repositionOxCartsNearResource(u.team, carcassPos, nextAnimal.mesh.position);
+                }
+              }
+              if (u.carryAmount >= 15 || !u.targetFaunaId) {
+                u.state = 'return';
+                u.waypoints = [];
+                u.repathTimer = 0;
+              }
             }
           }
         }
@@ -7838,22 +8173,38 @@ export class AoMEngine {
             if (u.mesh.userData.animatePose) {
               u.manualAttackTimer = 6 / 14; // Trigger 6-frame attack animation at 14 FPS
             }
-            if (u.kind === 'hoplite' || u.kind === 'hipaspist' || u.kind === 'myrmidon' || u.kind === 'hydra' || u.kind === 'ram' || u.kind === 'siege' || u.kind === 'cyclops' || u.kind === 'colossus' || u.kind === 'titan' || stats.isGod) {
+            if (
+              u.kind === 'hoplite' ||
+              u.kind === 'hipaspist' ||
+              u.kind === 'myrmidon' ||
+              u.kind === 'hydra' ||
+              u.kind === 'ram' ||
+              u.kind === 'siege' ||
+              u.kind === 'cyclops' ||
+              u.kind === 'colossus' ||
+              u.kind === 'titan' ||
+              u.kind === 'destroyer' ||
+              u.kind === 'behemoth' ||
+              u.kind === 'hekagigantes' ||
+              u.kind === 'fire_siphon' ||
+              u.kind === 'onager' ||
+              stats.isGod
+            ) {
               if (u.kind === 'myrmidon' || u.kind === 'hydra') {
                 u.combatFury = Math.min(5, (u.combatFury ?? 0) + 1);
                 u.combatFuryDecayTimer = 6.0;
                 u.mesh.userData.setCombatFury?.(u.combatFury / 5);
               }
               if (u.selected && u.team === 'player') {
-                this.camShakeTimer = stats.isMajorGod ? 0.22 : stats.isGod || u.kind === 'titan' ? 0.16 : u.kind === 'ram' || u.kind === 'siege' || u.kind === 'cyclops' || u.kind === 'colossus' ? 0.14 : 0.08;
-                this.camShakeIntensity = stats.isMajorGod ? 0.34 : stats.isGod || u.kind === 'titan' ? 0.26 : u.kind === 'ram' || u.kind === 'siege' || u.kind === 'cyclops' || u.kind === 'colossus' ? 0.24 : 0.18;
+                this.camShakeTimer = stats.isMajorGod ? 0.22 : stats.isGod || u.kind === 'titan' ? 0.16 : u.kind === 'ram' || u.kind === 'siege' || u.kind === 'cyclops' || u.kind === 'colossus' || u.kind === 'hekagigantes' || u.kind === 'behemoth' || u.kind === 'onager' ? 0.14 : 0.08;
+                this.camShakeIntensity = stats.isMajorGod ? 0.34 : stats.isGod || u.kind === 'titan' ? 0.26 : u.kind === 'ram' || u.kind === 'siege' || u.kind === 'cyclops' || u.kind === 'colossus' || u.kind === 'hekagigantes' || u.kind === 'behemoth' || u.kind === 'onager' ? 0.24 : 0.18;
               }
             }
             if (!u.mesh.userData.animatePose && u.mesh.userData.rightArm) {
               u.mesh.userData.rightArm.rotation.x = -0.95;
             }
             const computedDamage = this.computeUnitAttackDamage(u, targetU, targetB);
-            if ((u.kind === 'cavalry' || u.kind === 'camel_rider' || u.kind === 'bellerophon') && (u.chargeCooldown ?? 0) <= 0) {
+            if ((u.kind === 'cavalry' || u.kind === 'camel_rider' || u.kind === 'bellerophon' || u.kind === 'contarius') && (u.chargeCooldown ?? 0) <= 0) {
               u.chargeCooldown = 6.0;
               u.chargeBurstTimer = 1.4;
               this.spawnRingVfx(targetPos, 1.85, 0xfbbf24, 0.35);
@@ -7905,6 +8256,31 @@ export class AoMEngine {
                 const bounceDmg = Math.max(8, Math.round(this.computeUnitAttackDamage(u, nextBounce, undefined) * mult));
                 this.damageUnit(nextBounce, bounceDmg, u.team);
               }
+            } else if (u.kind === 'argus') {
+              // Argos de Atlas: jato de ácido corrosivo capaz de dissolver tropas em área!
+              const isAcidBurst = (u.specialCooldown ?? 0) <= 0;
+              const splashR = stats.splashRadius ?? 3.0;
+              if (isAcidBurst) {
+                u.specialCooldown = 7.0;
+                this.spawnRingVfx(targetPos, splashR + 0.6, 0x84cc16, 0.65);
+                this.spawnRingVfx(targetPos, splashR * 0.55, 0x22d3ee, 0.45);
+                const burstDmg = computedDamage + 95;
+                if (targetU) this.damageUnit(targetU, burstDmg, u.team);
+                else if (targetB) this.damageBuilding(targetB, burstDmg);
+                for (const splash of [...this.units.values()]) {
+                  if (splash.team !== u.team && splash.id !== targetU?.id && splash.mesh.position.distanceTo(targetPos) <= splashR) {
+                    this.damageUnit(splash, Math.round(burstDmg * 0.6), u.team);
+                  }
+                }
+              } else {
+                _vec3B.copy(u.mesh.position).setY(u.mesh.position.y + 1.55);
+                _vec3C.copy(targetPos).setY(targetPos.y + 1.0);
+                this.spawnProjectile(_vec3B, _vec3C, u.targetEntityId!, computedDamage, u.team, {
+                  splashRadius: splashR,
+                  isFireball: true,
+                });
+              }
+              soundEngine.playArrow();
             } else if (u.kind === 'petsuchos') {
               // Petsuchos: Raio solar concentrado de longo alcance!
               this.spawnLightningBoltVfx(targetPos, 1.35);
@@ -7921,10 +8297,10 @@ export class AoMEngine {
                   ? 7.4
                   : stats.isGod
                   ? 5.8
-                  : u.kind === 'siege' || u.kind === 'egypt_catapult'
+                  : u.kind === 'siege' || u.kind === 'egypt_catapult' || u.kind === 'onager'
                   ? 2.15
-                  : u.kind === 'chariot_archer' || u.kind === 'phoenix' || u.kind === 'manticore'
-                  ? 1.8
+                  : u.kind === 'chariot_archer' || u.kind === 'phoenix' || u.kind === 'manticore' || u.kind === 'stymphalian_bird'
+                  ? 1.85
                   : 1.35;
               _vec3B.copy(u.mesh.position).setY(u.mesh.position.y + launchH);
               _vec3C.copy(targetPos).setY(targetPos.y + 1.0);
@@ -7933,6 +8309,7 @@ export class AoMEngine {
                 isBoulder:
                   u.kind === 'siege' ||
                   u.kind === 'egypt_catapult' ||
+                  u.kind === 'onager' ||
                   u.kind === 'ares' ||
                   u.kind === 'hefesto' ||
                   u.kind === 'poseidon' ||
@@ -7940,12 +8317,15 @@ export class AoMEngine {
                 isPetrify:
                   u.kind === 'medusa' ||
                   u.kind === 'mummy' ||
+                  u.kind === 'lampades' ||
                   u.kind === 'hades' ||
                   u.kind === 'afrodite' ||
                   u.kind === 'artemis',
                 isFireball:
                   u.kind === 'phoenix' ||
                   u.kind === 'wadjet' ||
+                  u.kind === 'fire_siphon' ||
+                  u.kind === 'lampades' ||
                   u.kind === 'isis' ||
                   u.kind === 'apolo' ||
                   u.kind === 'dionisio' ||
@@ -7980,7 +8360,7 @@ export class AoMEngine {
                 else if (targetB) this.damageBuilding(targetB, computedDamage);
               }
 
-              // Mythic / Titan / War Elephant / Sphinx / Avenger / Norse Giants & Dragons cleave splash
+              // Mythic / Titan / War Elephant / Sphinx / Avenger / Norse Giants & Atlantean Giants cleave splash
               if (
                 u.kind === 'minotaur' ||
                 u.kind === 'cyclops' ||
@@ -8000,10 +8380,13 @@ export class AoMEngine {
                 u.kind === 'fire_giant' ||
                 u.kind === 'nidhogg' ||
                 u.kind === 'jormungand' ||
-                u.kind === 'fafnir'
+                u.kind === 'fafnir' ||
+                u.kind === 'behemoth' ||
+                u.kind === 'hekagigantes' ||
+                u.kind === 'tartarian_spawn'
               ) {
-                const splashRadius = stats.splashRadius ?? (u.kind === 'titan' ? 5.2 : u.kind === 'cyclops' ? 3.2 : 2.5);
-                this.spawnRingVfx(targetPos, splashRadius, u.kind === 'titan' ? 0xa855f7 : 0xfbbf24, 0.35);
+                const splashRadius = stats.splashRadius ?? (u.kind === 'titan' ? 5.2 : u.kind === 'cyclops' || u.kind === 'hekagigantes' ? 3.4 : 2.5);
+                this.spawnRingVfx(targetPos, splashRadius, u.kind === 'titan' ? 0xa855f7 : u.kind === 'tartarian_spawn' ? 0xf97316 : 0xfbbf24, 0.35);
                 for (const splash of [...this.units.values()]) {
                   if (splash.team !== u.team && splash.id !== targetU?.id && splash.mesh.position.distanceTo(targetPos) < splashRadius) {
                     const splashDmg = Math.round(this.computeUnitAttackDamage(u, splash, undefined) * (u.kind === 'titan' ? 0.65 : 0.45));
@@ -8014,11 +8397,56 @@ export class AoMEngine {
             }
           }
         }
+      } else if (u.state === 'idle' && u.kind === 'llama_caravan') {
+        let alliedMarket: BuildingEntity | null = null;
+        let alliedTc: BuildingEntity | null = null;
+        let bestRouteDist = -1;
+        for (const m of this.buildings.values()) {
+          if (m.team === u.team && m.isConstructed && m.kind === 'market') {
+            for (const tc of this.buildings.values()) {
+              if (tc.team === u.team && tc.isConstructed && tc.kind === 'town_center') {
+                const rd = m.mesh.position.distanceTo(tc.mesh.position);
+                if (rd > bestRouteDist) {
+                  bestRouteDist = rd;
+                  alliedMarket = m;
+                  alliedTc = tc;
+                }
+              }
+            }
+          }
+        }
+        if (alliedMarket && alliedTc && bestRouteDist >= 3.5) {
+          u.tradePhase = u.tradePhase ?? 'to_tc';
+          const destB = u.tradePhase === 'to_tc' ? alliedTc : alliedMarket;
+          const d = u.mesh.position.distanceTo(destB.mesh.position) - destB.radius - uRadius;
+          if (d > 2.1) {
+            this.steerUnitAroundObstacles(u, destB.mesh.position, effectiveSpeed, dt);
+          } else {
+            if (u.tradePhase === 'to_tc') {
+              const goldGain = Math.max(12, Math.round(bestRouteDist * 0.65));
+              const pool = u.team === 'player' ? this.resources : this.enemyResources;
+              pool.gold += goldGain;
+              if (u.team === 'player') {
+                this.spawnRingVfx(alliedTc.mesh.position, 2.2, 0xfacc15, 0.45);
+              }
+              u.tradePhase = 'to_market';
+            } else {
+              u.tradePhase = 'to_tc';
+            }
+            u.waypoints = [];
+            u.repathTimer = 0;
+          }
+        } else {
+          u.gatherTimer += dt;
+          if (u.gatherTimer >= 2.2) {
+            u.gatherTimer = 0;
+            const pool = u.team === 'player' ? this.resources : this.enemyResources;
+            pool.gold += 5;
+          }
+        }
       } else if (
         u.state === 'idle' &&
-        u.kind !== 'villager' &&
-        u.kind !== 'norse_dwarf' &&
-        u.kind !== 'ox_cart' &&
+        (!this.isNonCombatEconUnit(u) || Boolean(u.isPromotedHero)) &&
         this.treatyRemaining <= 0
       ) {
         const nearest = this.findNearestEnemy(u.team, u.mesh.position, 13.5);
@@ -8054,7 +8482,7 @@ export class AoMEngine {
       if (!b.isConstructed && b.team === 'player') {
         let hasAssignedBuilder = false;
         for (const u of this.units.values()) {
-          if (u.team === 'player' && u.kind === 'villager' && u.state === 'build' && u.targetEntityId === b.id) {
+          if (u.team === 'player' && this.isBuilderKind(u.kind) && u.state === 'build' && u.targetEntityId === b.id) {
             hasAssignedBuilder = true;
             break;
           }
@@ -8063,7 +8491,7 @@ export class AoMEngine {
           let bestIdle: UnitEntity | null = null;
           let bestIdleD = Infinity;
           for (const u of this.units.values()) {
-            if (u.team === 'player' && u.kind === 'villager' && u.state === 'idle') {
+            if (u.team === 'player' && this.isBuilderKind(u.kind) && u.state === 'idle') {
               const d = Math.hypot(u.mesh.position.x - b.mesh.position.x, u.mesh.position.z - b.mesh.position.z);
               if (d < bestIdleD) {
                 bestIdleD = d;
@@ -8169,7 +8597,7 @@ export class AoMEngine {
 
           if (b.team === 'player') {
             this.stats.unitsTrained++;
-            const isSpawnedWorker = spawned.kind === 'villager' || spawned.kind === 'norse_dwarf';
+            const isSpawnedWorker = this.isWorkerKind(spawned.kind);
             if (b.rallyPoint) {
               // Check if rally point is on a resource node or huntable animal for Villagers / Norse Dwarves / Ox Carts
               let assignedGather = false;
@@ -8257,7 +8685,7 @@ export class AoMEngine {
               for (const g of this.units.values()) {
                 if (
                   g.team === 'player' &&
-                  (g.kind === 'villager' || g.kind === 'norse_dwarf') &&
+                  this.isWorkerKind(g.kind) &&
                   g.lastGatherPos
                 ) {
                   const drop = this.findNearestDropOff('player', g.lastGatherPos);
@@ -8317,17 +8745,25 @@ export class AoMEngine {
       this.updateHealthBarVisual(b.mesh, b.hp, b.maxHp, b.selected || !b.isConstructed);
     }
 
-    // Passive Favor income from Temples + Relic tribute trickle
+    // Passive Favor income from Temples + Idle Atlantean Oracles + Relic tribute trickle
     this.favorTimer += dt;
     if (this.favorTimer >= 1) {
       this.favorTimer -= 1;
-      this.resources.favor = Math.min(200, this.resources.favor + 0.35 + playerTemples * 1.6 + this.relicsHeld * 0.45);
+      let playerOracleFavor = 0;
+      let enemyOracleFavor = 0;
+      for (const u of this.units.values()) {
+        if (u.kind === 'oracle' && u.hp > 0 && u.state === 'idle') {
+          if (u.team === 'player') playerOracleFavor += u.isPromotedHero ? 0.65 : 0.45;
+          else if (u.team === 'enemy') enemyOracleFavor += 0.4;
+        }
+      }
+      this.resources.favor = Math.min(200, this.resources.favor + 0.35 + playerTemples * 1.6 + playerOracleFavor + this.relicsHeld * 0.45);
       if (this.relicsHeld > 0) {
         this.resources.food += this.relicsHeld * 2.5;
         this.resources.wood += this.relicsHeld * 2.5;
         this.resources.gold += this.relicsHeld * 3.0;
       }
-      this.enemyResources.favor = Math.min(200, this.enemyResources.favor + 0.35 + enemyTemples * 1.4);
+      this.enemyResources.favor = Math.min(200, this.enemyResources.favor + 0.35 + enemyTemples * 1.4 + enemyOracleFavor);
     }
 
     // Renascimento automático e gratuito do Faraó no Centro da Cidade caso caia em batalha
@@ -8656,9 +9092,9 @@ export class AoMEngine {
     if (this.enemyAiTimer >= 3.2) {
       this.enemyAiTimer = 0;
 
-      // Send idle enemy villagers & Norse Dwarves to gather (and escort them with enemy Ox Carts)
+      // Send idle enemy villagers, Norse Dwarves & Atlantean Citizens to gather
       for (const u of this.units.values()) {
-        if (u.team === 'enemy' && (u.kind === 'villager' || u.kind === 'norse_dwarf') && u.state === 'idle') {
+        if (u.team === 'enemy' && this.isWorkerKind(u.kind) && u.state === 'idle') {
           let best: ResourceNodeEntity | null = null;
           let bestScore = 38;
           for (const n of this.nodes.values()) {
@@ -8721,6 +9157,7 @@ export class AoMEngine {
       let siegeWorks: BuildingEntity | null = null;
       let temple: BuildingEntity | null = null;
       let fortress: BuildingEntity | null = null;
+      let market: BuildingEntity | null = null;
       let tc: BuildingEntity | null = null;
       let farmCount = 0;
       for (const b of this.buildings.values()) {
@@ -8733,6 +9170,7 @@ export class AoMEngine {
           else if (b.kind === 'stable') stable = b;
           else if (b.kind === 'siege_works') siegeWorks = b;
           else if (b.kind === 'fortress') fortress = b;
+          else if (b.kind === 'market') market = b;
           else if (b.kind === 'farm') farmCount++;
           else if (b.kind === 'town_center') tc = b;
         }
@@ -8772,6 +9210,14 @@ export class AoMEngine {
           this.syncNavObstacles();
         }
       }
+      if (this.enemyPantheon === 'atlantean' && !market && this.enemyAge >= 2) {
+        const enemyMarketStats = this.buildingStats('market', 'enemy');
+        if (this.canAfford(this.enemyResources, enemyMarketStats.cost) && this.canPlaceBuildingAt('market', 40, -39, 'enemy')) {
+          this.deductCost(this.enemyResources, enemyMarketStats.cost);
+          this.spawnBuilding('market', 'enemy', 40, -39, true);
+          this.syncNavObstacles();
+        }
+      }
       const enemyFarmStats = this.buildingStats('farm', 'enemy');
       if (farmCount < 3 && this.enemyAge >= 2 && this.canAfford(this.enemyResources, enemyFarmStats.cost)) {
         const fx = 28 + Math.random() * 12;
@@ -8806,7 +9252,7 @@ export class AoMEngine {
           const settlement = this.findNearestSettlement(34, -34, 46);
           if (settlement) {
             const enemyBuilders = [...this.units.values()]
-              .filter((u) => u.team === 'enemy' && u.kind === 'villager')
+              .filter((u) => u.team === 'enemy' && this.isWorkerKind(u.kind))
               .slice(0, 2);
             if (enemyBuilders.length > 0) {
               this.beginTownCenterOnSettlement(settlement, 'enemy', enemyBuilders);
@@ -8815,28 +9261,52 @@ export class AoMEngine {
         }
       }
 
-      // Train enemy workers (and Norse Dwarves + Ox Carts when playing Norse)
+      // Train enemy workers (Norse Dwarves + Ox Carts, Atlantean Citizens + Oracles + Llamas)
       if (tc && tc.trainingQueue.length === 0) {
         const enemyVillagers = [...this.units.values()].filter(
-          (u) => u.team === 'enemy' && (u.kind === 'villager' || u.kind === 'norse_dwarf')
+          (u) => u.team === 'enemy' && this.isWorkerKind(u.kind)
         ).length;
         const enemyOxCarts = [...this.units.values()].filter(
           (u) => u.team === 'enemy' && u.kind === 'ox_cart'
         ).length;
+        const enemyOracles = [...this.units.values()].filter(
+          (u) => u.team === 'enemy' && u.kind === 'oracle'
+        ).length;
         const isEnemyNorse = this.enemyPantheon === 'norse' || this.enemyPantheon === 'jotunn';
+        const isEnemyAtlantean = this.enemyPantheon === 'atlantean';
         if (isEnemyNorse && enemyOxCarts < 2 && enemyPop.current < enemyPop.cap) {
           const oxStats = this.unitStats('ox_cart', 'enemy');
           if (this.canAfford(this.enemyResources, oxStats.cost)) {
             this.deductCost(this.enemyResources, oxStats.cost);
             tc.trainingQueue.push({ kind: 'ox_cart', progress: 0, total: oxStats.trainTime });
           }
-        } else if (enemyVillagers < 5 && enemyPop.current < enemyPop.cap) {
-          const workerKind: UnitKind =
-            isEnemyNorse && Math.random() < 0.45 ? 'norse_dwarf' : 'villager';
+        } else if (isEnemyAtlantean && enemyOracles < 2 && enemyPop.current + 2 <= enemyPop.cap) {
+          const oraStats = this.unitStats('oracle', 'enemy');
+          if (this.canAfford(this.enemyResources, oraStats.cost)) {
+            this.deductCost(this.enemyResources, oraStats.cost);
+            tc.trainingQueue.push({ kind: 'oracle', progress: 0, total: oraStats.trainTime });
+          }
+        } else if (enemyVillagers < (isEnemyAtlantean ? 4 : 5) && enemyPop.current < enemyPop.cap) {
+          const workerKind: UnitKind = isEnemyAtlantean
+            ? 'citizen'
+            : isEnemyNorse && Math.random() < 0.45
+            ? 'norse_dwarf'
+            : 'villager';
           const villStats = this.unitStats(workerKind, 'enemy');
           if (this.canAfford(this.enemyResources, villStats.cost)) {
             this.deductCost(this.enemyResources, villStats.cost);
             tc.trainingQueue.push({ kind: workerKind, progress: 0, total: villStats.trainTime });
+          }
+        }
+      }
+
+      if (market && this.enemyPantheon === 'atlantean' && market.trainingQueue.length === 0 && enemyPop.current + 1 <= enemyPop.cap) {
+        const llamaCount = [...this.units.values()].filter((u) => u.team === 'enemy' && u.kind === 'llama_caravan').length;
+        if (llamaCount < 2) {
+          const lStats = this.unitStats('llama_caravan', 'enemy');
+          if (this.canAfford(this.enemyResources, lStats.cost)) {
+            this.deductCost(this.enemyResources, lStats.cost);
+            market.trainingQueue.push({ kind: 'llama_caravan', progress: 0, total: lStats.trainTime });
           }
         }
       }
@@ -8851,6 +9321,10 @@ export class AoMEngine {
             ? this.enemyAge >= 2
               ? ['ulfsark', 'throwing_axeman', 'hersir', 'godi']
               : ['ulfsark', 'hersir']
+            : this.enemyPantheon === 'atlantean'
+            ? this.enemyAge >= 3
+              ? ['murmillo', 'arcus', 'contarius']
+              : ['murmillo']
             : this.enemyAge >= 2
             ? ['hoplite', 'hipaspist']
             : ['hoplite'];
@@ -8870,6 +9344,8 @@ export class AoMEngine {
               : ['slinger']
             : this.enemyPantheon === 'norse' || this.enemyPantheon === 'jotunn'
             ? ['throwing_axeman', 'godi']
+            : this.enemyPantheon === 'atlantean'
+            ? ['katapeltes', 'turma', 'cheiroballista']
             : this.enemyAge >= 3
             ? ['peltast', 'archer', 'gastraphetes']
             : ['peltast', 'archer'];
@@ -8889,6 +9365,10 @@ export class AoMEngine {
             ? this.enemyAge >= 3
               ? ['raiding_cavalry', 'jarl']
               : ['raiding_cavalry']
+            : this.enemyPantheon === 'atlantean'
+            ? this.enemyAge >= 3
+              ? ['turma', 'contarius']
+              : ['turma']
             : ['cavalry', 'prodromos'];
         const cavPick = cavChoices[Math.floor(Math.random() * cavChoices.length)];
         const cavStats = this.unitStats(cavPick, 'enemy');
@@ -8908,6 +9388,12 @@ export class AoMEngine {
             ? Math.random() < 0.5
               ? 'portable_ram'
               : 'norse_ballista'
+            : this.enemyPantheon === 'atlantean'
+            ? this.enemyAge >= 4
+              ? Math.random() < 0.5
+                ? 'fire_siphon'
+                : 'onager'
+              : 'cheiroballista'
             : Math.random() < 0.5
             ? 'ram'
             : 'siege';
@@ -8926,6 +9412,10 @@ export class AoMEngine {
             ? ['chariot_archer', 'camel_rider', 'war_elephant', 'priest']
             : this.enemyPantheon === 'norse' || this.enemyPantheon === 'jotunn'
             ? ['huskarl', 'jarl', 'portable_ram', 'norse_ballista', 'hersir', 'godi']
+            : this.enemyPantheon === 'atlantean'
+            ? this.enemyAge >= 4
+              ? ['destroyer', 'fanatic', 'fire_siphon', 'onager']
+              : ['destroyer']
             : ['hero', 'siege'];
         const fortPick = fortChoices[Math.floor(Math.random() * fortChoices.length)];
         const fortPickStats = this.unitStats(fortPick, 'enemy');
@@ -8952,6 +9442,12 @@ export class AoMEngine {
               : this.enemyAge >= 3
               ? ['frost_giant', 'mountain_giant', 'battle_boar', 'kraken', 'rock_troll', 'valkyrie']
               : ['troll', 'valkyrie', 'einherjar', 'hersir', 'godi']
+            : this.enemyPantheon === 'atlantean'
+            ? this.enemyAge >= 4
+              ? ['hekagigantes', 'argus', 'lampades', 'tartarian_spawn', 'behemoth', 'satyr', 'stymphalian_bird']
+              : this.enemyAge >= 3
+              ? ['behemoth', 'satyr', 'stymphalian_bird', 'dryad', 'promethean']
+              : ['promethean', 'automaton', 'caladria', 'carnivora']
             : this.enemyAge >= 5 && enemyGodsAlive < 1 && Math.random() < 0.35
             ? ['atena', 'ares', 'apolo', 'poseidon']
             : this.enemyAge >= 4
@@ -9005,9 +9501,7 @@ export class AoMEngine {
       const combatUnits = [...this.units.values()].filter(
         (u) =>
           u.team === 'enemy' &&
-          u.kind !== 'villager' &&
-          u.kind !== 'norse_dwarf' &&
-          u.kind !== 'ox_cart' &&
+          (!this.isNonCombatEconUnit(u) || Boolean(u.isPromotedHero)) &&
           u.state === 'idle'
       );
       if (combatUnits.length >= 3) {
@@ -9043,7 +9537,7 @@ export class AoMEngine {
     if (selUnits.length > 0) {
       const primary = selUnits[0];
       const stats = this.unitStats(primary.kind, primary.team);
-      const mods = this.computeUnitModifiers(primary.kind, primary.team);
+      const mods = this.computeUnitModifiers(primary.kind, primary.team, Boolean(primary.isPromotedHero));
       const totalHp = selUnits.reduce((acc, u) => acc + u.hp, 0);
       const totalMaxHp = selUnits.reduce((acc, u) => acc + u.maxHp, 0);
       const hackPct = Math.round(Math.min(82, (stats.hackArmor + mods.armorBonus) * 100));
@@ -9065,7 +9559,7 @@ export class AoMEngine {
         for (const other of this.units.values()) {
           if (
             other.team === primary.team &&
-            (other.kind === 'villager' || other.kind === 'norse_dwarf') &&
+            this.isWorkerKind(other.kind) &&
             other.mesh.position.distanceTo(primary.mesh.position) <= 10.5
           ) {
             nearbyGatherers++;
@@ -9082,8 +9576,28 @@ export class AoMEngine {
           primary.gatherResourceType === 'gold'
             ? 'Minerando Ouro (+30% Especialização Anã)'
             : 'Coletando recursos (-20% fora de Minas de Ouro)';
+      } else if (primary.kind === 'citizen' && (primary.state === 'gather' || primary.state === 'hunt')) {
+        unitTaskLabel = 'Coleta Direta Atlante (+55% velocidade, sem retorno a depósito)';
+      } else if (primary.kind === 'oracle') {
+        unitTaskLabel =
+          primary.state === 'idle'
+            ? `Vidente Ativo: +10 Visão & +${primary.isPromotedHero ? '0.65' : '0.45'} Favor/s`
+            : primary.isPromotedHero
+            ? `${taskMap[primary.state]} (Oráculo Herói ★)`
+            : 'Reposicionando Oráculo (pare para ampliar visão e gerar Favor)';
+      } else if (primary.kind === 'llama_caravan') {
+        unitTaskLabel =
+          primary.tradePhase === 'to_tc'
+            ? 'Rota Comercial: levando carga de Ouro à Cidadela'
+            : primary.tradePhase === 'to_market'
+            ? 'Rota Comercial: retornando ao Mercado Atlante'
+            : 'Caravana Comercial Atlante (gera Ouro contínuo)';
+      } else if (primary.kind === 'caladria') {
+        unitTaskLabel = 'Espírito Curador Alado (cura aliados feridos automaticamente)';
       }
       const countsMap = new Map<UnitKind, { kind: UnitKind; name: string; count: number }>();
+      let heroPromoteCount = 0;
+      const heroPromoteCost: ResourceCost = { food: 0, wood: 0, gold: 0, favor: 0 };
       for (const u of selUnits) {
         const uSpec = this.unitStats(u.kind, u.team);
         const existing = countsMap.get(u.kind);
@@ -9092,22 +9606,34 @@ export class AoMEngine {
         } else {
           countsMap.set(u.kind, { kind: u.kind, name: uSpec.name, count: 1 });
         }
+        if (u.team === 'player' && !u.isPromotedHero && uSpec.canPromoteHero) {
+          heroPromoteCount++;
+          const pCost = this.getHeroPromotionCost(u.kind);
+          heroPromoteCost.food = (heroPromoteCost.food ?? 0) + (pCost.food ?? 0);
+          heroPromoteCost.wood = (heroPromoteCost.wood ?? 0) + (pCost.wood ?? 0);
+          heroPromoteCost.gold = (heroPromoteCost.gold ?? 0) + (pCost.gold ?? 0);
+          heroPromoteCost.favor = (heroPromoteCost.favor ?? 0) + (pCost.favor ?? 0);
+        }
       }
+      const primaryAttack = primary.isPromotedHero && stats.attack === 0 ? 16 : stats.attack;
       return {
         count: selUnits.length,
         primaryType: 'unit',
         entityId: primary.id,
         unitKind: primary.kind,
-        isHero: Boolean(stats.isHero),
+        isHero: Boolean(stats.isHero || primary.isPromotedHero),
         isMythic: Boolean(stats.isMythic),
         isGod: Boolean(stats.isGod),
         isMajorGod: Boolean(stats.isMajorGod),
-        kindLabel: selUnits.length > 1 ? `${stats.name} (${selUnits.length})` : isRegent ? `${stats.name} ★ Regente` : stats.name,
+        kindLabel:
+          selUnits.length > 1
+            ? `${stats.name} (${selUnits.length})`
+            : `${stats.name}${primary.isPromotedHero ? ' ★ Herói' : ''}${isRegent ? ' ★ Regente' : ''}`,
         roleLabel: stats.role,
         team: primary.team,
         hp: Math.round(totalHp),
         maxHp: Math.round(totalMaxHp),
-        attack: Math.round(stats.attack * mods.atkMult),
+        attack: Math.round(primaryAttack * mods.atkMult),
         hackArmorPct: hackPct,
         pierceArmorPct: piercePct,
         crushArmorPct: crushPct,
@@ -9117,16 +9643,10 @@ export class AoMEngine {
         armorLabel: `Corte ${hackPct}% · Perf ${piercePct}% · Esmag ${crushPct}%`,
         taskLabel: unitTaskLabel,
         screenPos: this.projectWorldToScreen(primary.mesh.position, 2.2),
-        hasVillagerSelected: selUnits.some(
-          (u) =>
-            u.team === 'player' &&
-            (u.kind === 'villager' ||
-              u.kind === 'norse_dwarf' ||
-              u.kind === 'ulfsark' ||
-              u.kind === 'hersir' ||
-              u.kind === 'throwing_axeman' ||
-              u.kind === 'huskarl')
-        ),
+        hasVillagerSelected: selUnits.some((u) => u.team === 'player' && this.isBuilderKind(u.kind)),
+        canPromoteToHero: heroPromoteCount > 0,
+        heroPromoteCount: heroPromoteCount > 0 ? heroPromoteCount : undefined,
+        heroPromoteCost: heroPromoteCount > 0 ? heroPromoteCost : undefined,
         selectedCounts: Array.from(countsMap.values()),
         voiceLine: this.voiceLineTimer > 0 && this.lastVoiceLine ? this.lastVoiceLine : undefined,
       };
@@ -9287,7 +9807,7 @@ export class AoMEngine {
       if (u.team !== team || u.hp <= 0) continue;
       const stats = this.unitStats(u.kind, team);
       const val = u.kind === 'titan' ? 1200 : this.costValue(stats.cost);
-      if (u.kind === 'villager' || u.kind === 'norse_dwarf' || u.kind === 'ox_cart') {
+      if (this.isWorkerKind(u.kind) || u.kind === 'ox_cart' || u.kind === 'llama_caravan') {
         economy += val * 0.2;
       } else {
         military += val * 0.2;
@@ -9365,9 +9885,9 @@ export class AoMEngine {
     let combatUnitCount = 0;
     for (const u of this.units.values()) {
       if (u.team === 'player' && u.hp > 0) {
-        if (u.kind === 'villager' || u.kind === 'norse_dwarf') {
+        if (this.isWorkerKind(u.kind)) {
           if (u.state === 'idle') idleVillagerCount++;
-        } else if (u.kind !== 'ox_cart') {
+        } else if (u.kind !== 'ox_cart' && u.kind !== 'llama_caravan' && u.kind !== 'caladria') {
           combatUnitCount++;
           if (u.state === 'idle') idleMilitaryCount++;
         }
@@ -9629,6 +10149,41 @@ export class AoMEngine {
         this.voiceLineTimer = Math.max(0, this.voiceLineTimer - dt);
         if (this.voiceLineTimer <= 0) {
           this.lastVoiceLine = null;
+        }
+      }
+      if (this.combatCueCooldown > 0) {
+        this.combatCueCooldown = Math.max(0, this.combatCueCooldown - dt);
+      }
+      this.musicCheckTimer += dt;
+      if (this.musicCheckTimer >= 0.5) {
+        this.musicCheckTimer = 0;
+        const pop = this.getPopulation('player');
+        this.peakPopulation = Math.max(this.peakPopulation, pop.current);
+        const cap = Math.max(10, pop.cap);
+        const heavyCasualties =
+          this.peakPopulation >= 12 &&
+          pop.current <= Math.max(8, this.peakPopulation * 0.45) &&
+          pop.current < cap * 0.38;
+        const lowRatioAfterGrowth =
+          cap >= 20 && pop.current / cap <= 0.32 && this.peakPopulation >= 12;
+        if (heavyCasualties || lowRatioAfterGrowth) {
+          soundEngine.setMusicMood('mellow');
+        } else if (pop.current >= Math.max(10, cap * 0.48)) {
+          soundEngine.setMusicMood('standard');
+        }
+
+        if (this.combatCueCooldown <= 0) {
+          let activeFighters = 0;
+          for (const u of this.units.values()) {
+            if (u.team === 'player' && u.state === 'attack') {
+              activeFighters++;
+              if (activeFighters >= 3) break;
+            }
+          }
+          if (activeFighters >= 3) {
+            soundEngine.playCombatCue(this.pantheon);
+            this.combatCueCooldown = 36;
+          }
         }
       }
 
@@ -10200,7 +10755,7 @@ export class AoMEngine {
             placeMarker('sword', targetPos.x, targetPos.z, targetB ? 4.4 : 2.3);
           }
         }
-      } else if ((u.kind === 'villager' || u.kind === 'norse_dwarf') && u.state === 'hunt' && u.targetFaunaId) {
+      } else if (this.isWorkerKind(u.kind) && u.state === 'hunt' && u.targetFaunaId) {
         const animal = this.fauna.get(u.targetFaunaId);
         if (animal) {
           if (u.selected) {
@@ -10211,7 +10766,7 @@ export class AoMEngine {
             placeMarker('food', animal.mesh.position.x, animal.mesh.position.z, 2.0);
           }
         }
-      } else if ((u.kind === 'villager' || u.kind === 'norse_dwarf') && (u.state === 'gather' || u.state === 'return') && u.targetEntityId) {
+      } else if (this.isWorkerKind(u.kind) && (u.state === 'gather' || u.state === 'return') && u.targetEntityId) {
         const farmB = this.buildings.get(u.targetEntityId);
         if (farmB && farmB.kind === 'farm') {
           if (u.selected) {
@@ -10227,7 +10782,7 @@ export class AoMEngine {
             placeMarker('food', farmB.mesh.position.x, farmB.mesh.position.z, 2.2);
           }
         }
-      } else if ((u.kind === 'villager' || u.kind === 'norse_dwarf') && (u.state === 'gather' || u.state === 'return') && u.targetNodeId) {
+      } else if (this.isWorkerKind(u.kind) && (u.state === 'gather' || u.state === 'return') && u.targetNodeId) {
         const node = this.nodes.get(u.targetNodeId);
         if (node) {
           if (u.selected) {
@@ -10262,7 +10817,7 @@ export class AoMEngine {
         }
       } else if (
         u.state === 'idle' &&
-        ((u.kind !== 'villager' && u.kind !== 'norse_dwarf' && u.kind !== 'ox_cart') || u.rallyFlagPos !== null)
+        ((!this.isNonCombatEconUnit(u) || Boolean(u.isPromotedHero)) || u.rallyFlagPos !== null)
       ) {
         // Waiting troops display a rally/standby Flag
         if (!hasNearbyFlag(u.mesh.position.x, u.mesh.position.z)) {

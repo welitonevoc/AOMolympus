@@ -38,15 +38,38 @@ export default function App() {
     }
   });
 
+  const [lastPantheon, setLastPantheon] = useState<PantheonId>(() => {
+    try {
+      const saved = localStorage.getItem('aom_last_pantheon');
+      return (saved as PantheonId) || 'greek';
+    } catch {
+      return 'greek';
+    }
+  });
+
   useEffect(() => {
     soundEngine.applySettings({
       masterVolume: options.masterVolume,
       musicVolume: options.musicVolume,
       sfxVolume: options.sfxVolume,
-      musicEnabled: options.musicEnabled,
-      sfxEnabled: options.sfxEnabled,
+      musicEnabled: options.musicEnabled && !muted,
+      sfxEnabled: options.sfxEnabled && !muted,
     });
-  }, [options]);
+  }, [options, muted]);
+
+  useEffect(() => {
+    if (phase === 'playing') {
+      soundEngine.setMusicPausedDuck(false);
+    } else if (phase === 'paused') {
+      soundEngine.setMusicPausedDuck(true);
+    } else if (phase === 'victory') {
+      soundEngine.setMusicScene('victory');
+    } else if (phase === 'defeat') {
+      soundEngine.setMusicScene('defeat');
+    } else if (phase === 'title') {
+      soundEngine.setMusicScene('title', lastPantheon);
+    }
+  }, [phase, lastPantheon]);
 
   useEffect(() => {
     try {
@@ -78,6 +101,10 @@ export default function App() {
     );
 
     engineRef.current = engine;
+    setLastPantheon(pantheon);
+    try {
+      localStorage.setItem('aom_last_pantheon', pantheon);
+    } catch {}
     engine.startNewMatch(pantheon, difficulty, mapId, revealedMap, extras);
     engine.applyOptions(options);
     setPhase('playing');
@@ -209,6 +236,7 @@ export default function App() {
           onSelectIdleMilitary={() => engineRef.current?.selectIdleMilitary()}
           onOrderVillagersToTarget={() => engineRef.current?.commandVillagersToSelectedTarget()}
           onOrderVillagerTask={(task) => engineRef.current?.orderSelectedVillagersToTask(task)}
+          onPromoteToHero={() => engineRef.current?.promoteSelectedUnitsToHero()}
           onRestart={() => {
             if (hudSnapshot) {
               handleStartMatch(hudSnapshot.pantheon, hudSnapshot.difficulty, hudSnapshot.mapId, hudSnapshot.revealedMap);

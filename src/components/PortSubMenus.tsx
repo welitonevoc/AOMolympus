@@ -168,6 +168,7 @@ export function PortSubMenus({
   const [esoUser, setEsoUser] = useState(options.playerName);
   const [esoNotice, setEsoNotice] = useState<string | null>(null);
   const [showAdvancedRules, setShowAdvancedRules] = useState(false);
+  const [musicTrackTick, setMusicTrackTick] = useState(0);
 
   const clickSound = () => {
     soundEngine.unlock();
@@ -389,6 +390,7 @@ export function PortSubMenus({
                   const gods = GOD_PICKER_ENTRIES.filter((g) => g.pantheon === pick);
                   const chosen = gods[Math.floor(Math.random() * gods.length)]?.name ?? PANTHEONS[pick].deity;
                   onUpdateSkirmish({ ...skirmish, pantheon: pick, minorGod: chosen });
+                  soundEngine.previewPantheonTheme(pick);
                 }}
                 className="rounded border border-[#d4af37]/40 bg-[#1a2230] px-2.5 py-1 text-[11px] font-semibold text-[#f3d27a] hover:bg-[#242e40] cursor-pointer"
               >
@@ -406,6 +408,7 @@ export function PortSubMenus({
                       clickSound();
                       const firstGod = GOD_PICKER_ENTRIES.find((g) => g.pantheon === p.id)?.name ?? p.deity;
                       onUpdateSkirmish({ ...skirmish, pantheon: p.id, minorGod: firstGod });
+                      soundEngine.previewPantheonTheme(p.id);
                     }}
                     className={`flex items-center justify-between rounded border px-2.5 py-2 text-left text-xs font-semibold transition-colors cursor-pointer ${
                       active
@@ -538,6 +541,7 @@ export function PortSubMenus({
                       onClick={() => {
                         clickSound();
                         onUpdateSkirmish({ ...skirmish, pantheon: p.id, minorGod: p.deity });
+                        soundEngine.previewPantheonTheme(p.id);
                       }}
                       className={`flex flex-col items-start rounded border px-2 py-1.5 text-left transition-colors cursor-pointer ${
                         active
@@ -1002,6 +1006,29 @@ export function PortSubMenus({
                   {options.sfxEnabled ? 'LIGADO' : 'DESLIGADO'}
                 </span>
               </button>
+              {(() => {
+                void musicTrackTick;
+                const info = soundEngine.getCurrentMusicInfo();
+                return (
+                  <div className="mt-1 flex items-center justify-between gap-2 rounded border border-[#d4af37]/30 bg-[#141a25] px-4 py-2.5 text-xs">
+                    <div className="min-w-0">
+                      <div className="font-semibold text-[#f3d27a] truncate">{info.displayTitle}</div>
+                      <div className="text-[11px] text-[#94a3b8] truncate">{info.subtitle}</div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        soundEngine.unlock();
+                        soundEngine.skipToNextMusicTrack();
+                        setMusicTrackTick((t) => t + 1);
+                      }}
+                      className="shrink-0 rounded border border-[#d4af37]/45 bg-[#202838] px-3 py-1.5 text-[11px] font-semibold text-[#f3d27a] hover:border-[#f3d27a] cursor-pointer"
+                    >
+                      Próxima Faixa
+                    </button>
+                  </div>
+                );
+              })()}
             </>
           )}
 
@@ -2227,6 +2254,9 @@ export function PortSubMenus({
           <div className="my-2 h-px bg-white/10" />
           <p>Motor 3D WebGL · Navegação A* · Névoa de Guerra &amp; Ciclo Dia/Noite</p>
           <p>13 Panteões · 39 Deuses Maiores · 10 Mapas · Poderes Divinos · Era dos Deuses &amp; Titãs</p>
+          <p className="text-[#f3d27a]">
+            Trilha Sonora Dinâmica · Temas por Panteão, Modo Padrão/Calmo e Créditos: &ldquo;Gary&apos;s Reserve&rdquo;
+          </p>
         </div>
       </div>
     );

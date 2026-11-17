@@ -134,6 +134,7 @@ interface GameHUDProps {
   onSelectIdleMilitary: () => void;
   onOrderVillagersToTarget?: () => void;
   onOrderVillagerTask?: (task: 'wood' | 'food' | 'gold' | 'hunt' | 'build') => void;
+  onPromoteToHero?: () => void;
   onRestart: () => void;
   onReturnTitle: () => void;
 }
@@ -250,6 +251,7 @@ export function GameHUD({
   onSelectIdleMilitary,
   onOrderVillagersToTarget,
   onOrderVillagerTask,
+  onPromoteToHero,
   onRestart,
   onReturnTitle,
 }: GameHUDProps) {
@@ -263,6 +265,7 @@ export function GameHUD({
   const [postGameTab, setPostGameTab] = useState<PostGameTab>('summary');
   const [tributeFrom, setTributeFrom] = useState<ResourceType>('food');
   const [tributeTo, setTributeTo] = useState<ResourceType>('gold');
+  const [musicTrackTick, setMusicTrackTick] = useState(0);
 
   // Keyboard shortcuts: H toggles bottom dock, F4 toggles Duel Scoreboard (AoM), F10 opens Menu
   useEffect(() => {
@@ -411,6 +414,34 @@ export function GameHUD({
           'hefesto',
           'artemis',
         ]
+      : hud.pantheon === 'atlantean'
+      ? [
+          'citizen',
+          'oracle',
+          'llama_caravan',
+          'murmillo',
+          'katapeltes',
+          'turma',
+          'cheiroballista',
+          'arcus',
+          'contarius',
+          'destroyer',
+          'fanatic',
+          'fire_siphon',
+          'onager',
+          'promethean',
+          'automaton',
+          'caladria',
+          'behemoth',
+          'satyr',
+          'stymphalian_bird',
+          'dryad',
+          'hekagigantes',
+          'argus',
+          'lampades',
+          'carnivora',
+          'tartarian_spawn',
+        ]
       : [
           'villager',
           'hoplite',
@@ -475,6 +506,7 @@ export function GameHUD({
       hud.selection.buildingKind === 'archery_range' ||
       hud.selection.buildingKind === 'stable' ||
       hud.selection.buildingKind === 'siege_works' ||
+      hud.selection.buildingKind === 'market' ||
       hud.selection.buildingKind === 'temple' ||
       hud.selection.buildingKind === 'fortress');
 
@@ -1364,6 +1396,28 @@ export function GameHUD({
                     </div>
                   )}
 
+                  {hud.selection.canPromoteToHero && onPromoteToHero && (
+                    <button
+                      type="button"
+                      onClick={onPromoteToHero}
+                      title="Promover Cidadãos Atlantes selecionados a Herói (★)"
+                      className="flex items-center justify-between gap-2 rounded border border-[#facc15]/60 bg-[#281f0b] px-2 py-1 text-[10px] font-bold text-[#fde68a] hover:border-[#fde047] hover:bg-[#382b10] cursor-pointer"
+                    >
+                      <span className="flex items-center gap-1 truncate">
+                        <Crown className="h-3 w-3 text-[#facc15] shrink-0" />
+                        <span>
+                          Promover a Herói ★
+                          {(hud.selection.heroPromoteCount ?? 0) > 1 ? ` (×${hud.selection.heroPromoteCount})` : ''}
+                        </span>
+                      </span>
+                      {hud.selection.heroPromoteCost && (
+                        <span className="font-mono-num text-[9px] text-[#fef08a] shrink-0">
+                          {formatCost(hud.selection.heroPromoteCost)}
+                        </span>
+                      )}
+                    </button>
+                  )}
+
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-1 max-h-[118px] overflow-y-auto pr-0.5">
                     {buildingList.map((b) => {
                       const tcAtMax =
@@ -1436,12 +1490,18 @@ export function GameHUD({
                         u.producedAt === selectedPlayerBuildingKind ||
                         (u.kind === 'priest' &&
                           (selectedPlayerBuildingKind === 'temple' || selectedPlayerBuildingKind === 'town_center')) ||
+                        (u.kind === 'oracle' &&
+                          (selectedPlayerBuildingKind === 'temple' || selectedPlayerBuildingKind === 'town_center')) ||
                         ((u.kind === 'hersir' || u.kind === 'godi') &&
                           (selectedPlayerBuildingKind === 'barracks' ||
                             selectedPlayerBuildingKind === 'temple' ||
                             selectedPlayerBuildingKind === 'fortress')) ||
                         (u.kind === 'raiding_cavalry' &&
                           (selectedPlayerBuildingKind === 'barracks' || selectedPlayerBuildingKind === 'stable')) ||
+                        ((u.kind === 'turma' || u.kind === 'contarius') &&
+                          (selectedPlayerBuildingKind === 'stable' ||
+                            selectedPlayerBuildingKind === 'barracks' ||
+                            selectedPlayerBuildingKind === 'archery_range')) ||
                         (u.isHero &&
                           u.kind !== 'priest' &&
                           u.kind !== 'hersir' &&
@@ -1453,7 +1513,10 @@ export function GameHUD({
                           u.kind === 'siege_tower' ||
                           u.kind === 'egypt_catapult' ||
                           u.kind === 'portable_ram' ||
-                          u.kind === 'norse_ballista') &&
+                          u.kind === 'norse_ballista' ||
+                          u.kind === 'cheiroballista' ||
+                          u.kind === 'fire_siphon' ||
+                          u.kind === 'onager') &&
                           (selectedPlayerBuildingKind === 'siege_works' || selectedPlayerBuildingKind === 'fortress'))
                     );
                     const buildingTechs = techList.filter((t) => {
@@ -1668,6 +1731,28 @@ export function GameHUD({
                     </div>
                   </div>
 
+                  {hud.selection.canPromoteToHero && onPromoteToHero && (
+                    <button
+                      type="button"
+                      onClick={onPromoteToHero}
+                      title="Promover soldados Atlantes selecionados a Herói (★ bônus vs unidades míticas)"
+                      className="flex items-center justify-between gap-2 rounded border border-[#facc15]/70 bg-gradient-to-r from-[#2c210b] to-[#1e1708] px-2.5 py-1.5 text-[11px] font-bold text-[#fef08a] shadow hover:border-[#fde047] hover:from-[#3b2c0e] hover:to-[#281e0a] cursor-pointer"
+                    >
+                      <span className="flex items-center gap-1.5 truncate">
+                        <Crown className="h-3.5 w-3.5 text-[#facc15] shrink-0" />
+                        <span>
+                          Promover a Herói ★
+                          {(hud.selection.heroPromoteCount ?? 0) > 1 ? ` (×${hud.selection.heroPromoteCount})` : ''}
+                        </span>
+                      </span>
+                      {hud.selection.heroPromoteCost && (
+                        <span className="font-mono-num text-[9px] text-[#fde68a] shrink-0">
+                          {formatCost(hud.selection.heroPromoteCost)}
+                        </span>
+                      )}
+                    </button>
+                  )}
+
                   <div className="grid grid-cols-3 gap-1">
                     <button
                       type="button"
@@ -1865,12 +1950,18 @@ export function GameHUD({
 
               {hud.selection.voiceLine && (
                 <div
-                  className={`flex items-center gap-1 text-[10px] truncate ${
+                  title={`${hud.selection.voiceLine.cultureLabel} — ${hud.selection.voiceLine.translation}`}
+                  className={`flex items-center justify-between gap-1.5 text-[10px] ${
                     hud.selection.voiceLine.action === 'attack' ? 'text-rose-300' : 'text-[#fde68a]'
                   }`}
                 >
-                  <Volume2 className="h-3 w-3 shrink-0 opacity-80" />
-                  <span className="italic truncate">&ldquo;{hud.selection.voiceLine.phrase}&rdquo;</span>
+                  <div className="flex items-center gap-1 min-w-0">
+                    <Volume2 className="h-3 w-3 shrink-0 opacity-80" />
+                    <span className="italic font-semibold truncate">&ldquo;{hud.selection.voiceLine.phrase}&rdquo;</span>
+                  </div>
+                  <span className="text-[9px] text-[#94a3b8] truncate shrink-0 max-w-[46%]">
+                    {hud.selection.voiceLine.translation}
+                  </span>
                 </div>
               )}
             </div>
@@ -2316,6 +2407,41 @@ export function GameHUD({
 
             {activeDialog === 'player_options' && (
               <div className="mt-4 space-y-2.5 text-xs">
+                <button
+                  type="button"
+                  onClick={() =>
+                    onUpdateOptions({ ...options, musicEnabled: !options.musicEnabled })
+                  }
+                  className="flex w-full items-center justify-between rounded border border-white/15 bg-[#161b26] px-4 py-2.5 font-semibold text-white cursor-pointer"
+                >
+                  <span>Música Dinâmica</span>
+                  <span className={options.musicEnabled ? 'text-[#86efac]' : 'text-[#fca5a5]'}>
+                    {options.musicEnabled ? 'LIGADO' : 'DESLIGADO'}
+                  </span>
+                </button>
+                {(() => {
+                  void musicTrackTick;
+                  const info = soundEngine.getCurrentMusicInfo();
+                  return (
+                    <div className="flex w-full items-center justify-between gap-2 rounded border border-[#d4af37]/30 bg-[#141a26] px-4 py-2">
+                      <div className="min-w-0 text-left">
+                        <div className="font-semibold text-[#f3d27a] truncate">{info.displayTitle}</div>
+                        <div className="text-[10px] text-gray-400 truncate">{info.subtitle}</div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          soundEngine.unlock();
+                          soundEngine.skipToNextMusicTrack();
+                          setMusicTrackTick((t) => t + 1);
+                        }}
+                        className="shrink-0 rounded border border-[#d4af37]/45 bg-[#202736] px-2.5 py-1 text-[11px] font-semibold text-[#f3d27a] hover:border-[#f3d27a] cursor-pointer"
+                      >
+                        Próxima Música
+                      </button>
+                    </div>
+                  );
+                })()}
                 <button
                   type="button"
                   onClick={() =>

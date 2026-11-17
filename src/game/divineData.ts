@@ -3,6 +3,7 @@ import {
   BUILDING_STATS,
   BuildingKind,
   BuildingStats,
+  CIVILIZATION_UNITS,
   GodPowerId,
   GodPowerSpec,
   MajorGodSpec,
@@ -560,15 +561,15 @@ export const MINOR_GODS: Record<string, MinorGodSpec> = {
   Vidar: { id: 'Vidar', name: 'Vidar', age: 4, pantheon: 'norse', godPower: 'volcanic_eruption', mythUnit: 'fafnir', mythUnitTitle: 'Fafnir (Dragão Couraçado)', passiveBonusLabel: '+22% Ataque de Infantaria & Heróis (Retold)', attackBonusPct: 22 },
 
   // Atlantean
-  Prometheus: { id: 'Prometheus', name: 'Prometeu', age: 2, pantheon: 'atlantean', godPower: 'necromancy', mythUnit: 'minotaur', mythUnitTitle: 'Prometeano', passiveBonusLabel: '+14% Vida dos Heróis', hpBonusPct: 14 },
-  Okeanus: { id: 'Okeanus', name: 'Oceano', age: 2, pantheon: 'atlantean', godPower: 'restoration', mythUnit: 'minotaur', mythUnitTitle: 'Autômato', passiveBonusLabel: '+14% Velocidade & Coleta', speedBonusPct: 12, gatherBonusPct: 12 },
-  Leto: { id: 'Leto', name: 'Leto', age: 2, pantheon: 'atlantean', godPower: 'spiders', mythUnit: 'minotaur', mythUnitTitle: 'Autômato', passiveBonusLabel: '+14% Armadura de Autômatos', hpBonusPct: 14 },
-  Hyperion: { id: 'Hyperion', name: 'Hipérion', age: 3, pantheon: 'atlantean', godPower: 'chaos', mythUnit: 'centaur', mythUnitTitle: 'Sátiro', passiveBonusLabel: '+18% Ataque Heroico', attackBonusPct: 18 },
-  Theia: { id: 'Theia', name: 'Teia', age: 3, pantheon: 'atlantean', godPower: 'walking_woods', mythUnit: 'centaur', mythUnitTitle: 'Aves do Estínfalo', passiveBonusLabel: '+18% Velocidade da Cavalaria', speedBonusPct: 18 },
-  Rheia: { id: 'Rheia', name: 'Réia', age: 3, pantheon: 'atlantean', godPower: 'traitors', mythUnit: 'centaur', mythUnitTitle: 'Behemote Menor', passiveBonusLabel: '+20% Coleta Econômica', gatherBonusPct: 20 },
-  Helios: { id: 'Helios', name: 'Hélios', age: 4, pantheon: 'atlantean', godPower: 'solar_beam', mythUnit: 'cyclops', mythUnitTitle: 'Hekagigante', passiveBonusLabel: '+22% Ataque de Cerco', attackBonusPct: 22 },
-  Hekate: { id: 'Hekate', name: 'Hécate', age: 4, pantheon: 'atlantean', godPower: 'black_hole', mythUnit: 'cyclops', mythUnitTitle: 'Lampade', passiveBonusLabel: '+22% Recarga & Poder Mítico', hpBonusPct: 20 },
-  Atlas: { id: 'Atlas', name: 'Atlas', age: 4, pantheon: 'atlantean', godPower: 'tremor', mythUnit: 'cyclops', mythUnitTitle: 'Argos', passiveBonusLabel: '+25% Vida Mítica', hpBonusPct: 25 },
+  Prometheus: { id: 'Prometheus', name: 'Prometeu', age: 2, pantheon: 'atlantean', godPower: 'necromancy', mythUnit: 'promethean', mythUnitTitle: 'Prometeico', passiveBonusLabel: '+14% Vida dos Heróis', hpBonusPct: 14 },
+  Okeanus: { id: 'Okeanus', name: 'Oceano', age: 2, pantheon: 'atlantean', godPower: 'restoration', mythUnit: 'caladria', mythUnitTitle: 'Caládria & Carnívora', passiveBonusLabel: '+14% Velocidade & Coleta', speedBonusPct: 12, gatherBonusPct: 12 },
+  Leto: { id: 'Leto', name: 'Leto', age: 2, pantheon: 'atlantean', godPower: 'spiders', mythUnit: 'automaton', mythUnitTitle: 'Autômato', passiveBonusLabel: '+14% Armadura de Autômatos', hpBonusPct: 14 },
+  Hyperion: { id: 'Hyperion', name: 'Hipérion', age: 3, pantheon: 'atlantean', godPower: 'chaos', mythUnit: 'satyr', mythUnitTitle: 'Sátiro', passiveBonusLabel: '+18% Ataque Heroico', attackBonusPct: 18 },
+  Theia: { id: 'Theia', name: 'Teia', age: 3, pantheon: 'atlantean', godPower: 'walking_woods', mythUnit: 'stymphalian_bird', mythUnitTitle: 'Ave do Estínfalo & Dríade', passiveBonusLabel: '+18% Velocidade da Cavalaria', speedBonusPct: 18 },
+  Rheia: { id: 'Rheia', name: 'Réia', age: 3, pantheon: 'atlantean', godPower: 'traitors', mythUnit: 'behemoth', mythUnitTitle: 'Beemote', passiveBonusLabel: '+20% Coleta Econômica', gatherBonusPct: 20 },
+  Helios: { id: 'Helios', name: 'Hélios', age: 4, pantheon: 'atlantean', godPower: 'solar_beam', mythUnit: 'hekagigantes', mythUnitTitle: 'Hecatônquiro (Centimano)', passiveBonusLabel: '+22% Ataque de Cerco', attackBonusPct: 22 },
+  Hekate: { id: 'Hekate', name: 'Hécate', age: 4, pantheon: 'atlantean', godPower: 'black_hole', mythUnit: 'lampades', mythUnitTitle: 'Lâmpade & Cria do Tártaro', passiveBonusLabel: '+22% Recarga & Poder Mítico', hpBonusPct: 20 },
+  Atlas: { id: 'Atlas', name: 'Atlas', age: 4, pantheon: 'atlantean', godPower: 'tremor', mythUnit: 'argus', mythUnitTitle: 'Argos', passiveBonusLabel: '+25% Vida Mítica', hpBonusPct: 25 },
 
   // Shared Divine Edition Minor Gods for Expanded Civs
   Divine_War2: { id: 'Divine_War2', name: 'Senhor da Guerra', age: 2, pantheon: 'roman', godPower: 'flaming_weapons', mythUnit: 'minotaur', mythUnitTitle: 'Guardião Mítico', passiveBonusLabel: '+15% Ataque Militar', attackBonusPct: 15 },
@@ -1017,6 +1018,110 @@ const CIV_UNIT_NAMES: Partial<Record<PantheonId, Partial<Record<UnitKind, { name
     },
   },
   atlantean: {
+    citizen: {
+      name: 'Cidadão Atlante',
+      role: 'Aldeão atlante de elite — coleta muito mais rápido e deposita recursos automaticamente sem precisar voltar a depósitos. Pode ser promovido a Herói.',
+    },
+    oracle: {
+      name: 'Oráculo',
+      role: 'Batedor atlante — ganha grande linha de visão (+10) e gera Favor passivamente quando parado. Pode ser promovido a Herói para lutar contra míticas.',
+    },
+    llama_caravan: {
+      name: 'Caravana de Lhama',
+      role: 'Unidade comercial do Mercado — percorre rotas automáticas entre seu Mercado e a Cidadela gerando Ouro contínuo.',
+    },
+    murmillo: {
+      name: 'Murmillo',
+      role: 'Quartel Militar (Clássica) — infantaria padrão corpo a corpo resistente e versátil. Pode ser promovido a Herói.',
+    },
+    katapeltes: {
+      name: 'Katapeltes',
+      role: 'Contra-Quartel (Clássica) — lanceiro especializado em destruir cavalaria inimiga (2.25x). Pode ser promovido a Herói.',
+    },
+    turma: {
+      name: 'Turma',
+      role: 'Contra-Quartel (Clássica) — cavalaria à distância veloz que arremessa dardos letais contra arqueiros (1.8x). Pode ser promovido a Herói.',
+    },
+    cheiroballista: {
+      name: 'Cheiroballista',
+      role: 'Contra-Quartel (Clássica) — arma de cerco leve portátil que dispara virotes precisos letais contra infantaria (2.0x).',
+    },
+    arcus: {
+      name: 'Arcus',
+      role: 'Quartel Militar (Heroica) — arqueiro de longo alcance devastador contra infantaria. Pode ser promovido a Herói.',
+    },
+    contarius: {
+      name: 'Contarius',
+      role: 'Quartel Militar (Heroica) — cavalaria pesada de lança longa, eficaz contra arqueiros e cerco. Pode ser promovido a Herói.',
+    },
+    destroyer: {
+      name: 'Destruidor',
+      role: 'Palácio (Heroica) — infantaria pesadamente blindada com tridente e escudão especializada em derrubar edifícios (2.7x). Pode ser promovido a Herói.',
+    },
+    fanatic: {
+      name: 'Fanático',
+      role: 'Palácio (Mítica) — infantaria de elite com espadas duplas letais contra infantaria e cavalaria humanas. Pode ser promovido a Herói.',
+    },
+    fire_siphon: {
+      name: 'Sifão de Fogo',
+      role: 'Palácio (Mítica) — arma de cerco de bronze que dispara jatos de fogo líquido devastadores contra edifícios em área.',
+    },
+    onager: {
+      name: 'Onagro',
+      role: 'Palácio (Mítica · Retold) — catapulta pesada de longo alcance que arremessa rochas em área contra muralhas e exércitos.',
+    },
+    promethean: {
+      name: 'Prometeico (Prometeu)',
+      role: 'Templo (Clássica) — criatura de barro primordial que se divide em duas Proles Prometeicas ao morrer.',
+    },
+    promethean_offspring: {
+      name: 'Prole Prometeica',
+      role: 'Fragmento ágil de barro gerado quando um Prometeico é destruído em combate.',
+    },
+    automaton: {
+      name: 'Autômato (Leto)',
+      role: 'Templo (Clássica) — guerreiro mecânico de oricalco que se auto-repara continuamente e conserta outros Autômatos próximos.',
+    },
+    caladria: {
+      name: 'Caládria (Oceano)',
+      role: 'Templo (Clássica) — ave sagrada voadora que não ataca, mas cura continuamente tropas aliadas próximas.',
+    },
+    behemoth: {
+      name: 'Beemote (Réia)',
+      role: 'Templo (Heroica) — fera quadrúpede colossal especializada em demolir construções (3.1x) com regeneração constante.',
+    },
+    satyr: {
+      name: 'Sátiro (Hipérion)',
+      role: 'Templo (Heroica) — atirador ágil que dispara rajadas de lanças letais contra infantaria inimiga.',
+    },
+    stymphalian_bird: {
+      name: 'Ave do Estínfalo (Teia)',
+      role: 'Templo (Heroica) — ave metálica voadora que dispara penas de bronze afiadas à longa distância.',
+    },
+    dryad: {
+      name: 'Dríade (Teia)',
+      role: 'Infantaria mítica ágil invocada a partir da Árvore das Hespérides (Bosques Vivos de Teia/Gaia).',
+    },
+    hekagigantes: {
+      name: 'Hecatônquiro / Centimano (Hélios)',
+      role: 'Templo (Mítica) — gigante de múltiplos braços que esmaga exércitos com golpes sísmicos em área.',
+    },
+    argus: {
+      name: 'Argos (Atlas)',
+      role: 'Templo (Mítica) — criatura flutuante de múltiplos olhos que dispara rajadas de ácido corrosivo em área letal.',
+    },
+    lampades: {
+      name: 'Lâmpade (Hécate)',
+      role: 'Templo (Mítica) — ninfa do submundo que dispara orbes de fogo do caos capazes de atordoar e confundir inimigos.',
+    },
+    carnivora: {
+      name: 'Carnívora (Oceano)',
+      role: 'Templo / Poder Divino — planta carnívora monstruosa que devora soldados próximos com suas mandíbulas.',
+    },
+    tartarian_spawn: {
+      name: 'Cria do Tártaro (Hécate)',
+      role: 'Templo / Portal do Tártaro — demônio alado infernal com ataques flamejantes ferozes.',
+    },
     villager: { name: 'Cidadão Atlante' },
     hoplite: { name: 'Murmillo' },
     archer: { name: 'Arcus' },
@@ -1025,8 +1130,11 @@ const CIV_UNIT_NAMES: Partial<Record<PantheonId, Partial<Record<UnitKind, { name
     siege: { name: 'Sifão de Fogo' },
     minotaur: { name: 'Autômato' },
     centaur: { name: 'Sátiro' },
-    cyclops: { name: 'Behemote' },
-    titan: { name: 'Titã Atlante' },
+    cyclops: { name: 'Beemote' },
+    titan: {
+      name: 'Titã Atlante',
+      role: 'Unidade colossal invocada pelo Portão do Titã na Idade Mítica (Cronos, Urano ou Gaia).',
+    },
   },
   chinese: {
     villager: { name: 'Camponês Chinês' },
@@ -1139,7 +1247,10 @@ const CIV_UNIT_NAMES: Partial<Record<PantheonId, Partial<Record<UnitKind, { name
 };
 
 export function getCivUnitSpec(pantheon: PantheonId, kind: UnitKind): UnitStats {
-  const base = UNIT_STATS[kind];
+  const base =
+    pantheon === 'atlantean'
+      ? (CIVILIZATION_UNITS.atlantes[kind] ?? UNIT_STATS[kind])
+      : UNIT_STATS[kind];
   const ov = CIV_UNIT_NAMES[pantheon]?.[kind];
   if (!ov) return base;
   return { ...base, ...ov };
@@ -1210,6 +1321,71 @@ export function getCivBuildingSpec(pantheon: PantheonId, kind: BuildingKind): Bu
         ...base,
         name: 'Torre de Vigia Viking',
         role: 'Torre defensiva de madeira e pedra com escudos nórdicos.',
+      };
+    }
+  }
+  if (pantheon === 'atlantean') {
+    if (kind === 'town_center') {
+      return {
+        ...base,
+        name: `Cidadela Atlante (${p.name})`,
+        role: 'Centro imperial de oricalco — treina Cidadãos Atlantes e Oráculos batedores.',
+      };
+    }
+    if (kind === 'barracks') {
+      return {
+        ...base,
+        name: 'Quartel Militar Atlante',
+        role: 'Treina Murmillo (Clássica), Arcus e Contarius (Heroica). Todas podem ser promovidas a Heróis.',
+      };
+    }
+    if (kind === 'archery_range') {
+      return {
+        ...base,
+        name: 'Contra-Quartel Atlante',
+        role: 'Treina tropas táticas contra-unidade: Katapeltes, Turma e Cheiroballista.',
+      };
+    }
+    if (kind === 'stable') {
+      return {
+        ...base,
+        name: 'Pátio de Cavalaria Atlante',
+        role: 'Treina Turma (Clássica) e cavalaria pesada Contarius (Heroica).',
+      };
+    }
+    if (kind === 'fortress') {
+      return {
+        ...base,
+        name: 'Palácio Atlante',
+        role: 'Fortaleza real — treina Destruidor (Heroica), Fanático, Sifão de Fogo e Onagro (Mítica).',
+      };
+    }
+    if (kind === 'siege_works') {
+      return {
+        ...base,
+        name: 'Oficina de Cerco Atlante',
+        role: 'Constrói Cheiroballista, Sifão de Fogo e Onagro.',
+      };
+    }
+    if (kind === 'market') {
+      return {
+        ...base,
+        name: 'Mercado Atlante',
+        role: 'Treina Caravanas de Lhama para rotas automáticas de Ouro e comércio de recursos.',
+      };
+    }
+    if (kind === 'temple') {
+      return {
+        ...base,
+        name: `Templo dos Titãs (${p.deity})`,
+        role: 'Treina Oráculos e invoca Unidades Míticas concedidas pelos Deuses Menores Atlantes.',
+      };
+    }
+    if (kind === 'house') {
+      return {
+        ...base,
+        name: 'Mansão de Oricalco',
+        role: 'Habitação atlante de mármore branco e cúpula turquesa (+10 de população).',
       };
     }
   }
