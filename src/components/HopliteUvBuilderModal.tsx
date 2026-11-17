@@ -86,6 +86,11 @@ import {
   getCachedIsisTextures,
   animateIsis,
 } from '../civilizacao/egipcios/isisModel';
+import {
+  buildSet,
+  getCachedSetTextures,
+  animateSet,
+} from '../civilizacao/egipcios/setModel';
 import { AOM_HOPLITE_UV_TIERS, HopliteArmorTier } from '../civilizacao/gregos/gregosModels';
 import { createBuildingMesh, createMaterialPalette, createUnitMesh } from '../game/models';
 import { BuildingKind, PantheonId, UnitKind } from '../game/types';
@@ -463,6 +468,7 @@ export function getUnitsForCivAndGod(civ: PantheonId, majorGod: string): CivEnti
   if (civ === 'egyptian') {
     const isRa = godInfo.id.toLowerCase() === 'rá';
     const isIsis = godInfo.id.toLowerCase() === 'ísis';
+    const isSet = godInfo.id.toLowerCase() === 'set';
 
     const godOption: CivEntityOption[] = isIsis
       ? [
@@ -470,6 +476,14 @@ export function getUnitsForCivAndGod(civ: PantheonId, majorGod: string): CivEnti
             id: 'isis',
             name: '✨ Ísis (Deusa Maior da Magia)',
             role: 'Deusa da Magia e Prosperidade — Asas Volumétricas Aladas, Magia de Heka, Sopro da Vida (Ankh) e Estrela de Sopdet',
+          },
+        ]
+      : isSet
+      ? [
+          {
+            id: 'set',
+            name: '⚡ Set (Deus Maior do Caos)',
+            role: 'Deus do Caos e do Deserto — Cabeça Bestial, Cetro Was e Chave Ankh Flutuantes, Tempestade de Areia',
           },
         ]
       : [];
@@ -649,6 +663,7 @@ export function HopliteUvBuilderModal({
   const [atenaMode, setAtenaMode] = useState<'guardia' | 'avanco' | 'egide' | 'furia'>('guardia');
   const [hermesMode, setHermesMode] = useState<'flutuar' | 'velocidade' | 'rajada' | 'relampago'>('flutuar');
   const [isisMode, setIsisMode] = useState<'majestade' | 'heka' | 'ankh' | 'sopdet'>('majestade');
+  const [setMode, setSetMode] = useState<'senhor' | 'tempestade' | 'deserto' | 'monstro'>('senhor');
   const [focusDivine, setFocusDivine] = useState(false);
   const [myrmidonFury, setMyrmidonFury] = useState(true);
   const myrmidonFuryRef = useRef(myrmidonFury);
@@ -685,6 +700,8 @@ export function HopliteUvBuilderModal({
   hermesModeRef.current = hermesMode;
   const isisModeRef = useRef(isisMode);
   isisModeRef.current = isisMode;
+  const setModeRef = useRef(setMode);
+  setModeRef.current = setMode;
   const focusDivineRef = useRef(focusDivine);
   focusDivineRef.current = focusDivine;
 
@@ -705,6 +722,9 @@ export function HopliteUvBuilderModal({
       if (godId.toLowerCase() === 'zeus') setSelectedUnit('zeus');
       else if (godId.toLowerCase() === 'poseidon') setSelectedUnit('poseidon');
       else if (godId.toLowerCase() === 'hades') setSelectedUnit('hades');
+    } else if (selectedCiv === 'egyptian') {
+      if (godId.toLowerCase() === 'ísis') setSelectedUnit('isis');
+      else if (godId.toLowerCase() === 'set') setSelectedUnit('set');
     }
   };
 
@@ -768,7 +788,7 @@ export function HopliteUvBuilderModal({
       prevMouseX = e.clientX;
       prevMouseY = e.clientY;
 
-      const isGod = ((selectedUnit === 'zeus' || selectedUnit === 'poseidon' || selectedUnit === 'hades' || selectedUnit === 'artemis' || selectedUnit === 'hefesto' || selectedUnit === 'dionisio' || selectedUnit === 'afrodite' || selectedUnit === 'apolo' || selectedUnit === 'ares' || selectedUnit === 'atena' || selectedUnit === 'hermes') && selectedCiv === 'greek') || (selectedUnit === 'isis' && selectedCiv === 'egyptian');
+      const isGod = ((selectedUnit === 'zeus' || selectedUnit === 'poseidon' || selectedUnit === 'hades' || selectedUnit === 'artemis' || selectedUnit === 'hefesto' || selectedUnit === 'dionisio' || selectedUnit === 'afrodite' || selectedUnit === 'apolo' || selectedUnit === 'ares' || selectedUnit === 'atena' || selectedUnit === 'hermes') && selectedCiv === 'greek') || ((selectedUnit === 'isis' || selectedUnit === 'set') && selectedCiv === 'egyptian');
       if (isGod) {
         // No caso dos deuses, a câmera orbita em 360° e o deus permanece fixo no centro
         orbitYaw -= dx * 0.008;
@@ -1682,6 +1702,62 @@ export function HopliteUvBuilderModal({
             const m = isisModeRef.current;
             animateIsis(isis, dt, simTime, m);
           };
+        } else if (selectedUnit === 'set') {
+          // ===============================
+          // CENÁRIO DO SANTUÁRIO DO CAOS DE SET (DESERTO & OBELISCOS SOMBRIOS)
+          // ===============================
+          scene.background = new THREE.Color(0x0b0504);
+          scene.fog = new THREE.FogExp2(0x0b0504, 0.022);
+
+          const setTex = getCachedSetTextures();
+
+          const pedGeo = new THREE.CylinderGeometry(2.8, 3.1, 0.2, 48);
+          const pedMat = new THREE.MeshStandardMaterial({
+            map: setTex.floorTex,
+            roughness: 0.6,
+            metalness: 0.1,
+          });
+          const pedestal = new THREE.Mesh(pedGeo, pedMat);
+          pedestal.position.y = -0.1;
+          pedestal.receiveShadow = true;
+          environmentGroup.add(pedestal);
+
+          const ringGeo = new THREE.RingGeometry(2.4, 2.65, 48);
+          const ringMat = new THREE.MeshBasicMaterial({ color: 0x9333ea, side: THREE.DoubleSide });
+          const ring = new THREE.Mesh(ringGeo, ringMat);
+          ring.rotation.x = -Math.PI / 2;
+          ring.position.y = 0.01;
+          environmentGroup.add(ring);
+
+          // Dois obeliscos com ápice de caos púrpura/laranja
+          const obeliskMat = new THREE.MeshStandardMaterial({ color: 0x1c1917, roughness: 0.7 });
+          const chaosTipMat = new THREE.MeshStandardMaterial({
+            color: 0xc2410c,
+            emissive: 0x7e22ce,
+            emissiveIntensity: 0.8,
+          });
+          for (const x of [-3.0, 3.0]) {
+            const obelisk = new THREE.Group();
+            obelisk.position.set(x, 0, -2.8);
+            const baseMesh = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.35, 1.0), obeliskMat);
+            const shaftMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.45, 3.0, 4), obeliskMat);
+            shaftMesh.position.y = 1.65;
+            shaftMesh.rotation.y = Math.PI / 4;
+            const tipMesh = new THREE.Mesh(new THREE.ConeGeometry(0.26, 0.6, 4), chaosTipMat);
+            tipMesh.position.y = 3.45;
+            tipMesh.rotation.y = Math.PI / 4;
+            obelisk.add(baseMesh, shaftMesh, tipMesh);
+            environmentGroup.add(obelisk);
+          }
+
+          const setGod = buildSet(setTex);
+          group = setGod.root;
+          group.scale.setScalar(0.85);
+
+          group.userData.animatePose = (dt: number) => {
+            const m = setModeRef.current;
+            animateSet(setGod, dt, simTime, m);
+          };
         } else if (selectedUnit === 'hoplite' || selectedUnit === 'hipaspist' || selectedUnit === 'myrmidon') {
           // ===============================
           // CENÁRIO PADRÃO (PEDESTAL)
@@ -2056,7 +2132,7 @@ export function HopliteUvBuilderModal({
       if (hadesBlastLight.intensity > 0) hadesBlastLight.intensity = Math.max(0, hadesBlastLight.intensity - dt * 20);
 
       // Rotação da entidade / Órbita 360° da câmera
-      const isGod = ((selectedUnit === 'zeus' || selectedUnit === 'poseidon' || selectedUnit === 'hades' || selectedUnit === 'artemis' || selectedUnit === 'hefesto' || selectedUnit === 'dionisio' || selectedUnit === 'afrodite' || selectedUnit === 'apolo' || selectedUnit === 'ares' || selectedUnit === 'atena' || selectedUnit === 'hermes') && selectedCiv === 'greek') || (selectedUnit === 'isis' && selectedCiv === 'egyptian');
+      const isGod = ((selectedUnit === 'zeus' || selectedUnit === 'poseidon' || selectedUnit === 'hades' || selectedUnit === 'artemis' || selectedUnit === 'hefesto' || selectedUnit === 'dionisio' || selectedUnit === 'afrodite' || selectedUnit === 'apolo' || selectedUnit === 'ares' || selectedUnit === 'atena' || selectedUnit === 'hermes') && selectedCiv === 'greek') || ((selectedUnit === 'isis' || selectedUnit === 'set') && selectedCiv === 'egyptian');
 
       if (autoRotateRef.current) {
         if (isGod) {
@@ -2086,7 +2162,7 @@ export function HopliteUvBuilderModal({
 
       if (isGod) {
         // Câmera orbital 360° ao redor do Deus posicionado no centro exato
-        const isMajor = selectedUnit === 'zeus' || selectedUnit === 'poseidon' || selectedUnit === 'hades' || selectedUnit === 'isis';
+        const isMajor = selectedUnit === 'zeus' || selectedUnit === 'poseidon' || selectedUnit === 'hades' || selectedUnit === 'isis' || selectedUnit === 'set';
         const focusY = isFocus
           ? isMajor
             ? 2.25
@@ -3202,6 +3278,71 @@ export function HopliteUvBuilderModal({
                   >
                     <Eye className="h-3.5 w-3.5" />
                     <span>{focusDivine ? 'Visão Corpo' : 'Focar Rosto / Asas'}</span>
+                  </button>
+                  <div className="h-5 w-[1px] bg-white/15 mx-1" />
+                </>
+              ) : entityType === 'unit' && selectedUnit === 'set' && selectedCiv === 'egyptian' ? (
+                // Poderes e Animações de Set (Deus Maior do Caos e do Deserto)
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setSetMode('senhor')}
+                    className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      setMode === 'senhor'
+                        ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/30 font-bold'
+                        : 'border border-amber-400/30 text-amber-200 hover:bg-amber-400/20'
+                    }`}
+                  >
+                    <Crown className="h-3.5 w-3.5" />
+                    <span>Senhor do Caos</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSetMode('tempestade')}
+                    className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      setMode === 'tempestade'
+                        ? 'bg-orange-600 text-white shadow-md shadow-orange-600/30 font-bold'
+                        : 'border border-orange-400/30 text-orange-200 hover:bg-orange-400/20'
+                    }`}
+                  >
+                    <Wind className="h-3.5 w-3.5" />
+                    <span>Tempestade de Areia</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSetMode('deserto')}
+                    className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      setMode === 'deserto'
+                        ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30 font-bold'
+                        : 'border border-purple-400/30 text-purple-200 hover:bg-purple-400/20'
+                    }`}
+                  >
+                    <Zap className="h-3.5 w-3.5" />
+                    <span>Ira do Deserto</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSetMode('monstro')}
+                    className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      setMode === 'monstro'
+                        ? 'bg-gradient-to-r from-red-600 to-purple-600 text-white shadow-md shadow-red-500/40 font-bold'
+                        : 'border border-red-400/30 text-red-200 hover:bg-red-400/20'
+                    }`}
+                  >
+                    <Skull className="h-3.5 w-3.5" />
+                    <span>Horda de Monstros</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFocusDivine(!focusDivine)}
+                    className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      focusDivine
+                        ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/30 font-bold'
+                        : 'border border-amber-400/40 text-amber-200 hover:bg-amber-500/20'
+                    }`}
+                  >
+                    <Eye className="h-3.5 w-3.5" />
+                    <span>{focusDivine ? 'Visão Corpo' : 'Focar Cabeça Bestial'}</span>
                   </button>
                   <div className="h-5 w-[1px] bg-white/15 mx-1" />
                 </>

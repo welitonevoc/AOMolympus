@@ -83,7 +83,8 @@ export type UnitKind =
   | 'afrodite'
   | 'hefesto'
   | 'artemis'
-  | 'isis';
+  | 'isis'
+  | 'set';
 
 export type BuildingKind =
   | 'town_center'

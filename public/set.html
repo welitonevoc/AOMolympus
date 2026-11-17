@@ -1,0 +1,649 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Set - Deus do Caos e Deserto | Age of Mythology 3D</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --gold: #facc15;
+      --sand-red: #c2410c;
+      --chaos-purple: #9333ea;
+      --glass: rgba(18, 10, 6, 0.85);
+      --border: rgba(194, 65, 12, 0.48);
+    }
+    * { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #0b0504;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    }
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+      cursor: grab;
+    }
+    canvas:active { cursor: grabbing; }
+
+    #ui {
+      position: fixed;
+      top: 14px;
+      left: 14px;
+      right: 14px;
+      display: flex;
+      gap: 8px;
+      z-index: 10;
+      flex-wrap: wrap;
+      align-items: center;
+      pointer-events: none;
+    }
+    .btn-group {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      pointer-events: auto;
+    }
+    button {
+      padding: 9px 14px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--glass);
+      backdrop-filter: blur(10px);
+      color: #ffedd5;
+      font-weight: 600;
+      font-size: 13px;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+      transition: all 0.2s ease;
+    }
+    button:hover {
+      border-color: #f97316;
+      transform: translateY(-1px);
+      background: rgba(46, 20, 10, 0.94);
+    }
+    button.on {
+      background: linear-gradient(135deg, #c2410c 0%, #7e22ce 100%);
+      color: #ffffff;
+      border-color: #fed7aa;
+      box-shadow: 0 0 22px rgba(194, 65, 12, 0.65);
+    }
+    button.cam-btn {
+      border-color: rgba(250, 204, 21, 0.55);
+    }
+    button.cam-btn.active {
+      background: linear-gradient(135deg, #eab308 0%, #b45309 100%);
+      color: #ffffff;
+      border-color: #fef08a;
+      box-shadow: 0 0 18px rgba(250, 204, 21, 0.55);
+    }
+
+    #badge {
+      position: fixed;
+      top: 14px;
+      right: 16px;
+      background: var(--glass);
+      backdrop-filter: blur(8px);
+      border: 1px solid var(--border);
+      padding: 7px 13px;
+      border-radius: 10px;
+      color: #fb923c;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      pointer-events: none;
+      z-index: 9;
+    }
+    @media (max-width: 980px) {
+      #badge { display: none; }
+    }
+
+    #hint {
+      position: fixed;
+      bottom: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(18, 10, 5, 0.8);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(194, 65, 12, 0.34);
+      padding: 7px 16px;
+      border-radius: 999px;
+      color: #ffedd5;
+      font-size: 12.5px;
+      white-space: nowrap;
+      pointer-events: none;
+      z-index: 10;
+    }
+  </style>
+</head>
+<body>
+
+<div id="ui">
+  <div class="btn-group">
+    <button data-m="senhor" class="on">Senhor do Caos</button>
+    <button data-m="tempestade">Tempestade de Areia</button>
+    <button data-m="deserto">Ira do Deserto</button>
+    <button data-m="monstro">Horda de monstros</button>
+    <button id="btn-focus" class="cam-btn">Focar Cabeça Bestial</button>
+  </div>
+</div>
+
+<div id="badge">Egito • Set</div>
+<div id="hint">Arraste para girar 360° • Scroll / Pinça para zoom</div>
+
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+const T = THREE;
+
+/* ==========================================================================
+   1. TEXTURAS PROCEDURAIS PBR
+   ========================================================================== */
+function createProceduralTextures() {
+  const skinCanvas = document.createElement('canvas');
+  skinCanvas.width = skinCanvas.height = 256;
+  const sCtx = skinCanvas.getContext('2d');
+  sCtx.fillStyle = '#808080';
+  sCtx.fillRect(0, 0, 256, 256);
+  for (let i = 0; i < 5200; i++) {
+    const v = 118 + Math.floor(Math.random() * 16);
+    sCtx.fillStyle = `rgb(${v},${v},${v})`;
+    sCtx.fillRect(Math.random() * 256, Math.random() * 256, 1.5, 1.5);
+  }
+  const skinBump = new T.CanvasTexture(skinCanvas);
+  skinBump.wrapS = skinBump.wrapT = T.RepeatWrapping;
+  skinBump.repeat.set(4, 4);
+
+  const nemesCanvas = document.createElement('canvas');
+  nemesCanvas.width = nemesCanvas.height = 512;
+  const nCtx = nemesCanvas.getContext('2d');
+  const stripeH = 16;
+  for (let y = 0; y < 512; y += stripeH) {
+    const isGold = (y / stripeH) % 2 === 0;
+    nCtx.fillStyle = isGold ? '#facc15' : '#7c2d12';
+    nCtx.fillRect(0, y, 512, stripeH);
+    nCtx.fillStyle = isGold ? '#fef08a' : '#9a3412';
+    nCtx.fillRect(0, y, 512, 3);
+  }
+  const nemesTex = new T.CanvasTexture(nemesCanvas);
+  nemesTex.wrapS = nemesTex.wrapT = T.RepeatWrapping;
+
+  const kiltCanvas = document.createElement('canvas');
+  kiltCanvas.width = 512;
+  kiltCanvas.height = 256;
+  const kCtx = kiltCanvas.getContext('2d');
+  const kGrad = kCtx.createLinearGradient(0, 0, 0, 256);
+  kGrad.addColorStop(0, '#7c2d12');
+  kGrad.addColorStop(0.7, '#9a3412');
+  kGrad.addColorStop(1, '#c2410c');
+  kCtx.fillStyle = kGrad;
+  kCtx.fillRect(0, 0, 512, 256);
+
+  kCtx.fillStyle = '#facc15';
+  kCtx.fillRect(0, 198, 512, 38);
+  kCtx.fillStyle = '#451a03';
+  kCtx.fillRect(0, 194, 512, 4);
+  kCtx.fillRect(0, 236, 512, 4);
+  const kiltTex = new T.CanvasTexture(kiltCanvas);
+  kiltTex.wrapS = kiltTex.wrapT = T.RepeatWrapping;
+
+  const floorCanvas = document.createElement('canvas');
+  floorCanvas.width = floorCanvas.height = 1024;
+  const fCtx = floorCanvas.getContext('2d');
+  const fGrad = fCtx.createRadialGradient(512, 512, 40, 512, 512, 512);
+  fGrad.addColorStop(0, '#c2410c');
+  fGrad.addColorStop(0.5, '#7c2d12');
+  fGrad.addColorStop(0.85, '#451a03');
+  fGrad.addColorStop(1, '#1c0a03');
+  fCtx.fillStyle = fGrad;
+  fCtx.fillRect(0, 0, 1024, 1024);
+
+  for (let i = 0; i < 4000; i++) {
+    fCtx.fillStyle = i % 2 === 0 ? 'rgba(194, 65, 12, 0.25)' : 'rgba(126, 34, 206, 0.2)';
+    fCtx.fillRect(Math.random() * 1024, Math.random() * 1024, 8, 8);
+  }
+
+  const cx = 512, cy = 512;
+  fCtx.strokeStyle = '#9333ea';
+  fCtx.lineWidth = 16;
+  fCtx.beginPath();
+  fCtx.arc(cx, cy, 420, 0, Math.PI * 2);
+  fCtx.stroke();
+
+  fCtx.strokeStyle = '#facc15';
+  fCtx.lineWidth = 7;
+  fCtx.beginPath();
+  fCtx.arc(cx, cy, 436, 0, Math.PI * 2);
+  fCtx.stroke();
+
+  const floorTex = new T.CanvasTexture(floorCanvas);
+
+  return { skinBump, nemesTex, kiltTex, floorTex };
+}
+
+/* ==========================================================================
+   2. HELPERS DE ESCULTURA E MATERIAIS
+   ========================================================================== */
+function group(parent, x = 0, y = 0, z = 0) {
+  const g = new T.Group();
+  g.position.set(x, y, z);
+  if (parent) parent.add(g);
+  return g;
+}
+
+function sculpt(parent, geo, mat, pos = [0, 0, 0], rot = [0, 0, 0], scale = [1, 1, 1]) {
+  const m = new T.Mesh(geo, mat);
+  m.position.set(pos[0], pos[1], pos[2]);
+  m.rotation.set(rot[0], rot[1], rot[2]);
+  m.scale.set(scale[0], scale[1], scale[2]);
+  m.castShadow = true;
+  m.receiveShadow = true;
+  if (parent) parent.add(m);
+  return m;
+}
+
+function createMaterials(textures) {
+  return {
+    skin: new T.MeshStandardMaterial({
+      color: 0x3d3532,
+      roughness: 0.32,
+      metalness: 0.15,
+      bumpMap: textures.skinBump,
+      bumpScale: 0.003
+    }),
+    pureGold: new T.MeshStandardMaterial({
+      color: 0xfacc15,
+      emissive: 0x451a03,
+      emissiveIntensity: 0.3,
+      metalness: 0.95,
+      roughness: 0.12
+    }),
+    lapisBlue: new T.MeshStandardMaterial({
+      color: 0x1d4ed8,
+      emissive: 0x1e3a8a,
+      emissiveIntensity: 0.25,
+      metalness: 0.5,
+      roughness: 0.25
+    }),
+    turquoise: new T.MeshStandardMaterial({
+      color: 0x06b6d4,
+      emissive: 0x0e7490,
+      emissiveIntensity: 0.45,
+      metalness: 0.5,
+      roughness: 0.2
+    }),
+    obsidianKohl: new T.MeshStandardMaterial({
+      color: 0x18181b,
+      metalness: 0.85,
+      roughness: 0.22
+    }),
+    chaosPurple: new T.MeshStandardMaterial({
+      color: 0xa855f7,
+      emissive: 0x7e22ce,
+      emissiveIntensity: 2.8,
+      roughness: 0.1
+    }),
+    eyeChaosGlow: new T.MeshStandardMaterial({
+      color: 0xffffff,
+      emissive: 0xf97316,
+      emissiveIntensity: 4.2,
+      roughness: 0.05
+    }),
+    nemesMat: new T.MeshStandardMaterial({
+      map: textures.nemesTex,
+      roughness: 0.45,
+      metalness: 0.1,
+      side: T.DoubleSide
+    }),
+    kiltMat: new T.MeshStandardMaterial({
+      map: textures.kiltTex,
+      roughness: 0.48,
+      metalness: 0.08,
+      side: T.DoubleSide
+    })
+  };
+}
+
+/* ==========================================================================
+   3. CONSTRUÇÃO DE SET — SEM CAPA, COM ELMO ESTENDIDO ATÉ OS OMBROS E JÓIAS DE OURO
+   ========================================================================== */
+function buildSet(textures) {
+  const M = createMaterials(textures);
+  const root = new T.Group();
+  const body = group(root, 0, 1.12, 0);
+
+  // Pelve e Pernas
+  const pelvis = group(body, 0, 0.88, 0);
+  sculpt(pelvis, new T.SphereGeometry(0.21, 24, 20), M.skin, [0, 0, 0], [0, 0, 0], [1.05, 0.76, 0.8]);
+
+  const legs = {};
+  for (const side of ['L', 'R']) {
+    const s = side === 'R' ? 1 : -1;
+    const hip = group(pelvis, s * 0.12, -0.04, 0);
+    sculpt(hip, new T.CylinderGeometry(0.12, 0.085, 0.52, 20), M.skin, [0, -0.25, 0], [0, 0, 0], [1.0, 1, 1.05]);
+    sculpt(hip, new T.SphereGeometry(0.08, 16, 16), M.skin, [0, -0.50, 0.01]);
+    
+    const ankle = group(hip, 0, -0.51, 0);
+    sculpt(ankle, new T.BoxGeometry(0.075, 0.04, 0.19), M.skin, [0, -0.02, 0.035], [0.15, 0, 0]);
+    sculpt(ankle, new T.BoxGeometry(0.08, 0.012, 0.20), M.pureGold, [0, -0.04, 0.035], [0.15, 0, 0]);
+    const strap = new T.TorusGeometry(0.05, 0.006, 8, 20);
+    strap.rotateX(Math.PI / 2);
+    sculpt(ankle, strap, M.pureGold, [0, 0.02, -0.02], [0.1, 0, 0]);
+    sculpt(ankle, strap, M.pureGold, [0, 0.06, -0.02], [0.1, 0, 0]);
+    legs[side] = { hip, ankle };
+  }
+  
+  legs.L.hip.rotation.set(-0.15, -0.08, -0.02);
+  legs.R.hip.rotation.set(0.10, 0.08, 0.02);
+
+  const skirtMesh = sculpt(pelvis, new T.CylinderGeometry(0.21, 0.25, 0.95, 36, 1, true), M.kiltMat, [0, -0.45, 0]);
+  sculpt(pelvis, new T.BoxGeometry(0.12, 0.65, 0.02), M.pureGold, [0, -0.3, 0.18], [0.05, 0, 0]);
+  
+  const belt = new T.TorusGeometry(0.21, 0.025, 12, 36);
+  belt.rotateX(Math.PI / 2);
+  sculpt(pelvis, belt, M.pureGold, [0, 0.02, 0]);
+  sculpt(pelvis, new T.OctahedronGeometry(0.035, 0), M.turquoise, [0, 0.02, 0.215]);
+
+  // Tronco
+  const torso = group(body, 0, 1.38, 0);
+  const torsoPts = [
+    new T.Vector2(0.01, -0.45), new T.Vector2(0.20, -0.41), new T.Vector2(0.16, -0.18),
+    new T.Vector2(0.21, 0.05), new T.Vector2(0.27, 0.26), new T.Vector2(0.24, 0.41),
+    new T.Vector2(0.11, 0.48), new T.Vector2(0.01, 0.49)
+  ];
+  sculpt(torso, new T.LatheGeometry(torsoPts, 36), M.skin, [0, 0, 0], [0, 0, 0], [1.1, 1.0, 0.75]);
+
+  // Colar Usekh ricamente ornamentado em ouro, lápis-lazúli e turquesa
+  for (let c = 0; c < 5; c++) {
+    const colMat = c % 2 === 0 ? M.pureGold : M.lapisBlue;
+    const usekh = new T.TorusGeometry(0.14 + c * 0.028, 0.015, 8, 36, Math.PI);
+    usekh.rotateX(Math.PI / 2);
+    sculpt(torso, usekh, colMat, [0, 0.38 - c * 0.025, 0.02 + c * 0.005], [0.2, 0, 0], [1.1, 1, 0.85]);
+  }
+
+  // Ornamentação central no peitoral com gema preciosa turquesa emoldurada em ouro
+  const peitoralGemGroup = group(torso, 0, 0.24, 0.21);
+  sculpt(peitoralGemGroup, new T.BoxGeometry(0.095, 0.095, 0.025), M.pureGold);
+  sculpt(peitoralGemGroup, new T.OctahedronGeometry(0.042, 0), M.turquoise, [0, 0, 0.018]);
+  for (let side of [-1, 1]) {
+    sculpt(peitoralGemGroup, new T.ConeGeometry(0.015, 0.06, 5), M.pureGold, [side * 0.07, 0, 0.01], [0, 0, side * -Math.PI / 2]);
+  }
+
+  sculpt(torso, new T.CylinderGeometry(0.09, 0.11, 0.25, 20), M.skin, [0, 0.51, -0.005], [0.05, 0, 0]);
+
+  // Cabeça e a imponente Cabeça Bestial de Set com o Elmo Nemes estendido até os ombros
+  const head = group(torso, 0, 0.72, 0.025);
+  sculpt(head, new T.SphereGeometry(0.17, 36, 36), M.skin, [0, 0, 0], [0, 0, 0], [0.92, 1.15, 0.95]);
+
+  const eyeGeo = new T.SphereGeometry(0.018, 16, 16);
+  sculpt(head, eyeGeo, M.eyeChaosGlow, [-0.048, 0.02, 0.165], [0, 0, 0], [1.12, 0.75, 0.8]);
+  sculpt(head, eyeGeo, M.eyeChaosGlow, [0.048, 0.02, 0.165], [0, 0, 0], [1.12, 0.75, 0.8]);
+  sculpt(head, new T.BoxGeometry(0.052, 0.007, 0.014), M.obsidianKohl, [-0.048, 0.026, 0.175], [0, 0, -0.15]);
+  sculpt(head, new T.BoxGeometry(0.052, 0.007, 0.014), M.obsidianKohl, [0.048, 0.026, 0.175], [0, 0, 0.15]);
+
+  const setSnout = group(head, 0, -0.02, 0.14);
+  sculpt(setSnout, new T.BoxGeometry(0.062, 0.062, 0.32), M.skin, [0, 0, 0.14], [0.05, 0, 0]);
+  sculpt(setSnout, new T.BoxGeometry(0.068, 0.032, 0.048), M.obsidianKohl, [0, 0.02, 0.28]);
+
+  for (const side of [-1, 1]) {
+    const earGroup = group(head, side * 0.08, 0.16, -0.02);
+    earGroup.rotation.z = side * -0.12;
+    sculpt(earGroup, new T.BoxGeometry(0.042, 0.36, 0.075), M.skin, [0, 0.14, 0]);
+    sculpt(earGroup, new T.BoxGeometry(0.025, 0.32, 0.05), M.pureGold, [0, 0.14, 0.01]);
+  }
+
+  // Cocar Nemes estendido longamente até os ombros, ricamente emoldurado em ouro e pedras preciosas
+  sculpt(head, new T.SphereGeometry(0.19, 24, 24), M.nemesMat, [0, 0.04, -0.02], [-0.05, 0, 0], [1.04, 1.08, 1.08]);
+  for (const side of [-1, 1]) {
+    // Abas laterais estendidas até os ombros
+    const lappet = sculpt(head, new T.BoxGeometry(0.095, 0.54, 0.12), M.nemesMat, [side * 0.18, -0.18, 0.04], [0.12, 0, side * -0.22]);
+    // Ricas faixas de ouro e gemas preciosas incrustadas nas pontas dos ombros
+    for(let i=0; i<6; i++) {
+      const gemMat = i % 2 === 0 ? M.pureGold : (i === 1 ? M.turquoise : M.lapisBlue);
+      sculpt(lappet, new T.BoxGeometry(0.10, 0.035, 0.13), gemMat, [0, 0.20 - i*0.08, 0]);
+    }
+  }
+
+  // Braços
+  function createSetArm(isRight) {
+    const s = isRight ? 1 : -1;
+    const armRoot = group(torso, s * 0.35, 0.32, -0.01);
+    
+    sculpt(armRoot, new T.SphereGeometry(0.10, 16, 16), M.skin, [0, 0, 0], [0, 0, s * -0.2]);
+    sculpt(armRoot, new T.CapsuleGeometry(0.06, 0.24, 12, 16), M.skin, [s * 0.015, -0.16, 0], [0, 0, s * 0.05]);
+    sculpt(armRoot, new T.CylinderGeometry(0.065, 0.065, 0.08, 16), M.pureGold, [s * 0.015, -0.16, 0], [0, 0, s * 0.05]);
+
+    const elbow = group(armRoot, s * 0.03, -0.32, 0);
+    sculpt(elbow, new T.CylinderGeometry(0.055, 0.04, 0.28, 16), M.skin, [0, -0.14, 0]);
+    sculpt(elbow, new T.CylinderGeometry(0.06, 0.055, 0.12, 20, 1, true), M.pureGold, [0, -0.14, 0]);
+
+    const hand = group(elbow, 0, -0.28, 0);
+    sculpt(hand, new T.BoxGeometry(0.05, 0.06, 0.025), M.skin, [0, -0.01, 0]);
+
+    return { armRoot, elbow, hand };
+  }
+
+  const rightArm = createSetArm(true);
+  const leftArm = createSetArm(false);
+
+  rightArm.armRoot.rotation.set(0.15, 0.1, 0.35);
+  rightArm.elbow.rotation.set(-0.25, 0, 0.2);
+  leftArm.armRoot.rotation.set(0.15, -0.1, -0.35);
+  leftArm.elbow.rotation.set(-0.25, 0, -0.2);
+
+  // Cetro Was flutuando em pé à direita
+  const wasOrbitGroup = new T.Group();
+  root.add(wasOrbitGroup);
+  const wasScepter = new T.Group();
+  wasOrbitGroup.add(wasScepter);
+  sculpt(wasScepter, new T.CylinderGeometry(0.018, 0.018, 2.35, 16), M.pureGold, [0, 0.16, 0]);
+  sculpt(wasScepter, new T.BoxGeometry(0.065, 0.095, 0.08), M.pureGold, [0, 1.28, 0]);
+  sculpt(wasScepter, new T.ConeGeometry(0.022, 0.12, 6), M.pureGold, [0, 1.36, -0.035], [0.35, 0, 0]);
+  sculpt(wasScepter, new T.OctahedronGeometry(0.034, 0), M.turquoise, [0, 1.28, 0.045]);
+
+  // Chave da Vida Ankh flutuando em pé à esquerda
+  const ankhOrbitGroup = new T.Group();
+  root.add(ankhOrbitGroup);
+  const ankhArtifact = new T.Group();
+  ankhOrbitGroup.add(ankhArtifact);
+  sculpt(ankhArtifact, new T.BoxGeometry(0.055, 0.48, 0.032), M.pureGold, [0, -0.22, 0]);
+  sculpt(ankhArtifact, new T.TorusGeometry(0.125, 0.026, 12, 36), M.pureGold, [0, 0.22, 0], [0, 0, 0], [0.88, 1.32, 0.75]);
+
+  return {
+    root, body, torso, head, legs,
+    rightArm, leftArm, wasOrbitGroup, wasScepter,
+    ankhOrbitGroup, ankhArtifact, M
+  };
+}
+
+/* ==========================================================================
+   4. RENDERER, CENA E ILUMINAÇÃO DE DESERTO DE SET
+   ========================================================================== */
+const renderer = new T.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = T.PCFSoftShadowMap;
+document.body.appendChild(renderer.domElement);
+
+const scene = new T.Scene();
+scene.background = new T.Color(0x0b0504);
+scene.fog = new T.FogExp2(0x0b0504, 0.022);
+
+const camera = new T.PerspectiveCamera(36, window.innerWidth / window.innerHeight, 0.1, 150);
+
+const hemi = new T.HemisphereLight(0xfef08a, 0x451a03, 0.95);
+scene.add(hemi);
+const sunLight = new T.DirectionalLight(0xf97316, 2.3);
+sunLight.position.set(5, 8, 4);
+sunLight.castShadow = true;
+scene.add(sunLight);
+
+const chaosLight = new T.PointLight(0xa855f7, 0, 14);
+scene.add(chaosLight);
+
+const textures = createProceduralTextures();
+
+const floor = new T.Mesh(new T.CylinderGeometry(6, 6.5, 0.2, 48), new T.MeshStandardMaterial({map: textures.floorTex, roughness: 0.6, metalness: 0.1}));
+floor.position.y = -0.1;
+floor.receiveShadow = true;
+scene.add(floor);
+
+const obeliskMat = new T.MeshStandardMaterial({color: 0x1c1917, roughness: 0.7});
+for (const x of [-3.5, 3.5]) {
+    const obelisk = group(scene, x, 0, -4.5);
+    sculpt(obelisk, new T.BoxGeometry(1.4, 0.4, 1.4), obeliskMat);
+    sculpt(obelisk, new T.CylinderGeometry(0.5, 0.6, 4.0, 4), obeliskMat, [0, 2.2, 0], [0, Math.PI/4, 0]);
+    sculpt(obelisk, new T.ConeGeometry(0.35, 0.8, 4), new T.MeshStandardMaterial({color: 0xc2410c, emissive: 0x7e22ce, emissiveIntensity: 0.6}), [0, 4.6, 0], [0, Math.PI/4, 0]);
+}
+
+const setGod = buildSet(textures);
+scene.add(setGod.root);
+
+/* ==========================================================================
+   5. EFEITOS DE CAOS E TEMPESTADE DE AREIA
+   ========================================================================== */
+const sandGeo = new T.BufferGeometry();
+const sandPos = new Float32Array(350 * 3);
+for(let i=0; i<350; i++) {
+  sandPos[i*3] = (Math.random()-0.5)*16;
+  sandPos[i*3+1] = Math.random()*6.5;
+  sandPos[i*3+2] = (Math.random()-0.5)*16;
+}
+sandGeo.setAttribute('position', new T.BufferAttribute(sandPos, 3));
+const sandCloud = new T.Points(sandGeo, new T.PointsMaterial({color: 0xf97316, size: 0.085, transparent: true, opacity: 0.7, blending: T.AdditiveBlending}));
+scene.add(sandCloud);
+
+/* ==========================================================================
+   6. CONTROLES E LOOP DE ANIMAÇÃO
+   ========================================================================== */
+let mode = 'senhor';
+let camAngle = 0.35;
+let camPitch = 0.15;
+let camDist = 9.5;
+let targetCamDist = 9.5;
+let dragging = false;
+let lastX = 0, lastY = 0;
+let focusFace = false;
+
+document.querySelectorAll('button[data-m]').forEach(b => {
+  b.addEventListener('click', () => {
+    mode = b.dataset.m;
+    document.querySelectorAll('button[data-m]').forEach(x => x.classList.toggle('on', x === b));
+  });
+});
+
+const btnFocus = document.getElementById('btn-focus');
+btnFocus.addEventListener('click', () => {
+  focusFace = !focusFace;
+  btnFocus.classList.toggle('active', focusFace);
+  btnFocus.textContent = focusFace ? 'Corpo Inteiro' : 'Focar Cabeça Bestial';
+  targetCamDist = focusFace ? 3.0 : 9.5;
+  if (focusFace) { camAngle = 0.15; camPitch = 0.08; }
+});
+
+renderer.domElement.addEventListener('pointerdown', e => { dragging = true; lastX = e.clientX; lastY = e.clientY; });
+window.addEventListener('pointerup', () => dragging = false);
+window.addEventListener('pointermove', e => {
+  if (!dragging) return;
+  camAngle -= (e.clientX - lastX) * 0.009;
+  camPitch = T.MathUtils.clamp(camPitch + (e.clientY - lastY) * 0.006, -0.1, 0.8);
+  lastX = e.clientX; lastY = e.clientY;
+});
+renderer.domElement.addEventListener('wheel', e => {
+  e.preventDefault();
+  targetCamDist = T.MathUtils.clamp(targetCamDist + e.deltaY * 0.005, 2.5, 16);
+}, {passive: false});
+
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+const clock = new T.Clock();
+
+function update() {
+  const dt = Math.min(clock.getDelta(), 0.05);
+  const t = clock.getElapsedTime();
+
+  const hoverY = Math.sin(t * 1.5) * 0.08;
+  setGod.body.position.y = 1.12 + hoverY;
+
+  // Rotação orbital dos artefatos sagrados flutuantes
+  const wasX = 1.15 + Math.sin(t * 1.8) * 0.08;
+  const wasZ = 0.15 + Math.cos(t * 1.8) * 0.12;
+  setGod.wasOrbitGroup.position.set(wasX, 1.25 + Math.sin(t * 2.2) * 0.09, wasZ);
+  setGod.wasScepter.rotation.y = t * 1.2;
+  setGod.wasScepter.rotation.z = Math.sin(t * 1.5) * 0.06;
+
+  const ankhX = -1.15 - Math.sin(t * 1.6) * 0.08;
+  const ankhZ = 0.15 + Math.cos(t * 1.6) * 0.12;
+  setGod.ankhOrbitGroup.position.set(ankhX, 1.25 + Math.cos(t * 2.1) * 0.09, ankhZ);
+  setGod.ankhArtifact.rotation.y = -t * 1.4;
+  setGod.ankhArtifact.rotation.z = -Math.sin(t * 1.5) * 0.06;
+
+  // Lógica das Poses de Set
+  if (mode === 'senhor') {
+    setGod.rightArm.armRoot.rotation.set(0.15 + Math.sin(t * 2) * 0.04, 0.1, 0.42);
+    setGod.rightArm.elbow.rotation.set(-0.25, 0, 0.2);
+    setGod.leftArm.armRoot.rotation.set(0.15 + Math.cos(t * 2) * 0.04, -0.1, -0.42);
+    setGod.leftArm.elbow.rotation.set(-0.25, 0, -0.2);
+  } else if (mode === 'tempestade') {
+    setGod.rightArm.armRoot.rotation.set(-0.6, 0.3, 0.95 + Math.sin(t * 5) * 0.1);
+    setGod.rightArm.elbow.rotation.set(-0.65, 0.2, 0);
+    setGod.leftArm.armRoot.rotation.set(-0.6, -0.3, -0.95 - Math.cos(t * 5) * 0.1);
+    setGod.leftArm.elbow.rotation.set(-0.65, -0.2, 0);
+  } else if (mode === 'deserto') {
+    setGod.rightArm.armRoot.rotation.set(-1.3, 0.2, 0.25);
+    setGod.rightArm.elbow.rotation.set(-0.15, 0, 0);
+    setGod.leftArm.armRoot.rotation.set(0.4, -0.2, -0.6);
+    setGod.leftArm.elbow.rotation.set(-0.4, 0, -0.3);
+  } else if (mode === 'monstro') {
+    setGod.rightArm.armRoot.rotation.set(-0.8, 0.4, 0.7);
+    setGod.rightArm.elbow.rotation.set(-0.9, 0, 0.4);
+    setGod.leftArm.armRoot.rotation.set(-0.8, -0.4, -0.7);
+    setGod.leftArm.elbow.rotation.set(-0.9, 0, -0.4);
+  }
+
+  // Partículas de areia do deserto
+  const pArr = sandGeo.attributes.position.array;
+  const stormSpeed = mode === 'tempestade' ? 5.5 : 1.8;
+  for (let i = 0; i < 350; i++) {
+    pArr[i * 3] += Math.cos(t * 0.8 + i) * dt * stormSpeed;
+    pArr[i * 3 + 1] = (pArr[i * 3 + 1] + dt * stormSpeed * 0.6) % 6.5;
+    pArr[i * 3 + 2] += Math.sin(t * 0.8 + i) * dt * stormSpeed;
+    if (Math.abs(pArr[i * 3]) > 8) pArr[i * 3] *= -0.9;
+    if (Math.abs(pArr[i * 3 + 2]) > 8) pArr[i * 3 + 2] *= -0.9;
+  }
+  sandGeo.attributes.position.needsUpdate = true;
+
+  // Luz do Caos
+  let targetChaos = mode === 'tempestade' ? 6.5 : mode === 'deserto' ? 7.5 : mode === 'monstro' ? 5.0 : 2.5;
+  chaosLight.intensity = T.MathUtils.damp(chaosLight.intensity, targetChaos, 4, dt);
+  chaosLight.position.set(0, 2.2 + Math.sin(t * 2) * 0.3, 0.5);
+
+  // Câmera
+  camDist = T.MathUtils.damp(camDist, targetCamDist, 6, dt);
+  if (!dragging && !focusFace) camAngle += dt * 0.04;
+  const targetLook = focusFace ? new T.Vector3(0, 2.5 + hoverY, 0) : new T.Vector3(0, 1.8, 0);
+
+  const hDist = Math.cos(camPitch) * camDist;
+  const vDist = Math.sin(camPitch) * camDist;
+  camera.position.set(targetLook.x + Math.sin(camAngle) * hDist, targetLook.y + vDist, targetLook.z + Math.cos(camAngle) * hDist);
+  camera.lookAt(targetLook);
+
+  renderer.render(scene, camera);
+  requestAnimationFrame(update);
+}
+
+update();
+</script>
+</body>
+</html>

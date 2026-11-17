@@ -19,6 +19,7 @@ import { buildZeus, getCachedZeusTextures, animateZeus } from '../civilizacao/gr
 import { buildPoseidon, getCachedPoseidonTextures, animatePoseidon } from '../civilizacao/gregos/poseidonModel';
 import { buildHades, getCachedHadesTextures, animateHades } from '../civilizacao/gregos/hadesModel';
 import { buildIsis, getCachedIsisTextures, animateIsis } from '../civilizacao/egipcios/isisModel';
+import { buildSet, getCachedSetTextures, animateSet } from '../civilizacao/egipcios/setModel';
 import { createAoMOakTreeMesh, getFaunaCoatMaterial } from '../TEXTURA';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
@@ -2942,6 +2943,27 @@ export function createUnitMesh(
       iPhase += dt;
       const mode = attackT !== null ? (attackT > 0.5 ? 'sopdet' : 'heka') : moving ? 'ankh' : 'majestade';
       animateIsis(isis, dt, iPhase, mode);
+    };
+    root.userData.updateBrg = (dt: number, state: string) => {
+      root.userData.animatePose?.(dt, state === 'move', 2.0, state === 'attack' ? 0.5 : null);
+    };
+    attachGroundMarkers(root, 2.95, pal, team);
+    attachHealthBar(root, 13.8, 3.4);
+    return root;
+  } else if (kind === 'set') {
+    // DEUS MAIOR EGÍPCIO (~13.1u): Deus do Caos e do Deserto
+    const setTex = getCachedSetTextures();
+    const setGod = buildSet(setTex);
+    const setHolder = new THREE.Group();
+    setHolder.scale.setScalar(3.85);
+    setHolder.position.y = 0.25;
+    setHolder.add(setGod.root);
+    root.add(setHolder);
+    let sPhase = 0;
+    root.userData.animatePose = (dt: number, moving: boolean, _speed: number, attackT: number | null) => {
+      sPhase += dt;
+      const mode = attackT !== null ? (attackT > 0.5 ? 'deserto' : 'tempestade') : moving ? 'monstro' : 'senhor';
+      animateSet(setGod, dt, sPhase, mode);
     };
     root.userData.updateBrg = (dt: number, state: string) => {
       root.userData.animatePose?.(dt, state === 'move', 2.0, state === 'attack' ? 0.5 : null);
