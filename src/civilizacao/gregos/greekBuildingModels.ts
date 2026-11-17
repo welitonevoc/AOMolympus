@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { BuildingKind, TeamId } from '../../game/types';
+import { BuildingKind, PantheonId, TeamId } from '../../game/types';
 
 // ─── Procedural Greek Marble, Terracotta & Bronze Textures ─────────────────
 
@@ -184,85 +184,269 @@ function buildDelphicTripodRelicShrine(mats: GreekMaterials): THREE.Group {
   return shrine;
 }
 
-// ─── 1. TOWN CENTER (Evolui de T1 até T5 — Metrópole Divina da Acrópole) ──────
+// ─── 1. TOWN CENTER (Evolui de T1 até T5 — Metrópole Divina da Acrópole / Fórum Imperial) ──
 
-function buildGreekTownCenter(group: THREE.Group, mats: GreekMaterials, age: number): void {
-  // T1: Basic settlement foundation
-  for (let s = 0; s < Math.min(3, age); s++) {
+function buildGreekTownCenter(
+  group: THREE.Group,
+  mats: GreekMaterials,
+  age: number,
+  pantheon: PantheonId = 'greek'
+): { metropolisHalo?: THREE.Object3D; metropolisCrystal?: THREE.Object3D } {
+  const tier = Math.max(1, Math.min(5, Math.round(age)));
+  const isRoman = pantheon === 'roman';
+  const roofMat = isRoman ? mats.teamBanner : mats.terracottaRoof;
+  const accentMat = isRoman ? mats.goldTrim : mats.bronzeTrim;
+  const trimMat = isRoman ? mats.goldTrim : mats.marble;
+
+  // 1. Stepped Stylobate Plinth (expands from 1 rustic step at T1 to 4 monumental marble steps at T5)
+  const stepCount = tier === 1 ? 1 : tier === 2 ? 2 : tier >= 4 ? 4 : 3;
+  const baseWidth = 4.1 + tier * 0.34;
+  let deckY = 0;
+  for (let s = 0; s < stepCount; s++) {
+    const stepH = 0.14;
+    const shrink = s * 0.24;
+    const stepMat = s === 0 && tier === 1 ? mats.marbleDark : mats.marble;
     const step = new THREE.Mesh(
-      new THREE.BoxGeometry((4.2 + age * 0.25) - s * 0.25, 0.14, (4.2 + age * 0.25) - s * 0.25),
-      mats.marble
+      new THREE.BoxGeometry(baseWidth - shrink, stepH, baseWidth - shrink),
+      stepMat
     );
-    step.position.y = 0.07 + s * 0.14;
+    step.position.y = deckY + stepH * 0.5;
     group.add(step);
+    deckY += stepH;
   }
 
-  // T2+: Peristyle Colonnade scales with age
-  if (age >= 2) {
-    const colSpacing = 1.35;
-    const limit = age >= 4 ? 2.1 : 1.4;
-    for (let x = -limit; x <= limit; x += colSpacing) {
-      for (const z of [-limit, limit]) {
-        const col = buildDoricColumn(1.8 + age * 0.15, mats);
-        col.position.set(x, 0.42, z);
+  // Front ceremonial staircase
+  for (let st = 0; st < stepCount; st++) {
+    const stair = new THREE.Mesh(
+      new THREE.BoxGeometry(1.5 - st * 0.12, 0.12, 0.35),
+      mats.marbleDark
+    );
+    stair.position.set(0, 0.06 + st * 0.12, baseWidth * 0.5 + 0.14 - st * 0.14);
+    group.add(stair);
+  }
+
+  // 2. Central Sanctuary / Forum Cella (grows wider & taller from T1 → T5)
+  const cellaW = 1.9 + tier * 0.22;
+  const cellaH = 1.25 + tier * 0.26;
+  const cellaL = 2.3 + tier * 0.22;
+  const cella = new THREE.Mesh(
+    new THREE.BoxGeometry(cellaW, cellaH, cellaL),
+    tier === 1 ? mats.marbleDark : mats.marble
+  );
+  cella.position.set(0, deckY + cellaH * 0.5, -0.1);
+  group.add(cella);
+
+  // Decorative entablature / architrave frieze band (T2+)
+  if (tier >= 2) {
+    const frieze = new THREE.Mesh(
+      new THREE.BoxGeometry(cellaW + 0.16, 0.18, cellaL + 0.16),
+      tier >= 4 ? mats.goldTrim : accentMat
+    );
+    frieze.position.set(0, deckY + cellaH - 0.08, -0.1);
+    group.add(frieze);
+  }
+
+  // Grand arched portal entrance
+  const portalFrame = new THREE.Mesh(
+    new THREE.BoxGeometry(0.85 + tier * 0.06, 0.95 + tier * 0.08, 0.18),
+    accentMat
+  );
+  portalFrame.position.set(0, deckY + (0.95 + tier * 0.08) * 0.5, -0.1 + cellaL * 0.5 + 0.04);
+  group.add(portalFrame);
+
+  const portalDoor = new THREE.Mesh(
+    new THREE.BoxGeometry(0.58 + tier * 0.04, 0.78 + tier * 0.06, 0.22),
+    mats.timberWood
+  );
+  portalDoor.position.set(0, deckY + (0.78 + tier * 0.06) * 0.5, -0.1 + cellaL * 0.5 + 0.05);
+  group.add(portalDoor);
+
+  // 3. Peristyle Doric / Imperial Columns (T2+ front portico, T3+ full perimeter colonnade)
+  if (tier >= 2) {
+    const colH = cellaH + 0.08;
+    const frontZ = -0.1 + cellaL * 0.5 + 0.42;
+    const frontPositions = tier >= 3 ? [-1.35, -0.55, 0.55, 1.35] : [-0.72, 0.72];
+    for (const cx of frontPositions) {
+      const col = buildDoricColumn(colH, mats);
+      col.position.set(cx, deckY, frontZ);
+      group.add(col);
+    }
+  }
+  if (tier >= 3) {
+    const colH = cellaH + 0.08;
+    const sideX = cellaW * 0.5 + 0.42;
+    const zCount = tier >= 4 ? 3 : 2;
+    for (const sx of [-sideX, sideX]) {
+      for (let zi = -zCount; zi <= zCount; zi += 2) {
+        const col = buildDoricColumn(colH, mats);
+        col.position.set(sx, deckY, -0.1 + zi * 0.55);
         group.add(col);
       }
     }
   }
 
-  // Cella Sanctuary
-  const cellaH = 1.6 + age * 0.2;
-  const cella = new THREE.Mesh(new THREE.BoxGeometry(2.2 + age * 0.15, cellaH, 2.8 + age * 0.15), mats.marble);
-  cella.position.set(0, 0.42 + cellaH * 0.5, 0);
-  group.add(cella);
-
-  // Gable roof
+  // 4. Roof Architecture: Pitched Terracotta Pediment (Greek) or Domed Rotunda (Roman T4-T5)
+  const roofOverhangW = (cellaW + (tier >= 3 ? 0.95 : 0.35)) * 0.5;
+  const roofH = 0.62 + tier * 0.1;
+  const roofLen = cellaL + (tier >= 2 ? 0.72 : 0.25);
   const roofShape = new THREE.Shape();
-  roofShape.moveTo(-1.3, 0);
-  roofShape.lineTo(1.3, 0);
-  roofShape.lineTo(0, 0.75 + age * 0.05);
+  roofShape.moveTo(-roofOverhangW, 0);
+  roofShape.lineTo(roofOverhangW, 0);
+  roofShape.lineTo(0, roofH);
   roofShape.closePath();
-  const roofGeo = new THREE.ExtrudeGeometry(roofShape, { depth: 3.0 + age * 0.15, bevelEnabled: false });
-  const gableRoof = new THREE.Mesh(roofGeo, mats.terracottaRoof);
-  gableRoof.position.set(0, 0.42 + cellaH, -(1.5 + age * 0.08));
+  const roofGeo = new THREE.ExtrudeGeometry(roofShape, { depth: roofLen, bevelEnabled: false });
+  const gableRoof = new THREE.Mesh(roofGeo, roofMat);
+  gableRoof.position.set(0, deckY + cellaH, -0.1 - roofLen * 0.5 + (tier >= 2 ? 0.18 : 0));
   group.add(gableRoof);
 
-  // T3+: Relic shrine
-  if (age >= 3) {
+  // Roman Pantheon Imperial Dome on T4-T5
+  if (isRoman && tier >= 4) {
+    const drum = new THREE.Mesh(
+      new THREE.CylinderGeometry(cellaW * 0.42, cellaW * 0.46, 0.55, 16),
+      mats.marble
+    );
+    drum.position.set(0, deckY + cellaH + roofH * 0.55, -0.2);
+    group.add(drum);
+
+    const dome = new THREE.Mesh(
+      new THREE.SphereGeometry(cellaW * 0.44, 18, 12, 0, Math.PI * 2, 0, Math.PI / 2),
+      mats.goldTrim
+    );
+    dome.position.set(0, deckY + cellaH + roofH * 0.55 + 0.25, -0.2);
+    group.add(dome);
+  }
+
+  // 5. Flanking Courtyard Wings & Treasury Porticoes (T3-T5 Metropolis expansion)
+  if (tier >= 3) {
+    const wingW = 0.95 + (tier - 3) * 0.15;
+    const wingH = 1.05 + (tier - 3) * 0.22;
+    const wingL = 1.65 + (tier - 3) * 0.25;
+    const wingOffsetX = cellaW * 0.5 + wingW * 0.5 + 0.32;
+    for (const side of [-1, 1]) {
+      const wing = new THREE.Mesh(
+        new THREE.BoxGeometry(wingW, wingH, wingL),
+        mats.marble
+      );
+      wing.position.set(side * wingOffsetX, deckY + wingH * 0.5, -0.2);
+      group.add(wing);
+
+      const wingRoof = new THREE.Mesh(
+        new THREE.ConeGeometry(wingL * 0.52, 0.55 + (tier - 3) * 0.1, 4),
+        roofMat
+      );
+      wingRoof.rotation.y = Math.PI / 4;
+      wingRoof.position.set(side * wingOffsetX, deckY + wingH + 0.28, -0.2);
+      group.add(wingRoof);
+
+      if (tier >= 4) {
+        const finial = new THREE.Mesh(
+          new THREE.OctahedronGeometry(0.18, 0),
+          mats.goldTrim
+        );
+        finial.position.set(side * wingOffsetX, deckY + wingH + 0.68, -0.2);
+        group.add(finial);
+      }
+    }
+  }
+
+  // 6. Cultural Courtyard Props: Braziers (T2+), Delphic Tripod / Triumphal Arch (T3+), Golden Statues (T4+)
+  if (tier >= 2) {
+    for (const side of [-1, 1]) {
+      const brazierPed = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.13, 0.17, 0.34, 8),
+        mats.marbleDark
+      );
+      brazierPed.position.set(side * 0.92, deckY + 0.17, baseWidth * 0.42);
+      group.add(brazierPed);
+
+      const flame = new THREE.Mesh(
+        new THREE.ConeGeometry(0.13, 0.26, 6),
+        mats.emberGlow
+      );
+      flame.position.set(side * 0.92, deckY + 0.46, baseWidth * 0.42);
+      group.add(flame);
+    }
+  }
+
+  if (tier >= 3) {
     const tripod = buildDelphicTripodRelicShrine(mats);
-    tripod.position.set(1.4, 0.42, 1.4);
+    tripod.position.set(1.45, deckY, baseWidth * 0.34);
     group.add(tripod);
   }
 
-  // T4+: Golden statues / wreaths
-  if (age >= 4) {
-    const statueBase = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.4, 0.5), mats.goldTrim);
-    statueBase.position.set(-1.4, 0.42 + 0.2, 1.4);
-    group.add(statueBase);
+  if (tier >= 4) {
+    for (const side of [-1, 1]) {
+      const plinth = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.38, 0.48), mats.marbleDark);
+      plinth.position.set(side * 1.68, deckY + 0.19, baseWidth * 0.38);
+      group.add(plinth);
+
+      const statueBody = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.14, 0.18, 0.68, 8),
+        mats.goldTrim
+      );
+      statueBody.position.set(side * 1.68, deckY + 0.72, baseWidth * 0.38);
+      group.add(statueBody);
+
+      const statueCrest = new THREE.Mesh(
+        new THREE.SphereGeometry(0.16, 8, 8),
+        isRoman ? mats.teamBanner : mats.olympianGlow
+      );
+      statueCrest.position.set(side * 1.68, deckY + 1.16, baseWidth * 0.38);
+      group.add(statueCrest);
+    }
   }
 
-  // T5: Divine Olympian Spire & Halo
-  if (age >= 5) {
-    const spire = new THREE.Mesh(new THREE.ConeGeometry(0.35, 2.4, 8), mats.goldTrim);
-    spire.position.set(0, 0.42 + cellaH + 1.25, 0);
+  // 7. T5 DIVINE METROPOLIS CROWN (Upper Acropolis Cupola, Golden Spire & Rotating Celestial Halo)
+  let metropolisHalo: THREE.Object3D | undefined;
+  let metropolisCrystal: THREE.Object3D | undefined;
+
+  if (tier >= 5) {
+    const upperSanctum = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.88, 1.06, 0.72, 8),
+      trimMat
+    );
+    upperSanctum.position.set(0, deckY + cellaH + roofH + 0.15, -0.15);
+    group.add(upperSanctum);
+
+    const spire = new THREE.Mesh(new THREE.ConeGeometry(0.56, 1.55, 8), mats.goldTrim);
+    spire.position.set(0, deckY + cellaH + roofH + 1.25, -0.15);
     group.add(spire);
 
     const halo = new THREE.Mesh(
-      new THREE.TorusGeometry(0.9, 0.06, 8, 24),
-      new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.85 })
+      new THREE.TorusGeometry(1.18, 0.07, 10, 32),
+      isRoman ? mats.goldTrim : mats.olympianGlow
     );
     halo.rotation.x = Math.PI / 2;
-    halo.position.set(0, 0.42 + cellaH + 2.2, 0);
+    const haloY = deckY + cellaH + roofH + 2.15;
+    halo.position.set(0, haloY, -0.15);
+    halo.userData.baseY = haloY;
     group.add(halo);
+    metropolisHalo = halo;
+
+    const crystal = new THREE.Mesh(
+      new THREE.OctahedronGeometry(0.36, 0),
+      isRoman ? mats.relicGold : mats.olympianGlow
+    );
+    const crystalY = deckY + cellaH + roofH + 2.45;
+    crystal.position.set(0, crystalY, -0.15);
+    crystal.userData.baseY = crystalY;
+    group.add(crystal);
+    metropolisCrystal = crystal;
   }
 
-  const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 3.2, 6), mats.bronzeTrim);
-  pole.position.set(0, 0.42 + 1.6, 2.1);
+  // Team Banner Standard at forecourt
+  const pole = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.04, 0.045, 2.5 + tier * 0.25, 6),
+    accentMat
+  );
+  pole.position.set(-1.35, deckY + (2.5 + tier * 0.25) * 0.5, baseWidth * 0.42);
   group.add(pole);
 
-  const banner = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.85, 0.04), mats.teamBanner);
-  banner.position.set(0, 0.42 + 2.1, 2.13);
+  const banner = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.84, 0.04), mats.teamBanner);
+  banner.position.set(-1.35, deckY + 2.0 + tier * 0.22, baseWidth * 0.42 + 0.03);
   group.add(banner);
+
+  return { metropolisHalo, metropolisCrystal };
 }
 
 // ─── 2. BARRACKS (Quartel de Hoplitas) ──────────────────────────────────────
@@ -525,6 +709,8 @@ export interface GreekBuildingBuildResult {
   barWidth: number;
   beaconCrystal?: THREE.Object3D;
   vortexRing?: THREE.Object3D;
+  metropolisHalo?: THREE.Object3D;
+  metropolisCrystal?: THREE.Object3D;
 }
 
 export function createGreekBuildingMesh(
@@ -532,7 +718,8 @@ export function createGreekBuildingMesh(
   team: TeamId,
   pal: any,
   enableShadows = true,
-  age = 1
+  age = 1,
+  pantheon: PantheonId = 'greek'
 ): GreekBuildingBuildResult {
   const group = new THREE.Group();
   const mats = createGreekMaterials(team, pal);
@@ -542,15 +729,20 @@ export function createGreekBuildingMesh(
   let barWidth = 1.7;
   let beaconCrystal: THREE.Object3D | undefined;
   let vortexRing: THREE.Object3D | undefined;
+  let metropolisHalo: THREE.Object3D | undefined;
+  let metropolisCrystal: THREE.Object3D | undefined;
 
   switch (kind) {
-    case 'town_center':
-      buildGreekTownCenter(group, mats, age);
-      group.scale.setScalar(1.06 + (age - 1) * 0.05);
-      markerRadius = 3.65 + (age - 1) * 0.2;
-      barHeight = 4.0 + (age - 1) * 0.3;
-      barWidth = 3.0;
+    case 'town_center': {
+      const res = buildGreekTownCenter(group, mats, age, pantheon);
+      metropolisHalo = res.metropolisHalo;
+      metropolisCrystal = res.metropolisCrystal;
+      group.scale.setScalar(1.0 + (age - 1) * 0.055);
+      markerRadius = 3.55 + (age - 1) * 0.22;
+      barHeight = 3.65 + (age - 1) * 0.55;
+      barWidth = 3.0 + (age - 1) * 0.15;
       break;
+    }
     case 'barracks':
       buildGreekBarracks(group, mats);
       group.scale.setScalar(1.68);
@@ -656,5 +848,7 @@ export function createGreekBuildingMesh(
     barWidth,
     beaconCrystal,
     vortexRing,
+    metropolisHalo,
+    metropolisCrystal,
   };
 }

@@ -1335,15 +1335,33 @@ export function GameHUD({
             {/* ZONE 2 (LEFT-CENTER): Context-Strict Command Panel (No generic tabs) */}
             <div className="md:col-span-5 flex flex-col justify-between gap-1.5 md:border-r border-white/10 md:pr-2">
               <div className="flex items-center justify-between gap-1.5 border-b border-white/10 pb-1">
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-[#d4af37] truncate">
-                  {hud.selection.hasVillagerSelected
-                    ? 'Construções & Tarefas'
-                    : selectedPlayerBuildingKind
-                    ? getCivBuildingSpec(hud.pantheon, selectedPlayerBuildingKind).name
-                    : hud.selection.primaryType === 'unit' && hud.selection.team === 'player'
-                    ? 'Ordens & Formações'
-                    : 'Comandos'}
-                </span>
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-[#d4af37] truncate">
+                    {hud.selection.hasVillagerSelected
+                      ? 'Construções & Tarefas'
+                      : selectedPlayerBuildingKind
+                      ? getCivBuildingSpec(hud.pantheon, selectedPlayerBuildingKind).name
+                      : hud.selection.primaryType === 'unit' && hud.selection.team === 'player'
+                      ? 'Ordens & Formações'
+                      : 'Comandos'}
+                  </span>
+                  {selectedPlayerBuildingKind === 'town_center' && hud.selection.townCenterTier && (
+                    <span
+                      title={
+                        hud.selection.townCenterTier >= 5
+                          ? 'Centro da Cidade T5 — Metrópole Divina'
+                          : `Centro da Cidade Nível T${hud.selection.townCenterTier}`
+                      }
+                      className={`shrink-0 rounded border px-1 py-0.5 font-mono-num text-[9px] font-bold tracking-wider ${
+                        hud.selection.townCenterTier >= 5
+                          ? 'border-[#facc15]/70 bg-[#2b2108] text-[#fde047]'
+                          : 'border-[#c8a962]/45 bg-[#192030] text-[#e2d4ad]'
+                      }`}
+                    >
+                      {hud.selection.townCenterTier >= 5 ? 'T5 METRÓPOLE' : `T${hud.selection.townCenterTier}`}
+                    </span>
+                  )}
+                </div>
                 {isProductionBuilding && hud.selection.buildingId && (
                   <button
                     type="button"

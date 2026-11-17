@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { BuildingKind, TeamId } from '../../game/types';
+import { BuildingKind, PantheonId, TeamId } from '../../game/types';
 
 // ─── Procedural Atlantean Obsidian & Orichalcum Textures ─────────────────────
 
@@ -128,66 +128,233 @@ function buildPoseidonTridentRelicShrine(mats: AtlanteanMaterials): THREE.Group 
   return shrine;
 }
 
-// ─── 1. TOWN CENTER (Evolui de T1 até T5 — Metrópole Atlante) ───────────────
+// ─── 1. TOWN CENTER (Evolui de T1 até T5 — Metrópole Divina Atlante / Cidade Proibida / Cidadela Abissal) ──
 
-function buildAtlanteanTownCenter(group: THREE.Group, mats: AtlanteanMaterials, age: number): void {
+function buildAtlanteanTownCenter(
+  group: THREE.Group,
+  mats: AtlanteanMaterials,
+  age: number,
+  pantheon: PantheonId = 'atlantean'
+): { metropolisHalo?: THREE.Object3D; metropolisCrystal?: THREE.Object3D } {
+  const tier = Math.max(1, Math.min(5, Math.round(age)));
+  const isChinese = pantheon === 'chinese';
+  const isEldritch = pantheon === 'eldritch';
+
+  const plinthMat = isChinese ? mats.ivoryStone : mats.obsidianDark;
+  const wallMat = isChinese ? mats.ivoryStone : isEldritch ? mats.obsidian : mats.ivoryStone;
+  const roofMat = isChinese ? mats.teamBanner : isEldritch ? mats.obsidianDark : mats.turquoiseDome;
+  const trimMat = isChinese ? mats.relicGold : isEldritch ? mats.crystalGlow : mats.orichalcum;
+  const crystalMat = isChinese ? mats.relicGold : isEldritch ? mats.plasmaEmber : mats.crystalGlow;
+
+  // 1. Stepped Citadel Terrace (1 layer at T1 → 3 layers at T4-T5)
+  const baseW = 4.0 + tier * 0.34;
   const base = new THREE.Mesh(
-    new THREE.BoxGeometry((4.2 + age * 0.25), 0.45, (4.2 + age * 0.25)),
-    mats.obsidianDark
+    new THREE.BoxGeometry(baseW, 0.36, baseW),
+    plinthMat
   );
-  base.position.y = 0.225;
+  base.position.y = 0.18;
   group.add(base);
 
-  if (age >= 2) {
-    const innerPlatform = new THREE.Mesh(new THREE.BoxGeometry(3.8, 0.2, 3.8), mats.obsidian);
-    innerPlatform.position.y = 0.55;
+  let deckY = 0.36;
+  if (tier >= 2) {
+    const innerW = baseW - 0.55;
+    const innerPlatform = new THREE.Mesh(
+      new THREE.BoxGeometry(innerW, 0.22, innerW),
+      isChinese ? mats.orichalcum : mats.obsidian
+    );
+    innerPlatform.position.y = deckY + 0.11;
     group.add(innerPlatform);
+    deckY += 0.22;
+  }
+  if (tier >= 4) {
+    const upperW = baseW - 1.15;
+    const upperDeck = new THREE.Mesh(
+      new THREE.BoxGeometry(upperW, 0.2, upperW),
+      isEldritch ? mats.obsidianDark : mats.ivoryStone
+    );
+    upperDeck.position.y = deckY + 0.1;
+    group.add(upperDeck);
+    deckY += 0.2;
   }
 
-  const zigguratH = 1.6 + age * 0.25;
-  const ziggurat = new THREE.Mesh(new THREE.BoxGeometry(2.2 + age * 0.15, zigguratH, 2.6 + age * 0.15), mats.ivoryStone);
-  ziggurat.position.set(0, 0.55 + zigguratH * 0.5, -0.2);
+  // 2. Central Citadel Sanctuary / Forbidden Hall / Abyssal Monolith
+  const zigW = 2.0 + tier * 0.2;
+  const zigH = 1.35 + tier * 0.28;
+  const zigL = 2.25 + tier * 0.22;
+  const ziggurat = new THREE.Mesh(
+    new THREE.BoxGeometry(zigW, zigH, zigL),
+    wallMat
+  );
+  ziggurat.position.set(0, deckY + zigH * 0.5, -0.15);
   group.add(ziggurat);
 
-  const dome = new THREE.Mesh(new THREE.SphereGeometry(0.9 + age * 0.1, 16, 12, 0, Math.PI * 2, 0, Math.PI / 2), mats.turquoiseDome);
-  dome.position.set(0, 0.55 + zigguratH, -0.2);
-  group.add(dome);
+  // Corner Orichalcum / Crimson / Abyssal Rib Pillars (T2+)
+  if (tier >= 2) {
+    for (const sx of [-1, 1]) {
+      for (const sz of [-1, 1]) {
+        const col = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.11, 0.14, zigH + 0.15, 8),
+          isChinese ? mats.teamBanner : trimMat
+        );
+        col.position.set(sx * (zigW * 0.5 + 0.06), deckY + zigH * 0.5, -0.15 + sz * (zigL * 0.5 + 0.06));
+        group.add(col);
+      }
+    }
+  }
 
-  if (age >= 3) {
+  // 3. Cultural Crown Roof: Turquoise Cupola (Atlantean) / Tiered Pagoda (Chinese) / Jagged Monolith Crown (Eldritch)
+  let roofTopY = deckY + zigH;
+  if (isChinese) {
+    const pagodaTiers = tier >= 5 ? 3 : tier >= 3 ? 2 : 1;
+    for (let pt = 0; pt < pagodaTiers; pt++) {
+      const s = 1 - pt * 0.26;
+      const tierBaseH = pt === 0 ? 0 : 0.62 * pt;
+      if (pt > 0) {
+        const upperBox = new THREE.Mesh(
+          new THREE.BoxGeometry(zigW * s * 0.78, 0.58, zigL * s * 0.78),
+          mats.teamBanner
+        );
+        upperBox.position.set(0, deckY + zigH + tierBaseH - 0.18, -0.15);
+        group.add(upperBox);
+      }
+      const eaves = new THREE.Mesh(
+        new THREE.ConeGeometry((zigW * 0.78) * s, 0.62, 4),
+        roofMat
+      );
+      eaves.rotation.y = Math.PI / 4;
+      eaves.position.set(0, deckY + zigH + tierBaseH + 0.28, -0.15);
+      group.add(eaves);
+
+      const trimEdge = new THREE.Mesh(
+        new THREE.BoxGeometry((zigW + 0.35) * s, 0.08, (zigL + 0.35) * s),
+        mats.relicGold
+      );
+      trimEdge.position.set(0, deckY + zigH + tierBaseH + 0.02, -0.15);
+      group.add(trimEdge);
+      roofTopY = deckY + zigH + tierBaseH + 0.58;
+    }
+  } else if (isEldritch) {
+    const crown = new THREE.Mesh(
+      new THREE.ConeGeometry(zigW * 0.62, 1.15 + tier * 0.22, 6),
+      mats.obsidianDark
+    );
+    crown.position.set(0, deckY + zigH + (1.15 + tier * 0.22) * 0.5, -0.15);
+    group.add(crown);
+    roofTopY = deckY + zigH + 1.15 + tier * 0.22;
+  } else {
+    const domeR = 0.88 + tier * 0.12;
+    const dome = new THREE.Mesh(
+      new THREE.SphereGeometry(domeR, 18, 12, 0, Math.PI * 2, 0, Math.PI / 2),
+      roofMat
+    );
+    dome.position.set(0, deckY + zigH, -0.15);
+    group.add(dome);
+
+    if (tier >= 2) {
+      const domeRing = new THREE.Mesh(
+        new THREE.TorusGeometry(domeR * 0.98, 0.07, 8, 24),
+        mats.orichalcum
+      );
+      domeRing.rotation.x = Math.PI / 2;
+      domeRing.position.set(0, deckY + zigH + 0.04, -0.15);
+      group.add(domeRing);
+    }
+    roofTopY = deckY + zigH + domeR;
+  }
+
+  // 4. Flanking Palace Towers / Wings (T3-T5 Metropolis expansion)
+  if (tier >= 3) {
+    const wingW = 0.92 + (tier - 3) * 0.14;
+    const wingH = 1.05 + (tier - 3) * 0.24;
+    const wingX = zigW * 0.5 + wingW * 0.5 + 0.28;
+    for (const side of [-1, 1]) {
+      const wing = new THREE.Mesh(
+        new THREE.BoxGeometry(wingW, wingH, 1.55 + (tier - 3) * 0.2),
+        wallMat
+      );
+      wing.position.set(side * wingX, deckY + wingH * 0.5, -0.18);
+      group.add(wing);
+
+      if (isChinese) {
+        const wingRoof = new THREE.Mesh(new THREE.ConeGeometry(0.88, 0.55, 4), roofMat);
+        wingRoof.rotation.y = Math.PI / 4;
+        wingRoof.position.set(side * wingX, deckY + wingH + 0.25, -0.18);
+        group.add(wingRoof);
+      } else {
+        const wingDome = new THREE.Mesh(
+          new THREE.SphereGeometry(0.46, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2),
+          roofMat
+        );
+        wingDome.position.set(side * wingX, deckY + wingH, -0.18);
+        group.add(wingDome);
+      }
+    }
+
     const relicShrine = buildPoseidonTridentRelicShrine(mats);
-    relicShrine.position.set(1.4, 0.55, 1.4);
+    relicShrine.position.set(1.45, deckY, baseW * 0.34);
     group.add(relicShrine);
   }
 
-  if (age >= 4) {
-    for (const [ox, oz] of [[-1.5, -1.5], [1.5, -1.5]]) {
-      const crystalPillar = new THREE.Mesh(new THREE.OctahedronGeometry(0.25, 0), mats.crystalGlow);
-      crystalPillar.position.set(ox, 1.2, oz);
+  // 5. Four Corner Crystal Pylons / Jade Pillars (T4+)
+  if (tier >= 4) {
+    const cOffset = baseW * 0.38;
+    for (const [ox, oz] of [[-cOffset, -cOffset], [cOffset, -cOffset], [-cOffset, cOffset], [cOffset, cOffset]]) {
+      const pylonBase = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.14, 0.2, 0.85, 6),
+        trimMat
+      );
+      pylonBase.position.set(ox, deckY + 0.425, oz);
+      group.add(pylonBase);
+
+      const crystalPillar = new THREE.Mesh(new THREE.OctahedronGeometry(0.24, 0), crystalMat);
+      crystalPillar.position.set(ox, deckY + 1.18, oz);
       group.add(crystalPillar);
     }
   }
 
-  if (age >= 5) {
-    const giantSpire = new THREE.Mesh(new THREE.OctahedronGeometry(0.55, 1), mats.crystalGlow);
-    giantSpire.position.set(0, 0.55 + zigguratH + 1.6, -0.2);
-    group.add(giantSpire);
+  // 6. T5 DIVINE METROPOLIS CROWN (Astral Spire, Celestial Halo & Levitating Crystal)
+  let metropolisHalo: THREE.Object3D | undefined;
+  let metropolisCrystal: THREE.Object3D | undefined;
 
+  if (tier >= 5) {
+    const spireBase = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.32, 0.52, 0.72, 8),
+      trimMat
+    );
+    spireBase.position.set(0, roofTopY + 0.32, -0.15);
+    group.add(spireBase);
+
+    const haloY = roofTopY + 1.35;
     const halo = new THREE.Mesh(
-      new THREE.TorusGeometry(1.4, 0.08, 8, 24),
-      new THREE.MeshBasicMaterial({ color: 0x5eead4, transparent: true, opacity: 0.85 })
+      new THREE.TorusGeometry(1.32, 0.08, 10, 32),
+      trimMat
     );
     halo.rotation.x = Math.PI / 2;
-    halo.position.set(0, 0.55 + zigguratH + 2.2, -0.2);
+    halo.position.set(0, haloY, -0.15);
+    halo.userData.baseY = haloY;
     group.add(halo);
+    metropolisHalo = halo;
+
+    const crystalY = roofTopY + 1.55;
+    const giantSpire = new THREE.Mesh(new THREE.OctahedronGeometry(0.52, 1), crystalMat);
+    giantSpire.position.set(0, crystalY, -0.15);
+    giantSpire.userData.baseY = crystalY;
+    group.add(giantSpire);
+    metropolisCrystal = giantSpire;
   }
 
-  const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 3.2, 6), mats.orichalcum);
-  pole.position.set(0, 0.55 + 1.6, 2.15);
+  const pole = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.04, 0.045, 2.5 + tier * 0.25, 6),
+    trimMat
+  );
+  pole.position.set(-1.35, deckY + (2.5 + tier * 0.25) * 0.5, baseW * 0.42);
   group.add(pole);
 
   const banner = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.85, 0.04), mats.teamBanner);
-  banner.position.set(0, 0.55 + 2.1, 2.18);
+  banner.position.set(-1.35, deckY + 2.0 + tier * 0.22, baseW * 0.42 + 0.03);
   group.add(banner);
+
+  return { metropolisHalo, metropolisCrystal };
 }
 
 // ─── 2. BARRACKS ────────────────────────────────────────────────────────────
@@ -396,6 +563,8 @@ export interface AtlanteanBuildingBuildResult {
   barWidth: number;
   beaconCrystal?: THREE.Object3D;
   vortexRing?: THREE.Object3D;
+  metropolisHalo?: THREE.Object3D;
+  metropolisCrystal?: THREE.Object3D;
 }
 
 export function createAtlanteanBuildingMesh(
@@ -403,7 +572,8 @@ export function createAtlanteanBuildingMesh(
   team: TeamId,
   pal: any,
   enableShadows = true,
-  age = 1
+  age = 1,
+  pantheon: PantheonId = 'atlantean'
 ): AtlanteanBuildingBuildResult {
   const group = new THREE.Group();
   const mats = createAtlanteanMaterials(team, pal);
@@ -413,15 +583,20 @@ export function createAtlanteanBuildingMesh(
   let barWidth = 1.7;
   let beaconCrystal: THREE.Object3D | undefined;
   let vortexRing: THREE.Object3D | undefined;
+  let metropolisHalo: THREE.Object3D | undefined;
+  let metropolisCrystal: THREE.Object3D | undefined;
 
   switch (kind) {
-    case 'town_center':
-      buildAtlanteanTownCenter(group, mats, age);
-      group.scale.setScalar(1.06 + (age - 1) * 0.05);
-      markerRadius = 3.65 + (age - 1) * 0.2;
-      barHeight = 4.0 + (age - 1) * 0.3;
-      barWidth = 3.0;
+    case 'town_center': {
+      const res = buildAtlanteanTownCenter(group, mats, age, pantheon);
+      metropolisHalo = res.metropolisHalo;
+      metropolisCrystal = res.metropolisCrystal;
+      group.scale.setScalar(1.0 + (age - 1) * 0.055);
+      markerRadius = 3.55 + (age - 1) * 0.22;
+      barHeight = 3.7 + (age - 1) * 0.55;
+      barWidth = 3.0 + (age - 1) * 0.15;
       break;
+    }
     case 'barracks':
       buildAtlanteanBarracks(group, mats);
       group.scale.setScalar(1.68);
@@ -527,5 +702,7 @@ export function createAtlanteanBuildingMesh(
     barWidth,
     beaconCrystal,
     vortexRing,
+    metropolisHalo,
+    metropolisCrystal,
   };
 }

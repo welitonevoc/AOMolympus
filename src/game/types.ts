@@ -4543,6 +4543,7 @@ export interface SelectionSummary {
   screenPos?: { x: number; y: number };
   buildingId?: string;
   buildingKind?: BuildingKind;
+  townCenterTier?: AgeLevel;
   settlementId?: string;
   isConstructed?: boolean;
   buildProgress?: number;

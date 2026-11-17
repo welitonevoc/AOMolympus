@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { BuildingKind, FaunaKind, MapId, PANTHEONS, PantheonId, ResourceNodeKind, TeamId, UnitKind } from './types';
+import { AgeLevel, BuildingKind, FaunaKind, MapId, PANTHEONS, PantheonId, ResourceNodeKind, TeamId, UnitKind } from './types';
 import { createGreekUnitMesh } from '../civilizacao/gregos/gregosModels';
 import { createZeusMilitaryUnitMesh, ZeusMilitaryUnitKind } from '../civilizacao/gregos/zeusMilitaryModels';
 import { createZeusMythOrHeroMesh, ZeusMythOrHeroKind } from '../civilizacao/gregos/zeusMythAndHeroModels';
@@ -815,8 +815,12 @@ function buildSimpleTownCenter(
   team: TeamId,
   pal: MaterialPalette,
   look: CivLook,
-  enableShadows: boolean
+  enableShadows: boolean,
+  age: AgeLevel = 1
 ): void {
+  if (age > 1) {
+    root.scale.setScalar(1 + (age - 1) * 0.04);
+  }
   const village = getTownCenterVillageMats();
   const teamMat = team === 'player' ? pal.tunicPlayer : pal.tunicEnemy;
 
@@ -1042,20 +1046,27 @@ export function createBuildingMesh(
   pal: MaterialPalette,
   enableShadows: boolean,
   pantheon: PantheonId = 'greek',
-  majorGod?: string
+  majorGod?: string,
+  age: AgeLevel = 1
 ): THREE.Group {
   const root = new THREE.Group();
   const teamMat = team === 'player' ? pal.tunicPlayer : pal.tunicEnemy;
   const look = getCivLook(pantheon, pal, majorGod);
 
   if (look.style === 'norse') {
-    const built = createNorseBuildingMesh(kind, team, pal, enableShadows);
+    const built = createNorseBuildingMesh(kind, team, pal, enableShadows, age, pantheon);
     root.add(built.group);
     if (built.beaconCrystal) {
       root.userData.beaconCrystal = built.beaconCrystal;
     }
     if (built.vortexRing) {
       root.userData.vortexRing = built.vortexRing;
+    }
+    if (built.metropolisHalo) {
+      root.userData.metropolisHalo = built.metropolisHalo;
+    }
+    if (built.metropolisCrystal) {
+      root.userData.metropolisCrystal = built.metropolisCrystal;
     }
     attachGroundMarkers(root, built.markerRadius, pal, team);
     attachHealthBar(root, built.barHeight, built.barWidth);
@@ -1063,13 +1074,19 @@ export function createBuildingMesh(
   }
 
   if (look.style === 'egyptian') {
-    const built = createEgyptianBuildingMesh(kind, team, pal, enableShadows);
+    const built = createEgyptianBuildingMesh(kind, team, pal, enableShadows, age, pantheon);
     root.add(built.group);
     if (built.beaconCrystal) {
       root.userData.beaconCrystal = built.beaconCrystal;
     }
     if (built.vortexRing) {
       root.userData.vortexRing = built.vortexRing;
+    }
+    if (built.metropolisHalo) {
+      root.userData.metropolisHalo = built.metropolisHalo;
+    }
+    if (built.metropolisCrystal) {
+      root.userData.metropolisCrystal = built.metropolisCrystal;
     }
     attachGroundMarkers(root, built.markerRadius, pal, team);
     attachHealthBar(root, built.barHeight, built.barWidth);
@@ -1077,13 +1094,19 @@ export function createBuildingMesh(
   }
 
   if (look.style === 'greek') {
-    const built = createGreekBuildingMesh(kind, team, pal, enableShadows);
+    const built = createGreekBuildingMesh(kind, team, pal, enableShadows, age, pantheon);
     root.add(built.group);
     if (built.beaconCrystal) {
       root.userData.beaconCrystal = built.beaconCrystal;
     }
     if (built.vortexRing) {
       root.userData.vortexRing = built.vortexRing;
+    }
+    if (built.metropolisHalo) {
+      root.userData.metropolisHalo = built.metropolisHalo;
+    }
+    if (built.metropolisCrystal) {
+      root.userData.metropolisCrystal = built.metropolisCrystal;
     }
     attachGroundMarkers(root, built.markerRadius, pal, team);
     attachHealthBar(root, built.barHeight, built.barWidth);
@@ -1091,7 +1114,7 @@ export function createBuildingMesh(
   }
 
   if (look.style === 'atlantean') {
-    const built = createAtlanteanBuildingMesh(kind, team, pal, enableShadows);
+    const built = createAtlanteanBuildingMesh(kind, team, pal, enableShadows, age, pantheon);
     root.add(built.group);
     if (built.beaconCrystal) {
       root.userData.beaconCrystal = built.beaconCrystal;
@@ -1099,13 +1122,19 @@ export function createBuildingMesh(
     if (built.vortexRing) {
       root.userData.vortexRing = built.vortexRing;
     }
+    if (built.metropolisHalo) {
+      root.userData.metropolisHalo = built.metropolisHalo;
+    }
+    if (built.metropolisCrystal) {
+      root.userData.metropolisCrystal = built.metropolisCrystal;
+    }
     attachGroundMarkers(root, built.markerRadius, pal, team);
     attachHealthBar(root, built.barHeight, built.barWidth);
     return root;
   }
 
   if (kind === 'town_center') {
-    buildSimpleTownCenter(root, team, pal, look, enableShadows);
+    buildSimpleTownCenter(root, team, pal, look, enableShadows, age);
     return root;
   }
 

@@ -2149,6 +2149,72 @@ export class AoMEngine {
     return entity;
   }
 
+  private getTownCenterTierMaxHp(team: TeamId, age: AgeLevel): number {
+    const pantheon = this.teamPantheon(team);
+    const baseMaxHp = getCivBuildingSpec(pantheon, 'town_center').maxHp;
+    const tierMult = 1 + Math.max(0, age - 1) * 0.25;
+    return Math.round(baseMaxHp * tierMult);
+  }
+
+  private disposeBuildingVisualMeshes(root: THREE.Object3D) {
+    root.traverse((obj) => {
+      if (obj.userData?.ignoreRaycast) return;
+      if ((obj as THREE.Mesh).isMesh) {
+        (obj as THREE.Mesh).geometry?.dispose();
+      }
+    });
+  }
+
+  private upgradeTeamTownCenters(team: TeamId, newAge: AgeLevel) {
+    const pantheon = this.teamPantheon(team);
+    const majorGod = team === 'player' ? this.majorGodName : undefined;
+    const suddenDeathMult = this.mapId === 'sudden_death' ? 1.5 : 1;
+    const tierMaxHp = Math.round(this.getTownCenterTierMaxHp(team, newAge) * suddenDeathMult);
+
+    for (const b of this.buildings.values()) {
+      if (b.team !== team || b.kind !== 'town_center') continue;
+
+      const prevMax = b.maxHp;
+      b.maxHp = tierMaxHp;
+      if (b.isConstructed) {
+        b.hp = Math.min(b.maxHp, b.hp + Math.max(0, b.maxHp - prevMax));
+      } else {
+        b.hp = Math.min(b.maxHp, Math.round(b.maxHp * Math.max(0.25, b.buildProgress)));
+      }
+
+      const oldMesh = b.mesh;
+      const newMesh = createBuildingMesh(
+        'town_center',
+        b.team,
+        this.palette,
+        !this.isSoftwareGl,
+        pantheon,
+        majorGod,
+        newAge
+      );
+      newMesh.position.copy(oldMesh.position);
+      newMesh.rotation.copy(oldMesh.rotation);
+      newMesh.scale.copy(oldMesh.scale);
+      newMesh.userData.entityType = 'building';
+      newMesh.userData.entityId = b.id;
+      if (newMesh.userData.selectionRing) {
+        newMesh.userData.selectionRing.visible = b.selected;
+      }
+
+      this.scene.remove(oldMesh);
+      this.disposeBuildingVisualMeshes(oldMesh);
+      this.scene.add(newMesh);
+      b.mesh = newMesh;
+      this.updateHealthBarVisual(b.mesh, b.hp, b.maxHp, b.selected);
+
+      if (b.isConstructed) {
+        const ringColor = newAge >= 5 ? 0xfacc15 : team === 'player' ? 0x38bdf8 : 0xf97316;
+        this.spawnRingVfx(b.mesh.position, 9.5 + newAge * 0.8, ringColor, 1.25);
+        this.spawnPillarVfx(b.mesh.position, newAge >= 5 ? 0xfde047 : ringColor, newAge >= 5 ? 2.1 : 1.35);
+      }
+    }
+  }
+
   private spawnBuilding(
     kind: BuildingKind,
     team: TeamId,
@@ -2160,8 +2226,18 @@ export class AoMEngine {
   ): BuildingEntity {
     const id = fixedId ?? `b_${this.nextId++}`;
     const pantheon = this.teamPantheon(team);
+    const teamAge: AgeLevel = team === 'player' ? this.age : this.enemyAge;
     const stats = getCivBuildingSpec(pantheon, kind);
-    const mesh = createBuildingMesh(kind, team, this.palette, !this.isSoftwareGl, pantheon, team === 'player' ? this.majorGodName : undefined);
+    const maxHp = kind === 'town_center' ? this.getTownCenterTierMaxHp(team, teamAge) : stats.maxHp;
+    const mesh = createBuildingMesh(
+      kind,
+      team,
+      this.palette,
+      !this.isSoftwareGl,
+      pantheon,
+      team === 'player' ? this.majorGodName : undefined,
+      kind === 'town_center' ? teamAge : 1
+    );
     mesh.position.set(x, groundHeightAt(x, z, this.mapId), z);
     mesh.userData.entityType = 'building';
     mesh.userData.entityId = id;
@@ -2178,8 +2254,8 @@ export class AoMEngine {
       kind,
       team,
       mesh,
-      hp: isConstructed ? stats.maxHp : Math.round(stats.maxHp * 0.25),
-      maxHp: stats.maxHp,
+      hp: isConstructed ? maxHp : Math.round(maxHp * 0.25),
+      maxHp,
       radius: this.getCivBuildingRadius(kind, team),
       selected: false,
       isConstructed,
@@ -2672,7 +2748,15 @@ export class AoMEngine {
     this.activeBuildMode = kind;
 
     this.clearPlacementGhost();
-    const ghost = createBuildingMesh(kind, 'player', this.palette, false, this.pantheon, this.majorGodName);
+    const ghost = createBuildingMesh(
+      kind,
+      'player',
+      this.palette,
+      false,
+      this.pantheon,
+      this.majorGodName,
+      kind === 'town_center' ? this.age : 1
+    );
     ghost.scale.copy(this.getBuildingScale(kind));
     ghost.traverse((obj) => {
       if ((obj as THREE.Mesh).isMesh) {
@@ -8595,6 +8679,21 @@ export class AoMEngine {
         }
       }
 
+      if (b.isConstructed && b.kind === 'town_center') {
+        const halo = b.mesh.userData.metropolisHalo as THREE.Object3D | undefined;
+        if (halo) {
+          halo.rotation.z += dt * 0.75;
+          const baseY = (halo.userData.baseY as number | undefined) ?? halo.position.y;
+          halo.position.y = baseY + Math.sin(this.elapsedSeconds * 2.1) * 0.06;
+        }
+        const crystal = b.mesh.userData.metropolisCrystal as THREE.Object3D | undefined;
+        if (crystal) {
+          crystal.rotation.y += dt * 1.45;
+          const baseY = (crystal.userData.baseY as number | undefined) ?? crystal.position.y;
+          crystal.position.y = baseY + Math.sin(this.elapsedSeconds * 2.5 + 0.6) * 0.1;
+        }
+      }
+
       if (b.kind === 'titan_gate' && b.mesh.userData.vortexRing) {
         b.mesh.userData.vortexRing.rotation.z += dt * (b.isConstructed ? 2.2 : 0.8);
       }
@@ -9270,21 +9369,25 @@ export class AoMEngine {
       if (this.enemyAge === 1 && this.elapsedSeconds > 75 && this.canAfford(this.enemyResources, AGE_COSTS[2])) {
         this.deductCost(this.enemyResources, AGE_COSTS[2]);
         this.enemyAge = 2;
+        this.upgradeTeamTownCenters('enemy', 2);
         soundEngine.playAgeTransitionComplete(2, this.enemyPantheon, true);
         this.notifyStatus(`⚠️ O inimigo avançou para a ${AGE_NAMES[2]}!`);
       } else if (this.enemyAge === 2 && this.elapsedSeconds > 165 && this.canAfford(this.enemyResources, AGE_COSTS[3])) {
         this.deductCost(this.enemyResources, AGE_COSTS[3]);
         this.enemyAge = 3;
+        this.upgradeTeamTownCenters('enemy', 3);
         soundEngine.playAgeTransitionComplete(3, this.enemyPantheon, true);
         this.notifyStatus(`⚠️ O inimigo avançou para a ${AGE_NAMES[3]}!`);
       } else if (this.enemyAge === 3 && this.elapsedSeconds > 260 && this.canAfford(this.enemyResources, AGE_COSTS[4])) {
         this.deductCost(this.enemyResources, AGE_COSTS[4]);
         this.enemyAge = 4;
+        this.upgradeTeamTownCenters('enemy', 4);
         soundEngine.playAgeTransitionComplete(4, this.enemyPantheon, true);
         this.notifyStatus(`⚠️ O inimigo alcançou a ${AGE_NAMES[4]}!`);
       } else if (this.enemyAge === 4 && this.elapsedSeconds > 380 && this.canAfford(this.enemyResources, AGE_COSTS[5])) {
         this.deductCost(this.enemyResources, AGE_COSTS[5]);
         this.enemyAge = 5;
+        this.upgradeTeamTownCenters('enemy', 5);
         soundEngine.playAgeTransitionComplete(5, this.enemyPantheon, true);
         this.notifyStatus(`⚡ ALERTA: O inimigo ascendeu à ${AGE_NAMES[5]}!`);
       }
@@ -9805,11 +9908,18 @@ export class AoMEngine {
       const hackPct = Math.round(stats.hackArmor * 100);
       const piercePct = Math.round(stats.pierceArmor * 100);
       const crushPct = Math.round(stats.crushArmor * 100);
+      const tcTier: AgeLevel | undefined =
+        b.kind === 'town_center' ? (b.team === 'player' ? this.age : this.enemyAge) : undefined;
+      const tcLabel = tcTier
+        ? tcTier >= 5
+          ? `${stats.name} (T5 · Metrópole Divina)`
+          : `${stats.name} (T${tcTier})`
+        : stats.name;
       return {
         count: 1,
         primaryType: 'building',
         entityId: b.id,
-        kindLabel: stats.name,
+        kindLabel: tcLabel,
         roleLabel: stats.role,
         team: b.team,
         hp: Math.round(b.hp),
@@ -9823,6 +9933,7 @@ export class AoMEngine {
         screenPos: this.projectWorldToScreen(b.mesh.position, 3.8),
         buildingId: b.id,
         buildingKind: b.kind,
+        townCenterTier: tcTier,
         isConstructed: b.isConstructed,
         buildProgress: b.buildProgress,
         trainingQueue: b.trainingQueue.map((q) => ({ ...q })),
@@ -10363,6 +10474,7 @@ export class AoMEngine {
           this.advancingToAge = null;
           this.ageAdvanceProgress = 0;
           this.ageAdvanceTotal = 0;
+          this.upgradeTeamTownCenters('player', this.age);
           soundEngine.playAgeTransitionComplete(this.age, this.pantheon, false);
           const themeInfo = soundEngine.getAgeThemeInfo(this.age, this.pantheon);
           if (this.age === 5) {
@@ -10374,21 +10486,16 @@ export class AoMEngine {
               this.activeTechResearch = null;
             }
             this.notifyStatus(
-              `⚡ ERA V: ERA DOS DEUSES ALCANÇADA! (${themeInfo.title}) — Convocação Divina habilitada no Templo!`
+              `⚡ ERA V: ERA DOS DEUSES ALCANÇADA! (${themeInfo.title}) — Metrópole Divina & Convocação Divina habilitadas!`
             );
             for (const b of this.buildings.values()) {
-              if (b.team === 'player' && (b.kind === 'town_center' || b.kind === 'temple')) {
+              if (b.team === 'player' && b.kind === 'temple') {
                 this.spawnPillarVfx(b.mesh.position, 0xfacc15, 2.0);
                 this.spawnRingVfx(b.mesh.position, 10, 0xc084fc, 1.3);
               }
             }
           } else {
-            this.notifyStatus(`🏛️ Avançou para a ${AGE_NAMES[this.age]}! ♪ ${themeInfo.title}`);
-            for (const b of this.buildings.values()) {
-              if (b.team === 'player' && b.kind === 'town_center') {
-                this.spawnRingVfx(b.mesh.position, 9, 0xfacc15, 1.1);
-              }
-            }
+            this.notifyStatus(`🏛️ Avançou para a ${AGE_NAMES[this.age]}! Centros evoluíram para T${this.age} · ♪ ${themeInfo.title}`);
           }
         }
       }
@@ -10404,11 +10511,15 @@ export class AoMEngine {
           }
           const tech = TECH_SPECS[doneId];
           if (doneId === 'secrets_of_titans') {
+            const prevAge = this.age;
             this.age = 5;
+            if (prevAge < 5) {
+              this.upgradeTeamTownCenters('player', 5);
+            }
             soundEngine.playAgeTransitionComplete(5, this.pantheon, false);
             const themeInfo = soundEngine.getAgeThemeInfo(5, this.pantheon);
             this.notifyStatus(
-              `⚡ ERA V: ERA DOS DEUSES DESBLOQUEADA! (${themeInfo.title}) — Invoque Deuses no Templo e erga o Portão do Titã!`
+              `⚡ ERA V: ERA DOS DEUSES DESBLOQUEADA! (${themeInfo.title}) — Metrópole Divina erguida & Portão do Titã liberado!`
             );
           } else {
             soundEngine.playFanfare(false);

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { BuildingKind, TeamId } from '../../game/types';
+import { BuildingKind, PantheonId, TeamId } from '../../game/types';
 
 // ─── Procedural Wood-and-Stone Nordic Building Textures ─────────────────────
 
@@ -438,244 +438,424 @@ function addBoulderCluster(
   parent.add(b2);
 }
 
-// ─── 1. GREAT LONGHOUSE (Norse Town Center — Salão Comunal / Grande Casa Longa) ───
+// ─── 1. GREAT LONGHOUSE / TENSHU / DRUIDIC HALL / SUN-DANCE LODGE / FROST CITADEL (Town Center T1–T5 Metrópole) ───
 
 function buildNorseLonghouseTownCenter(
   group: THREE.Group,
-  mats: NorseMaterials
-): void {
-  // 1. Massive Dry-Stacked Granite & Slate Plinth Terrace
+  mats: NorseMaterials,
+  age = 1,
+  pantheon: PantheonId = 'norse'
+): { metropolisHalo?: THREE.Object3D; metropolisCrystal?: THREE.Object3D } {
+  const tier = Math.max(1, Math.min(5, Math.round(age)));
+  const isJapanese = pantheon === 'japanese';
+  const isCeltic = pantheon === 'celtic';
+  const isLakota = pantheon === 'lakota';
+  const isJotunn = pantheon === 'jotunn';
+
+  // 1. Dry-Stacked Granite & Slate Plinth Terrace (expands T1 → T5)
+  const plinthW = 4.35 + tier * 0.34;
   const stonePlinth = new THREE.Mesh(
-    new THREE.BoxGeometry(5.1, 0.36, 5.1),
-    mats.graniteStone
+    new THREE.BoxGeometry(plinthW, 0.34, plinthW),
+    isLakota ? mats.timberWall : mats.graniteStone
   );
-  stonePlinth.position.y = 0.18;
+  stonePlinth.position.y = 0.17;
   group.add(stonePlinth);
 
-  const upperStoneDeck = new THREE.Mesh(
-    new THREE.BoxGeometry(4.5, 0.18, 4.5),
-    mats.slateStone
-  );
-  upperStoneDeck.position.y = 0.42;
-  group.add(upperStoneDeck);
+  let deckY = 0.34;
+  if (tier >= 2) {
+    const upperW = plinthW - 0.56;
+    const upperStoneDeck = new THREE.Mesh(
+      new THREE.BoxGeometry(upperW, 0.2, upperW),
+      isJotunn ? mats.runeGlow : mats.slateStone
+    );
+    upperStoneDeck.position.y = deckY + 0.1;
+    group.add(upperStoneDeck);
+    deckY += 0.2;
+  }
 
-  // Wide front stone steps leading up to the Chieftain's Hall
-  for (let i = 0; i < 3; i++) {
+  // Wide front stone steps leading up to the Hall
+  const stepCount = tier >= 3 ? 3 : 2;
+  for (let i = 0; i < stepCount; i++) {
     const step = new THREE.Mesh(
-      new THREE.BoxGeometry(1.7 - i * 0.12, 0.12, 0.38),
+      new THREE.BoxGeometry(1.65 - i * 0.12, 0.12, 0.36),
       mats.graniteStone
     );
-    step.position.set(0, 0.08 + i * 0.12, 2.38 - i * 0.18);
+    step.position.set(0, 0.08 + i * 0.12, plinthW * 0.5 + 0.1 - i * 0.16);
     group.add(step);
   }
 
-  // Corner stone boulder buttresses around foundation
-  for (const [bx, bz] of [
-    [-2.25, -2.25],
-    [2.25, -2.25],
-    [-2.25, 2.25],
-    [2.25, 2.25],
-  ]) {
-    addBoulderCluster(group, bx, 0.18, bz, 1.35, mats.graniteStone);
+  // Corner stone boulder buttresses around foundation (T2+)
+  if (tier >= 2) {
+    const cOff = plinthW * 0.44;
+    for (const [bx, bz] of [
+      [-cOff, -cOff],
+      [cOff, -cOff],
+      [-cOff, cOff],
+      [cOff, cOff],
+    ]) {
+      addBoulderCluster(group, bx, 0.16, bz, 1.15 + tier * 0.1, mats.graniteStone);
+    }
   }
 
-  // 2. Main Chieftain's Longhouse Timber Hull (Elongated Nordic Hall)
-  const hallW = 2.45;
-  const hallH = 1.25;
-  const hallL = 3.75;
-  const mainHall = new THREE.Mesh(
-    new THREE.BoxGeometry(hallW, hallH, hallL),
-    mats.timberWall
-  );
-  mainHall.position.set(0, 0.5 + hallH * 0.5, -0.1);
-  group.add(mainHall);
+  // 2. Main Hall / Cultural Core (grows from modest T1 Longhouse to Grand T5 Metropolis Citadel)
+  const hallW = 2.0 + tier * 0.2;
+  const hallH = 1.0 + tier * 0.16;
+  const hallL = 2.95 + tier * 0.28;
+  const wallMat = isJapanese
+    ? mats.slateStone
+    : isJotunn
+    ? mats.slateStone
+    : isLakota
+    ? mats.thatchGold
+    : mats.timberWall;
+  const roofMat = isJapanese
+    ? mats.slateStone
+    : isCeltic || isLakota
+    ? mats.thatchGold
+    : mats.shingleRoof;
+  const trimMat = isJapanese
+    ? mats.teamBanner
+    : isJotunn
+    ? mats.runeGlow
+    : mats.carvedTrim;
 
-  // Carved Rune Trim frieze around top of hall walls
-  const frieze = new THREE.Mesh(
-    new THREE.BoxGeometry(hallW + 0.08, 0.22, hallL + 0.08),
-    mats.carvedTrim
-  );
-  frieze.position.set(0, 0.5 + hallH - 0.1, -0.1);
-  group.add(frieze);
+  if (isLakota && tier <= 2) {
+    // Circular Sacred Earth Lodge
+    const lodge = new THREE.Mesh(
+      new THREE.CylinderGeometry(hallW * 0.65, hallW * 0.78, hallH, 12),
+      mats.thatchGold
+    );
+    lodge.position.set(0, deckY + hallH * 0.5, -0.1);
+    group.add(lodge);
+  } else {
+    const mainHall = new THREE.Mesh(
+      new THREE.BoxGeometry(hallW, hallH, hallL),
+      wallMat
+    );
+    mainHall.position.set(0, deckY + hallH * 0.5, -0.1);
+    group.add(mainHall);
+  }
 
-  // Curved exterior stave ribs / buttress timbers along both long walls
-  for (let i = -3; i <= 3; i++) {
-    const zPos = -0.1 + i * 0.52;
-    for (const side of [-1, 1]) {
-      const rib = new THREE.Mesh(
-        new THREE.BoxGeometry(0.14, hallH + 0.12, 0.14),
-        mats.darkBeam
-      );
-      rib.position.set(side * (hallW * 0.5 + 0.05), 0.5 + hallH * 0.5, zPos);
-      group.add(rib);
+  // Carved Rune / Lacquer Trim frieze around top of hall walls (T2+)
+  if (tier >= 2 && !(isLakota && tier <= 2)) {
+    const frieze = new THREE.Mesh(
+      new THREE.BoxGeometry(hallW + 0.08, 0.2, hallL + 0.08),
+      trimMat
+    );
+    frieze.position.set(0, deckY + hallH - 0.08, -0.1);
+    group.add(frieze);
+  }
 
-      // Painted Viking Round Shields mounted between stave ribs
-      if (Math.abs(i) <= 2) {
-        const shield = buildVikingShield(
-          0.19,
-          (i + (side > 0 ? 1 : 0)) % 2 === 0 ? mats.teamBanner : mats.shieldAlt,
-          mats.bronzeMetal
+  // Exterior Stave Buttresses & Viking Shields (T2+ for Norse/Celtic/Jotunn)
+  if (!isLakota && !isJapanese) {
+    const ribCount = tier >= 3 ? 3 : 2;
+    for (let i = -ribCount; i <= ribCount; i++) {
+      const zPos = -0.1 + i * (hallL / (ribCount * 2 + 1));
+      for (const side of [-1, 1]) {
+        const rib = new THREE.Mesh(
+          new THREE.BoxGeometry(0.13, hallH + 0.1, 0.13),
+          mats.darkBeam
         );
-        shield.position.set(side * (hallW * 0.5 + 0.09), 0.5 + hallH * 0.58, zPos + 0.25);
-        if (side < 0) shield.rotation.y = Math.PI;
-        group.add(shield);
+        rib.position.set(side * (hallW * 0.5 + 0.04), deckY + hallH * 0.5, zPos);
+        group.add(rib);
+
+        if (tier >= 2 && Math.abs(i) <= ribCount - 1) {
+          const shield = buildVikingShield(
+            0.18,
+            (i + (side > 0 ? 1 : 0)) % 2 === 0 ? mats.teamBanner : mats.shieldAlt,
+            tier >= 4 ? mats.bronzeMetal : mats.ironMetal
+          );
+          shield.position.set(side * (hallW * 0.5 + 0.08), deckY + hallH * 0.58, zPos + 0.2);
+          if (side < 0) shield.rotation.y = Math.PI;
+          group.add(shield);
+        }
       }
     }
   }
 
-  // 3. Two-Tiered Steeply Pitched Stave Shingle Roof with Drakkar Dragon Prows
-  const lowerRoof = buildPitchedStaveRoof(
-    hallW + 0.45,
-    1.15,
-    hallL + 0.35,
-    mats.shingleRoof,
-    mats.darkBeam,
-    mats.carvedTrim,
-    true
-  );
-  lowerRoof.position.set(0, 0.5 + hallH, -0.1);
-  group.add(lowerRoof);
+  // 3. Roof Tiers: Pitched Stave Roof / Japanese Tenshu Tiers / Lakota Grand Sun-Dance Pavilion
+  let roofApexY = deckY + hallH;
+  if (isJapanese) {
+    // Japanese Tenshu Castle Tiered Pagoda Roofs (1 tier at T1 → 3 tiers at T4-T5)
+    const pagodaTiers = tier >= 4 ? 3 : tier >= 2 ? 2 : 1;
+    let curY = deckY + hallH;
+    for (let pt = 0; pt < pagodaTiers; pt++) {
+      const scale = 1 - pt * 0.26;
+      if (pt > 0) {
+        const story = new THREE.Mesh(
+          new THREE.BoxGeometry(hallW * scale * 0.78, 0.68, hallL * scale * 0.74),
+          mats.timberWall
+        );
+        story.position.set(0, curY + 0.34, -0.1);
+        group.add(story);
+        curY += 0.68;
+      }
+      const pRoof = buildPitchedStaveRoof(
+        (hallW + 0.5) * scale,
+        0.58,
+        (hallL + 0.45) * scale,
+        roofMat,
+        mats.darkBeam,
+        pt === pagodaTiers - 1 && tier >= 4 ? mats.bronzeMetal : trimMat,
+        pt === pagodaTiers - 1
+      );
+      pRoof.position.set(0, curY, -0.1);
+      group.add(pRoof);
+      curY += 0.55;
+    }
+    roofApexY = curY;
 
-  // Upper raised clerestory roof tier (classic Jarl/King's Great Hall)
-  const upperTierWalls = new THREE.Mesh(
-    new THREE.BoxGeometry(1.35, 0.45, 2.35),
-    mats.carvedTrim
-  );
-  upperTierWalls.position.set(0, 0.5 + hallH + 0.85, -0.1);
-  group.add(upperTierWalls);
+    // Crimson Torii Gate at front entrance (T2+)
+    if (tier >= 2) {
+      for (const side of [-0.65, 0.65]) {
+        const post = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.08, 0.1, 1.35, 8),
+          mats.teamBanner
+        );
+        post.position.set(side, deckY + 0.675, plinthW * 0.43);
+        group.add(post);
+      }
+      const kasagi = new THREE.Mesh(
+        new THREE.BoxGeometry(1.75, 0.14, 0.16),
+        mats.teamBanner
+      );
+      kasagi.position.set(0, deckY + 1.35, plinthW * 0.43);
+      group.add(kasagi);
+    }
+  } else {
+    // Standard Nordic / Celtic / Lakota / Jotunn Roof Progression
+    const lowerRoofH = 0.85 + tier * 0.08;
+    const lowerRoof = buildPitchedStaveRoof(
+      hallW + 0.42,
+      lowerRoofH,
+      hallL + 0.32,
+      roofMat,
+      mats.darkBeam,
+      tier >= 4 ? mats.bronzeMetal : mats.carvedTrim,
+      tier >= 2
+    );
+    lowerRoof.position.set(0, deckY + hallH, -0.1);
+    group.add(lowerRoof);
+    roofApexY = deckY + hallH + lowerRoofH;
 
-  const upperRoof = buildPitchedStaveRoof(
-    1.55,
-    0.82,
-    2.55,
-    mats.shingleRoof,
-    mats.darkBeam,
-    mats.bronzeMetal,
-    true
-  );
-  upperRoof.position.set(0, 0.5 + hallH + 1.06, -0.1);
-  group.add(upperRoof);
+    // T3+: Upper Raised Jarl Clerestory Tier
+    if (tier >= 3) {
+      const upperWalls = new THREE.Mesh(
+        new THREE.BoxGeometry(1.25 + (tier - 3) * 0.18, 0.48, 2.15 + (tier - 3) * 0.25),
+        tier >= 4 ? mats.bronzeMetal : mats.carvedTrim
+      );
+      upperWalls.position.set(0, deckY + hallH + 0.82, -0.1);
+      group.add(upperWalls);
+
+      const upperRoof = buildPitchedStaveRoof(
+        1.5 + (tier - 3) * 0.2,
+        0.82,
+        2.35 + (tier - 3) * 0.28,
+        roofMat,
+        mats.darkBeam,
+        tier >= 4 ? mats.bronzeMetal : mats.carvedTrim,
+        true
+      );
+      upperRoof.position.set(0, deckY + hallH + 1.04, -0.1);
+      group.add(upperRoof);
+      roofApexY = deckY + hallH + 1.88;
+    }
+  }
 
   // Central Smoke-Hole (Ljóri) Chimney Vent with glowing Hearth Ember
   const smokeVent = new THREE.Mesh(
-    new THREE.BoxGeometry(0.46, 0.28, 0.46),
+    new THREE.BoxGeometry(0.44, 0.26, 0.44),
     mats.darkBeam
   );
-  smokeVent.position.set(0, 0.5 + hallH + 1.85, -0.1);
+  smokeVent.position.set(0, roofApexY + 0.05, -0.1);
   group.add(smokeVent);
 
   const hearthEmber = new THREE.Mesh(
-    new THREE.SphereGeometry(0.16, 10, 10),
-    mats.emberGlow
+    new THREE.SphereGeometry(0.15, 10, 10),
+    isJotunn ? mats.runeGlow : mats.emberGlow
   );
-  hearthEmber.position.set(0, 0.5 + hallH + 1.98, -0.1);
+  hearthEmber.position.set(0, roofApexY + 0.18, -0.1);
   group.add(hearthEmber);
 
-  // 4. Grand Carved Front Portico (Chieftain's Entrance)
+  // 4. Grand Carved Front Portico, Braziers & Banners (scales T1 → T5)
+  const porchZ = -0.1 + hallL * 0.5 + 0.28;
   const porchRoof = buildPitchedStaveRoof(
-    1.45,
-    0.68,
-    0.95,
-    mats.shingleRoof,
+    1.38,
+    0.64,
+    0.9,
+    roofMat,
     mats.darkBeam,
     mats.carvedTrim,
-    true
+    tier >= 2
   );
-  porchRoof.position.set(0, 1.42, 1.95);
+  porchRoof.position.set(0, deckY + 0.92, porchZ);
   group.add(porchRoof);
 
   for (const side of [-1, 1]) {
     const pillar = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.11, 0.13, 1.05, 8),
+      new THREE.CylinderGeometry(0.1, 0.12, 1.0, 8),
       mats.carvedTrim
     );
-    pillar.position.set(side * 0.56, 0.98, 2.22);
+    pillar.position.set(side * 0.54, deckY + 0.48, porchZ + 0.24);
     group.add(pillar);
 
-    // Roaring bronze fire-brazier flanking the entrance steps
-    const brazierStand = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.14, 0.18, 0.36, 8),
-      mats.graniteStone
-    );
-    brazierStand.position.set(side * 0.92, 0.68, 2.15);
-    group.add(brazierStand);
+    if (tier >= 2) {
+      const brazierStand = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.13, 0.17, 0.34, 8),
+        mats.graniteStone
+      );
+      brazierStand.position.set(side * 0.94, deckY + 0.17, porchZ + 0.22);
+      group.add(brazierStand);
 
-    const brazierBowl = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.2, 0.11, 0.14, 8),
-      mats.bronzeMetal
-    );
-    brazierBowl.position.set(side * 0.92, 0.9, 2.15);
-    group.add(brazierBowl);
+      const flame = new THREE.Mesh(
+        new THREE.ConeGeometry(0.14, 0.28, 6),
+        isJotunn ? mats.runeGlow : mats.emberGlow
+      );
+      flame.position.set(side * 0.94, deckY + 0.48, porchZ + 0.22);
+      group.add(flame);
+    }
 
-    const flame = new THREE.Mesh(
-      new THREE.ConeGeometry(0.14, 0.28, 6),
-      mats.emberGlow
-    );
-    flame.position.set(side * 0.92, 1.08, 2.15);
-    group.add(flame);
+    // Clan War-Banner Standard (1 at T1, 2 at T2+)
+    if (tier >= 2 || side === -1) {
+      const pole = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.03, 0.035, 1.65 + tier * 0.22, 6),
+        mats.darkBeam
+      );
+      pole.position.set(side * 1.38, deckY + (1.65 + tier * 0.22) * 0.5, porchZ + 0.14);
+      group.add(pole);
 
-    // Tall Clan War-Banner Standard
-    const pole = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.03, 0.035, 1.75, 6),
-      mats.darkBeam
-    );
-    pole.position.set(side * 1.35, 1.32, 2.08);
-    group.add(pole);
-
-    const banner = new THREE.Mesh(
-      new THREE.BoxGeometry(0.32, 0.72, 0.03),
-      mats.teamBanner
-    );
-    banner.position.set(side * 1.35, 1.68, 2.12);
-    group.add(banner);
+      const banner = new THREE.Mesh(
+        new THREE.BoxGeometry(0.32, 0.72, 0.03),
+        mats.teamBanner
+      );
+      banner.position.set(side * 1.38, deckY + 1.2 + tier * 0.2, porchZ + 0.18);
+      group.add(banner);
+    }
   }
 
-  // Heavy iron-bound arched wooden portal door
+  // Heavy iron-bound portal door
   const doorPortal = new THREE.Mesh(
-    new THREE.BoxGeometry(0.68, 0.88, 0.12),
+    new THREE.BoxGeometry(0.66, 0.86, 0.12),
     mats.darkBeam
   );
-  doorPortal.position.set(0, 0.94, 1.78);
+  doorPortal.position.set(0, deckY + 0.43, -0.1 + hallL * 0.5 + 0.02);
   group.add(doorPortal);
 
-  // 5. Side Annexes: Left Mead Storage Wing & Right Winter Provision Granary
-  const leftWing = new THREE.Mesh(
-    new THREE.BoxGeometry(0.95, 0.85, 1.85),
-    mats.timberWall
-  );
-  leftWing.position.set(-1.62, 0.92, -0.25);
-  group.add(leftWing);
-
-  const leftWingRoof = buildPitchedStaveRoof(
-    1.12,
-    0.56,
-    2.02,
-    mats.shingleRoof,
-    mats.darkBeam,
-    mats.carvedTrim,
-    false
-  );
-  leftWingRoof.position.set(-1.62, 1.35, -0.25);
-  group.add(leftWingRoof);
-
-  // Stack of oak Mead Barrels & Supply Crates on the right terrace
-  for (let b = 0; b < 3; b++) {
-    const barrel = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.16, 0.16, 0.36, 10),
-      mats.timberWall
+  // 5. Flanking Annexes & Runestones (T3 Left Mead Wing + Runestones; T4 Symmetric Right Armory/War-Hall Wing + 4 Corner Runestones)
+  if (tier >= 3) {
+    const leftWing = new THREE.Mesh(
+      new THREE.BoxGeometry(0.95, 0.85, 1.85),
+      wallMat
     );
-    barrel.rotation.z = Math.PI / 2;
-    barrel.position.set(1.62, 0.68, -0.75 + b * 0.42);
-    group.add(barrel);
+    leftWing.position.set(-(hallW * 0.5 + 0.52), deckY + 0.425, -0.2);
+    group.add(leftWing);
+
+    const leftWingRoof = buildPitchedStaveRoof(
+      1.12,
+      0.54,
+      2.02,
+      roofMat,
+      mats.darkBeam,
+      mats.carvedTrim,
+      tier >= 4
+    );
+    leftWingRoof.position.set(-(hallW * 0.5 + 0.52), deckY + 0.85, -0.2);
+    group.add(leftWingRoof);
+
+    for (let b = 0; b < 3; b++) {
+      const barrel = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.15, 0.15, 0.34, 10),
+        mats.timberWall
+      );
+      barrel.rotation.z = Math.PI / 2;
+      barrel.position.set(hallW * 0.5 + 0.48, deckY + 0.18, -0.75 + b * 0.42);
+      group.add(barrel);
+    }
+
+    // Two sacred Runestones / Totems / Stonehenge Pillars
+    for (const side of [-1, 1]) {
+      const runestone = buildRunestoneMonolith(
+        1.15 + (tier - 3) * 0.15,
+        mats.graniteStone,
+        isCeltic ? mats.bronzeMetal : mats.runeGlow
+      );
+      runestone.position.set(side * (plinthW * 0.36), deckY, -plinthW * 0.36);
+      runestone.rotation.y = side * 0.35;
+      group.add(runestone);
+    }
   }
 
-  // Two sacred Runestones guarding the rear corners of the Great Longhouse
-  for (const side of [-1, 1]) {
-    const runestone = buildRunestoneMonolith(1.2, mats.graniteStone, mats.runeGlow);
-    runestone.position.set(side * 1.82, 0.5, -1.85);
-    runestone.rotation.y = side * 0.35;
-    group.add(runestone);
+  if (tier >= 4) {
+    // Symmetric Right War-Hall Wing (or Lakota Tipi Pavilion)
+    const rightWing = new THREE.Mesh(
+      new THREE.BoxGeometry(0.95, 0.85, 1.85),
+      wallMat
+    );
+    rightWing.position.set(hallW * 0.5 + 0.52, deckY + 0.425, -0.2);
+    group.add(rightWing);
+
+    const rightWingRoof = buildPitchedStaveRoof(
+      1.12,
+      0.54,
+      2.02,
+      roofMat,
+      mats.darkBeam,
+      mats.bronzeMetal,
+      true
+    );
+    rightWingRoof.position.set(hallW * 0.5 + 0.52, deckY + 0.85, -0.2);
+    group.add(rightWingRoof);
+
+    // Front Corner Runestones / Totem Pillars (completing 4-corner sacred perimeter)
+    for (const side of [-1, 1]) {
+      const frontStone = buildRunestoneMonolith(1.25, mats.graniteStone, mats.runeGlow);
+      frontStone.position.set(side * (plinthW * 0.38), deckY, plinthW * 0.36);
+      group.add(frontStone);
+    }
   }
+
+  // 6. T5 DIVINE VALHALLA METROPOLIS CROWN (Borgund Sky-Spire, Bifrost Rune Halo & Glowing Crystal)
+  let metropolisHalo: THREE.Object3D | undefined;
+  let metropolisCrystal: THREE.Object3D | undefined;
+
+  if (tier >= 5) {
+    const skyTurret = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.42, 0.58, 0.78, 8),
+      mats.bronzeMetal
+    );
+    skyTurret.position.set(0, roofApexY + 0.48, -0.1);
+    group.add(skyTurret);
+
+    const skySpire = new THREE.Mesh(
+      new THREE.ConeGeometry(0.56, 1.15, 8),
+      roofMat
+    );
+    skySpire.position.set(0, roofApexY + 1.42, -0.1);
+    group.add(skySpire);
+
+    const haloY = roofApexY + 2.25;
+    const halo = new THREE.Mesh(
+      new THREE.TorusGeometry(1.32, 0.075, 10, 32),
+      isJotunn ? mats.emberGlow : mats.runeGlow
+    );
+    halo.rotation.x = Math.PI / 2;
+    halo.position.set(0, haloY, -0.1);
+    halo.userData.baseY = haloY;
+    group.add(halo);
+    metropolisHalo = halo;
+
+    const crystalY = roofApexY + 2.48;
+    const crystal = new THREE.Mesh(
+      new THREE.OctahedronGeometry(0.42, 0),
+      isJapanese || isCeltic ? mats.bronzeMetal : mats.runeGlow
+    );
+    crystal.position.set(0, crystalY, -0.1);
+    crystal.userData.baseY = crystalY;
+    group.add(crystal);
+    metropolisCrystal = crystal;
+  }
+
+  return { metropolisHalo, metropolisCrystal };
 }
 
 // ─── 2. MEAD HALL (Salão de Hidromel / Quartel Militar Nórdico) ─────────────
@@ -1397,13 +1577,17 @@ export interface NorseBuildingBuildResult {
   barWidth: number;
   beaconCrystal?: THREE.Object3D;
   vortexRing?: THREE.Object3D;
+  metropolisHalo?: THREE.Object3D;
+  metropolisCrystal?: THREE.Object3D;
 }
 
 export function createNorseBuildingMesh(
   kind: BuildingKind,
   team: TeamId,
   pal: any,
-  enableShadows = true
+  enableShadows = true,
+  age = 1,
+  pantheon: PantheonId = 'norse'
 ): NorseBuildingBuildResult {
   const group = new THREE.Group();
   const mats = createNorseMaterials(team, pal);
@@ -1413,15 +1597,20 @@ export function createNorseBuildingMesh(
   let barWidth = 1.65;
   let beaconCrystal: THREE.Object3D | undefined;
   let vortexRing: THREE.Object3D | undefined;
+  let metropolisHalo: THREE.Object3D | undefined;
+  let metropolisCrystal: THREE.Object3D | undefined;
 
   switch (kind) {
-    case 'town_center':
-      buildNorseLonghouseTownCenter(group, mats);
-      group.scale.setScalar(1.06);
-      markerRadius = 3.65;
-      barHeight = 3.85;
-      barWidth = 3.0;
+    case 'town_center': {
+      const res = buildNorseLonghouseTownCenter(group, mats, age, pantheon);
+      metropolisHalo = res.metropolisHalo;
+      metropolisCrystal = res.metropolisCrystal;
+      group.scale.setScalar(1.0 + (age - 1) * 0.055);
+      markerRadius = 3.55 + (age - 1) * 0.22;
+      barHeight = 3.65 + (age - 1) * 0.58;
+      barWidth = 3.0 + (age - 1) * 0.15;
       break;
+    }
     case 'barracks':
       buildNorseMeadHall(group, mats, 'infantry');
       group.scale.setScalar(1.72);
@@ -1527,5 +1716,7 @@ export function createNorseBuildingMesh(
     barWidth,
     beaconCrystal,
     vortexRing,
+    metropolisHalo,
+    metropolisCrystal,
   };
 }
