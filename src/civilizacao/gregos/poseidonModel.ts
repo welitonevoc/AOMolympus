@@ -115,6 +115,14 @@ export function createPoseidonProceduralTextures(): PoseidonProceduralTextures {
   return { skinBump, tunicTex, stoneTex, waterTex };
 }
 
+let cachedPoseidonTextures: PoseidonProceduralTextures | null = null;
+export function getCachedPoseidonTextures(): PoseidonProceduralTextures {
+  if (!cachedPoseidonTextures) {
+    cachedPoseidonTextures = createPoseidonProceduralTextures();
+  }
+  return cachedPoseidonTextures;
+}
+
 function group(parent?: THREE.Object3D, x = 0, y = 0, z = 0): THREE.Group {
   const g = new THREE.Group();
   g.position.set(x, y, z);
@@ -805,4 +813,70 @@ export function createPoseidonEnvironment(scene: THREE.Scene | THREE.Group, text
   }
 
   return { oceanMesh, oceanGeo, oceanPos, pillars };
+}
+
+export type PoseidonParts = ReturnType<typeof buildPoseidon>;
+
+export function animatePoseidon(
+  poseidon: PoseidonParts,
+  dt: number,
+  t: number,
+  mode: 'ondas' | 'correnteza' | 'golpe' | 'tsunami' = 'ondas'
+): void {
+  if (mode === 'correnteza') {
+    const f = t * 2.5;
+    poseidon.vessel.position.z = Math.sin(f * 1.1) * 0.25;
+    poseidon.vessel.rotation.x = 0.18 + Math.sin(f * 0.8) * 0.05;
+    poseidon.body.position.y = 1.05 + Math.sin(t * 2.0) * 0.06;
+    poseidon.rightArm.arm.rotation.x = -0.35;
+    poseidon.leftArm.arm.rotation.x = 0;
+    poseidon.vortexGroup.rotation.y += dt * 2.8;
+    for (const r of poseidon.swirlRings) {
+      r.mesh.rotation.y -= dt * 4.0;
+      r.mesh.position.y = r.baseY + Math.sin(t * 4 + r.phase) * 0.07;
+    }
+  } else if (mode === 'golpe') {
+    const cycle = (t * 1.4) % 2.4;
+    poseidon.vessel.position.z = 0;
+    poseidon.vessel.rotation.x = 0;
+    if (cycle < 1.1) {
+      const prep = cycle / 1.1;
+      poseidon.rightArm.arm.rotation.x = -0.3 - prep * 1.6;
+      poseidon.body.position.y = 1.05 + prep * 0.25;
+    } else if (cycle < 1.5) {
+      poseidon.rightArm.arm.rotation.x = 0.35;
+      poseidon.body.position.y = 0.92;
+      poseidon.tridentCore.scale.setScalar(1.7);
+    } else {
+      poseidon.rightArm.arm.rotation.x = -0.3;
+      poseidon.body.position.y = 1.05;
+    }
+    poseidon.vortexGroup.rotation.y += dt * 1.8;
+  } else if (mode === 'tsunami') {
+    const f = t * 3.0;
+    poseidon.vessel.position.z = 0;
+    poseidon.vessel.rotation.x = 0;
+    poseidon.body.position.y = 1.18 + Math.sin(f) * 0.1;
+    poseidon.rightArm.arm.rotation.x = -1.35 + Math.sin(f * 0.6) * 0.15;
+    poseidon.leftArm.arm.rotation.x = -1.2 + Math.cos(f * 0.6) * 0.15;
+    poseidon.vortexGroup.rotation.y += dt * 3.6;
+    for (const r of poseidon.swirlRings) {
+      r.mesh.rotation.y -= dt * 4.5;
+    }
+    poseidon.tridentCore.scale.setScalar(1.5 + Math.sin(f * 6) * 0.35);
+  } else {
+    const f = t * 1.6;
+    poseidon.vessel.position.z = 0;
+    poseidon.vessel.rotation.x = 0;
+    poseidon.body.position.y = 1.05 + Math.sin(f) * 0.07;
+    poseidon.rightArm.arm.rotation.x = -0.3;
+    poseidon.leftArm.arm.rotation.x = 0;
+    poseidon.vortexGroup.rotation.y += dt * 1.4;
+    for (const r of poseidon.swirlRings) {
+      r.mesh.rotation.y -= dt * 2.2;
+      r.mesh.position.y = r.baseY + Math.sin(t * 2.6 + r.phase) * 0.04;
+    }
+    const pulse = 1 + Math.sin(t * 8) * 0.2;
+    poseidon.tridentCore.scale.setScalar(1.2 * pulse);
+  }
 }

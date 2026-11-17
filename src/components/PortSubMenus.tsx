@@ -2036,6 +2036,17 @@ export function PortSubMenus({
       'iron_dwarf',
       'medusa',
       'titan',
+      'zeus',
+      'poseidon',
+      'hades',
+      'atena',
+      'ares',
+      'hermes',
+      'apolo',
+      'dionisio',
+      'afrodite',
+      'hefesto',
+      'artemis',
     ];
     const buildingKinds: BuildingKind[] = [
       'town_center',

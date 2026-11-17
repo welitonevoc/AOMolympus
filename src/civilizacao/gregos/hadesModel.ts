@@ -181,6 +181,14 @@ export function createHadesProceduralTextures(): HadesProceduralTextures {
   return { skinBump, tunicTex, obsidianTex, smokeTex };
 }
 
+let cachedHadesTextures: HadesProceduralTextures | null = null;
+export function getCachedHadesTextures(): HadesProceduralTextures {
+  if (!cachedHadesTextures) {
+    cachedHadesTextures = createHadesProceduralTextures();
+  }
+  return cachedHadesTextures;
+}
+
 /* ==========================================================================
    2. HELPERS DE GEOMETRIA E MATERIAIS DO SUBMUNDO
    ========================================================================== */
@@ -979,4 +987,119 @@ export function createHadesUnderworldEnvironment(
   }
 
   return { ground, runeRings, pillarFlames };
+}
+
+const _hadesTmpV = new THREE.Vector3();
+
+export function animateHades(
+  hades: HadesMeshHierarchy,
+  dt: number,
+  t: number,
+  mode: 'reinar' | 'marcha' | 'chama' | 'portal' = 'reinar',
+  bidentLight?: THREE.PointLight,
+  inGameMoveOffset = true
+): void {
+  let gx = 0;
+  let gz = 0;
+  let yaw = inGameMoveOffset ? 0 : Math.sin(t * 0.35) * 0.16;
+  let tiltPitch = 0.03;
+  let tiltRoll = 0;
+  const hoverBob = Math.sin(t * 1.4) * 0.06;
+
+  if (mode === 'marcha') {
+    if (!inGameMoveOffset) {
+      const a = t * 0.65;
+      const R = 2.4;
+      gx = Math.cos(a) * R;
+      gz = Math.sin(a) * R;
+      yaw = -a;
+    }
+    tiltPitch = 0.16;
+    tiltRoll = inGameMoveOffset ? 0 : -0.2;
+  } else if (!inGameMoveOffset) {
+    gx = Math.sin(t * 0.45) * 0.2;
+    gz = Math.cos(t * 0.38) * 0.15;
+  }
+
+  hades.vessel.position.set(gx, inGameMoveOffset ? 0 : -0.1, gz);
+  hades.vessel.rotation.set(0, yaw, 0);
+  hades.body.position.y = 1.12 + hoverBob;
+  hades.body.rotation.set(tiltPitch, 0, tiltRoll);
+
+  hades.shadowCone.rotation.y -= dt * (mode === 'marcha' ? 4.5 : 2.2);
+  hades.groundAuraRing.scale.setScalar(1 + Math.sin(t * 3.0) * 0.06);
+  for (const w of hades.orbitingWisps) {
+    const ang = t * w.speed + w.phase;
+    w.mesh.position.set(
+      Math.cos(ang) * w.radius,
+      w.height + Math.sin(t * 2.5 + w.phase) * 0.15,
+      Math.sin(ang) * w.radius
+    );
+  }
+
+  if (mode === 'chama') {
+    hades.rightArm.arm.rotation.set(-0.55, 0.15, 1.35);
+    hades.rightArm.elbow.rotation.set(-0.35, 0.2, 0.25);
+    hades.bident.rotation.set(0.95, 0, -0.35);
+    hades.leftArm.arm.rotation.set(0.45, -0.3, -0.85);
+  } else if (mode === 'portal') {
+    hades.rightArm.arm.rotation.set(-0.50, 0.15, 2.38 + Math.sin(t * 2.0) * 0.04);
+    hades.rightArm.elbow.rotation.set(0.55, 0.2, 0.28);
+    hades.bident.rotation.set(0.22, 0, -0.24);
+    hades.leftArm.arm.rotation.set(0.55, -0.35, -1.15);
+  } else if (mode === 'marcha') {
+    hades.rightArm.arm.rotation.set(0.32, 0.15, 0.72);
+    hades.rightArm.elbow.rotation.set(-0.45, 0.1, 0.22);
+    hades.bident.rotation.set(0.85, 0.1, -0.36);
+    hades.leftArm.arm.rotation.set(0.28, -0.22, -0.78);
+  } else {
+    hades.rightArm.arm.rotation.set(-0.18, 0.12, 0.55 + Math.sin(t * 1.4) * 0.03);
+    hades.rightArm.elbow.rotation.set(-0.52, 0.15, 0.22);
+    hades.bident.rotation.set(0.18, 0, -0.46);
+    hades.leftArm.arm.rotation.set(0.25, -0.2, -0.74 + Math.cos(t * 1.3) * 0.03);
+  }
+
+  hades.soulOrb.rotation.y += dt * 3.0;
+  hades.soulRing1.rotation.z += dt * 3.6;
+  hades.soulRing2.rotation.y -= dt * 3.2;
+
+  const powerMult = mode === 'chama' || mode === 'portal' ? 1.55 : 1.0;
+  hades.bidentGlow.scale.setScalar((0.9 + Math.sin(t * 14) * 0.18) * powerMult);
+
+  if (bidentLight) {
+    hades.bidentAnchor.getWorldPosition(_hadesTmpV);
+    bidentLight.position.copy(_hadesTmpV);
+    bidentLight.intensity = 2.4 * powerMult + Math.sin(t * 16) * 0.4;
+  }
+
+  const wind = mode === 'marcha' || mode === 'portal' ? 1.85 : 1.0;
+  hades.beardTip.rotation.x = -0.14 + Math.sin(t * 2.4 * wind) * 0.035;
+  for (const s of hades.hairStrands) {
+    s.mesh.rotation.x = Math.sin(t * 2.3 * wind + s.phase) * 0.04;
+    s.mesh.rotation.z = Math.cos(t * 1.8 * wind + s.phase) * 0.032;
+  }
+
+  const cAttr = hades.cape.geometry.attributes.position as THREE.BufferAttribute;
+  for (let i = 0; i < cAttr.count; i++) {
+    const bx = hades.capeBase[i * 3];
+    const by = hades.capeBase[i * 3 + 1];
+    const bz = hades.capeBase[i * 3 + 2];
+    const normY = Math.max(0, Math.min(1, (0.98 - by) / 1.96));
+    const wave1 = Math.sin(t * 3.1 * wind - normY * 4.5 + bx * 2.5) * 0.14 * normY;
+    const wave2 = Math.cos(t * 2.1 * wind - normY * 3.0) * 0.06 * normY;
+    cAttr.setXYZ(i, bx + Math.sin(t * 2.3 - normY * 3.0) * 0.035 * normY, by, bz + wave1 + wave2);
+  }
+  cAttr.needsUpdate = true;
+  hades.cape.geometry.computeVertexNormals();
+
+  const skAttr = hades.skirtMesh.geometry.attributes.position as THREE.BufferAttribute;
+  for (let i = 0; i < skAttr.count; i++) {
+    const bx = hades.skirtBase[i * 3];
+    const by = hades.skirtBase[i * 3 + 1];
+    const bz = hades.skirtBase[i * 3 + 2];
+    const normY = Math.max(0, Math.min(1, (0.46 - by) / 0.92));
+    skAttr.setZ(i, bz + Math.sin(t * 3.3 * wind - normY * 4.0 + bx * 4.0) * 0.042 * normY);
+  }
+  skAttr.needsUpdate = true;
+  hades.skirtMesh.geometry.computeVertexNormals();
 }

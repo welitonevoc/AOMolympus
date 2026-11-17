@@ -340,7 +340,6 @@ export function GameHUD({
   const secretsSpec = TECH_SPECS.secrets_of_titans;
   const canResearchTitans =
     hud.age === 4 &&
-    hud.titansEnabled &&
     !hud.activeTechResearch &&
     !hud.researchedTechs.includes('secrets_of_titans') &&
     hud.resources.food >= (secretsSpec.cost.food ?? 0) &&
@@ -405,6 +404,17 @@ export function GameHUD({
           'medusa',
         ] as UnitKind[])
       : []),
+    'zeus',
+    'poseidon',
+    'hades',
+    'atena',
+    'ares',
+    'hermes',
+    'apolo',
+    'dionisio',
+    'afrodite',
+    'hefesto',
+    'artemis',
   ];
   const powerIds = Array.from(new Set(hud.unlockedPowers));
 
@@ -592,12 +602,12 @@ export function GameHUD({
                 ({formatCost(nextAgeCost)})
               </span>
             </button>
-          ) : hud.age === 4 && hud.titansEnabled ? (
+          ) : hud.age === 4 ? (
             <button
               type="button"
               onClick={() => onResearchTech('secrets_of_titans')}
               disabled={!canResearchTitans}
-              title={`Pesquisar Segredos dos Titãs no Templo (${formatCost(secretsSpec.cost)})`}
+              title={`Despertar ${AGE_NAMES[5]} no Templo (${formatCost(secretsSpec.cost)})`}
               className={`flex items-center gap-1.5 rounded px-2.5 py-1 text-[11px] font-bold transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
                 canResearchTitans
                   ? 'border border-[#f5d77f] bg-gradient-to-b from-[#e0bc56] to-[#a87f20] text-[#0d1017] hover:brightness-110'
@@ -900,12 +910,12 @@ export function GameHUD({
               onClick={onCycleScaleProfile}
               title={`Proporção Global AoM: ${
                 hud.scaleProfile === 'monumental'
-                  ? 'Monumental (Edifícios 1.55x / Unidades 0.88x)'
+                  ? 'Monumental (Edifícios 1.35x / Unidades 0.92x)'
                   : hud.scaleProfile === 'realistic'
-                  ? 'Realista (Edifícios 1.80x / Unidades 0.78x)'
+                  ? 'Realista (Edifícios 1.55x / Unidades 0.85x)'
                   : hud.scaleProfile === 'compact'
-                  ? 'Compacta (Edifícios 1.15x / Unidades 1.0x)'
-                  : 'Clássica AoM (Edifícios 1.35x / Unidades 0.95x)'
+                  ? 'Compacta (Edifícios 0.98x / Unidades 1.0x)'
+                  : 'Clássica AoM (Edifícios 1.15x / Unidades 0.95x)'
               } — Clique para alternar`}
               aria-label="Alternar proporção global de edifícios e unidades"
               className="flex h-8 w-8 items-center justify-center rounded border border-[#d4af37]/60 bg-[#1c2330] text-[#f3d27a] hover:bg-[#273145] cursor-pointer"
@@ -1103,6 +1113,17 @@ export function GameHUD({
                   'medusa',
                 ] as UnitKind[])
               : []),
+            'zeus',
+            'poseidon',
+            'hades',
+            'atena',
+            'ares',
+            'hermes',
+            'apolo',
+            'dionisio',
+            'afrodite',
+            'hefesto',
+            'artemis',
             ...(hud.titansEnabled ? (['titan'] as UnitKind[]) : []),
           ];
           const buildingUnits = allTrainableKinds
@@ -1116,7 +1137,6 @@ export function GameHUD({
             );
 
           const buildingTechs = techList.filter((t) => {
-            if (!hud.titansEnabled && t.id === 'secrets_of_titans') return false;
             if (t.building === bKind) return true;
             if (bKind === 'fortress' && t.id === 'watch_tower') return true;
             if (bKind === 'tower' && (t.id === 'watch_tower' || t.id === 'burning_pitch')) return true;
@@ -1882,9 +1902,7 @@ export function GameHUD({
                     </div>
                   )}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
-                    {techList
-                      .filter((t) => hud.titansEnabled || t.id !== 'secrets_of_titans')
-                      .map((t) => {
+                    {techList.map((t) => {
                         const researched = hud.researchedTechs.includes(t.id);
                         const activeNow = hud.activeTechResearch?.id === t.id;
                         const missingPrereq = t.requires && !hud.researchedTechs.includes(t.requires);
@@ -2295,9 +2313,7 @@ export function GameHUD({
                         Adorados: {hud.chosenMinorGods.map((id) => getMinorGodSpec(id).name).join(' · ')}
                       </div>
                     )}
-                    {techList
-                      .filter((t) => hud.titansEnabled || t.id !== 'secrets_of_titans')
-                      .map((t) => {
+                    {techList.map((t) => {
                         const done = hud.researchedTechs.includes(t.id);
                         return (
                           <div key={t.id} className="flex items-center justify-between rounded bg-[#10141c] px-2.5 py-1.5">

@@ -1838,7 +1838,7 @@ export class AoMEngine {
     const id = fixedId ?? `b_${this.nextId++}`;
     const pantheon = this.teamPantheon(team);
     const stats = getCivBuildingSpec(pantheon, kind);
-    const mesh = createBuildingMesh(kind, team, this.palette, !this.isSoftwareGl, pantheon);
+    const mesh = createBuildingMesh(kind, team, this.palette, !this.isSoftwareGl, pantheon, team === 'player' ? this.majorGodName : undefined);
     mesh.position.set(x, groundHeightAt(x, z, this.mapId), z);
     mesh.userData.entityType = 'building';
     mesh.userData.entityId = id;
@@ -1979,6 +1979,8 @@ export class AoMEngine {
     if (units.length === 0) return;
     // Prefer combat/hero/mythic leader when a mixed group is selected or ordered
     const leader =
+      units.find((u) => this.unitStats(u.kind, u.team).isMajorGod) ??
+      units.find((u) => this.unitStats(u.kind, u.team).isGod) ??
       units.find((u) => u.kind === 'titan') ??
       units.find((u) => this.unitStats(u.kind, u.team).isHero) ??
       units.find((u) => u.kind !== 'villager') ??
@@ -2067,12 +2069,13 @@ export class AoMEngine {
 
   public getUnitScale(kind: UnitKind): THREE.Vector3 {
     const um = this.globalScaleConfig.unitMultiplier;
-    if (kind === 'titan') {
-      const tm = Math.max(1.0, um * 1.05);
-      return new THREE.Vector3(tm, tm, tm);
+    const spec = getCivUnitSpec(this.pantheon, kind);
+    // Deuses Maiores (~13.1u) > Deuses Menores (~10.4u) > Titãs (~8.7u) mantêm hierarquia estrita fixa
+    if (spec.isMajorGod || spec.isGod || kind === 'titan') {
+      return new THREE.Vector3(1.0, 1.0, 1.0);
     }
-    if (getCivUnitSpec(this.pantheon, kind).isHero) {
-      const hm = um * 1.02;
+    if (spec.isHero) {
+      const hm = um * 1.04;
       return new THREE.Vector3(hm, hm, hm);
     }
     return new THREE.Vector3(um, um, um);
@@ -2114,10 +2117,10 @@ export class AoMEngine {
     }
     this.applyGlobalScales();
     const labels: Record<AoMScaleProfile, string> = {
-      classic_aom: '🏛️ Proporções Clássicas AoM (Edifícios 1.35x / Unidades 0.95x)',
-      monumental: '⚡ Proporções Monumentais (Edifícios 1.55x / Unidades 0.88x)',
-      realistic: '🏰 Proporções Realistas (Edifícios 1.80x / Unidades 0.78x)',
-      compact: '📐 Proporções Compactas (Edifícios 1.15x / Unidades 1.0x)',
+      classic_aom: '🏛️ Proporções Clássicas AoM (Edifícios 1.15x / Unidades 0.95x)',
+      monumental: '⚡ Proporções Monumentais (Edifícios 1.35x / Unidades 0.92x)',
+      realistic: '🏰 Proporções Realistas (Edifícios 1.55x / Unidades 0.85x)',
+      compact: '📐 Proporções Compactas (Edifícios 0.98x / Unidades 1.0x)',
     };
     this.notifyStatus(`Escala global: ${labels[this.globalScaleConfig.profile] || this.globalScaleConfig.profile}`);
   }
@@ -2326,7 +2329,7 @@ export class AoMEngine {
     if (this.age < stats.minAge) {
       this.notifyStatus(
         stats.minAge === 5
-          ? 'Requer Era V (Titãs) — pesquise "Segredos dos Titãs" no Templo!'
+          ? 'Requer Era V (Era dos Deuses) — pesquise no Templo!'
           : `Requer ${AGE_NAMES[stats.minAge]}.`
       );
       return;
@@ -2340,7 +2343,7 @@ export class AoMEngine {
     this.activeBuildMode = kind;
 
     this.clearPlacementGhost();
-    const ghost = createBuildingMesh(kind, 'player', this.palette, false, this.pantheon);
+    const ghost = createBuildingMesh(kind, 'player', this.palette, false, this.pantheon, this.majorGodName);
     ghost.scale.copy(this.getBuildingScale(kind));
     ghost.traverse((obj) => {
       if ((obj as THREE.Mesh).isMesh) {
@@ -2485,10 +2488,6 @@ export class AoMEngine {
     if (this.phase !== 'playing') return;
     const spec = TECH_SPECS[techId];
     if (!spec) return;
-    if (techId === 'secrets_of_titans' && !this.titansEnabled) {
-      this.notifyStatus('Titãs estão desativados nesta partida.');
-      return;
-    }
     if (this.researchedTechs.includes(techId)) {
       this.notifyStatus(`${spec.name} já foi pesquisada.`);
       return;
@@ -3073,6 +3072,13 @@ export class AoMEngine {
 
   private getFormationRolePriority(kind: UnitKind): number {
     switch (kind) {
+      case 'zeus':
+      case 'poseidon':
+      case 'hades':
+      case 'atena':
+      case 'ares':
+      case 'hefesto':
+      case 'dionisio':
       case 'titan':
       case 'colossus':
       case 'cyclops':
@@ -3095,6 +3101,10 @@ export class AoMEngine {
       case 'bellerophon':
       case 'pegasus':
         return 1;
+      case 'hermes':
+      case 'apolo':
+      case 'afrodite':
+      case 'artemis':
       case 'peltast':
       case 'archer':
       case 'gastraphetes':
@@ -5410,7 +5420,7 @@ export class AoMEngine {
       const w = this.container.clientWidth || window.innerWidth;
       const h = Math.max(1, this.container.clientHeight || window.innerHeight);
       const aspect = w / h;
-      const frustumSize = THREE.MathUtils.lerp(18, 52, zoomT);
+      const frustumSize = THREE.MathUtils.lerp(18, 58, zoomT);
       this.orthoCamera.left = (-frustumSize * aspect) / 2;
       this.orthoCamera.right = (frustumSize * aspect) / 2;
       this.orthoCamera.top = frustumSize / 2;
@@ -5650,6 +5660,19 @@ export class AoMEngine {
         return 1.2;
       case 'titan':
         return 2.2;
+      case 'atena':
+      case 'ares':
+      case 'hermes':
+      case 'apolo':
+      case 'dionisio':
+      case 'afrodite':
+      case 'hefesto':
+      case 'artemis':
+        return 2.55;
+      case 'zeus':
+      case 'poseidon':
+      case 'hades':
+        return 2.95;
     }
   }
 
@@ -6522,15 +6545,15 @@ export class AoMEngine {
             if (u.mesh.userData.animatePose) {
               u.manualAttackTimer = 6 / 14; // Trigger 6-frame attack animation at 14 FPS
             }
-            if (u.kind === 'hoplite' || u.kind === 'hipaspist' || u.kind === 'myrmidon' || u.kind === 'hydra' || u.kind === 'ram' || u.kind === 'siege' || u.kind === 'cyclops' || u.kind === 'colossus') {
+            if (u.kind === 'hoplite' || u.kind === 'hipaspist' || u.kind === 'myrmidon' || u.kind === 'hydra' || u.kind === 'ram' || u.kind === 'siege' || u.kind === 'cyclops' || u.kind === 'colossus' || u.kind === 'titan' || stats.isGod) {
               if (u.kind === 'myrmidon' || u.kind === 'hydra') {
                 u.combatFury = Math.min(5, (u.combatFury ?? 0) + 1);
                 u.combatFuryDecayTimer = 6.0;
                 u.mesh.userData.setCombatFury?.(u.combatFury / 5);
               }
               if (u.selected && u.team === 'player') {
-                this.camShakeTimer = u.kind === 'ram' || u.kind === 'siege' || u.kind === 'cyclops' || u.kind === 'colossus' ? 0.14 : 0.08;
-                this.camShakeIntensity = u.kind === 'ram' || u.kind === 'siege' || u.kind === 'cyclops' || u.kind === 'colossus' ? 0.24 : 0.18;
+                this.camShakeTimer = stats.isMajorGod ? 0.22 : stats.isGod || u.kind === 'titan' ? 0.16 : u.kind === 'ram' || u.kind === 'siege' || u.kind === 'cyclops' || u.kind === 'colossus' ? 0.14 : 0.08;
+                this.camShakeIntensity = stats.isMajorGod ? 0.34 : stats.isGod || u.kind === 'titan' ? 0.26 : u.kind === 'ram' || u.kind === 'siege' || u.kind === 'cyclops' || u.kind === 'colossus' ? 0.24 : 0.18;
               }
             }
             if (!u.mesh.userData.animatePose && u.mesh.userData.rightArm) {
@@ -6542,15 +6565,29 @@ export class AoMEngine {
               u.chargeBurstTimer = 1.4;
               this.spawnRingVfx(targetPos, 1.85, 0xfbbf24, 0.35);
             }
-            if (stats.range > 4) {
-              const launchH = u.kind === 'siege' ? 2.15 : u.kind === 'phoenix' || u.kind === 'manticore' ? 1.8 : 1.35;
+            if (u.kind === 'zeus' || u.kind === 'hermes') {
+              // Instant sky lightning strike + divine AoE blast
+              const blastRadius = stats.splashRadius ?? (u.kind === 'zeus' ? 6.5 : 4.6);
+              this.spawnLightningBoltVfx(targetPos, blastRadius * 0.75);
+              this.spawnRingVfx(targetPos, blastRadius, u.kind === 'zeus' ? 0xfacc15 : 0x38bdf8, 0.55);
+              soundEngine.playLightning?.();
+              if (targetU) this.damageUnit(targetU, computedDamage, u.team);
+              else if (targetB) this.damageBuilding(targetB, computedDamage);
+              for (const splash of [...this.units.values()]) {
+                if (splash.team !== u.team && splash.id !== targetU?.id && splash.mesh.position.distanceTo(targetPos) <= blastRadius) {
+                  const splashDmg = Math.round(this.computeUnitAttackDamage(u, splash, undefined) * (u.kind === 'zeus' ? 0.7 : 0.55));
+                  this.damageUnit(splash, splashDmg, u.team);
+                }
+              }
+            } else if (stats.range > 4) {
+              const launchH = stats.isMajorGod ? 7.4 : stats.isGod ? 5.8 : u.kind === 'siege' ? 2.15 : u.kind === 'phoenix' || u.kind === 'manticore' ? 1.8 : 1.35;
               _vec3B.copy(u.mesh.position).setY(u.mesh.position.y + launchH);
               _vec3C.copy(targetPos).setY(targetPos.y + 1.0);
               this.spawnProjectile(_vec3B, _vec3C, u.targetEntityId!, computedDamage, u.team, {
                 splashRadius: stats.splashRadius,
-                isBoulder: u.kind === 'siege',
-                isPetrify: u.kind === 'medusa',
-                isFireball: u.kind === 'phoenix',
+                isBoulder: u.kind === 'siege' || u.kind === 'ares' || u.kind === 'hefesto' || u.kind === 'poseidon',
+                isPetrify: u.kind === 'medusa' || u.kind === 'hades' || u.kind === 'afrodite' || u.kind === 'artemis',
+                isFireball: u.kind === 'phoenix' || u.kind === 'apolo' || u.kind === 'dionisio' || u.kind === 'atena',
               });
               soundEngine.playArrow();
             } else {
@@ -7156,6 +7193,9 @@ export class AoMEngine {
       } else if (this.enemyAge === 3 && this.elapsedSeconds > 260 && this.canAfford(this.enemyResources, AGE_COSTS[4])) {
         this.deductCost(this.enemyResources, AGE_COSTS[4]);
         this.enemyAge = 4;
+      } else if (this.enemyAge === 4 && this.elapsedSeconds > 380 && this.canAfford(this.enemyResources, AGE_COSTS[5])) {
+        this.deductCost(this.enemyResources, AGE_COSTS[5]);
+        this.enemyAge = 5;
       }
 
       // Build temple / house / farm / archery_range / stable / siege_works / fortress if needed
@@ -7324,15 +7364,18 @@ export class AoMEngine {
       }
 
       if (temple && temple.trainingQueue.length === 0 && this.enemyAge >= 2 && enemyPop.current + 4 <= enemyPop.cap) {
+        const enemyGodsAlive = [...this.units.values()].filter((u) => u.team === 'enemy' && this.unitStats(u.kind, 'enemy').isGod).length;
         const mythPool: UnitKind[] =
-          this.enemyAge >= 4
+          this.enemyAge >= 5 && enemyGodsAlive < 1 && Math.random() < 0.35
+            ? ['atena', 'ares', 'apolo', 'poseidon']
+            : this.enemyAge >= 4
             ? ['cyclops', 'colossus', 'medusa', 'automaton', 'hydra']
             : this.enemyAge >= 3
             ? ['centaur', 'manticore', 'hydra', 'satyr', 'phoenix']
             : ['minotaur', 'nymph', 'cyclops'];
         const mythPick = mythPool[Math.floor(Math.random() * mythPool.length)];
         const mythStats = this.unitStats(mythPick, 'enemy');
-        if (this.canAfford(this.enemyResources, mythStats.cost)) {
+        if (enemyPop.current + mythStats.popCost <= enemyPop.cap && this.canAfford(this.enemyResources, mythStats.cost)) {
           this.deductCost(this.enemyResources, mythStats.cost);
           temple.trainingQueue.push({ kind: mythPick, progress: 0, total: mythStats.trainTime });
         }
@@ -7633,12 +7676,12 @@ export class AoMEngine {
         z: u.mesh.position.z,
         category: 'unit',
         team: u.team,
-        color: u.team === 'player' ? '#60a5fa' : '#ef4444',
-        size: u.kind === 'titan' ? 5.8 : uSpec.isHero ? 4.2 : 3.4,
+        color: uSpec.isMajorGod ? '#facc15' : uSpec.isGod ? '#c084fc' : u.team === 'player' ? '#60a5fa' : '#ef4444',
+        size: uSpec.isMajorGod ? 6.6 : uSpec.isGod ? 6.0 : u.kind === 'titan' ? 5.6 : uSpec.isHero ? 4.2 : 3.4,
         selected: u.selected,
         subKind: u.kind,
         isHero: Boolean(uSpec.isHero),
-        isTitan: u.kind === 'titan',
+        isTitan: u.kind === 'titan' || Boolean(uSpec.isGod),
         label: `${uSpec.name} (${u.team === 'player' ? 'Aliado' : 'Inimigo'})`,
       });
     }
@@ -7827,7 +7870,7 @@ export class AoMEngine {
           soundEngine.playFanfare(false);
           if (doneId === 'secrets_of_titans') {
             this.age = 5;
-            this.notifyStatus('ERA V DESBLOQUEADA! Pesquisou Segredos dos Titãs — construa o Portão do Titã!');
+            this.notifyStatus('ERA V: ERA DOS DEUSES DESBLOQUEADA! Invoque Deuses Maiores e Menores no Templo e erga o Portão do Titã!');
           } else {
             this.notifyStatus(`Tecnologia concluída: ${tech.name}!`);
           }

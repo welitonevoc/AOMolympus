@@ -23,19 +23,22 @@ import {
 } from 'lucide-react';
 import { createGreekUnitMesh } from '../civilizacao/gregos/gregosModels';
 import {
+  animateZeus,
   buildZeus,
-  createZeusProceduralTextures,
   createZeusTempleEnvironment,
+  getCachedZeusTextures,
 } from '../civilizacao/gregos/zeusModel';
 import {
+  animatePoseidon,
   buildPoseidon,
   createPoseidonEnvironment,
-  createPoseidonProceduralTextures,
+  getCachedPoseidonTextures,
 } from '../civilizacao/gregos/poseidonModel';
 import {
+  animateHades,
   buildHades,
-  createHadesProceduralTextures,
   createHadesUnderworldEnvironment,
+  getCachedHadesTextures,
   HadesUnderworldEnvironment,
 } from '../civilizacao/gregos/hadesModel';
 import {
@@ -96,7 +99,7 @@ interface HopliteUvBuilderModalProps {
   onSelectTier: (tier: 1 | 2 | 3 | 4) => void;
 }
 
-export type InspectableUnitId = UnitKind | 'zeus' | 'poseidon' | 'hades' | 'artemis' | 'hefesto' | 'dionisio' | 'afrodite' | 'apolo' | 'ares' | 'atena' | 'hermes';
+export type InspectableUnitId = UnitKind;
 
 interface CivEntityOption {
   id: InspectableUnitId;
@@ -1278,7 +1281,7 @@ export function HopliteUvBuilderModal({
           scene.background = new THREE.Color(0x7fb8bd);
           scene.fog = new THREE.FogExp2(0x7fb8bd, 0.018);
 
-          const zTex = createZeusProceduralTextures();
+          const zTex = getCachedZeusTextures();
           const temple = createZeusTempleEnvironment(environmentGroup, zTex);
           zeusClouds = temple.clouds;
 
@@ -1289,80 +1292,18 @@ export function HopliteUvBuilderModal({
             opacity: 0.38,
             depthWrite: false,
           });
-          const blob = new THREE.Mesh(new THREE.CircleGeometry(1.6, 24), blobMat);
+          const blob = new THREE.Mesh(new THREE.CircleGeometry(1.9, 24), blobMat);
           blob.rotation.x = -Math.PI / 2;
           blob.position.y = 0.02;
           environmentGroup.add(blob);
 
           const zeus = buildZeus(zTex);
           group = zeus.flight;
-          group.scale.setScalar(0.72);
-          group.position.set(0, 0.15, 0);
+          group.scale.setScalar(1.38);
+          group.position.set(0, 0.25, 0);
 
           group.userData.animatePose = (dt: number) => {
-            const m = zeusModeRef.current;
-            const wind = m === 'voar' ? 2.4 : m === 'tempestade' ? 2.8 : 1.2;
-
-            // Barba ondulante
-            for (const b of zeus.beardLocks) {
-              b.mesh.rotation.x = b.rx + Math.sin(simTime * 2.8 * wind + b.phase) * 0.045;
-              b.mesh.rotation.z = b.rz + Math.cos(simTime * 2.2 * wind + b.phase) * 0.035;
-            }
-
-            // Capa esvoaçante de linho
-            const cAttr = zeus.cape.geometry.attributes.position;
-            for (let i = 0; i < cAttr.count; i++) {
-              const bx = zeus.capeBase[i * 3];
-              const by = zeus.capeBase[i * 3 + 1];
-              const bz = zeus.capeBase[i * 3 + 2];
-              const normY = (0.91 - by) / 1.82;
-              const wave1 = Math.sin(simTime * 3.4 * wind - normY * 4.5 + bx * 2.6) * 0.14 * normY;
-              cAttr.setXYZ(i, bx, by, bz + wave1);
-            }
-            cAttr.needsUpdate = true;
-
-            // Variação de Pose conforme modo de Zeus
-            if (m === 'voar') {
-              const t = simTime * 2.6;
-              zeus.flight.position.y = 0.22 + Math.sin(t) * 0.15;
-              zeus.flight.position.z = Math.sin(t * 1.4) * 0.18;
-              zeus.flight.rotation.x = 0.28 + Math.sin(t * 0.8) * 0.06;
-              zeus.flight.rotation.z = Math.sin(t * 1.1) * 0.1;
-              zeus.ring2.rotation.z += dt * 1.2;
-            } else if (m === 'raios') {
-              const cycle = (simTime * 1.5) % (Math.PI * 2);
-              const raise = (Math.sin(cycle) + 1) * 0.5;
-              zeus.flight.position.y = 0.2 + raise * 0.12;
-              zeus.flight.rotation.x = -raise * 0.1;
-              zeus.rightArm.arm.rotation.x = -1.1 - raise * 0.9;
-              zeus.handAnchor.rotation.z = Math.sin(simTime * 8) * 0.2;
-              zeus.handGlow.scale.setScalar(1.5 + raise * 0.8);
-              zeus.leftOrb.scale.setScalar(1.2 + raise * 0.4);
-              zeus.ring2.rotation.z += dt * (1.0 + raise * 2.0);
-            } else if (m === 'tempestade') {
-              const t = simTime * 3.8;
-              zeus.flight.position.y = 0.25 + Math.sin(t) * 0.12;
-              zeus.flight.rotation.x = Math.sin(t * 0.7) * 0.08;
-              zeus.flight.rotation.z = Math.cos(t * 1.2) * 0.1;
-              zeus.ring2.rotation.z += dt * 3.2;
-              zeus.handGlow.scale.setScalar(1.6 + Math.sin(simTime * 16) * 0.5);
-              zeus.leftOrb.scale.setScalar(1.4 + Math.cos(simTime * 14) * 0.3);
-            } else {
-              // Pairar padrão
-              const t = simTime * 1.8;
-              zeus.flight.position.y = 0.15 + Math.sin(t) * 0.08;
-              zeus.flight.position.z = 0;
-              zeus.flight.rotation.x = Math.sin(t * 0.6) * 0.04;
-              zeus.flight.rotation.z = Math.cos(t * 0.5) * 0.03;
-              zeus.rightArm.arm.rotation.x = -0.3;
-              zeus.handAnchor.rotation.z = 0;
-              zeus.handGlow.scale.setScalar(1.2);
-              zeus.ring2.rotation.z += dt * 0.65;
-            }
-
-            zeus.ring1.material.opacity = 0.38 + 0.22 * Math.sin(simTime * 2.2);
-            const pulse = 1 + Math.sin(simTime * 16) * 0.16;
-            zeus.handGlow.scale.setScalar(1.2 * pulse);
+            animateZeus(zeus, dt, simTime, zeusModeRef.current);
           };
         } else if (selectedUnit === 'poseidon' && selectedCiv === 'greek') {
           // ===============================
@@ -1371,7 +1312,7 @@ export function HopliteUvBuilderModal({
           scene.background = new THREE.Color(0x04151f);
           scene.fog = new THREE.FogExp2(0x04151f, 0.022);
 
-          const pTex = createPoseidonProceduralTextures();
+          const pTex = getCachedPoseidonTextures();
           const oceanEnv = createPoseidonEnvironment(environmentGroup, pTex);
           poseidonOceanPos = oceanEnv.oceanPos as THREE.BufferAttribute;
           poseidonOceanInitY = new Float32Array(oceanEnv.oceanPos.count);
@@ -1381,67 +1322,14 @@ export function HopliteUvBuilderModal({
 
           const poseidon = buildPoseidon(pTex);
           group = poseidon.vessel;
-          group.scale.setScalar(0.72);
-          group.position.set(0, -0.2, 0);
+          group.scale.setScalar(1.05);
+          group.position.set(0, -0.1, 0);
 
           group.userData.animatePose = (dt: number) => {
             const m = poseidonModeRef.current;
-
-            if (m === 'correnteza') {
-              const t = simTime * 2.5;
-              poseidon.vessel.position.z = Math.sin(t * 1.1) * 0.25;
-              poseidon.vessel.rotation.x = 0.18 + Math.sin(t * 0.8) * 0.05;
-              poseidon.vortexGroup.rotation.y += dt * 2.8;
-              for (const r of poseidon.swirlRings) {
-                r.mesh.rotation.y -= dt * 4.0;
-                r.mesh.position.y = r.baseY + Math.sin(simTime * 4 + r.phase) * 0.07;
-              }
-              if (Math.random() < 0.3) {
-                spawnSpray((Math.random() - 0.5) * 1.2, 0.2, (Math.random() - 0.5) * 1.2, 2.5, 1.2, 2.8);
-              }
-            } else if (m === 'golpe') {
-              const cycle = (simTime * 1.4) % 2.4;
-              if (cycle < 1.1) {
-                // Ergue tridente
-                const prep = cycle / 1.1;
-                poseidon.rightArm.arm.rotation.x = -0.3 - prep * 1.6;
-                poseidon.body.position.y = 1.05 + prep * 0.25;
-              } else if (cycle < 1.5) {
-                // Impacto nas águas
-                poseidon.rightArm.arm.rotation.x = 0.35;
-                poseidon.body.position.y = 0.92;
-                poseidon.tridentCore.scale.setScalar(1.7);
-              } else {
-                // Recuperação
-                poseidon.rightArm.arm.rotation.x = -0.3;
-                poseidon.body.position.y = 1.05;
-              }
-              poseidon.vortexGroup.rotation.y += dt * 1.8;
-            } else if (m === 'tsunami') {
-              const t = simTime * 3.0;
-              poseidon.body.position.y = 1.18 + Math.sin(t) * 0.1;
-              poseidon.rightArm.arm.rotation.x = -1.35 + Math.sin(t * 0.6) * 0.15;
-              poseidon.leftArm.arm.rotation.x = -1.2 + Math.cos(t * 0.6) * 0.15;
-              poseidon.vortexGroup.rotation.y += dt * 3.6;
-              for (const r of poseidon.swirlRings) {
-                r.mesh.rotation.y -= dt * 4.5;
-              }
-              poseidon.tridentCore.scale.setScalar(1.5 + Math.sin(t * 6) * 0.35);
-            } else {
-              // Conduzido pelas águas (padrão)
-              const t = simTime * 1.6;
-              poseidon.vessel.position.z = 0;
-              poseidon.vessel.rotation.x = 0;
-              poseidon.body.position.y = 1.05 + Math.sin(t) * 0.07;
-              poseidon.rightArm.arm.rotation.x = -0.3;
-              poseidon.leftArm.arm.rotation.x = 0;
-              poseidon.vortexGroup.rotation.y += dt * 1.4;
-              for (const r of poseidon.swirlRings) {
-                r.mesh.rotation.y -= dt * 2.2;
-                r.mesh.position.y = r.baseY + Math.sin(simTime * 2.6 + r.phase) * 0.04;
-              }
-              const pulse = 1 + Math.sin(simTime * 8) * 0.2;
-              poseidon.tridentCore.scale.setScalar(1.2 * pulse);
+            animatePoseidon(poseidon, dt, simTime, m === 'conduzido' ? 'ondas' : m);
+            if (m === 'correnteza' && Math.random() < 0.3) {
+              spawnSpray((Math.random() - 0.5) * 1.2, 0.2, (Math.random() - 0.5) * 1.2, 2.5, 1.2, 2.8);
             }
           };
         } else if (selectedUnit === 'hades' && selectedCiv === 'greek') {
@@ -1452,133 +1340,27 @@ export function HopliteUvBuilderModal({
           scene.fog = new THREE.FogExp2(0x090b14, 0.026);
           ashPoints.visible = true;
 
-          const hTex = createHadesProceduralTextures();
+          const hTex = getCachedHadesTextures();
           hadesEnv = createHadesUnderworldEnvironment(environmentGroup, hTex);
 
           const hades = buildHades(hTex);
           hadesBidentAnchor = hades.bidentAnchor;
           group = hades.vessel;
-          group.scale.setScalar(0.72);
-          group.position.set(0, -0.1, 0);
+          group.scale.setScalar(1.02);
+          group.position.set(0, -0.05, 0);
 
           let trailTimer = 0;
-          const tmpV = new THREE.Vector3();
 
           group.userData.animatePose = (dt: number) => {
             const m = hadesModeRef.current;
-            const t = simTime;
-
-            // 1. Deslize sombrio e bob de flutuação
-            let gx = 0;
-            let gz = 0;
-            let yaw = Math.sin(t * 0.35) * 0.16;
-            let tiltPitch = 0.03;
-            let tiltRoll = 0;
-            const hoverBob = Math.sin(t * 1.4) * 0.06;
-
+            animateHades(hades, dt, simTime, m, bidentLight, false);
             if (m === 'marcha') {
-              const a = t * 0.65;
-              const R = 2.4;
-              gx = Math.cos(a) * R;
-              gz = Math.sin(a) * R;
-              yaw = -a;
-              tiltPitch = 0.16;
-              tiltRoll = -0.2;
-
               trailTimer -= dt;
               if (trailTimer <= 0) {
                 trailTimer = 0.12;
-                spawnShadowTrail(gx, gz);
+                spawnShadowTrail(hades.vessel.position.x, hades.vessel.position.z);
               }
-            } else {
-              gx = Math.sin(t * 0.45) * 0.2;
-              gz = Math.cos(t * 0.38) * 0.15;
             }
-
-            hades.vessel.position.set(gx, -0.1, gz);
-            hades.vessel.rotation.set(0, yaw, 0);
-            hades.body.position.y = 1.12 + hoverBob;
-            hades.body.rotation.set(tiltPitch, 0, tiltRoll);
-
-            // Vórtice de fumaça sombria e almas orbitando aos pés
-            hades.shadowCone.rotation.y -= dt * (m === 'marcha' ? 4.5 : 2.2);
-            hades.groundAuraRing.scale.setScalar(1 + Math.sin(t * 3.0) * 0.06);
-            for (const w of hades.orbitingWisps) {
-              const ang = t * w.speed + w.phase;
-              w.mesh.position.set(
-                Math.cos(ang) * w.radius,
-                w.height + Math.sin(t * 2.5 + w.phase) * 0.15,
-                Math.sin(ang) * w.radius
-              );
-            }
-
-            // 2. Postura e Animação do Bidente Real
-            if (m === 'chama') {
-              hades.rightArm.arm.rotation.set(-0.55, 0.15, 1.35);
-              hades.rightArm.elbow.rotation.set(-0.35, 0.2, 0.25);
-              hades.bident.rotation.set(0.95, 0, -0.35);
-              hades.leftArm.arm.rotation.set(0.45, -0.3, -0.85);
-            } else if (m === 'portal') {
-              hades.rightArm.arm.rotation.set(-0.50, 0.15, 2.38 + Math.sin(t * 2.0) * 0.04);
-              hades.rightArm.elbow.rotation.set(0.55, 0.2, 0.28);
-              hades.bident.rotation.set(0.22, 0, -0.24);
-              hades.leftArm.arm.rotation.set(0.55, -0.35, -1.15);
-            } else if (m === 'marcha') {
-              hades.rightArm.arm.rotation.set(0.32, 0.15, 0.72);
-              hades.rightArm.elbow.rotation.set(-0.45, 0.1, 0.22);
-              hades.bident.rotation.set(0.85, 0.1, -0.36);
-              hades.leftArm.arm.rotation.set(0.28, -0.22, -0.78);
-            } else {
-              // Reinar
-              hades.rightArm.arm.rotation.set(-0.18, 0.12, 0.55 + Math.sin(t * 1.4) * 0.03);
-              hades.rightArm.elbow.rotation.set(-0.52, 0.15, 0.22);
-              hades.bident.rotation.set(0.18, 0, -0.46);
-              hades.leftArm.arm.rotation.set(0.25, -0.2, -0.74 + Math.cos(t * 1.3) * 0.03);
-            }
-
-            // Núcleo de Alma aprisionada entre as pontas do Bidente
-            hades.soulOrb.rotation.y += dt * 3.0;
-            hades.soulRing1.rotation.z += dt * 3.6;
-            hades.soulRing2.rotation.y -= dt * 3.2;
-
-            const powerMult = m === 'chama' || m === 'portal' ? 1.55 : 1.0;
-            hades.bidentGlow.scale.setScalar((0.9 + Math.sin(t * 14) * 0.18) * powerMult);
-
-            hades.bidentAnchor.getWorldPosition(tmpV);
-            bidentLight.position.copy(tmpV);
-            bidentLight.intensity = 2.4 * powerMult + Math.sin(t * 16) * 0.4;
-
-            // Vento no manto esfarrapado, saiote e cabelos
-            const wind = m === 'marcha' || m === 'portal' ? 1.85 : 1.0;
-            hades.beardTip.rotation.x = -0.14 + Math.sin(t * 2.4 * wind) * 0.035;
-            for (const s of hades.hairStrands) {
-              s.mesh.rotation.x = Math.sin(t * 2.3 * wind + s.phase) * 0.04;
-              s.mesh.rotation.z = Math.cos(t * 1.8 * wind + s.phase) * 0.032;
-            }
-
-            const cAttr = hades.cape.geometry.attributes.position as THREE.BufferAttribute;
-            for (let i = 0; i < cAttr.count; i++) {
-              const bx = hades.capeBase[i * 3];
-              const by = hades.capeBase[i * 3 + 1];
-              const bz = hades.capeBase[i * 3 + 2];
-              const normY = Math.max(0, Math.min(1, (0.98 - by) / 1.96));
-              const wave1 = Math.sin(t * 3.1 * wind - normY * 4.5 + bx * 2.5) * 0.14 * normY;
-              const wave2 = Math.cos(t * 2.1 * wind - normY * 3.0) * 0.06 * normY;
-              cAttr.setXYZ(i, bx + Math.sin(t * 2.3 - normY * 3.0) * 0.035 * normY, by, bz + wave1 + wave2);
-            }
-            cAttr.needsUpdate = true;
-            hades.cape.geometry.computeVertexNormals();
-
-            const skAttr = hades.skirtMesh.geometry.attributes.position as THREE.BufferAttribute;
-            for (let i = 0; i < skAttr.count; i++) {
-              const bx = hades.skirtBase[i * 3];
-              const by = hades.skirtBase[i * 3 + 1];
-              const bz = hades.skirtBase[i * 3 + 2];
-              const normY = Math.max(0, Math.min(1, (0.46 - by) / 0.92));
-              skAttr.setZ(i, bz + Math.sin(t * 3.3 * wind - normY * 4.0 + bx * 4.0) * 0.042 * normY);
-            }
-            skAttr.needsUpdate = true;
-            hades.skirtMesh.geometry.computeVertexNormals();
           };
         } else if (selectedUnit === 'artemis' && selectedCiv === 'greek') {
           // ===============================
@@ -1604,7 +1386,7 @@ export function HopliteUvBuilderModal({
           const aTex = getCachedArtemisTextures();
           const artemis = buildArtemis(aTex);
           group = artemis.root;
-          group.scale.setScalar(0.85);
+          group.scale.setScalar(0.81);
 
           group.userData.animatePose = (dt: number) => {
             const m = artemisModeRef.current;
@@ -1673,7 +1455,7 @@ export function HopliteUvBuilderModal({
           const dTex = getCachedDionysusTextures();
           const dionisio = buildDionysus(dTex);
           group = dionisio.root;
-          group.scale.setScalar(0.85);
+          group.scale.setScalar(0.83);
 
           group.userData.animatePose = (dt: number) => {
             const m = dionisioModeRef.current;
@@ -1703,7 +1485,7 @@ export function HopliteUvBuilderModal({
           const aTex = getCachedAphroditeTextures();
           const afrodite = buildAphrodite(aTex);
           group = afrodite.root;
-          group.scale.setScalar(0.85);
+          group.scale.setScalar(1.22);
 
           group.userData.animatePose = (dt: number) => {
             const m = afroditeModeRef.current;
@@ -1733,7 +1515,7 @@ export function HopliteUvBuilderModal({
           const apoTex = getCachedApolloTextures();
           const apolo = buildApollo(apoTex);
           group = apolo.root;
-          group.scale.setScalar(0.85);
+          group.scale.setScalar(0.82);
 
           group.userData.animatePose = (dt: number) => {
             const m = apoloModeRef.current;
@@ -1763,7 +1545,7 @@ export function HopliteUvBuilderModal({
           const aresTex = getCachedAresTextures();
           const ares = buildAres(aresTex);
           group = ares.root;
-          group.scale.setScalar(0.85);
+          group.scale.setScalar(0.79);
 
           group.userData.animatePose = (dt: number) => {
             const m = aresModeRef.current;
@@ -1793,7 +1575,7 @@ export function HopliteUvBuilderModal({
           const atenaTex = getCachedAtenaTextures();
           const atena = buildAthena(atenaTex);
           group = atena.root;
-          group.scale.setScalar(0.85);
+          group.scale.setScalar(0.80);
 
           group.userData.animatePose = (dt: number) => {
             const m = atenaModeRef.current;
@@ -1823,7 +1605,7 @@ export function HopliteUvBuilderModal({
           const hermesTex = getCachedHermesTextures();
           const hermes = buildHermes(hermesTex);
           group = hermes.root;
-          group.scale.setScalar(0.85);
+          group.scale.setScalar(0.81);
 
           group.userData.animatePose = (dt: number) => {
             const m = hermesModeRef.current;
@@ -1878,7 +1660,7 @@ export function HopliteUvBuilderModal({
           group.userData.setArmorTier?.(activeTier);
           group.userData.setMode?.('3d');
           if (selectedUnit === 'titan') {
-            group.scale.setScalar(0.48);
+            group.scale.setScalar(0.28);
             group.position.y = -0.05;
           }
         }
@@ -2233,8 +2015,15 @@ export function HopliteUvBuilderModal({
 
       if (isGod) {
         // Câmera orbital 360° ao redor do Deus posicionado no centro exato
-        const focusY = isFocus ? (selectedUnit === 'zeus' ? 1.4 : selectedUnit === 'poseidon' ? 1.5 : selectedUnit === 'artemis' ? 1.42 : selectedUnit === 'hefesto' ? 1.45 : selectedUnit === 'dionisio' ? 1.42 : selectedUnit === 'afrodite' ? 1.46 : selectedUnit === 'apolo' ? 1.48 : selectedUnit === 'ares' ? 1.48 : selectedUnit === 'atena' ? 1.46 : selectedUnit === 'hermes' ? 1.44 : 1.48) : 1.35;
-        const effDist = isFocus ? 2.0 / zoomRef.current : 5.8 / zoomRef.current;
+        const isMajor = selectedUnit === 'zeus' || selectedUnit === 'poseidon' || selectedUnit === 'hades';
+        const focusY = isFocus
+          ? isMajor
+            ? 2.25
+            : 1.55
+          : isMajor
+          ? 1.85
+          : 1.45;
+        const effDist = isFocus ? (isMajor ? 2.8 : 2.1) / zoomRef.current : (isMajor ? 7.2 : 6.0) / zoomRef.current;
 
         const horizDist = effDist * Math.cos(orbitPitch);
         const camX = Math.sin(orbitYaw) * horizDist;
@@ -2256,8 +2045,8 @@ export function HopliteUvBuilderModal({
           selectedUnit === 'phoenix' ||
           selectedUnit === 'ram' ||
           selectedUnit === 'siege';
-        const baseDist = isBuilding ? 8.5 : isTitan ? 10.5 : isGiantMyth ? 6.8 : isMountedOrSiege ? 6.0 : 4.8;
-        const baseHeight = isBuilding ? 1.6 : isTitan ? 2.8 : isGiantMyth ? 1.75 : isMountedOrSiege ? 1.3 : 1.1;
+        const baseDist = isBuilding ? 8.5 : isTitan ? 7.4 : isGiantMyth ? 6.8 : isMountedOrSiege ? 6.0 : 4.8;
+        const baseHeight = isBuilding ? 1.6 : isTitan ? 1.4 : isGiantMyth ? 1.75 : isMountedOrSiege ? 1.3 : 1.1;
         const dist = baseDist / zoomRef.current;
         const height = baseHeight * (1 + (1 - zoomRef.current) * 0.2);
 

@@ -78,6 +78,14 @@ export function createZeusProceduralTextures(): ZeusProceduralTextures {
   return { skinBump, tunicTex, marbleTex };
 }
 
+let cachedZeusTextures: ZeusProceduralTextures | null = null;
+export function getCachedZeusTextures(): ZeusProceduralTextures {
+  if (!cachedZeusTextures) {
+    cachedZeusTextures = createZeusProceduralTextures();
+  }
+  return cachedZeusTextures;
+}
+
 function group(parent?: THREE.Object3D, x = 0, y = 0, z = 0): THREE.Group {
   const g = new THREE.Group();
   g.position.set(x, y, z);
@@ -703,4 +711,76 @@ export function createZeusTempleEnvironment(scene: THREE.Scene | THREE.Group, te
   }
 
   return { ground, clouds };
+}
+
+export type ZeusParts = ReturnType<typeof buildZeus>;
+
+export function animateZeus(
+  zeus: ZeusParts,
+  dt: number,
+  t: number,
+  mode: 'pairar' | 'voar' | 'raios' | 'tempestade' = 'pairar'
+): void {
+  const wind = mode === 'voar' ? 2.4 : mode === 'tempestade' ? 2.8 : 1.2;
+
+  for (const b of zeus.beardLocks) {
+    b.mesh.rotation.x = b.rx + Math.sin(t * 2.8 * wind + b.phase) * 0.045;
+    b.mesh.rotation.z = b.rz + Math.cos(t * 2.2 * wind + b.phase) * 0.035;
+  }
+
+  const cAttr = zeus.cape.geometry.attributes.position as THREE.BufferAttribute;
+  for (let i = 0; i < cAttr.count; i++) {
+    const bx = zeus.capeBase[i * 3];
+    const by = zeus.capeBase[i * 3 + 1];
+    const bz = zeus.capeBase[i * 3 + 2];
+    const normY = (0.91 - by) / 1.82;
+    const wave1 = Math.sin(t * 3.4 * wind - normY * 4.5 + bx * 2.6) * 0.14 * normY;
+    cAttr.setXYZ(i, bx, by, bz + wave1);
+  }
+  cAttr.needsUpdate = true;
+
+  if (mode === 'voar') {
+    const f = t * 2.6;
+    zeus.flight.position.y = 0.22 + Math.sin(f) * 0.15;
+    zeus.flight.position.z = Math.sin(f * 1.4) * 0.18;
+    zeus.flight.rotation.x = 0.28 + Math.sin(f * 0.8) * 0.06;
+    zeus.flight.rotation.z = Math.sin(f * 1.1) * 0.1;
+    zeus.rightArm.arm.rotation.x = -0.35;
+    zeus.ring2.rotation.z += dt * 1.2;
+  } else if (mode === 'raios') {
+    const cycle = (t * 1.5) % (Math.PI * 2);
+    const raise = (Math.sin(cycle) + 1) * 0.5;
+    zeus.flight.position.y = 0.2 + raise * 0.12;
+    zeus.flight.position.z = 0;
+    zeus.flight.rotation.x = -raise * 0.1;
+    zeus.flight.rotation.z = 0;
+    zeus.rightArm.arm.rotation.x = -1.1 - raise * 0.9;
+    zeus.handAnchor.rotation.z = Math.sin(t * 8) * 0.2;
+    zeus.leftOrb.scale.setScalar(1.2 + raise * 0.4);
+    zeus.ring2.rotation.z += dt * (1.0 + raise * 2.0);
+  } else if (mode === 'tempestade') {
+    const f = t * 3.8;
+    zeus.flight.position.y = 0.25 + Math.sin(f) * 0.12;
+    zeus.flight.position.z = 0;
+    zeus.flight.rotation.x = Math.sin(f * 0.7) * 0.08;
+    zeus.flight.rotation.z = Math.cos(f * 1.2) * 0.1;
+    zeus.rightArm.arm.rotation.x = -0.85 + Math.sin(t * 6) * 0.2;
+    zeus.ring2.rotation.z += dt * 3.2;
+    zeus.leftOrb.scale.setScalar(1.4 + Math.cos(t * 14) * 0.3);
+  } else {
+    const f = t * 1.8;
+    zeus.flight.position.y = 0.15 + Math.sin(f) * 0.08;
+    zeus.flight.position.z = 0;
+    zeus.flight.rotation.x = Math.sin(f * 0.6) * 0.04;
+    zeus.flight.rotation.z = Math.cos(f * 0.5) * 0.03;
+    zeus.rightArm.arm.rotation.x = -0.3;
+    zeus.handAnchor.rotation.z = 0;
+    zeus.leftOrb.scale.setScalar(1.0);
+    zeus.ring2.rotation.z += dt * 0.65;
+  }
+
+  zeus.ring1.material.opacity = 0.38 + 0.22 * Math.sin(t * 2.2);
+  const pulse = 1 + Math.sin(t * 16) * 0.16;
+  const boost = mode === 'raios' || mode === 'tempestade' ? 1.55 : 1.2;
+  zeus.handGlow.scale.setScalar(boost * pulse);
 }

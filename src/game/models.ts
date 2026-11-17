@@ -15,6 +15,9 @@ import { buildApollo, getCachedApolloTextures, animateApollo } from '../civiliza
 import { buildAres, getCachedAresTextures, animateAres } from '../civilizacao/gregos/aresModel';
 import { buildAthena, getCachedAtenaTextures, animateAthena } from '../civilizacao/gregos/atenaModel';
 import { buildHermes, getCachedHermesTextures, animateHermes } from '../civilizacao/gregos/hermesModel';
+import { buildZeus, getCachedZeusTextures, animateZeus } from '../civilizacao/gregos/zeusModel';
+import { buildPoseidon, getCachedPoseidonTextures, animatePoseidon } from '../civilizacao/gregos/poseidonModel';
+import { buildHades, getCachedHadesTextures, animateHades } from '../civilizacao/gregos/hadesModel';
 import { createAoMOakTreeMesh, getFaunaCoatMaterial } from '../TEXTURA';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
@@ -2182,7 +2185,7 @@ export function createUnitMesh(
     if (godKey.includes('zeus')) {
       const typhonTex = getCachedTyphonTextures();
       const typhon = buildTyphonTitan(typhonTex);
-      typhon.titanRoot.scale.setScalar(1.85);
+      typhon.titanRoot.scale.setScalar(2.15);
       root.add(typhon.titanRoot);
       root.userData.typhon = typhon;
 
@@ -2221,8 +2224,8 @@ export function createUnitMesh(
         root.userData.animatePose?.(dt, state === 'move', 2.0, state === 'attack' ? 0.5 : null);
       };
 
-      attachGroundMarkers(root, 2.2, pal, team);
-      attachHealthBar(root, 8.2, 2.8);
+      attachGroundMarkers(root, 2.25, pal, team);
+      attachHealthBar(root, 9.2, 2.8);
       return root;
     }
 
@@ -2232,7 +2235,7 @@ export function createUnitMesh(
     if (godKey.includes('poseidon')) {
       const caribTex = getCachedCaribdisTextures();
       const caribdis = buildCharybdisTitan(caribTex);
-      caribdis.root.scale.setScalar(1.85);
+      caribdis.root.scale.setScalar(2.22);
       root.add(caribdis.root);
       root.userData.caribdis = caribdis;
 
@@ -2275,8 +2278,8 @@ export function createUnitMesh(
         root.userData.animatePose?.(dt, state === 'move', 2.0, state === 'attack' ? 0.5 : null);
       };
 
-      attachGroundMarkers(root, 2.2, pal, team);
-      attachHealthBar(root, 8.2, 2.8);
+      attachGroundMarkers(root, 2.25, pal, team);
+      attachHealthBar(root, 9.2, 2.8);
       return root;
     }
 
@@ -2286,7 +2289,7 @@ export function createUnitMesh(
     if (godKey.includes('hades')) {
       const cerbTex = getCachedCerberusTextures();
       const cerberus = buildCerberusTitan(cerbTex);
-      cerberus.titanRoot.scale.setScalar(1.85);
+      cerberus.titanRoot.scale.setScalar(1.94);
       root.add(cerberus.titanRoot);
       root.userData.cerberus = cerberus;
 
@@ -2352,8 +2355,8 @@ export function createUnitMesh(
         root.userData.animatePose?.(dt, state === 'move', 2.0, state === 'attack' ? 0.5 : null);
       };
 
-      attachGroundMarkers(root, 2.2, pal, team);
-      attachHealthBar(root, 8.2, 2.8);
+      attachGroundMarkers(root, 2.25, pal, team);
+      attachHealthBar(root, 9.2, 2.8);
       return root;
     }
 
@@ -2538,12 +2541,69 @@ export function createUnitMesh(
     root.userData.rightLeg = rightLeg;
     root.userData.leftArm = leftArm;
     root.userData.rightArm = rightArm;
-    attachGroundMarkers(root, 2.2, pal, team);
-    attachHealthBar(root, 8.85, 2.8);
-  } else if ((kind as any) === 'artemis') {
+    attachGroundMarkers(root, 2.25, pal, team);
+    attachHealthBar(root, 9.2, 2.8);
+  } else if (kind === 'zeus') {
+    // DEUS MAIOR (~13.1u): Maior entidade do campo de batalha (> Deuses Menores > Titãs)
+    const zeusTex = getCachedZeusTextures();
+    const zeus = buildZeus(zeusTex);
+    const zeusHolder = new THREE.Group();
+    zeusHolder.scale.setScalar(5.05);
+    zeusHolder.position.y = 0.25;
+    zeusHolder.add(zeus.flight);
+    root.add(zeusHolder);
+    let zPhase = 0;
+    root.userData.animatePose = (dt: number, moving: boolean, _speed: number, attackT: number | null) => {
+      zPhase += dt;
+      const mode = attackT !== null ? (attackT > 0.5 ? 'tempestade' : 'raios') : moving ? 'voar' : 'pairar';
+      animateZeus(zeus, dt, zPhase, mode);
+    };
+    root.userData.updateBrg = (dt: number, state: string) => {
+      root.userData.animatePose?.(dt, state === 'move', 2.0, state === 'attack' ? 0.5 : null);
+    };
+    attachGroundMarkers(root, 2.95, pal, team);
+    attachHealthBar(root, 13.8, 3.4);
+    return root;
+  } else if (kind === 'poseidon') {
+    // DEUS MAIOR (~13.1u): Maior entidade do campo de batalha (> Deuses Menores > Titãs)
+    const posTex = getCachedPoseidonTextures();
+    const poseidon = buildPoseidon(posTex);
+    poseidon.vessel.scale.setScalar(3.82);
+    root.add(poseidon.vessel);
+    let pPhase = 0;
+    root.userData.animatePose = (dt: number, moving: boolean, _speed: number, attackT: number | null) => {
+      pPhase += dt;
+      const mode = attackT !== null ? (attackT > 0.5 ? 'tsunami' : 'golpe') : moving ? 'correnteza' : 'ondas';
+      animatePoseidon(poseidon, dt, pPhase, mode);
+    };
+    root.userData.updateBrg = (dt: number, state: string) => {
+      root.userData.animatePose?.(dt, state === 'move', 2.0, state === 'attack' ? 0.5 : null);
+    };
+    attachGroundMarkers(root, 2.95, pal, team);
+    attachHealthBar(root, 13.8, 3.4);
+    return root;
+  } else if (kind === 'hades') {
+    // DEUS MAIOR (~13.1u): Maior entidade do campo de batalha (> Deuses Menores > Titãs)
+    const hadesTex = getCachedHadesTextures();
+    const hades = buildHades(hadesTex);
+    hades.vessel.scale.setScalar(3.72);
+    root.add(hades.vessel);
+    let hPhase = 0;
+    root.userData.animatePose = (dt: number, moving: boolean, _speed: number, attackT: number | null) => {
+      hPhase += dt;
+      const mode = attackT !== null ? (attackT > 0.5 ? 'portal' : 'chama') : moving ? 'marcha' : 'reinar';
+      animateHades(hades, dt, hPhase, mode, undefined, true);
+    };
+    root.userData.updateBrg = (dt: number, state: string) => {
+      root.userData.animatePose?.(dt, state === 'move', 2.0, state === 'attack' ? 0.5 : null);
+    };
+    attachGroundMarkers(root, 2.95, pal, team);
+    attachHealthBar(root, 13.8, 3.4);
+    return root;
+  } else if (kind === 'artemis') {
     const artemisTex = getCachedArtemisTextures();
     const artemis = buildArtemis(artemisTex);
-    artemis.root.scale.setScalar(1.25);
+    artemis.root.scale.setScalar(2.95);
     root.add(artemis.root);
     let aPhase = 0;
     root.userData.animatePose = (dt: number, moving: boolean, _speed: number, attackT: number | null) => {
@@ -2551,13 +2611,16 @@ export function createUnitMesh(
       const mode = attackT !== null ? 'raizes' : moving ? 'cacada' : 'vigilia';
       animateArtemis(artemis, dt, aPhase, mode);
     };
-    attachGroundMarkers(root, 1.25, pal, team);
-    attachHealthBar(root, 3.4, 1.6);
+    root.userData.updateBrg = (dt: number, state: string) => {
+      root.userData.animatePose?.(dt, state === 'move', 2.0, state === 'attack' ? 0.5 : null);
+    };
+    attachGroundMarkers(root, 2.55, pal, team);
+    attachHealthBar(root, 11.2, 3.0);
     return root;
-  } else if ((kind as any) === 'hefesto') {
+  } else if (kind === 'hefesto') {
     const hefTex = getCachedHephaestusTextures();
     const hef = buildHephaestus(hefTex);
-    hef.root.scale.setScalar(1.25);
+    hef.root.scale.setScalar(3.08);
     root.add(hef.root);
     let hPhase = 0;
     root.userData.animatePose = (dt: number, moving: boolean, _speed: number, attackT: number | null) => {
@@ -2565,13 +2628,16 @@ export function createUnitMesh(
       const mode = attackT !== null ? 'martelo' : moving ? 'automato' : 'forja';
       animateHephaestus(hef, dt, hPhase, mode);
     };
-    attachGroundMarkers(root, 1.25, pal, team);
-    attachHealthBar(root, 3.4, 1.6);
+    root.userData.updateBrg = (dt: number, state: string) => {
+      root.userData.animatePose?.(dt, state === 'move', 2.0, state === 'attack' ? 0.5 : null);
+    };
+    attachGroundMarkers(root, 2.55, pal, team);
+    attachHealthBar(root, 11.2, 3.0);
     return root;
-  } else if ((kind as any) === 'dionisio') {
+  } else if (kind === 'dionisio') {
     const dioTex = getCachedDionysusTextures();
     const dio = buildDionysus(dioTex);
-    dio.root.scale.setScalar(1.25);
+    dio.root.scale.setScalar(3.02);
     root.add(dio.root);
     let dPhase = 0;
     root.userData.animatePose = (dt: number, moving: boolean, _speed: number, attackT: number | null) => {
@@ -2579,13 +2645,16 @@ export function createUnitMesh(
       const mode = attackT !== null ? 'vinhas' : moving ? 'danca' : 'banquete';
       animateDionysus(dio, dt, dPhase, mode);
     };
-    attachGroundMarkers(root, 1.25, pal, team);
-    attachHealthBar(root, 3.4, 1.6);
+    root.userData.updateBrg = (dt: number, state: string) => {
+      root.userData.animatePose?.(dt, state === 'move', 2.0, state === 'attack' ? 0.5 : null);
+    };
+    attachGroundMarkers(root, 2.55, pal, team);
+    attachHealthBar(root, 11.2, 3.0);
     return root;
-  } else if ((kind as any) === 'afrodite') {
+  } else if (kind === 'afrodite') {
     const afroTex = getCachedAphroditeTextures();
     const afro = buildAphrodite(afroTex);
-    afro.root.scale.setScalar(1.25);
+    afro.root.scale.setScalar(4.45);
     root.add(afro.root);
     let aPhase = 0;
     root.userData.animatePose = (dt: number, moving: boolean, _speed: number, attackT: number | null) => {
@@ -2593,13 +2662,16 @@ export function createUnitMesh(
       const mode = attackT !== null ? 'encanto' : moving ? 'danca' : 'graca';
       animateAphrodite(afro, dt, aPhase, mode);
     };
-    attachGroundMarkers(root, 1.25, pal, team);
-    attachHealthBar(root, 3.4, 1.6);
+    root.userData.updateBrg = (dt: number, state: string) => {
+      root.userData.animatePose?.(dt, state === 'move', 2.0, state === 'attack' ? 0.5 : null);
+    };
+    attachGroundMarkers(root, 2.55, pal, team);
+    attachHealthBar(root, 11.2, 3.0);
     return root;
-  } else if ((kind as any) === 'apolo') {
+  } else if (kind === 'apolo') {
     const apoTex = getCachedApolloTextures();
     const apo = buildApollo(apoTex);
-    apo.root.scale.setScalar(1.25);
+    apo.root.scale.setScalar(2.98);
     root.add(apo.root);
     let aPhase = 0;
     root.userData.animatePose = (dt: number, moving: boolean, _speed: number, attackT: number | null) => {
@@ -2607,13 +2679,16 @@ export function createUnitMesh(
       const mode = attackT !== null ? 'flecha' : moving ? 'voo' : 'pairar';
       animateApollo(apo, dt, aPhase, mode);
     };
-    attachGroundMarkers(root, 1.25, pal, team);
-    attachHealthBar(root, 3.4, 1.6);
+    root.userData.updateBrg = (dt: number, state: string) => {
+      root.userData.animatePose?.(dt, state === 'move', 2.0, state === 'attack' ? 0.5 : null);
+    };
+    attachGroundMarkers(root, 2.55, pal, team);
+    attachHealthBar(root, 11.2, 3.0);
     return root;
-  } else if ((kind as any) === 'ares') {
+  } else if (kind === 'ares') {
     const aresTex = getCachedAresTextures();
     const ares = buildAres(aresTex);
-    ares.root.scale.setScalar(1.25);
+    ares.root.scale.setScalar(2.88);
     root.add(ares.root);
     let aPhase = 0;
     root.userData.animatePose = (dt: number, moving: boolean, _speed: number, attackT: number | null) => {
@@ -2621,13 +2696,16 @@ export function createUnitMesh(
       const mode = attackT !== null ? (attackT > 0.6 ? 'sismico' : 'furia') : moving ? 'investida' : 'postura';
       animateAres(ares, dt, aPhase, mode);
     };
-    attachGroundMarkers(root, 1.25, pal, team);
-    attachHealthBar(root, 3.4, 1.6);
+    root.userData.updateBrg = (dt: number, state: string) => {
+      root.userData.animatePose?.(dt, state === 'move', 2.0, state === 'attack' ? 0.5 : null);
+    };
+    attachGroundMarkers(root, 2.55, pal, team);
+    attachHealthBar(root, 11.2, 3.0);
     return root;
-  } else if ((kind as any) === 'atena') {
+  } else if (kind === 'atena') {
     const atenaTex = getCachedAtenaTextures();
     const atena = buildAthena(atenaTex);
-    atena.root.scale.setScalar(1.25);
+    atena.root.scale.setScalar(2.90);
     root.add(atena.root);
     let aPhase = 0;
     root.userData.animatePose = (dt: number, moving: boolean, _speed: number, attackT: number | null) => {
@@ -2635,13 +2713,16 @@ export function createUnitMesh(
       const mode = attackT !== null ? (attackT > 0.5 ? 'furia' : 'avanco') : moving ? 'egide' : 'guardia';
       animateAthena(atena, dt, aPhase, mode);
     };
-    attachGroundMarkers(root, 1.25, pal, team);
-    attachHealthBar(root, 3.4, 1.6);
+    root.userData.updateBrg = (dt: number, state: string) => {
+      root.userData.animatePose?.(dt, state === 'move', 2.0, state === 'attack' ? 0.5 : null);
+    };
+    attachGroundMarkers(root, 2.55, pal, team);
+    attachHealthBar(root, 11.2, 3.0);
     return root;
-  } else if ((kind as any) === 'hermes') {
+  } else if (kind === 'hermes') {
     const hermesTex = getCachedHermesTextures();
     const hermes = buildHermes(hermesTex);
-    hermes.root.scale.setScalar(1.25);
+    hermes.root.scale.setScalar(2.95);
     root.add(hermes.root);
     let aPhase = 0;
     root.userData.animatePose = (dt: number, moving: boolean, _speed: number, attackT: number | null) => {
@@ -2649,8 +2730,11 @@ export function createUnitMesh(
       const mode = attackT !== null ? (attackT > 0.5 ? 'relampago' : 'rajada') : moving ? 'velocidade' : 'flutuar';
       animateHermes(hermes, dt, aPhase, mode);
     };
-    attachGroundMarkers(root, 1.25, pal, team);
-    attachHealthBar(root, 3.4, 1.6);
+    root.userData.updateBrg = (dt: number, state: string) => {
+      root.userData.animatePose?.(dt, state === 'move', 2.0, state === 'attack' ? 0.5 : null);
+    };
+    attachGroundMarkers(root, 2.55, pal, team);
+    attachHealthBar(root, 11.2, 3.0);
     return root;
   }
 

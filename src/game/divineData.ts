@@ -514,8 +514,8 @@ export const TECH_SPECS: Record<TechId, TechSpec> = {
   },
   secrets_of_titans: {
     id: 'secrets_of_titans',
-    name: 'Segredos dos Titãs',
-    description: 'Avança para a Era V (Titãs) e libera a construção do Portão do Titã.',
+    name: 'Era V: Despertar dos Deuses',
+    description: 'Avança para a Era V (Era dos Deuses), liberando a invocação de Deuses Maiores e Menores no Templo e a construção do Portão do Titã.',
     minAge: 4,
     building: 'temple',
     cost: { food: 600, wood: 600, gold: 600, favor: 45 },
@@ -760,6 +760,50 @@ const CIV_UNIT_NAMES: Partial<Record<PantheonId, Partial<Record<UnitKind, { name
       role: 'Ave Imortal de Fogo (Apolo) — Orbes flamejantes com dano em área sobre tropas e estruturas.',
     },
     titan: { name: 'Titã Olímpico' },
+    zeus: {
+      name: 'Zeus — Rei do Olimpo',
+      role: 'Deus Maior (Era V) — Maior entidade do campo de batalha; tempestades de raios supremos em área.',
+    },
+    poseidon: {
+      name: 'Poseidon — Senhor dos Mares',
+      role: 'Deus Maior (Era V) — Maior entidade dos oceanos; maremotos e ondas sísmicas com tridente.',
+    },
+    hades: {
+      name: 'Hades — Soberano do Submundo',
+      role: 'Deus Maior (Era V) — Maior entidade do Tártaro; chamas espectrais e vórtices necróticos.',
+    },
+    atena: {
+      name: 'Atena — Deusa da Sabedoria',
+      role: 'Deusa Menor (Era V) — Maior que os Titãs; lança e Égide sagrada devastadora.',
+    },
+    ares: {
+      name: 'Ares — Deus da Guerra',
+      role: 'Deus Menor (Era V) — Maior que os Titãs; golpes sísmicos de guerra total.',
+    },
+    hermes: {
+      name: 'Hermes — Mensageiro Alado',
+      role: 'Deus Menor (Era V) — Maior que os Titãs; velocidade divina e relâmpagos em área.',
+    },
+    apolo: {
+      name: 'Apolo — Deus do Sol',
+      role: 'Deus Menor (Era V) — Maior que os Titãs; chuva solar de longo alcance.',
+    },
+    dionisio: {
+      name: 'Dionísio — Senhor das Vinhas',
+      role: 'Deus Menor (Era V) — Maior que os Titãs; tirso arcano e frenesi mítico.',
+    },
+    afrodite: {
+      name: 'Afrodite — Deusa da Beleza',
+      role: 'Deus Menor (Era V) — Maior que os Titãs; magia encantadora em área.',
+    },
+    hefesto: {
+      name: 'Hefesto — Deus da Forja',
+      role: 'Deus Menor (Era V) — Maior que os Titãs; martelo vulcânico contra cidades e exércitos.',
+    },
+    artemis: {
+      name: 'Ártemis — Deusa da Caça',
+      role: 'Deus Menor (Era V) — Maior que os Titãs; flechas lunares sísmicas de longo alcance.',
+    },
   },
   egyptian: {
     villager: { name: 'Trabalhador' },

@@ -433,7 +433,40 @@ class SoundEngine {
     let phrase = chosen.phrase;
     let translation = chosen.pt;
 
-    if (kind === 'titan') {
+    if (kind === 'zeus') {
+      phrase = action === 'attack' ? 'ZEUS: "Fulminarei todos os mortais com o Trovão Supremo!"' : 'ZEUS: "O Rei do Olimpo atende ao chamado da Era V!"';
+      translation = action === 'attack' ? 'Trovão Supremo do Pai dos Deuses!' : 'Zeus aguarda seu decreto divino.';
+    } else if (kind === 'poseidon') {
+      phrase = action === 'attack' ? 'POSEIDON: "Que os mares engulam suas muralhas!"' : 'POSEIDON: "O Senhor dos Mares ergue seu Tridente!"';
+      translation = action === 'attack' ? 'Tsunami sísmico de Poseidon!' : 'Poseidon domina as águas.';
+    } else if (kind === 'hades') {
+      phrase = action === 'attack' ? 'HADES: "Para as profundezas do Tártaro!"' : 'HADES: "As sombras do Submundo obedecem."';
+      translation = action === 'attack' ? 'Chamas necróticas do Submundo!' : 'Hades reina sobre o campo.';
+    } else if (kind === 'atena') {
+      phrase = action === 'attack' ? 'ATENA: "Pela Égide e pela Sabedoria Divina!"' : 'ATENA: "A estratégia precede a vitória."';
+      translation = action === 'attack' ? 'Golpe sagrado da Égide de Atena!' : 'Atena protege suas fileiras.';
+    } else if (kind === 'ares') {
+      phrase = action === 'attack' ? 'ARES: "SANGUE E GUERRA! Esmaguem tudo!"' : 'ARES: "Onde está o combate?!"';
+      translation = action === 'attack' ? 'Fúria sísmica do Deus da Guerra!' : 'Ares anseia pela batalha.';
+    } else if (kind === 'hermes') {
+      phrase = action === 'attack' ? 'HERMES: "Mais rápido que o relâmpago!"' : 'HERMES: "Asas do Olimpo ao seu dispor."';
+      translation = action === 'attack' ? 'Rajada celeste de Hermes!' : 'Mensageiro divino pronto.';
+    } else if (kind === 'apolo') {
+      phrase = action === 'attack' ? 'APOLO: "Que o fogo solar reduza-os a cinzas!"' : 'APOLO: "A luz do Sol ilumina o campo."';
+      translation = action === 'attack' ? 'Flechas solares de Apolo!' : 'Apolo mira o horizonte.';
+    } else if (kind === 'dionisio') {
+      phrase = action === 'attack' ? 'DIONÍSIO: "O frenesi dionisíaco os consumirá!"' : 'DIONÍSIO: "Celebremos a vitória antecipada!"';
+      translation = action === 'attack' ? 'Onda arcana das vinhas sagradas!' : 'Dionísio abençoa a marcha.';
+    } else if (kind === 'afrodite') {
+      phrase = action === 'attack' ? 'AFRODITE: "Contemplem a fúria celestial da Beleza!"' : 'AFRODITE: "Nascida da espuma e das estrelas."';
+      translation = action === 'attack' ? 'Explosão encantadora de Afrodite!' : 'Afrodite flutua em graça.';
+    } else if (kind === 'hefesto') {
+      phrase = action === 'attack' ? 'HEFESTO: "Sinta o martelo da Forja Olímpica!"' : 'HEFESTO: "Fogo e bronze moldam o destino."';
+      translation = action === 'attack' ? 'Impacto vulcânico de Hefesto!' : 'Hefesto prepara o martelo.';
+    } else if (kind === 'artemis') {
+      phrase = action === 'attack' ? 'ÁRTEMIS: "A caçada lunar nunca erra o alvo!"' : 'ÁRTEMIS: "Sob o luar, somos implacáveis."';
+      translation = action === 'attack' ? 'Chuva de flechas lunares de Ártemis!' : 'Ártemis vigia a floresta.';
+    } else if (kind === 'titan') {
       phrase = action === 'attack' ? `TITÃ: "${chosen.phrase}"` : `Titã Ancestral — "${chosen.phrase}"`;
       translation = action === 'attack' ? 'Rugido Titânico de Destruição!' : 'O Titã aguarda seu comando.';
     } else if (kind === 'ajax') {
@@ -517,7 +550,15 @@ class SoundEngine {
     const now = ctx.currentTime;
 
     const kindPitchMult =
-      kind === 'titan'
+      kind === 'zeus' || kind === 'poseidon' || kind === 'hades'
+        ? 0.42
+        : kind === 'ares' || kind === 'hefesto' || kind === 'dionisio'
+        ? 0.48
+        : kind === 'hermes' || kind === 'apolo'
+        ? 0.56
+        : kind === 'atena' || kind === 'afrodite' || kind === 'artemis'
+        ? 0.72
+        : kind === 'titan'
         ? 0.52
         : kind === 'colossus' || kind === 'hydra' || kind === 'cyclops'
         ? 0.62
@@ -558,6 +599,11 @@ class SoundEngine {
 
         osc.type =
           kind === 'titan' ||
+          kind === 'zeus' ||
+          kind === 'poseidon' ||
+          kind === 'hades' ||
+          kind === 'ares' ||
+          kind === 'hefesto' ||
           kind === 'minotaur' ||
           kind === 'cyclops' ||
           kind === 'colossus' ||
