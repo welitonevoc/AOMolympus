@@ -2099,7 +2099,7 @@ export function HopliteUvBuilderModal({
         pedestal.receiveShadow = true;
         environmentGroup.add(pedestal);
 
-        group = createBuildingMesh(selectedBuilding, 'player', pal, true, selectedCiv, selectedMajorGod);
+        group = createBuildingMesh(selectedBuilding, 'player', pal, true, selectedCiv, selectedMajorGod, activeTier);
       }
 
       scene.add(group);
@@ -2685,6 +2685,54 @@ export function HopliteUvBuilderModal({
                     </button>
                   ))}
             </div>
+
+            {/* Seletor de Tiers T1 a T5 (Metrópole Divina) para Edificações */}
+            {entityType === 'building' && (
+              <div className="flex flex-col gap-2.5 rounded-xl border border-amber-600/40 bg-stone-950/80 p-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-amber-400">
+                    🏛️ Tiers de Edificação (T1–T5 Metrópole)
+                  </span>
+                  <span className="text-[10px] font-mono text-amber-300/80 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20">
+                    {(activeTier as number) === 5 ? 'T5 · Metrópole Divina' : `T${activeTier} Era`}
+                  </span>
+                </div>
+
+                <div className="space-y-1.5">
+                  {([
+                    { tier: 1 as const, name: 'T1 · Era Arcaica (Posto Inicial)', desc: 'Estrutura rústica fundamental com fundação básica e acabamento inicial.' },
+                    { tier: 2 as const, name: 'T2 · Era Clássica (Expansão)', desc: 'Frisos esculpidos, colunatas frontais e pilares de reforço.' },
+                    { tier: 3 as const, name: 'T3 · Era Heroica (Cidadela)', desc: 'Asas laterais, estátuas votivas e pátios monumentais.' },
+                    { tier: 4 as const, name: 'T4 · Era Mítica (Santuário Imperial)', desc: 'Cúpulas monumentais, obeliscos e obreiros divinos.' },
+                    { tier: 5 as const, name: 'T5 · Metrópole Divina (Apogeu)', desc: 'Coroação celeste, halo rotativo de plasma e cristal sagrado.' },
+                  ].map((item) => {
+                    const isSelected = activeTier === item.tier;
+                    return (
+                      <div
+                        key={item.tier}
+                        onClick={() => onSelectTier(item.tier as any)}
+                        className={`cursor-pointer p-2 rounded-lg border transition-all flex items-center justify-between ${
+                          isSelected
+                            ? 'bg-amber-500/15 border-amber-500 shadow-md shadow-amber-500/10 text-amber-200'
+                            : 'bg-stone-900/60 border-stone-800 text-stone-400 hover:bg-stone-800/60 hover:text-stone-200'
+                        }`}
+                      >
+                        <div>
+                          <div className="flex items-center space-x-1.5">
+                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                              T{item.tier}
+                            </span>
+                            <span className="text-xs font-medium">{item.name}</span>
+                          </div>
+                          <p className="text-[10px] text-stone-400 mt-0.5 line-clamp-1">{item.desc}</p>
+                        </div>
+                        {isSelected && <span className="text-amber-400 text-xs font-bold">●</span>}
+                      </div>
+                    );
+                  }))}
+                </div>
+              </div>
+            )}
 
             {/* Nível de Armadura e Textura UV dos Guerreiros Gregos (T1–T4) */}
             {entityType === 'unit' &&
