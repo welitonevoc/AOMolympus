@@ -234,6 +234,10 @@ export type TechId =
   | 'copper_mail'
   | 'bronze_mail'
   | 'iron_mail'
+  | 'copper_shields'
+  | 'bronze_shields'
+  | 'iron_shields'
+  | 'ballistics'
   | 'hand_axe'
   | 'pickaxe'
   | 'plow'
@@ -245,17 +249,31 @@ export type TechId =
   | 'engineers'
   | 'omniscience'
   | 'mythic_rejuvenation'
-  | 'secrets_of_titans';
+  | 'secrets_of_titans'
+  | 'phobos_spear_of_horror'
+  | 'deimos_sword_of_dread'
+  | 'enyo_bow_of_horror'
+  | 'sarissa'
+  | 'aegis_shield'
+  | 'sun_ray'
+  | 'shafts_of_plague'
+  | 'forge_of_olympus'
+  | 'olympian_weapons';
 
 export interface TechSpec {
   id: TechId;
   name: string;
   description: string;
   minAge: AgeLevel;
-  building: 'armory' | 'barracks' | 'town_center' | 'temple' | 'fortress';
+  building: 'armory' | 'barracks' | 'archery_range' | 'town_center' | 'temple' | 'fortress';
+  secondaryBuildings?: BuildingKind[];
   cost: ResourceCost;
   researchTime: number;
   requires?: TechId;
+  requiresMinorGod?: string[];
+  requiresMinorGodLabel?: string;
+  pantheons?: PantheonId[];
+  category?: 'armory_weapon' | 'armory_armor' | 'armory_shield' | 'armory_utility' | 'mythic' | 'economy' | 'military' | 'temple';
 }
 
 export interface MinorGodSpec {

@@ -74,6 +74,8 @@ import {
   VisibilityMode,
   WorldSizeId,
 } from '../game/types';
+import { EraIcon, getEraSubtitle } from './EraIcon';
+import { TechIcon } from './TechIcon';
 
 export interface SkirmishDraft {
   pantheon: PantheonId;
@@ -438,8 +440,10 @@ export function PortSubMenus({
             </div>
 
             <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/10 pt-3">
-              <span className="text-xs text-[#9ca3af]">
-                Era Inicial: <strong className="text-[#f3efe6]">{AGE_NAMES[activeScn.startingAge]}</strong>
+              <span className="flex items-center gap-1.5 text-xs text-[#9ca3af]">
+                <span>Era Inicial:</span>
+                <EraIcon age={activeScn.startingAge} pantheon={activeScn.pantheon} size={18} active />
+                <strong className="text-[#f3efe6]">{AGE_NAMES[activeScn.startingAge]}</strong>
               </span>
               <button
                 type="button"
@@ -766,13 +770,20 @@ export function PortSubMenus({
                           clickSound();
                           onUpdateSkirmish({ ...skirmish, startingAge: ageLv });
                         }}
-                        className={`rounded border px-2 py-1 text-[10px] font-semibold cursor-pointer truncate ${
+                        title={`${AGE_NAMES[ageLv]} — ${getEraSubtitle(ageLv, skirmish.pantheon)}`}
+                        className={`flex items-center gap-1 rounded border px-1.5 py-1 text-[10px] font-semibold cursor-pointer truncate ${
                           skirmish.startingAge === ageLv
                             ? 'border-[#d4af37] bg-[#1f2838] text-[#f3d27a]'
                             : 'border-white/8 bg-[#161c28] text-[#cbd5e1]'
                         }`}
                       >
-                        {AGE_NAMES[ageLv].replace('Era ', '')}
+                        <EraIcon
+                          age={ageLv}
+                          pantheon={skirmish.pantheon}
+                          size={16}
+                          active={skirmish.startingAge === ageLv}
+                        />
+                        <span className="truncate">{AGE_NAMES[ageLv].replace('Era ', '')}</span>
                       </button>
                     ))}
                   </div>
@@ -1954,7 +1965,11 @@ export function PortSubMenus({
                 <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-[#9ca3af]">
                   <div>Civilização: <strong className="text-white">{PANTHEONS[activePreset.pantheon].name}</strong></div>
                   <div>Adversário: <strong className="text-white">{PANTHEONS[activePreset.enemyPantheon].name}</strong></div>
-                  <div>Era Inicial: <strong className="text-white">{AGE_NAMES[activePreset.startingAge]}</strong></div>
+                  <div className="flex items-center gap-1.5">
+                    <span>Era Inicial:</span>
+                    <EraIcon age={activePreset.startingAge} pantheon={activePreset.pantheon} size={16} active />
+                    <strong className="text-white">{AGE_NAMES[activePreset.startingAge]}</strong>
+                  </div>
                   <div>Mapa: <strong className="text-white">{MAPS[activePreset.mapId].name}</strong></div>
                 </div>
               </div>
@@ -2169,7 +2184,9 @@ export function PortSubMenus({
       'fortress',
       'titan_gate',
     ];
-    const techList = Object.values(TECH_SPECS);
+    const techList = Object.values(TECH_SPECS).filter(
+      (tech) => !tech.pantheons || tech.pantheons.includes(techTreeCiv)
+    );
     return (
       <div className="flex flex-col gap-4">
         {renderPanelHeader(
@@ -2227,16 +2244,38 @@ export function PortSubMenus({
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 max-h-72 overflow-y-auto pr-1">
+          <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
+            {/* Faixa de todas as 5 Eras da Civilização selecionada */}
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+              {([1, 2, 3, 4, 5] as AgeLevel[]).map((era) => (
+                <div
+                  key={era}
+                  className="flex items-center gap-2 rounded border border-[#d4af37]/30 bg-[#141a26] px-2.5 py-2"
+                >
+                  <EraIcon age={era} pantheon={techTreeCiv} size={30} active />
+                  <div className="min-w-0">
+                    <div className="text-[11px] font-bold text-[#f3d27a] truncate">
+                      {AGE_NAMES[era].replace('Era ', '')}
+                    </div>
+                    <div className="text-[10px] text-[#cbd5e1] truncate">{getEraSubtitle(era, techTreeCiv)}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <div className="rounded border border-[#d4af37]/25 bg-[#131822] p-3">
               <h4 className="mb-2 text-xs font-bold text-[#f3d27a]">Edificações ({buildingKinds.length})</h4>
               <div className="space-y-1.5 text-xs">
                 {buildingKinds.map((bk) => {
                   const spec = getCivBuildingSpec(techTreeCiv, bk);
                   return (
-                    <div key={bk} className="flex justify-between rounded border border-white/10 bg-[#171c26] px-2.5 py-1.5">
+                    <div key={bk} className="flex items-center justify-between gap-2 rounded border border-white/10 bg-[#171c26] px-2.5 py-1.5">
                       <span className="font-semibold text-white truncate">{spec.name}</span>
-                      <span className="text-[#9ca3af] shrink-0 ml-2">{AGE_NAMES[spec.minAge].replace('Era ', '')}</span>
+                      <span className="flex items-center gap-1 text-[#9ca3af] shrink-0">
+                        <EraIcon age={spec.minAge} pantheon={techTreeCiv} size={15} />
+                        <span>{AGE_NAMES[spec.minAge].replace('Era ', '')}</span>
+                      </span>
                     </div>
                   );
                 })}
@@ -2248,11 +2287,14 @@ export function PortSubMenus({
                 {unitKinds.map((uk) => {
                   const spec = getCivUnitSpec(techTreeCiv, uk);
                   return (
-                    <div key={uk} className="flex justify-between rounded border border-white/10 bg-[#171c26] px-2.5 py-1.5">
+                    <div key={uk} className="flex items-center justify-between gap-2 rounded border border-white/10 bg-[#171c26] px-2.5 py-1.5">
                       <span className={spec.isMythic ? 'font-semibold text-[#38bdf8] truncate' : spec.isHero ? 'font-semibold text-[#facc15] truncate' : 'font-semibold text-white truncate'}>
                         {spec.name}
                       </span>
-                      <span className="text-[#9ca3af] shrink-0 ml-2">Atq {spec.attack}</span>
+                      <span className="flex items-center gap-1 text-[#9ca3af] shrink-0">
+                        <EraIcon age={spec.minAge} pantheon={techTreeCiv} size={15} />
+                        <span>Atq {spec.attack}</span>
+                      </span>
                     </div>
                   );
                 })}
@@ -2262,15 +2304,25 @@ export function PortSubMenus({
               <h4 className="mb-2 text-xs font-bold text-[#f3d27a]">Tecnologias ({techList.length})</h4>
               <div className="space-y-1.5 text-xs">
                 {techList.map((tech: typeof TECH_SPECS[TechId]) => (
-                  <div key={tech.id} className="flex flex-col rounded border border-white/10 bg-[#171c26] px-2.5 py-1.5">
-                    <div className="flex justify-between">
-                      <span className="font-semibold text-white">{tech.name}</span>
-                      <span className="text-[10px] text-[#e5c45e]">{AGE_NAMES[tech.minAge].replace('Era ', '')}</span>
+                  <div key={tech.id} className="flex items-start gap-2 rounded border border-white/10 bg-[#171c26] px-2 py-1.5">
+                    <TechIcon techId={tech.id} size={26} className="shrink-0 mt-0.5" />
+                    <div className="min-w-0 flex-1 flex flex-col">
+                      <div className="flex items-center justify-between gap-1">
+                        <span className="font-semibold text-white truncate">{tech.name}</span>
+                        <span className="flex items-center gap-1 text-[10px] text-[#e5c45e] shrink-0">
+                          <EraIcon age={tech.minAge} pantheon={techTreeCiv} size={14} />
+                          <span>
+                            {tech.requiresMinorGodLabel ? `${tech.requiresMinorGodLabel} · ` : ''}
+                            {AGE_NAMES[tech.minAge].replace('Era ', '')}
+                          </span>
+                        </span>
+                      </div>
+                      <span className="text-[10px] text-[#9ca3af] leading-snug">{tech.description}</span>
                     </div>
-                    <span className="text-[10px] text-[#9ca3af]">{tech.description}</span>
                   </div>
                 ))}
               </div>
+            </div>
             </div>
           </div>
         )}

@@ -57,6 +57,7 @@ import {
   getCivBuildingSpec,
   getCivGodPowerSpec,
   getCivUnitSpec,
+  getEffectiveTechCost,
   getMinorGodChoicesForAge,
   getMinorGodSpec,
   GOD_POWERS,
@@ -81,8 +82,10 @@ import {
 } from '../game/types';
 import { soundEngine } from '../game/audio';
 import { AnimatedPortrait } from './AnimatedPortrait';
+import { EraIcon, getEraSubtitle } from './EraIcon';
 import { HopliteUvBuilderModal } from './HopliteUvBuilderModal';
 import { Minimap } from './Minimap';
+import { TechIcon } from './TechIcon';
 
 const GAME_TYPE_LABELS: Record<GameTypeId, string> = {
   supremacy: 'Supremacia',
@@ -585,30 +588,26 @@ export function GameHUD({
             <button
               type="button"
               onClick={() => setShowAgeBonuses((v) => !v)}
-              title="Ver progresso e bônus de cada Era"
+              title={`${AGE_NAMES[hud.age]} (${getEraSubtitle(hud.age, hud.pantheon)}) — Ver progresso e bônus de cada Era`}
               className="flex items-center gap-1.5 min-w-0 rounded px-1 py-0.5 -ml-1 hover:bg-white/8 transition-colors cursor-pointer"
             >
-              <Crown className="h-3.5 w-3.5 text-[#d4af37] shrink-0" />
+              <EraIcon age={hud.age} pantheon={hud.pantheon} size={22} active />
               <span className="font-display text-xs font-bold tracking-wide text-[#f5e3b0] truncate">
                 {AGE_NAMES[hud.age]}
               </span>
-              <span className="hidden sm:flex items-center gap-0.5 text-[9px] font-mono-num ml-0.5">
-                {(['I', 'II', 'III', 'IV', 'V'] as const).map((roman, i) => {
-                  const eraNum = (i + 1) as AgeLevel;
+              <span className="hidden sm:flex items-center gap-1 ml-0.5">
+                {([1, 2, 3, 4, 5] as AgeLevel[]).map((eraNum) => {
                   const active = eraNum === hud.age;
-                  const unlocked = eraNum < hud.age;
+                  const unlocked = eraNum <= hud.age;
                   return (
                     <span
-                      key={roman}
-                      className={
-                        active
-                          ? 'font-bold text-[#fde68a] underline underline-offset-2'
-                          : unlocked
-                          ? 'text-[#d4af37]'
-                          : 'text-[#64748b]'
-                      }
+                      key={eraNum}
+                      title={`${AGE_NAMES[eraNum]} · ${getEraSubtitle(eraNum, hud.pantheon)}`}
+                      className={`inline-flex items-center rounded-sm transition-transform ${
+                        active ? 'scale-110 ring-1 ring-[#fde047]/80' : ''
+                      }`}
                     >
-                      {roman}
+                      <EraIcon age={eraNum} pantheon={hud.pantheon} size={14} active={active} locked={!unlocked} />
                     </span>
                   );
                 })}
@@ -651,14 +650,15 @@ export function GameHUD({
                     type="button"
                     onClick={onAdvanceAge}
                     disabled={!canAffordNextAge}
-                    title={`Avançar para ${AGE_NAMES[nextAge]} (${formatCost(nextAgeCost)})`}
-                    className={`rounded px-2 py-0.5 text-[10px] font-bold transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                    title={`Avançar para ${AGE_NAMES[nextAge]} — ${getEraSubtitle(nextAge, hud.pantheon)} (${formatCost(nextAgeCost)})`}
+                    className={`flex items-center gap-1 rounded px-2 py-0.5 text-[10px] font-bold transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
                       canAffordNextAge
                         ? 'bg-[#d4af37] text-[#0b0e14] hover:bg-[#e5c45e]'
                         : 'bg-[#1b2230] text-[#94a3b8] opacity-75 cursor-not-allowed'
                     }`}
                   >
-                    {AGE_NAMES[nextAge]}
+                    <EraIcon age={nextAge} pantheon={hud.pantheon} size={14} locked={!canAffordNextAge} />
+                    <span>{AGE_NAMES[nextAge]}</span>
                   </button>
                 </>
               ) : (
@@ -788,25 +788,38 @@ export function GameHUD({
 
                   return (
                     <div key={era} className="py-1.5 flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <span
-                            className={`text-[11px] font-bold ${
-                              current ? 'text-[#fde68a]' : unlocked ? 'text-[#d4af37]' : 'text-[#64748b]'
-                            }`}
-                          >
-                            {AGE_NAMES[era]}
-                          </span>
-                          <span className="text-[10px] text-[#94a3b8]">
-                            {current ? '· Atual' : unlocked ? '· Concluída' : advancingToThis ? `· ${Math.round(ageAdvancePct)}%` : ''}
-                          </span>
-                          <span className="text-[9px] text-[#c8a962]/85 font-medium">
-                            ({themeInfo.intensityLabel})
-                          </span>
+                      <div className="flex items-start gap-2 min-w-0">
+                        <EraIcon
+                          age={era}
+                          pantheon={hud.pantheon}
+                          size={30}
+                          active={current}
+                          locked={!unlocked}
+                          className="mt-0.5"
+                        />
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span
+                              className={`text-[11px] font-bold ${
+                                current ? 'text-[#fde68a]' : unlocked ? 'text-[#d4af37]' : 'text-[#64748b]'
+                              }`}
+                            >
+                              {AGE_NAMES[era]}
+                            </span>
+                            <span className="text-[10px] text-[#94a3b8] font-medium">
+                              · {getEraSubtitle(era, hud.pantheon)}
+                            </span>
+                            <span className="text-[10px] text-[#94a3b8]">
+                              {current ? '· Atual' : unlocked ? '· Concluída' : advancingToThis ? `· ${Math.round(ageAdvancePct)}%` : ''}
+                            </span>
+                            <span className="text-[9px] text-[#c8a962]/85 font-medium">
+                              ({themeInfo.intensityLabel})
+                            </span>
+                          </div>
+                          <p className={`text-[10px] leading-snug ${unlocked ? 'text-[#cbd5e1]' : 'text-[#64748b]'}`}>
+                            {bonusText}
+                          </p>
                         </div>
-                        <p className={`text-[10px] leading-snug ${unlocked ? 'text-[#cbd5e1]' : 'text-[#64748b]'}`}>
-                          {bonusText}
-                        </p>
                       </div>
                       <div className="flex items-center gap-1.5 shrink-0">
                         {!unlocked && era === nextAge && nextAgeCost && (
@@ -1556,7 +1569,10 @@ export function GameHUD({
                           (selectedPlayerBuildingKind === 'siege_works' || selectedPlayerBuildingKind === 'fortress'))
                     );
                     const buildingTechs = techList.filter((t) => {
+                      if (t.pantheons && !t.pantheons.includes(hud.pantheon)) return false;
+                      if (t.requiresMinorGod && !t.requiresMinorGod.some((mg) => hud.chosenMinorGods.includes(mg))) return false;
                       if (t.building === selectedPlayerBuildingKind) return true;
+                      if (t.secondaryBuildings?.includes(selectedPlayerBuildingKind)) return true;
                       if (selectedPlayerBuildingKind === 'fortress' && t.id === 'watch_tower') return true;
                       if (selectedPlayerBuildingKind === 'tower' && (t.id === 'watch_tower' || t.id === 'burning_pitch')) return true;
                       return false;
@@ -1578,7 +1594,7 @@ export function GameHUD({
                             }`}
                           >
                             <span className="flex items-center gap-1.5 truncate">
-                              <Crown className="h-3.5 w-3.5 shrink-0" />
+                              <EraIcon age={nextAge} pantheon={hud.pantheon} size={18} locked={!canAffordNextAge} />
                               <span>Evoluir: {AGE_NAMES[nextAge]}</span>
                             </span>
                             <span className="font-mono-num text-[10px] shrink-0">{formatCost(nextAgeCost)}</span>
@@ -1676,6 +1692,7 @@ export function GameHUD({
                               const activeNow = hud.activeTechResearch?.id === t.id;
                               const missingPrereq = t.requires && !hud.researchedTechs.includes(t.requires);
                               const ageLocked = hud.age < t.minAge;
+                              const effectiveCost = getEffectiveTechCost(t, hud.researchedTechs);
                               const disabled =
                                 researched || activeNow || Boolean(hud.activeTechResearch) || Boolean(missingPrereq) || ageLocked;
                               return (
@@ -1684,27 +1701,32 @@ export function GameHUD({
                                   type="button"
                                   disabled={disabled}
                                   onClick={() => onResearchTech(t.id)}
-                                  title={`${t.name} — ${t.description}`}
-                                  className={`flex items-center justify-between gap-1 rounded border px-1.5 py-1 text-left transition-colors cursor-pointer ${
+                                  title={`${t.name}${t.requiresMinorGodLabel ? ` (${t.requiresMinorGodLabel})` : ''} — ${t.description}`}
+                                  className={`flex items-center justify-between gap-1.5 rounded border px-1.5 py-1 text-left transition-colors cursor-pointer ${
                                     researched
                                       ? 'border-emerald-500/35 bg-[#10241c] text-emerald-200 cursor-default'
                                       : activeNow
                                       ? 'border-[#facc15] bg-[#262010] text-[#fde68a]'
                                       : disabled
                                       ? 'border-white/5 bg-[#121620] text-[#64748b] cursor-not-allowed'
+                                      : t.category === 'mythic'
+                                      ? 'border-[#a855f7]/45 bg-[#1c1528] text-[#f3e8ff] hover:border-[#c084fc] hover:bg-[#261c36]'
                                       : 'border-[#c8a962]/30 bg-[#171d2c] text-[#f3efe6] hover:border-[#d4af37] hover:bg-[#20293d]'
                                   }`}
                                 >
-                                  <div className="min-w-0">
-                                    <div className="text-[10px] font-semibold truncate">{t.name}</div>
-                                    <div className="font-mono-num text-[9px] text-[#94a3b8] truncate">
-                                      {researched
-                                        ? 'Concluída'
-                                        : ageLocked
-                                        ? AGE_NAMES[t.minAge]
-                                        : missingPrereq
-                                        ? `Req: ${TECH_SPECS[t.requires!].name}`
-                                        : formatCost(t.cost)}
+                                  <div className="flex items-center gap-1.5 min-w-0">
+                                    <TechIcon techId={t.id} size={26} className="shrink-0" />
+                                    <div className="min-w-0">
+                                      <div className="text-[10px] font-semibold truncate">{t.name}</div>
+                                      <div className="font-mono-num text-[9px] text-[#94a3b8] truncate">
+                                        {researched
+                                          ? 'Concluída'
+                                          : ageLocked
+                                          ? AGE_NAMES[t.minAge]
+                                          : missingPrereq
+                                          ? `Req: ${TECH_SPECS[t.requires!].name}`
+                                          : formatCost(effectiveCost)}
+                                      </div>
                                     </div>
                                   </div>
                                   {researched ? (
@@ -2021,23 +2043,26 @@ export function GameHUD({
 
               <div className="flex flex-1 flex-col justify-between gap-1.5">
                 {hud.activeTechResearch && (
-                  <div className="rounded border border-[#facc15]/40 bg-[#231d10] px-2 py-1">
-                    <div className="flex items-center justify-between text-[10px] font-semibold text-[#fde68a]">
-                      <span className="truncate">{TECH_SPECS[hud.activeTechResearch.id].name}</span>
-                      <span className="font-mono-num shrink-0">
-                        {Math.round((hud.activeTechResearch.progress / Math.max(1, hud.activeTechResearch.total)) * 100)}%
-                      </span>
-                    </div>
-                    <div className="mt-1 h-1 w-full overflow-hidden rounded-full bg-black/50">
-                      <div
-                        className="h-full bg-[#facc15]"
-                        style={{
-                          width: `${Math.min(
-                            100,
-                            (hud.activeTechResearch.progress / Math.max(1, hud.activeTechResearch.total)) * 100
-                          )}%`,
-                        }}
-                      />
+                  <div className="flex items-center gap-2 rounded border border-[#facc15]/40 bg-[#231d10] px-2 py-1">
+                    <TechIcon techId={hud.activeTechResearch.id} size={22} className="shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between text-[10px] font-semibold text-[#fde68a]">
+                        <span className="truncate">{TECH_SPECS[hud.activeTechResearch.id].name}</span>
+                        <span className="font-mono-num shrink-0 ml-1">
+                          {Math.round((hud.activeTechResearch.progress / Math.max(1, hud.activeTechResearch.total)) * 100)}%
+                        </span>
+                      </div>
+                      <div className="mt-1 h-1 w-full overflow-hidden rounded-full bg-black/50">
+                        <div
+                          className="h-full bg-[#facc15]"
+                          style={{
+                            width: `${Math.min(
+                              100,
+                              (hud.activeTechResearch.progress / Math.max(1, hud.activeTechResearch.total)) * 100
+                            )}%`,
+                          }}
+                        />
+                      </div>
                     </div>
                   </div>
                 )}
@@ -2112,7 +2137,10 @@ export function GameHUD({
                       className="flex flex-col gap-1 rounded border border-white/8 bg-[#141925] px-2 py-1 text-left hover:border-[#d4af37]/55 cursor-pointer"
                     >
                       <div className="flex items-center justify-between gap-1">
-                        <span className="text-[#e5c45e] font-semibold truncate">{AGE_NAMES[hud.age]}</span>
+                        <span className="flex items-center gap-1.5 text-[#e5c45e] font-semibold truncate">
+                          <EraIcon age={hud.age} pantheon={hud.pantheon} size={16} active />
+                          <span className="truncate">{AGE_NAMES[hud.age]}</span>
+                        </span>
                         <span className="font-mono-num text-[9px] text-[#cbd5e1] shrink-0">{ageReadinessPct}%</span>
                       </div>
                       <div className="h-1 w-full overflow-hidden rounded-full bg-white/10">
@@ -2181,13 +2209,16 @@ export function GameHUD({
         <div className="fixed inset-0 z-30 flex items-center justify-center bg-[#0b0e13]/78 p-4">
           <div className="w-full max-w-xl rounded-xl border border-[#d4af37]/60 bg-[#12161f] p-5 shadow-2xl">
             <div className="flex items-center justify-between border-b border-[#d4af37]/25 pb-2.5">
-              <div>
-                <h3 className="font-display text-lg font-bold text-[#f3d27a]">
-                  Avançar para a {AGE_NAMES[hud.pendingMinorGodAge]}
-                </h3>
-                <p className="text-xs text-[#9ca3af]">
-                  Escolha uma divindade menor para guiar {playerPantheon.name} ({hud.majorGodName})
-                </p>
+              <div className="flex items-center gap-2.5">
+                <EraIcon age={hud.pendingMinorGodAge} pantheon={hud.pantheon} size={34} active />
+                <div>
+                  <h3 className="font-display text-lg font-bold text-[#f3d27a]">
+                    Avançar para a {AGE_NAMES[hud.pendingMinorGodAge]} · {getEraSubtitle(hud.pendingMinorGodAge, hud.pantheon)}
+                  </h3>
+                  <p className="text-xs text-[#9ca3af]">
+                    Escolha uma divindade menor para guiar {playerPantheon.name} ({hud.majorGodName})
+                  </p>
+                </div>
               </div>
               <button
                 type="button"
@@ -2270,14 +2301,44 @@ export function GameHUD({
             </div>
 
             {activeDialog === 'techtree' && (
-              <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3 max-h-[62vh] overflow-y-auto text-xs">
+              <div className="mt-3 space-y-3 max-h-[65vh] overflow-y-auto text-xs pr-0.5">
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5">
+                  {([1, 2, 3, 4, 5] as AgeLevel[]).map((era) => {
+                    const current = hud.age === era;
+                    const unlocked = hud.age >= era;
+                    return (
+                      <div
+                        key={era}
+                        className={`flex items-center gap-2 rounded border px-2 py-1.5 ${
+                          current
+                            ? 'border-[#facc15] bg-[#241e10]'
+                            : unlocked
+                            ? 'border-[#d4af37]/35 bg-[#161b26]'
+                            : 'border-white/10 bg-[#10141c] opacity-75'
+                        }`}
+                      >
+                        <EraIcon age={era} pantheon={hud.pantheon} size={26} active={current} locked={!unlocked} />
+                        <div className="min-w-0">
+                          <div className={`text-[10px] font-bold truncate ${current ? 'text-[#fde68a]' : unlocked ? 'text-white' : 'text-[#94a3b8]'}`}>
+                            {AGE_NAMES[era]}
+                          </div>
+                          <div className="text-[9px] text-[#9ca3af] truncate">{getEraSubtitle(era, hud.pantheon)}</div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div className="rounded border border-white/10 bg-[#161b26] p-3">
                   <div className="mb-2 font-bold text-[#f3d27a]">Edificações ({playerPantheon.name})</div>
                   <div className="space-y-1.5">
                     {buildingList.map((b) => (
-                      <div key={b.kind} className="flex items-center justify-between rounded bg-[#10141c] px-2.5 py-1.5">
-                        <span className={hud.age >= b.minAge ? 'text-white font-semibold' : 'text-[#64748b]'}>{b.name}</span>
-                        <span className="text-[11px] text-[#e5c45e]">{AGE_NAMES[b.minAge]}</span>
+                      <div key={b.kind} className="flex items-center justify-between gap-2 rounded bg-[#10141c] px-2.5 py-1.5">
+                        <span className={hud.age >= b.minAge ? 'text-white font-semibold truncate' : 'text-[#64748b] truncate'}>{b.name}</span>
+                        <span className="flex items-center gap-1 text-[11px] text-[#e5c45e] shrink-0">
+                          <EraIcon age={b.minAge} pantheon={hud.pantheon} size={15} locked={hud.age < b.minAge} />
+                          <span>{AGE_NAMES[b.minAge].replace('Era ', '')}</span>
+                        </span>
                       </div>
                     ))}
                   </div>
@@ -2286,11 +2347,14 @@ export function GameHUD({
                   <div className="mb-2 font-bold text-[#f3d27a]">Tropas & Bestas Míticas</div>
                   <div className="space-y-1.5">
                     {[...unitList, ...(hud.titansEnabled ? [getCivUnitSpec(hud.pantheon, 'titan')] : [])].map((u) => (
-                      <div key={u.kind} className="flex items-center justify-between rounded bg-[#10141c] px-2.5 py-1.5">
-                        <span className={hud.age >= u.minAge ? (u.isMythic ? 'text-[#38bdf8] font-semibold' : 'text-white font-semibold') : 'text-[#64748b]'}>
+                      <div key={u.kind} className="flex items-center justify-between gap-2 rounded bg-[#10141c] px-2.5 py-1.5">
+                        <span className={hud.age >= u.minAge ? (u.isMythic ? 'text-[#38bdf8] font-semibold truncate' : 'text-white font-semibold truncate') : 'text-[#64748b] truncate'}>
                           {u.name}
                         </span>
-                        <span className="text-[11px] text-[#e5c45e]">{AGE_NAMES[u.minAge]} · Atq {u.attack}</span>
+                        <span className="flex items-center gap-1 text-[11px] text-[#e5c45e] shrink-0">
+                          <EraIcon age={u.minAge} pantheon={hud.pantheon} size={15} locked={hud.age < u.minAge} />
+                          <span>Atq {u.attack}</span>
+                        </span>
                       </div>
                     ))}
                   </div>
@@ -2303,18 +2367,36 @@ export function GameHUD({
                         Adorados: {hud.chosenMinorGods.map((id) => getMinorGodSpec(id).name).join(' · ')}
                       </div>
                     )}
-                    {techList.map((t) => {
+                    {techList
+                      .filter((t) => !t.pantheons || t.pantheons.includes(hud.pantheon))
+                      .map((t) => {
                         const done = hud.researchedTechs.includes(t.id);
                         return (
-                          <div key={t.id} className="flex items-center justify-between rounded bg-[#10141c] px-2.5 py-1.5">
-                            <span className={done ? 'text-emerald-300 font-semibold' : 'text-[#cbd5e1]'}>{t.name}</span>
-                            <span className="text-[10px] text-[#e5c45e]">
-                              {done ? 'Concluída' : AGE_NAMES[t.minAge]}
+                          <div
+                            key={t.id}
+                            title={t.description}
+                            className="flex items-center justify-between gap-2 rounded bg-[#10141c] px-2 py-1.5"
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <TechIcon techId={t.id} size={22} className="shrink-0" />
+                              <div className="min-w-0">
+                                <div className={done ? 'text-emerald-300 font-semibold truncate' : 'text-[#cbd5e1] truncate'}>
+                                  {t.name}
+                                </div>
+                                {t.requiresMinorGodLabel && (
+                                  <div className="text-[9px] text-[#c084fc] truncate">{t.requiresMinorGodLabel}</div>
+                                )}
+                              </div>
+                            </div>
+                            <span className="flex items-center gap-1 text-[10px] text-[#e5c45e] shrink-0">
+                              <EraIcon age={t.minAge} pantheon={hud.pantheon} size={15} locked={hud.age < t.minAge} />
+                              <span>{done ? 'Concluída' : AGE_NAMES[t.minAge].replace('Era ', '')}</span>
                             </span>
                           </div>
                         );
                       })}
                   </div>
+                </div>
                 </div>
               </div>
             )}
@@ -2358,13 +2440,19 @@ export function GameHUD({
                 <div className="grid grid-cols-4 items-center rounded border border-white/10 bg-[#161b26] px-3 py-2 text-white">
                   <span className="font-semibold">{options.playerName}</span>
                   <span>{playerPantheon.name} ({hud.majorGodName})</span>
-                  <span>{AGE_NAMES[hud.age]}</span>
+                  <span className="flex items-center gap-1.5">
+                    <EraIcon age={hud.age} pantheon={hud.pantheon} size={18} active />
+                    <span>{AGE_NAMES[hud.age]}</span>
+                  </span>
                   <span className="text-[#86efac] font-semibold">Você</span>
                 </div>
                 <div className="grid grid-cols-4 items-center rounded border border-white/10 bg-[#161b26] px-3 py-2 text-[#cbd5e1]">
                   <span className="font-semibold">IA ({hud.difficulty.toUpperCase()})</span>
                   <span>{PANTHEONS[hud.enemyPantheon].name} ({PANTHEONS[hud.enemyPantheon].deity})</span>
-                  <span>{AGE_NAMES[hud.enemyAge]}</span>
+                  <span className="flex items-center gap-1.5">
+                    <EraIcon age={hud.enemyAge} pantheon={hud.enemyPantheon} size={18} active />
+                    <span>{AGE_NAMES[hud.enemyAge]}</span>
+                  </span>
                   <span className="text-[#fca5a5] font-semibold">Inimigo</span>
                 </div>
               </div>
@@ -2832,7 +2920,10 @@ export function GameHUD({
                 </div>
                 <div className="rounded-lg border border-white/10 bg-[#171c26] p-3">
                   <div className="text-[11px] text-[#9ca3af]">Era Alcançada</div>
-                  <div className="text-sm font-bold text-[#f3d27a]">{AGE_NAMES[hud.age]}</div>
+                  <div className="mt-0.5 flex items-center gap-2 text-sm font-bold text-[#f3d27a]">
+                    <EraIcon age={hud.age} pantheon={hud.pantheon} size={22} active />
+                    <span>{AGE_NAMES[hud.age]}</span>
+                  </div>
                 </div>
                 <div className="rounded-lg border border-white/10 bg-[#171c26] p-3">
                   <div className="text-[11px] text-[#9ca3af]">Mapa</div>

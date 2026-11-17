@@ -39,6 +39,8 @@ import {
   getCivBuildingSpec,
   getCivGodPowerSpec,
   getCivUnitSpec,
+  getEffectiveTechCost,
+  getEffectiveTechTime,
   getMajorGodSpec,
   getMinorGodSpec,
   getRivalPantheon,
@@ -117,6 +119,9 @@ interface UnitEntity {
   isPromotedHero?: boolean;
   tradeTargetBuildingId?: string | null;
   tradePhase?: 'to_tc' | 'to_market';
+  poisonTimer?: number;
+  poisonTickTimer?: number;
+  poisonTeam?: TeamId;
 }
 
 interface BuildingEntity {
@@ -195,6 +200,10 @@ interface ProjectileVfx {
   isBoulder?: boolean;
   isPetrify?: boolean;
   isFireball?: boolean;
+  hasBallistics?: boolean;
+  isFireArrow?: boolean;
+  isPoisonArrow?: boolean;
+  targetRadius?: number;
 }
 
 interface TransientVfx {
@@ -657,6 +666,8 @@ export class AoMEngine {
   // Shared projectile geometries & materials
   private arrowGeo = new THREE.CylinderGeometry(0.03, 0.03, 0.9, 5);
   private arrowMat = new THREE.MeshBasicMaterial({ color: 0xfef08a });
+  private fireArrowMat = new THREE.MeshBasicMaterial({ color: 0xf97316 });
+  private poisonArrowMat = new THREE.MeshBasicMaterial({ color: 0x4ade80 });
   private boulderGeo = new THREE.DodecahedronGeometry(0.28, 0);
   private boulderMat = new THREE.MeshStandardMaterial({
     color: 0xf97316,
@@ -1846,97 +1857,165 @@ export class AoMEngine {
     let hpMult = 1;
     let speedMult = 1;
     let armorBonus = 0;
+    let hackVulnMult = 1;
+    let pierceVulnMult = 1;
+    let crushVulnMult = 1;
+    let rangeBonus = 0;
+    let bonusVsMythMult = 1;
+    let bonusVsBuildingMult = 1;
     let gatherWoodMult = 1;
     let gatherGoldMult = 1;
     let gatherFoodMult = 1;
 
+    const pantheon = this.teamPantheon(team);
+    const unitSpec = this.unitStats(kind, team);
+    const teamTechs = team === 'player' ? this.researchedTechs : this.enemyResearchedTechs;
+    const has = (id: TechId) => teamTechs.includes(id);
+
+    const isHero = Boolean(unitSpec.isHero || isPromotedHero);
+    const isHumanSoldier =
+      !this.isWorkerKind(kind) &&
+      !unitSpec.isMythic &&
+      !unitSpec.isSiege &&
+      !isHero &&
+      !unitSpec.isGod &&
+      kind !== 'titan' &&
+      kind !== 'ox_cart' &&
+      kind !== 'llama_caravan';
+    const isGreekArcher = kind === 'archer' || kind === 'peltast' || kind === 'gastraphetes';
+    const isGreekInfantry = kind === 'hoplite' || kind === 'hipaspist' || kind === 'myrmidon';
+
+    // Standard Armory Weapons (+10% attack per tier for human soldiers & heroes; defensive buildings handled separately)
+    if (isHumanSoldier || isHero) {
+      if (has('copper_weapons')) atkMult += 0.10;
+      if (has('bronze_weapons')) atkMult += 0.10;
+      if (has('iron_weapons')) atkMult += 0.10;
+    }
+
+    // Standard Armory Armor (-10% hack vulnerability for human soldiers, -15% for heroes; cumulative)
+    if (isHumanSoldier || isHero) {
+      const vulnFactor = isHero ? 0.85 : 0.90;
+      if (has('copper_mail')) hackVulnMult *= vulnFactor;
+      if (has('bronze_mail')) hackVulnMult *= vulnFactor;
+      if (has('iron_mail')) hackVulnMult *= vulnFactor;
+
+      // Standard Armory Shields (-10% pierce vulnerability for human soldiers, -15% for heroes; cumulative)
+      if (has('copper_shields')) pierceVulnMult *= vulnFactor;
+      if (has('bronze_shields')) pierceVulnMult *= vulnFactor;
+      if (has('iron_shields')) pierceVulnMult *= vulnFactor;
+    }
+
+    if (
+      kind === 'hoplite' ||
+      kind === 'hipaspist' ||
+      kind === 'myrmidon' ||
+      kind === 'peltast' ||
+      kind === 'archer' ||
+      kind === 'gastraphetes' ||
+      kind === 'cavalry' ||
+      kind === 'prodromos' ||
+      kind === 'egypt_spearman' ||
+      kind === 'slinger' ||
+      kind === 'axeman' ||
+      kind === 'chariot_archer' ||
+      kind === 'camel_rider' ||
+      kind === 'war_elephant' ||
+      kind === 'ulfsark' ||
+      kind === 'throwing_axeman' ||
+      kind === 'raiding_cavalry' ||
+      kind === 'huskarl' ||
+      kind === 'jarl' ||
+      kind === 'murmillo' ||
+      kind === 'katapeltes' ||
+      kind === 'turma' ||
+      kind === 'arcus' ||
+      kind === 'contarius' ||
+      kind === 'destroyer' ||
+      kind === 'fanatic'
+    ) {
+      if (has('medium_soldiers')) {
+        hpMult += 0.15;
+        atkMult += 0.1;
+      }
+      if (has('heavy_soldiers')) {
+        hpMult += 0.15;
+        atkMult += 0.12;
+      }
+      if (has('champion_soldiers')) {
+        hpMult += 0.2;
+        atkMult += 0.15;
+      }
+    }
+
+    // Burning Pitch: ranged units deal 3x damage vs buildings
+    if (has('burning_pitch') && unitSpec.range > 4 && !unitSpec.isSiege && !unitSpec.isGod) {
+      bonusVsBuildingMult = Math.max(1, 3.0 / (unitSpec.bonusVsBuilding ?? 1));
+    }
+
+    if (
+      kind === 'siege' ||
+      kind === 'ram' ||
+      kind === 'siege_tower' ||
+      kind === 'egypt_catapult' ||
+      kind === 'portable_ram' ||
+      kind === 'norse_ballista' ||
+      kind === 'cheiroballista' ||
+      kind === 'fire_siphon' ||
+      kind === 'onager' ||
+      isHero
+    ) {
+      if (has('engineers')) {
+        hpMult += 0.3;
+        atkMult += 0.2;
+        bonusVsBuildingMult *= 1.2;
+      }
+    }
+
+    if (unitSpec.isMythic) {
+      if (has('omniscience')) {
+        hpMult += 0.2;
+        atkMult += 0.15;
+      }
+      if (has('mythic_rejuvenation')) {
+        hpMult += 0.25;
+        speedMult += 0.15;
+      }
+    }
+
+    // 9 Greek Mythic Armory Technologies (Minor God exclusives)
+    if (pantheon === 'greek') {
+      if (has('phobos_spear_of_horror') && kind === 'hoplite') {
+        atkMult += 0.20;
+      }
+      if (has('deimos_sword_of_dread') && kind === 'hipaspist') {
+        atkMult += 0.20;
+      }
+      if (has('enyo_bow_of_horror') && kind === 'archer') {
+        atkMult += 0.20;
+      }
+      if (has('sarissa') && kind === 'hoplite') {
+        rangeBonus += 0.9;
+        atkMult += 0.12;
+        hackVulnMult *= 0.90;
+      }
+      if (has('aegis_shield') && isGreekInfantry) {
+        pierceVulnMult *= 0.80;
+      }
+      if (has('sun_ray') && (isGreekArcher || kind === 'centaur' || kind === 'manticore')) {
+        atkMult += 0.20;
+      }
+      if (has('shafts_of_plague') && isGreekArcher) {
+        atkMult += 0.15;
+      }
+      if (has('olympian_weapons') && (kind === 'myrmidon' || kind === 'cavalry' || kind === 'gastraphetes')) {
+        atkMult += 0.20;
+        bonusVsMythMult *= 1.40;
+      }
+    }
+
     if (team === 'player') {
-      const has = (id: TechId) => this.researchedTechs.includes(id);
-      if (!this.isWorkerKind(kind) || isPromotedHero) {
-        if (has('copper_weapons')) atkMult += 0.12;
-        if (has('bronze_weapons')) atkMult += 0.14;
-        if (has('iron_weapons')) atkMult += 0.16;
-        if (has('copper_mail')) armorBonus += 0.1;
-        if (has('bronze_mail')) armorBonus += 0.1;
-        if (has('iron_mail')) armorBonus += 0.12;
-      }
-      if (
-        kind === 'hoplite' ||
-        kind === 'hipaspist' ||
-        kind === 'myrmidon' ||
-        kind === 'peltast' ||
-        kind === 'archer' ||
-        kind === 'gastraphetes' ||
-        kind === 'cavalry' ||
-        kind === 'prodromos' ||
-        kind === 'egypt_spearman' ||
-        kind === 'slinger' ||
-        kind === 'axeman' ||
-        kind === 'chariot_archer' ||
-        kind === 'camel_rider' ||
-        kind === 'war_elephant' ||
-        kind === 'ulfsark' ||
-        kind === 'throwing_axeman' ||
-        kind === 'raiding_cavalry' ||
-        kind === 'huskarl' ||
-        kind === 'jarl' ||
-        kind === 'murmillo' ||
-        kind === 'katapeltes' ||
-        kind === 'turma' ||
-        kind === 'arcus' ||
-        kind === 'contarius' ||
-        kind === 'destroyer' ||
-        kind === 'fanatic'
-      ) {
-        if (has('medium_soldiers')) {
-          hpMult += 0.15;
-          atkMult += 0.1;
-        }
-        if (has('heavy_soldiers')) {
-          hpMult += 0.15;
-          atkMult += 0.12;
-        }
-        if (has('champion_soldiers')) {
-          hpMult += 0.2;
-          atkMult += 0.15;
-        }
-      }
-      const unitSpec = getCivUnitSpec(this.teamPantheon(team), kind);
-      if (
-        kind === 'siege' ||
-        kind === 'ram' ||
-        kind === 'siege_tower' ||
-        kind === 'egypt_catapult' ||
-        kind === 'portable_ram' ||
-        kind === 'norse_ballista' ||
-        kind === 'cheiroballista' ||
-        kind === 'fire_siphon' ||
-        kind === 'onager' ||
-        unitSpec.isHero ||
-        isPromotedHero
-      ) {
-        if (has('burning_pitch')) atkMult += 0.25;
-        if (has('engineers')) {
-          hpMult += 0.3;
-          atkMult += 0.2;
-        }
-      }
-      if (unitSpec.isMythic) {
-        if (has('omniscience')) {
-          hpMult += 0.2;
-          atkMult += 0.15;
-        }
-        if (has('mythic_rejuvenation')) {
-          hpMult += 0.25;
-          speedMult += 0.15;
-        }
-      }
       if (kind === 'norse_dwarf') {
-        const isThor =
-          team === 'player'
-            ? this.majorGodName.toLowerCase() === 'thor'
-            : PANTHEONS[this.enemyPantheon].deity.toLowerCase() === 'thor';
-        // Authentic AoM Norse Dwarf economy: +30% Gold gather rate (-20% Food/Wood), or Thor's Dwarves (+38% Gold, nearly equal Food/Wood)
+        const isThor = this.majorGodName.toLowerCase() === 'thor';
         gatherGoldMult += isThor ? 0.38 : 0.3;
         gatherWoodMult -= isThor ? 0.04 : 0.2;
         gatherFoodMult -= isThor ? 0.04 : 0.2;
@@ -1967,12 +2046,24 @@ export class AoMEngine {
       if (this.flamingWeaponsTimer > 0 && (!this.isWorkerKind(kind) || isPromotedHero)) {
         atkMult += 0.6;
       }
-    } else if (this.difficulty === 'titan') {
-      atkMult = 1.18;
-      hpMult = 1.15;
-    } else if (this.difficulty === 'easy') {
-      atkMult = 0.85;
-      hpMult = 0.88;
+    } else {
+      if (kind === 'norse_dwarf') {
+        const isThor = PANTHEONS[this.enemyPantheon].deity.toLowerCase() === 'thor';
+        gatherGoldMult += isThor ? 0.38 : 0.3;
+        gatherWoodMult -= isThor ? 0.04 : 0.2;
+        gatherFoodMult -= isThor ? 0.04 : 0.2;
+      } else if (kind === 'citizen') {
+        gatherWoodMult += 0.35;
+        gatherGoldMult += 0.35;
+        gatherFoodMult += 0.35;
+      }
+      if (this.difficulty === 'titan') {
+        atkMult *= 1.18;
+        hpMult *= 1.15;
+      } else if (this.difficulty === 'easy') {
+        atkMult *= 0.85;
+        hpMult *= 0.88;
+      }
     }
 
     if (isPromotedHero) {
@@ -1982,8 +2073,6 @@ export class AoMEngine {
       armorBonus += 0.1;
     }
 
-    const pantheon = this.teamPantheon(team);
-    const unitSpec = this.unitStats(kind, team);
     if (unitSpec.isMajorGod && unitSpec.name.toLowerCase().includes(this.majorGodName.toLowerCase())) {
       hpMult += 0.15;
       atkMult += 0.15;
@@ -2020,20 +2109,39 @@ export class AoMEngine {
       else speedMult *= 0.94;
     }
 
-    return { atkMult, hpMult, speedMult, armorBonus, gatherWoodMult, gatherGoldMult, gatherFoodMult };
+    return {
+      atkMult,
+      hpMult,
+      speedMult,
+      armorBonus,
+      hackVulnMult,
+      pierceVulnMult,
+      crushVulnMult,
+      rangeBonus,
+      bonusVsMythMult,
+      bonusVsBuildingMult,
+      gatherWoodMult,
+      gatherGoldMult,
+      gatherFoodMult,
+    };
   }
 
   private computeUnitAttackDamage(attacker: UnitEntity, targetUnit?: UnitEntity, targetBuilding?: BuildingEntity): number {
     const baseSpec = this.unitStats(attacker.kind, attacker.team);
+    const mods = this.computeUnitModifiers(attacker.kind, attacker.team, Boolean(attacker.isPromotedHero));
     const aSpec = attacker.isPromotedHero
       ? {
           ...baseSpec,
           isHero: true,
-          bonusVsMyth: Math.max(baseSpec.bonusVsMyth ?? 1, 3.0),
+          bonusVsMyth: Math.max(baseSpec.bonusVsMyth ?? 1, 3.0) * mods.bonusVsMythMult,
+          bonusVsBuilding: (baseSpec.bonusVsBuilding ?? 1) * mods.bonusVsBuildingMult,
           attack: baseSpec.kind === 'oracle' ? Math.max(baseSpec.attack, 16) : baseSpec.attack,
         }
-      : baseSpec;
-    const mods = this.computeUnitModifiers(attacker.kind, attacker.team, Boolean(attacker.isPromotedHero));
+      : {
+          ...baseSpec,
+          bonusVsMyth: (baseSpec.bonusVsMyth ?? 1) * mods.bonusVsMythMult,
+          bonusVsBuilding: (baseSpec.bonusVsBuilding ?? 1) * mods.bonusVsBuildingMult,
+        };
     const furyStacks = attacker.kind === 'myrmidon' || attacker.kind === 'hydra' ? (attacker.combatFury ?? 0) : 0;
     const chargeMult =
       (attacker.kind === 'cavalry' || attacker.kind === 'bellerophon' || attacker.kind === 'contarius') &&
@@ -2055,23 +2163,18 @@ export class AoMEngine {
     if (targetUnit) {
       const tSpec = this.unitStats(targetUnit.kind, targetUnit.team);
       const tMods = this.computeUnitModifiers(targetUnit.kind, targetUnit.team, Boolean(targetUnit.isPromotedHero));
-      const effectiveArmor = Math.min(
-        0.82,
-        (aSpec.damageType === 'hack'
-          ? tSpec.hackArmor
-          : aSpec.damageType === 'pierce'
-          ? tSpec.pierceArmor
-          : tSpec.crushArmor) + tMods.armorBonus
-      );
+      const effectiveHackArmor = Math.min(0.85, 1 - (1 - tSpec.hackArmor) * tMods.hackVulnMult + tMods.armorBonus);
+      const effectivePierceArmor = Math.min(0.85, 1 - (1 - tSpec.pierceArmor) * tMods.pierceVulnMult + tMods.armorBonus);
+      const effectiveCrushArmor = Math.min(0.85, 1 - (1 - tSpec.crushArmor) * tMods.crushVulnMult + tMods.armorBonus);
       return CombatManager.calculateDamage(
         aSpec,
         {
           kind: targetUnit.kind,
           isMythic: tSpec.isMythic,
           isSiege: tSpec.isSiege,
-          hackArmor: effectiveArmor,
-          pierceArmor: effectiveArmor,
-          crushArmor: effectiveArmor,
+          hackArmor: effectiveHackArmor,
+          pierceArmor: effectivePierceArmor,
+          crushArmor: effectiveCrushArmor,
         },
         baseDmg
       );
@@ -2144,6 +2247,8 @@ export class AoMEngine {
       chargeCooldown: 0,
       chargeBurstTimer: 0,
       specialCooldown: 0,
+      poisonTimer: 0,
+      poisonTickTimer: 0,
     };
     this.units.set(id, entity);
     return entity;
@@ -3012,6 +3117,14 @@ export class AoMEngine {
     }
     const spec = TECH_SPECS[techId];
     if (!spec) return;
+    if (spec.pantheons && !spec.pantheons.includes(this.pantheon)) {
+      this.notifyStatus(`${spec.name} é exclusiva do panteão Grego.`);
+      return;
+    }
+    if (spec.requiresMinorGod && !spec.requiresMinorGod.some((mg) => this.chosenMinorGods.includes(mg))) {
+      this.notifyStatus(`${spec.name} requer adorar ${spec.requiresMinorGodLabel ?? 'o Deus Menor correspondente'}.`);
+      return;
+    }
     if (this.researchedTechs.includes(techId)) {
       this.notifyStatus(`${spec.name} já foi pesquisada.`);
       return;
@@ -3028,9 +3141,10 @@ export class AoMEngine {
       this.notifyStatus(`Pesquise ${TECH_SPECS[spec.requires].name} antes.`);
       return;
     }
+    const validBuildings: BuildingKind[] = [spec.building, ...(spec.secondaryBuildings ?? [])];
     let hasBuilding = false;
     for (const b of this.buildings.values()) {
-      if (b.team === 'player' && b.isConstructed && b.kind === spec.building) {
+      if (b.team === 'player' && b.isConstructed && validBuildings.includes(b.kind)) {
         hasBuilding = true;
         break;
       }
@@ -3039,13 +3153,15 @@ export class AoMEngine {
       this.notifyStatus(`Construa um(a) ${this.buildingStats(spec.building, 'player').name} para pesquisar ${spec.name}.`);
       return;
     }
-    if (!this.canAfford(this.resources, spec.cost)) {
+    const effectiveCost = getEffectiveTechCost(spec, this.researchedTechs);
+    const effectiveTime = getEffectiveTechTime(spec, this.researchedTechs);
+    if (!this.canAfford(this.resources, effectiveCost)) {
       this.notifyStatus(`Recursos insuficientes para pesquisar ${spec.name}.`);
       return;
     }
 
-    this.deductCost(this.resources, spec.cost);
-    this.activeTechResearch = { id: techId, progress: 0, total: spec.researchTime };
+    this.deductCost(this.resources, effectiveCost);
+    this.activeTechResearch = { id: techId, progress: 0, total: effectiveTime };
     if (techId === 'secrets_of_titans') {
       soundEngine.playAgeTransitionStart(5, this.pantheon);
     } else {
@@ -6739,21 +6855,39 @@ export class AoMEngine {
     targetId: string,
     damage: number,
     team: TeamId,
-    opts?: { splashRadius?: number; isBoulder?: boolean; isPetrify?: boolean; isFireball?: boolean }
+    opts?: {
+      splashRadius?: number;
+      isBoulder?: boolean;
+      isPetrify?: boolean;
+      isFireball?: boolean;
+      hasBallistics?: boolean;
+      isFireArrow?: boolean;
+      isPoisonArrow?: boolean;
+      targetRadius?: number;
+    }
   ) {
     const isBoulder = Boolean(opts?.isBoulder);
     const isPetrify = Boolean(opts?.isPetrify);
     const isFireball = Boolean(opts?.isFireball);
+    const isFireArrow = Boolean(opts?.isFireArrow);
+    const isPoisonArrow = Boolean(opts?.isPoisonArrow);
+    const hasBallistics = Boolean(opts?.hasBallistics);
     const mesh = isBoulder
       ? new THREE.Mesh(this.boulderGeo, this.boulderMat)
       : isFireball
       ? new THREE.Mesh(this.fireOrbGeo, this.fireOrbMat)
       : isPetrify
       ? new THREE.Mesh(this.petrifyBoltGeo, this.petrifyBoltMat)
+      : isPoisonArrow
+      ? new THREE.Mesh(this.arrowGeo, this.poisonArrowMat)
+      : isFireArrow
+      ? new THREE.Mesh(this.arrowGeo, this.fireArrowMat)
       : new THREE.Mesh(this.arrowGeo, this.arrowMat);
     mesh.position.copy(start);
     this.scene.add(mesh);
     const dist = start.distanceTo(end);
+    const baseDur = Math.max(isBoulder ? 0.35 : 0.18, dist / (isBoulder ? 16 : 24));
+    const baseArc = Math.min(isBoulder ? 6.0 : 3.5, dist * (isBoulder ? 0.28 : 0.18));
     this.projectiles.push({
       mesh,
       start: start.clone(),
@@ -6762,12 +6896,16 @@ export class AoMEngine {
       damage,
       team,
       progress: 0,
-      duration: Math.max(isBoulder ? 0.35 : 0.18, dist / (isBoulder ? 16 : 24)),
-      arcHeight: Math.min(isBoulder ? 6.0 : 3.5, dist * (isBoulder ? 0.28 : 0.18)),
+      duration: hasBallistics ? baseDur * 0.7 : baseDur,
+      arcHeight: hasBallistics ? baseArc * 0.78 : baseArc,
       splashRadius: opts?.splashRadius,
       isBoulder,
       isPetrify,
       isFireball,
+      hasBallistics,
+      isFireArrow,
+      isPoisonArrow,
+      targetRadius: opts?.targetRadius,
     });
   }
 
@@ -7678,6 +7816,17 @@ export class AoMEngine {
       u.manualAttackTimer = Math.max(0, u.manualAttackTimer - dt);
       u.repathTimer = Math.max(0, u.repathTimer - dt);
 
+      if ((u.poisonTimer ?? 0) > 0 && u.hp > 0) {
+        u.poisonTimer = Math.max(0, (u.poisonTimer ?? 0) - dt);
+        u.poisonTickTimer = (u.poisonTickTimer ?? 0) - dt;
+        if ((u.poisonTickTimer ?? 0) <= 0) {
+          u.poisonTickTimer = 1.0;
+          this.spawnRingVfx(u.mesh.position, 0.9, 0x4ade80, 0.3);
+          this.damageUnit(u, 6, u.poisonTeam ?? 'player');
+          if (u.hp <= 0) continue;
+        }
+      }
+
       if (u.frozenTimer > 0) {
         u.frozenTimer = Math.max(0, u.frozenTimer - dt);
         if (u.mesh.userData.selectionRing) {
@@ -8321,7 +8470,8 @@ export class AoMEngine {
           : this.getUnitRadius(targetU!.kind) + uRadius;
         const dist = u.mesh.position.distanceTo(targetPos) - extraRadius;
 
-        if (dist > stats.range) {
+        const effectiveRange = stats.range + mods.rangeBonus;
+        if (dist > effectiveRange) {
           this.steerUnitAroundObstacles(u, targetPos, effectiveSpeed, dt);
         } else {
           u.mesh.rotation.y = Math.atan2(
@@ -8462,10 +8612,17 @@ export class AoMEngine {
                   : u.kind === 'chariot_archer' || u.kind === 'phoenix' || u.kind === 'manticore' || u.kind === 'stymphalian_bird'
                   ? 1.85
                   : 1.35;
+              const attackerTechs = u.team === 'player' ? this.researchedTechs : this.enemyResearchedTechs;
+              const attackerPantheon = this.teamPantheon(u.team);
+              const isArcherUnit = u.kind === 'archer' || u.kind === 'peltast' || u.kind === 'gastraphetes';
               _vec3B.copy(u.mesh.position).setY(u.mesh.position.y + launchH);
               _vec3C.copy(targetPos).setY(targetPos.y + 1.0);
               this.spawnProjectile(_vec3B, _vec3C, u.targetEntityId!, computedDamage, u.team, {
                 splashRadius: stats.splashRadius,
+                hasBallistics: attackerTechs.includes('ballistics'),
+                isFireArrow: !stats.isSiege && attackerTechs.includes('burning_pitch'),
+                isPoisonArrow: attackerPantheon === 'greek' && isArcherUnit && attackerTechs.includes('shafts_of_plague'),
+                targetRadius: targetU ? this.getUnitRadius(targetU.kind) : targetB?.radius,
                 isBoulder:
                   u.kind === 'siege' ||
                   u.kind === 'egypt_catapult' ||
@@ -8903,11 +9060,21 @@ export class AoMEngine {
             const targetU = this.units.get(enemy.id);
             if (targetU) {
               b.attackTimer = b.kind === 'fortress' ? 1.15 : 1.4;
-              const towerAtkMult = b.team === 'player' && hasWatchTower ? 1.3 : 1;
+              const bTechs = b.team === 'player' ? this.researchedTechs : this.enemyResearchedTechs;
+              let bAtkMult = 1;
+              if (bTechs.includes('copper_weapons')) bAtkMult += 0.10;
+              if (bTechs.includes('bronze_weapons')) bAtkMult += 0.10;
+              if (bTechs.includes('iron_weapons')) bAtkMult += 0.10;
+              if (bTechs.includes('watch_tower') && (b.kind === 'tower' || b.kind === 'fortress')) bAtkMult += 0.30;
+              if (bTechs.includes('burning_pitch')) bAtkMult += 0.15;
               const launchY = b.kind === 'tower' ? 4.4 : b.kind === 'fortress' ? 4.8 : 3.5;
               _vec3B.copy(b.mesh.position).setY(b.mesh.position.y + launchY);
               _vec3C.copy(targetU.mesh.position).setY(targetU.mesh.position.y + 1.0);
-              this.spawnProjectile(_vec3B, _vec3C, targetU.id, Math.round(stats.attack * towerAtkMult), b.team);
+              this.spawnProjectile(_vec3B, _vec3C, targetU.id, Math.round(stats.attack * bAtkMult), b.team, {
+                hasBallistics: bTechs.includes('ballistics'),
+                isFireArrow: bTechs.includes('burning_pitch'),
+                targetRadius: this.getUnitRadius(targetU.kind),
+              });
               soundEngine.playArrow();
             }
           }
@@ -9247,14 +9414,45 @@ export class AoMEngine {
         if (p.damage > 0) {
           const targetU = this.units.get(p.targetId);
           if (targetU) {
-            if (p.isPetrify) {
-              targetU.frozenTimer = Math.max(targetU.frozenTimer, 1.6);
-              this.spawnRingVfx(targetU.mesh.position, 1.5, 0x2dd4bf, 0.45);
+            // Without Ballistics, fast moving units outside the aim spot can dodge long shots
+            const dodgeThreshold = (p.targetRadius ?? 0.5) + 1.5;
+            const targetMovedDist = Math.hypot(
+              targetU.mesh.position.x - p.end.x,
+              targetU.mesh.position.z - p.end.z
+            );
+            const missedMovingTarget =
+              !p.hasBallistics &&
+              !p.isBoulder &&
+              !p.isFireball &&
+              targetU.state === 'move' &&
+              targetMovedDist > dodgeThreshold;
+
+            if (missedMovingTarget) {
+              this.spawnRingVfx(p.end, 0.55, 0x94a3b8, 0.25);
+            } else {
+              if (p.isPetrify) {
+                targetU.frozenTimer = Math.max(targetU.frozenTimer, 1.6);
+                this.spawnRingVfx(targetU.mesh.position, 1.5, 0x2dd4bf, 0.45);
+              }
+              if (p.isPoisonArrow) {
+                targetU.poisonTimer = 4.5;
+                targetU.poisonTickTimer = Math.min(targetU.poisonTickTimer ?? 1.0, 0.75);
+                targetU.poisonTeam = p.team;
+                this.spawnRingVfx(targetU.mesh.position, 1.0, 0x4ade80, 0.35);
+              }
+              if (p.isFireArrow) {
+                this.spawnRingVfx(targetU.mesh.position, 0.7, 0xf97316, 0.25);
+              }
+              this.damageUnit(targetU, p.damage, p.team);
             }
-            this.damageUnit(targetU, p.damage, p.team);
           } else {
             const targetB = this.buildings.get(p.targetId);
-            if (targetB) this.damageBuilding(targetB, p.damage);
+            if (targetB) {
+              if (p.isFireArrow) {
+                this.spawnRingVfx(p.end, 1.15, 0xf97316, 0.35);
+              }
+              this.damageBuilding(targetB, p.damage);
+            }
           }
 
           if (p.splashRadius && p.splashRadius > 0) {
@@ -9284,7 +9482,9 @@ export class AoMEngine {
       }
       const targetU = this.units.get(p.targetId);
       if (targetU) {
-        p.end.copy(targetU.mesh.position).setY(targetU.mesh.position.y + 1.0);
+        if (p.hasBallistics || p.isBoulder || p.isFireball) {
+          p.end.copy(targetU.mesh.position).setY(targetU.mesh.position.y + 1.0);
+        }
       } else {
         const targetF = this.fauna.get(p.targetId);
         if (targetF) {
@@ -9720,14 +9920,19 @@ export class AoMEngine {
         'medium_soldiers',
         'copper_weapons',
         'copper_mail',
+        'copper_shields',
         'plow',
         'omniscience',
         'heavy_soldiers',
         'bronze_weapons',
         'bronze_mail',
+        'bronze_shields',
+        'ballistics',
         'champion_soldiers',
         'iron_weapons',
         'iron_mail',
+        'iron_shields',
+        'burning_pitch',
       ];
       for (const tid of enemyTechOrder) {
         if (this.enemyResearchedTechs.includes(tid)) continue;
@@ -9790,9 +9995,9 @@ export class AoMEngine {
       const mods = this.computeUnitModifiers(primary.kind, primary.team, Boolean(primary.isPromotedHero));
       const totalHp = selUnits.reduce((acc, u) => acc + u.hp, 0);
       const totalMaxHp = selUnits.reduce((acc, u) => acc + u.maxHp, 0);
-      const hackPct = Math.round(Math.min(82, (stats.hackArmor + mods.armorBonus) * 100));
-      const piercePct = Math.round(Math.min(82, (stats.pierceArmor + mods.armorBonus) * 100));
-      const crushPct = Math.round(Math.min(82, (stats.crushArmor + mods.armorBonus) * 100));
+      const hackPct = Math.round(Math.min(85, (1 - (1 - stats.hackArmor) * mods.hackVulnMult + mods.armorBonus) * 100));
+      const piercePct = Math.round(Math.min(85, (1 - (1 - stats.pierceArmor) * mods.pierceVulnMult + mods.armorBonus) * 100));
+      const crushPct = Math.round(Math.min(85, (1 - (1 - stats.crushArmor) * mods.crushVulnMult + mods.armorBonus) * 100));
       const isRegent = primary.id === this.regentUnitId;
       const taskMap: Record<UnitEntity['state'], string> = {
         idle: 'Em espera',
@@ -9888,7 +10093,7 @@ export class AoMEngine {
         pierceArmorPct: piercePct,
         crushArmorPct: crushPct,
         speed: Number((stats.speed * mods.speedMult).toFixed(1)),
-        range: Number(stats.range.toFixed(1)),
+        range: Number((stats.range + mods.rangeBonus).toFixed(1)),
         popCost: stats.popCost,
         armorLabel: `Corte ${hackPct}% · Perf ${piercePct}% · Esmag ${crushPct}%`,
         taskLabel: unitTaskLabel,
@@ -9915,6 +10120,15 @@ export class AoMEngine {
           ? `${stats.name} (T5 · Metrópole Divina)`
           : `${stats.name} (T${tcTier})`
         : stats.name;
+      const bTechs = b.team === 'player' ? this.researchedTechs : this.enemyResearchedTechs;
+      let bAtkMult = 1;
+      if (stats.attack) {
+        if (bTechs.includes('copper_weapons')) bAtkMult += 0.10;
+        if (bTechs.includes('bronze_weapons')) bAtkMult += 0.10;
+        if (bTechs.includes('iron_weapons')) bAtkMult += 0.10;
+        if (bTechs.includes('watch_tower') && (b.kind === 'tower' || b.kind === 'fortress')) bAtkMult += 0.30;
+        if (bTechs.includes('burning_pitch')) bAtkMult += 0.15;
+      }
       return {
         count: 1,
         primaryType: 'building',
@@ -9924,7 +10138,7 @@ export class AoMEngine {
         team: b.team,
         hp: Math.round(b.hp),
         maxHp: b.maxHp,
-        attack: stats.attack,
+        attack: stats.attack ? Math.round(stats.attack * bAtkMult) : stats.attack,
         hackArmorPct: hackPct,
         pierceArmorPct: piercePct,
         crushArmorPct: crushPct,

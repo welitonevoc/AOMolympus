@@ -21,6 +21,7 @@ import {
   X,
   Zap,
 } from 'lucide-react';
+import { EraIcon, getEraSubtitle } from './EraIcon';
 import { createGreekUnitMesh } from '../civilizacao/gregos/gregosModels';
 import {
   animateZeusHoplite,
@@ -2748,22 +2749,25 @@ export function HopliteUvBuilderModal({
                       <div
                         key={item.tier}
                         onClick={() => onSelectTier(item.tier as any)}
-                        className={`cursor-pointer p-2 rounded-lg border transition-all flex items-center justify-between ${
+                        className={`cursor-pointer p-2 rounded-lg border transition-all flex items-center justify-between gap-2 ${
                           isSelected
                             ? 'bg-amber-500/15 border-amber-500 shadow-md shadow-amber-500/10 text-amber-200'
                             : 'bg-stone-900/60 border-stone-800 text-stone-400 hover:bg-stone-800/60 hover:text-stone-200'
                         }`}
                       >
-                        <div>
-                          <div className="flex items-center space-x-1.5">
-                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                              T{item.tier}
-                            </span>
-                            <span className="text-xs font-medium">{item.name}</span>
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <EraIcon age={item.tier} pantheon={selectedCiv} size={28} active={isSelected} />
+                          <div className="min-w-0">
+                            <div className="flex items-center space-x-1.5">
+                              <span className="text-xs font-medium truncate">{item.name}</span>
+                              <span className="text-[9px] text-amber-300/80 truncate hidden sm:inline">
+                                · {getEraSubtitle(item.tier, selectedCiv)}
+                              </span>
+                            </div>
+                            <p className="text-[10px] text-stone-400 mt-0.5 line-clamp-1">{item.desc}</p>
                           </div>
-                          <p className="text-[10px] text-stone-400 mt-0.5 line-clamp-1">{item.desc}</p>
                         </div>
-                        {isSelected && <span className="text-amber-400 text-xs font-bold">●</span>}
+                        {isSelected && <span className="text-amber-400 text-xs font-bold shrink-0">●</span>}
                       </div>
                     );
                   }))}
