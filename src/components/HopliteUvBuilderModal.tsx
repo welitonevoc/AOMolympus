@@ -13,6 +13,7 @@ import {
   Crown,
   Eye,
   Flame,
+  Hammer,
   Layers,
   Map as MapIcon,
   Maximize2,
@@ -51,6 +52,13 @@ import {
   MAJOR_GODS_BY_CIV,
   MapDioramaHandle,
 } from './gallery3dCatalog';
+import {
+  buildRelicArtifactMesh,
+  buildUtensilMesh,
+  GALLERY_RELIC_ITEMS,
+  GALLERY_UTENSIL_ITEMS,
+  StudioArtifactHandle,
+} from './gallery3dArtifacts';
 import {
   AOM_HOPLITE_UV_TIERS,
   createGreekUnitMesh,
@@ -176,13 +184,15 @@ interface HopliteUvBuilderModalProps {
   onSelectTier: (tier: 1 | 2 | 3 | 4) => void;
 }
 
-type GalleryCategory = 'unit' | 'building' | 'map' | 'fauna' | 'flora';
+type GalleryCategory = 'unit' | 'building' | 'map' | 'fauna' | 'flora' | 'utensil' | 'relic';
 type LightingMood = 'studio' | 'day' | 'dusk' | 'night';
 type CameraPreset = 'iso' | 'front' | 'side' | 'top';
 type UnitCategoryFilter = 'all' | 'god' | 'hero' | 'troop' | 'myth';
 type MapExpansionFilter = 'all' | MapExpansion;
 type FaunaDietFilter = 'all' | 'pacific' | 'aggressive';
 type FloraTypeFilter = 'all' | 'tree' | 'resource';
+type UtensilCategoryFilter = 'all' | 'work' | 'domestic' | 'ritual';
+type RelicPantheonFilter = 'all' | 'greek' | 'egyptian' | 'norse' | 'atlantean';
 
 const LIGHTING_PRESETS: Record<
   LightingMood,
@@ -348,6 +358,7 @@ export function HopliteUvBuilderModal({
   const mount3DRef = useRef<HTMLDivElement | null>(null);
   const entityMeshRef = useRef<THREE.Group | null>(null);
   const dioramaHandleRef = useRef<MapDioramaHandle | null>(null);
+  const artifactHandleRef = useRef<StudioArtifactHandle | null>(null);
   const controlsRef = useRef<OrbitControls | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const camTransitionRef = useRef<{
@@ -410,6 +421,13 @@ export function HopliteUvBuilderModal({
   const [floraVariantSeed, setFloraVariantSeed] = useState<number>(0);
   const [floraWind, setFloraWind] = useState<boolean>(true);
 
+  // Utensils & Relics state
+  const [selectedUtensilId, setSelectedUtensilId] = useState<string>('amphora');
+  const [utensilFilter, setUtensilFilter] = useState<UtensilCategoryFilter>('all');
+  const [selectedRelicId, setSelectedRelicId] = useState<string>('chalice_athena');
+  const [relicPantheonFilter, setRelicPantheonFilter] = useState<RelicPantheonFilter>('all');
+  const [artifactAuraActive, setArtifactAuraActive] = useState<boolean>(true);
+
   // God / Hoplite / Myrmidon special states
   const [zeusMode, setZeusMode] = useState<'pairar' | 'voar' | 'raios' | 'tempestade'>('pairar');
   const [poseidonMode, setPoseidonMode] = useState<'conduzido' | 'correnteza' | 'golpe' | 'tsunami'>('conduzido');
@@ -446,6 +464,8 @@ export function HopliteUvBuilderModal({
   faunaAnimRef.current = faunaAnim;
   const floraWindRef = useRef(floraWind);
   floraWindRef.current = floraWind;
+  const artifactAuraRef = useRef(artifactAuraActive);
+  artifactAuraRef.current = artifactAuraActive;
   const hopliteActionRef = useRef(hopliteAction);
   hopliteActionRef.current = hopliteAction;
   const myrmidonFuryRef = useRef(myrmidonFury);
@@ -527,6 +547,28 @@ export function HopliteUvBuilderModal({
         : GALLERY_FLORA_ITEMS.filter((f) => f.category === floraFilter),
     [floraFilter]
   );
+  const selectedUtensilCfg = useMemo(
+    () => GALLERY_UTENSIL_ITEMS.find((u) => u.id === selectedUtensilId) || GALLERY_UTENSIL_ITEMS[0],
+    [selectedUtensilId]
+  );
+  const filteredUtensils = useMemo(
+    () =>
+      utensilFilter === 'all'
+        ? GALLERY_UTENSIL_ITEMS
+        : GALLERY_UTENSIL_ITEMS.filter((u) => u.category === utensilFilter),
+    [utensilFilter]
+  );
+  const selectedRelicCfg = useMemo(
+    () => GALLERY_RELIC_ITEMS.find((r) => r.id === selectedRelicId) || GALLERY_RELIC_ITEMS[0],
+    [selectedRelicId]
+  );
+  const filteredRelics = useMemo(
+    () =>
+      relicPantheonFilter === 'all'
+        ? GALLERY_RELIC_ITEMS
+        : GALLERY_RELIC_ITEMS.filter((r) => r.pantheon === relicPantheonFilter),
+    [relicPantheonFilter]
+  );
 
   // Compute canonical studio framing for current subject
   const getFramingForSubject = (focusHead: boolean): { target: [number, number, number]; offset: [number, number, number]; baseDist: number } => {
@@ -563,6 +605,20 @@ export function HopliteUvBuilderModal({
         target: [0, ty, 0],
         offset: [dist * 0.56, dist * 0.34, dist * 0.78],
         baseDist: dist,
+      };
+    }
+    if (galleryCategory === 'utensil') {
+      return {
+        target: [0, 0.75, 0],
+        offset: [2.5, 1.5, 3.0],
+        baseDist: 4.1,
+      };
+    }
+    if (galleryCategory === 'relic') {
+      return {
+        target: [0, 1.0, 0],
+        offset: [2.3, 1.4, 3.1],
+        baseDist: 4.1,
       };
     }
     if (galleryCategory === 'building') {
@@ -1371,6 +1427,11 @@ export function HopliteUvBuilderModal({
         dioramaHandleRef.current.dispose();
         dioramaHandleRef.current = null;
       }
+      if (artifactHandleRef.current) {
+        scene.remove(artifactHandleRef.current.group);
+        artifactHandleRef.current.dispose();
+        artifactHandleRef.current = null;
+      }
       while (environmentGroup.children.length > 0) {
         environmentGroup.remove(environmentGroup.children[0]);
       }
@@ -1442,6 +1503,37 @@ export function HopliteUvBuilderModal({
           const refVillager = createUnitMesh('villager', 'player', pal, !isSoftwareGl, selectedCiv, selectedMajorGod);
           refVillager.position.set(-1.75, 0, 0.7);
           refVillager.rotation.y = 0.45;
+          environmentGroup.add(refVillager);
+        }
+      } else if (galleryCategory === 'utensil') {
+        scene.background = new THREE.Color(0x0d1017);
+        scene.fog = new THREE.FogExp2(0x0d1017, 0.018);
+        addPedestal(1.85, 2.05, selectedUtensilCfg.accentHex);
+
+        const handle = buildUtensilMesh(selectedUtensilId, pal, !isSoftwareGl);
+        artifactHandleRef.current = handle;
+        group = handle.group;
+
+        if (showHumanScale) {
+          const refVillager = createUnitMesh('villager', 'player', pal, !isSoftwareGl, selectedCiv, selectedMajorGod);
+          refVillager.position.set(-1.45, 0, 0.45);
+          refVillager.rotation.y = 0.4;
+          environmentGroup.add(refVillager);
+        }
+      } else if (galleryCategory === 'relic') {
+        const relicBg = new THREE.Color(selectedRelicCfg.auraHex).multiplyScalar(0.11);
+        scene.background = relicBg;
+        scene.fog = new THREE.FogExp2(relicBg.getHex(), 0.02);
+        addPedestal(1.9, 2.15, selectedRelicCfg.auraHex);
+
+        const handle = buildRelicArtifactMesh(selectedRelicId, pal, !isSoftwareGl);
+        artifactHandleRef.current = handle;
+        group = handle.group;
+
+        if (showHumanScale) {
+          const refVillager = createUnitMesh('villager', 'player', pal, !isSoftwareGl, selectedCiv, selectedMajorGod);
+          refVillager.position.set(-1.5, 0, 0.45);
+          refVillager.rotation.y = 0.42;
           environmentGroup.add(refVillager);
         }
       } else if (galleryCategory === 'building') {
@@ -2021,6 +2113,11 @@ export function HopliteUvBuilderModal({
             canopy.rotation.set(0, 0, 0);
           }
         }
+      } else if (
+        (galleryCategory === 'utensil' || galleryCategory === 'relic') &&
+        artifactHandleRef.current?.animate
+      ) {
+        artifactHandleRef.current.animate(simTime, dt, artifactAuraRef.current);
       } else if (galleryCategory === 'unit') {
         // Olympus clouds
         if (zeusClouds.length > 0) {
@@ -2328,6 +2425,10 @@ export function HopliteUvBuilderModal({
         dioramaHandleRef.current.dispose();
         dioramaHandleRef.current = null;
       }
+      if (artifactHandleRef.current) {
+        artifactHandleRef.current.dispose();
+        artifactHandleRef.current = null;
+      }
       localDisposables.forEach((d) => d.dispose());
 
       bolts.forEach((b) =>
@@ -2395,6 +2496,8 @@ export function HopliteUvBuilderModal({
     selectedFauna,
     selectedFloraId,
     floraVariantSeed,
+    selectedUtensilId,
+    selectedRelicId,
     showHumanScale,
   ]);
 
@@ -2465,7 +2568,7 @@ export function HopliteUvBuilderModal({
             </div>
           </div>
 
-          {/* 5 Studio Categories */}
+          {/* 7 Studio Categories */}
           <nav className="flex items-center gap-1 rounded-lg border border-white/10 bg-[#080b12] p-1 overflow-x-auto max-w-full">
             {(
               [
@@ -2474,6 +2577,8 @@ export function HopliteUvBuilderModal({
                 { id: 'map', label: 'Mapas & Relevo', icon: Mountain },
                 { id: 'fauna', label: 'Fauna', icon: Compass },
                 { id: 'flora', label: 'Flora & Recursos', icon: Trees },
+                { id: 'utensil', label: 'Utensílios', icon: Hammer },
+                { id: 'relic', label: 'Relíquias', icon: Sparkles },
               ] as const
             ).map((tab) => {
               const Icon = tab.icon;
@@ -2483,7 +2588,7 @@ export function HopliteUvBuilderModal({
                   key={tab.id}
                   type="button"
                   onClick={() => setGalleryCategory(tab.id)}
-                  className={`flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[11px] font-semibold transition cursor-pointer whitespace-nowrap ${
+                  className={`flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-semibold transition cursor-pointer whitespace-nowrap ${
                     active
                       ? 'bg-[#d4af37] text-[#090c12] shadow'
                       : 'text-[#9ca3af] hover:bg-white/5 hover:text-white'
@@ -2773,6 +2878,75 @@ export function HopliteUvBuilderModal({
               </div>
             )}
 
+            {galleryCategory === 'utensil' && (
+              <div className="border-b border-white/10 p-3 space-y-2 bg-[#111827]/70">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-[#f5e3b0]">
+                    Utensílios & Forja (<span className="font-mono-num">{filteredUtensils.length}</span>)
+                  </span>
+                  <Hammer className="h-3.5 w-3.5 text-amber-400" />
+                </div>
+                <div className="grid grid-cols-4 gap-1">
+                  {(
+                    [
+                      { id: 'all', label: 'Todos' },
+                      { id: 'work', label: 'Trabalho' },
+                      { id: 'domestic', label: 'Domésticos' },
+                      { id: 'ritual', label: 'Ritual' },
+                    ] as const
+                  ).map((f) => (
+                    <button
+                      key={f.id}
+                      type="button"
+                      onClick={() => setUtensilFilter(f.id)}
+                      className={`rounded py-1 text-[10px] font-semibold border transition cursor-pointer ${
+                        utensilFilter === f.id
+                          ? 'border-amber-400/70 bg-amber-500/20 text-amber-200'
+                          : 'border-white/10 bg-[#0b0f18] text-[#9ca3af] hover:text-white'
+                      }`}
+                    >
+                      {f.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {galleryCategory === 'relic' && (
+              <div className="border-b border-white/10 p-3 space-y-2 bg-[#111827]/70">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-[#f5e3b0]">
+                    Relíquias Sagradas (<span className="font-mono-num">{filteredRelics.length}</span>)
+                  </span>
+                  <Sparkles className="h-3.5 w-3.5 text-sky-300" />
+                </div>
+                <div className="grid grid-cols-5 gap-1">
+                  {(
+                    [
+                      { id: 'all', label: 'Todas' },
+                      { id: 'greek', label: 'Gregos' },
+                      { id: 'egyptian', label: 'Egípcios' },
+                      { id: 'norse', label: 'Nórdicos' },
+                      { id: 'atlantean', label: 'Atlantes' },
+                    ] as const
+                  ).map((f) => (
+                    <button
+                      key={f.id}
+                      type="button"
+                      onClick={() => setRelicPantheonFilter(f.id)}
+                      className={`rounded py-1 text-[9px] font-semibold border transition cursor-pointer ${
+                        relicPantheonFilter === f.id
+                          ? 'border-sky-400/70 bg-sky-500/20 text-sky-200'
+                          : 'border-white/10 bg-[#0b0f18] text-[#9ca3af] hover:text-white'
+                      }`}
+                    >
+                      {f.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Scrollable Item Catalog */}
             <div className="flex-1 overflow-y-auto p-2.5 space-y-1.5">
               {galleryCategory === 'unit' &&
@@ -2915,6 +3089,74 @@ export function HopliteUvBuilderModal({
                         </span>
                       </div>
                       <span className="mt-0.5 text-[10px] text-[#9ca3af] line-clamp-1">{f.yieldLabel}</span>
+                    </button>
+                  );
+                })}
+
+              {galleryCategory === 'utensil' &&
+                filteredUtensils.map((u) => {
+                  const isSelected = selectedUtensilId === u.id;
+                  const catLabel =
+                    u.category === 'work'
+                      ? 'Trabalho'
+                      : u.category === 'ritual'
+                      ? 'Ritual'
+                      : 'Doméstico';
+                  return (
+                    <button
+                      key={u.id}
+                      type="button"
+                      onClick={() => setSelectedUtensilId(u.id)}
+                      className={`w-full flex flex-col items-start rounded-lg border px-3 py-2 text-left transition cursor-pointer ${
+                        isSelected
+                          ? 'border-amber-400 bg-amber-500/15 text-amber-100'
+                          : 'border-white/8 bg-[#121826]/70 text-[#d1d5db] hover:border-white/25 hover:bg-[#192236]'
+                      }`}
+                    >
+                      <div className="flex w-full items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span
+                            className="h-3 w-3 shrink-0 rounded-sm border border-white/25"
+                            style={{ backgroundColor: formatHex(u.accentHex) }}
+                          />
+                          <span className="font-display text-xs font-bold truncate">{u.name}</span>
+                        </div>
+                        <span className="shrink-0 rounded bg-white/8 px-1.5 py-0.5 text-[9px] text-[#cbd5e1]">
+                          {catLabel}
+                        </span>
+                      </div>
+                      <span className="mt-0.5 text-[10px] text-[#9ca3af] line-clamp-1">{u.usage}</span>
+                    </button>
+                  );
+                })}
+
+              {galleryCategory === 'relic' &&
+                filteredRelics.map((r) => {
+                  const isSelected = selectedRelicId === r.id;
+                  return (
+                    <button
+                      key={r.id}
+                      type="button"
+                      onClick={() => setSelectedRelicId(r.id)}
+                      className={`w-full flex flex-col items-start rounded-lg border px-3 py-2 text-left transition cursor-pointer ${
+                        isSelected
+                          ? 'border-sky-400 bg-sky-500/15 text-sky-100'
+                          : 'border-white/8 bg-[#121826]/70 text-[#d1d5db] hover:border-white/25 hover:bg-[#192236]'
+                      }`}
+                    >
+                      <div className="flex w-full items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span
+                            className="h-3 w-3 shrink-0 rounded-sm border border-white/25"
+                            style={{ backgroundColor: formatHex(r.auraHex) }}
+                          />
+                          <span className="font-display text-xs font-bold truncate">{r.name}</span>
+                        </div>
+                        <span className="shrink-0 rounded bg-white/8 px-1.5 py-0.5 text-[9px] text-[#cbd5e1]">
+                          {PANTHEONS[r.pantheon].name}
+                        </span>
+                      </div>
+                      <span className="mt-0.5 text-[10px] text-amber-300/90 line-clamp-1">{r.bonusLabel}</span>
                     </button>
                   );
                 })}
@@ -3257,6 +3499,104 @@ export function HopliteUvBuilderModal({
                     <div className="mt-0.5 font-mono-num text-xs text-emerald-300">
                       Semente #{floraVariantSeed} (de 5 variações)
                     </div>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {galleryCategory === 'utensil' && (
+              <>
+                <div className="border-b border-white/10 pb-2.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-amber-300">
+                      Utensílio & Artefato Civil
+                    </span>
+                    <span className="rounded bg-white/8 px-1.5 py-0.5 text-[9px] font-semibold uppercase text-[#cbd5e1]">
+                      {selectedUtensilCfg.category === 'work'
+                        ? 'Trabalho'
+                        : selectedUtensilCfg.category === 'ritual'
+                        ? 'Ritual'
+                        : 'Doméstico'}
+                    </span>
+                  </div>
+                  <h3 className="mt-1 font-display text-base font-bold text-[#f5e3b0]">
+                    {selectedUtensilCfg.name}
+                  </h3>
+                  <p className="mt-1 text-[11px] leading-relaxed text-[#cbd5e1]">
+                    {selectedUtensilCfg.desc}
+                  </p>
+                </div>
+
+                <div className="space-y-2 text-[11px]">
+                  <div className="rounded-lg border border-white/10 bg-[#090d16] p-2.5">
+                    <div className="text-[9px] font-bold uppercase text-[#9ca3af]">Afinidade Cultural</div>
+                    <div className="mt-0.5 font-semibold text-amber-200">{selectedUtensilCfg.civAffinity}</div>
+                  </div>
+                  <div className="rounded-lg border border-white/10 bg-[#090d16] p-2.5">
+                    <div className="text-[9px] font-bold uppercase text-[#9ca3af]">Função / Uso</div>
+                    <div className="mt-0.5 text-[#e2e8f0]">{selectedUtensilCfg.usage}</div>
+                  </div>
+                  <div className="rounded-lg border border-white/10 bg-[#090d16] p-2.5">
+                    <div className="text-[9px] font-bold uppercase text-[#9ca3af]">Materiais</div>
+                    <div className="mt-0.5 text-[#cbd5e1]">{selectedUtensilCfg.materialLabel}</div>
+                  </div>
+                </div>
+
+                <div className="border-t border-white/10 pt-2.5 flex items-center justify-between text-[10px]">
+                  <span className="font-bold uppercase tracking-wider text-[#9ca3af]">Acabamento</span>
+                  <div className="flex items-center gap-2">
+                    <span
+                      className="h-3.5 w-6 rounded-sm border border-white/25"
+                      style={{ backgroundColor: formatHex(selectedUtensilCfg.accentHex) }}
+                    />
+                    <span className="font-mono-num text-[#cbd5e1]">
+                      {formatHex(selectedUtensilCfg.accentHex)}
+                    </span>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {galleryCategory === 'relic' && (
+              <>
+                <div className="border-b border-white/10 pb-2.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-sky-300">
+                      {PANTHEONS[selectedRelicCfg.pantheon].name} · {selectedRelicCfg.tierLabel}
+                    </span>
+                  </div>
+                  <h3 className="mt-1 font-display text-base font-bold text-[#f5e3b0]">
+                    {selectedRelicCfg.name}
+                  </h3>
+                  <p className="mt-1 text-[11px] leading-relaxed text-[#cbd5e1]">
+                    {selectedRelicCfg.desc}
+                  </p>
+                </div>
+
+                <div className="rounded-lg border border-amber-400/35 bg-amber-500/10 p-2.5 text-[11px]">
+                  <div className="text-[9px] font-bold uppercase tracking-wider text-amber-300">
+                    Bônus no Templo
+                  </div>
+                  <div className="mt-0.5 font-semibold text-[#fde68a]">{selectedRelicCfg.bonusLabel}</div>
+                </div>
+
+                <div className="space-y-2 text-[11px]">
+                  <div className="rounded-lg border border-white/10 bg-[#090d16] p-2.5">
+                    <div className="text-[9px] font-bold uppercase text-[#9ca3af]">Origem Mitológica</div>
+                    <div className="mt-0.5 text-[#e2e8f0]">{selectedRelicCfg.origin}</div>
+                  </div>
+                </div>
+
+                <div className="border-t border-white/10 pt-2.5 flex items-center justify-between text-[10px]">
+                  <span className="font-bold uppercase tracking-wider text-[#9ca3af]">Aura Mítica</span>
+                  <div className="flex items-center gap-2">
+                    <span
+                      className="h-3.5 w-6 rounded-sm border border-white/25"
+                      style={{ backgroundColor: formatHex(selectedRelicCfg.auraHex) }}
+                    />
+                    <span className="font-mono-num text-[#cbd5e1]">
+                      {formatHex(selectedRelicCfg.auraHex)}
+                    </span>
                   </div>
                 </div>
               </>
@@ -4058,6 +4398,60 @@ export function HopliteUvBuilderModal({
                   </button>
                 );
               })}
+              <button
+                type="button"
+                onClick={() => setShowHumanScale((v) => !v)}
+                className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                  showHumanScale
+                    ? 'bg-sky-500/20 text-sky-200 border border-sky-400/50'
+                    : 'border border-white/12 text-[#9ca3af] hover:text-white'
+                }`}
+              >
+                <Users className="h-3.5 w-3.5" />
+                <span>Escala Aldeão</span>
+              </button>
+            </>
+          ) : galleryCategory === 'utensil' ? (
+            <>
+              <button
+                type="button"
+                onClick={() => setArtifactAuraActive((v) => !v)}
+                className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                  artifactAuraActive
+                    ? 'bg-amber-500/25 text-amber-200 border border-amber-400/50'
+                    : 'border border-white/12 text-[#9ca3af] hover:text-white'
+                }`}
+              >
+                <Flame className="h-3.5 w-3.5" />
+                <span>Brasas / Efeitos</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowHumanScale((v) => !v)}
+                className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                  showHumanScale
+                    ? 'bg-sky-500/20 text-sky-200 border border-sky-400/50'
+                    : 'border border-white/12 text-[#9ca3af] hover:text-white'
+                }`}
+              >
+                <Users className="h-3.5 w-3.5" />
+                <span>Escala Aldeão</span>
+              </button>
+            </>
+          ) : galleryCategory === 'relic' ? (
+            <>
+              <button
+                type="button"
+                onClick={() => setArtifactAuraActive((v) => !v)}
+                className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                  artifactAuraActive
+                    ? 'bg-sky-500/25 text-sky-200 border border-sky-400/50'
+                    : 'border border-white/12 text-[#9ca3af] hover:text-white'
+                }`}
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+                <span>Aura Sagrada</span>
+              </button>
               <button
                 type="button"
                 onClick={() => setShowHumanScale((v) => !v)}
