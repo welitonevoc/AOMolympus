@@ -81,6 +81,11 @@ import {
   getCachedHermesTextures,
   animateHermes,
 } from '../civilizacao/gregos/hermesModel';
+import {
+  buildIsis,
+  getCachedIsisTextures,
+  animateIsis,
+} from '../civilizacao/egipcios/isisModel';
 import { AOM_HOPLITE_UV_TIERS, HopliteArmorTier } from '../civilizacao/gregos/gregosModels';
 import { createBuildingMesh, createMaterialPalette, createUnitMesh } from '../game/models';
 import { BuildingKind, PantheonId, UnitKind } from '../game/types';
@@ -459,7 +464,18 @@ export function getUnitsForCivAndGod(civ: PantheonId, majorGod: string): CivEnti
     const isRa = godInfo.id.toLowerCase() === 'rá';
     const isIsis = godInfo.id.toLowerCase() === 'ísis';
 
+    const godOption: CivEntityOption[] = isIsis
+      ? [
+          {
+            id: 'isis',
+            name: '✨ Ísis (Deusa Maior da Magia)',
+            role: 'Deusa da Magia e Prosperidade — Asas Volumétricas Aladas, Magia de Heka, Sopro da Vida (Ankh) e Estrela de Sopdet',
+          },
+        ]
+      : [];
+
     return [
+      ...godOption,
       {
         id: 'hoplite',
         name: isRa ? 'Lanceiro Solar de Rá' : isIsis ? 'Guardião do Nilo de Ísis' : 'Homem de Armas do Caos (Set)',
@@ -632,6 +648,7 @@ export function HopliteUvBuilderModal({
   const [aresMode, setAresMode] = useState<'postura' | 'investida' | 'sismico' | 'furia'>('postura');
   const [atenaMode, setAtenaMode] = useState<'guardia' | 'avanco' | 'egide' | 'furia'>('guardia');
   const [hermesMode, setHermesMode] = useState<'flutuar' | 'velocidade' | 'rajada' | 'relampago'>('flutuar');
+  const [isisMode, setIsisMode] = useState<'majestade' | 'heka' | 'ankh' | 'sopdet'>('majestade');
   const [focusDivine, setFocusDivine] = useState(false);
   const [myrmidonFury, setMyrmidonFury] = useState(true);
   const myrmidonFuryRef = useRef(myrmidonFury);
@@ -666,6 +683,8 @@ export function HopliteUvBuilderModal({
   atenaModeRef.current = atenaMode;
   const hermesModeRef = useRef(hermesMode);
   hermesModeRef.current = hermesMode;
+  const isisModeRef = useRef(isisMode);
+  isisModeRef.current = isisMode;
   const focusDivineRef = useRef(focusDivine);
   focusDivineRef.current = focusDivine;
 
@@ -749,7 +768,7 @@ export function HopliteUvBuilderModal({
       prevMouseX = e.clientX;
       prevMouseY = e.clientY;
 
-      const isGod = (selectedUnit === 'zeus' || selectedUnit === 'poseidon' || selectedUnit === 'hades' || selectedUnit === 'artemis' || selectedUnit === 'hefesto' || selectedUnit === 'dionisio' || selectedUnit === 'afrodite' || selectedUnit === 'apolo' || selectedUnit === 'ares' || selectedUnit === 'atena' || selectedUnit === 'hermes') && selectedCiv === 'greek';
+      const isGod = ((selectedUnit === 'zeus' || selectedUnit === 'poseidon' || selectedUnit === 'hades' || selectedUnit === 'artemis' || selectedUnit === 'hefesto' || selectedUnit === 'dionisio' || selectedUnit === 'afrodite' || selectedUnit === 'apolo' || selectedUnit === 'ares' || selectedUnit === 'atena' || selectedUnit === 'hermes') && selectedCiv === 'greek') || (selectedUnit === 'isis' && selectedCiv === 'egyptian');
       if (isGod) {
         // No caso dos deuses, a câmera orbita em 360° e o deus permanece fixo no centro
         orbitYaw -= dx * 0.008;
@@ -1611,6 +1630,58 @@ export function HopliteUvBuilderModal({
             const m = hermesModeRef.current;
             animateHermes(hermes, dt, simTime, m);
           };
+        } else if (selectedUnit === 'isis') {
+          // ===============================
+          // CENÁRIO DO TEMPLO DE ÍSIS (NILO & OBELISCOS)
+          // ===============================
+          scene.background = new THREE.Color(0x050508);
+          scene.fog = new THREE.FogExp2(0x050508, 0.022);
+
+          const isisTex = getCachedIsisTextures();
+
+          const pedGeo = new THREE.CylinderGeometry(2.8, 3.1, 0.2, 48);
+          const pedMat = new THREE.MeshStandardMaterial({
+            map: isisTex.floorTex,
+            roughness: 0.5,
+            metalness: 0.2,
+          });
+          const pedestal = new THREE.Mesh(pedGeo, pedMat);
+          pedestal.position.y = -0.1;
+          pedestal.receiveShadow = true;
+          environmentGroup.add(pedestal);
+
+          const ringGeo = new THREE.RingGeometry(2.4, 2.65, 48);
+          const ringMat = new THREE.MeshBasicMaterial({ color: 0xfacc15, side: THREE.DoubleSide });
+          const ring = new THREE.Mesh(ringGeo, ringMat);
+          ring.rotation.x = -Math.PI / 2;
+          ring.position.y = 0.01;
+          environmentGroup.add(ring);
+
+          // Dois obeliscos com ápice de ouro
+          const obeliskMat = new THREE.MeshStandardMaterial({ color: 0x1c1917, roughness: 0.7 });
+          const goldTipMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 1, roughness: 0.1 });
+          for (const x of [-3.0, 3.0]) {
+            const obelisk = new THREE.Group();
+            obelisk.position.set(x, 0, -2.8);
+            const baseMesh = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.35, 1.0), obeliskMat);
+            const shaftMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.45, 3.0, 4), obeliskMat);
+            shaftMesh.position.y = 1.65;
+            shaftMesh.rotation.y = Math.PI / 4;
+            const tipMesh = new THREE.Mesh(new THREE.ConeGeometry(0.26, 0.6, 4), goldTipMat);
+            tipMesh.position.y = 3.45;
+            tipMesh.rotation.y = Math.PI / 4;
+            obelisk.add(baseMesh, shaftMesh, tipMesh);
+            environmentGroup.add(obelisk);
+          }
+
+          const isis = buildIsis(isisTex);
+          group = isis.root;
+          group.scale.setScalar(0.85);
+
+          group.userData.animatePose = (dt: number) => {
+            const m = isisModeRef.current;
+            animateIsis(isis, dt, simTime, m);
+          };
         } else if (selectedUnit === 'hoplite' || selectedUnit === 'hipaspist' || selectedUnit === 'myrmidon') {
           // ===============================
           // CENÁRIO PADRÃO (PEDESTAL)
@@ -1985,7 +2056,7 @@ export function HopliteUvBuilderModal({
       if (hadesBlastLight.intensity > 0) hadesBlastLight.intensity = Math.max(0, hadesBlastLight.intensity - dt * 20);
 
       // Rotação da entidade / Órbita 360° da câmera
-      const isGod = (selectedUnit === 'zeus' || selectedUnit === 'poseidon' || selectedUnit === 'hades' || selectedUnit === 'artemis' || selectedUnit === 'hefesto' || selectedUnit === 'dionisio' || selectedUnit === 'afrodite' || selectedUnit === 'apolo' || selectedUnit === 'ares' || selectedUnit === 'atena' || selectedUnit === 'hermes') && selectedCiv === 'greek';
+      const isGod = ((selectedUnit === 'zeus' || selectedUnit === 'poseidon' || selectedUnit === 'hades' || selectedUnit === 'artemis' || selectedUnit === 'hefesto' || selectedUnit === 'dionisio' || selectedUnit === 'afrodite' || selectedUnit === 'apolo' || selectedUnit === 'ares' || selectedUnit === 'atena' || selectedUnit === 'hermes') && selectedCiv === 'greek') || (selectedUnit === 'isis' && selectedCiv === 'egyptian');
 
       if (autoRotateRef.current) {
         if (isGod) {
@@ -2015,7 +2086,7 @@ export function HopliteUvBuilderModal({
 
       if (isGod) {
         // Câmera orbital 360° ao redor do Deus posicionado no centro exato
-        const isMajor = selectedUnit === 'zeus' || selectedUnit === 'poseidon' || selectedUnit === 'hades';
+        const isMajor = selectedUnit === 'zeus' || selectedUnit === 'poseidon' || selectedUnit === 'hades' || selectedUnit === 'isis';
         const focusY = isFocus
           ? isMajor
             ? 2.25
@@ -3066,6 +3137,71 @@ export function HopliteUvBuilderModal({
                   >
                     <Eye className="h-3.5 w-3.5" />
                     <span>{focusDivine ? 'Visão Corpo' : 'Focar Rosto/Pétaso'}</span>
+                  </button>
+                  <div className="h-5 w-[1px] bg-white/15 mx-1" />
+                </>
+              ) : entityType === 'unit' && selectedUnit === 'isis' && selectedCiv === 'egyptian' ? (
+                // Poderes e Animações de Ísis (Deusa Maior da Magia e Prosperidade)
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setIsisMode('majestade')}
+                    className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      isisMode === 'majestade'
+                        ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/30 font-bold'
+                        : 'border border-amber-400/30 text-amber-200 hover:bg-amber-400/20'
+                    }`}
+                  >
+                    <Wind className="h-3.5 w-3.5" />
+                    <span>Majestade Alada</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsisMode('heka')}
+                    className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      isisMode === 'heka'
+                        ? 'bg-teal-500 text-slate-950 shadow-md shadow-teal-500/30 font-bold'
+                        : 'border border-teal-400/30 text-teal-200 hover:bg-teal-400/20'
+                    }`}
+                  >
+                    <Sparkles className="h-3.5 w-3.5" />
+                    <span>Magia de Heka</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsisMode('ankh')}
+                    className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      isisMode === 'ankh'
+                        ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30 font-bold'
+                        : 'border border-emerald-400/30 text-emerald-200 hover:bg-emerald-400/20'
+                    }`}
+                  >
+                    <Shield className="h-3.5 w-3.5" />
+                    <span>Sopro da Vida (Ankh)</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsisMode('sopdet')}
+                    className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      isisMode === 'sopdet'
+                        ? 'bg-gradient-to-r from-cyan-500 to-amber-400 text-slate-950 shadow-md shadow-cyan-500/40 font-bold'
+                        : 'border border-cyan-400/30 text-cyan-200 hover:bg-cyan-400/20'
+                    }`}
+                  >
+                    <Flame className="h-3.5 w-3.5" />
+                    <span>Estrela de Sopdet</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFocusDivine(!focusDivine)}
+                    className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      focusDivine
+                        ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/30 font-bold'
+                        : 'border border-amber-400/40 text-amber-200 hover:bg-amber-500/20'
+                    }`}
+                  >
+                    <Eye className="h-3.5 w-3.5" />
+                    <span>{focusDivine ? 'Visão Corpo' : 'Focar Rosto / Asas'}</span>
                   </button>
                   <div className="h-5 w-[1px] bg-white/15 mx-1" />
                 </>

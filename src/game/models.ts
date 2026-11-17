@@ -18,6 +18,7 @@ import { buildHermes, getCachedHermesTextures, animateHermes } from '../civiliza
 import { buildZeus, getCachedZeusTextures, animateZeus } from '../civilizacao/gregos/zeusModel';
 import { buildPoseidon, getCachedPoseidonTextures, animatePoseidon } from '../civilizacao/gregos/poseidonModel';
 import { buildHades, getCachedHadesTextures, animateHades } from '../civilizacao/gregos/hadesModel';
+import { buildIsis, getCachedIsisTextures, animateIsis } from '../civilizacao/egipcios/isisModel';
 import { createAoMOakTreeMesh, getFaunaCoatMaterial } from '../TEXTURA';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
@@ -2926,6 +2927,27 @@ export function createUnitMesh(
     };
     attachGroundMarkers(root, 2.55, pal, team);
     attachHealthBar(root, 11.2, 3.0);
+    return root;
+  } else if (kind === 'isis') {
+    // DEUSA MAIOR EGÍPCIA (~13.1u): Deusa da Magia e Prosperidade
+    const isisTex = getCachedIsisTextures();
+    const isis = buildIsis(isisTex);
+    const isisHolder = new THREE.Group();
+    isisHolder.scale.setScalar(3.85);
+    isisHolder.position.y = 0.25;
+    isisHolder.add(isis.root);
+    root.add(isisHolder);
+    let iPhase = 0;
+    root.userData.animatePose = (dt: number, moving: boolean, _speed: number, attackT: number | null) => {
+      iPhase += dt;
+      const mode = attackT !== null ? (attackT > 0.5 ? 'sopdet' : 'heka') : moving ? 'ankh' : 'majestade';
+      animateIsis(isis, dt, iPhase, mode);
+    };
+    root.userData.updateBrg = (dt: number, state: string) => {
+      root.userData.animatePose?.(dt, state === 'move', 2.0, state === 'attack' ? 0.5 : null);
+    };
+    attachGroundMarkers(root, 2.95, pal, team);
+    attachHealthBar(root, 13.8, 3.4);
     return root;
   }
 

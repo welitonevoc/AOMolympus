@@ -1,0 +1,738 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Ísis - Deusa da Magia e Prosperidade | Age of Mythology 3D</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --isis-gold: #facc15;
+      --isis-black: #09090b;
+      --magic-cyan: #2dd4bf;
+      --glass: rgba(9, 9, 11, 0.85);
+      --border: rgba(250, 204, 21, 0.45);
+    }
+    * { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #050508;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    }
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+      cursor: grab;
+    }
+    canvas:active { cursor: grabbing; }
+
+    #ui {
+      position: fixed;
+      top: 14px;
+      left: 14px;
+      right: 14px;
+      display: flex;
+      gap: 8px;
+      z-index: 10;
+      flex-wrap: wrap;
+      align-items: center;
+      pointer-events: none;
+    }
+    .btn-group {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      pointer-events: auto;
+    }
+    button {
+      padding: 9px 14px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--glass);
+      backdrop-filter: blur(10px);
+      color: #fefce8;
+      font-weight: 600;
+      font-size: 13px;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.55);
+      transition: all 0.2s ease;
+    }
+    button:hover {
+      border-color: #fef08a;
+      transform: translateY(-1px);
+      background: rgba(24, 24, 27, 0.94);
+    }
+    button.on {
+      background: linear-gradient(135deg, #eab308 0%, #b45309 100%);
+      color: #000000;
+      border-color: #fef9c3;
+      box-shadow: 0 0 22px rgba(250, 204, 21, 0.65);
+    }
+    button.cam-btn {
+      border-color: rgba(45, 212, 191, 0.55);
+    }
+    button.cam-btn.active {
+      background: linear-gradient(135deg, #14b8a6 0%, #0f766e 100%);
+      color: #ffffff;
+      border-color: #99f6e4;
+      box-shadow: 0 0 18px rgba(20, 184, 166, 0.55);
+    }
+
+    #badge {
+      position: fixed;
+      top: 14px;
+      right: 16px;
+      background: var(--glass);
+      backdrop-filter: blur(8px);
+      border: 1px solid var(--border);
+      padding: 7px 13px;
+      border-radius: 10px;
+      color: #facc15;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      pointer-events: none;
+      z-index: 9;
+    }
+    @media (max-width: 980px) {
+      #badge { display: none; }
+    }
+
+    #hint {
+      position: fixed;
+      bottom: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(9, 9, 11, 0.8);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(250, 204, 21, 0.34);
+      padding: 7px 16px;
+      border-radius: 999px;
+      color: #fef9c3;
+      font-size: 12.5px;
+      white-space: nowrap;
+      pointer-events: none;
+      z-index: 10;
+    }
+  </style>
+</head>
+<body>
+
+<div id="ui">
+  <div class="btn-group">
+    <button data-m="majestade" class="on">Majestade Alada</button>
+    <button data-m="heka">Magia de Heka</button>
+    <button data-m="ankh">Sopro da Vida (Ankh)</button>
+    <button data-m="sopdet">Estrela de Sopdet (Nilo)</button>
+    <button id="btn-focus" class="cam-btn">Focar Rosto / Asas</button>
+  </div>
+</div>
+
+<div id="badge">AoM • Ísis Divina</div>
+<div id="hint">Arraste para girar 360° • Scroll / Pinça para zoom</div>
+
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+const T = THREE;
+
+/* ==========================================================================
+   1. TEXTURAS PROCEDURAIS PBR
+   ========================================================================== */
+function createProceduralTextures() {
+  const skinCanvas = document.createElement('canvas');
+  skinCanvas.width = skinCanvas.height = 256;
+  const sCtx = skinCanvas.getContext('2d');
+  sCtx.fillStyle = '#808080';
+  sCtx.fillRect(0, 0, 256, 256);
+  for (let i = 0; i < 4000; i++) {
+    const v = 125 + Math.floor(Math.random() * 6);
+    sCtx.fillStyle = `rgb(${v},${v},${v})`;
+    sCtx.fillRect(Math.random() * 256, Math.random() * 256, 1.5, 1.5);
+  }
+  const skinBump = new T.CanvasTexture(skinCanvas);
+  skinBump.wrapS = skinBump.wrapT = T.RepeatWrapping;
+  skinBump.repeat.set(4, 4);
+
+  const floorCanvas = document.createElement('canvas');
+  floorCanvas.width = floorCanvas.height = 1024;
+  const fCtx = floorCanvas.getContext('2d');
+  fCtx.fillStyle = '#1c1917';
+  fCtx.fillRect(0, 0, 1024, 1024);
+
+  for (let i = 0; i < 4000; i++) {
+    fCtx.fillStyle = i % 2 === 0 ? 'rgba(41, 37, 36, 0.4)' : 'rgba(68, 64, 60, 0.2)';
+    fCtx.fillRect(Math.random() * 1024, Math.random() * 1024, 8, 8);
+  }
+
+  fCtx.strokeStyle = '#eab308';
+  fCtx.lineWidth = 14;
+  fCtx.beginPath();
+  fCtx.arc(512, 512, 420, 0, Math.PI * 2);
+  fCtx.stroke();
+  fCtx.strokeStyle = '#0284c7';
+  fCtx.lineWidth = 6;
+  fCtx.beginPath();
+  fCtx.arc(512, 512, 440, 0, Math.PI * 2);
+  fCtx.stroke();
+
+  const floorTex = new T.CanvasTexture(floorCanvas);
+
+  return { skinBump, floorTex };
+}
+
+/* ==========================================================================
+   2. HELPERS DE ESCULTURA E MATERIAIS
+   ========================================================================== */
+function group(parent, x = 0, y = 0, z = 0) {
+  const g = new T.Group();
+  g.position.set(x, y, z);
+  if (parent) parent.add(g);
+  return g;
+}
+
+function sculpt(parent, geo, mat, pos = [0, 0, 0], rot = [0, 0, 0], scale = [1, 1, 1]) {
+  const m = new T.Mesh(geo, mat);
+  m.position.set(pos[0], pos[1], pos[2]);
+  m.rotation.set(rot[0], rot[1], rot[2]);
+  m.scale.set(scale[0], scale[1], scale[2]);
+  m.castShadow = true;
+  m.receiveShadow = true;
+  if (parent) parent.add(m);
+  return m;
+}
+
+function createMaterials(textures) {
+  return {
+    obsidianSkin: new T.MeshStandardMaterial({
+      color: 0x09090b,
+      emissive: 0x050505,
+      roughness: 0.18,
+      metalness: 0.65,
+      bumpMap: textures.skinBump,
+      bumpScale: 0.002
+    }),
+    pureGold: new T.MeshStandardMaterial({
+      color: 0xfacc15,
+      emissive: 0x451a03,
+      emissiveIntensity: 0.35,
+      metalness: 1.0,
+      roughness: 0.12
+    }),
+    darkGold: new T.MeshStandardMaterial({
+      color: 0xb45309,
+      metalness: 0.9,
+      roughness: 0.25
+    }),
+    lapisBlue: new T.MeshStandardMaterial({
+      color: 0x1d4ed8,
+      emissive: 0x1e3a8a,
+      emissiveIntensity: 0.2,
+      metalness: 0.4,
+      roughness: 0.3
+    }),
+    magicCyan: new T.MeshStandardMaterial({
+      color: 0xffffff,
+      emissive: 0x2dd4bf,
+      emissiveIntensity: 3.5,
+      roughness: 0.1
+    }),
+    magicGreen: new T.MeshStandardMaterial({
+      color: 0xffffff,
+      emissive: 0x10b981,
+      emissiveIntensity: 3.5,
+      roughness: 0.1
+    }),
+    waterMagic: new T.MeshBasicMaterial({
+      color: 0x0ea5e9,
+      transparent: true,
+      opacity: 0.8,
+      blending: T.AdditiveBlending,
+      side: T.DoubleSide,
+      depthWrite: false
+    }),
+    dressMaterial: new T.MeshStandardMaterial({
+      color: 0x18181b,
+      roughness: 0.6,
+      metalness: 0.1,
+      side: T.DoubleSide
+    })
+  };
+}
+
+/* ==========================================================================
+   3. CONSTRUÇÃO DE ÍSIS E ASAS VOLUMÉTRICAS DE PENAS
+   ========================================================================== */
+function buildVolumetricWing(parent, isRight, M) {
+  const wingPivot = group(parent, 0, 0, -0.04);
+  
+  if (isRight) {
+    wingPivot.rotation.z = -Math.PI / 2;
+  } else {
+    wingPivot.rotation.z = -Math.PI / 2;
+    wingPivot.scale.x = -1;
+  }
+
+  // 3 Camadas de Penas: Coberteiras (Ouro), Secundárias (Lápis-lazúli), Primárias (Obsidiana/Ouro)
+  const layers = [
+    { r: 0.15, len: 0.35, count: 18, mat: M.pureGold, zOffset: 0.02 },
+    { r: 0.35, len: 0.70, count: 26, mat: M.lapisBlue, zOffset: 0.0 },
+    { r: 0.65, len: 1.15, count: 34, mat: M.obsidianSkin, edge: M.pureGold, zOffset: -0.02 }
+  ];
+
+  layers.forEach((layer) => {
+    for (let i = 0; i < layer.count; i++) {
+      const a = (i / (layer.count - 1)) * (Math.PI * 0.58);
+      const px = Math.cos(a) * layer.r;
+      const py = Math.sin(a) * layer.r;
+      
+      const featherGroup = group(wingPivot, px, py, layer.zOffset);
+      featherGroup.rotation.z = a + Math.PI / 2;
+      
+      // A pena principal (cilindro achatado)
+      const featherGeo = new T.CylinderGeometry(0.008, 0.035, layer.len, 5);
+      sculpt(featherGroup, featherGeo, layer.mat, [0, layer.len / 2, 0], [0, 0, 0], [1, 1, 0.15]);
+      
+      // Borda de ouro para a camada primária
+      if (layer.edge) {
+        const edgeGeo = new T.CylinderGeometry(0.012, 0.042, layer.len * 1.02, 3);
+        sculpt(featherGroup, edgeGeo, layer.edge, [0, layer.len / 2, -0.005], [0, 0, 0], [1, 1, 0.1]);
+      }
+    }
+  });
+
+  return wingPivot;
+}
+
+function buildTyet(M) {
+  const tyet = new T.Group();
+  sculpt(tyet, new T.TorusGeometry(0.25, 0.06, 12, 24), M.magicCyan, [0, 0.35, 0]);
+  sculpt(tyet, new T.BoxGeometry(0.75, 0.12, 0.1), M.magicCyan, [0, 0.1, 0]);
+  sculpt(tyet, new T.BoxGeometry(0.12, 0.65, 0.1), M.magicCyan, [0, -0.28, 0]);
+  sculpt(tyet, new T.CylinderGeometry(0.05, 0.05, 0.5), M.magicCyan, [0.25, -0.2, 0], [0, 0, 0.25]);
+  sculpt(tyet, new T.CylinderGeometry(0.05, 0.05, 0.5), M.magicCyan, [-0.25, -0.2, 0], [0, 0, -0.25]);
+  return tyet;
+}
+
+function buildAnkh(M) {
+  const ankh = new T.Group();
+  sculpt(ankh, new T.TorusGeometry(0.06, 0.015, 8, 16), M.magicGreen, [0, 0.1, 0]);
+  sculpt(ankh, new T.BoxGeometry(0.18, 0.03, 0.03), M.magicGreen, [0, 0.02, 0]);
+  sculpt(ankh, new T.BoxGeometry(0.03, 0.15, 0.03), M.magicGreen, [0, -0.07, 0]);
+  return ankh;
+}
+
+function buildIsis(textures) {
+  const M = createMaterials(textures);
+  const root = new T.Group();
+  const body = group(root, 0, 1.15, 0);
+
+  // Pelve, Pernas e Vestido
+  const pelvis = group(body, 0, 0.92, 0);
+  sculpt(pelvis, new T.SphereGeometry(0.21, 24, 20), M.dressMaterial, [0, 0, 0], [0, 0, 0], [1.05, 0.75, 0.8]);
+
+  const legs = {};
+  for (const side of ['L', 'R']) {
+    const s = side === 'R' ? 1 : -1;
+    const hip = group(pelvis, s * 0.11, -0.04, 0);
+    sculpt(hip, new T.CylinderGeometry(0.12, 0.08, 0.52, 20), M.obsidianSkin, [0, -0.25, 0], [0, 0, 0], [1.0, 1, 1.05]);
+    sculpt(hip, new T.SphereGeometry(0.08, 16, 16), M.obsidianSkin, [0, -0.50, 0.01]);
+    
+    const ankle = group(hip, 0, -0.51, 0);
+    sculpt(ankle, new T.BoxGeometry(0.075, 0.04, 0.19), M.obsidianSkin, [0, -0.02, 0.035], [0.15, 0, 0]);
+    sculpt(ankle, new T.BoxGeometry(0.08, 0.012, 0.20), M.pureGold, [0, -0.04, 0.035], [0.15, 0, 0]);
+    const strap = new T.TorusGeometry(0.05, 0.006, 8, 20);
+    strap.rotateX(Math.PI / 2);
+    sculpt(ankle, strap, M.pureGold, [0, 0.02, -0.02], [0.1, 0, 0]);
+    sculpt(ankle, strap, M.pureGold, [0, 0.06, -0.02], [0.1, 0, 0]);
+    legs[side] = { hip, ankle };
+  }
+  
+  legs.L.hip.rotation.set(-0.15, -0.08, -0.02);
+  legs.R.hip.rotation.set(0.10, 0.08, 0.02);
+
+  const skirtMesh = sculpt(pelvis, new T.CylinderGeometry(0.205, 0.24, 0.95, 36, 1, true), M.dressMaterial, [0, -0.45, 0]);
+  sculpt(pelvis, new T.BoxGeometry(0.12, 0.65, 0.02), M.pureGold, [0, -0.3, 0.18], [0.05, 0, 0]);
+  
+  const belt = new T.TorusGeometry(0.21, 0.025, 12, 36);
+  belt.rotateX(Math.PI / 2);
+  sculpt(pelvis, belt, M.pureGold, [0, 0.02, 0]);
+
+  // Tronco
+  const torso = group(body, 0, 1.38, 0);
+  const torsoPts = [
+    new T.Vector2(0.01, -0.45), new T.Vector2(0.20, -0.41), new T.Vector2(0.16, -0.18),
+    new T.Vector2(0.21, 0.05), new T.Vector2(0.27, 0.26), new T.Vector2(0.24, 0.41),
+    new T.Vector2(0.11, 0.48), new T.Vector2(0.01, 0.49)
+  ];
+  sculpt(torso, new T.LatheGeometry(torsoPts, 36), M.obsidianSkin, [0, 0, 0], [0, 0, 0], [1.1, 1.0, 0.75]);
+
+  for (let c = 0; c < 6; c++) {
+    const colMat = c % 2 === 0 ? M.pureGold : M.lapisBlue;
+    const usekh = new T.TorusGeometry(0.14 + c * 0.028, 0.015, 8, 36, Math.PI);
+    usekh.rotateX(Math.PI / 2);
+    sculpt(torso, usekh, colMat, [0, 0.38 - c * 0.025, 0.02 + c * 0.005], [0.2, 0, 0], [1.1, 1, 0.85]);
+  }
+
+  const chestBird = group(torso, 0, 0.05, 0.19);
+  chestBird.rotation.x = -0.1;
+  sculpt(chestBird, new T.SphereGeometry(0.04, 12, 12), M.pureGold); 
+  sculpt(chestBird, new T.ConeGeometry(0.08, 0.25, 4), M.pureGold, [0, -0.05, 0], [0, 0, 0], [1, 1, 0.2]); 
+  for(const side of [-1, 1]) sculpt(chestBird, new T.ConeGeometry(0.05, 0.25, 4), M.pureGold, [side*0.12, 0.05, 0], [0, 0, side*-1.2], [1, 1, 0.2]);
+
+  sculpt(torso, new T.CylinderGeometry(0.09, 0.11, 0.25, 20), M.obsidianSkin, [0, 0.51, -0.005], [0.05, 0, 0]);
+
+  // Cabeça
+  const head = group(torso, 0, 0.72, 0.025);
+  sculpt(head, new T.SphereGeometry(0.17, 36, 36), M.obsidianSkin, [0, 0, 0], [0, 0, 0], [0.92, 1.15, 0.95]);
+
+  sculpt(head, new T.BoxGeometry(0.015, 0.06, 0.03), M.obsidianSkin, [0, 0.005, 0.165], [-0.15, 0, 0]);
+  sculpt(head, new T.SphereGeometry(0.012, 12, 12), M.obsidianSkin, [0, -0.025, 0.175], [0, 0, 0], [1, 0.8, 1]);
+  sculpt(head, new T.SphereGeometry(0.018, 16, 16), M.pureGold, [-0.045, 0.02, 0.155], [0, 0, 0], [1.1, 0.75, 0.8]);
+  sculpt(head, new T.SphereGeometry(0.018, 16, 16), M.pureGold, [0.045, 0.02, 0.155], [0, 0, 0], [1.1, 0.75, 0.8]);
+
+  sculpt(head, new T.SphereGeometry(0.18, 24, 24), M.darkGold, [0, 0.04, -0.02], [-0.05, 0, 0], [1.02, 1.05, 1.05]);
+  for (const side of [-1, 1]) {
+    const hairLock = sculpt(head, new T.BoxGeometry(0.08, 0.38, 0.09), M.darkGold, [side * 0.14, -0.1, 0.03], [0.1, 0, side * -0.15]);
+    for(let i=0; i<4; i++) sculpt(hairLock, new T.BoxGeometry(0.085, 0.02, 0.095), M.pureGold, [0, 0.1 - i*0.06, 0]);
+  }
+
+  const crown = group(head, 0, 0.22, 0);
+  sculpt(crown, new T.CylinderGeometry(0.15, 0.16, 0.06, 24), M.pureGold, [0, -0.02, 0]);
+  sculpt(crown, new T.ConeGeometry(0.03, 0.1, 4), M.pureGold, [0, 0.02, 0.15], [Math.PI/2, 0, 0]);
+
+  const sunDisk = sculpt(crown, new T.SphereGeometry(0.16, 24, 24), M.pureGold, [0, 0.22, 0], [0, 0, 0], [1, 1, 0.4]);
+  const diskAura = new T.Mesh(new T.SphereGeometry(0.20, 16, 16), new T.MeshBasicMaterial({color: 0xfacc15, transparent: true, opacity: 0.4, blending: T.AdditiveBlending}));
+  sunDisk.add(diskAura);
+
+  for (const side of [-1, 1]) {
+    const hornCurve = new T.CatmullRomCurve3([
+      new T.Vector3(side * 0.08, 0, 0),
+      new T.Vector3(side * 0.25, 0.15, 0),
+      new T.Vector3(side * 0.22, 0.38, 0)
+    ]);
+    sculpt(crown, new T.TubeGeometry(hornCurve, 16, 0.028, 8, false), M.pureGold);
+  }
+
+  // Braços e Asas Volumétricas
+  const wings = {};
+  function createIsisArmAndWing(isRight) {
+    const s = isRight ? 1 : -1;
+    const armRoot = group(torso, s * 0.35, 0.32, -0.01);
+    
+    sculpt(armRoot, new T.SphereGeometry(0.10, 16, 16), M.obsidianSkin, [0, 0, 0], [0, 0, s * -0.2]);
+    sculpt(armRoot, new T.CapsuleGeometry(0.06, 0.24, 12, 16), M.obsidianSkin, [s * 0.015, -0.16, 0], [0, 0, s * 0.05]);
+    sculpt(armRoot, new T.CylinderGeometry(0.065, 0.065, 0.08, 16), M.pureGold, [s * 0.015, -0.16, 0], [0, 0, s * 0.05]);
+
+    const elbow = group(armRoot, s * 0.03, -0.32, 0);
+    sculpt(elbow, new T.CylinderGeometry(0.055, 0.04, 0.28, 16), M.obsidianSkin, [0, -0.14, 0]);
+    sculpt(elbow, new T.CylinderGeometry(0.06, 0.055, 0.12, 20, 1, true), M.pureGold, [0, -0.14, 0]);
+
+    const hand = group(elbow, 0, -0.28, 0);
+    sculpt(hand, new T.BoxGeometry(0.05, 0.06, 0.025), M.obsidianSkin, [0, -0.01, 0]);
+
+    const wingPivot = buildVolumetricWing(armRoot, isRight, M);
+    return { armRoot, elbow, hand, wingPivot };
+  }
+
+  const rightArm = createIsisArmAndWing(true);
+  const leftArm = createIsisArmAndWing(false);
+  wings.R = rightArm.wingPivot;
+  wings.L = leftArm.wingPivot;
+
+  // Cetro
+  const staff = group(rightArm.hand, 0, -0.03, 0.03);
+  sculpt(staff, new T.CylinderGeometry(0.015, 0.015, 2.2, 12), M.pureGold, [0, 0.1, 0]);
+  const lotus = group(staff, 0, 1.25, 0);
+  sculpt(lotus, new T.ConeGeometry(0.06, 0.15, 6), M.lapisBlue, [0, 0, 0], [Math.PI, 0, 0]);
+  
+  const magicNode = group(staff, 0, 1.3, 0);
+
+  // Elementos Mágicos Escondidos no Torso
+  const tyetSymbol = buildTyet(M);
+  tyetSymbol.position.set(0, 0.2, -0.35);
+  tyetSymbol.scale.setScalar(0.01); // Escondido
+  torso.add(tyetSymbol);
+
+  const ankhAura = new T.Mesh(
+    new T.SphereGeometry(1.6, 24, 24),
+    new T.MeshBasicMaterial({color: 0x10b981, transparent: true, opacity: 0, blending: T.AdditiveBlending, depthWrite: false})
+  );
+  body.add(ankhAura);
+
+  return {
+    root, body, torso, legs,
+    rightArm, leftArm, wings,
+    staff, magicNode, crown, tyetSymbol, ankhAura, M
+  };
+}
+
+/* ==========================================================================
+   4. CENA E RENDERER
+   ========================================================================== */
+const renderer = new T.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = T.PCFSoftShadowMap;
+document.body.appendChild(renderer.domElement);
+
+const scene = new T.Scene();
+scene.background = new T.Color(0x050508);
+scene.fog = new T.FogExp2(0x050508, 0.025);
+
+const camera = new T.PerspectiveCamera(36, window.innerWidth / window.innerHeight, 0.1, 150);
+
+const hemi = new T.HemisphereLight(0xffffff, 0x1e3a8a, 0.9);
+scene.add(hemi);
+const sunLight = new T.DirectionalLight(0xfacc15, 2.0);
+sunLight.position.set(5, 8, 4);
+sunLight.castShadow = true;
+scene.add(sunLight);
+const magicLight = new T.PointLight(0x2dd4bf, 0, 12);
+scene.add(magicLight);
+
+const textures = createProceduralTextures();
+
+const floor = new T.Mesh(new T.CylinderGeometry(6, 6.5, 0.2, 48), new T.MeshStandardMaterial({map: textures.floorTex, roughness: 0.5, metalness: 0.2}));
+floor.position.y = -0.1;
+floor.receiveShadow = true;
+scene.add(floor);
+
+const obeliskMat = new T.MeshStandardMaterial({color: 0x1c1917, roughness: 0.7});
+for (const x of [-3.5, 3.5]) {
+    const obelisk = group(scene, x, 0, -4.5);
+    sculpt(obelisk, new T.BoxGeometry(1.4, 0.4, 1.4), obeliskMat);
+    sculpt(obelisk, new T.CylinderGeometry(0.5, 0.6, 4.0, 4), obeliskMat, [0, 2.2, 0], [0, Math.PI/4, 0]);
+    sculpt(obelisk, new T.ConeGeometry(0.35, 0.8, 4), new T.MeshStandardMaterial({color: 0xfacc15, metalness: 1, roughness: 0.1}), [0, 4.6, 0], [0, Math.PI/4, 0]);
+}
+
+const isis = buildIsis(textures);
+scene.add(isis.root);
+
+/* ==========================================================================
+   5. EFEITOS DAS MAGIAS
+   ========================================================================== */
+// Partículas (Runas Heka e Ankhs)
+const particles = [];
+const runeGeo = new T.BoxGeometry(0.08, 0.08, 0.01);
+const starBeam = new T.Mesh(
+  new T.CylinderGeometry(0.4, 0.8, 15, 24, 1, true),
+  new T.MeshBasicMaterial({color: 0xe0f2fe, transparent: true, opacity: 0, blending: T.AdditiveBlending, side: T.DoubleSide, depthWrite: false})
+);
+starBeam.position.y = 7.5;
+scene.add(starBeam);
+
+const waterRipples = [];
+function spawnRipple() {
+  const ring = new T.Mesh(
+    new T.RingGeometry(0.5, 1.5, 32),
+    isis.M.waterMagic
+  );
+  ring.rotation.x = -Math.PI / 2;
+  ring.position.y = 0.05;
+  scene.add(ring);
+  waterRipples.push({mesh: ring, life: 1.0, max: 1.0});
+}
+
+function spawnParticle(type) {
+  const isAnkh = type === 'ankh';
+  const mesh = isAnkh ? buildAnkh(isis.M) : new T.Mesh(runeGeo, isis.M.magicCyan);
+  
+  const angle = Math.random() * Math.PI * 2;
+  const rad = 0.5 + Math.random() * 2.0;
+  mesh.position.set(Math.cos(angle)*rad, 0.5, Math.sin(angle)*rad);
+  
+  scene.add(mesh);
+  particles.push({
+    mesh,
+    isAnkh,
+    vy: 1.5 + Math.random(),
+    rot: Math.random() * 2,
+    life: 1.5 + Math.random()
+  });
+}
+
+/* ==========================================================================
+   6. CONTROLES E LOOP DE ANIMAÇÃO
+   ========================================================================== */
+let mode = 'majestade';
+let camAngle = 0.35;
+let camPitch = 0.15;
+let camDist = 9.5;
+let targetCamDist = 9.5;
+let dragging = false;
+let lastX = 0, lastY = 0;
+let focusFace = false;
+
+document.querySelectorAll('button[data-m]').forEach(b => {
+  b.addEventListener('click', () => {
+    mode = b.dataset.m;
+    document.querySelectorAll('button[data-m]').forEach(x => x.classList.toggle('on', x === b));
+  });
+});
+
+const btnFocus = document.getElementById('btn-focus');
+btnFocus.addEventListener('click', () => {
+  focusFace = !focusFace;
+  btnFocus.classList.toggle('active', focusFace);
+  targetCamDist = focusFace ? 3.0 : 9.5;
+  if(focusFace) { camAngle = 0.15; camPitch = 0.08; }
+});
+
+renderer.domElement.addEventListener('pointerdown', e => { dragging = true; lastX = e.clientX; lastY = e.clientY; });
+window.addEventListener('pointerup', () => dragging = false);
+window.addEventListener('pointermove', e => {
+  if (!dragging) return;
+  camAngle -= (e.clientX - lastX) * 0.009;
+  camPitch = T.MathUtils.clamp(camPitch + (e.clientY - lastY) * 0.006, -0.1, 0.8);
+  lastX = e.clientX; lastY = e.clientY;
+});
+renderer.domElement.addEventListener('wheel', e => {
+  e.preventDefault();
+  targetCamDist = T.MathUtils.clamp(targetCamDist + e.deltaY * 0.005, 2.5, 16);
+}, {passive: false});
+
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+const clock = new T.Clock();
+let hekaWeight = 0;
+let ankhWeight = 0;
+let sopdetWeight = 0;
+let particleTimer = 0;
+let rippleTimer = 0;
+
+function update() {
+  const dt = Math.min(clock.getDelta(), 0.05);
+  const t = clock.getElapsedTime();
+
+  const hoverY = Math.sin(t * 1.5) * 0.1;
+  isis.body.position.y = 1.15 + hoverY;
+  isis.crown.rotation.y = Math.sin(t) * 0.05;
+
+  // Lógica das Poses
+  if (mode === 'majestade') {
+    isis.rightArm.armRoot.rotation.set(-0.2, 0.2, 1.35 + Math.sin(t*2)*0.05);
+    isis.rightArm.elbow.rotation.set(0, 0, 0.6);
+    isis.leftArm.armRoot.rotation.set(-0.2, -0.2, -1.35 - Math.cos(t*2)*0.05);
+    isis.leftArm.elbow.rotation.set(0, 0, -0.6);
+  } else if (mode === 'heka') {
+    isis.rightArm.armRoot.rotation.set(-1.2, 0.2, 0.3);
+    isis.rightArm.elbow.rotation.set(0, 0, 0);
+    isis.leftArm.armRoot.rotation.set(-0.2, -0.2, -1.6);
+    isis.leftArm.elbow.rotation.set(0, 0, -0.2);
+  } else if (mode === 'sopdet') {
+    isis.rightArm.armRoot.rotation.set(-0.5, 0.1, 2.4 + Math.sin(t*3)*0.05);
+    isis.rightArm.elbow.rotation.set(0, 0, 0.2);
+    isis.leftArm.armRoot.rotation.set(-0.5, -0.1, -2.4 - Math.cos(t*3)*0.05);
+    isis.leftArm.elbow.rotation.set(0, 0, -0.2);
+  } else if (mode === 'ankh') {
+    // Cruza os braços (asas fecham ao redor)
+    isis.rightArm.armRoot.rotation.set(-0.8, -0.6, 0.3);
+    isis.rightArm.elbow.rotation.set(-1.5, 0, 0);
+    isis.leftArm.armRoot.rotation.set(-0.8, 0.6, -0.3);
+    isis.leftArm.elbow.rotation.set(-1.5, 0, 0);
+  }
+
+  // Transições de Poderes
+  hekaWeight = T.MathUtils.damp(hekaWeight, mode === 'heka' ? 1 : 0, 4, dt);
+  sopdetWeight = T.MathUtils.damp(sopdetWeight, mode === 'sopdet' ? 1 : 0, 4, dt);
+  ankhWeight = T.MathUtils.damp(ankhWeight, mode === 'ankh' ? 1 : 0, 4, dt);
+
+  // Efeitos Heka
+  isis.tyetSymbol.scale.setScalar(Math.max(0.01, hekaWeight * 1.5));
+  isis.tyetSymbol.rotation.y += dt * 2;
+  
+  // Efeitos Sopdet
+  starBeam.material.opacity = sopdetWeight * 0.85;
+  starBeam.rotation.y += dt * 3;
+  if (mode === 'sopdet') {
+    rippleTimer -= dt;
+    if(rippleTimer <= 0) { rippleTimer = 0.5; spawnRipple(); }
+  }
+
+  // Efeitos Ankh
+  isis.ankhAura.material.opacity = ankhWeight * 0.4;
+  isis.ankhAura.scale.setScalar(1 + Math.sin(t*5)*0.05);
+
+  // Spawn Partículas
+  if (mode === 'heka' || mode === 'ankh') {
+    particleTimer -= dt;
+    if (particleTimer <= 0) {
+      particleTimer = 0.15;
+      spawnParticle(mode);
+    }
+  }
+
+  // Update Partículas
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.life -= dt;
+    p.mesh.position.y += p.vy * dt;
+    p.mesh.rotation.y += p.rot * dt;
+    if(p.isAnkh) p.mesh.scale.setScalar(p.life);
+    else p.mesh.scale.setScalar(p.life * 0.5);
+
+    if (p.life <= 0) {
+      scene.remove(p.mesh);
+      particles.splice(i, 1);
+    }
+  }
+
+  // Update Ripples
+  for (let i = waterRipples.length - 1; i >= 0; i--) {
+    const r = waterRipples[i];
+    r.life -= dt;
+    r.mesh.scale.setScalar(1 + (1 - r.life) * 4);
+    r.mesh.material.opacity = r.life * 0.8;
+    if (r.life <= 0) {
+      scene.remove(r.mesh);
+      waterRipples.splice(i, 1);
+    }
+  }
+
+  // Luz Mágica
+  let targetIntensity = 0;
+  if (mode === 'heka') targetIntensity = 4;
+  else if (mode === 'sopdet') targetIntensity = 5;
+  else if (mode === 'ankh') targetIntensity = 3;
+  
+  magicLight.intensity = T.MathUtils.damp(magicLight.intensity, targetIntensity, 4, dt);
+  if(mode === 'sopdet') {
+    magicLight.position.set(0, 4, 0);
+    magicLight.color.setHex(0xe0f2fe);
+  } else {
+    const tmpV = new T.Vector3();
+    isis.magicNode.getWorldPosition(tmpV);
+    magicLight.position.copy(tmpV);
+    magicLight.color.setHex(mode === 'ankh' ? 0x10b981 : 0x2dd4bf);
+  }
+
+  // Câmera
+  camDist = T.MathUtils.damp(camDist, targetCamDist, 6, dt);
+  if (!dragging && !focusFace) camAngle += dt * 0.04;
+  const targetLook = focusFace ? new T.Vector3(0, 2.6 + hoverY, 0) : new T.Vector3(0, 1.8, 0);
+  
+  const hDist = Math.cos(camPitch) * camDist;
+  const vDist = Math.sin(camPitch) * camDist;
+  camera.position.set(targetLook.x + Math.sin(camAngle)*hDist, targetLook.y + vDist, targetLook.z + Math.cos(camAngle)*hDist);
+  camera.lookAt(targetLook);
+
+  renderer.render(scene, camera);
+  requestAnimationFrame(update);
+}
+
+update();
+</script>
+</body>
+</html>
