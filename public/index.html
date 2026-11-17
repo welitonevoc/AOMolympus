@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Age of Mythology: Olympus — Hub 3D</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --gold: #facc15;
+      --teal: #2dd4bf;
+      --orange: #ea580c;
+      --bg: #0b0f19;
+      --card: rgba(18, 26, 43, 0.85);
+      --border: rgba(255, 255, 255, 0.12);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: radial-gradient(circle at 50% 20%, #152238 0%, var(--bg) 80%);
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      color: #f1f5f9;
+      min-height: 100vh;
+      padding: 24px 16px;
+    }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+    h1 {
+      font-size: 26px;
+      color: var(--gold);
+      letter-spacing: 0.04em;
+      margin-bottom: 6px;
+    }
+    p.sub {
+      font-size: 14px;
+      color: #94a3b8;
+    }
+    .section-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #cbd5e1;
+      margin: 24px 0 12px 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 14px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      text-decoration: none;
+      color: inherit;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      transition: all 0.2s ease;
+      backdrop-filter: blur(10px);
+    }
+    .card:hover {
+      transform: translateY(-2px);
+      border-color: var(--gold);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    }
+    .card.zeus { border-color: rgba(250, 204, 21, 0.4); }
+    .card.poseidon { border-color: rgba(45, 212, 191, 0.4); }
+    .card.hades { border-color: rgba(234, 88, 12, 0.4); }
+    .card-title {
+      font-size: 16px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .card.zeus .card-title { color: #facc15; }
+    .card.poseidon .card-title { color: #2dd4bf; }
+    .card.hades .card-title { color: #fb923c; }
+    .card-desc {
+      font-size: 12px;
+      color: #94a3b8;
+      line-height: 1.4;
+    }
+    .badge {
+      align-self: flex-start;
+      margin-top: 4px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.08);
+      color: #cbd5e1;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🏛️ Age of Mythology: Olympus</h1>
+      <p class="sub">Visualizadores 3D Interativos dos Guerreiros & Deuses</p>
+    </header>
+
+    <div class="section-title">🛡️ Unidades Hoplitas (Tiers T1–T4)</div>
+    <div class="grid">
+      <a class="card zeus" href="hoplita.html">
+        <div class="card-title">⚡ Hoplitas de Zeus</div>
+        <div class="card-desc">Tiers T1–T4 com Couraça de Ouro Olímpico, Raio Sagrado, Guarda Falange e Defesa de Escudo.</div>
+        <span class="badge">T1–T4 • Céus</span>
+      </a>
+      <a class="card poseidon" href="hoplita_poseidon.html">
+        <div class="card-title">🔱 Hoplitas de Poseidon</div>
+        <div class="card-desc">Tiers Costeiro, Oricalco, Atlante e Abissal. Lança-Tridente, Muralha de Coral e Vórtice Aquático.</div>
+        <span class="badge">T1–T4 • Mares</span>
+      </a>
+      <a class="card hades" href="hoplita_hades.html">
+        <div class="card-title">💀 Hoplitas de Hades</div>
+        <div class="card-desc">Tiers Umbral, Estígio, Ouro Sombrio e Tártaro. Bidente de Almas, Chamas e Égide do Tártaro.</div>
+        <span class="badge">T1–T4 • Submundo</span>
+      </a>
+    </div>
+
+    <div class="section-title">👑 Deuses Maiores & Menores (3D)</div>
+    <div class="grid">
+      <a class="card" href="zeus.html">
+        <div class="card-title">⚡ Zeus</div>
+        <div class="card-desc">Pai dos Deuses, Templo Olímpico e Raios Divinos.</div>
+      </a>
+      <a class="card" href="poseidon.html">
+        <div class="card-title">🌊 Poseidon</div>
+        <div class="card-desc">Senhor dos Oceanos, Santuário Costeiro e Tridente Titânico.</div>
+      </a>
+      <a class="card" href="hades.html">
+        <div class="card-title">🔥 Hades</div>
+        <div class="card-desc">Soberano do Submundo, Portões do Tártaro e Tochas de Almas.</div>
+      </a>
+      <a class="card" href="ares.html">
+        <div class="card-title">⚔️ Ares</div>
+        <div class="card-desc">Deus da Guerra Selvagem.</div>
+      </a>
+      <a class="card" href="atena.html">
+        <div class="card-title">🦉 Atena</div>
+        <div class="card-desc">Deusa da Sabedoria e Estratégia Bélica.</div>
+      </a>
+      <a class="card" href="apolo.html">
+        <div class="card-title">☀️ Apolo</div>
+        <div class="card-desc">Deus da Luz, Música e Arco Solar.</div>
+      </a>
+      <a class="card" href="artemis.html">
+        <div class="card-title">🏹 Ártemis</div>
+        <div class="card-desc">Deusa da Caça e Vida Selvagem.</div>
+      </a>
+      <a class="card" href="afrodite.html">
+        <div class="card-title">🕊️ Afrodite</div>
+        <div class="card-desc">Deusa da Beleza e Graça.</div>
+      </a>
+      <a class="card" href="hefesto.html">
+        <div class="card-title">🔨 Hefesto</div>
+        <div class="card-desc">Ferreiro dos Deuses e Forja do Vulcão.</div>
+      </a>
+    </div>
+  </div>
+</body>
+</html>

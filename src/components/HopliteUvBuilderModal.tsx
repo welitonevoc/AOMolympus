@@ -73,6 +73,20 @@ import {
   ZeusHopliteAction,
 } from '../civilizacao/gregos/zeusHopliteModel';
 import {
+  animatePoseidonHoplite,
+  buildPoseidonHoplite,
+  createPoseidonHopliteArena,
+  getCachedPoseidonHopliteTextures,
+  PoseidonHopliteAction,
+} from '../civilizacao/gregos/poseidonHopliteModel';
+import {
+  animateHadesHoplite,
+  buildHadesHoplite,
+  createHadesHopliteArena,
+  getCachedHadesHopliteTextures,
+  HadesHopliteAction,
+} from '../civilizacao/gregos/hadesHopliteModel';
+import {
   animateZeus,
   buildZeus,
   createZeusTempleEnvironment,
@@ -1898,24 +1912,83 @@ export function HopliteUvBuilderModal({
             animateRa(raGod, dt, simTime, raModeRef.current);
           };
         } else if (selectedCiv === 'greek' && selectedUnit === 'hoplite') {
-          scene.background = new THREE.Color(0x132644);
-          scene.fog = new THREE.FogExp2(0x132644, 0.02);
+          if (selectedMajorGod === 'Poseidon') {
+            scene.background = new THREE.Color(0x062336);
+            scene.fog = new THREE.FogExp2(0x062336, 0.02);
 
-          const hTex = getCachedZeusHopliteTextures();
-          const hopliteRig = buildZeusHoplite(hTex, (activeTier as HopliteTierId) || 3);
-          group = hopliteRig.root;
-          group.scale.setScalar(0.95);
-          const arena = createZeusHopliteArena(hTex);
-          environmentGroup.add(arena);
+            const pTex = getCachedPoseidonHopliteTextures();
+            const hopliteRig = buildPoseidonHoplite(pTex, (activeTier as HopliteTierId) || 3);
+            group = hopliteRig.root;
+            group.scale.setScalar(0.95);
+            const arena = createPoseidonHopliteArena(pTex);
+            environmentGroup.add(arena);
 
-          group.userData.setArmorTier = (tier: number) => {
-            hopliteRig.setTier(tier as HopliteTierId);
-          };
-          group.userData.animatePose = (dt: number) => {
-            animateZeusHoplite(hopliteRig, dt, simTime, hopliteActionRef.current, (p) => {
-              spawnSpark(p);
-            });
-          };
+            group.userData.setArmorTier = (tier: number) => {
+              hopliteRig.setTier(tier as HopliteTierId);
+            };
+            group.userData.animatePose = (dt: number) => {
+              animatePoseidonHoplite(
+                hopliteRig,
+                dt,
+                simTime,
+                hopliteActionRef.current as PoseidonHopliteAction,
+                (p) => {
+                  spawnSpark(p);
+                }
+              );
+            };
+          } else if (selectedMajorGod === 'Hades') {
+            scene.background = new THREE.Color(0x090712);
+            scene.fog = new THREE.FogExp2(0x090712, 0.022);
+
+            const hTex = getCachedHadesHopliteTextures();
+            const hopliteRig = buildHadesHoplite(hTex, (activeTier as HopliteTierId) || 3);
+            group = hopliteRig.root;
+            group.scale.setScalar(0.95);
+            const { arena, torches } = createHadesHopliteArena(hTex);
+            environmentGroup.add(arena);
+
+            group.userData.setArmorTier = (tier: number) => {
+              hopliteRig.setTier(tier as HopliteTierId);
+            };
+            group.userData.animatePose = (dt: number) => {
+              torches.forEach((tr) => {
+                tr.mesh.scale.set(
+                  1 + Math.sin(simTime * 11 + tr.phase) * 0.15,
+                  1 + Math.cos(simTime * 13 + tr.phase) * 0.22,
+                  1
+                );
+              });
+              animateHadesHoplite(
+                hopliteRig,
+                dt,
+                simTime,
+                hopliteActionRef.current as HadesHopliteAction,
+                (p) => {
+                  spawnSpark(p);
+                }
+              );
+            };
+          } else {
+            scene.background = new THREE.Color(0x132644);
+            scene.fog = new THREE.FogExp2(0x132644, 0.02);
+
+            const hTex = getCachedZeusHopliteTextures();
+            const hopliteRig = buildZeusHoplite(hTex, (activeTier as HopliteTierId) || 3);
+            group = hopliteRig.root;
+            group.scale.setScalar(0.95);
+            const arena = createZeusHopliteArena(hTex);
+            environmentGroup.add(arena);
+
+            group.userData.setArmorTier = (tier: number) => {
+              hopliteRig.setTier(tier as HopliteTierId);
+            };
+            group.userData.animatePose = (dt: number) => {
+              animateZeusHoplite(hopliteRig, dt, simTime, hopliteActionRef.current, (p) => {
+                spawnSpark(p);
+              });
+            };
+          }
         } else if (
           selectedCiv === 'greek' &&
           (selectedUnit === 'hipaspist' || selectedUnit === 'myrmidon')
@@ -4212,24 +4285,51 @@ export function HopliteUvBuilderModal({
           ) : galleryCategory === 'unit' && selectedCiv === 'greek' && selectedUnit === 'hoplite' ? (
             <>
               {(
-                [
-                  { id: 'guarda', label: 'Guarda Falange', icon: Shield },
-                  { id: 'marcha', label: 'Marcha', icon: Play },
-                  { id: 'corrida', label: 'Corrida', icon: Wind },
-                  { id: 'ataque', label: 'Ataque Lança', icon: Zap },
-                  { id: 'defesa', label: 'Defesa Escudo', icon: Shield },
-                ] as const
+                selectedMajorGod === 'Poseidon'
+                  ? [
+                      { id: 'guarda', label: 'Guarda Marinha', icon: Shield },
+                      { id: 'marcha', label: 'Marcha', icon: Play },
+                      { id: 'corrida', label: 'Corrida', icon: Wind },
+                      { id: 'ataque', label: 'Estocada Tridente', icon: Zap },
+                      { id: 'defesa', label: 'Muralha de Coral', icon: Shield },
+                    ]
+                  : selectedMajorGod === 'Hades'
+                  ? [
+                      { id: 'guarda', label: 'Guarda Sombria', icon: Shield },
+                      { id: 'marcha', label: 'Marcha', icon: Play },
+                      { id: 'corrida', label: 'Corrida', icon: Wind },
+                      { id: 'ataque', label: 'Estocada Bidente', icon: Zap },
+                      { id: 'defesa', label: 'Égide do Tártaro', icon: Shield },
+                    ]
+                  : [
+                      { id: 'guarda', label: 'Guarda Falange', icon: Shield },
+                      { id: 'marcha', label: 'Marcha', icon: Play },
+                      { id: 'corrida', label: 'Corrida', icon: Wind },
+                      { id: 'ataque', label: 'Ataque Lança', icon: Zap },
+                      { id: 'defesa', label: 'Defesa Escudo', icon: Shield },
+                    ]
               ).map((act) => {
                 const Icon = act.icon;
+                const isPoseidon = selectedMajorGod === 'Poseidon';
+                const isHades = selectedMajorGod === 'Hades';
+                const activeColor = isPoseidon
+                  ? 'bg-teal-400 text-slate-950 shadow'
+                  : isHades
+                  ? 'bg-emerald-500 text-slate-950 shadow'
+                  : 'bg-amber-400 text-slate-950 shadow';
+                const inactiveColor = isPoseidon
+                  ? 'border border-teal-400/30 text-teal-200 hover:bg-teal-400/15'
+                  : isHades
+                  ? 'border border-emerald-400/30 text-emerald-200 hover:bg-emerald-400/15'
+                  : 'border border-amber-400/30 text-amber-200 hover:bg-amber-400/15';
+
                 return (
                   <button
                     key={act.id}
                     type="button"
-                    onClick={() => setHopliteAction(act.id)}
+                    onClick={() => setHopliteAction(act.id as ZeusHopliteAction)}
                     className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
-                      hopliteAction === act.id
-                        ? 'bg-amber-400 text-slate-950 shadow'
-                        : 'border border-amber-400/30 text-amber-200 hover:bg-amber-400/15'
+                      hopliteAction === act.id ? activeColor : inactiveColor
                     }`}
                   >
                     <Icon className="h-3.5 w-3.5" />
