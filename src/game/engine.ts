@@ -1741,7 +1741,16 @@ export class AoMEngine {
           speedMult += 0.15;
         }
       }
-      if (kind === 'norse_dwarf') gatherGoldMult += 0.28;
+      if (kind === 'norse_dwarf') {
+        const isThor =
+          team === 'player'
+            ? this.majorGodName.toLowerCase() === 'thor'
+            : PANTHEONS[this.enemyPantheon].deity.toLowerCase() === 'thor';
+        // Authentic AoM Norse Dwarf economy: +30% Gold gather rate (-20% Food/Wood), or Thor's Dwarves (+38% Gold, nearly equal Food/Wood)
+        gatherGoldMult += isThor ? 0.38 : 0.3;
+        gatherWoodMult -= isThor ? 0.04 : 0.2;
+        gatherFoodMult -= isThor ? 0.04 : 0.2;
+      }
       if (has('hand_axe')) gatherWoodMult += 0.2;
       if (has('pickaxe')) gatherGoldMult += 0.2;
       if (has('plow')) gatherFoodMult += 0.2;
@@ -2843,12 +2852,24 @@ export class AoMEngine {
       this.spawnPillarVfx(mine.mesh.position, 0xfacc15, 1.8);
       this.spawnRingVfx(mine.mesh.position, 7.5, 0xf59e0b, 1.4);
       for (const u of this.units.values()) {
-        if (u.team === 'player' && u.kind === 'villager' && u.state === 'idle' && u.mesh.position.distanceTo(mine.mesh.position) <= 22) {
+        if (
+          u.team === 'player' &&
+          (u.kind === 'villager' || u.kind === 'norse_dwarf') &&
+          u.state === 'idle' &&
+          u.mesh.position.distanceTo(mine.mesh.position) <= 24
+        ) {
           u.state = 'gather';
           u.targetNodeId = mine.id;
           u.gatherResourceType = 'gold';
           u.lastGatherPos = mine.mesh.position.clone();
           u.waypoints = [];
+        } else if (
+          u.team === 'player' &&
+          u.kind === 'ox_cart' &&
+          u.state === 'idle' &&
+          u.mesh.position.distanceTo(mine.mesh.position) <= 26
+        ) {
+          this.stationOxCartNearTarget(u, mine.mesh.position);
         }
       }
       this.notifyStatus(`${spec.name}! Nova Mina de Ouro (1000 Ouro) brotou da terra!`);
@@ -3609,7 +3630,11 @@ export class AoMEngine {
   public selectAllCombatUnits() {
     const selectedCombat: UnitEntity[] = [];
     for (const u of this.units.values()) {
-      const sel = u.team === 'player' && u.kind !== 'villager';
+      const sel =
+        u.team === 'player' &&
+        u.kind !== 'villager' &&
+        u.kind !== 'norse_dwarf' &&
+        u.kind !== 'ox_cart';
       u.selected = sel;
       if (sel) selectedCombat.push(u);
     }
@@ -3633,7 +3658,11 @@ export class AoMEngine {
     for (const f of this.fauna.values()) f.selected = false;
 
     const idleVillagers = [...this.units.values()].filter(
-      (u) => u.team === 'player' && u.kind === 'villager' && u.state === 'idle' && u.hp > 0
+      (u) =>
+        u.team === 'player' &&
+        (u.kind === 'villager' || u.kind === 'norse_dwarf') &&
+        u.state === 'idle' &&
+        u.hp > 0
     );
     if (idleVillagers.length > 0) {
       const target = idleVillagers[this.idleVillagerCycleIndex % idleVillagers.length];
@@ -3644,7 +3673,7 @@ export class AoMEngine {
       this.emitHudSnapshot();
       return;
     }
-    this.notifyStatus('Todos os aldeões estão trabalhando.');
+    this.notifyStatus('Todos os coletores e anões estão trabalhando.');
     this.emitHudSnapshot();
   }
 
@@ -3657,7 +3686,13 @@ export class AoMEngine {
     for (const f of this.fauna.values()) f.selected = false;
 
     const idleMilitary = [...this.units.values()].filter(
-      (u) => u.team === 'player' && u.kind !== 'villager' && u.state === 'idle' && u.hp > 0
+      (u) =>
+        u.team === 'player' &&
+        u.kind !== 'villager' &&
+        u.kind !== 'norse_dwarf' &&
+        u.kind !== 'ox_cart' &&
+        u.state === 'idle' &&
+        u.hp > 0
     );
     if (idleMilitary.length > 0) {
       const target = idleMilitary[this.idleMilitaryCycleIndex % idleMilitary.length];
@@ -4302,7 +4337,9 @@ export class AoMEngine {
     const picked = this.pickEntityFromEvent(e.clientX, e.clientY);
     const additive = e.shiftKey;
     const selectedPlayerUnits = [...this.units.values()].filter((u) => u.team === 'player' && u.selected);
-    const currentVillagers = selectedPlayerUnits.filter((u) => u.kind === 'villager');
+    const currentVillagers = selectedPlayerUnits.filter(
+      (u) => u.kind === 'villager' || u.kind === 'norse_dwarf'
+    );
     if (currentVillagers.length > 0) {
       this.lastSelectedVillagerIds = currentVillagers.map((u) => u.id);
     }
@@ -4362,9 +4399,14 @@ export class AoMEngine {
         } else {
           u.selected = true;
         }
-        if (u.team === 'player' && u.kind === 'villager') {
+        if (u.team === 'player' && (u.kind === 'villager' || u.kind === 'norse_dwarf')) {
           this.lastSelectedVillagerIds = [...this.units.values()]
-            .filter((v) => v.team === 'player' && v.kind === 'villager' && v.selected)
+            .filter(
+              (v) =>
+                v.team === 'player' &&
+                (v.kind === 'villager' || v.kind === 'norse_dwarf') &&
+                v.selected
+            )
             .map((v) => v.id);
         }
         this.lastClickTime = now;
@@ -4440,7 +4482,7 @@ export class AoMEngine {
       u.selected = inside;
       if (inside) {
         selectedGroup.push(u);
-        if (u.kind === 'villager') selectedVills.push(u.id);
+        if (u.kind === 'villager' || u.kind === 'norse_dwarf') selectedVills.push(u.id);
       }
     }
     if (selectedVills.length > 0) {
@@ -4744,20 +4786,27 @@ export class AoMEngine {
     }
   }
 
-  private getFallbackVillagers(targetPos: THREE.Vector3): UnitEntity[] {
+  private getFallbackVillagers(targetPos: THREE.Vector3, resourceType?: ResourceType): UnitEntity[] {
     const remembered = this.lastSelectedVillagerIds
       .map((id) => this.units.get(id))
-      .filter((u): u is UnitEntity => Boolean(u && u.team === 'player' && u.kind === 'villager'));
+      .filter((u): u is UnitEntity =>
+        Boolean(u && u.team === 'player' && (u.kind === 'villager' || u.kind === 'norse_dwarf'))
+      );
     if (remembered.length > 0) return remembered;
 
-    const allVills = [...this.units.values()].filter((u) => u.team === 'player' && u.kind === 'villager');
+    const allVills = [...this.units.values()].filter(
+      (u) => u.team === 'player' && (u.kind === 'villager' || u.kind === 'norse_dwarf')
+    );
     const idleVills = allVills.filter((u) => u.state === 'idle');
     const pool = idleVills.length > 0 ? idleVills : allVills;
-    pool.sort(
-      (a, b) =>
-        Math.hypot(a.mesh.position.x - targetPos.x, a.mesh.position.z - targetPos.z) -
-        Math.hypot(b.mesh.position.x - targetPos.x, b.mesh.position.z - targetPos.z)
-    );
+    pool.sort((a, b) => {
+      const distA = Math.hypot(a.mesh.position.x - targetPos.x, a.mesh.position.z - targetPos.z);
+      const distB = Math.hypot(b.mesh.position.x - targetPos.x, b.mesh.position.z - targetPos.z);
+      // Prioritize Norse Dwarves for Gold Mines and regular Gatherers for Wood/Food
+      const dwarfPrefA = resourceType === 'gold' ? (a.kind === 'norse_dwarf' ? -10 : 0) : a.kind === 'norse_dwarf' ? 6 : 0;
+      const dwarfPrefB = resourceType === 'gold' ? (b.kind === 'norse_dwarf' ? -10 : 0) : b.kind === 'norse_dwarf' ? 6 : 0;
+      return distA + dwarfPrefA - (distB + dwarfPrefB);
+    });
     return pool.slice(0, Math.min(2, pool.length));
   }
 
@@ -5115,9 +5164,11 @@ export class AoMEngine {
       }
       if (targetB && targetB.team === 'player' && targetB.isConstructed && targetB.kind === 'farm') {
         let orderedFarm = false;
-        const farmers = selectedPlayerUnits.some((u) => u.kind === 'villager' || u.kind === 'norse_dwarf')
+        const farmers = selectedPlayerUnits.some(
+          (u) => u.kind === 'villager' || u.kind === 'norse_dwarf' || u.kind === 'ox_cart'
+        )
           ? selectedPlayerUnits
-          : this.getFallbackVillagers(targetB.mesh.position);
+          : this.getFallbackVillagers(targetB.mesh.position, 'food');
         for (const u of farmers) {
           if (u.kind === 'villager' || u.kind === 'norse_dwarf') {
             u.state = 'gather';
@@ -5129,6 +5180,9 @@ export class AoMEngine {
             u.waypoints = [];
             u.rallyFlagPos = null;
             u.repathTimer = 0;
+            orderedFarm = true;
+          } else if (u.kind === 'ox_cart') {
+            this.stationOxCartNearTarget(u, targetB.mesh.position);
             orderedFarm = true;
           }
         }
@@ -5173,13 +5227,18 @@ export class AoMEngine {
       const animal = this.fauna.get(picked.id);
       if (animal) {
         let ordered = false;
-        const hunters = selectedPlayerUnits.some((u) => u.kind === 'villager' || u.kind === 'norse_dwarf')
+        const hunters = selectedPlayerUnits.some(
+          (u) => u.kind === 'villager' || u.kind === 'norse_dwarf' || u.kind === 'ox_cart'
+        )
           ? selectedPlayerUnits
           : selectedPlayerUnits.length > 0
           ? selectedPlayerUnits
-          : this.getFallbackVillagers(animal.mesh.position);
+          : this.getFallbackVillagers(animal.mesh.position, 'food');
         for (const u of hunters) {
-          if (u.kind === 'villager' || u.kind === 'norse_dwarf' || !animal.isCarcass) {
+          if (u.kind === 'ox_cart') {
+            this.stationOxCartNearTarget(u, animal.mesh.position);
+            ordered = true;
+          } else if (u.kind === 'villager' || u.kind === 'norse_dwarf' || !animal.isCarcass) {
             u.state = 'hunt';
             u.targetFaunaId = animal.id;
             u.targetNodeId = null;
@@ -5205,9 +5264,11 @@ export class AoMEngine {
       const node = this.nodes.get(picked.id);
       if (node) {
         let ordered = false;
-        const gatherers = selectedPlayerUnits.some((u) => u.kind === 'villager' || u.kind === 'norse_dwarf')
+        const gatherers = selectedPlayerUnits.some(
+          (u) => u.kind === 'villager' || u.kind === 'norse_dwarf' || u.kind === 'ox_cart'
+        )
           ? selectedPlayerUnits
-          : this.getFallbackVillagers(node.mesh.position);
+          : this.getFallbackVillagers(node.mesh.position, node.resourceType);
         for (const u of gatherers) {
           if (u.kind === 'villager' || u.kind === 'norse_dwarf') {
             u.state = 'gather';
@@ -5220,8 +5281,13 @@ export class AoMEngine {
             u.rallyFlagPos = null;
             u.repathTimer = 0;
             ordered = true;
+          } else if (u.kind === 'ox_cart') {
+            this.stationOxCartNearTarget(u, node.mesh.position);
+            ordered = true;
           }
         }
+        // If Norse gatherers were commanded to a distant node and an idle Ox Cart is near the Town Center, escort them automatically
+        this.autoDispatchIdleOxCartToNode('player', node.mesh.position);
         if (ordered) {
           this.spawnRingVfx(node.mesh.position, 1.5, 0x4ade80, 0.5);
           this.triggerUnitVoice(gatherers, 'work');
@@ -6597,6 +6663,106 @@ export class AoMEngine {
     return best;
   }
 
+  /**
+   * Resolves the closest valid resource drop-off point for a team:
+   * Either a constructed Town Center OR a living Norse Ox Cart (`ox_cart`).
+   */
+  private findNearestDropOff(
+    team: TeamId,
+    pos: THREE.Vector3
+  ): { pos: THREE.Vector3; radius: number; dist: number; oxCart?: UnitEntity; townCenter?: BuildingEntity } | null {
+    const tc = this.findNearestTownCenter(team, pos);
+    let bestPos: THREE.Vector3 | null = tc ? tc.mesh.position : null;
+    let bestRadius = tc ? tc.radius : 2.2;
+    let bestDist = tc
+      ? Math.hypot(tc.mesh.position.x - pos.x, tc.mesh.position.z - pos.z)
+      : Infinity;
+    let bestOxCart: UnitEntity | undefined;
+    let bestTc: BuildingEntity | undefined = tc ?? undefined;
+
+    for (const other of this.units.values()) {
+      if (other.team === team && other.kind === 'ox_cart' && other.hp > 0) {
+        const oxD = Math.hypot(other.mesh.position.x - pos.x, other.mesh.position.z - pos.z);
+        if (oxD < bestDist) {
+          bestDist = oxD;
+          bestPos = other.mesh.position;
+          bestRadius = 1.05;
+          bestOxCart = other;
+          bestTc = undefined;
+        }
+      }
+    }
+
+    if (!bestPos) return null;
+    return { pos: bestPos, radius: bestRadius, dist: bestDist, oxCart: bestOxCart, townCenter: bestTc };
+  }
+
+  /**
+   * Commands an Ox Cart (`ox_cart`) to park right beside a resource node, fauna, or farm
+   * so Norse Gatherers and Dwarves have near-zero drop-off walking distance.
+   */
+  private stationOxCartNearTarget(oxCart: UnitEntity, resourcePos: THREE.Vector3) {
+    const dx = oxCart.mesh.position.x - resourcePos.x;
+    const dz = oxCart.mesh.position.z - resourcePos.z;
+    const len = Math.hypot(dx, dz);
+    const dirX = len > 0.2 ? dx / len : 0.7;
+    const dirZ = len > 0.2 ? dz / len : 0.7;
+    const parkX = THREE.MathUtils.clamp(resourcePos.x + dirX * 2.25, -PLAYABLE_HALF_SIZE + 2, PLAYABLE_HALF_SIZE - 2);
+    const parkZ = THREE.MathUtils.clamp(resourcePos.z + dirZ * 2.25, -PLAYABLE_HALF_SIZE + 2, PLAYABLE_HALF_SIZE - 2);
+    const dest = new THREE.Vector3(parkX, groundHeightAt(parkX, parkZ, this.mapId), parkZ);
+    oxCart.state = 'move';
+    oxCart.waypoints = [dest];
+    oxCart.targetPos = dest;
+    oxCart.rallyFlagPos = dest.clone();
+    oxCart.lastGatherPos = resourcePos.clone();
+  }
+
+  /**
+   * When a resource node or carcass depletes and gatherers advance to a replacement node,
+   * any friendly Ox Cart stationed near the depleted resource automatically follows them.
+   */
+  private repositionOxCartsNearResource(team: TeamId, oldResourcePos: THREE.Vector3, newResourcePos: THREE.Vector3) {
+    for (const u of this.units.values()) {
+      if (u.team === team && u.kind === 'ox_cart' && u.hp > 0) {
+        const d = Math.hypot(u.mesh.position.x - oldResourcePos.x, u.mesh.position.z - oldResourcePos.z);
+        if (d <= 9.5) {
+          this.stationOxCartNearTarget(u, newResourcePos);
+        }
+      }
+    }
+  }
+
+  /**
+   * Automatically dispatches an unstationed Ox Cart sitting near the Town Center
+   * if gatherers are sent to harvest a distant resource node that has no drop-off nearby.
+   */
+  private autoDispatchIdleOxCartToNode(team: TeamId, nodePos: THREE.Vector3) {
+    const drop = this.findNearestDropOff(team, nodePos);
+    if (drop && drop.dist <= 8.5) return; // Already has a Town Center or Ox Cart nearby
+
+    for (const u of this.units.values()) {
+      if (u.team === team && u.kind === 'ox_cart' && u.hp > 0 && u.state === 'idle') {
+        // Check if this Ox Cart is currently serving any active gatherer within 7.5m
+        let servingActiveGatherer = false;
+        for (const g of this.units.values()) {
+          if (
+            g.team === team &&
+            (g.kind === 'villager' || g.kind === 'norse_dwarf') &&
+            (g.state === 'gather' || g.state === 'hunt' || g.state === 'return') &&
+            g.mesh.position.distanceTo(u.mesh.position) <= 7.5
+          ) {
+            servingActiveGatherer = true;
+            break;
+          }
+        }
+        if (!servingActiveGatherer) {
+          this.stationOxCartNearTarget(u, nodePos);
+          return;
+        }
+      }
+    }
+  }
+
   private findNearestEnemy(team: TeamId, pos: THREE.Vector3, maxRange: number): { id: string; isBuilding: boolean; dist: number } | null {
     let bestId: string | null = null;
     let bestIsB = false;
@@ -7313,7 +7479,10 @@ export class AoMEngine {
                 pool[u.carryType] += u.carryAmount;
                 u.carryAmount = 0;
               }
-              const take = Math.min(5, node.amount);
+              const isDwarfGold = u.kind === 'norse_dwarf' && node.resourceType === 'gold';
+              const swingTake = isDwarfGold ? 6 : 5;
+              const maxCarry = isDwarfGold ? 20 : 15;
+              const take = Math.min(swingTake, node.amount);
               node.amount -= take;
               u.carryType = node.resourceType;
               u.carryAmount += take;
@@ -7326,10 +7495,11 @@ export class AoMEngine {
                 u.targetNodeId = replacement ? replacement.id : null;
                 if (replacement) {
                   u.lastGatherPos = replacement.mesh.position.clone();
+                  this.repositionOxCartsNearResource(u.team, depletedPos, replacement.mesh.position);
                 }
               }
               // Keep harvesting if carry bag isn't full and replacement node is right here, or return when full / no replacement
-              if (u.carryAmount >= 15 || !u.targetNodeId) {
+              if (u.carryAmount >= maxCarry || !u.targetNodeId) {
                 u.state = 'return';
                 u.waypoints = [];
                 u.repathTimer = 0;
@@ -7338,9 +7508,10 @@ export class AoMEngine {
           }
         }
       } else if (u.state === 'hunt') {
+        const isEconomicWorker = u.kind === 'villager' || u.kind === 'norse_dwarf';
         const animal = u.targetFaunaId ? this.fauna.get(u.targetFaunaId) : undefined;
         if (!animal || animal.foodAmount <= 0) {
-          if (u.kind !== 'villager') {
+          if (!isEconomicWorker) {
             u.state = 'idle';
             u.targetFaunaId = null;
             u.waypoints = [];
@@ -7352,6 +7523,7 @@ export class AoMEngine {
             u.targetFaunaId = nextAnimal.id;
             u.gatherResourceType = 'food';
             u.lastGatherPos = nextAnimal.mesh.position.clone();
+            this.repositionOxCartsNearResource(u.team, searchOrigin, nextAnimal.mesh.position);
             u.waypoints = [];
             u.repathTimer = 0;
           } else if (u.carryAmount > 0) {
@@ -7367,6 +7539,7 @@ export class AoMEngine {
               u.targetFaunaId = null;
               u.gatherResourceType = 'food';
               u.lastGatherPos = fallbackBerry.mesh.position.clone();
+              this.repositionOxCartsNearResource(u.team, searchOrigin, fallbackBerry.mesh.position);
               u.waypoints = [];
             } else {
               u.state = 'idle';
@@ -7414,7 +7587,7 @@ export class AoMEngine {
             } else {
               soundEngine.playSwordHit();
             }
-            const huntDmg = u.kind === 'villager' ? 24 : Math.max(stats.attack, 20);
+            const huntDmg = isEconomicWorker ? 24 : Math.max(stats.attack, 20);
             animal.hp -= huntDmg;
             if (fStats.retaliates && !animal.retaliateTargetId) {
               animal.retaliateTargetId = u.id;
@@ -7428,14 +7601,14 @@ export class AoMEngine {
               bodyGrp.rotation.z = Math.PI / 2.2;
               bodyGrp.position.y = 0.2;
               this.spawnRingVfx(animal.mesh.position, 1.2, 0xfb923c, 0.45);
-              if (u.kind !== 'villager') {
+              if (!isEconomicWorker) {
                 u.state = 'idle';
                 u.targetFaunaId = null;
               }
             }
           }
         } else {
-          if (u.kind !== 'villager') {
+          if (!isEconomicWorker) {
             u.state = 'idle';
             u.targetFaunaId = null;
             continue;
@@ -7469,6 +7642,7 @@ export class AoMEngine {
               u.targetFaunaId = nextAnimal ? nextAnimal.id : null;
               if (nextAnimal) {
                 u.lastGatherPos = nextAnimal.mesh.position.clone();
+                this.repositionOxCartsNearResource(u.team, carcassPos, nextAnimal.mesh.position);
               }
             }
             if (u.carryAmount >= 15 || !u.targetFaunaId) {
@@ -7479,35 +7653,28 @@ export class AoMEngine {
           }
         }
       } else if (u.state === 'return') {
-        const tc = this.findNearestTownCenter(u.team, u.mesh.position);
-        let dropPos: THREE.Vector3 | null = tc ? tc.mesh.position : null;
-        let dropRadius = tc ? tc.radius : 2.2;
-        let bestDropDist = tc
-          ? Math.hypot(tc.mesh.position.x - u.mesh.position.x, tc.mesh.position.z - u.mesh.position.z)
-          : Infinity;
-        for (const other of this.units.values()) {
-          if (other.team === u.team && other.kind === 'ox_cart' && other.hp > 0) {
-            const oxD = Math.hypot(other.mesh.position.x - u.mesh.position.x, other.mesh.position.z - u.mesh.position.z);
-            if (oxD < bestDropDist) {
-              bestDropDist = oxD;
-              dropPos = other.mesh.position;
-              dropRadius = 1.1;
-            }
-          }
-        }
-        if (!dropPos) {
+        const dropOff = this.findNearestDropOff(u.team, u.mesh.position);
+        if (!dropOff) {
           u.state = 'idle';
           u.waypoints = [];
           continue;
         }
-        const dist = bestDropDist;
-        if (dist > dropRadius + uRadius + 2.15) {
-          this.steerUnitAroundObstacles(u, dropPos, effectiveSpeed, dt);
+        const dist = dropOff.dist;
+        if (dist > dropOff.radius + uRadius + 2.15) {
+          this.steerUnitAroundObstacles(u, dropOff.pos, effectiveSpeed, dt);
         } else {
           const depositedType = u.carryType ?? u.gatherResourceType;
           if (u.carryType && u.carryAmount > 0) {
             const pool = u.team === 'player' ? this.resources : this.enemyResources;
             pool[u.carryType] += u.carryAmount;
+            if (dropOff.oxCart) {
+              // Track cumulative resources deposited into this mobile Ox Cart and show deposit ring
+              dropOff.oxCart.carryAmount += u.carryAmount;
+              dropOff.oxCart.carryType = u.carryType;
+              const ringHex =
+                u.carryType === 'gold' ? 0xfacc15 : u.carryType === 'wood' ? 0x4ade80 : 0xfb923c;
+              this.spawnRingVfx(dropOff.oxCart.mesh.position, 1.35, ringHex, 0.32);
+            }
             u.carryAmount = 0;
           }
           u.waypoints = [];
@@ -7847,7 +8014,13 @@ export class AoMEngine {
             }
           }
         }
-      } else if (u.state === 'idle' && u.kind !== 'villager' && this.treatyRemaining <= 0) {
+      } else if (
+        u.state === 'idle' &&
+        u.kind !== 'villager' &&
+        u.kind !== 'norse_dwarf' &&
+        u.kind !== 'ox_cart' &&
+        this.treatyRemaining <= 0
+      ) {
         const nearest = this.findNearestEnemy(u.team, u.mesh.position, 13.5);
         if (nearest) {
           u.state = 'attack';
@@ -7996,10 +8169,11 @@ export class AoMEngine {
 
           if (b.team === 'player') {
             this.stats.unitsTrained++;
+            const isSpawnedWorker = spawned.kind === 'villager' || spawned.kind === 'norse_dwarf';
             if (b.rallyPoint) {
-              // Check if rally point is on a resource node or huntable animal for Villagers
+              // Check if rally point is on a resource node or huntable animal for Villagers / Norse Dwarves / Ox Carts
               let assignedGather = false;
-              if (spawned.kind === 'villager') {
+              if (isSpawnedWorker || spawned.kind === 'ox_cart') {
                 let nearNode: ResourceNodeEntity | null = null;
                 let nearNodeD = 4.2;
                 for (const n of this.nodes.values()) {
@@ -8010,19 +8184,28 @@ export class AoMEngine {
                   }
                 }
                 if (nearNode) {
-                  spawned.state = 'gather';
-                  spawned.targetNodeId = nearNode.id;
-                  spawned.gatherResourceType = nearNode.resourceType;
-                  spawned.lastGatherPos = nearNode.mesh.position.clone();
+                  if (spawned.kind === 'ox_cart') {
+                    this.stationOxCartNearTarget(spawned, nearNode.mesh.position);
+                  } else {
+                    spawned.state = 'gather';
+                    spawned.targetNodeId = nearNode.id;
+                    spawned.gatherResourceType = nearNode.resourceType;
+                    spawned.lastGatherPos = nearNode.mesh.position.clone();
+                    this.autoDispatchIdleOxCartToNode('player', nearNode.mesh.position);
+                  }
                   assignedGather = true;
                 } else {
                   for (const f of this.fauna.values()) {
                     const d = Math.hypot(f.mesh.position.x - b.rallyPoint.x, f.mesh.position.z - b.rallyPoint.z);
                     if (d < 4.0) {
-                      spawned.state = 'hunt';
-                      spawned.targetFaunaId = f.id;
-                      spawned.gatherResourceType = 'food';
-                      spawned.lastGatherPos = f.mesh.position.clone();
+                      if (spawned.kind === 'ox_cart') {
+                        this.stationOxCartNearTarget(spawned, f.mesh.position);
+                      } else {
+                        spawned.state = 'hunt';
+                        spawned.targetFaunaId = f.id;
+                        spawned.gatherResourceType = 'food';
+                        spawned.lastGatherPos = f.mesh.position.clone();
+                      }
                       assignedGather = true;
                       break;
                     }
@@ -8044,14 +8227,21 @@ export class AoMEngine {
                   spawned.targetPos = spawned.waypoints.shift() ?? b.rallyPoint.clone();
                 }
               }
-            } else if (spawned.kind === 'villager') {
-              // Default auto-gather when no rally point is set
+            } else if (isSpawnedWorker) {
+              // Default auto-gather when no rally point is set: Norse Dwarves prioritize Gold Mines!
               let bestNode: ResourceNodeEntity | null = null;
-              let bestD = 26;
+              let bestScore = Infinity;
               for (const n of this.nodes.values()) {
                 const d = n.mesh.position.distanceTo(spawned.mesh.position);
-                if (d < bestD) {
-                  bestD = d;
+                if (d > 38) continue;
+                const score =
+                  spawned.kind === 'norse_dwarf'
+                    ? n.resourceType === 'gold'
+                      ? d - 20
+                      : d + 12
+                    : d;
+                if (score < bestScore) {
+                  bestScore = score;
                   bestNode = n;
                 }
               }
@@ -8060,6 +8250,22 @@ export class AoMEngine {
                 spawned.targetNodeId = bestNode.id;
                 spawned.gatherResourceType = bestNode.resourceType;
                 spawned.lastGatherPos = bestNode.mesh.position.clone();
+                this.autoDispatchIdleOxCartToNode('player', bestNode.mesh.position);
+              }
+            } else if (spawned.kind === 'ox_cart') {
+              // Auto-dispatch newly trained Ox Cart to the furthest active gatherer cluster lacking an Ox Cart
+              for (const g of this.units.values()) {
+                if (
+                  g.team === 'player' &&
+                  (g.kind === 'villager' || g.kind === 'norse_dwarf') &&
+                  g.lastGatherPos
+                ) {
+                  const drop = this.findNearestDropOff('player', g.lastGatherPos);
+                  if (!drop || drop.dist > 6.5) {
+                    this.stationOxCartNearTarget(spawned, g.lastGatherPos);
+                    break;
+                  }
+                }
               }
             }
 
@@ -8450,21 +8656,30 @@ export class AoMEngine {
     if (this.enemyAiTimer >= 3.2) {
       this.enemyAiTimer = 0;
 
-      // Send idle enemy villagers to gather
+      // Send idle enemy villagers & Norse Dwarves to gather (and escort them with enemy Ox Carts)
       for (const u of this.units.values()) {
-        if (u.team === 'enemy' && u.kind === 'villager' && u.state === 'idle') {
+        if (u.team === 'enemy' && (u.kind === 'villager' || u.kind === 'norse_dwarf') && u.state === 'idle') {
           let best: ResourceNodeEntity | null = null;
-          let bestD = 32;
+          let bestScore = 38;
           for (const n of this.nodes.values()) {
             const d = n.mesh.position.distanceTo(u.mesh.position);
-            if (d < bestD) {
-              bestD = d;
+            const score =
+              u.kind === 'norse_dwarf'
+                ? n.resourceType === 'gold'
+                  ? d - 16
+                  : d + 8
+                : d;
+            if (score < bestScore) {
+              bestScore = score;
               best = n;
             }
           }
           if (best) {
             u.state = 'gather';
             u.targetNodeId = best.id;
+            u.gatherResourceType = best.resourceType;
+            u.lastGatherPos = best.mesh.position.clone();
+            this.autoDispatchIdleOxCartToNode('enemy', best.mesh.position);
           }
         }
       }
@@ -8600,13 +8815,29 @@ export class AoMEngine {
         }
       }
 
-      // Train enemy soldiers
+      // Train enemy workers (and Norse Dwarves + Ox Carts when playing Norse)
       if (tc && tc.trainingQueue.length === 0) {
-        const enemyVillagers = [...this.units.values()].filter((u) => u.team === 'enemy' && u.kind === 'villager').length;
-        const villStats = this.unitStats('villager', 'enemy');
-        if (enemyVillagers < 4 && enemyPop.current < enemyPop.cap && this.canAfford(this.enemyResources, villStats.cost)) {
-          this.deductCost(this.enemyResources, villStats.cost);
-          tc.trainingQueue.push({ kind: 'villager', progress: 0, total: villStats.trainTime });
+        const enemyVillagers = [...this.units.values()].filter(
+          (u) => u.team === 'enemy' && (u.kind === 'villager' || u.kind === 'norse_dwarf')
+        ).length;
+        const enemyOxCarts = [...this.units.values()].filter(
+          (u) => u.team === 'enemy' && u.kind === 'ox_cart'
+        ).length;
+        const isEnemyNorse = this.enemyPantheon === 'norse' || this.enemyPantheon === 'jotunn';
+        if (isEnemyNorse && enemyOxCarts < 2 && enemyPop.current < enemyPop.cap) {
+          const oxStats = this.unitStats('ox_cart', 'enemy');
+          if (this.canAfford(this.enemyResources, oxStats.cost)) {
+            this.deductCost(this.enemyResources, oxStats.cost);
+            tc.trainingQueue.push({ kind: 'ox_cart', progress: 0, total: oxStats.trainTime });
+          }
+        } else if (enemyVillagers < 5 && enemyPop.current < enemyPop.cap) {
+          const workerKind: UnitKind =
+            isEnemyNorse && Math.random() < 0.45 ? 'norse_dwarf' : 'villager';
+          const villStats = this.unitStats(workerKind, 'enemy');
+          if (this.canAfford(this.enemyResources, villStats.cost)) {
+            this.deductCost(this.enemyResources, villStats.cost);
+            tc.trainingQueue.push({ kind: workerKind, progress: 0, total: villStats.trainTime });
+          }
         }
       }
 
@@ -8771,7 +9002,14 @@ export class AoMEngine {
     // Launch coordinated raid wave toward player TC (blocked during Treaty)
     if (this.treatyRemaining <= 0 && this.enemyWaveTimer <= 0) {
       this.enemyWaveTimer = this.difficulty === 'titan' ? 32 : this.difficulty === 'hard' ? 40 : 48;
-      const combatUnits = [...this.units.values()].filter((u) => u.team === 'enemy' && u.kind !== 'villager' && u.state === 'idle');
+      const combatUnits = [...this.units.values()].filter(
+        (u) =>
+          u.team === 'enemy' &&
+          u.kind !== 'villager' &&
+          u.kind !== 'norse_dwarf' &&
+          u.kind !== 'ox_cart' &&
+          u.state === 'idle'
+      );
       if (combatUnits.length >= 3) {
         const playerTc = this.findNearestTownCenter('player', new THREE.Vector3(0, 0, 0));
         const dest = playerTc ? playerTc.mesh.position : new THREE.Vector3(-34, 0, 34);
@@ -8821,6 +9059,30 @@ export class AoMEngine {
         build: 'Construindo',
         attack: 'Em combate',
       };
+      let unitTaskLabel = taskMap[primary.state];
+      if (primary.kind === 'ox_cart') {
+        let nearbyGatherers = 0;
+        for (const other of this.units.values()) {
+          if (
+            other.team === primary.team &&
+            (other.kind === 'villager' || other.kind === 'norse_dwarf') &&
+            other.mesh.position.distanceTo(primary.mesh.position) <= 10.5
+          ) {
+            nearbyGatherers++;
+          }
+        }
+        unitTaskLabel =
+          nearbyGatherers > 0
+            ? `Depósito Móvel Ativo · ${nearbyGatherers} coletor(es) próximos · ${primary.carryAmount} recursos recebidos`
+            : primary.state === 'move'
+            ? 'Reposicionando Caravana de Recursos'
+            : `Depósito Móvel de Recursos (${primary.carryAmount} recursos recebidos)`;
+      } else if (primary.kind === 'norse_dwarf' && primary.state === 'gather') {
+        unitTaskLabel =
+          primary.gatherResourceType === 'gold'
+            ? 'Minerando Ouro (+30% Especialização Anã)'
+            : 'Coletando recursos (-20% fora de Minas de Ouro)';
+      }
       const countsMap = new Map<UnitKind, { kind: UnitKind; name: string; count: number }>();
       for (const u of selUnits) {
         const uSpec = this.unitStats(u.kind, u.team);
@@ -8853,7 +9115,7 @@ export class AoMEngine {
         range: Number(stats.range.toFixed(1)),
         popCost: stats.popCost,
         armorLabel: `Corte ${hackPct}% · Perf ${piercePct}% · Esmag ${crushPct}%`,
-        taskLabel: taskMap[primary.state],
+        taskLabel: unitTaskLabel,
         screenPos: this.projectWorldToScreen(primary.mesh.position, 2.2),
         hasVillagerSelected: selUnits.some(
           (u) =>
@@ -9025,7 +9287,7 @@ export class AoMEngine {
       if (u.team !== team || u.hp <= 0) continue;
       const stats = this.unitStats(u.kind, team);
       const val = u.kind === 'titan' ? 1200 : this.costValue(stats.cost);
-      if (u.kind === 'villager') {
+      if (u.kind === 'villager' || u.kind === 'norse_dwarf' || u.kind === 'ox_cart') {
         economy += val * 0.2;
       } else {
         military += val * 0.2;
@@ -9103,9 +9365,9 @@ export class AoMEngine {
     let combatUnitCount = 0;
     for (const u of this.units.values()) {
       if (u.team === 'player' && u.hp > 0) {
-        if (u.kind === 'villager') {
+        if (u.kind === 'villager' || u.kind === 'norse_dwarf') {
           if (u.state === 'idle') idleVillagerCount++;
-        } else {
+        } else if (u.kind !== 'ox_cart') {
           combatUnitCount++;
           if (u.state === 'idle') idleMilitaryCount++;
         }
@@ -9938,7 +10200,7 @@ export class AoMEngine {
             placeMarker('sword', targetPos.x, targetPos.z, targetB ? 4.4 : 2.3);
           }
         }
-      } else if (u.kind === 'villager' && u.state === 'hunt' && u.targetFaunaId) {
+      } else if ((u.kind === 'villager' || u.kind === 'norse_dwarf') && u.state === 'hunt' && u.targetFaunaId) {
         const animal = this.fauna.get(u.targetFaunaId);
         if (animal) {
           if (u.selected) {
@@ -9949,13 +10211,13 @@ export class AoMEngine {
             placeMarker('food', animal.mesh.position.x, animal.mesh.position.z, 2.0);
           }
         }
-      } else if (u.kind === 'villager' && (u.state === 'gather' || u.state === 'return') && u.targetEntityId) {
+      } else if ((u.kind === 'villager' || u.kind === 'norse_dwarf') && (u.state === 'gather' || u.state === 'return') && u.targetEntityId) {
         const farmB = this.buildings.get(u.targetEntityId);
         if (farmB && farmB.kind === 'farm') {
           if (u.selected) {
             if (u.state === 'return') {
-              const tc = this.findNearestTownCenter('player', u.mesh.position);
-              if (tc) addTrailPath([u.mesh.position, tc.mesh.position], 0x38bdf8, false);
+              const drop = this.findNearestDropOff('player', u.mesh.position);
+              if (drop) addTrailPath([u.mesh.position, drop.pos], 0x38bdf8, false);
             } else {
               addTrailPath([u.mesh.position, farmB.mesh.position], 0x4ade80, false);
             }
@@ -9965,13 +10227,13 @@ export class AoMEngine {
             placeMarker('food', farmB.mesh.position.x, farmB.mesh.position.z, 2.2);
           }
         }
-      } else if (u.kind === 'villager' && (u.state === 'gather' || u.state === 'return') && u.targetNodeId) {
+      } else if ((u.kind === 'villager' || u.kind === 'norse_dwarf') && (u.state === 'gather' || u.state === 'return') && u.targetNodeId) {
         const node = this.nodes.get(u.targetNodeId);
         if (node) {
           if (u.selected) {
             if (u.state === 'return') {
-              const tc = this.findNearestTownCenter('player', u.mesh.position);
-              if (tc) addTrailPath([u.mesh.position, tc.mesh.position], 0x38bdf8, false);
+              const drop = this.findNearestDropOff('player', u.mesh.position);
+              if (drop) addTrailPath([u.mesh.position, drop.pos], 0x38bdf8, false);
             } else {
               addTrailPath(
                 [u.mesh.position, node.mesh.position],
@@ -9987,7 +10249,7 @@ export class AoMEngine {
             placeMarker(markerKind, node.mesh.position.x, node.mesh.position.z, node.kind === 'tree' ? 4.4 : 2.2);
           }
         }
-      } else if (u.kind === 'villager' && u.state === 'build' && u.targetEntityId) {
+      } else if (u.state === 'build' && u.targetEntityId) {
         const b = this.buildings.get(u.targetEntityId);
         if (b && !b.isConstructed) {
           if (u.selected) {
@@ -9998,7 +10260,10 @@ export class AoMEngine {
             placeMarker('build', b.mesh.position.x, b.mesh.position.z, 3.2);
           }
         }
-      } else if (u.state === 'idle' && (u.kind !== 'villager' || u.rallyFlagPos !== null)) {
+      } else if (
+        u.state === 'idle' &&
+        ((u.kind !== 'villager' && u.kind !== 'norse_dwarf' && u.kind !== 'ox_cart') || u.rallyFlagPos !== null)
+      ) {
         // Waiting troops display a rally/standby Flag
         if (!hasNearbyFlag(u.mesh.position.x, u.mesh.position.z)) {
           placedFlags.push({ x: u.mesh.position.x, z: u.mesh.position.z });
