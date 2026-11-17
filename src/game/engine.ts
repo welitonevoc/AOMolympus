@@ -1147,13 +1147,25 @@ export class AoMEngine {
       this.spawnUnit('priest', 'player', -29, 30);
       this.spawnUnit('egypt_spearman', 'player', -27, 29);
       this.spawnUnit('egypt_spearman', 'player', -25, 31);
+    } else if (this.pantheon === 'norse' || this.pantheon === 'jotunn') {
+      this.spawnUnit('ox_cart', 'player', -31, 35);
+      this.spawnUnit('norse_dwarf', 'player', -32, 37);
+      this.spawnUnit('hersir', 'player', -29, 30);
+      this.spawnUnit('ulfsark', 'player', -27, 29);
+      this.spawnUnit('ulfsark', 'player', -25, 31);
     } else {
       this.spawnUnit('hoplite', 'player', -27, 29);
       this.spawnUnit('hoplite', 'player', -25, 31);
     }
 
     if (this.gameType === 'regicide') {
-      const regent = this.spawnUnit(this.pantheon === 'egyptian' ? 'pharaoh' : 'hero', 'player', -32, 30);
+      const regentKind: UnitKind =
+        this.pantheon === 'egyptian'
+          ? 'pharaoh'
+          : this.pantheon === 'norse' || this.pantheon === 'jotunn'
+          ? 'hersir'
+          : 'hero';
+      const regent = this.spawnUnit(regentKind, 'player', -32, 30);
       this.regentUnitId = regent.id;
     }
 
@@ -1170,6 +1182,11 @@ export class AoMEngine {
       this.spawnUnit('pharaoh', 'enemy', 30, -30);
       this.spawnUnit('egypt_spearman', 'enemy', 25, -26);
       this.spawnUnit('egypt_spearman', 'enemy', 27, -24);
+    } else if (this.enemyPantheon === 'norse' || this.enemyPantheon === 'jotunn') {
+      this.spawnUnit('ox_cart', 'enemy', 32, -35);
+      this.spawnUnit('hersir', 'enemy', 29, -29);
+      this.spawnUnit('ulfsark', 'enemy', 25, -26);
+      this.spawnUnit('ulfsark', 'enemy', 27, -24);
     } else {
       this.spawnUnit('hoplite', 'enemy', 25, -26);
       this.spawnUnit('hoplite', 'enemy', 27, -24);
@@ -1305,6 +1322,7 @@ export class AoMEngine {
       this.camTarget.set(-32, 0, 32);
       this.camDesiredDistance = 36;
       this.camDistance = 36;
+      soundEngine.playAgeTransitionComplete(startAge, this.pantheon, false);
     }
   }
 
@@ -1677,7 +1695,12 @@ export class AoMEngine {
         kind === 'axeman' ||
         kind === 'chariot_archer' ||
         kind === 'camel_rider' ||
-        kind === 'war_elephant'
+        kind === 'war_elephant' ||
+        kind === 'ulfsark' ||
+        kind === 'throwing_axeman' ||
+        kind === 'raiding_cavalry' ||
+        kind === 'huskarl' ||
+        kind === 'jarl'
       ) {
         if (has('medium_soldiers')) {
           hpMult += 0.15;
@@ -1693,7 +1716,15 @@ export class AoMEngine {
         }
       }
       const unitSpec = getCivUnitSpec(this.teamPantheon(team), kind);
-      if (kind === 'siege' || kind === 'ram' || kind === 'siege_tower' || kind === 'egypt_catapult' || unitSpec.isHero) {
+      if (
+        kind === 'siege' ||
+        kind === 'ram' ||
+        kind === 'siege_tower' ||
+        kind === 'egypt_catapult' ||
+        kind === 'portable_ram' ||
+        kind === 'norse_ballista' ||
+        unitSpec.isHero
+      ) {
         if (has('burning_pitch')) atkMult += 0.25;
         if (has('engineers')) {
           hpMult += 0.3;
@@ -1710,6 +1741,7 @@ export class AoMEngine {
           speedMult += 0.15;
         }
       }
+      if (kind === 'norse_dwarf') gatherGoldMult += 0.28;
       if (has('hand_axe')) gatherWoodMult += 0.2;
       if (has('pickaxe')) gatherGoldMult += 0.2;
       if (has('plow')) gatherFoodMult += 0.2;
@@ -2604,7 +2636,7 @@ export class AoMEngine {
       this.advancingToAge = 5;
       this.ageAdvanceProgress = 0;
       this.ageAdvanceTotal = AGE_ADVANCE_TIMES[5];
-      soundEngine.playFanfare(false);
+      soundEngine.playAgeTransitionStart(5, this.pantheon);
       for (const b of this.buildings.values()) {
         if (b.team === 'player' && b.isConstructed && (b.kind === 'town_center' || b.kind === 'temple')) {
           this.spawnPillarVfx(b.mesh.position, 0xfacc15, 1.4);
@@ -2648,7 +2680,7 @@ export class AoMEngine {
     this.advancingToAge = nextAge;
     this.ageAdvanceProgress = 0;
     this.ageAdvanceTotal = AGE_ADVANCE_TIMES[nextAge] || 14;
-    soundEngine.playFanfare(false);
+    soundEngine.playAgeTransitionStart(nextAge, this.pantheon);
     this.notifyStatus(`Adorando ${minorSpec.name}! Avançando para a ${AGE_NAMES[nextAge]}...`);
     this.emitHudSnapshot();
   }
@@ -2695,7 +2727,11 @@ export class AoMEngine {
 
     this.deductCost(this.resources, spec.cost);
     this.activeTechResearch = { id: techId, progress: 0, total: spec.researchTime };
-    soundEngine.playSelect();
+    if (techId === 'secrets_of_titans') {
+      soundEngine.playAgeTransitionStart(5, this.pantheon);
+    } else {
+      soundEngine.playSelect();
+    }
     this.notifyStatus(`Pesquisando ${spec.name}...`);
     this.emitHudSnapshot();
   }
@@ -3274,6 +3310,18 @@ export class AoMEngine {
       case 'sphinx':
       case 'scarab':
       case 'avenger':
+      case 'hersir':
+      case 'ulfsark':
+      case 'huskarl':
+      case 'portable_ram':
+      case 'einherjar':
+      case 'frost_giant':
+      case 'mountain_giant':
+      case 'battle_boar':
+      case 'kraken':
+      case 'rock_troll':
+      case 'fenris_wolf':
+      case 'fafnir':
       case 'ram':
       case 'ajax':
       case 'jason':
@@ -3284,6 +3332,10 @@ export class AoMEngine {
       case 'cavalry':
       case 'prodromos':
       case 'camel_rider':
+      case 'raiding_cavalry':
+      case 'jarl':
+      case 'valkyrie':
+      case 'nidhogg':
       case 'roc':
       case 'bellerophon':
       case 'pegasus':
@@ -3301,6 +3353,12 @@ export class AoMEngine {
       case 'wadjet':
       case 'petsuchos':
       case 'mummy':
+      case 'godi':
+      case 'throwing_axeman':
+      case 'norse_ballista':
+      case 'troll':
+      case 'fire_giant':
+      case 'jormungand':
       case 'peltast':
       case 'archer':
       case 'gastraphetes':
@@ -3315,6 +3373,8 @@ export class AoMEngine {
       case 'siege':
         return 2;
       case 'villager':
+      case 'norse_dwarf':
+      case 'ox_cart':
         return 3;
     }
   }
@@ -4528,10 +4588,17 @@ export class AoMEngine {
     this.stats.buildingsBuilt++;
     soundEngine.playBuild();
 
-    // Assign selected villagers (or nearest idle/any villager) to construct
+    // Assign selected builders (villager, norse_dwarf, or Norse infantry) to construct
+    const canBuildUnit = (kind: UnitKind) =>
+      kind === 'villager' ||
+      kind === 'norse_dwarf' ||
+      kind === 'ulfsark' ||
+      kind === 'hersir' ||
+      kind === 'throwing_axeman' ||
+      kind === 'huskarl';
     let assigned = 0;
     for (const u of this.units.values()) {
-      if (u.team === 'player' && u.kind === 'villager' && u.selected) {
+      if (u.team === 'player' && canBuildUnit(u.kind) && u.selected) {
         u.state = 'build';
         u.targetEntityId = b.id;
         u.targetNodeId = null;
@@ -4547,7 +4614,7 @@ export class AoMEngine {
       let best: UnitEntity | null = null;
       let bestScore = Infinity;
       for (const u of this.units.values()) {
-        if (u.team === 'player' && u.kind === 'villager') {
+        if (u.team === 'player' && canBuildUnit(u.kind)) {
           const d = Math.hypot(u.mesh.position.x - b.mesh.position.x, u.mesh.position.z - b.mesh.position.z);
           const penalty = u.state === 'idle' ? 0 : u.state === 'build' ? 120 : 35;
           if (d + penalty < bestScore) {
@@ -5022,11 +5089,13 @@ export class AoMEngine {
       }
       if (targetB && targetB.team === 'player' && !targetB.isConstructed) {
         let orderedBuild = false;
-        const builders = selectedPlayerUnits.some((u) => u.kind === 'villager')
+        const isBuilderKind = (k: UnitKind) =>
+          k === 'villager' || k === 'norse_dwarf' || k === 'ulfsark' || k === 'hersir' || k === 'throwing_axeman' || k === 'huskarl';
+        const builders = selectedPlayerUnits.some((u) => isBuilderKind(u.kind))
           ? selectedPlayerUnits
           : this.getFallbackVillagers(targetB.mesh.position);
         for (const u of builders) {
-          if (u.kind === 'villager') {
+          if (isBuilderKind(u.kind)) {
             u.state = 'build';
             u.targetEntityId = targetB.id;
             u.targetNodeId = null;
@@ -5046,11 +5115,11 @@ export class AoMEngine {
       }
       if (targetB && targetB.team === 'player' && targetB.isConstructed && targetB.kind === 'farm') {
         let orderedFarm = false;
-        const farmers = selectedPlayerUnits.some((u) => u.kind === 'villager')
+        const farmers = selectedPlayerUnits.some((u) => u.kind === 'villager' || u.kind === 'norse_dwarf')
           ? selectedPlayerUnits
           : this.getFallbackVillagers(targetB.mesh.position);
         for (const u of farmers) {
-          if (u.kind === 'villager') {
+          if (u.kind === 'villager' || u.kind === 'norse_dwarf') {
             u.state = 'gather';
             u.targetEntityId = targetB.id;
             u.targetNodeId = null;
@@ -5074,8 +5143,10 @@ export class AoMEngine {
 
     if (picked.type === 'settlement' && picked.id) {
       const settlement = this.settlements.get(picked.id);
-      const villagers = selectedPlayerUnits.some((u) => u.kind === 'villager')
-        ? selectedPlayerUnits.filter((u) => u.kind === 'villager')
+      const isBuilderKind = (k: UnitKind) =>
+        k === 'villager' || k === 'norse_dwarf' || k === 'ulfsark' || k === 'hersir' || k === 'throwing_axeman' || k === 'huskarl';
+      const villagers = selectedPlayerUnits.some((u) => isBuilderKind(u.kind))
+        ? selectedPlayerUnits.filter((u) => isBuilderKind(u.kind))
         : this.getFallbackVillagers(settlement?.mesh.position ?? new THREE.Vector3());
       if (settlement && villagers.length > 0) {
         if (this.beginTownCenterOnSettlement(settlement, 'player', villagers)) {
@@ -5102,13 +5173,13 @@ export class AoMEngine {
       const animal = this.fauna.get(picked.id);
       if (animal) {
         let ordered = false;
-        const hunters = selectedPlayerUnits.some((u) => u.kind === 'villager')
+        const hunters = selectedPlayerUnits.some((u) => u.kind === 'villager' || u.kind === 'norse_dwarf')
           ? selectedPlayerUnits
           : selectedPlayerUnits.length > 0
           ? selectedPlayerUnits
           : this.getFallbackVillagers(animal.mesh.position);
         for (const u of hunters) {
-          if (u.kind === 'villager' || !animal.isCarcass) {
+          if (u.kind === 'villager' || u.kind === 'norse_dwarf' || !animal.isCarcass) {
             u.state = 'hunt';
             u.targetFaunaId = animal.id;
             u.targetNodeId = null;
@@ -5134,11 +5205,11 @@ export class AoMEngine {
       const node = this.nodes.get(picked.id);
       if (node) {
         let ordered = false;
-        const gatherers = selectedPlayerUnits.some((u) => u.kind === 'villager')
+        const gatherers = selectedPlayerUnits.some((u) => u.kind === 'villager' || u.kind === 'norse_dwarf')
           ? selectedPlayerUnits
           : this.getFallbackVillagers(node.mesh.position);
         for (const u of gatherers) {
-          if (u.kind === 'villager') {
+          if (u.kind === 'villager' || u.kind === 'norse_dwarf') {
             u.state = 'gather';
             u.targetNodeId = node.id;
             u.targetEntityId = null;
@@ -6557,6 +6628,7 @@ export class AoMEngine {
   private getUnitRadius(kind: UnitKind): number {
     switch (kind) {
       case 'villager':
+      case 'norse_dwarf':
         return 0.44;
       case 'hoplite':
       case 'hipaspist':
@@ -6564,6 +6636,10 @@ export class AoMEngine {
       case 'egypt_spearman':
       case 'axeman':
       case 'priest':
+      case 'ulfsark':
+      case 'throwing_axeman':
+      case 'huskarl':
+      case 'godi':
         return 0.48;
       case 'myrmidon':
       case 'nymph':
@@ -6571,9 +6647,13 @@ export class AoMEngine {
       case 'iron_dwarf':
       case 'pharaoh':
       case 'mummy':
+      case 'hersir':
+      case 'einherjar':
         return 0.52;
       case 'son_of_osiris':
       case 'avenger':
+      case 'troll':
+      case 'fenris_wolf':
         return 0.62;
       case 'peltast':
       case 'archer':
@@ -6582,9 +6662,13 @@ export class AoMEngine {
       case 'cavalry':
       case 'prodromos':
       case 'camel_rider':
+      case 'raiding_cavalry':
+      case 'jarl':
+      case 'valkyrie':
       case 'medusa':
       case 'automaton':
       case 'wadjet':
+      case 'ox_cart':
         return 0.72;
       case 'chariot_archer':
       case 'sphinx':
@@ -6593,9 +6677,13 @@ export class AoMEngine {
       case 'pegasus':
       case 'bellerophon':
       case 'phoenix':
+      case 'battle_boar':
+      case 'rock_troll':
         return 0.85;
       case 'roc':
       case 'scarab':
+      case 'frost_giant':
+      case 'fire_giant':
         return 0.96;
       case 'ajax':
       case 'perseus':
@@ -6610,17 +6698,24 @@ export class AoMEngine {
       case 'siege':
       case 'siege_tower':
       case 'egypt_catapult':
+      case 'portable_ram':
+      case 'norse_ballista':
         return 1.0;
       case 'minotaur':
       case 'centaur':
         return 0.82;
       case 'war_elephant':
       case 'hydra':
+      case 'mountain_giant':
+      case 'jormungand':
         return 1.1;
       case 'cyclops':
+      case 'fafnir':
         return 1.15;
       case 'colossus':
-        return 1.2;
+      case 'kraken':
+      case 'nidhogg':
+        return 1.25;
       case 'titan':
         return 2.2;
       case 'atena':
@@ -7385,17 +7480,29 @@ export class AoMEngine {
         }
       } else if (u.state === 'return') {
         const tc = this.findNearestTownCenter(u.team, u.mesh.position);
-        if (!tc) {
+        let dropPos: THREE.Vector3 | null = tc ? tc.mesh.position : null;
+        let dropRadius = tc ? tc.radius : 2.2;
+        let bestDropDist = tc
+          ? Math.hypot(tc.mesh.position.x - u.mesh.position.x, tc.mesh.position.z - u.mesh.position.z)
+          : Infinity;
+        for (const other of this.units.values()) {
+          if (other.team === u.team && other.kind === 'ox_cart' && other.hp > 0) {
+            const oxD = Math.hypot(other.mesh.position.x - u.mesh.position.x, other.mesh.position.z - u.mesh.position.z);
+            if (oxD < bestDropDist) {
+              bestDropDist = oxD;
+              dropPos = other.mesh.position;
+              dropRadius = 1.1;
+            }
+          }
+        }
+        if (!dropPos) {
           u.state = 'idle';
           u.waypoints = [];
           continue;
         }
-        const dist = Math.hypot(
-          tc.mesh.position.x - u.mesh.position.x,
-          tc.mesh.position.z - u.mesh.position.z
-        );
-        if (dist > tc.radius + uRadius + 2.15) {
-          this.steerUnitAroundObstacles(u, tc.mesh.position, effectiveSpeed, dt);
+        const dist = bestDropDist;
+        if (dist > dropRadius + uRadius + 2.15) {
+          this.steerUnitAroundObstacles(u, dropPos, effectiveSpeed, dt);
         } else {
           const depositedType = u.carryType ?? u.gatherResourceType;
           if (u.carryType && u.carryAmount > 0) {
@@ -7706,7 +7813,7 @@ export class AoMEngine {
                 else if (targetB) this.damageBuilding(targetB, computedDamage);
               }
 
-              // Mythic / Titan / War Elephant / Sphinx / Avenger cleave splash
+              // Mythic / Titan / War Elephant / Sphinx / Avenger / Norse Giants & Dragons cleave splash
               if (
                 u.kind === 'minotaur' ||
                 u.kind === 'cyclops' ||
@@ -7716,7 +7823,17 @@ export class AoMEngine {
                 u.kind === 'avenger' ||
                 u.kind === 'war_elephant' ||
                 u.kind === 'scarab' ||
-                u.kind === 'roc'
+                u.kind === 'roc' ||
+                u.kind === 'einherjar' ||
+                u.kind === 'frost_giant' ||
+                u.kind === 'mountain_giant' ||
+                u.kind === 'battle_boar' ||
+                u.kind === 'kraken' ||
+                u.kind === 'rock_troll' ||
+                u.kind === 'fire_giant' ||
+                u.kind === 'nidhogg' ||
+                u.kind === 'jormungand' ||
+                u.kind === 'fafnir'
               ) {
                 const splashRadius = stats.splashRadius ?? (u.kind === 'titan' ? 5.2 : u.kind === 'cyclops' ? 3.2 : 2.5);
                 this.spawnRingVfx(targetPos, splashRadius, u.kind === 'titan' ? 0xa855f7 : 0xfbbf24, 0.35);
@@ -8361,15 +8478,23 @@ export class AoMEngine {
       if (this.enemyAge === 1 && this.elapsedSeconds > 75 && this.canAfford(this.enemyResources, AGE_COSTS[2])) {
         this.deductCost(this.enemyResources, AGE_COSTS[2]);
         this.enemyAge = 2;
+        soundEngine.playAgeTransitionComplete(2, this.enemyPantheon, true);
+        this.notifyStatus(`⚠️ O inimigo avançou para a ${AGE_NAMES[2]}!`);
       } else if (this.enemyAge === 2 && this.elapsedSeconds > 165 && this.canAfford(this.enemyResources, AGE_COSTS[3])) {
         this.deductCost(this.enemyResources, AGE_COSTS[3]);
         this.enemyAge = 3;
+        soundEngine.playAgeTransitionComplete(3, this.enemyPantheon, true);
+        this.notifyStatus(`⚠️ O inimigo avançou para a ${AGE_NAMES[3]}!`);
       } else if (this.enemyAge === 3 && this.elapsedSeconds > 260 && this.canAfford(this.enemyResources, AGE_COSTS[4])) {
         this.deductCost(this.enemyResources, AGE_COSTS[4]);
         this.enemyAge = 4;
+        soundEngine.playAgeTransitionComplete(4, this.enemyPantheon, true);
+        this.notifyStatus(`⚠️ O inimigo alcançou a ${AGE_NAMES[4]}!`);
       } else if (this.enemyAge === 4 && this.elapsedSeconds > 380 && this.canAfford(this.enemyResources, AGE_COSTS[5])) {
         this.deductCost(this.enemyResources, AGE_COSTS[5]);
         this.enemyAge = 5;
+        soundEngine.playAgeTransitionComplete(5, this.enemyPantheon, true);
+        this.notifyStatus(`⚡ ALERTA: O inimigo ascendeu à ${AGE_NAMES[5]}!`);
       }
 
       // Build temple / house / farm / archery_range / stable / siege_works / fortress if needed
@@ -8491,6 +8616,10 @@ export class AoMEngine {
             ? this.enemyAge >= 2
               ? ['egypt_spearman', 'slinger', 'axeman']
               : ['egypt_spearman']
+            : this.enemyPantheon === 'norse' || this.enemyPantheon === 'jotunn'
+            ? this.enemyAge >= 2
+              ? ['ulfsark', 'throwing_axeman', 'hersir', 'godi']
+              : ['ulfsark', 'hersir']
             : this.enemyAge >= 2
             ? ['hoplite', 'hipaspist']
             : ['hoplite'];
@@ -8508,6 +8637,8 @@ export class AoMEngine {
             ? this.enemyAge >= 3
               ? ['slinger', 'chariot_archer']
               : ['slinger']
+            : this.enemyPantheon === 'norse' || this.enemyPantheon === 'jotunn'
+            ? ['throwing_axeman', 'godi']
             : this.enemyAge >= 3
             ? ['peltast', 'archer', 'gastraphetes']
             : ['peltast', 'archer'];
@@ -8523,6 +8654,10 @@ export class AoMEngine {
         const cavChoices: UnitKind[] =
           this.enemyPantheon === 'egyptian' && this.enemyAge >= 3
             ? ['chariot_archer', 'camel_rider']
+            : this.enemyPantheon === 'norse' || this.enemyPantheon === 'jotunn'
+            ? this.enemyAge >= 3
+              ? ['raiding_cavalry', 'jarl']
+              : ['raiding_cavalry']
             : ['cavalry', 'prodromos'];
         const cavPick = cavChoices[Math.floor(Math.random() * cavChoices.length)];
         const cavStats = this.unitStats(cavPick, 'enemy');
@@ -8538,6 +8673,10 @@ export class AoMEngine {
             ? Math.random() < 0.5
               ? 'siege_tower'
               : 'egypt_catapult'
+            : this.enemyPantheon === 'norse' || this.enemyPantheon === 'jotunn'
+            ? Math.random() < 0.5
+              ? 'portable_ram'
+              : 'norse_ballista'
             : Math.random() < 0.5
             ? 'ram'
             : 'siege';
@@ -8554,6 +8693,8 @@ export class AoMEngine {
             ? ['jason', 'odysseus', 'perseus', 'hippolyta', 'theseus', 'bellerophon', 'siege']
             : this.enemyPantheon === 'egyptian'
             ? ['chariot_archer', 'camel_rider', 'war_elephant', 'priest']
+            : this.enemyPantheon === 'norse' || this.enemyPantheon === 'jotunn'
+            ? ['huskarl', 'jarl', 'portable_ram', 'norse_ballista', 'hersir', 'godi']
             : ['hero', 'siege'];
         const fortPick = fortChoices[Math.floor(Math.random() * fortChoices.length)];
         const fortPickStats = this.unitStats(fortPick, 'enemy');
@@ -8574,6 +8715,12 @@ export class AoMEngine {
               : this.enemyAge >= 3
               ? ['roc', 'petsuchos', 'scarab', 'sphinx']
               : ['sphinx', 'wadjet', 'priest']
+            : this.enemyPantheon === 'norse' || this.enemyPantheon === 'jotunn'
+            ? this.enemyAge >= 4
+              ? ['fire_giant', 'fenris_wolf', 'nidhogg', 'jormungand', 'fafnir', 'frost_giant', 'mountain_giant']
+              : this.enemyAge >= 3
+              ? ['frost_giant', 'mountain_giant', 'battle_boar', 'kraken', 'rock_troll', 'valkyrie']
+              : ['troll', 'valkyrie', 'einherjar', 'hersir', 'godi']
             : this.enemyAge >= 5 && enemyGodsAlive < 1 && Math.random() < 0.35
             ? ['atena', 'ares', 'apolo', 'poseidon']
             : this.enemyAge >= 4
@@ -8708,7 +8855,16 @@ export class AoMEngine {
         armorLabel: `Corte ${hackPct}% · Perf ${piercePct}% · Esmag ${crushPct}%`,
         taskLabel: taskMap[primary.state],
         screenPos: this.projectWorldToScreen(primary.mesh.position, 2.2),
-        hasVillagerSelected: selUnits.some((u) => u.team === 'player' && u.kind === 'villager'),
+        hasVillagerSelected: selUnits.some(
+          (u) =>
+            u.team === 'player' &&
+            (u.kind === 'villager' ||
+              u.kind === 'norse_dwarf' ||
+              u.kind === 'ulfsark' ||
+              u.kind === 'hersir' ||
+              u.kind === 'throwing_axeman' ||
+              u.kind === 'huskarl')
+        ),
         selectedCounts: Array.from(countsMap.values()),
         voiceLine: this.voiceLineTimer > 0 && this.lastVoiceLine ? this.lastVoiceLine : undefined,
       };
@@ -9221,7 +9377,8 @@ export class AoMEngine {
           this.advancingToAge = null;
           this.ageAdvanceProgress = 0;
           this.ageAdvanceTotal = 0;
-          soundEngine.playFanfare(this.age === 5);
+          soundEngine.playAgeTransitionComplete(this.age, this.pantheon, false);
+          const themeInfo = soundEngine.getAgeThemeInfo(this.age, this.pantheon);
           if (this.age === 5) {
             if (!this.researchedTechs.includes('secrets_of_titans')) {
               this.researchedTechs.push('secrets_of_titans');
@@ -9230,9 +9387,8 @@ export class AoMEngine {
             if (this.activeTechResearch?.id === 'secrets_of_titans') {
               this.activeTechResearch = null;
             }
-            soundEngine.playLightning?.();
             this.notifyStatus(
-              '⚡ ERA V: ERA DOS DEUSES ALCANÇADA! Convocação de Deuses Maiores e Menores habilitada no Templo!'
+              `⚡ ERA V: ERA DOS DEUSES ALCANÇADA! (${themeInfo.title}) — Convocação Divina habilitada no Templo!`
             );
             for (const b of this.buildings.values()) {
               if (b.team === 'player' && (b.kind === 'town_center' || b.kind === 'temple')) {
@@ -9241,7 +9397,7 @@ export class AoMEngine {
               }
             }
           } else {
-            this.notifyStatus(`Avançou para a ${AGE_NAMES[this.age]}!`);
+            this.notifyStatus(`🏛️ Avançou para a ${AGE_NAMES[this.age]}! ♪ ${themeInfo.title}`);
             for (const b of this.buildings.values()) {
               if (b.team === 'player' && b.kind === 'town_center') {
                 this.spawnRingVfx(b.mesh.position, 9, 0xfacc15, 1.1);
@@ -9261,11 +9417,15 @@ export class AoMEngine {
             this.stats.techsResearched += 1;
           }
           const tech = TECH_SPECS[doneId];
-          soundEngine.playFanfare(false);
           if (doneId === 'secrets_of_titans') {
             this.age = 5;
-            this.notifyStatus('ERA V: ERA DOS DEUSES DESBLOQUEADA! Invoque Deuses Maiores e Menores no Templo e erga o Portão do Titã!');
+            soundEngine.playAgeTransitionComplete(5, this.pantheon, false);
+            const themeInfo = soundEngine.getAgeThemeInfo(5, this.pantheon);
+            this.notifyStatus(
+              `⚡ ERA V: ERA DOS DEUSES DESBLOQUEADA! (${themeInfo.title}) — Invoque Deuses no Templo e erga o Portão do Titã!`
+            );
           } else {
+            soundEngine.playFanfare(false);
             this.notifyStatus(`Tecnologia concluída: ${tech.name}!`);
           }
           if (doneId === 'medium_soldiers' || doneId === 'heavy_soldiers' || doneId === 'champion_soldiers') {

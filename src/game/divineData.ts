@@ -547,15 +547,17 @@ export const MINOR_GODS: Record<string, MinorGodSpec> = {
   Thoth: { id: 'Thoth', name: 'Thoth', age: 4, pantheon: 'egyptian', godPower: 'meteor', mythUnit: 'phoenix', mythUnitTitle: 'Fênix / Elefante', passiveBonusLabel: '+20% Dano Mítico & Heróis', attackBonusPct: 20 },
 
   // Norse
-  Forseti: { id: 'Forseti', name: 'Forseti', age: 2, pantheon: 'norse', godPower: 'healing', mythUnit: 'minotaur', mythUnitTitle: 'Troll', passiveBonusLabel: '+14% Velocidade & Vida Ulfsark', speedBonusPct: 14 },
-  Freyja: { id: 'Freyja', name: 'Freyja', age: 2, pantheon: 'norse', godPower: 'walking_woods', mythUnit: 'minotaur', mythUnitTitle: 'Valquíria', passiveBonusLabel: '+15% Vida Cavalaria & Valquírias', hpBonusPct: 15 },
-  Heimdall: { id: 'Heimdall', name: 'Heimdall', age: 2, pantheon: 'norse', godPower: 'undermine', mythUnit: 'minotaur', mythUnitTitle: 'Einherjar', passiveBonusLabel: '+18% Dano vs Construções', attackBonusPct: 14 },
-  Skadi: { id: 'Skadi', name: 'Skadi', age: 3, pantheon: 'norse', godPower: 'frost', mythUnit: 'centaur', mythUnitTitle: 'Gigante de Gelo', passiveBonusLabel: '+18% Coleta de Caça & Fazendas', gatherBonusPct: 18 },
-  Bragi: { id: 'Bragi', name: 'Bragi', age: 3, pantheon: 'norse', godPower: 'flaming_weapons', mythUnit: 'centaur', mythUnitTitle: 'Javali de Batalha', passiveBonusLabel: '+16% Ataque de Ulfsark', attackBonusPct: 16 },
-  Njord: { id: 'Njord', name: 'Njord', age: 3, pantheon: 'norse', godPower: 'walking_woods', mythUnit: 'centaur', mythUnitTitle: 'Gigante da Montanha', passiveBonusLabel: '+18% HP Mítico', hpBonusPct: 18 },
-  Baldr: { id: 'Baldr', name: 'Baldr', age: 4, pantheon: 'norse', godPower: 'meteor', mythUnit: 'cyclops', mythUnitTitle: 'Gigante de Fogo', passiveBonusLabel: '+20% Ataque & Cerco', attackBonusPct: 20 },
-  Tyr: { id: 'Tyr', name: 'Tyr', age: 4, pantheon: 'norse', godPower: 'blizzard', mythUnit: 'cyclops', mythUnitTitle: 'Lobo Fenris', passiveBonusLabel: '+22% Vida & Fúria Nórdica', hpBonusPct: 20 },
-  Hel: { id: 'Hel', name: 'Hel', age: 4, pantheon: 'norse', godPower: 'tornado', mythUnit: 'cyclops', mythUnitTitle: 'Nidhogg / Gigante', passiveBonusLabel: '+25% Poder das Unidades Míticas', attackBonusPct: 22 },
+  Forseti: { id: 'Forseti', name: 'Forseti', age: 2, pantheon: 'norse', godPower: 'healing', mythUnit: 'troll', mythUnitTitle: 'Troll', passiveBonusLabel: '+14% Velocidade & Vida Ulfsark', speedBonusPct: 14 },
+  Freyja: { id: 'Freyja', name: 'Freyja', age: 2, pantheon: 'norse', godPower: 'walking_woods', mythUnit: 'valkyrie', mythUnitTitle: 'Valquíria', passiveBonusLabel: '+15% Vida Cavalaria & Valquírias', hpBonusPct: 15 },
+  Heimdall: { id: 'Heimdall', name: 'Heimdall', age: 2, pantheon: 'norse', godPower: 'undermine', mythUnit: 'einherjar', mythUnitTitle: 'Einherjar', passiveBonusLabel: '+18% Dano vs Construções', attackBonusPct: 14 },
+  Skadi: { id: 'Skadi', name: 'Skadi', age: 3, pantheon: 'norse', godPower: 'frost', mythUnit: 'frost_giant', mythUnitTitle: 'Gigante de Gelo', passiveBonusLabel: '+18% Coleta de Caça & Fazendas', gatherBonusPct: 18 },
+  Bragi: { id: 'Bragi', name: 'Bragi', age: 3, pantheon: 'norse', godPower: 'flaming_weapons', mythUnit: 'battle_boar', mythUnitTitle: 'Javali de Batalha (Gullinbursti)', passiveBonusLabel: '+16% Ataque de Ulfsark', attackBonusPct: 16 },
+  Njord: { id: 'Njord', name: 'Njord', age: 3, pantheon: 'norse', godPower: 'walking_woods', mythUnit: 'mountain_giant', mythUnitTitle: 'Gigante da Montanha & Kraken', passiveBonusLabel: '+18% HP Mítico · Libera Gigante da Montanha & Kraken', hpBonusPct: 18 },
+  Aegir: { id: 'Aegir', name: 'Aegir', age: 3, pantheon: 'norse', godPower: 'tremor', mythUnit: 'rock_troll', mythUnitTitle: 'Troll da Rocha', passiveBonusLabel: '+18% Armadura & Resistência a Projéteis (Retold)', hpBonusPct: 18 },
+  Baldr: { id: 'Baldr', name: 'Baldr', age: 4, pantheon: 'norse', godPower: 'meteor', mythUnit: 'fire_giant', mythUnitTitle: 'Gigante de Fogo', passiveBonusLabel: '+20% Ataque & Cerco', attackBonusPct: 20 },
+  Tyr: { id: 'Tyr', name: 'Tyr', age: 4, pantheon: 'norse', godPower: 'blizzard', mythUnit: 'fenris_wolf', mythUnitTitle: 'Cria de Fenris (Lobo Fenris)', passiveBonusLabel: '+22% Vida & Fúria Nórdica', hpBonusPct: 20 },
+  Hel: { id: 'Hel', name: 'Hel', age: 4, pantheon: 'norse', godPower: 'tornado', mythUnit: 'nidhogg', mythUnitTitle: 'Nidhogg & Os 3 Gigantes (Fogo, Gelo e Montanha)', passiveBonusLabel: '+25% Poder Mítico · Libera Nidhogg, Jormungand e todos os Gigantes', attackBonusPct: 22 },
+  Vidar: { id: 'Vidar', name: 'Vidar', age: 4, pantheon: 'norse', godPower: 'volcanic_eruption', mythUnit: 'fafnir', mythUnitTitle: 'Fafnir (Dragão Couraçado)', passiveBonusLabel: '+22% Ataque de Infantaria & Heróis (Retold)', attackBonusPct: 22 },
 
   // Atlantean
   Prometheus: { id: 'Prometheus', name: 'Prometeu', age: 2, pantheon: 'atlantean', godPower: 'necromancy', mythUnit: 'minotaur', mythUnitTitle: 'Prometeano', passiveBonusLabel: '+14% Vida dos Heróis', hpBonusPct: 14 },
@@ -589,7 +591,8 @@ export const MAJOR_GODS: MajorGodSpec[] = [
   // Norse
   { id: 'Thor', name: 'Thor', pantheon: 'norse', focus: 'Mina de Ouro Anã e armoria avançada', favoredPower: 'create_gold', minorChoices: { 2: ['Forseti', 'Freyja'], 3: ['Bragi', 'Skadi'], 4: ['Baldr', 'Tyr'] } },
   { id: 'Odin', name: 'Odin', pantheon: 'norse', focus: 'Grande Caçada, regeneração e força viking', favoredPower: 'great_hunt', minorChoices: { 2: ['Freyja', 'Heimdall'], 3: ['Njord', 'Skadi'], 4: ['Baldr', 'Tyr'] } },
-  { id: 'Loki', name: 'Loki', pantheon: 'norse', focus: 'Unidades míticas e ataques furtivos', favoredPower: 'spiders', minorChoices: { 2: ['Forseti', 'Heimdall'], 3: ['Bragi', 'Njord'], 4: ['Hel', 'Tyr'] } },
+  { id: 'Loki', name: 'Loki', pantheon: 'norse', focus: 'Unidades míticas, Hel e ataques furtivos', favoredPower: 'spiders', minorChoices: { 2: ['Forseti', 'Heimdall'], 3: ['Bragi', 'Njord'], 4: ['Hel', 'Tyr'] } },
+  { id: 'Freyr', name: 'Freyr', pantheon: 'norse', focus: 'Defesa rúnica, Troll da Rocha (Aegir) e Dragão Fafnir (Vidar)', favoredPower: 'prosperity', minorChoices: { 2: ['Freyja', 'Forseti'], 3: ['Aegir', 'Bragi'], 4: ['Vidar', 'Hel'] } },
   // Atlantean
   { id: 'Cronos', name: 'Cronos', pantheon: 'atlantean', focus: 'Solapar fortificações e armas de cerco', favoredPower: 'undermine', minorChoices: { 2: ['Prometheus', 'Leto'], 3: ['Hyperion', 'Rheia'], 4: ['Helios', 'Atlas'] } },
   { id: 'Urano', name: 'Urano', pantheon: 'atlantean', focus: 'Onda de choque sísmica e mobilidade', favoredPower: 'tremor', minorChoices: { 2: ['Okeanus', 'Prometheus'], 3: ['Hyperion', 'Theia'], 4: ['Helios', 'Hekate'] } },
@@ -900,16 +903,118 @@ const CIV_UNIT_NAMES: Partial<Record<PantheonId, Partial<Record<UnitKind, { name
     },
   },
   norse: {
-    villager: { name: 'Coletor Nórdico' },
+    villager: {
+      name: 'Coletor Nórdico',
+      role: 'Coleta alimento, madeira e ouro e cultiva fazendas. Nos Nórdicos, a infantaria constrói os edifícios.',
+    },
+    norse_dwarf: {
+      name: 'Anão Minerador',
+      role: 'Forjador anão de Nidavellir treinado no Centro da Cidade. Coleta Ouro muito mais rápido que coletores comuns.',
+    },
+    ox_cart: {
+      name: 'Carro de Bois',
+      role: 'Depósito móvel de recursos dos Nórdicos. Acompanha coletores e anões até florestas, caças e minas de ouro.',
+    },
+    hersir: {
+      name: 'Hersir',
+      role: 'Herói guerreiro nórdico que gera Favor em combate e derrota criaturas míticas.',
+    },
+    godi: {
+      name: 'Godi',
+      role: 'Sacerdote-herói nórdico de longo alcance (Retold). Arremessa lanças rúnicas contra unidades míticas terrestres e voadoras.',
+    },
+    ulfsark: {
+      name: 'Ulfsark (Berserk)',
+      role: 'Infantaria rápida de dupla lâmina que constrói todos os edifícios militares e econômicos nórdicos.',
+    },
+    throwing_axeman: {
+      name: 'Lançador de Machado',
+      role: 'Infantaria viking que arremessa machados à distância causando dano cortante, letal contra infantaria inimiga.',
+    },
+    raiding_cavalry: {
+      name: 'Cavaleiro de Incursão',
+      role: 'Cavalaria rápida nórdica excelente para flanquear arqueiros, trabalhadores e armas de cerco.',
+    },
+    huskarl: {
+      name: 'Huskarl',
+      role: 'Infantaria de elite do Forte da Colina com escudo pesado e altíssima armadura contra flechas.',
+    },
+    jarl: {
+      name: 'Jarl',
+      role: 'Cavalaria pesada nobre do Forte da Colina com grande vida e bônus de ataque contra unidades míticas.',
+    },
+    portable_ram: {
+      name: 'Aríete Portátil',
+      role: 'Aríete viking carregado por guerreiros para demolir muralhas, torres e fortalezas rapidamente.',
+    },
+    norse_ballista: {
+      name: 'Balista Nórdica',
+      role: 'Artilharia pesada de longo alcance que dispara virotes gigantes contra tropas e edificações.',
+    },
+    troll: {
+      name: 'Troll (Forseti)',
+      role: 'Criatura mítica das cavernas que arremessa pedregulhos à distância e regenera ferimentos.',
+    },
+    valkyrie: {
+      name: 'Valquíria (Freyja)',
+      role: 'Guerreira celestial montada em corcel branco que luta na linha de frente e cura tropas aliadas.',
+    },
+    einherjar: {
+      name: 'Einherjar (Heimdall)',
+      role: 'Guerreiro imortal de Valhalla com machado colossal que sopra sua trompa para inspirar o exército.',
+    },
+    frost_giant: {
+      name: 'Gigante de Gelo (Skadi / Hel)',
+      role: 'Colosso de Niflheim que congela inimigos com seu sopro glacial e esmaga tropas.',
+    },
+    mountain_giant: {
+      name: 'Gigante da Montanha (Njord / Hel)',
+      role: 'Gigante de pedra viva armado com um tronco de pinheiro colossal para pulverizar construções.',
+    },
+    battle_boar: {
+      name: 'Javali de Batalha (Bragi)',
+      role: 'Gullinbursti — javali mecânico forjado em ouro e bronze que arremessa soldados pelos ares.',
+    },
+    kraken: {
+      name: 'Kraken (Njord)',
+      role: 'Monstro abissal tentacular que afunda navios instantaneamente e esmaga tropas costeiras.',
+    },
+    rock_troll: {
+      name: 'Troll da Rocha (Aegir - Freyr)',
+      role: 'Criatura blindada de granito e cristais rúnicos que bloqueia ataques e resiste muito bem a projéteis.',
+    },
+    fire_giant: {
+      name: 'Gigante de Fogo (Baldr / Hel)',
+      role: 'Gigante de Muspelheim armado com espada flamejante que dispara bolas de fogo devastadoras em área.',
+    },
+    fenris_wolf: {
+      name: 'Cria de Fenris (Tyr)',
+      role: 'Lobo monstruoso acorrentado com Gleipnir que ganha ataque e velocidade em matilha.',
+    },
+    nidhogg: {
+      name: 'Nidhogg (Hel)',
+      role: 'Dragão alado primordial que cospe fogo devastador sobre exércitos e bases.',
+    },
+    jormungand: {
+      name: 'Prole de Jormungand (Njord / Hel)',
+      role: 'Serpente marinha colosal que dispara jatos de ácido corrosivo contra navios e unidades costeiras.',
+    },
+    fafnir: {
+      name: 'Fafnir (Vidar - Freyr)',
+      role: 'Dragão terrestre encouraçado em ouro amaldiçoado que cospe fogo e emana névoa tóxica venenosa.',
+    },
     hoplite: { name: 'Ulfsark' },
     archer: { name: 'Lançador de Machado' },
-    cavalry: { name: 'Jarl Montado' },
+    cavalry: { name: 'Cavaleiro de Incursão' },
     hero: { name: 'Hersir' },
-    siege: { name: 'Balista Portátil' },
-    minotaur: { name: 'Valquíria' },
-    centaur: { name: 'Troll' },
+    siege: { name: 'Balista Nórdica' },
+    minotaur: { name: 'Troll' },
+    centaur: { name: 'Valquíria' },
     cyclops: { name: 'Gigante de Gelo' },
-    titan: { name: 'Titã de Ymir' },
+    titan: {
+      name: 'Titã Ymir — Gigante de Gelo Primordial',
+      role: 'O colossal Ymir, o gigante de gelo primordial armado com um machado de gelo colossal, invocado após pesquisar o Segredo dos Titãs.',
+    },
   },
   atlantean: {
     villager: { name: 'Cidadão Atlante' },

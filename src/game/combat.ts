@@ -84,7 +84,9 @@ export class CombatManager {
       (target.kind === 'cavalry' ||
         target.kind === 'prodromos' ||
         target.kind === 'camel_rider' ||
-        target.kind === 'chariot_archer') &&
+        target.kind === 'chariot_archer' ||
+        target.kind === 'raiding_cavalry' ||
+        target.kind === 'jarl') &&
       attackerStats.bonusVsCavalry
     ) {
       finalDmg *= attackerStats.bonusVsCavalry;
@@ -95,6 +97,10 @@ export class CombatManager {
         target.kind === 'myrmidon' ||
         target.kind === 'egypt_spearman' ||
         target.kind === 'axeman' ||
+        target.kind === 'ulfsark' ||
+        target.kind === 'throwing_axeman' ||
+        target.kind === 'huskarl' ||
+        target.kind === 'norse_dwarf' ||
         target.kind === 'villager') &&
       attackerStats.bonusVsInfantry
     ) {
@@ -105,7 +111,8 @@ export class CombatManager {
         target.kind === 'peltast' ||
         target.kind === 'gastraphetes' ||
         target.kind === 'slinger' ||
-        target.kind === 'chariot_archer') &&
+        target.kind === 'chariot_archer' ||
+        target.kind === 'godi') &&
       attackerStats.bonusVsArcher
     ) {
       finalDmg *= attackerStats.bonusVsArcher;
@@ -115,7 +122,9 @@ export class CombatManager {
         target.kind === 'siege' ||
         target.kind === 'ram' ||
         target.kind === 'siege_tower' ||
-        target.kind === 'egypt_catapult') &&
+        target.kind === 'egypt_catapult' ||
+        target.kind === 'portable_ram' ||
+        target.kind === 'norse_ballista') &&
       attackerStats.bonusVsSiege
     ) {
       finalDmg *= attackerStats.bonusVsSiege;

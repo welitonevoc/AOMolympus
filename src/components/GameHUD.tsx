@@ -79,6 +79,7 @@ import {
   TechId,
   UnitKind,
 } from '../game/types';
+import { soundEngine } from '../game/audio';
 import { AnimatedPortrait } from './AnimatedPortrait';
 import { HopliteUvBuilderModal } from './HopliteUvBuilderModal';
 import { Minimap } from './Minimap';
@@ -365,6 +366,42 @@ export function GameHUD({
           'ra',
           'isis',
           'set',
+          'atena',
+          'ares',
+          'hermes',
+          'apolo',
+          'dionisio',
+          'afrodite',
+          'hefesto',
+          'artemis',
+        ]
+      : hud.pantheon === 'norse' || hud.pantheon === 'jotunn'
+      ? [
+          'villager',
+          'norse_dwarf',
+          'ox_cart',
+          'hersir',
+          'godi',
+          'ulfsark',
+          'throwing_axeman',
+          'raiding_cavalry',
+          'huskarl',
+          'jarl',
+          'portable_ram',
+          'norse_ballista',
+          'troll',
+          'valkyrie',
+          'einherjar',
+          'frost_giant',
+          'mountain_giant',
+          'battle_boar',
+          'kraken',
+          'rock_troll',
+          'fire_giant',
+          'fenris_wolf',
+          'nidhogg',
+          'jormungand',
+          'fafnir',
           'atena',
           'ares',
           'hermes',
@@ -675,6 +712,7 @@ export function GameHUD({
                           .map((id) => getMinorGodSpec(id))
                           .find((mg) => mg.age === era)
                       : undefined;
+                  const themeInfo = soundEngine.getAgeThemeInfo(era, hud.pantheon);
 
                   let bonusText = '';
                   if (era === 1) {
@@ -701,7 +739,7 @@ export function GameHUD({
                   return (
                     <div key={era} className="py-1.5 flex items-start justify-between gap-2">
                       <div className="min-w-0">
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-1.5 flex-wrap">
                           <span
                             className={`text-[11px] font-bold ${
                               current ? 'text-[#fde68a]' : unlocked ? 'text-[#d4af37]' : 'text-[#64748b]'
@@ -712,16 +750,31 @@ export function GameHUD({
                           <span className="text-[10px] text-[#94a3b8]">
                             {current ? '· Atual' : unlocked ? '· Concluída' : advancingToThis ? `· ${Math.round(ageAdvancePct)}%` : ''}
                           </span>
+                          <span className="text-[9px] text-[#c8a962]/85 font-medium">
+                            ({themeInfo.intensityLabel})
+                          </span>
                         </div>
                         <p className={`text-[10px] leading-snug ${unlocked ? 'text-[#cbd5e1]' : 'text-[#64748b]'}`}>
                           {bonusText}
                         </p>
                       </div>
-                      {!unlocked && era === nextAge && nextAgeCost && (
-                        <span className="font-mono-num text-[9px] text-[#94a3b8] shrink-0 text-right">
-                          {ageReadinessPct}%
-                        </span>
-                      )}
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {!unlocked && era === nextAge && nextAgeCost && (
+                          <span className="font-mono-num text-[9px] text-[#94a3b8] text-right">
+                            {ageReadinessPct}%
+                          </span>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => soundEngine.playAgeTransitionComplete(era, hud.pantheon, false)}
+                          title={`${themeInfo.title} — ${themeInfo.description} (Clique para ouvir)`}
+                          aria-label={`Ouvir ${themeInfo.title}`}
+                          className="flex items-center gap-1 rounded border border-[#c8a962]/40 bg-[#1a2232] px-1.5 py-0.5 text-[9px] font-semibold text-[#f5e3b0] hover:border-[#facc15] hover:bg-[#c8a962]/20 cursor-pointer transition"
+                        >
+                          <Volume2 className="h-2.5 w-2.5 text-[#facc15]" />
+                          <span>Tema {era}</span>
+                        </button>
+                      </div>
                     </div>
                   );
                 })}
@@ -1383,11 +1436,24 @@ export function GameHUD({
                         u.producedAt === selectedPlayerBuildingKind ||
                         (u.kind === 'priest' &&
                           (selectedPlayerBuildingKind === 'temple' || selectedPlayerBuildingKind === 'town_center')) ||
+                        ((u.kind === 'hersir' || u.kind === 'godi') &&
+                          (selectedPlayerBuildingKind === 'barracks' ||
+                            selectedPlayerBuildingKind === 'temple' ||
+                            selectedPlayerBuildingKind === 'fortress')) ||
+                        (u.kind === 'raiding_cavalry' &&
+                          (selectedPlayerBuildingKind === 'barracks' || selectedPlayerBuildingKind === 'stable')) ||
                         (u.isHero &&
                           u.kind !== 'priest' &&
+                          u.kind !== 'hersir' &&
+                          u.kind !== 'godi' &&
                           (selectedPlayerBuildingKind === 'town_center' || selectedPlayerBuildingKind === 'fortress')) ||
                         (u.kind === 'myrmidon' && (selectedPlayerBuildingKind === 'barracks' || selectedPlayerBuildingKind === 'fortress')) ||
-                        ((u.kind === 'ram' || u.kind === 'siege' || u.kind === 'siege_tower' || u.kind === 'egypt_catapult') &&
+                        ((u.kind === 'ram' ||
+                          u.kind === 'siege' ||
+                          u.kind === 'siege_tower' ||
+                          u.kind === 'egypt_catapult' ||
+                          u.kind === 'portable_ram' ||
+                          u.kind === 'norse_ballista') &&
                           (selectedPlayerBuildingKind === 'siege_works' || selectedPlayerBuildingKind === 'fortress'))
                     );
                     const buildingTechs = techList.filter((t) => {

@@ -260,6 +260,67 @@ export function AnimatedPortrait({ selection, pantheon, primaryColor }: Animated
           ctx.quadraticCurveTo(24, 10, 18, 22);
           ctx.lineTo(12, 16);
           ctx.fill();
+        } else if (
+          uk === 'frost_giant' ||
+          uk === 'fire_giant' ||
+          uk === 'mountain_giant' ||
+          uk === 'troll' ||
+          uk === 'rock_troll' ||
+          uk === 'einherjar'
+        ) {
+          // Norse Giants, Trolls & Einherjar
+          ctx.fillStyle =
+            uk === 'frost_giant'
+              ? '#38bdf8'
+              : uk === 'fire_giant'
+              ? '#ea580c'
+              : uk === 'mountain_giant' || uk === 'rock_troll'
+              ? '#64748b'
+              : uk === 'troll'
+              ? '#4d7c0f'
+              : '#d97706';
+          ctx.beginPath();
+          ctx.arc(0, -14, 19, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+          // Horns or ice/fire crown
+          ctx.fillStyle = uk === 'frost_giant' ? '#e0f2fe' : uk === 'fire_giant' ? '#fde047' : '#fef3c7';
+          for (const dir of [-1, 1]) {
+            ctx.beginPath();
+            ctx.moveTo(dir * 13, -24);
+            ctx.quadraticCurveTo(dir * 26, -38, dir * 18, -46);
+            ctx.lineTo(dir * 10, -30);
+            ctx.fill();
+          }
+          // Glowing Nordic eyes
+          ctx.fillStyle = uk === 'frost_giant' || uk === 'rock_troll' ? '#bae6fd' : '#fef08a';
+          ctx.fillRect(-9, -18, 5, 4);
+          ctx.fillRect(4, -18, 5, 4);
+        } else if (
+          uk === 'nidhogg' ||
+          uk === 'fafnir' ||
+          uk === 'jormungand' ||
+          uk === 'kraken' ||
+          uk === 'battle_boar' ||
+          uk === 'fenris_wolf' ||
+          uk === 'valkyrie'
+        ) {
+          // Norse Mythic Beasts & Valkyrie
+          ctx.fillStyle =
+            uk === 'battle_boar' || uk === 'valkyrie'
+              ? '#eab308'
+              : uk === 'jormungand' || uk === 'kraken'
+              ? '#0d9488'
+              : uk === 'fafnir'
+              ? '#15803d'
+              : '#7f1d1d';
+          ctx.beginPath();
+          ctx.arc(0, -13, 18, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+          ctx.fillStyle = uk === 'valkyrie' ? '#38bdf8' : '#fde047';
+          ctx.fillRect(-8, -17, 5, 4);
+          ctx.fillRect(3, -17, 5, 4);
         } else if (uk === 'cyclops' || uk === 'minotaur' || uk === 'titan') {
           // Monstrous horned or single-eyed head
           ctx.fillStyle = uk === 'titan' ? '#475569' : uk === 'cyclops' ? '#c28b5a' : '#78350f';

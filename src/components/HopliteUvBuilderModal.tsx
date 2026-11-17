@@ -210,8 +210,16 @@ export const MAJOR_GODS_BY_CIV: Partial<Record<PantheonId, MajorGodOption[]>> = 
       name: 'Loki',
       title: 'Mestre da Trapaça (Chamas & Mudança de Forma)',
       color: '#f97316',
-      titanName: 'Gigante de Fogo Surtr (Titã de Loki)',
-      titanRole: 'Monstruosidade titânica de chamas eternas de Muspelheim com espada monumental de magma puro.',
+      titanName: 'Titã Ymir — Gigante de Gelo Primordial',
+      titanRole: 'O gigantesco Ymir, o gigante de gelo primordial armado com um machado colossal, invocado após pesquisar o Segredo dos Titãs.',
+    },
+    {
+      id: 'Freyr',
+      name: 'Freyr',
+      title: 'Senhor de Alfheim (Defesa Rúnica, Aegir & Vidar — Retold)',
+      color: '#eab308',
+      titanName: 'Titã Ymir — Gigante de Gelo Primordial',
+      titanRole: 'O gigantesco Ymir, o gigante de gelo primordial armado com um machado colossal, invocado após pesquisar o Segredo dos Titãs.',
     },
   ],
   atlantean: [
@@ -607,44 +615,143 @@ export function getUnitsForCivAndGod(civ: PantheonId, majorGod: string): CivEnti
   }
 
   if (civ === 'norse') {
-    const isThor = godInfo.id.toLowerCase() === 'thor';
-    const isOdin = godInfo.id.toLowerCase() === 'odin';
-
     return [
-      {
-        id: 'hoplite',
-        name: isThor ? 'Ulfsark do Trovão (Thor)' : isOdin ? 'Ulfsark de Odin' : 'Ulfsark Ígneo de Loki',
-        role: 'Infantaria rápida nórdica capaz de erguer construções militares no campo',
-      },
-      {
-        id: 'hipaspist',
-        name: isThor ? 'Lançador de Machados Mjölnir' : isOdin ? 'Guerreiro Rúnico de Odin' : 'Lançador de Machados Ígneos',
-        role: 'Guerreiro devastador com machados arremessados',
-      },
-      {
-        id: 'cavalry',
-        name: isThor ? 'Cavaleiro Forjado de Thor' : isOdin ? 'Saqueador Corvo de Odin' : 'Saqueador de Cinzas de Loki',
-        role: 'Cavalaria nórdica de ataque surpresa e invasão relâmpago',
-      },
-      {
-        id: 'hero',
-        name: isThor ? 'Hersir do Trovão (Thor)' : isOdin ? 'Hersir Sábio de Odin' : 'Hersir Trapaceiro de Loki',
-        role: 'Guerreiro devoto que gera Favor místico em combate',
-      },
+      // 1. Unidades Civis, Econômicas e Heróis
       {
         id: 'villager',
-        name: isThor ? 'Anão Minerador de Thor' : isOdin ? 'Coletor de Yggdrasil' : 'Servo Astuto de Loki',
-        role: 'Unidade com carro de bois para transporte instantâneo de recursos',
+        name: '🌾 Coletor Nórdico (Centro da Cidade)',
+        role: 'Coleta alimento, madeira e ouro e cultiva fazendas. Nos Nórdicos, a infantaria constrói todos os edifícios',
       },
       {
-        id: 'minotaur',
-        name: isThor ? 'Gigante de Tempestade' : isOdin ? 'Gigante de Gelo Ancestral' : 'Gigante de Fogo do Muspelheim',
-        role: 'Monstro colossal nórdico de força sísmica',
+        id: 'norse_dwarf',
+        name: '⛏️ Anão Minerador (Centro da Cidade)',
+        role: 'Forjador anão de Nidavellir especialista na coleta acelerada de Ouro',
       },
+      {
+        id: 'ox_cart',
+        name: '🐂 Carro de Bois (Depósito Móvel)',
+        role: 'Depósito móvel de recursos nórdico que acompanha coletores e anões até minas, florestas e caças',
+      },
+      {
+        id: 'hersir',
+        name: '🔨 Hersir (Herói Nórdico — Salão Comunal / Templo)',
+        role: 'Herói guerreiro com martelo rúnico e manto de lobo que gera Favor em combate e derrota criaturas míticas',
+      },
+      {
+        id: 'godi',
+        name: '⚡ Godi (Herói à Distância — Retold)',
+        role: 'Sacerdote-herói nórdico de longo alcance que arremessa lanças rúnicas contra unidades míticas terrestres e voadoras',
+      },
+      // 2. Tropas Humanas (Salão Comunal e Forte da Colina)
+      {
+        id: 'ulfsark',
+        name: '⚔️ Ulfsark / Berserk (Salão Comunal)',
+        role: 'Infantaria rápida de dupla lâmina que constrói todos os edifícios militares e econômicos nórdicos',
+      },
+      {
+        id: 'throwing_axeman',
+        name: '🪓 Lançador de Machado (Salão Comunal)',
+        role: 'Infantaria que arremessa machados à distância causando dano cortante, excelente contra infantaria inimiga',
+      },
+      {
+        id: 'raiding_cavalry',
+        name: '🐎 Cavaleiro de Incursão (Salão Comunal / Estábulo)',
+        role: 'Cavalaria rápida viking excelente para flanquear arqueiros, trabalhadores e armas de cerco',
+      },
+      {
+        id: 'huskarl',
+        name: '🛡️ Huskarl (Forte da Colina — Era Heroica)',
+        role: 'Infantaria de elite com escudo pesado e altíssima armadura contra projéteis, letal contra arqueiros',
+      },
+      {
+        id: 'jarl',
+        name: '👑 Jarl (Forte da Colina — Era Heroica)',
+        role: 'Cavalaria pesada nobre com grande quantidade de vida e bônus de ataque contra unidades míticas',
+      },
+      // 3. Armas de Cerco (Forte da Colina / Oficina de Cerco)
+      {
+        id: 'portable_ram',
+        name: '🪵 Aríete Portátil (Forte da Colina — Era Heroica)',
+        role: 'Aríete viking carregado por guerreiros para demolir muralhas, torres e edifícios rapidamente',
+      },
+      {
+        id: 'norse_ballista',
+        name: '🏹 Balista Nórdica (Forte da Colina — Era Mítica)',
+        role: 'Artilharia pesada de longo alcance que dispara virotes gigantes contra tropas e construções',
+      },
+      // 4. Unidades Míticas (Templo — Era Clássica)
+      {
+        id: 'troll',
+        name: '🪨 Troll (Forseti — Era Clássica)',
+        role: 'Criatura mítica das cavernas que arremessa pedregulhos à distância e regenera ferimentos ao atacar',
+      },
+      {
+        id: 'valkyrie',
+        name: '🪽 Valquíria (Freyja — Era Clássica)',
+        role: 'Guerreira celestial montada em corcel branco que luta na linha de frente e cura tropas aliadas',
+      },
+      {
+        id: 'einherjar',
+        name: '📯 Einherjar (Heimdall — Era Clássica)',
+        role: 'Guerreiro imortal de Valhalla com machado colossal que sopra sua trompa Gjallarhorn para inspirar o exército',
+      },
+      // Era Heroica
+      {
+        id: 'frost_giant',
+        name: '❄️ Gigante de Gelo (Skadi / Hel — Era Heroica)',
+        role: 'Colosso glacial de Niflheim que congela inimigos com seu sopro de gelo e esmaga tropas',
+      },
+      {
+        id: 'mountain_giant',
+        name: '🏔️ Gigante da Montanha (Njord / Hel — Era Heroica)',
+        role: 'Gigante colossal de granito vivo armado com um tronco de pinheiro para demolir edifícios',
+      },
+      {
+        id: 'battle_boar',
+        name: '🐗 Javali de Batalha (Bragi — Era Heroica)',
+        role: 'Gullinbursti — javali mecânico dourado forjado pelos anões que arremessa soldados inimigos pelos ares',
+      },
+      {
+        id: 'kraken',
+        name: '🐙 Kraken (Njord — Era Heroica)',
+        role: 'Monstro abissal tentacular que afunda navios instantaneamente e esmaga tropas costeiras',
+      },
+      {
+        id: 'rock_troll',
+        name: '💎 Troll da Rocha (Aegir / Freyr — Era Heroica)',
+        role: 'Criatura blindada de rocha e cristais rúnicos que bloqueia ataques e resiste muito bem a projéteis',
+      },
+      // Era Mítica
+      {
+        id: 'fire_giant',
+        name: '🔥 Gigante de Fogo (Baldr / Hel — Era Mítica)',
+        role: 'Gigante de Muspelheim armado com espada flamejante que dispara bolas de fogo e causa dano em área',
+      },
+      {
+        id: 'fenris_wolf',
+        name: '🐺 Cria de Fenris (Tyr — Era Mítica)',
+        role: 'Lobo monstruoso acorrentado com Gleipnir que ganha ataque e velocidade quando luta em matilha',
+      },
+      {
+        id: 'nidhogg',
+        name: '🐉 Nidhogg (Hel — Era Mítica)',
+        role: 'Dragão gigante invocado por Hel que cospe fogo devastador sobre exércitos e bases',
+      },
+      {
+        id: 'jormungand',
+        name: '🐍 Jormungand (Njord / Hel — Era Mítica)',
+        role: 'Serpente marinha colosal que dispara jatos de ácido contra navios e unidades costeiras',
+      },
+      {
+        id: 'fafnir',
+        name: '☠️ Fafnir (Vidar / Freyr — Era Mítica)',
+        role: 'Dragão terrestre encouraçado em ouro amaldiçoado que cospe fogo e deixa um rastro tóxico',
+      },
+      // Fim de Jogo
       {
         id: 'titan',
-        name: `❄️ ${godInfo.titanName}`,
-        role: godInfo.titanRole,
+        name: '❄️ Titã Ymir (Segredo dos Titãs — Fim de Jogo)',
+        role: 'O gigantesco Ymir, o gigante de gelo primordial armado com um machado colossal',
       },
     ];
   }
@@ -2344,12 +2451,30 @@ export function HopliteUvBuilderModal({
           selectedUnit === 'hydra' ||
           selectedUnit === 'war_elephant' ||
           selectedUnit === 'roc' ||
-          selectedUnit === 'siege_tower';
+          selectedUnit === 'siege_tower' ||
+          selectedUnit === 'frost_giant' ||
+          selectedUnit === 'mountain_giant' ||
+          selectedUnit === 'fire_giant' ||
+          selectedUnit === 'nidhogg' ||
+          selectedUnit === 'kraken' ||
+          selectedUnit === 'jormungand' ||
+          selectedUnit === 'fafnir';
         const isMountedOrSiege =
           selectedUnit === 'cavalry' ||
           selectedUnit === 'prodromos' ||
           selectedUnit === 'chariot_archer' ||
           selectedUnit === 'camel_rider' ||
+          selectedUnit === 'raiding_cavalry' ||
+          selectedUnit === 'jarl' ||
+          selectedUnit === 'valkyrie' ||
+          selectedUnit === 'battle_boar' ||
+          selectedUnit === 'rock_troll' ||
+          selectedUnit === 'troll' ||
+          selectedUnit === 'einherjar' ||
+          selectedUnit === 'fenris_wolf' ||
+          selectedUnit === 'ox_cart' ||
+          selectedUnit === 'portable_ram' ||
+          selectedUnit === 'norse_ballista' ||
           selectedUnit === 'sphinx' ||
           selectedUnit === 'wadjet' ||
           selectedUnit === 'petsuchos' ||

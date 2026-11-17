@@ -22,6 +22,7 @@ import { buildIsis, getCachedIsisTextures, animateIsis } from '../civilizacao/eg
 import { buildSet, getCachedSetTextures, animateSet } from '../civilizacao/egipcios/setModel';
 import { buildRa, getCachedRaTextures, animateRa } from '../civilizacao/egipcios/raModel';
 import { createEgyptianUnitMesh, getEgyptianUnitMarkerSpec } from '../civilizacao/egipcios/egipciosModels';
+import { createNorseUnitMesh, getNorseUnitMarkerSpec } from '../civilizacao/nordicos/nordicosModels';
 import { createAoMOakTreeMesh, getFaunaCoatMaterial } from '../TEXTURA';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
@@ -1671,6 +1672,57 @@ export function createUnitMesh(
       );
     };
     const mSpec = getEgyptianUnitMarkerSpec(kind);
+    attachGroundMarkers(root, mSpec.markerRadius, pal, team);
+    attachHealthBar(root, mSpec.barHeight, mSpec.barWidth);
+    return root;
+  }
+
+  const isExplicitNorseUnit =
+    kind === 'norse_dwarf' ||
+    kind === 'ox_cart' ||
+    kind === 'hersir' ||
+    kind === 'godi' ||
+    kind === 'ulfsark' ||
+    kind === 'throwing_axeman' ||
+    kind === 'raiding_cavalry' ||
+    kind === 'huskarl' ||
+    kind === 'jarl' ||
+    kind === 'portable_ram' ||
+    kind === 'norse_ballista' ||
+    kind === 'troll' ||
+    kind === 'valkyrie' ||
+    kind === 'einherjar' ||
+    kind === 'frost_giant' ||
+    kind === 'mountain_giant' ||
+    kind === 'battle_boar' ||
+    kind === 'kraken' ||
+    kind === 'rock_troll' ||
+    kind === 'fire_giant' ||
+    kind === 'fenris_wolf' ||
+    kind === 'nidhogg' ||
+    kind === 'jormungand' ||
+    kind === 'fafnir';
+
+  if (isExplicitNorseUnit || ((look.style === 'norse' || pantheon === 'jotunn') && !isGodKind)) {
+    const norseMesh = createNorseUnitMesh(kind, team, pal, enableShadows);
+    root.add(norseMesh);
+    root.userData.norseMesh = norseMesh;
+    root.userData.animatePose = norseMesh.userData.animatePose;
+    root.userData.leftLeg = norseMesh.userData.leftLeg;
+    root.userData.rightLeg = norseMesh.userData.rightLeg;
+    root.userData.leftArm = norseMesh.userData.leftArm;
+    root.userData.rightArm = norseMesh.userData.rightArm;
+    root.userData.updateBrg = (dt: number, state: string) => {
+      norseMesh.userData.animatePose?.(
+        dt,
+        state === 'move',
+        3.2,
+        state === 'attack' ? 0.5 : null,
+        state,
+        'wood'
+      );
+    };
+    const mSpec = getNorseUnitMarkerSpec(kind);
     attachGroundMarkers(root, mSpec.markerRadius, pal, team);
     attachHealthBar(root, mSpec.barHeight, mSpec.barWidth);
     return root;
