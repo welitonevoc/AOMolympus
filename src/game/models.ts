@@ -25,6 +25,7 @@ import { createEgyptianUnitMesh, getEgyptianUnitMarkerSpec } from '../civilizaca
 import { createNorseUnitMesh, getNorseUnitMarkerSpec } from '../civilizacao/nordicos/nordicosModels';
 import { createAtlanteanUnitMesh, getAtlanteanUnitMarkerSpec } from '../civilizacao/atlantes/atlantesModels';
 import { createNorseBuildingMesh } from '../civilizacao/nordicos/norseBuildingModels';
+import { createEgyptianBuildingMesh } from '../civilizacao/egipcios/egyptianBuildingModels';
 import {
   createAoMOakTreeMesh,
   createBiomeTreeMesh,
@@ -1059,6 +1060,20 @@ export function createBuildingMesh(
     return root;
   }
 
+  if (look.style === 'egyptian') {
+    const built = createEgyptianBuildingMesh(kind, team, pal, enableShadows);
+    root.add(built.group);
+    if (built.beaconCrystal) {
+      root.userData.beaconCrystal = built.beaconCrystal;
+    }
+    if (built.vortexRing) {
+      root.userData.vortexRing = built.vortexRing;
+    }
+    attachGroundMarkers(root, built.markerRadius, pal, team);
+    attachHealthBar(root, built.barHeight, built.barWidth);
+    return root;
+  }
+
   if (kind === 'town_center') {
     buildSimpleTownCenter(root, team, pal, look, enableShadows);
     return root;
@@ -1279,72 +1294,7 @@ export function createBuildingMesh(
     return root;
   }
 
-  // --- EGYPTIAN / AZTEC / BABYLONIAN ARCHITECTURE ---
-  if (look.style === 'egyptian') {
-    if (kind === 'house') {
-      addPart(new THREE.Mesh(new THREE.BoxGeometry(1.90, 0.14, 1.65), pal.sandstoneDark), 0, 0.07, 0);
-      addPart(new THREE.Mesh(new THREE.BoxGeometry(1.68, 0.96, 1.44), look.wallMat), 0, 0.62, 0);
-      addPart(new THREE.Mesh(new THREE.BoxGeometry(1.78, 0.12, 1.54), look.trimMat), 0, 1.15, 0);
-      addPart(new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.68, 0.12), pal.timber), 0, 0.48, 0.73);
-      addPart(new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.24, 0.06), teamMat), 0.56, 0.88, 0.74);
 
-      attachGroundMarkers(root, 1.15, pal, team);
-      attachHealthBar(root, 2.05, 1.3);
-      return root;
-    }
-    if (kind === 'barracks') {
-      addPart(new THREE.Mesh(new THREE.BoxGeometry(4.6, 0.4, 4.2), pal.sandstoneDark), 0, 0.2, 0);
-      addPart(new THREE.Mesh(new THREE.BoxGeometry(4.0, 2.4, 3.6), look.wallMat), 0, 1.6, 0);
-      addPart(new THREE.Mesh(new THREE.BoxGeometry(4.3, 0.3, 3.9), look.trimMat), 0, 2.95, 0);
-      for (const ox of [-1.85, 1.85]) {
-        addPart(new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.58, 3.4, 4), pal.sandstoneDark), ox, 2.1, 1.6);
-        addPart(new THREE.Mesh(new THREE.ConeGeometry(0.42, 0.8, 4), look.roofMat), ox, 4.2, 1.6);
-      }
-      const shield = new THREE.Mesh(new THREE.CylinderGeometry(0.62, 0.62, 0.16, 12), pal.gold);
-      shield.rotation.x = Math.PI / 2;
-      addPart(shield, 0, 2.1, 1.85);
-      addPart(new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.9, 0.1), teamMat), 0, 3.5, 0);
-
-      attachGroundMarkers(root, 2.7, pal, team);
-      attachHealthBar(root, 4.4, 2.6);
-      return root;
-    }
-    if (kind === 'temple') {
-      addPart(new THREE.Mesh(new THREE.BoxGeometry(5.2, 0.4, 5.2), pal.sandstoneDark), 0, 0.2, 0);
-      addPart(new THREE.Mesh(new THREE.BoxGeometry(4.6, 0.35, 4.6), look.wallMat), 0, 0.58, 0);
-      const pyrBase = new THREE.Mesh(new THREE.ConeGeometry(3.2, 3.4, 4), look.wallMat);
-      pyrBase.rotation.y = Math.PI / 4;
-      addPart(pyrBase, 0, 2.45, 0);
-      const pyrCap = new THREE.Mesh(new THREE.ConeGeometry(1.2, 1.4, 4), look.roofMat);
-      pyrCap.rotation.y = Math.PI / 4;
-      addPart(pyrCap, 0, 4.15, 0);
-      for (const [px, pz] of [[-2.0, 2.0], [2.0, 2.0], [-2.0, -2.0], [2.0, -2.0]]) {
-        addPart(new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.32, 2.8, 10), look.wallMat), px, 2.2, pz);
-        addPart(new THREE.Mesh(new THREE.SphereGeometry(0.32, 8, 6), look.trimMat), px, 3.65, pz);
-      }
-      const crystal = addPart(new THREE.Mesh(new THREE.OctahedronGeometry(0.65, 0), pal.crystalGlow), 0, 5.8, 0);
-      root.userData.beaconCrystal = crystal;
-      addPart(new THREE.Mesh(new THREE.BoxGeometry(0.85, 1.35, 0.08), teamMat), 0, 1.8, 2.15);
-
-      attachGroundMarkers(root, 3.0, pal, team);
-      attachHealthBar(root, 6.2, 2.8);
-      return root;
-    }
-    // tower (Watch Tower, Height 7.2u)
-    addPart(new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.55, 2.2), pal.sandstoneDark), 0, 0.275, 0);
-    const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.65, 1.05, 4.8, 4), look.wallMat);
-    shaft.rotation.y = Math.PI / 4;
-    addPart(shaft, 0, 2.95, 0);
-    addPart(new THREE.Mesh(new THREE.BoxGeometry(1.65, 0.35, 1.65), look.trimMat), 0, 5.4, 0);
-    addPart(new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.22, 1.8), teamMat), 0, 5.68, 0);
-    const tip = new THREE.Mesh(new THREE.ConeGeometry(0.85, 1.4, 4), look.roofMat);
-    tip.rotation.y = Math.PI / 4;
-    addPart(tip, 0, 6.5, 0);
-
-    attachGroundMarkers(root, 1.6, pal, team);
-    attachHealthBar(root, 7.4, 1.9);
-    return root;
-  }
 
   // --- ATLANTEAN / CHINESE / ELDRITCH ARCHITECTURE ---
   if (look.style === 'atlantean') {
