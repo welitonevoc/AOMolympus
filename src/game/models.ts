@@ -23,6 +23,7 @@ import { buildSet, getCachedSetTextures, animateSet } from '../civilizacao/egipc
 import { buildRa, getCachedRaTextures, animateRa } from '../civilizacao/egipcios/raModel';
 import { createEgyptianUnitMesh, getEgyptianUnitMarkerSpec } from '../civilizacao/egipcios/egipciosModels';
 import { createNorseUnitMesh, getNorseUnitMarkerSpec } from '../civilizacao/nordicos/nordicosModels';
+import { createNorseBuildingMesh } from '../civilizacao/nordicos/norseBuildingModels';
 import { createAoMOakTreeMesh, getFaunaCoatMaterial } from '../TEXTURA';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
@@ -1118,6 +1119,20 @@ export function createBuildingMesh(
   const teamMat = team === 'player' ? pal.tunicPlayer : pal.tunicEnemy;
   const look = getCivLook(pantheon, pal, majorGod);
 
+  if (look.style === 'norse') {
+    const built = createNorseBuildingMesh(kind, team, pal, enableShadows);
+    root.add(built.group);
+    if (built.beaconCrystal) {
+      root.userData.beaconCrystal = built.beaconCrystal;
+    }
+    if (built.vortexRing) {
+      root.userData.vortexRing = built.vortexRing;
+    }
+    attachGroundMarkers(root, built.markerRadius, pal, team);
+    attachHealthBar(root, built.barHeight, built.barWidth);
+    return root;
+  }
+
   if (kind === 'town_center') {
     buildSimpleTownCenter(root, team, pal, look, enableShadows);
     return root;
@@ -1399,74 +1414,6 @@ export function createBuildingMesh(
     const tip = new THREE.Mesh(new THREE.ConeGeometry(0.85, 1.4, 4), look.roofMat);
     tip.rotation.y = Math.PI / 4;
     addPart(tip, 0, 6.5, 0);
-
-    attachGroundMarkers(root, 1.6, pal, team);
-    attachHealthBar(root, 7.4, 1.9);
-    return root;
-  }
-
-  // --- NORSE / JAPANESE / CELTIC / LAKOTA / JOTUNN ARCHITECTURE ---
-  if (look.style === 'norse') {
-    if (kind === 'house') {
-      addPart(new THREE.Mesh(new THREE.BoxGeometry(1.90, 0.16, 1.65), pal.stoneDark), 0, 0.08, 0);
-      addPart(new THREE.Mesh(new THREE.BoxGeometry(1.66, 0.82, 1.40), look.wallMat), 0, 0.57, 0);
-      const roof = new THREE.Mesh(new THREE.ConeGeometry(1.42, 0.88, 4), look.roofMat);
-      roof.rotation.y = Math.PI / 4;
-      addPart(roof, 0, 1.40, 0);
-      addPart(new THREE.Mesh(new THREE.BoxGeometry(0.40, 0.62, 0.12), look.trimMat), 0, 0.47, 0.71);
-      const sh = new THREE.Mesh(new THREE.CylinderGeometry(0.20, 0.20, 0.06, 10), teamMat);
-      sh.rotation.x = Math.PI / 2;
-      addPart(sh, 0.55, 0.76, 0.73);
-
-      attachGroundMarkers(root, 1.15, pal, team);
-      attachHealthBar(root, 2.05, 1.3);
-      return root;
-    }
-    if (kind === 'barracks') {
-      addPart(new THREE.Mesh(new THREE.BoxGeometry(4.6, 0.42, 4.2), pal.stoneDark), 0, 0.21, 0);
-      addPart(new THREE.Mesh(new THREE.BoxGeometry(4.0, 2.2, 3.6), look.wallMat), 0, 1.5, 0);
-      const roof = new THREE.Mesh(new THREE.ConeGeometry(3.6, 2.1, 4), look.roofMat);
-      roof.rotation.y = Math.PI / 4;
-      addPart(roof, 0, 3.55, 0);
-      for (const [px, pz] of [[-1.95, 1.75], [1.95, 1.75], [-1.95, -1.75], [1.95, -1.75]]) {
-        addPart(new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.32, 3.0, 8), look.trimMat), px, 1.7, pz);
-      }
-      addPart(new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.5, 0.16), pal.steel), 0, 2.0, 1.85);
-      addPart(new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.9, 0.1), teamMat), 0, 3.8, 0);
-
-      attachGroundMarkers(root, 2.7, pal, team);
-      attachHealthBar(root, 4.4, 2.6);
-      return root;
-    }
-    if (kind === 'temple') {
-      addPart(new THREE.Mesh(new THREE.BoxGeometry(5.2, 0.42, 5.2), pal.stoneDark), 0, 0.21, 0);
-      for (const [px, pz] of [[-1.95, 1.95], [1.95, 1.95], [-1.95, -1.95], [1.95, -1.95]]) {
-        addPart(new THREE.Mesh(new THREE.BoxGeometry(0.65, 2.6, 0.5), look.trimMat), px, 1.6, pz);
-      }
-      addPart(new THREE.Mesh(new THREE.BoxGeometry(3.0, 2.4, 3.0), look.wallMat), 0, 1.6, 0);
-      const spire1 = new THREE.Mesh(new THREE.ConeGeometry(2.7, 1.8, 4), look.roofMat);
-      spire1.rotation.y = Math.PI / 4;
-      addPart(spire1, 0, 3.5, 0);
-      const spire2 = new THREE.Mesh(new THREE.ConeGeometry(1.7, 1.6, 4), look.roofMat);
-      spire2.rotation.y = Math.PI / 4;
-      addPart(spire2, 0, 4.7, 0);
-      const crystal = addPart(new THREE.Mesh(new THREE.OctahedronGeometry(0.65, 0), pal.iceBlue), 0, 6.0, 0);
-      root.userData.beaconCrystal = crystal;
-      addPart(new THREE.Mesh(new THREE.BoxGeometry(0.85, 1.35, 0.08), teamMat), 0, 1.7, 1.55);
-
-      attachGroundMarkers(root, 3.0, pal, team);
-      attachHealthBar(root, 6.4, 2.8);
-      return root;
-    }
-    // tower (Norse Watch Tower, Height 7.2u)
-    addPart(new THREE.Mesh(new THREE.CylinderGeometry(1.25, 1.5, 0.6, 8), pal.stoneDark), 0, 0.3, 0);
-    addPart(new THREE.Mesh(new THREE.CylinderGeometry(0.95, 1.2, 4.2, 8), look.wallMat), 0, 2.7, 0);
-    addPart(new THREE.Mesh(new THREE.BoxGeometry(2.3, 0.55, 2.3), look.trimMat), 0, 4.95, 0);
-    addPart(new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.22, 2.4), teamMat), 0, 5.35, 0);
-    const roof = new THREE.Mesh(new THREE.ConeGeometry(1.95, 1.8, 4), look.roofMat);
-    roof.rotation.y = Math.PI / 4;
-    addPart(roof, 0, 6.35, 0);
-    addPart(new THREE.Mesh(new THREE.SphereGeometry(0.24, 8, 8), pal.steel), 0, 7.25, 0);
 
     attachGroundMarkers(root, 1.6, pal, team);
     attachHealthBar(root, 7.4, 1.9);

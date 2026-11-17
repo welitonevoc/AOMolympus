@@ -1148,6 +1148,71 @@ export function getCivUnitSpec(pantheon: PantheonId, kind: UnitKind): UnitStats 
 export function getCivBuildingSpec(pantheon: PantheonId, kind: BuildingKind): BuildingStats {
   const base = BUILDING_STATS[kind];
   const p = PANTHEONS[pantheon];
+  if (pantheon === 'norse' || pantheon === 'jotunn') {
+    if (kind === 'town_center') {
+      return {
+        ...base,
+        name: `Grande Casa Longa (${p.name})`,
+        role: 'Salão principal de madeira e pedra rúnica — treina Coletores, Anões, Carroças de Bois e Ulfsarks.',
+      };
+    }
+    if (kind === 'barracks') {
+      return {
+        ...base,
+        name: 'Salão de Hidromel (Quartel)',
+        role: 'Salão Comunal Viking — treina Ulfsarks, Guerreiros de Machado, Hersirs e Cavalaria de Incursão.',
+      };
+    }
+    if (kind === 'archery_range') {
+      return {
+        ...base,
+        name: 'Salão de Lançadores de Machado',
+        role: 'Pátio de guerra nórdico — treina Guerreiros de Machado de Arremesso e Batedores.',
+      };
+    }
+    if (kind === 'stable') {
+      return {
+        ...base,
+        name: 'Salão de Incursão Montada',
+        role: 'Estábulo Viking — treina Cavalaria de Incursão e Jarls.',
+      };
+    }
+    if (kind === 'temple') {
+      return {
+        ...base,
+        name: `Templo Nórdico Hof (${p.deity})`,
+        role: 'Igreja de madeira em camadas (Stave Hof) cercada por pedras rúnicas — invoca Hersirs, Godis e criaturas míticas.',
+      };
+    }
+    if (kind === 'fortress') {
+      return {
+        ...base,
+        name: 'Forte da Colina',
+        role: 'Fortaleza paliçada de madeira e granito — treina Huskarls, Jarls, Aríetes e Balistas.',
+      };
+    }
+    if (kind === 'armory') {
+      return {
+        ...base,
+        name: 'Forja Anã de Nidavellir',
+        role: 'Forja rúnica de pedra e madeira — pesquisa melhorias de armas e armaduras nórdicas.',
+      };
+    }
+    if (kind === 'house') {
+      return {
+        ...base,
+        name: 'Casa Longa Nórdica',
+        role: 'Habitação viking de madeira entalhada e base de pedra (+10 de população).',
+      };
+    }
+    if (kind === 'tower') {
+      return {
+        ...base,
+        name: 'Torre de Vigia Viking',
+        role: 'Torre defensiva de madeira e pedra com escudos nórdicos.',
+      };
+    }
+  }
   if (kind === 'town_center') {
     return { ...base, name: `Cidadela (${p.name})` };
   }

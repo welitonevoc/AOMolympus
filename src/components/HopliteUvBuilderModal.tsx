@@ -801,6 +801,20 @@ export function getUnitsForCivAndGod(civ: PantheonId, majorGod: string): CivEnti
 
 export function getBuildingsForCivAndGod(civ: PantheonId, majorGod: string): { id: BuildingKind; name: string; role: string }[] {
   const god = majorGod || 'Zeus';
+  if (civ === 'norse' || civ === 'jotunn') {
+    return [
+      { id: 'town_center', name: `Grande Casa Longa (${god})`, role: `Salão Comunal de madeira entalhada, pedra e proas de dragão — treina Coletores, Anões, Carroças de Bois e Ulfsarks` },
+      { id: 'barracks', name: `Salão de Hidromel (${god})`, role: `Salão de Hidromel com escudos vikings — treina Ulfsark, Hirdman, Guerreiro de Machado, Hersir e Cavalaria de Incursão` },
+      { id: 'temple', name: `Templo Nórdico Hof (${god})`, role: `Templo Stave em camadas com pedras rúnicas e proas de Drakkar — invoca Hersir, Godi e unidades míticas de ${god}` },
+      { id: 'fortress', name: `Forte da Colina (${god})`, role: `Fortaleza paliçada sobre colina de granito — treina Huskarl, Jarl, Aríete Portátil e Balista` },
+      { id: 'armory', name: `Forja Anã de ${god}`, role: `Forja rúnica de pedra e madeira — aprimora armas e armaduras com a mestria dos Anões` },
+      { id: 'archery_range', name: `Salão de Machados (${god})`, role: `Pátio de combate nórdico — treina Guerreiros de Machado de Arremesso` },
+      { id: 'stable', name: `Estábulo de Incursão (${god})`, role: `Salão de cavalaria nórdica — treina Cavalaria de Incursão e Jarls` },
+      { id: 'siege_works', name: `Oficina de Cerco Viking (${god})`, role: `Constrói Aríetes Portáteis e Balistas de precisão` },
+      { id: 'house', name: `Casa Longa (${god})`, role: `Cabana nórdica de madeira e pedra com teto de ripas e escudo no frontão` },
+      { id: 'tower', name: `Torre de Vigia Viking (${god})`, role: `Torre defensiva de madeira e granito adornada com escudos do clã` },
+    ];
+  }
   return [
     { id: 'town_center', name: `Centro da Cidade (${god})`, role: `Sede principal consagrada a ${god} — treina aldeões e avança eras` },
     { id: 'barracks', name: `Quartel de ${god}`, role: `Treina infantaria (Hoplita, Hipaspista${civ === 'greek' && god.toLowerCase().includes('zeus') ? ', Mirmidão' : ''}) sob a bênção de ${god}` },
