@@ -225,124 +225,67 @@ function buildCanopicRelicShrine(mats: EgyptianMaterials): THREE.Group {
 
 // ─── 1. PHARAONIC PALACE (Town Center — Palácio do Faraó / Centro da Cidade) ───
 
-function buildEgyptianTownCenter(group: THREE.Group, mats: EgyptianMaterials): void {
-  // 1. Terraced Sandstone Foundation with Batter Walls & Hieroglyph trim
+function buildEgyptianTownCenter(group: THREE.Group, mats: EgyptianMaterials, age: number): void {
   const basePlinth = new THREE.Mesh(
-    new THREE.BoxGeometry(5.4, 0.46, 5.4),
+    new THREE.BoxGeometry((4.2 + age * 0.3), 0.46, (4.2 + age * 0.3)),
     mats.sandstoneDark
   );
   basePlinth.position.y = 0.23;
   group.add(basePlinth);
 
-  const innerCourt = new THREE.Mesh(
-    new THREE.BoxGeometry(4.8, 0.2, 4.8),
-    mats.sandstone
-  );
-  innerCourt.position.y = 0.56;
-  group.add(innerCourt);
-
-  // Grand Frontal Staircase
-  for (let s = 0; s < 4; s++) {
-    const step = new THREE.Mesh(
-      new THREE.BoxGeometry(2.2 - s * 0.15, 0.11, 0.35),
-      mats.sandstoneDark
-    );
-    step.position.set(0, 0.05 + s * 0.11, 2.65 - s * 0.18);
-    group.add(step);
-  }
-
-  // 2. Twin Monumental Entrance Pylons (Battered Egyptian Gateway Towers)
-  for (const side of [-1, 1]) {
-    const pylon = new THREE.Mesh(
-      new THREE.BoxGeometry(1.3, 3.3, 1.5),
+  if (age >= 2) {
+    const innerCourt = new THREE.Mesh(
+      new THREE.BoxGeometry((3.8 + age * 0.2), 0.2, (3.8 + age * 0.2)),
       mats.sandstone
     );
-    pylon.position.set(side * 1.75, 1.65 + 0.66, 1.4);
-    pylon.rotation.y = side * 0.04;
-    group.add(pylon);
-
-    const pylonCap = new THREE.Mesh(
-      new THREE.BoxGeometry(1.38, 0.28, 1.58),
-      mats.goldTrim
-    );
-    pylonCap.position.set(side * 1.75, 3.45 + 0.66, 1.4);
-    group.add(pylonCap);
+    innerCourt.position.y = 0.56;
+    group.add(innerCourt);
   }
 
-  // 3. Central Pharaonic Sanctuary Hall with Lapis Roof & Hieroglyph Frieze
-  const hall = new THREE.Mesh(
-    new THREE.BoxGeometry(2.5, 2.5, 3.0),
-    mats.sandstone
-  );
-  hall.position.set(0, 1.25 + 0.66, -0.3);
+  for (const side of [-1, 1]) {
+    const pylon = new THREE.Mesh(new THREE.BoxGeometry(1.3, 2.4 + age * 0.3, 1.5), mats.sandstone);
+    pylon.position.set(side * (1.5 + age * 0.05), (1.2 + age * 0.15) + 0.66, 1.4);
+    group.add(pylon);
+  }
+
+  const hallH = 2.0 + age * 0.25;
+  const hall = new THREE.Mesh(new THREE.BoxGeometry(2.3 + age * 0.12, hallH, 2.6 + age * 0.12), mats.sandstone);
+  hall.position.set(0, hallH * 0.5 + 0.66, -0.3);
   group.add(hall);
 
-  const frieze = new THREE.Mesh(
-    new THREE.BoxGeometry(2.58, 0.38, 3.08),
-    mats.hieroglyphTrim
-  );
-  frieze.position.set(0, 2.55 + 0.66, -0.3);
-  group.add(frieze);
-
-  const lapisRoof = new THREE.Mesh(
-    new THREE.BoxGeometry(2.7, 0.26, 3.2),
-    mats.lapisRoof
-  );
-  lapisRoof.position.set(0, 2.85 + 0.66, -0.3);
-  group.add(lapisRoof);
-
-  // 4. Soaring Golden Solar Obelisk in Courtyard Center
-  const obeliskBase = new THREE.Mesh(
-    new THREE.BoxGeometry(0.7, 0.48, 0.7),
-    mats.sandstoneDark
-  );
-  obeliskBase.position.set(0, 0.66 + 0.24, -0.2);
-  group.add(obeliskBase);
-
-  const obeliskShaft = new THREE.Mesh(
-    new THREE.ConeGeometry(0.3, 3.6, 4),
-    mats.goldTrim
-  );
-  obeliskShaft.position.set(0, 0.66 + 0.48 + 1.8, -0.2);
-  group.add(obeliskShaft);
-
-  const solarApex = new THREE.Mesh(
-    new THREE.OctahedronGeometry(0.24, 0),
-    mats.goldSolar
-  );
-  solarApex.position.set(0, 0.66 + 2.6, -0.2);
-  group.add(solarApex);
-
-  // 5. Front Portico Lotus Columns & Guardian Sphinxes
-  for (const side of [-1, 1]) {
-    const col = buildLotusColumn(2.4, mats);
-    col.position.set(side * 0.9, 0.66, 1.55);
-    group.add(col);
-
-    const sphinx = buildCrouchingSphinx(mats);
-    sphinx.position.set(side * 1.9, 0.66, 2.3);
-    sphinx.rotation.y = -side * 0.35;
-    group.add(sphinx);
+  if (age >= 3) {
+    const obeliskShaft = new THREE.Mesh(new THREE.ConeGeometry(0.25, 2.8 + age * 0.3, 4), mats.goldTrim);
+    obeliskShaft.position.set(0, 0.66 + 1.4, -0.2);
+    group.add(obeliskShaft);
   }
 
-  // 6. Royal Banner Standard & Relic Offering Altar
-  const pole = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.045, 0.045, 3.4, 6),
-    mats.goldTrim
-  );
+  if (age >= 4) {
+    const relic = buildCanopicRelicShrine(mats);
+    relic.position.set(1.4, 0.66, 1.4);
+    group.add(relic);
+  }
+
+  if (age >= 5) {
+    const giantApex = new THREE.Mesh(new THREE.OctahedronGeometry(0.55, 1), mats.goldSolar);
+    giantApex.position.set(0, 0.66 + hallH + 1.8, -0.3);
+    group.add(giantApex);
+
+    const halo = new THREE.Mesh(
+      new THREE.TorusGeometry(1.5, 0.08, 8, 24),
+      new THREE.MeshBasicMaterial({ color: 0xffd700, transparent: true, opacity: 0.85 })
+    );
+    halo.rotation.x = Math.PI / 2;
+    halo.position.set(0, 0.66 + hallH + 2.4, -0.3);
+    group.add(halo);
+  }
+
+  const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 3.4, 6), mats.goldTrim);
   pole.position.set(0, 0.66 + 1.7, 2.15);
   group.add(pole);
 
-  const banner = new THREE.Mesh(
-    new THREE.BoxGeometry(0.6, 0.9, 0.04),
-    mats.teamBanner
-  );
+  const banner = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.9, 0.04), mats.teamBanner);
   banner.position.set(0, 0.66 + 2.2, 2.18);
   group.add(banner);
-
-  const relicShrine = buildCanopicRelicShrine(mats);
-  relicShrine.position.set(1.15, 0.66, -1.5);
-  group.add(relicShrine);
 }
 
 // ─── 2. MIGDAL BARRACKS (Quartel Egípcio / Migdal Fortress) ──────────────────

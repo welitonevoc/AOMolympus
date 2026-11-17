@@ -26,6 +26,8 @@ import { createNorseUnitMesh, getNorseUnitMarkerSpec } from '../civilizacao/nord
 import { createAtlanteanUnitMesh, getAtlanteanUnitMarkerSpec } from '../civilizacao/atlantes/atlantesModels';
 import { createNorseBuildingMesh } from '../civilizacao/nordicos/norseBuildingModels';
 import { createEgyptianBuildingMesh } from '../civilizacao/egipcios/egyptianBuildingModels';
+import { createGreekBuildingMesh } from '../civilizacao/gregos/greekBuildingModels';
+import { createAtlanteanBuildingMesh } from '../civilizacao/atlantes/atlanteanBuildingModels';
 import {
   createAoMOakTreeMesh,
   createBiomeTreeMesh,
@@ -1062,6 +1064,34 @@ export function createBuildingMesh(
 
   if (look.style === 'egyptian') {
     const built = createEgyptianBuildingMesh(kind, team, pal, enableShadows);
+    root.add(built.group);
+    if (built.beaconCrystal) {
+      root.userData.beaconCrystal = built.beaconCrystal;
+    }
+    if (built.vortexRing) {
+      root.userData.vortexRing = built.vortexRing;
+    }
+    attachGroundMarkers(root, built.markerRadius, pal, team);
+    attachHealthBar(root, built.barHeight, built.barWidth);
+    return root;
+  }
+
+  if (look.style === 'greek') {
+    const built = createGreekBuildingMesh(kind, team, pal, enableShadows);
+    root.add(built.group);
+    if (built.beaconCrystal) {
+      root.userData.beaconCrystal = built.beaconCrystal;
+    }
+    if (built.vortexRing) {
+      root.userData.vortexRing = built.vortexRing;
+    }
+    attachGroundMarkers(root, built.markerRadius, pal, team);
+    attachHealthBar(root, built.barHeight, built.barWidth);
+    return root;
+  }
+
+  if (look.style === 'atlantean') {
+    const built = createAtlanteanBuildingMesh(kind, team, pal, enableShadows);
     root.add(built.group);
     if (built.beaconCrystal) {
       root.userData.beaconCrystal = built.beaconCrystal;
