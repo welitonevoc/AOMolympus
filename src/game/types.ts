@@ -294,9 +294,14 @@ export interface MinorGodSpec {
 export interface MajorGodSpec {
   id: string;
   name: string;
+  title?: string;
   pantheon: PantheonId;
   focus: string;
   favoredPower: GodPowerId;
+  powerDescription?: string;
+  lore?: string;
+  comingSoon?: boolean;
+  expansionLabel?: string;
   minorChoices: {
     2: [string, string];
     3: [string, string];
@@ -1120,11 +1125,11 @@ export const PANTHEONS: Record<PantheonId, PantheonConfig> = {
   japanese: {
     id: 'japanese',
     name: 'Japoneses',
-    deity: 'Izanagi',
-    minorGods: 'Inari · Ebisu · Hachiman · Amaterasu · Susanoo · Raijin',
+    deity: 'Amaterasu',
+    minorGods: 'Tsukuyomi · Susanoo · Inari · Hachiman · Raijin · Fujin',
     archStyle: 'norse',
     architectureLabel: 'Santuários xintoístas de cedro, torii e armaduras laqueadas',
-    bonusLabel: 'Samurais ágeis e tempestades de Raijin/Fujin',
+    bonusLabel: 'Samurais ágeis e bênçãos solares de Amaterasu (Em breve)',
     primaryColor: '#e11d48',
     bannerHex: 0xe11d48,
     accentHex: 0xfde047,
@@ -1202,6 +1207,20 @@ export const PANTHEONS: Record<PantheonId, PantheonConfig> = {
     favoredGodPower: 'blizzard',
   },
 };
+
+export const PLAYABLE_PANTHEON_IDS: PantheonId[] = ['greek', 'egyptian', 'norse', 'atlantean'];
+
+export const COMING_SOON_PANTHEON_IDS: PantheonId[] = [
+  'chinese',
+  'japanese',
+  'aztec',
+  'roman',
+  'eldritch',
+  'celtic',
+  'babylonian',
+  'lakota',
+  'jotunn',
+];
 
 export type CivilizationId = 'gregos' | 'egipcios' | 'nordicos' | 'atlantes';
 
