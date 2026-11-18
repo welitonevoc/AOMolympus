@@ -1,0 +1,1243 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Aldeões Gregos (Homem & Mulher) | Age of Mythology: Olympus 3D</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --accent: #facc15;
+      --glass: rgba(12, 18, 32, 0.85);
+      --border: rgba(250, 204, 21, 0.42);
+    }
+    * { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #0a1220;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    }
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+      cursor: grab;
+    }
+    canvas:active { cursor: grabbing; }
+
+    #ui {
+      position: fixed;
+      top: 14px;
+      left: 14px;
+      right: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 10;
+      pointer-events: none;
+    }
+    .row {
+      display: flex;
+      gap: 7px;
+      flex-wrap: wrap;
+      align-items: center;
+      pointer-events: auto;
+    }
+    button {
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--glass);
+      backdrop-filter: blur(10px);
+      color: #f8fafc;
+      font-weight: 600;
+      font-size: 12.5px;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+      transition: all 0.2s ease;
+    }
+    button:hover {
+      transform: translateY(-1px);
+      background: rgba(24, 36, 62, 0.94);
+    }
+    button.god-btn.on[data-god="zeus"] {
+      background: linear-gradient(135deg, #fde047 0%, #2563eb 100%);
+      color: #091326;
+      border-color: #fef9c3;
+      box-shadow: 0 0 18px rgba(250, 204, 21, 0.55);
+    }
+    button.god-btn.on[data-god="poseidon"] {
+      background: linear-gradient(135deg, #2dd4bf 0%, #0284c7 100%);
+      color: #031521;
+      border-color: #ccfbf1;
+      box-shadow: 0 0 18px rgba(45, 212, 191, 0.55);
+    }
+    button.god-btn.on[data-god="hades"] {
+      background: linear-gradient(135deg, #ea580c 0%, #6d28d9 100%);
+      color: #ffffff;
+      border-color: #fed7aa;
+      box-shadow: 0 0 18px rgba(234, 88, 12, 0.55);
+    }
+    button.gen-btn.on {
+      background: linear-gradient(135deg, #f8fafc 0%, #94a3b8 100%);
+      color: #090d16;
+      border-color: #ffffff;
+    }
+    button.act-btn.on {
+      background: linear-gradient(135deg, #38bdf8 0%, #1d4ed8 100%);
+      color: #ffffff;
+      border-color: #bae6fd;
+      box-shadow: 0 0 16px rgba(56, 189, 248, 0.5);
+    }
+    button.cam-btn {
+      border-color: rgba(125, 211, 252, 0.5);
+    }
+    button.cam-btn.active {
+      background: linear-gradient(135deg, #0ea5e9 0%, #0369a1 100%);
+      color: #fff;
+      border-color: #e0f2fe;
+    }
+
+    #info-card {
+      position: fixed;
+      bottom: 46px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--glass);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--border);
+      padding: 8px 18px;
+      border-radius: 12px;
+      text-align: center;
+      pointer-events: none;
+      z-index: 10;
+      min-width: 300px;
+      max-width: 92vw;
+      box-shadow: 0 6px 22px rgba(0, 0, 0, 0.48);
+    }
+    #card-title {
+      color: #fde047;
+      font-weight: 700;
+      font-size: 13.5px;
+    }
+    #card-sub {
+      color: #cbd5e1;
+      font-size: 11.5px;
+      margin-top: 2px;
+    }
+
+    #badge {
+      position: fixed;
+      top: 14px;
+      right: 16px;
+      background: var(--glass);
+      backdrop-filter: blur(8px);
+      border: 1px solid var(--border);
+      padding: 7px 13px;
+      border-radius: 10px;
+      color: #fde047;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      pointer-events: none;
+      z-index: 9;
+    }
+    @media (max-width: 1024px) {
+      #badge { display: none; }
+    }
+
+    #hint {
+      position: fixed;
+      bottom: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(10, 18, 32, 0.8);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      padding: 5px 15px;
+      border-radius: 999px;
+      color: #e2e8f0;
+      font-size: 11.5px;
+      white-space: nowrap;
+      pointer-events: none;
+      z-index: 10;
+    }
+  </style>
+</head>
+<body>
+
+<div id="ui">
+  <div class="row">
+    <button data-god="zeus" class="god-btn on">⚡ Zeus</button>
+    <button data-god="poseidon" class="god-btn">🔱 Poseidon</button>
+    <button data-god="hades" class="god-btn">💀 Hades</button>
+    <span style="width:6px"></span>
+    <button data-gen="ambos" class="gen-btn on">Homem & Mulher</button>
+    <button data-gen="homem" class="gen-btn">Aldeão (Homem)</button>
+    <button data-gen="mulher" class="gen-btn">Aldeã (Mulher)</button>
+  </div>
+  <div class="row">
+    <button data-act="vigilia" class="act-btn on">Vigília</button>
+    <button data-act="andar" class="act-btn">Andando</button>
+    <button data-act="madeira" class="act-btn">Cortar Madeira</button>
+    <button data-act="ouro" class="act-btn">Minerar Ouro</button>
+    <button data-act="fruta" class="act-btn">Colher Frutas</button>
+    <button data-act="construir" class="act-btn">Construir</button>
+    <button id="btn-focus" class="cam-btn">Focar Rostos</button>
+    <button onclick="window.location.href='hoplita.html'" class="cam-btn" style="border-color: rgba(250, 204, 21, 0.5); background: rgba(250, 204, 21, 0.12);">🛡️ Hoplitas</button>
+    <button onclick="window.location.href='index.html'" class="cam-btn" style="border-color: rgba(148, 163, 184, 0.5); background: rgba(148, 163, 184, 0.12);">🏛️ Hub</button>
+  </div>
+</div>
+
+<div id="badge">Grécia • Aldeões Coletores</div>
+
+<div id="info-card">
+  <div id="card-title">Aldeões Gregos de Zeus</div>
+  <div id="card-sub">Túnica Chiton e Peplos em linho alvo com meandro azul-olímpico, faixa dourada e ferramentas de bronze solar</div>
+</div>
+
+<div id="hint">Arraste para girar 360° • Scroll / Pinça para zoom</div>
+
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+const T = THREE;
+
+/* ==========================================================================
+   1. CONFIGURAÇÃO VISUAL DAS 3 DIVINDADES (ZEUS, POSEIDON E HADES)
+   ========================================================================== */
+export const GOD_THEMES = {
+  zeus: {
+    id: 'zeus',
+    title: 'Aldeões Gregos de Zeus',
+    subtitle: 'Túnica Chiton e Peplos em linho alvo com meandro azul-olímpico, faixa dourada e ferramentas de bronze solar',
+    bgHex: 0x132644,
+    hemiSky: 0xfef9c3,
+    hemiGround: 0x1e3a8a,
+    rimHex: 0x38bdf8,
+    ringHex: 0xfacc15,
+    tunicBase: '#f8fafc',
+    tunicStripe: '#1e3a8a',
+    tunicTrim: '#eab308',
+    sashHex: 0x1d4ed8,
+    accentHex: 0xfacc15,
+    toolMetalHex: 0xd97706,
+    sparkHex: 0xfef08a,
+    maleSkin: 0xc98d62,
+    femaleSkin: 0xdfaa84,
+    maleHair: 0x3b2314,
+    femaleHair: 0x4a2c18
+  },
+  poseidon: {
+    id: 'poseidon',
+    title: 'Aldeões Gregos de Poseidon',
+    subtitle: 'Vestes em linho marinho com ondas turquesa, faixa de coral-azul e ferramentas de bronze atlante',
+    bgHex: 0x062336,
+    hemiSky: 0xccfbf1,
+    hemiGround: 0x0c4a6e,
+    rimHex: 0x2dd4bf,
+    ringHex: 0x2dd4bf,
+    tunicBase: '#ecfeff',
+    tunicStripe: '#0f766e',
+    tunicTrim: '#2dd4bf',
+    sashHex: 0x0284c7,
+    accentHex: 0x5eead4,
+    toolMetalHex: 0x0d9488,
+    sparkHex: 0x99f6e4,
+    maleSkin: 0xc28558,
+    femaleSkin: 0xdba47e,
+    maleHair: 0x1e293b,
+    femaleHair: 0x293548
+  },
+  hades: {
+    id: 'hades',
+    title: 'Aldeões Gregos de Hades',
+    subtitle: 'Túnicas cinza-carvão do Submundo com borda carmesim, detalhes em ferro escuro e brasas espectrais',
+    bgHex: 0x090712,
+    hemiSky: 0xa7f3d0,
+    hemiGround: 0x2e1065,
+    rimHex: 0x10b981,
+    ringHex: 0xea580c,
+    tunicBase: '#3f3f46',
+    tunicStripe: '#7f1d1d',
+    tunicTrim: '#ea580c',
+    sashHex: 0x450a0a,
+    accentHex: 0xea580c,
+    toolMetalHex: 0x71717a,
+    sparkHex: 0x6ee7b7,
+    maleSkin: 0xae917e,
+    femaleSkin: 0xc7afa0,
+    maleHair: 0x18181b,
+    femaleHair: 0x1f1926
+  }
+};
+
+/* ==========================================================================
+   2. TEXTURAS PROCEDURAIS PBR PARA AS VESTES E PISO DA VILA GREGA
+   ========================================================================== */
+export function createVillagerTunicTexture(theme) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 256;
+  const ctx = canvas.getContext('2d');
+
+  ctx.fillStyle = theme.tunicBase;
+  ctx.fillRect(0, 0, 512, 256);
+
+  // Pregas sutis do tecido
+  ctx.fillStyle = 'rgba(15, 23, 42, 0.08)';
+  for (let x = 0; x < 512; x += 8) ctx.fillRect(x, 0, 3, 256);
+
+  // Barrado grego na parte inferior
+  ctx.fillStyle = theme.tunicStripe;
+  ctx.fillRect(0, 196, 512, 40);
+  ctx.fillStyle = theme.tunicTrim;
+  ctx.fillRect(0, 192, 512, 4);
+  ctx.fillRect(0, 236, 512, 4);
+
+  // Padrão de meandro grego
+  ctx.strokeStyle = theme.tunicTrim;
+  ctx.lineWidth = 3;
+  for (let x = 0; x < 512; x += 32) {
+    ctx.beginPath();
+    ctx.moveTo(x + 4, 229);
+    ctx.lineTo(x + 4, 204);
+    ctx.lineTo(x + 24, 204);
+    ctx.lineTo(x + 24, 223);
+    ctx.lineTo(x + 12, 223);
+    ctx.lineTo(x + 12, 213);
+    ctx.lineTo(x + 18, 213);
+    ctx.stroke();
+  }
+
+  const tex = new T.CanvasTexture(canvas);
+  tex.wrapS = tex.wrapT = T.RepeatWrapping;
+  tex.colorSpace = T.SRGBColorSpace;
+  return tex;
+}
+
+export function createFloorTexture(theme) {
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = 1024;
+  const ctx = canvas.getContext('2d');
+
+  ctx.fillStyle = theme.id === 'hades' ? '#18181b' : (theme.id === 'poseidon' ? '#cbd5e1' : '#e2e8f0');
+  ctx.fillRect(0, 0, 1024, 1024);
+
+  ctx.strokeStyle = 'rgba(100, 116, 139, 0.24)';
+  ctx.lineWidth = 2;
+  for (let i = 0; i < 40; i++) {
+    ctx.beginPath();
+    let mx = Math.random() * 1024, my = 0;
+    ctx.moveTo(mx, my);
+    while (my < 1024) {
+      my += 32;
+      mx += (Math.random() - 0.5) * 45;
+      ctx.lineTo(mx, my);
+    }
+    ctx.stroke();
+  }
+
+  const cx = 512, cy = 512;
+  ctx.strokeStyle = theme.tunicStripe;
+  ctx.lineWidth = 16;
+  ctx.beginPath();
+  ctx.arc(cx, cy, 420, 0, Math.PI * 2);
+  ctx.stroke();
+
+  ctx.strokeStyle = theme.tunicTrim;
+  ctx.lineWidth = 7;
+  ctx.beginPath();
+  ctx.arc(cx, cy, 436, 0, Math.PI * 2);
+  ctx.stroke();
+
+  // Símbolo Sagrado da Divindade no centro da arena (Raio de Zeus, Tridente de Poseidon, Bidente de Hades)
+  ctx.save();
+  ctx.strokeStyle = theme.tunicTrim;
+  ctx.fillStyle = theme.tunicTrim;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+
+  if (theme.id === 'zeus') {
+    // Raio de Zeus
+    ctx.beginPath();
+    ctx.moveTo(cx + 28, cy - 155);
+    ctx.lineTo(cx - 52, cy + 8);
+    ctx.lineTo(cx + 4, cy + 8);
+    ctx.lineTo(cx - 26, cy + 155);
+    ctx.lineTo(cx + 58, cy - 12);
+    ctx.lineTo(cx + 2, cy - 12);
+    ctx.closePath();
+    ctx.fill();
+  } else if (theme.id === 'poseidon') {
+    // Tridente de Poseidon
+    ctx.lineWidth = 14;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy + 155);
+    ctx.lineTo(cx, cy - 125);
+    ctx.stroke();
+
+    ctx.lineWidth = 12;
+    ctx.beginPath();
+    ctx.moveTo(cx - 75, cy - 75);
+    ctx.quadraticCurveTo(cx - 75, cy - 22, cx, cy - 22);
+    ctx.quadraticCurveTo(cx + 75, cy - 22, cx + 75, cy - 75);
+    ctx.stroke();
+
+    // Ponta central e laterais
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - 165); ctx.lineTo(cx - 20, cy - 115); ctx.lineTo(cx + 20, cy - 115); ctx.closePath(); ctx.fill();
+    for (const s of [-1, 1]) {
+      ctx.beginPath();
+      ctx.moveTo(cx + s * 75, cy - 125); ctx.lineTo(cx + s * 75 - 16, cy - 75); ctx.lineTo(cx + s * 75 + 16, cy - 75); ctx.closePath(); ctx.fill();
+    }
+  } else if (theme.id === 'hades') {
+    // Bidente de Hades (Cetro de 2 pontas do Submundo)
+    ctx.lineWidth = 14;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy + 155);
+    ctx.lineTo(cx, cy - 10);
+    ctx.stroke();
+
+    ctx.lineWidth = 13;
+    ctx.beginPath();
+    ctx.moveTo(cx - 60, cy - 95);
+    ctx.quadraticCurveTo(cx - 60, cy - 10, cx, cy - 10);
+    ctx.quadraticCurveTo(cx + 60, cy - 10, cx + 60, cy - 95);
+    ctx.stroke();
+
+    for (const s of [-1, 1]) {
+      ctx.beginPath();
+      ctx.moveTo(cx + s * 60, cy - 155); ctx.lineTo(cx + s * 60 - 18, cy - 95); ctx.lineTo(cx + s * 60 + 18, cy - 95); ctx.closePath(); ctx.fill();
+    }
+    ctx.beginPath();
+    ctx.arc(cx, cy - 10, 20, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+
+  const tex = new T.CanvasTexture(canvas);
+  tex.colorSpace = T.SRGBColorSpace;
+  return tex;
+}
+
+/* ==========================================================================
+   3. HELPERS DE MODELAGEM HUMANA ESGUIA E NATURAL
+   ========================================================================== */
+function group(parent, x = 0, y = 0, z = 0) {
+  const g = new T.Group();
+  g.position.set(x, y, z);
+  if (parent) parent.add(g);
+  return g;
+}
+
+function sculpt(parent, geo, mat, pos = [0, 0, 0], rot = [0, 0, 0], scale = [1, 1, 1]) {
+  const m = new T.Mesh(geo, mat);
+  m.position.set(pos[0], pos[1], pos[2]);
+  m.rotation.set(rot[0], rot[1], rot[2]);
+  m.scale.set(scale[0], scale[1], scale[2]);
+  m.castShadow = true;
+  m.receiveShadow = true;
+  if (parent) parent.add(m);
+  return m;
+}
+
+export function buildGreekVillager(isFemale, initialGod = 'zeus') {
+  const theme = GOD_THEMES[initialGod];
+
+  const M = {
+    skin: new T.MeshStandardMaterial({
+      color: isFemale ? theme.femaleSkin : theme.maleSkin,
+      roughness: 0.48,
+      metalness: 0.04
+    }),
+    hair: new T.MeshStandardMaterial({
+      color: isFemale ? theme.femaleHair : theme.maleHair,
+      roughness: 0.65
+    }),
+    tunic: new T.MeshStandardMaterial({
+      map: createVillagerTunicTexture(theme),
+      roughness: 0.60,
+      side: T.DoubleSide
+    }),
+    sash: new T.MeshStandardMaterial({
+      color: theme.sashHex,
+      roughness: 0.55,
+      side: T.DoubleSide
+    }),
+    accent: new T.MeshStandardMaterial({
+      color: theme.accentHex,
+      metalness: 0.85,
+      roughness: 0.25
+    }),
+    leather: new T.MeshStandardMaterial({
+      color: 0x5c2d16,
+      roughness: 0.72
+    }),
+    wood: new T.MeshStandardMaterial({
+      color: 0x6b3818,
+      roughness: 0.65
+    }),
+    toolMetal: new T.MeshStandardMaterial({
+      color: theme.toolMetalHex,
+      metalness: 0.85,
+      roughness: 0.25
+    }),
+    lipMat: new T.MeshStandardMaterial({
+      color: isFemale ? 0xc86d6d : 0xa86454,
+      roughness: 0.45
+    }),
+    eyeIris: new T.MeshStandardMaterial({
+      color: 0x1e293b,
+      roughness: 0.2
+    })
+  };
+
+  const root = new T.Group();
+  // Proporções esguias e naturais (homem ligeiramente mais alto, mulher mais delicada e grácil)
+  const heightScale = isFemale ? 0.94 : 1.0;
+  const body = group(root, 0, 1.00 * heightScale, 0);
+  body.scale.setScalar(heightScale);
+
+  // Pelve esguia
+  const pelvis = group(body, 0, 0.88, 0);
+  const hipWidth = isFemale ? 1.08 : 0.96;
+  sculpt(pelvis, new T.SphereGeometry(0.19, 18, 16), M.tunic, [0, 0, 0], [0, 0, 0], [hipWidth, 0.78, 0.82]);
+
+  // Pernas magras e proporcionais
+  const legs = {};
+  const legSpread = isFemale ? 0.125 : 0.135;
+  for (const side of ['L', 'R']) {
+    const s = side === 'R' ? 1 : -1;
+    const hip = group(pelvis, s * legSpread, -0.04, 0);
+
+    const thighRTop = isFemale ? 0.105 : 0.112;
+    const thighRBot = isFemale ? 0.075 : 0.082;
+    sculpt(hip, new T.CylinderGeometry(thighRTop, thighRBot, 0.48, 16), M.skin, [0, -0.23, 0]);
+    sculpt(hip, new T.SphereGeometry(thighRBot * 1.02, 12, 12), M.skin, [0, -0.47, 0.01]);
+
+    const knee = group(hip, 0, -0.48, 0);
+    const calfRTop = isFemale ? 0.072 : 0.078;
+    const calfRBot = isFemale ? 0.045 : 0.050;
+    sculpt(knee, new T.CylinderGeometry(calfRTop, calfRBot, 0.44, 16), M.skin, [0, -0.22, 0]);
+
+    // Sandálias Gregas (Krepides) com tiras de couro cruzadas
+    const ankle = group(knee, 0, -0.44, 0.02);
+    sculpt(ankle, new T.BoxGeometry(0.082, 0.016, 0.20), M.leather, [0, -0.042, 0.035]);
+    sculpt(ankle, new T.BoxGeometry(0.076, 0.032, 0.18), M.skin, [0, -0.022, 0.032]);
+    sculpt(ankle, new T.BoxGeometry(0.084, 0.012, 0.024), M.leather, [0, -0.008, 0.06]);
+    sculpt(ankle, new T.BoxGeometry(0.084, 0.012, 0.024), M.leather, [0, -0.005, 0.00]);
+
+    legs[side] = { hip, knee, ankle };
+  }
+
+  legs.L.hip.rotation.set(-0.12, -0.08, -0.04);
+  legs.L.knee.rotation.set(0.16, 0, 0);
+  legs.R.hip.rotation.set(0.10, 0.08, 0.04);
+  legs.R.knee.rotation.set(0.14, 0, 0);
+
+  // Tronco magro e natural (sem exageros musculares)
+  const torso = group(body, 0, 1.28, 0);
+  const shoulderW = isFemale ? 0.255 : 0.305;
+  const waistW = isFemale ? 0.175 : 0.205;
+  const torsoPts = [
+    new T.Vector2(0.01, -0.42),
+    new T.Vector2(0.20, -0.38),
+    new T.Vector2(waistW, -0.16),
+    new T.Vector2(waistW + 0.03, 0.04),
+    new T.Vector2(shoulderW, 0.26),
+    new T.Vector2(shoulderW * 0.85, 0.40),
+    new T.Vector2(0.10, 0.46),
+    new T.Vector2(0.01, 0.47)
+  ];
+  sculpt(torso, new T.LatheGeometry(torsoPts, 28), M.skin, [0, 0, 0], [0, 0, 0], [1.08, 1.0, 0.72]);
+
+  // Vestimenta Grega: Chiton (Homem) ou Peplos drapeado (Mulher)
+  const tunicPts = [
+    new T.Vector2(0.01, -0.38),
+    new T.Vector2(0.215, -0.34),
+    new T.Vector2(waistW + 0.015, -0.15),
+    new T.Vector2(waistW + 0.045, 0.05),
+    new T.Vector2(shoulderW + 0.015, 0.27),
+    new T.Vector2(shoulderW * 0.78, 0.37),
+    new T.Vector2(0.14, 0.38),
+    new T.Vector2(0.01, 0.38)
+  ];
+  sculpt(torso, new T.LatheGeometry(tunicPts, 32), M.tunic, [0, 0.01, 0], [0, 0, 0], [1.10, 1.0, 0.76]);
+
+  // Fibulas (broches gregos nos ombros) e Faixa/Xale drapeado
+  for (const side of [-1, 1]) {
+    if (!isFemale && side === 1) continue; // Homem usa Chiton preso no ombro esquerdo (Exomis)
+    sculpt(torso, new T.CylinderGeometry(0.022, 0.022, 0.016, 12), M.accent, [side * (shoulderW * 0.68), 0.37, 0.02], [0.2, 0, 0]);
+  }
+
+  // Faixa de tecido da divindade atravessando o peito e cintura
+  const sashBand = sculpt(torso, new T.BoxGeometry(0.075, 0.64, 0.24), M.sash, [0, 0.04, 0.01], [0, 0, isFemale ? 0.48 : -0.52]);
+  const belt = new T.TorusGeometry(waistW + 0.025, 0.022, 10, 28);
+  belt.rotateX(Math.PI / 2);
+  sculpt(torso, belt, M.sash, [0, -0.16, 0.005], [0.04, 0, 0], [1.12, 1, 0.80]);
+
+  // Emblemas da Divindade na Fivela do Cinto (Raio, Tridente e Bidente)
+  const buckleZ = (waistW + 0.025) * 0.82;
+  const zeusBuckle = group(torso, 0, -0.16, buckleZ);
+  sculpt(zeusBuckle, new T.ConeGeometry(0.018, 0.055, 4), M.accent, [-0.006, 0.018, 0], [0, 0, -0.32], [1, 1, 0.35]);
+  sculpt(zeusBuckle, new T.ConeGeometry(0.018, 0.055, 4), M.accent, [0.006, -0.018, 0], [0, 0, Math.PI - 0.32], [1, 1, 0.35]);
+
+  const poseidonBuckle = group(torso, 0, -0.16, buckleZ);
+  sculpt(poseidonBuckle, new T.BoxGeometry(0.010, 0.075, 0.016), M.accent, [0, 0, 0]);
+  sculpt(poseidonBuckle, new T.BoxGeometry(0.046, 0.010, 0.016), M.accent, [0, 0.018, 0]);
+  sculpt(poseidonBuckle, new T.BoxGeometry(0.009, 0.032, 0.016), M.accent, [-0.020, 0.030, 0]);
+  sculpt(poseidonBuckle, new T.BoxGeometry(0.009, 0.032, 0.016), M.accent, [0.020, 0.030, 0]);
+  poseidonBuckle.visible = false;
+
+  const hadesBuckle = group(torso, 0, -0.16, buckleZ);
+  sculpt(hadesBuckle, new T.BoxGeometry(0.010, 0.045, 0.016), M.accent, [0, -0.016, 0]);
+  sculpt(hadesBuckle, new T.BoxGeometry(0.042, 0.010, 0.016), M.accent, [0, 0.008, 0]);
+  sculpt(hadesBuckle, new T.BoxGeometry(0.010, 0.042, 0.016), M.accent, [-0.017, 0.025, 0]);
+  sculpt(hadesBuckle, new T.BoxGeometry(0.010, 0.042, 0.016), M.accent, [0.017, 0.025, 0]);
+  hadesBuckle.visible = false;
+
+  // Saia / Túnica inferior (curta nos joelhos para o homem, longa e fluida até os tornozelos para a mulher)
+  const skirtH = isFemale ? 0.96 : 0.56;
+  const skirtBotR = isFemale ? 0.34 : 0.36;
+  const skirtY = isFemale ? -0.64 : -0.44;
+  const skirtGeo = new T.CylinderGeometry(0.21, skirtBotR, skirtH, 36, 12, true);
+  const skPos = skirtGeo.attributes.position;
+  for (let i = 0; i < skPos.count; i++) {
+    let x = skPos.getX(i), y = skPos.getY(i), z = skPos.getZ(i);
+    const angle = Math.atan2(z, x);
+    const normY = Math.max(0, Math.min(1, (skirtH * 0.5 - y) / skirtH));
+    const pleat = Math.sin(angle * 16) * 0.018 * (0.2 + normY * 0.9);
+    const r = Math.sqrt(x * x + z * z) + pleat;
+    skPos.setXYZ(i, Math.cos(angle) * r * 1.05, y, Math.sin(angle) * r * 0.84);
+  }
+  skirtGeo.computeVertexNormals();
+  sculpt(torso, skirtGeo, M.tunic, [0, skirtY, 0], [0.02, 0, 0]);
+
+  // Pescoço e Cabeça Grega Clássica
+  sculpt(torso, new T.CylinderGeometry(0.082, 0.102, 0.22, 16), M.skin, [0, 0.48, -0.005], [0.05, 0, 0]);
+
+  const head = group(torso, 0, 0.68, 0.025);
+  const headScaleX = isFemale ? 0.88 : 0.93;
+  sculpt(head, new T.SphereGeometry(0.168, 28, 28), M.skin, [0, 0, 0], [0, 0, 0], [headScaleX, 1.12, 0.96]);
+
+  // Nariz grego reto e boca expressiva
+  sculpt(head, new T.BoxGeometry(0.018, 0.068, 0.032), M.skin, [0, 0.005, 0.158], [-0.10, 0, 0]);
+  sculpt(head, new T.BoxGeometry(0.038, 0.012, 0.018), M.lipMat, [0, -0.068, 0.154]);
+
+  // Olhos e Sobrancelhas
+  const eyeWhiteMat = new T.MeshStandardMaterial({ color: 0xffffff, roughness: 0.2 });
+  for (const side of [-1, 1]) {
+    sculpt(head, new T.SphereGeometry(0.019, 12, 12), eyeWhiteMat, [side * 0.048, 0.022, 0.148], [0, 0, 0], [1.15, 0.72, 0.75]);
+    sculpt(head, new T.SphereGeometry(0.011, 10, 10), M.eyeIris, [side * 0.048, 0.022, 0.158]);
+    sculpt(head, new T.BoxGeometry(0.046, 0.007, 0.014), M.hair, [side * 0.048, 0.044, 0.154], [0, 0, side * -0.08]);
+  }
+
+  // Cabelos Gregos (Cachos curtos com faixa no Homem; Coque grego elegante com tiara e mechas na Mulher)
+  if (isFemale) {
+    // Coque grego clássico (Chignon) na nuca + ondas frontais + faixa dourada
+    sculpt(head, new T.SphereGeometry(0.178, 24, 24, 0, Math.PI * 2, 0, Math.PI * 0.62), M.hair, [0, 0.025, -0.01], [-0.12, 0, 0], [0.94, 1.08, 1.02]);
+    sculpt(head, new T.SphereGeometry(0.088, 18, 18), M.hair, [0, -0.02, -0.18], [0, 0, 0], [0.95, 1.05, 1.15]);
+    // Mechas laterais suaves emoldurando o rosto
+    for (const side of [-1, 1]) {
+      sculpt(head, new T.CapsuleGeometry(0.022, 0.14, 8, 10), M.hair, [side * 0.125, -0.07, 0.07], [0.15, 0, side * -0.12]);
+    }
+    // Diadema / Faixa grega na cabeça da aldeã
+    const headband = new T.TorusGeometry(0.166, 0.009, 8, 32);
+    headband.rotateX(Math.PI / 2);
+    sculpt(head, headband, M.accent, [0, 0.095, 0.005], [0.22, 0, 0], [0.92, 1, 1.02]);
+  } else {
+    // Cabelo cacheado grego clássico com faixa atlética
+    sculpt(head, new T.SphereGeometry(0.180, 24, 24, 0, Math.PI * 2, 0, Math.PI * 0.62), M.hair, [0, 0.028, -0.01], [-0.14, 0, 0], [0.98, 1.06, 1.04]);
+    for (let c = 0; c < 10; c++) {
+      const a = (c / 10) * Math.PI * 2;
+      sculpt(head, new T.SphereGeometry(0.036, 10, 10), M.hair, [Math.sin(a) * 0.155, 0.06 + (c % 2) * 0.03, Math.cos(a) * 0.155]);
+    }
+    const fillet = new T.TorusGeometry(0.172, 0.008, 8, 32);
+    fillet.rotateX(Math.PI / 2);
+    sculpt(head, fillet, M.accent, [0, 0.085, 0.005], [0.20, 0, 0], [0.96, 1, 1.02]);
+  }
+
+  // Braços esguios e articulados
+  function createVillagerArm(isRight) {
+    const s = isRight ? 1 : -1;
+    const armX = isFemale ? 0.295 : 0.345;
+    const arm = group(torso, s * armX, 0.32, -0.005);
+
+    const upperR = isFemale ? 0.056 : 0.068;
+    sculpt(arm, new T.SphereGeometry(upperR * 1.15, 14, 14), M.skin, [0, -0.01, 0]);
+    sculpt(arm, new T.CapsuleGeometry(upperR, 0.24, 10, 14), M.skin, [s * 0.015, -0.15, 0], [0, 0, s * 0.06]);
+
+    // Bracelete simples da divindade
+    const armlet = new T.TorusGeometry(upperR * 1.04, 0.006, 6, 20);
+    armlet.rotateX(Math.PI / 2);
+    sculpt(arm, armlet, M.accent, [s * 0.014, -0.14, 0]);
+
+    const elbow = group(arm, s * 0.03, -0.30, 0);
+    const foreRTop = isFemale ? 0.052 : 0.062;
+    const foreRBot = isFemale ? 0.038 : 0.045;
+    sculpt(elbow, new T.CylinderGeometry(foreRTop, foreRBot, 0.28, 14), M.skin, [0, -0.14, 0]);
+
+    const hand = group(elbow, 0, -0.29, 0);
+    sculpt(hand, new T.BoxGeometry(0.052, 0.064, 0.026), M.skin, [0, -0.015, 0]);
+
+    return { arm, elbow, hand };
+  }
+
+  const rightArm = createVillagerArm(true);
+  const leftArm = createVillagerArm(false);
+
+  // ========================================================================
+  // FERRAMENTAS DE COLETA INTERCAMBIÁVEIS (MACHADO, PICARETA, CESTO E MARTELO)
+  // ========================================================================
+  const tools = {};
+
+  // 1. Machado de Lenhador (Cortar Madeira)
+  const axe = group(rightArm.hand, 0, -0.025, 0.02);
+  axe.rotation.set(Math.PI / 2, 0, 0);
+  sculpt(axe, new T.CylinderGeometry(0.015, 0.017, 0.92, 10), M.wood, [0, 0.28, 0]);
+  sculpt(axe, new T.BoxGeometry(0.03, 0.14, 0.20), M.toolMetal, [0, 0.66, 0.07]);
+  sculpt(axe, new T.BoxGeometry(0.012, 0.18, 0.06), M.accent, [0, 0.66, 0.16]);
+  tools.axe = axe;
+
+  // 2. Picareta de Mineração (Minerar Ouro)
+  const pickaxe = group(rightArm.hand, 0, -0.025, 0.02);
+  pickaxe.rotation.set(Math.PI / 2, 0, 0);
+  sculpt(pickaxe, new T.CylinderGeometry(0.015, 0.017, 0.92, 10), M.wood, [0, 0.28, 0]);
+  sculpt(pickaxe, new T.CylinderGeometry(0.024, 0.024, 0.08, 10), M.toolMetal, [0, 0.68, 0]);
+  sculpt(pickaxe, new T.ConeGeometry(0.024, 0.24, 5), M.toolMetal, [0, 0.68, 0.13], [Math.PI / 2 + 0.18, 0, 0]);
+  sculpt(pickaxe, new T.ConeGeometry(0.024, 0.24, 5), M.toolMetal, [0, 0.68, -0.13], [-Math.PI / 2 - 0.18, 0, 0]);
+  tools.pickaxe = pickaxe;
+
+  // 3. Martelo de Carpinteiro / Construtor (Construir)
+  const hammer = group(rightArm.hand, 0, -0.025, 0.02);
+  hammer.rotation.set(Math.PI / 2, 0, 0);
+  sculpt(hammer, new T.CylinderGeometry(0.014, 0.016, 0.56, 10), M.wood, [0, 0.18, 0]);
+  sculpt(hammer, new T.CylinderGeometry(0.038, 0.038, 0.18, 12), M.toolMetal, [0, 0.42, 0], [Math.PI / 2, 0, 0]);
+  tools.hammer = hammer;
+
+  // 4. Cesto de Vime Grego com Frutas / Grãos (Colher Frutas)
+  const basket = group(leftArm.hand, 0, -0.04, 0.06);
+  const basketGeo = new T.CylinderGeometry(0.18, 0.12, 0.20, 18);
+  sculpt(basket, basketGeo, M.leather, [0, -0.04, 0.06], [0.25, 0, 0]);
+  const rimBasket = new T.TorusGeometry(0.18, 0.014, 8, 22);
+  rimBasket.rotateX(Math.PI / 2);
+  sculpt(basket, rimBasket, M.accent, [0, 0.055, 0.085], [0.25, 0, 0]);
+  // Frutas coloridas dentro do cesto
+  const fruitCols = [0xdc2626, 0xf59e0b, 0x7e22ce, 0x16a34a];
+  for (let f = 0; f < 6; f++) {
+    const fa = (f / 6) * Math.PI * 2;
+    sculpt(
+      basket,
+      new T.SphereGeometry(0.042, 10, 10),
+      new T.MeshStandardMaterial({ color: fruitCols[f % fruitCols.length], roughness: 0.35 }),
+      [Math.cos(fa) * 0.07, 0.065, 0.085 + Math.sin(fa) * 0.07]
+    );
+  }
+  tools.basket = basket;
+
+  function setToolMode(act) {
+    tools.axe.visible = act === 'madeira';
+    tools.pickaxe.visible = act === 'ouro';
+    tools.hammer.visible = act === 'construir';
+    tools.basket.visible = act === 'fruta';
+  }
+  setToolMode('vigilia');
+
+  function applyGodTheme(godKey) {
+    const next = GOD_THEMES[godKey] || GOD_THEMES.zeus;
+    M.skin.color.setHex(isFemale ? next.femaleSkin : next.maleSkin);
+    M.hair.color.setHex(isFemale ? next.femaleHair : next.maleHair);
+    M.sash.color.setHex(next.sashHex);
+    M.accent.color.setHex(next.accentHex);
+    M.toolMetal.color.setHex(next.toolMetalHex);
+
+    zeusBuckle.visible = (godKey === 'zeus');
+    poseidonBuckle.visible = (godKey === 'poseidon');
+    hadesBuckle.visible = (godKey === 'hades');
+
+    if (M.tunic.map) M.tunic.map.dispose();
+    M.tunic.map = createVillagerTunicTexture(next);
+    M.tunic.needsUpdate = true;
+  }
+
+  return {
+    root, body, torso, head, legs,
+    rightArm, leftArm, tools,
+    setToolMode, applyGodTheme,
+    isFemale, heightScale
+  };
+}
+
+/* ==========================================================================
+   4. CENA, ILUMINAÇÃO E RECURSOS NATURAIS DA ARENA (ÁRVORE, MINA DE OURO, ARBUSTO)
+   ========================================================================== */
+const renderer = new T.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = T.PCFSoftShadowMap;
+renderer.toneMapping = T.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.15;
+document.body.appendChild(renderer.domElement);
+
+const scene = new T.Scene();
+scene.background = new T.Color(GOD_THEMES.zeus.bgHex);
+scene.fog = new T.FogExp2(GOD_THEMES.zeus.bgHex, 0.020);
+
+const camera = new T.PerspectiveCamera(36, window.innerWidth / window.innerHeight, 0.1, 140);
+
+const hemi = new T.HemisphereLight(0xfef9c3, 0x1e3a8a, 1.12);
+scene.add(hemi);
+
+const sun = new T.DirectionalLight(0xfffbeb, 2.2);
+sun.position.set(4.8, 8.2, 5.2);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, { left: -8, right: 8, top: 8, bottom: -8, near: 1, far: 28 });
+sun.shadow.bias = -0.0004;
+scene.add(sun);
+
+const rimLight = new T.DirectionalLight(0x38bdf8, 1.45);
+rimLight.position.set(-4.5, 4.5, -5.0);
+scene.add(rimLight);
+
+const hitLight = new T.PointLight(0xfacc15, 0, 9);
+scene.add(hitLight);
+
+// Piso Circular Grego
+const floorMat = new T.MeshStandardMaterial({
+  map: createFloorTexture(GOD_THEMES.zeus),
+  roughness: 0.42,
+  metalness: 0.12
+});
+const arenaFloor = new T.Mesh(new T.CylinderGeometry(7.2, 7.5, 0.32, 72), floorMat);
+arenaFloor.position.y = -0.16;
+arenaFloor.receiveShadow = true;
+scene.add(arenaFloor);
+
+const arenaRingMat = new T.MeshBasicMaterial({ color: 0xfacc15, transparent: true, opacity: 0.85, side: T.DoubleSide });
+const arenaRing = new T.Mesh(new T.RingGeometry(4.45, 4.56, 72), arenaRingMat);
+arenaRing.rotation.x = -Math.PI / 2;
+arenaRing.position.y = 0.015;
+scene.add(arenaRing);
+
+// Colunas Dóricas ao fundo
+const marbleMat = new T.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.45 });
+for (let i = 0; i < 6; i++) {
+  const a = Math.PI + ((i - 2.5) / 5) * Math.PI * 0.85;
+  const col = group(scene, Math.cos(a) * 5.7, 0, Math.sin(a) * 5.7);
+  sculpt(col, new T.BoxGeometry(0.68, 0.14, 0.68), marbleMat, [0, 0.07, 0]);
+  sculpt(col, new T.CylinderGeometry(0.21, 0.25, 2.65, 16), marbleMat, [0, 1.46, 0]);
+  sculpt(col, new T.BoxGeometry(0.62, 0.14, 0.62), marbleMat, [0, 2.86, 0]);
+}
+
+// ==========================================================================
+// NÓS DE RECURSOS DO AGE OF MYTHOLOGY (APARECEM CONFORME A TAREFA DE COLETA!)
+// ==========================================================================
+const resourceNodes = {};
+
+// 1. Árvore Mediterrânea (Oliveira / Cipreste) para Cortar Madeira
+const treeNode = group(scene, 0, 0, 1.35);
+sculpt(treeNode, new T.CylinderGeometry(0.14, 0.22, 1.5, 12), new T.MeshStandardMaterial({ color: 0x5c3317, roughness: 0.85 }), [0, 0.75, 0]);
+const leafMat = new T.MeshStandardMaterial({ color: 0x15803d, roughness: 0.75 });
+sculpt(treeNode, new T.DodecahedronGeometry(0.75, 1), leafMat, [0, 1.85, 0], [0, 0, 0], [1.15, 0.85, 1.15]);
+sculpt(treeNode, new T.DodecahedronGeometry(0.55, 1), leafMat, [0.45, 1.65, 0.25]);
+sculpt(treeNode, new T.DodecahedronGeometry(0.52, 1), leafMat, [-0.42, 1.70, -0.20]);
+treeNode.visible = false;
+resourceNodes.madeira = treeNode;
+
+// 2. Veio de Mina de Ouro (Gold Mine)
+const goldMineNode = group(scene, 0, 0, 1.35);
+const rockMat = new T.MeshStandardMaterial({ color: 0x475569, roughness: 0.82 });
+const goldOreMat = new T.MeshStandardMaterial({ color: 0xfacc15, emissive: 0x451a03, emissiveIntensity: 0.25, metalness: 0.92, roughness: 0.2 });
+sculpt(goldMineNode, new T.DodecahedronGeometry(0.68, 0), rockMat, [0, 0.36, 0], [0.2, 0.5, 0], [1.3, 0.78, 1.1]);
+sculpt(goldMineNode, new T.DodecahedronGeometry(0.45, 0), rockMat, [-0.48, 0.24, 0.15]);
+sculpt(goldMineNode, new T.OctahedronGeometry(0.28, 0), goldOreMat, [0.18, 0.52, -0.25], [0.3, 0.4, 0.2]);
+sculpt(goldMineNode, new T.OctahedronGeometry(0.22, 0), goldOreMat, [-0.22, 0.45, -0.28], [0.5, 0.2, 0.4]);
+sculpt(goldMineNode, new T.OctahedronGeometry(0.20, 0), goldOreMat, [0.38, 0.28, 0.18]);
+goldMineNode.visible = false;
+resourceNodes.ouro = goldMineNode;
+
+// 3. Arbusto de Frutas Silvestres (Berry Bush)
+const berryNode = group(scene, 0, 0, 1.35);
+const bushMat = new T.MeshStandardMaterial({ color: 0x166534, roughness: 0.78 });
+const berryMat = new T.MeshStandardMaterial({ color: 0xbe123c, roughness: 0.35 });
+sculpt(berryNode, new T.DodecahedronGeometry(0.52, 1), bushMat, [0, 0.38, 0], [0, 0, 0], [1.25, 0.85, 1.15]);
+sculpt(berryNode, new T.DodecahedronGeometry(0.38, 1), bushMat, [0.38, 0.30, 0.12]);
+sculpt(berryNode, new T.DodecahedronGeometry(0.36, 1), bushMat, [-0.36, 0.32, -0.08]);
+for (let b = 0; b < 16; b++) {
+  const ba = (b / 16) * Math.PI * 2;
+  const br = 0.32 + (b % 3) * 0.12;
+  sculpt(berryNode, new T.SphereGeometry(0.042, 8, 8), berryMat, [Math.cos(ba) * br, 0.42 + (b % 3) * 0.12, Math.sin(ba) * br]);
+}
+berryNode.visible = false;
+resourceNodes.fruta = berryNode;
+
+// 4. Alicerce de Construção em Mármore e Madeira (Construir)
+const buildNode = group(scene, 0, 0, 1.38);
+sculpt(buildNode, new T.BoxGeometry(1.35, 0.16, 0.85), marbleMat, [0, 0.08, 0]);
+sculpt(buildNode, new T.BoxGeometry(0.24, 0.65, 0.24), marbleMat, [-0.45, 0.42, 0]);
+sculpt(buildNode, new T.BoxGeometry(0.24, 0.45, 0.24), marbleMat, [0.45, 0.32, 0]);
+const timberMat = new T.MeshStandardMaterial({ color: 0x78350f, roughness: 0.75 });
+sculpt(buildNode, new T.BoxGeometry(1.25, 0.07, 0.08), timberMat, [0, 0.68, -0.25], [0, 0, -0.15]);
+sculpt(buildNode, new T.BoxGeometry(0.08, 0.85, 0.08), timberMat, [0.45, 0.45, 0.25], [0, 0, 0.12]);
+buildNode.visible = false;
+resourceNodes.construir = buildNode;
+
+// Instanciar o Aldeão (Homem) e a Aldeã (Mulher)
+const maleVillager = buildGreekVillager(false, 'zeus');
+const femaleVillager = buildGreekVillager(true, 'zeus');
+scene.add(maleVillager.root);
+scene.add(femaleVillager.root);
+
+// Sistema de partículas para cavacos de madeira / faíscas de ouro
+const PART_N = 50;
+const partPos = new Float32Array(PART_N * 3).fill(-100);
+const partVel = new Float32Array(PART_N * 3);
+const partLife = new Float32Array(PART_N);
+let partIdx = 0;
+
+const partGeo = new T.BufferGeometry();
+partGeo.setAttribute('position', new T.BufferAttribute(partPos, 3));
+const partMat = new T.PointsMaterial({
+  color: 0xfef08a,
+  size: 0.10,
+  transparent: true,
+  opacity: 0.95,
+  blending: T.AdditiveBlending,
+  depthWrite: false
+});
+scene.add(new T.Points(partGeo, partMat));
+
+function spawnWorkParticles(x, y, z) {
+  for (let k = 0; k < 10; k++) {
+    const i = partIdx;
+    partIdx = (partIdx + 1) % PART_N;
+    partPos[i * 3] = x + (Math.random() - 0.5) * 0.25;
+    partPos[i * 3 + 1] = y;
+    partPos[i * 3 + 2] = z + (Math.random() - 0.5) * 0.25;
+    partVel[i * 3] = (Math.random() - 0.5) * 3.2;
+    partVel[i * 3 + 1] = 1.6 + Math.random() * 2.8;
+    partVel[i * 3 + 2] = (Math.random() - 0.5) * 3.2;
+    partLife[i] = 0.25 + Math.random() * 0.2;
+  }
+  hitLight.position.set(x, y + 0.3, z);
+  hitLight.intensity = 6.0;
+}
+
+function updateParticles(dt) {
+  for (let i = 0; i < PART_N; i++) {
+    if (partLife[i] <= 0) continue;
+    partLife[i] -= dt;
+    partVel[i * 3 + 1] -= 9.5 * dt;
+    partPos[i * 3] += partVel[i * 3] * dt;
+    partPos[i * 3 + 1] += partVel[i * 3 + 1] * dt;
+    partPos[i * 3 + 2] += partVel[i * 3 + 2] * dt;
+    if (partLife[i] <= 0) partPos[i * 3 + 1] = -100;
+  }
+  partGeo.attributes.position.needsUpdate = true;
+}
+
+/* ==========================================================================
+   5. CONTROLES DE UI (DIVINDADE, GÊNERO E TAREFAS DE COLETA)
+   ========================================================================== */
+let currentGod = 'zeus';
+let genderMode = 'ambos';
+let action = 'vigilia';
+let focusFaces = false;
+
+let camAngle = 0.38;
+let camPitch = 0.18;
+let camDist = 7.4;
+let targetCamDist = 7.4;
+let currentLookAt = new T.Vector3(0, 1.65, 0);
+
+let dragging = false;
+let lastX = 0, lastY = 0;
+let pinchStartDist = 0;
+
+const cardTitle = document.getElementById('card-title');
+const cardSub = document.getElementById('card-sub');
+
+function updateResourceVisibility() {
+  Object.keys(resourceNodes).forEach(k => {
+    resourceNodes[k].visible = (k === action);
+  });
+  maleVillager.setToolMode(action);
+  femaleVillager.setToolMode(action);
+}
+
+document.querySelectorAll('button[data-god]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    currentGod = btn.dataset.god;
+    const theme = GOD_THEMES[currentGod];
+    document.querySelectorAll('button[data-god]').forEach(b => b.classList.toggle('on', b === btn));
+
+    scene.background.setHex(theme.bgHex);
+    scene.fog.color.setHex(theme.bgHex);
+    hemi.color.setHex(theme.hemiSky);
+    hemi.groundColor.setHex(theme.hemiGround);
+    rimLight.color.setHex(theme.rimHex);
+    arenaRingMat.color.setHex(theme.ringHex);
+    partMat.color.setHex(theme.sparkHex);
+    hitLight.color.setHex(theme.sparkHex);
+
+    if (floorMat.map) floorMat.map.dispose();
+    floorMat.map = createFloorTexture(theme);
+    floorMat.needsUpdate = true;
+
+    maleVillager.applyGodTheme(currentGod);
+    femaleVillager.applyGodTheme(currentGod);
+
+    cardTitle.textContent = theme.title;
+    cardSub.textContent = theme.subtitle;
+  });
+});
+
+document.querySelectorAll('button[data-gen]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    genderMode = btn.dataset.gen;
+    document.querySelectorAll('button[data-gen]').forEach(b => b.classList.toggle('on', b === btn));
+    maleVillager.root.visible = (genderMode === 'ambos' || genderMode === 'homem');
+    femaleVillager.root.visible = (genderMode === 'ambos' || genderMode === 'mulher');
+  });
+});
+
+document.querySelectorAll('button[data-act]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    action = btn.dataset.act;
+    document.querySelectorAll('button[data-act]').forEach(b => b.classList.toggle('on', b === btn));
+    updateResourceVisibility();
+  });
+});
+
+const btnFocus = document.getElementById('btn-focus');
+btnFocus.addEventListener('click', () => {
+  focusFaces = !focusFaces;
+  btnFocus.classList.toggle('active', focusFaces);
+  btnFocus.textContent = focusFaces ? 'Corpo Inteiro' : 'Focar Rostos';
+  targetCamDist = focusFaces ? 2.75 : 7.4;
+  if (focusFaces) {
+    camAngle = 0.22;
+    camPitch = 0.08;
+  }
+});
+
+renderer.domElement.addEventListener('pointerdown', (e) => {
+  dragging = true;
+  lastX = e.clientX;
+  lastY = e.clientY;
+});
+addEventListener('pointerup', () => { dragging = false; });
+addEventListener('pointermove', (e) => {
+  if (!dragging) return;
+  camAngle -= (e.clientX - lastX) * 0.009;
+  camPitch = T.MathUtils.clamp(camPitch + (e.clientY - lastY) * 0.006, -0.22, 0.85);
+  lastX = e.clientX;
+  lastY = e.clientY;
+});
+
+renderer.domElement.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  targetCamDist = T.MathUtils.clamp(targetCamDist + e.deltaY * 0.005, 1.8, 14.0);
+}, { passive: false });
+
+renderer.domElement.addEventListener('touchstart', (e) => {
+  if (e.touches.length === 2) {
+    const dx = e.touches[0].clientX - e.touches[1].clientX;
+    const dy = e.touches[0].clientY - e.touches[1].clientY;
+    pinchStartDist = Math.hypot(dx, dy);
+  }
+}, { passive: true });
+
+renderer.domElement.addEventListener('touchmove', (e) => {
+  if (e.touches.length === 2) {
+    const dx = e.touches[0].clientX - e.touches[1].clientX;
+    const dy = e.touches[0].clientY - e.touches[1].clientY;
+    const dist = Math.hypot(dx, dy);
+    const delta = pinchStartDist - dist;
+    targetCamDist = T.MathUtils.clamp(targetCamDist + delta * 0.015, 1.8, 14.0);
+    pinchStartDist = dist;
+  }
+}, { passive: true });
+
+addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+
+/* ==========================================================================
+   6. LOOP DE ANIMAÇÃO DOS ALDEÕES COLETORES
+   ========================================================================== */
+let sparkDone = false;
+
+function animateVillager(v, dt, t, offsetX, phaseOffset) {
+  if (!v.root.visible) return;
+
+  let vx = offsetX;
+  let vz = 0;
+  let vy = 0;
+  let yaw = 0;
+  let pitch = 0;
+  let torsoYaw = 0;
+  const breath = Math.sin(t * 2.3 + phaseOffset) * 0.018;
+
+  if (action === 'andar') {
+    const a = t * 0.95 + phaseOffset;
+    const R = v.isFemale ? 2.15 : 2.75;
+    vx = Math.cos(a) * R;
+    vz = Math.sin(a) * R;
+    yaw = -a;
+    pitch = 0.06;
+
+    const stride = t * 5.6 + phaseOffset;
+    const sinS = Math.sin(stride);
+    const cosS = Math.cos(stride);
+    vy = Math.abs(cosS) * 0.04;
+    torsoYaw = sinS * 0.08;
+
+    v.legs.L.hip.rotation.x = -0.12 + sinS * 0.36;
+    v.legs.L.knee.rotation.x = 0.18 + Math.max(0, -cosS) * 0.36;
+    v.legs.R.hip.rotation.x = -0.12 - sinS * 0.36;
+    v.legs.R.knee.rotation.x = 0.18 + Math.max(0, cosS) * 0.36;
+
+    v.rightArm.arm.rotation.set(-0.15 - sinS * 0.35, 0.08, 0.14);
+    v.rightArm.elbow.rotation.set(-0.25, 0, 0.08);
+    v.leftArm.arm.rotation.set(-0.15 + sinS * 0.35, -0.08, -0.14);
+    v.leftArm.elbow.rotation.set(-0.25, 0, -0.08);
+  } else if (action === 'madeira' || action === 'ouro' || action === 'construir') {
+    // Posiciona de frente para o recurso natural no centro-frente
+    vx = (genderMode === 'ambos') ? (v.isFemale ? 0.56 : -0.56) : 0;
+    vz = 0.25;
+    yaw = (genderMode === 'ambos') ? (v.isFemale ? -0.32 : 0.32) : 0;
+
+    const speed = action === 'construir' ? 5.2 : 3.8;
+    const swing = (t * speed + phaseOffset) % (Math.PI * 2);
+    const strike = Math.sin(swing);
+
+    // Ergue a ferramenta e golpeia o recurso com ritmo firme
+    pitch = 0.14 + strike * 0.16;
+    torsoYaw = -0.18 + strike * 0.28;
+
+    v.rightArm.arm.rotation.set(-1.35 + strike * 0.95, 0.18, 0.25);
+    v.rightArm.elbow.rotation.set(-0.65 + strike * 0.35, 0.1, 0.1);
+    v.leftArm.arm.rotation.set(-0.65 + strike * 0.35, -0.25, -0.22);
+    v.leftArm.elbow.rotation.set(-0.85, -0.15, 0.15);
+
+    v.legs.L.hip.rotation.set(-0.22, -0.10, -0.06);
+    v.legs.L.knee.rotation.set(0.28, 0, 0);
+    v.legs.R.hip.rotation.set(0.18, 0.10, 0.06);
+    v.legs.R.knee.rotation.set(0.22, 0, 0);
+
+    // Dispara cavacos / faíscas no momento do impacto
+    if (!v.isFemale || genderMode === 'mulher') {
+      if (strike > 0.92 && !sparkDone) {
+        sparkDone = true;
+        spawnWorkParticles(0, action === 'madeira' ? 0.85 : 0.45, 1.15);
+      } else if (strike < 0.2) {
+        sparkDone = false;
+      }
+    }
+  } else if (action === 'fruta') {
+    // Colhe frutas do arbusto e coloca no cesto de vime
+    vx = (genderMode === 'ambos') ? (v.isFemale ? 0.56 : -0.56) : 0;
+    vz = 0.28;
+    yaw = (genderMode === 'ambos') ? (v.isFemale ? -0.30 : 0.30) : 0;
+
+    const pick = Math.sin(t * 3.4 + phaseOffset);
+    pitch = 0.22 + pick * 0.08;
+    torsoYaw = pick * 0.18;
+
+    // Braço esquerdo segura o cesto junto à cintura; braço direito colhe e traz ao cesto
+    v.leftArm.arm.rotation.set(-0.55, -0.28, -0.24);
+    v.leftArm.elbow.rotation.set(-1.05, -0.2, 0.2);
+
+    v.rightArm.arm.rotation.set(-0.95 - pick * 0.35, 0.22 - pick * 0.25, 0.22);
+    v.rightArm.elbow.rotation.set(-0.55 - pick * 0.45, 0.15, 0.15);
+
+    v.legs.L.hip.rotation.set(-0.18, -0.08, -0.04);
+    v.legs.L.knee.rotation.set(0.26, 0, 0);
+    v.legs.R.hip.rotation.set(0.16, 0.08, 0.04);
+    v.legs.R.knee.rotation.set(0.22, 0, 0);
+  } else {
+    // Vigília: postura serena, natural e elegante
+    vx = offsetX;
+    vz = 0;
+    yaw = Math.sin(t * 0.45 + phaseOffset) * 0.12 + (genderMode === 'ambos' ? (v.isFemale ? -0.14 : 0.14) : 0);
+
+    v.rightArm.arm.rotation.set(-0.14, 0.08, 0.16 + Math.sin(t * 1.8 + phaseOffset) * 0.02);
+    v.rightArm.elbow.rotation.set(-0.32, 0.06, 0.08);
+    v.leftArm.arm.rotation.set(-0.14, -0.08, -0.16 - Math.cos(t * 1.8 + phaseOffset) * 0.02);
+    v.leftArm.elbow.rotation.set(-0.32, -0.06, -0.08);
+
+    v.legs.L.hip.rotation.set(-0.12, -0.08, -0.04);
+    v.legs.L.knee.rotation.set(0.16, 0, 0);
+    v.legs.R.hip.rotation.set(0.10, 0.08, 0.04);
+    v.legs.R.knee.rotation.set(0.14, 0, 0);
+  }
+
+  v.root.position.set(vx, vy, vz);
+  v.root.rotation.set(0, yaw, 0);
+  v.body.position.y = 1.00 * v.heightScale + breath;
+  v.body.rotation.set(pitch, torsoYaw, 0);
+}
+
+const clock = new T.Clock();
+let elapsed = 0;
+let started = false;
+
+function animate() {
+  const dt = Math.min(clock.getDelta(), 0.05);
+  elapsed += dt;
+
+  const maleOffset = (genderMode === 'ambos') ? -0.58 : 0;
+  const femaleOffset = (genderMode === 'ambos') ? 0.58 : 0;
+
+  animateVillager(maleVillager, dt, elapsed, maleOffset, 0);
+  animateVillager(femaleVillager, dt, elapsed, femaleOffset, 1.4);
+
+  hitLight.intensity = Math.max(0, hitLight.intensity - dt * 22);
+  updateParticles(dt);
+
+  camDist = T.MathUtils.damp(camDist, targetCamDist, 6, dt);
+  if (!dragging && !focusFaces && action !== 'andar') camAngle += dt * 0.05;
+
+  const desiredTarget = focusFaces
+    ? new T.Vector3(0, 2.38, 0)
+    : new T.Vector3(0, 1.65, 0.15);
+  currentLookAt.lerp(desiredTarget, 0.13);
+
+  const horizDist = Math.cos(camPitch) * camDist;
+  const vertDist = Math.sin(camPitch) * camDist;
+  camera.position.set(
+    currentLookAt.x + Math.sin(camAngle) * horizDist,
+    currentLookAt.y + vertDist,
+    currentLookAt.z + Math.cos(camAngle) * horizDist
+  );
+  camera.lookAt(currentLookAt);
+
+  renderer.render(scene, camera);
+  requestAnimationFrame(animate);
+}
+
+function startApp() {
+  if (started) return;
+  started = true;
+  animate();
+}
+
+if (document.readyState === 'complete') {
+  startApp();
+} else {
+  window.addEventListener('load', startApp);
+}
+</script>
+</body>
+</html>

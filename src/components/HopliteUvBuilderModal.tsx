@@ -87,6 +87,11 @@ import {
   HadesHopliteAction,
 } from '../civilizacao/gregos/hadesHopliteModel';
 import {
+  buildGreekVillager,
+  GOD_VILLAGER_THEMES,
+  GreekVillagerInstance,
+} from '../civilizacao/gregos/greekVillagerModel';
+import {
   animateZeus,
   buildZeus,
   createZeusTempleEnvironment,
@@ -458,6 +463,8 @@ export function HopliteUvBuilderModal({
   const [setMode, setSetMode] = useState<'senhor' | 'tempestade' | 'deserto' | 'monstro'>('senhor');
   const [raMode, setRaMode] = useState<'gloria' | 'bencao' | 'chuva' | 'ira'>('gloria');
   const [hopliteAction, setHopliteAction] = useState<ZeusHopliteAction>('guarda');
+  const [villagerGender, setVillagerGender] = useState<'homem' | 'mulher' | 'ambos'>('ambos');
+  const [villagerTask, setVillagerTask] = useState<'vigilia' | 'andar' | 'madeira' | 'ouro' | 'fruta' | 'construir'>('vigilia');
   const [focusDivine, setFocusDivine] = useState<boolean>(false);
   const [myrmidonFury, setMyrmidonFury] = useState<boolean>(true);
 
@@ -482,6 +489,10 @@ export function HopliteUvBuilderModal({
   artifactAuraRef.current = artifactAuraActive;
   const hopliteActionRef = useRef(hopliteAction);
   hopliteActionRef.current = hopliteAction;
+  const villagerGenderRef = useRef(villagerGender);
+  villagerGenderRef.current = villagerGender;
+  const villagerTaskRef = useRef(villagerTask);
+  villagerTaskRef.current = villagerTask;
   const myrmidonFuryRef = useRef(myrmidonFury);
   myrmidonFuryRef.current = myrmidonFury;
   const focusDivineRef = useRef(focusDivine);
@@ -1989,6 +2000,151 @@ export function HopliteUvBuilderModal({
               });
             };
           }
+        } else if (selectedCiv === 'greek' && selectedUnit === 'villager') {
+          const godKey = (
+            selectedMajorGod === 'Poseidon'
+              ? 'poseidon'
+              : selectedMajorGod === 'Hades'
+              ? 'hades'
+              : 'zeus'
+          ) as 'zeus' | 'poseidon' | 'hades';
+          const theme = GOD_VILLAGER_THEMES[godKey] || GOD_VILLAGER_THEMES.zeus;
+
+          scene.background = new THREE.Color(theme.bgHex);
+          scene.fog = new THREE.FogExp2(theme.bgHex, 0.02);
+          addPedestal(2.2, 2.4, theme.accentHex);
+
+          const maleVillager = buildGreekVillager(false, godKey, !isSoftwareGl);
+          const femaleVillager = buildGreekVillager(true, godKey, !isSoftwareGl);
+          const villagerRoot = new THREE.Group();
+          villagerRoot.add(maleVillager.root);
+          villagerRoot.add(femaleVillager.root);
+          group = villagerRoot;
+
+          const animateStudioVillager = (
+            v: GreekVillagerInstance,
+            _dt: number,
+            t: number,
+            offsetX: number,
+            phaseOffset: number,
+            task: string
+          ) => {
+            if (!v.root.visible) return;
+
+            let vx = offsetX;
+            let vz = 0;
+            let vy = 0;
+            let yaw = 0;
+            let pitch = 0;
+            let torsoYaw = 0;
+            const breath = Math.sin(t * 2.3 + phaseOffset) * 0.018;
+
+            if (task === 'andar') {
+              const a = t * 0.95 + phaseOffset;
+              const R = v.isFemale ? 1.6 : 2.0;
+              vx = Math.cos(a) * R;
+              vz = Math.sin(a) * R;
+              yaw = -a;
+              pitch = 0.06;
+
+              const stride = t * 5.6 + phaseOffset;
+              const sinS = Math.sin(stride);
+              const cosS = Math.cos(stride);
+              vy = Math.abs(cosS) * 0.04;
+              torsoYaw = sinS * 0.08;
+
+              v.legs.L.hip.rotation.x = -0.12 + sinS * 0.36;
+              v.legs.L.knee.rotation.x = 0.18 + Math.max(0, -cosS) * 0.36;
+              v.legs.R.hip.rotation.x = -0.12 - sinS * 0.36;
+              v.legs.R.knee.rotation.x = 0.18 + Math.max(0, cosS) * 0.36;
+
+              v.rightArm.arm.rotation.set(-0.15 - sinS * 0.35, 0.08, 0.14);
+              v.rightArm.elbow.rotation.set(-0.25, 0, 0.08);
+              v.leftArm.arm.rotation.set(-0.15 + sinS * 0.35, -0.08, -0.14);
+              v.leftArm.elbow.rotation.set(-0.25, 0, -0.08);
+            } else if (task === 'madeira' || task === 'ouro' || task === 'construir') {
+              vx = offsetX;
+              vz = 0.25;
+              yaw = v.isFemale ? -0.22 : 0.22;
+
+              const speed = task === 'construir' ? 5.2 : 3.8;
+              const swing = (t * speed + phaseOffset) % (Math.PI * 2);
+              const strike = Math.sin(swing);
+
+              pitch = 0.14 + strike * 0.16;
+              torsoYaw = -0.18 + strike * 0.28;
+
+              v.rightArm.arm.rotation.set(-1.35 + strike * 0.95, 0.18, 0.25);
+              v.rightArm.elbow.rotation.set(-0.65 + strike * 0.35, 0.1, 0.1);
+              v.leftArm.arm.rotation.set(-0.65 + strike * 0.35, -0.25, -0.22);
+              v.leftArm.elbow.rotation.set(-0.85, -0.15, 0.15);
+
+              v.legs.L.hip.rotation.set(-0.22, -0.10, -0.06);
+              v.legs.L.knee.rotation.set(0.28, 0, 0);
+              v.legs.R.hip.rotation.set(0.18, 0.10, 0.06);
+              v.legs.R.knee.rotation.set(0.22, 0, 0);
+
+              if (strike > 0.92) {
+                spawnSpark(new THREE.Vector3(vx, 0.6, 0.8));
+              }
+            } else if (task === 'fruta') {
+              vx = offsetX;
+              vz = 0.28;
+              yaw = v.isFemale ? -0.20 : 0.20;
+
+              const pick = Math.sin(t * 3.4 + phaseOffset);
+              pitch = 0.22 + pick * 0.08;
+              torsoYaw = pick * 0.18;
+
+              v.leftArm.arm.rotation.set(-0.55, -0.28, -0.24);
+              v.leftArm.elbow.rotation.set(-1.05, -0.2, 0.2);
+
+              v.rightArm.arm.rotation.set(-0.95 - pick * 0.35, 0.22 - pick * 0.25, 0.22);
+              v.rightArm.elbow.rotation.set(-0.55 - pick * 0.45, 0.15, 0.15);
+
+              v.legs.L.hip.rotation.set(-0.18, -0.08, -0.04);
+              v.legs.L.knee.rotation.set(0.26, 0, 0);
+              v.legs.R.hip.rotation.set(0.16, 0.08, 0.04);
+              v.legs.R.knee.rotation.set(0.22, 0, 0);
+            } else {
+              vx = offsetX;
+              vz = 0;
+              yaw = Math.sin(t * 0.45 + phaseOffset) * 0.12 + (v.isFemale ? -0.14 : 0.14);
+
+              v.rightArm.arm.rotation.set(-0.14, 0.08, 0.16 + Math.sin(t * 1.8 + phaseOffset) * 0.02);
+              v.rightArm.elbow.rotation.set(-0.32, 0.06, 0.08);
+              v.leftArm.arm.rotation.set(-0.14, -0.08, -0.16 - Math.cos(t * 1.8 + phaseOffset) * 0.02);
+              v.leftArm.elbow.rotation.set(-0.32, -0.06, -0.08);
+
+              v.legs.L.hip.rotation.set(-0.12, -0.08, -0.04);
+              v.legs.L.knee.rotation.set(0.16, 0, 0);
+              v.legs.R.hip.rotation.set(0.10, 0.08, 0.04);
+              v.legs.R.knee.rotation.set(0.14, 0, 0);
+            }
+
+            v.root.position.set(vx, vy, vz);
+            v.root.rotation.set(0, yaw, 0);
+            v.body.position.y = 1.00 * v.heightScale + breath;
+            v.body.rotation.set(pitch, torsoYaw, 0);
+          };
+
+          group.userData.animatePose = (dt: number) => {
+            const currentGender = villagerGenderRef.current;
+            const currentTask = villagerTaskRef.current;
+
+            maleVillager.root.visible = currentGender === 'ambos' || currentGender === 'homem';
+            femaleVillager.root.visible = currentGender === 'ambos' || currentGender === 'mulher';
+
+            maleVillager.setToolMode(currentTask);
+            femaleVillager.setToolMode(currentTask);
+
+            const maleOffset = currentGender === 'ambos' ? -0.58 : 0;
+            const femaleOffset = currentGender === 'ambos' ? 0.58 : 0;
+
+            const t = simTime;
+            animateStudioVillager(maleVillager, dt, t, maleOffset, 0, currentTask);
+            animateStudioVillager(femaleVillager, dt, t, femaleOffset, 1.4, currentTask);
+          };
         } else if (
           selectedCiv === 'greek' &&
           (selectedUnit === 'hipaspist' || selectedUnit === 'myrmidon')
@@ -4334,6 +4490,85 @@ export function HopliteUvBuilderModal({
                   >
                     <Icon className="h-3.5 w-3.5" />
                     <span>{act.label}</span>
+                  </button>
+                );
+              })}
+            </>
+          ) : galleryCategory === 'unit' && selectedCiv === 'greek' && selectedUnit === 'villager' ? (
+            <>
+              {/* Controles de Gênero do Aldeão */}
+              {(
+                [
+                  { id: 'ambos', label: 'Ambos', icon: Users },
+                  { id: 'homem', label: 'Homem', icon: User },
+                  { id: 'mulher', label: 'Mulher', icon: User },
+                ] as const
+              ).map((g) => {
+                const Icon = g.icon;
+                const isPoseidon = selectedMajorGod === 'Poseidon';
+                const isHades = selectedMajorGod === 'Hades';
+                const activeColor = isPoseidon
+                  ? 'bg-teal-400 text-slate-950 shadow'
+                  : isHades
+                  ? 'bg-emerald-500 text-slate-950 shadow'
+                  : 'bg-amber-400 text-slate-950 shadow';
+                const inactiveColor = isPoseidon
+                  ? 'border border-teal-400/30 text-teal-200 hover:bg-teal-400/15'
+                  : isHades
+                  ? 'border border-emerald-400/30 text-emerald-200 hover:bg-emerald-400/15'
+                  : 'border border-amber-400/30 text-amber-200 hover:bg-amber-400/15';
+
+                return (
+                  <button
+                    key={g.id}
+                    type="button"
+                    onClick={() => setVillagerGender(g.id)}
+                    className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      villagerGender === g.id ? activeColor : inactiveColor
+                    }`}
+                  >
+                    <Icon className="h-3.5 w-3.5" />
+                    <span>{g.label}</span>
+                  </button>
+                );
+              })}
+              <div className="h-4 w-px bg-white/20 mx-1" />
+              {/* Tarefas e Ferramentas dos Aldeões */}
+              {(
+                [
+                  { id: 'vigilia', label: 'Vigília', icon: Shield },
+                  { id: 'andar', label: 'Andando', icon: Play },
+                  { id: 'madeira', label: 'Madeira', icon: Trees },
+                  { id: 'ouro', label: 'Ouro', icon: Sparkles },
+                  { id: 'fruta', label: 'Frutas', icon: Sun },
+                  { id: 'construir', label: 'Construir', icon: Hammer },
+                ] as const
+              ).map((t) => {
+                const Icon = t.icon;
+                const isPoseidon = selectedMajorGod === 'Poseidon';
+                const isHades = selectedMajorGod === 'Hades';
+                const activeColor = isPoseidon
+                  ? 'bg-teal-400 text-slate-950 shadow'
+                  : isHades
+                  ? 'bg-emerald-500 text-slate-950 shadow'
+                  : 'bg-amber-400 text-slate-950 shadow';
+                const inactiveColor = isPoseidon
+                  ? 'border border-teal-400/30 text-teal-200 hover:bg-teal-400/15'
+                  : isHades
+                  ? 'border border-emerald-400/30 text-emerald-200 hover:bg-emerald-400/15'
+                  : 'border border-amber-400/30 text-amber-200 hover:bg-amber-400/15';
+
+                return (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => setVillagerTask(t.id)}
+                    className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      villagerTask === t.id ? activeColor : inactiveColor
+                    }`}
+                  >
+                    <Icon className="h-3.5 w-3.5" />
+                    <span>{t.label}</span>
                   </button>
                 );
               })}
