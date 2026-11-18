@@ -244,6 +244,27 @@ function buildTroll(
   root.userData.rightLeg = rightLeg;
   root.userData.leftArm = leftArm;
   root.userData.rightArm = rightArm;
+
+  let phase = 0;
+  root.userData.animatePose = (dt: number, moving: boolean, speed: number, attackT: number | null) => {
+    phase += dt * (moving ? Math.max(3.0, speed * 1.3) : 1.8);
+    if (moving) {
+      const s = Math.sin(phase);
+      leftLeg.rotation.x = s * 0.45;
+      rightLeg.rotation.x = -s * 0.45;
+      leftArm.rotation.x = -s * 0.35;
+      if (attackT === null) rightArm.rotation.x = s * 0.35;
+    } else {
+      leftLeg.rotation.x = THREE.MathUtils.damp(leftLeg.rotation.x, 0, 8, dt);
+      rightLeg.rotation.x = THREE.MathUtils.damp(rightLeg.rotation.x, 0, 8, dt);
+      leftArm.rotation.x = THREE.MathUtils.damp(leftArm.rotation.x, 0, 8, dt);
+      if (attackT === null) rightArm.rotation.x = THREE.MathUtils.damp(rightArm.rotation.x, 0, 8, dt);
+    }
+    if (attackT !== null) {
+      rightArm.rotation.x = -1.8 + Math.sin(attackT * Math.PI) * 2.1;
+      leftArm.rotation.x = -0.6 * Math.sin(attackT * Math.PI);
+    }
+  };
   return root;
 }
 
@@ -312,6 +333,27 @@ function buildValkyrie(team: TeamId, pal: MaterialPalette, enableShadows: boolea
   enableShadowsRecursive(root, enableShadows);
   root.userData.leftLeg = legs[0];
   root.userData.rightLeg = legs[1];
+
+  let phase = 0;
+  root.userData.animatePose = (dt: number, moving: boolean, speed: number, attackT: number | null) => {
+    phase += dt * (moving ? Math.max(4.2, speed * 1.6) : 2.0);
+    if (moving) {
+      const s = Math.sin(phase);
+      legs[0].rotation.x = s * 0.55;
+      legs[1].rotation.x = -s * 0.55;
+      legs[2].rotation.x = -s * 0.55;
+      legs[3].rotation.x = s * 0.55;
+      body.position.y = Math.abs(Math.sin(phase)) * 0.08;
+    } else {
+      legs.forEach((l) => (l.rotation.x = THREE.MathUtils.damp(l.rotation.x, 0, 8, dt)));
+      body.position.y = Math.sin(phase) * 0.02;
+    }
+    if (attackT !== null) {
+      spear.position.z = 0.38 + Math.sin(attackT * Math.PI) * 0.65;
+    } else {
+      spear.position.z = THREE.MathUtils.damp(spear.position.z, 0.38, 8, dt);
+    }
+  };
   return root;
 }
 
@@ -391,6 +433,27 @@ function buildEinherjar(team: TeamId, pal: MaterialPalette, enableShadows: boole
   root.userData.rightLeg = rightLeg;
   root.userData.leftArm = leftArm;
   root.userData.rightArm = rightArm;
+
+  let phase = 0;
+  root.userData.animatePose = (dt: number, moving: boolean, speed: number, attackT: number | null) => {
+    phase += dt * (moving ? Math.max(3.2, speed * 1.4) : 1.9);
+    if (moving) {
+      const s = Math.sin(phase);
+      leftLeg.rotation.x = s * 0.52;
+      rightLeg.rotation.x = -s * 0.52;
+      leftArm.rotation.x = -s * 0.32;
+      if (attackT === null) rightArm.rotation.x = s * 0.32;
+    } else {
+      leftLeg.rotation.x = THREE.MathUtils.damp(leftLeg.rotation.x, 0, 8, dt);
+      rightLeg.rotation.x = THREE.MathUtils.damp(rightLeg.rotation.x, 0, 8, dt);
+      leftArm.rotation.x = THREE.MathUtils.damp(leftArm.rotation.x, 0, 8, dt);
+      if (attackT === null) rightArm.rotation.x = THREE.MathUtils.damp(rightArm.rotation.x, 0, 8, dt);
+    }
+    if (attackT !== null) {
+      rightArm.rotation.x = -2.1 + Math.sin(attackT * Math.PI) * 2.5;
+      leftArm.rotation.x = -1.2 + Math.sin(attackT * Math.PI) * 0.6;
+    }
+  };
   return root;
 }
 
@@ -543,6 +606,32 @@ function buildNorseGiant(
   root.userData.rightLeg = rightLeg;
   root.userData.leftArm = leftArm;
   root.userData.rightArm = rightArm;
+
+  let phase = 0;
+  root.userData.animatePose = (dt: number, moving: boolean, speed: number, attackT: number | null) => {
+    phase += dt * (moving ? Math.max(2.4, speed * 1.0) : 1.5);
+    if (moving) {
+      const s = Math.sin(phase);
+      leftLeg.rotation.x = s * 0.42;
+      rightLeg.rotation.x = -s * 0.42;
+      leftArm.rotation.x = -s * 0.28;
+      if (attackT === null) rightArm.rotation.x = s * 0.28;
+      body.position.y = Math.abs(Math.sin(phase)) * 0.06;
+    } else {
+      leftLeg.rotation.x = THREE.MathUtils.damp(leftLeg.rotation.x, 0, 8, dt);
+      rightLeg.rotation.x = THREE.MathUtils.damp(rightLeg.rotation.x, 0, 8, dt);
+      leftArm.rotation.x = THREE.MathUtils.damp(leftArm.rotation.x, 0, 8, dt);
+      if (attackT === null) rightArm.rotation.x = THREE.MathUtils.damp(rightArm.rotation.x, 0, 8, dt);
+      body.position.y = 0;
+    }
+    if (attackT !== null) {
+      rightArm.rotation.x = -2.2 + Math.sin(attackT * Math.PI) * 2.7;
+      leftArm.rotation.x = -1.1 + Math.sin(attackT * Math.PI) * 1.3;
+      body.rotation.x = Math.sin(attackT * Math.PI) * 0.25;
+    } else {
+      body.rotation.x = THREE.MathUtils.damp(body.rotation.x, 0, 8, dt);
+    }
+  };
   return root;
 }
 
@@ -603,6 +692,29 @@ function buildBattleBoar(team: TeamId, pal: MaterialPalette, enableShadows: bool
   enableShadowsRecursive(root, enableShadows);
   root.userData.leftLeg = legs[0];
   root.userData.rightLeg = legs[1];
+
+  let phase = 0;
+  root.userData.animatePose = (dt: number, moving: boolean, speed: number, attackT: number | null) => {
+    phase += dt * (moving ? Math.max(5.0, speed * 1.8) : 2.2);
+    if (moving) {
+      const s = Math.sin(phase);
+      legs[0].rotation.x = s * 0.55;
+      legs[1].rotation.x = -s * 0.55;
+      legs[2].rotation.x = -s * 0.55;
+      legs[3].rotation.x = s * 0.55;
+      body.position.y = Math.abs(Math.sin(phase)) * 0.05;
+    } else {
+      legs.forEach((l) => (l.rotation.x = THREE.MathUtils.damp(l.rotation.x, 0, 8, dt)));
+      body.position.y = 0;
+    }
+    if (attackT !== null) {
+      body.rotation.x = -Math.sin(attackT * Math.PI) * 0.45;
+      head.rotation.x = Math.PI / 2 - Math.sin(attackT * Math.PI) * 0.65;
+    } else {
+      body.rotation.x = THREE.MathUtils.damp(body.rotation.x, 0, 8, dt);
+      head.rotation.x = THREE.MathUtils.damp(head.rotation.x, Math.PI / 2, 8, dt);
+    }
+  };
   return root;
 }
 
@@ -657,6 +769,24 @@ function buildKraken(team: TeamId, pal: MaterialPalette, enableShadows: boolean)
   root.userData.rightArm = tentacles[1];
   root.userData.leftLeg = tentacles[2];
   root.userData.rightLeg = tentacles[3];
+
+  let phase = 0;
+  root.userData.animatePose = (dt: number, moving: boolean, speed: number, attackT: number | null) => {
+    phase += dt * (moving ? Math.max(3.5, speed * 1.3) : 2.1);
+    tentacles.forEach((tGrp, idx) => {
+      const offset = (idx / 6) * Math.PI * 2;
+      tGrp.rotation.z = Math.sin(phase + offset) * 0.25;
+      tGrp.rotation.x = Math.cos(phase + offset) * 0.2;
+    });
+    body.position.y = Math.sin(phase) * 0.08;
+    if (attackT !== null) {
+      mantle.rotation.x = -0.25 + Math.sin(attackT * Math.PI) * 0.5;
+      tentacles[0].rotation.z = Math.sin(attackT * Math.PI) * 0.8;
+      tentacles[1].rotation.z = -Math.sin(attackT * Math.PI) * 0.8;
+    } else {
+      mantle.rotation.x = THREE.MathUtils.damp(mantle.rotation.x, -0.25, 8, dt);
+    }
+  };
   return root;
 }
 
@@ -715,6 +845,30 @@ function buildFenrisWolf(team: TeamId, pal: MaterialPalette, enableShadows: bool
   enableShadowsRecursive(root, enableShadows);
   root.userData.leftLeg = legs[0];
   root.userData.rightLeg = legs[1];
+
+  let phase = 0;
+  root.userData.animatePose = (dt: number, moving: boolean, speed: number, attackT: number | null) => {
+    phase += dt * (moving ? Math.max(5.5, speed * 2.0) : 2.4);
+    if (moving) {
+      const s = Math.sin(phase);
+      legs[0].rotation.x = s * 0.65;
+      legs[1].rotation.x = -s * 0.65;
+      legs[2].rotation.x = -s * 0.65;
+      legs[3].rotation.x = s * 0.65;
+      body.position.y = Math.abs(Math.sin(phase)) * 0.07;
+    } else {
+      legs.forEach((l) => (l.rotation.x = THREE.MathUtils.damp(l.rotation.x, 0, 8, dt)));
+      body.position.y = 0;
+    }
+    if (attackT !== null) {
+      head.position.z = 0.76 + Math.sin(attackT * Math.PI) * 0.35;
+      body.rotation.x = Math.sin(attackT * Math.PI) * 0.32;
+    } else {
+      head.position.z = THREE.MathUtils.damp(head.position.z, 0.76, 8, dt);
+      body.rotation.x = THREE.MathUtils.damp(body.rotation.x, 0, 8, dt);
+    }
+    tail.rotation.y = Math.sin(phase * 1.8) * 0.25;
+  };
   return root;
 }
 
@@ -811,6 +965,32 @@ function buildNorseDragon(
   root.userData.rightArm = rightWing;
   root.userData.leftLeg = legs[0];
   root.userData.rightLeg = legs[1];
+
+  let phase = 0;
+  root.userData.animatePose = (dt: number, moving: boolean, speed: number, attackT: number | null) => {
+    phase += dt * (isFafnir ? (moving ? Math.max(3.8, speed * 1.4) : 2.0) : Math.max(4.8, speed * 1.5));
+    const flap = Math.sin(phase);
+    leftWing.rotation.z = flap * 0.55 + 0.15;
+    rightWing.rotation.z = -flap * 0.55 - 0.15;
+    if (!isFafnir) {
+      body.position.y = 1.35 + Math.cos(phase * 0.8) * 0.18;
+    } else if (moving) {
+      legs[0].rotation.x = flap * 0.45;
+      legs[1].rotation.x = -flap * 0.45;
+      legs[2].rotation.x = -flap * 0.45;
+      legs[3].rotation.x = flap * 0.45;
+    } else {
+      legs.forEach((l) => (l.rotation.x = THREE.MathUtils.damp(l.rotation.x, 0, 8, dt)));
+    }
+    if (attackT !== null) {
+      head.rotation.x = Math.PI / 2 + Math.sin(attackT * Math.PI) * 0.45;
+      maw.scale.setScalar(1 + Math.sin(attackT * Math.PI) * 0.65);
+    } else {
+      head.rotation.x = THREE.MathUtils.damp(head.rotation.x, Math.PI / 2, 8, dt);
+      maw.scale.setScalar(1);
+    }
+    tail.rotation.y = Math.sin(phase * 1.4) * 0.35;
+  };
   return root;
 }
 
@@ -858,6 +1038,21 @@ function buildJormungand(team: TeamId, pal: MaterialPalette, enableShadows: bool
 
   enableShadowsRecursive(root, enableShadows);
   root.userData.leftArm = head;
+
+  let phase = 0;
+  root.userData.animatePose = (dt: number, moving: boolean, speed: number, attackT: number | null) => {
+    phase += dt * (moving ? Math.max(3.2, speed * 1.3) : 2.0);
+    trunk.rotation.z = Math.sin(phase) * 0.22;
+    trunk.rotation.x = 0.22 + Math.cos(phase * 1.2) * 0.08;
+    body.rotation.y = Math.sin(phase * 0.7) * 0.15;
+    if (attackT !== null) {
+      head.position.z = 0.38 + Math.sin(attackT * Math.PI) * 0.55;
+      head.position.y = 1.62 - Math.sin(attackT * Math.PI) * 0.28;
+    } else {
+      head.position.z = THREE.MathUtils.damp(head.position.z, 0.38, 8, dt);
+      head.position.y = THREE.MathUtils.damp(head.position.y, 1.62, 8, dt);
+    }
+  };
   return root;
 }
 

@@ -17,6 +17,18 @@ import traitorsPowerXmb from './traitors';
 import tremorPowerXmb from './tremor';
 import underminePowerXmb from './undermine';
 import walkingWoodsPowerXmb from './walking woods';
+// ── Newly added god powers (complete coverage) ──
+import lightningPowerXmb from './lightning';
+import healingPowerXmb from './healing';
+import volcanicEruptionPowerXmb from './volcanic eruption';
+import blackHolePowerXmb from './black hole';
+import prosperityPowerXmb from './prosperity';
+import blizzardPowerXmb from './blizzard';
+import darkestNightPowerXmb from './darkest night';
+import diseasePowerXmb from './disease';
+import maelstromPowerXmb from './maelstrom';
+import necromancyPowerXmb from './necromancy';
+import solarBeamPowerXmb from './solar beam';
 
 export interface XmbNode {
   tag: string;
@@ -45,6 +57,18 @@ export const XMB_GOD_POWERS = {
   tremor: tremorPowerXmb,
   undermine: underminePowerXmb,
   walking_woods: walkingWoodsPowerXmb,
+  // ── Complete coverage — previously missing ──
+  lightning: lightningPowerXmb,
+  healing: healingPowerXmb,
+  volcanic_eruption: volcanicEruptionPowerXmb,
+  black_hole: blackHolePowerXmb,
+  prosperity: prosperityPowerXmb,
+  blizzard: blizzardPowerXmb,
+  darkest_night: darkestNightPowerXmb,
+  disease: diseasePowerXmb,
+  maelstrom: maelstromPowerXmb,
+  necromancy: necromancyPowerXmb,
+  solar_beam: solarBeamPowerXmb,
 } as const;
 
 export type XmbGodPowerKey = keyof typeof XMB_GOD_POWERS;
@@ -81,4 +105,16 @@ export {
   tremorPowerXmb,
   underminePowerXmb,
   walkingWoodsPowerXmb,
+  // ── New exports ──
+  lightningPowerXmb,
+  healingPowerXmb,
+  volcanicEruptionPowerXmb,
+  blackHolePowerXmb,
+  prosperityPowerXmb,
+  blizzardPowerXmb,
+  darkestNightPowerXmb,
+  diseasePowerXmb,
+  maelstromPowerXmb,
+  necromancyPowerXmb,
+  solarBeamPowerXmb,
 };

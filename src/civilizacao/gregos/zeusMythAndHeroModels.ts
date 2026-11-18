@@ -4,6 +4,8 @@ import { MaterialPalette } from '../../game/models';
 import { buildMedusa as buildZeusMedusaModel, animateMedusaModel } from './zeusMedusaModel';
 import { buildZeusHydra as buildZeusHydraModel, animateHydraModel } from './zeusHydraModel';
 import { buildZeusColossus as buildZeusColossusModel, animateColossusModel } from './zeusColossusModel';
+import { buildZeusManticore as buildZeusManticoreModel, animateManticoreModel } from './zeusManticoreModel';
+import { buildZeusCyclops as buildZeusCyclopsModel, animateCyclopsModel } from './zeusCyclopsModel';
 
 export type ZeusMythOrHeroKind =
   | 'cyclops'
@@ -457,192 +459,34 @@ function setPoseHelper(
 }
 
 // ============================================================================
-// 1. ZEUS SIGNATURE MYTH UNIT: CYCLOPS (Massive club + Grab & Throw animation)
+// 1. ZEUS SIGNATURE MYTH UNIT: CYCLOPS (Massive club + Throw ability • Vontade de Cronos)
 // ============================================================================
-function buildZeusCyclops(team: TeamId, pal: MaterialPalette, enableShadows: boolean): THREE.Group {
-  const root = new THREE.Group();
-  const geos = getSculptGeos();
-  const teamMat = team === 'player' ? pal.tunicPlayer : pal.tunicEnemy;
-  const skinMat = new THREE.MeshStandardMaterial({ color: 0xb98258, roughness: 0.78, metalness: 0.05 });
-  const eyeGlowMat = new THREE.MeshStandardMaterial({
-    color: 0xfef08a,
-    emissive: 0xf59e0b,
-    emissiveIntensity: 1.4,
-    roughness: 0.25,
-  });
-
-  const leftLeg = new THREE.Mesh(geos.giantLimb, skinMat);
-  leftLeg.position.set(-0.32, 0.58, 0);
-  const rightLeg = new THREE.Mesh(geos.giantLimb, skinMat);
-  rightLeg.position.set(0.32, 0.58, 0);
-  root.add(leftLeg, rightLeg);
-
-  // Bronze greave plates
-  const greaveGeo = new THREE.CylinderGeometry(0.19, 0.15, 0.46, 10);
-  const gL = new THREE.Mesh(greaveGeo, pal.bronze);
-  gL.position.set(0, -0.25, 0.03);
-  leftLeg.add(gL);
-  const gR = new THREE.Mesh(greaveGeo, pal.bronze);
-  gR.position.set(0, -0.25, 0.03);
-  rightLeg.add(gR);
-
-  // Broad Muscular Torso + Fur Loincloth + Team War Belt
-  const torsoGrp = new THREE.Group();
-  torsoGrp.position.set(0, 1.06, 0);
-  const chest = new THREE.Mesh(geos.humanTorso, skinMat);
-  chest.scale.set(2.3, 2.05, 1.9);
-  const loin = new THREE.Mesh(new THREE.CylinderGeometry(0.54, 0.62, 0.44, 12), pal.furBrown);
-  loin.position.y = 0.05;
-  const belt = new THREE.Mesh(new THREE.BoxGeometry(1.12, 0.22, 0.88), teamMat);
-  belt.position.y = 0.22;
-  const strap = new THREE.Mesh(new THREE.BoxGeometry(0.24, 1.05, 0.86), pal.bronze);
-  strap.position.set(-0.18, 0.68, 0);
-  strap.rotation.z = -0.52;
-  const pauldron = new THREE.Mesh(new THREE.SphereGeometry(0.34, 10, 8), pal.bronze);
-  pauldron.position.set(-0.62, 1.12, 0);
-  torsoGrp.add(chest, loin, belt, strap, pauldron);
-
-  // Cyclopean Head with Jaw Horns & Single Glowing Eye
-  const head = new THREE.Mesh(new THREE.SphereGeometry(0.42, 14, 12), skinMat);
-  head.position.set(0, 1.56, 0.08);
-  const brow = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.14, 0.28), skinMat);
-  brow.position.set(0, 1.72, 0.32);
-  const eyeSocket = new THREE.Mesh(new THREE.TorusGeometry(0.14, 0.04, 8, 16), pal.furBrown);
-  eyeSocket.position.set(0, 1.58, 0.44);
-  const eyeBall = new THREE.Mesh(new THREE.SphereGeometry(0.12, 10, 10), eyeGlowMat);
-  eyeBall.position.set(0, 1.58, 0.44);
-  const tuskL = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.2, 6), pal.ivory);
-  tuskL.position.set(-0.16, 1.38, 0.42);
-  const tuskR = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.2, 6), pal.ivory);
-  tuskR.position.set(0.16, 1.38, 0.42);
-  const hornL = new THREE.Mesh(geos.satyrHorn, pal.ivory);
-  hornL.position.set(-0.24, 1.84, 0.08);
-  hornL.scale.set(-1.3, 1.3, 1.3);
-  const hornR = new THREE.Mesh(geos.satyrHorn, pal.ivory);
-  hornR.position.set(0.24, 1.84, 0.08);
-  hornR.scale.set(1.3, 1.3, 1.3);
-  torsoGrp.add(head, brow, eyeSocket, eyeBall, tuskL, tuskR, hornL, hornR);
-  root.add(torsoGrp);
-
-  // Left Grabbing Claw Arm (reaches out to grab & hurl humans!)
-  const leftArm = new THREE.Group();
-  leftArm.position.set(-0.78, 2.15, 0.06);
-  const lLimb = new THREE.Mesh(geos.giantLimb, skinMat);
-  lLimb.position.y = -0.34;
-  const bracerL = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.17, 0.36, 10), pal.bronze);
-  bracerL.position.y = -0.58;
-  leftArm.add(lLimb, bracerL);
-  root.add(leftArm);
-
-  // Right Arm + Bronze-Banded Tree-Trunk Boulder Club
-  const rightArm = new THREE.Group();
-  rightArm.position.set(0.78, 2.15, 0.06);
-  const rLimb = new THREE.Mesh(geos.giantLimb, skinMat);
-  rLimb.position.y = -0.34;
-  const club = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.11, 1.9, 10), pal.timber);
-  club.rotation.x = Math.PI / 2.2;
-  club.position.set(0, -0.72, 0.65);
-  const band1 = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.24, 0.14, 10), pal.bronze);
-  band1.rotation.x = Math.PI / 2.2;
-  band1.position.set(0, -0.62, 1.05);
-  const spike = new THREE.Mesh(new THREE.DodecahedronGeometry(0.22, 0), pal.stoneDark);
-  spike.position.set(0, -0.52, 1.48);
-  rightArm.add(rLimb, club, band1, spike);
-  root.add(rightArm);
-
-  let walkClock = 0;
-  root.userData.leftLeg = leftLeg;
-  root.userData.rightLeg = rightLeg;
-  root.userData.leftArm = leftArm;
-  root.userData.rightArm = rightArm;
+function buildZeusCyclops(team: TeamId, _pal: MaterialPalette, enableShadows: boolean): THREE.Group {
+  const model = buildZeusCyclopsModel({ teamId: team, scale: 0.82 });
+  const root = model.root;
+  let elapsed = 0;
   root.userData.animatePose = (dt: number, moving: boolean, speed: number, attackT: number | null) => {
-    if (moving) {
-      walkClock += dt * Math.max(3.5, speed * 1.9);
-      const st = Math.sin(walkClock) * 0.45;
-      leftLeg.rotation.x = st;
-      rightLeg.rotation.x = -st;
-    } else {
-      leftLeg.rotation.x = THREE.MathUtils.damp(leftLeg.rotation.x, 0, 8, dt);
-      rightLeg.rotation.x = THREE.MathUtils.damp(rightLeg.rotation.x, 0, 8, dt);
-    }
-    if (attackT !== null) {
-      // Grab with left arm and smash/hurl with both arms!
-      const s = Math.sin(attackT * Math.PI);
-      leftArm.rotation.x = -1.45 * s;
-      rightArm.rotation.x = -1.35 * s;
-      torsoGrp.rotation.x = 0.18 * s;
-    } else {
-      leftArm.rotation.x = THREE.MathUtils.damp(leftArm.rotation.x, moving ? Math.sin(walkClock) * 0.3 : 0, 7, dt);
-      rightArm.rotation.x = THREE.MathUtils.damp(rightArm.rotation.x, moving ? -Math.sin(walkClock) * 0.3 : 0, 7, dt);
-      torsoGrp.rotation.x = THREE.MathUtils.damp(torsoGrp.rotation.x, 0, 7, dt);
-    }
+    elapsed += dt * (moving ? Math.max(3.2, speed * 1.6) : 2.0);
+    animateCyclopsModel(model, elapsed, dt, moving, speed, attackT);
   };
-
   makeShadows(root, enableShadows);
   return root;
 }
 
 // ============================================================================
-// 2. MANTICORE (Winged Lion + Curling Scorpion Tail)
+// 2. MANTICORE (Winged Lion + Curling Scorpion Tail • Quill Volley)
 // ============================================================================
-function buildManticore(team: TeamId, pal: MaterialPalette, enableShadows: boolean): THREE.Group {
-  const root = new THREE.Group();
-  const geos = getSculptGeos();
-  const tex = getMythTextures();
-  const teamMat = team === 'player' ? pal.tunicPlayer : pal.tunicEnemy;
-  const furMat = new THREE.MeshStandardMaterial({ color: 0xb45309, roughness: 0.75, metalness: 0.05 });
-  const wingMat = new THREE.MeshStandardMaterial({ map: tex.phoenixPlume, color: 0xfef3c7, roughness: 0.6, side: THREE.DoubleSide });
-
-  const body = new THREE.Mesh(geos.horseBody, furMat);
-  body.scale.set(1.05, 0.96, 1.05);
-  body.position.set(0, 0.92, 0);
-  const saddleBand = new THREE.Mesh(new THREE.BoxGeometry(0.68, 0.34, 0.42), teamMat);
-  saddleBand.position.set(0, 1.02, 0.1);
-  root.add(body, saddleBand);
-
-  const leftLeg = new THREE.Mesh(geos.heroLimb, furMat);
-  leftLeg.position.set(-0.24, 0.36, 0.46);
-  const rightLeg = new THREE.Mesh(geos.heroLimb, furMat);
-  rightLeg.position.set(0.24, 0.36, 0.46);
-  const backL = new THREE.Mesh(geos.heroLimb, furMat);
-  backL.position.set(-0.24, 0.36, -0.46);
-  const backR = new THREE.Mesh(geos.heroLimb, furMat);
-  backR.position.set(0.24, 0.36, -0.46);
-  root.add(leftLeg, rightLeg, backL, backR);
-
-  // Lion Mane + Horned Beast Head
-  const mane = new THREE.Mesh(new THREE.DodecahedronGeometry(0.36, 1), pal.crimson);
-  mane.position.set(0, 1.26, 0.62);
-  const head = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.32, 0.42), furMat);
-  head.position.set(0, 1.32, 0.78);
-  const hornL = new THREE.Mesh(geos.satyrHorn, pal.ivory);
-  hornL.position.set(-0.12, 1.46, 0.72);
-  hornL.scale.x = -1;
-  const hornR = new THREE.Mesh(geos.satyrHorn, pal.ivory);
-  hornR.position.set(0.12, 1.46, 0.72);
-  root.add(mane, head, hornL, hornR);
-
-  // Bat-Lion Wings
-  const wingL = new THREE.Mesh(geos.wingFeather, wingMat);
-  wingL.position.set(-0.24, 1.18, 0.1);
-  wingL.rotation.y = Math.PI * 0.78;
-  const wingR = new THREE.Mesh(geos.wingFeather, wingMat);
-  wingR.position.set(0.24, 1.18, 0.1);
-  wingR.rotation.y = -Math.PI * 0.22;
-  wingR.scale.x = -1;
-  root.add(wingL, wingR);
-
-  // Scorpion Tail + Venom Stinger
-  const tailGrp = new THREE.Group();
-  tailGrp.position.set(0, 0.96, -0.62);
-  const tailTube = new THREE.Mesh(geos.scorpionTail, pal.obsidian);
-  const stinger = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.28, 6), pal.jade);
-  stinger.rotation.x = Math.PI / 2;
-  stinger.position.set(0, 1.54, 0.24);
-  tailGrp.add(tailTube, stinger);
-  root.add(tailGrp);
-
-  setPoseHelper(root, { leftLeg, rightLeg, wingL, wingR, tail: tailGrp });
+function buildManticore(team: TeamId, _pal: MaterialPalette, enableShadows: boolean): THREE.Group {
+  const model = buildZeusManticoreModel({ teamId: team, scale: 0.88 });
+  const root = model.root;
+  let elapsed = 0;
+  root.userData.animatePose = (dt: number, moving: boolean, speed: number, attackT: number | null) => {
+    elapsed += dt * (moving ? Math.max(3.2, speed * 1.6) : 2.2);
+    const tailWhip = attackT !== null ? Math.sin(attackT * Math.PI) * 1.35 : 0;
+    const wingFlap = attackT !== null ? Math.sin(attackT * Math.PI) * 0.45 : (moving ? Math.sin(elapsed * 4.5) * 0.25 : Math.sin(elapsed * 2.5) * 0.12);
+    const jawOpen = attackT !== null ? Math.sin(attackT * Math.PI) * 0.35 : 0;
+    animateManticoreModel(model, elapsed, dt, tailWhip, wingFlap, jawOpen, moving);
+  };
   makeShadows(root, enableShadows);
   return root;
 }
