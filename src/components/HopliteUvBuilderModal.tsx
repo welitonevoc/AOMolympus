@@ -92,6 +92,13 @@ import {
   GreekVillagerInstance,
 } from '../civilizacao/gregos/greekVillagerModel';
 import {
+  buildNorseWorker,
+  NORSE_GOD_THEMES,
+  NorseWorkerInstance,
+  NorseWorkerRole,
+  NorseWorkerTask,
+} from '../civilizacao/nordicos/norseVillagerModel';
+import {
   animateZeus,
   buildZeus,
   createZeusTempleEnvironment,
@@ -465,6 +472,8 @@ export function HopliteUvBuilderModal({
   const [hopliteAction, setHopliteAction] = useState<ZeusHopliteAction>('guarda');
   const [villagerGender, setVillagerGender] = useState<'homem' | 'mulher' | 'ambos'>('ambos');
   const [villagerTask, setVillagerTask] = useState<'vigilia' | 'andar' | 'madeira' | 'ouro' | 'fruta' | 'construir'>('vigilia');
+  const [norseWorkerMode, setNorseWorkerMode] = useState<NorseWorkerRole | 'todos'>('todos');
+  const [norseWorkerTask, setNorseWorkerTask] = useState<NorseWorkerTask>('vigilia');
   const [focusDivine, setFocusDivine] = useState<boolean>(false);
   const [myrmidonFury, setMyrmidonFury] = useState<boolean>(true);
 
@@ -493,6 +502,10 @@ export function HopliteUvBuilderModal({
   villagerGenderRef.current = villagerGender;
   const villagerTaskRef = useRef(villagerTask);
   villagerTaskRef.current = villagerTask;
+  const norseWorkerModeRef = useRef(norseWorkerMode);
+  norseWorkerModeRef.current = norseWorkerMode;
+  const norseWorkerTaskRef = useRef(norseWorkerTask);
+  norseWorkerTaskRef.current = norseWorkerTask;
   const myrmidonFuryRef = useRef(myrmidonFury);
   myrmidonFuryRef.current = myrmidonFury;
   const focusDivineRef = useRef(focusDivine);
@@ -2144,6 +2157,164 @@ export function HopliteUvBuilderModal({
             const t = simTime;
             animateStudioVillager(maleVillager, dt, t, maleOffset, 0, currentTask);
             animateStudioVillager(femaleVillager, dt, t, femaleOffset, 1.4, currentTask);
+          };
+        } else if (
+          selectedCiv === 'norse' &&
+          (selectedUnit === 'villager' || selectedUnit === 'norse_dwarf')
+        ) {
+          const godKey = (
+            selectedMajorGod.toLowerCase() === 'thor'
+              ? 'thor'
+              : selectedMajorGod.toLowerCase() === 'loki'
+              ? 'loki'
+              : selectedMajorGod.toLowerCase() === 'freyr'
+              ? 'freyr'
+              : 'odin'
+          );
+          const theme = NORSE_GOD_THEMES[godKey] || NORSE_GOD_THEMES.odin;
+
+          scene.background = new THREE.Color(theme.bgHex);
+          scene.fog = new THREE.FogExp2(theme.bgHex, 0.02);
+          addPedestal(2.4, 2.6, theme.ringHex);
+
+          const norseMan = buildNorseWorker('homem', godKey, !isSoftwareGl);
+          const norseWoman = buildNorseWorker('mulher', godKey, !isSoftwareGl);
+          const norseDwarf = buildNorseWorker('anao', godKey, !isSoftwareGl);
+
+          const norseWorkerRoot = new THREE.Group();
+          norseWorkerRoot.add(norseMan.root);
+          norseWorkerRoot.add(norseWoman.root);
+          norseWorkerRoot.add(norseDwarf.root);
+          group = norseWorkerRoot;
+
+          const animateStudioNorseWorker = (
+            w: NorseWorkerInstance,
+            _dt: number,
+            t: number,
+            slotOffsetX: number,
+            phaseOffset: number,
+            currentTask: NorseWorkerTask,
+            currentMode: string
+          ) => {
+            if (!w.root.visible) return;
+
+            let vx = slotOffsetX;
+            let vz = 0;
+            let vy = 0;
+            let yaw = 0;
+            let pitch = 0;
+            let torsoYaw = 0;
+            const breath = Math.sin(t * 2.3 + phaseOffset) * 0.016;
+
+            if (currentTask === 'andar') {
+              const a = t * 0.95 + phaseOffset;
+              const R = w.isDwarf ? 1.6 : (w.isFemale ? 1.9 : 2.2);
+              vx = Math.cos(a) * R;
+              vz = Math.sin(a) * R;
+              yaw = -a;
+              pitch = 0.06;
+
+              const stepFreq = w.isDwarf ? 7.2 : 5.6;
+              const stride = t * stepFreq + phaseOffset;
+              const sinS = Math.sin(stride);
+              const cosS = Math.cos(stride);
+              vy = Math.abs(cosS) * 0.04;
+              torsoYaw = sinS * 0.09;
+
+              w.legs.L.hip.rotation.x = -0.12 + sinS * 0.36;
+              w.legs.L.knee.rotation.x = 0.18 + Math.max(0, -cosS) * 0.36;
+              w.legs.R.hip.rotation.x = -0.12 - sinS * 0.36;
+              w.legs.R.knee.rotation.x = 0.18 + Math.max(0, cosS) * 0.36;
+
+              w.rightArm.arm.rotation.set(-0.15 - sinS * 0.35, 0.08, 0.14);
+              w.rightArm.elbow.rotation.set(-0.25, 0, 0.08);
+              w.leftArm.arm.rotation.set(-0.15 + sinS * 0.35, -0.08, -0.14);
+              w.leftArm.elbow.rotation.set(-0.25, 0, -0.08);
+            } else if (currentTask === 'madeira' || currentTask === 'ouro' || currentTask === 'construir') {
+              vx = currentMode === 'todos' ? slotOffsetX : 0;
+              vz = 0.25;
+              yaw = currentMode === 'todos' ? -slotOffsetX * 0.45 : 0;
+
+              const speed = (w.isDwarf && currentTask === 'ouro') ? 5.6 : (currentTask === 'construir' ? 5.0 : 3.9);
+              const swing = (t * speed + phaseOffset) % (Math.PI * 2);
+              const strike = Math.sin(swing);
+
+              pitch = 0.14 + strike * 0.16;
+              torsoYaw = -0.18 + strike * 0.28;
+
+              w.rightArm.arm.rotation.set(-1.35 + strike * 0.95, 0.18, 0.25);
+              w.rightArm.elbow.rotation.set(-0.65 + strike * 0.35, 0.1, 0.1);
+              w.leftArm.arm.rotation.set(-0.65 + strike * 0.35, -0.25, -0.22);
+              w.leftArm.elbow.rotation.set(-0.85, -0.15, 0.15);
+
+              w.legs.L.hip.rotation.set(-0.22, -0.10, -0.06);
+              w.legs.L.knee.rotation.set(0.28, 0, 0);
+              w.legs.R.hip.rotation.set(0.18, 0.10, 0.06);
+              w.legs.R.knee.rotation.set(0.22, 0, 0);
+
+              if (strike > 0.92) {
+                spawnSpark(new THREE.Vector3(vx, 0.5, 0.8));
+              }
+            } else if (currentTask === 'fruta') {
+              vx = currentMode === 'todos' ? slotOffsetX : 0;
+              vz = 0.28;
+              yaw = currentMode === 'todos' ? -slotOffsetX * 0.45 : 0;
+
+              const pick = Math.sin(t * 3.4 + phaseOffset);
+              pitch = 0.22 + pick * 0.08;
+              torsoYaw = pick * 0.18;
+
+              w.leftArm.arm.rotation.set(-0.55, -0.28, -0.24);
+              w.leftArm.elbow.rotation.set(-1.05, -0.2, 0.2);
+
+              w.rightArm.arm.rotation.set(-0.95 - pick * 0.35, 0.22 - pick * 0.25, 0.22);
+              w.rightArm.elbow.rotation.set(-0.55 - pick * 0.45, 0.15, 0.15);
+
+              w.legs.L.hip.rotation.set(-0.18, -0.08, -0.04);
+              w.legs.L.knee.rotation.set(0.26, 0, 0);
+              w.legs.R.hip.rotation.set(0.16, 0.08, 0.04);
+              w.legs.R.knee.rotation.set(0.22, 0, 0);
+            } else {
+              vx = currentMode === 'todos' ? slotOffsetX : 0;
+              vz = (currentMode === 'todos' && w.isDwarf) ? 0.18 : 0;
+              yaw = Math.sin(t * 0.45 + phaseOffset) * 0.12 + (currentMode === 'todos' ? -slotOffsetX * 0.18 : 0);
+
+              w.rightArm.arm.rotation.set(-0.14, 0.08, 0.18 + Math.sin(t * 1.8 + phaseOffset) * 0.02);
+              w.rightArm.elbow.rotation.set(-0.32, 0.06, 0.08);
+              w.leftArm.arm.rotation.set(-0.14, -0.08, -0.18 - Math.cos(t * 1.8 + phaseOffset) * 0.02);
+              w.leftArm.elbow.rotation.set(-0.32, -0.06, -0.08);
+
+              w.legs.L.hip.rotation.set(-0.12, -0.08, -0.04);
+              w.legs.L.knee.rotation.set(0.16, 0, 0);
+              w.legs.R.hip.rotation.set(0.10, 0.08, 0.04);
+              w.legs.R.knee.rotation.set(0.14, 0, 0);
+            }
+
+            w.root.position.set(vx, vy, vz);
+            w.root.rotation.set(0, yaw, 0);
+            w.body.position.y = w.baseHipY + breath;
+            w.body.rotation.set(pitch, torsoYaw, 0);
+          };
+
+          group.userData.animatePose = (dt: number) => {
+            const currentMode = norseWorkerModeRef.current;
+            const currentTask = norseWorkerTaskRef.current;
+
+            const isSpecificDwarfUnit = selectedUnit === 'norse_dwarf';
+            const effMode = isSpecificDwarfUnit && currentMode === 'todos' ? 'anao' : currentMode;
+
+            norseMan.root.visible = effMode === 'todos' || effMode === 'homem';
+            norseWoman.root.visible = effMode === 'todos' || effMode === 'mulher';
+            norseDwarf.root.visible = effMode === 'todos' || effMode === 'anao';
+
+            norseMan.setToolMode(currentTask);
+            norseWoman.setToolMode(currentTask);
+            norseDwarf.setToolMode(currentTask);
+
+            const t = simTime;
+            animateStudioNorseWorker(norseMan, dt, t, -0.82, 0, currentTask, effMode);
+            animateStudioNorseWorker(norseDwarf, dt, t, 0.0, 0.9, currentTask, effMode);
+            animateStudioNorseWorker(norseWoman, dt, t, 0.82, 1.8, currentTask, effMode);
           };
         } else if (
           selectedCiv === 'greek' &&
@@ -4565,6 +4736,96 @@ export function HopliteUvBuilderModal({
                     onClick={() => setVillagerTask(t.id)}
                     className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
                       villagerTask === t.id ? activeColor : inactiveColor
+                    }`}
+                  >
+                    <Icon className="h-3.5 w-3.5" />
+                    <span>{t.label}</span>
+                  </button>
+                );
+              })}
+            </>
+          ) : galleryCategory === 'unit' && selectedCiv === 'norse' && (selectedUnit === 'villager' || selectedUnit === 'norse_dwarf') ? (
+            <>
+              {/* Papel / Trabalhador Nórdico */}
+              {(
+                [
+                  { id: 'todos', label: 'Todos (3)', icon: Users },
+                  { id: 'homem', label: 'Coletor', icon: User },
+                  { id: 'mulher', label: 'Coletora', icon: User },
+                  { id: 'anao', label: 'Anão Minerador', icon: Hammer },
+                ] as const
+              ).map((m) => {
+                const Icon = m.icon;
+                const god = selectedMajorGod.toLowerCase();
+                const activeColor =
+                  god === 'thor'
+                    ? 'bg-amber-500 text-slate-950 shadow'
+                    : god === 'loki'
+                    ? 'bg-emerald-500 text-slate-950 shadow'
+                    : god === 'freyr'
+                    ? 'bg-yellow-400 text-slate-950 shadow'
+                    : 'bg-sky-400 text-slate-950 shadow';
+                const inactiveColor =
+                  god === 'thor'
+                    ? 'border border-amber-400/30 text-amber-200 hover:bg-amber-400/15'
+                    : god === 'loki'
+                    ? 'border border-emerald-400/30 text-emerald-200 hover:bg-emerald-400/15'
+                    : god === 'freyr'
+                    ? 'border border-yellow-400/30 text-yellow-200 hover:bg-yellow-400/15'
+                    : 'border border-sky-400/30 text-sky-200 hover:bg-sky-400/15';
+
+                return (
+                  <button
+                    key={m.id}
+                    type="button"
+                    onClick={() => setNorseWorkerMode(m.id)}
+                    className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      norseWorkerMode === m.id ? activeColor : inactiveColor
+                    }`}
+                  >
+                    <Icon className="h-3.5 w-3.5" />
+                    <span>{m.label}</span>
+                  </button>
+                );
+              })}
+              <div className="h-4 w-px bg-white/20 mx-1" />
+              {/* Tarefas / Ferramentas Nórdicas */}
+              {(
+                [
+                  { id: 'vigilia', label: 'Vigília', icon: Shield },
+                  { id: 'andar', label: 'Andando', icon: Play },
+                  { id: 'madeira', label: 'Pinheiro', icon: Trees },
+                  { id: 'ouro', label: 'Ouro', icon: Sparkles },
+                  { id: 'fruta', label: 'Bagas', icon: Sun },
+                  { id: 'construir', label: 'Construir', icon: Hammer },
+                ] as const
+              ).map((t) => {
+                const Icon = t.icon;
+                const god = selectedMajorGod.toLowerCase();
+                const activeColor =
+                  god === 'thor'
+                    ? 'bg-amber-500 text-slate-950 shadow'
+                    : god === 'loki'
+                    ? 'bg-emerald-500 text-slate-950 shadow'
+                    : god === 'freyr'
+                    ? 'bg-yellow-400 text-slate-950 shadow'
+                    : 'bg-sky-400 text-slate-950 shadow';
+                const inactiveColor =
+                  god === 'thor'
+                    ? 'border border-amber-400/30 text-amber-200 hover:bg-amber-400/15'
+                    : god === 'loki'
+                    ? 'border border-emerald-400/30 text-emerald-200 hover:bg-emerald-400/15'
+                    : god === 'freyr'
+                    ? 'border border-yellow-400/30 text-yellow-200 hover:bg-yellow-400/15'
+                    : 'border border-sky-400/30 text-sky-200 hover:bg-sky-400/15';
+
+                return (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => setNorseWorkerTask(t.id)}
+                    className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      norseWorkerTask === t.id ? activeColor : inactiveColor
                     }`}
                   >
                     <Icon className="h-3.5 w-3.5" />
