@@ -22,6 +22,7 @@ import {
   LayoutGrid,
   ListChecks,
   Lock,
+  LogOut,
   Menu,
   Moon,
   Mountain,
@@ -143,6 +144,7 @@ interface GameHUDProps {
   onOrderVillagerTask?: (task: 'wood' | 'food' | 'gold' | 'hunt' | 'build') => void;
   onPromoteToHero?: () => void;
   onTeleportSkyPassage?: (buildingId: string) => void;
+  onUngarrisonBuilding?: (buildingId: string) => void;
   onOrderPrayTemple?: (templeId?: string) => void;
   onOrderEmpowerMonument?: (buildingId?: string) => void;
   onSpreadOracles?: () => void;
@@ -264,6 +266,7 @@ export function GameHUD({
   onOrderVillagerTask,
   onPromoteToHero,
   onTeleportSkyPassage,
+  onUngarrisonBuilding,
   onOrderPrayTemple,
   onOrderEmpowerMonument,
   onSpreadOracles,
@@ -1925,6 +1928,30 @@ export function GameHUD({
                           </button>
                         )}
 
+                        {hud.selection.canGarrison && hud.selection.buildingId && (
+                          <div className="flex flex-col gap-1 rounded border border-[#60a5fa]/35 bg-[#0f1d32] p-2">
+                            <div className="flex items-center justify-between gap-1 text-[10px]">
+                              <span className="flex items-center gap-1.5 font-semibold text-[#93c5fd]">
+                                <Shield className="h-3.5 w-3.5 text-[#60a5fa]" />
+                                <span>Guarnição Defensiva</span>
+                              </span>
+                              <span className="font-mono-num text-[10px] font-bold text-[#fde047]">
+                                {hud.selection.garrisonedCount ?? 0} / {hud.selection.garrisonMaxCapacity ?? 10}
+                              </span>
+                            </div>
+                            {hud.selection.canUngarrison && onUngarrisonBuilding && (
+                              <button
+                                type="button"
+                                onClick={() => onUngarrisonBuilding(hud.selection.buildingId!)}
+                                className="flex items-center justify-center gap-1.5 rounded border border-[#f59e0b]/70 bg-[#2d1b06] px-2 py-1 text-[10px] font-bold text-[#fef3c7] hover:bg-[#452709] cursor-pointer"
+                              >
+                                <LogOut className="h-3.5 w-3.5 text-[#fbbf24]" />
+                                <span>Desembarcar ({hud.selection.garrisonedCount})</span>
+                              </button>
+                            )}
+                          </div>
+                        )}
+
                         {showMarket && (
                           <div className="grid grid-cols-2 gap-1">
                             <button
@@ -2135,28 +2162,37 @@ export function GameHUD({
                   <div>
                     <div className="mb-1 text-[10px] text-[#94a3b8]">Formação do Esquadrão</div>
                     <div
-                      className="grid grid-cols-3 gap-1"
+                      className="grid grid-cols-5 gap-1"
                       role="group"
                       aria-label="Formação das tropas"
                     >
-                      {(['box', 'line', 'staggered'] as FormationId[]).map((fid) => {
+                      {(['box', 'line', 'staggered', 'phalanx', 'wedge'] as FormationId[]).map((fid) => {
                         const active = hud.formation === fid;
                         const spec = FORMATIONS[fid];
-                        const Icon = fid === 'box' ? LayoutGrid : fid === 'line' ? StretchHorizontal : GripHorizontal;
+                        const Icon =
+                          fid === 'box'
+                            ? LayoutGrid
+                            : fid === 'line'
+                            ? StretchHorizontal
+                            : fid === 'staggered'
+                            ? GripHorizontal
+                            : fid === 'phalanx'
+                            ? Shield
+                            : Swords;
                         return (
                           <button
                             key={fid}
                             type="button"
                             onClick={() => onSetFormation(fid)}
                             title={`${spec.name} (Tecla F) — ${spec.description}`}
-                            className={`flex flex-col items-center justify-center gap-0.5 rounded border px-1.5 py-1.5 text-[10px] font-semibold transition-colors cursor-pointer ${
+                            className={`flex flex-col items-center justify-center gap-0.5 rounded border px-1 py-1.5 text-[9px] font-semibold transition-colors cursor-pointer ${
                               active
                                 ? 'border-[#d4af37] bg-[#d4af37] text-[#0b0e14]'
                                 : 'border-[#c8a962]/25 bg-[#131926] text-[#cbd5e1] hover:border-[#f3d27a] hover:text-white'
                             }`}
                           >
                             <Icon className="h-3.5 w-3.5 shrink-0" />
-                            <span>{spec.name}</span>
+                            <span className="truncate max-w-full text-[8.5px]">{spec.name.split(' ')[0]}</span>
                           </button>
                         );
                       })}

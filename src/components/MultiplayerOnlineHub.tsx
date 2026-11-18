@@ -263,16 +263,28 @@ export function MultiplayerOnlineHub({
 
   const renderConnectionBadge = () => {
     const isConnected = mp.status === 'connected';
+    const playerElo = Number(getStoredValue('aom_player_elo', '1250'));
+    const eloTier =
+      playerElo >= 1800 ? 'Titã' : playerElo >= 1500 ? 'Ouro' : playerElo >= 1300 ? 'Prata' : 'Bronze';
     return (
-      <div
-        className={`flex items-center gap-1.5 rounded border px-2 py-1 text-[11px] font-mono-num whitespace-nowrap shrink-0 ${
-          isConnected
-            ? 'border-emerald-400/40 bg-emerald-950/60 text-emerald-300'
-            : 'border-amber-400/40 bg-amber-950/60 text-amber-300'
-        }`}
-      >
-        {isConnected ? <Wifi className="h-3.5 w-3.5" /> : <WifiOff className="h-3.5 w-3.5" />}
-        <span>{isConnected ? `Online · ${mp.pingMs}ms` : 'Conectando...'}</span>
+      <div className="flex items-center gap-2 shrink-0">
+        <div
+          title="Classificação ELO Competitiva Retold"
+          className="flex items-center gap-1.5 rounded border border-[#facc15]/50 bg-[#241a08] px-2 py-1 text-[11px] font-mono-num font-bold text-[#fef08a] whitespace-nowrap"
+        >
+          <Swords className="h-3.5 w-3.5 text-[#facc15]" />
+          <span>ELO {playerElo} ({eloTier})</span>
+        </div>
+        <div
+          className={`flex items-center gap-1.5 rounded border px-2 py-1 text-[11px] font-mono-num whitespace-nowrap ${
+            isConnected
+              ? 'border-emerald-400/40 bg-emerald-950/60 text-emerald-300'
+              : 'border-amber-400/40 bg-amber-950/60 text-amber-300'
+          }`}
+        >
+          {isConnected ? <Wifi className="h-3.5 w-3.5" /> : <WifiOff className="h-3.5 w-3.5" />}
+          <span>{isConnected ? `Online · ${mp.pingMs}ms` : 'Conectando...'}</span>
+        </div>
       </div>
     );
   };

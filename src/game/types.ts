@@ -247,7 +247,7 @@ export type GodPowerId =
   | 'undermine';
 
 export type GodPowerCategory = 'Ofensivo' | 'Econômico' | 'Defensivo';
-export type FormationId = 'box' | 'line' | 'staggered';
+export type FormationId = 'box' | 'line' | 'staggered' | 'phalanx' | 'wedge';
 
 export type TechId =
   | 'copper_weapons'
@@ -359,6 +359,16 @@ export const FORMATIONS: Record<FormationId, FormationSpec> = {
     id: 'staggered',
     name: 'Escalonada',
     description: 'Fileiras alternadas e espaçadas para reduzir dano em área.',
+  },
+  phalanx: {
+    id: 'phalanx',
+    name: 'Falange',
+    description: 'Muralha de escudos e lanças com +25% armadura contra perfuração e corte, reduzindo velocidade em 15%.',
+  },
+  wedge: {
+    id: 'wedge',
+    name: 'Cunha (Wedge)',
+    description: 'Ponta de lança para investida com +20% velocidade de movimento e +15% dano de carga/ataque.',
   },
 };
 
@@ -4940,6 +4950,10 @@ export interface SelectionSummary {
   oracleFavorPerSec?: number;
   isEmpowered?: boolean;
   empoweredByLabel?: string;
+  garrisonedCount?: number;
+  garrisonMaxCapacity?: number;
+  canGarrison?: boolean;
+  canUngarrison?: boolean;
   isisProtected?: boolean;
   canPromoteToHero?: boolean;
   heroPromoteIsFree?: boolean;

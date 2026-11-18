@@ -238,6 +238,7 @@ export default function App() {
           onOrderVillagerTask={(task) => engineRef.current?.orderSelectedVillagersToTask(task)}
           onPromoteToHero={() => engineRef.current?.promoteSelectedUnitsToHero()}
           onTeleportSkyPassage={(id) => engineRef.current?.teleportSkyPassage(id)}
+          onUngarrisonBuilding={(id) => engineRef.current?.ungarrisonBuilding(id)}
           onOrderPrayTemple={(templeId) => engineRef.current?.orderVillagersToPrayAtTemple(templeId)}
           onOrderEmpowerMonument={(buildingId) => engineRef.current?.orderEmpowerMonument(buildingId)}
           onSpreadOracles={() => engineRef.current?.orderOraclesToSpread()}

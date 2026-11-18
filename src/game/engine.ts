@@ -92,7 +92,7 @@ interface UnitEntity {
   hp: number;
   maxHp: number;
   selected: boolean;
-  state: 'idle' | 'move' | 'gather' | 'hunt' | 'return' | 'build' | 'attack' | 'pray' | 'empower';
+  state: 'idle' | 'move' | 'gather' | 'hunt' | 'return' | 'build' | 'attack' | 'pray' | 'empower' | 'garrisoned';
   targetPos: THREE.Vector3 | null;
   targetEntityId: string | null;
   targetNodeId: string | null;
@@ -123,6 +123,8 @@ interface UnitEntity {
   poisonTimer?: number;
   poisonTickTimer?: number;
   poisonTeam?: TeamId;
+  garrisonedInId?: string | null;
+  empowerAura?: boolean;
 }
 
 interface BuildingEntity {
@@ -143,6 +145,8 @@ interface BuildingEntity {
   settlementId?: string;
   empoweredTimer?: number;
   empoweredBy?: 'pharaoh' | 'priest';
+  garrisonedUnitIds?: string[];
+  maxGarrisonCapacity?: number;
 }
 
 interface ResourceNodeEntity {
@@ -2174,6 +2178,23 @@ export class AoMEngine {
       else speedMult *= 0.94;
     }
 
+    // Retold Tactical Formations Combat Modifiers
+    const activeFormation = team === 'player' ? this.formation : 'box';
+    if (activeFormation === 'phalanx') {
+      // Falange: +25% armadura contra perfuração e corte, -15% velocidade
+      hackVulnMult *= 0.75;
+      pierceVulnMult *= 0.75;
+      speedMult *= 0.85;
+      armorBonus += 0.05;
+    } else if (activeFormation === 'wedge') {
+      // Cunha (Wedge): +20% velocidade de movimento e +15% poder de ataque de choque
+      atkMult *= 1.15;
+      speedMult *= 1.20;
+    } else if (activeFormation === 'staggered') {
+      // Escalonada: reduz vulnerabilidade a projéteis e dano em área
+      pierceVulnMult *= 0.88;
+    }
+
     return {
       atkMult,
       hpMult,
@@ -2314,6 +2335,8 @@ export class AoMEngine {
       specialCooldown: 0,
       poisonTimer: 0,
       poisonTickTimer: 0,
+      garrisonedInId: null,
+      empowerAura: false,
     };
     this.units.set(id, entity);
     return entity;
@@ -2444,6 +2467,8 @@ export class AoMEngine {
       rallyPoint: null,
       attackTimer: 0,
       settlementId,
+      garrisonedUnitIds: [],
+      maxGarrisonCapacity: this.getGarrisonCapacity(kind),
     };
     this.buildings.set(id, entity);
     return entity;
@@ -2682,6 +2707,27 @@ export class AoMEngine {
     const pantheon = this.teamPantheon(team);
     const stats = getCivBuildingSpec(pantheon, kind);
     return stats.radius * this.globalScaleConfig.buildingMultiplier;
+  }
+
+  public getGarrisonCapacity(kind: BuildingKind): number {
+    switch (kind) {
+      case 'town_center':
+        return 15;
+      case 'fortress':
+      case 'asgard_hill_fort':
+        return 20;
+      case 'tower':
+      case 'mirror_tower':
+        return 5;
+      case 'sky_passage':
+        return 10;
+      default:
+        return 0;
+    }
+  }
+
+  public canGarrisonIn(b: BuildingEntity): boolean {
+    return b.isConstructed && this.getGarrisonCapacity(b.kind) > 0;
   }
 
   public setGlobalScaleConfig(config: Partial<AoMGlobalScaleConfig> | AoMScaleProfile) {
@@ -4092,6 +4138,39 @@ export class AoMEngine {
       cols = n <= 2 ? n : Math.max(3, Math.ceil(Math.sqrt(n * 1.4)));
       colSpacing = Math.max(2.9, maxRadius * 3.5);
       rowSpacing = Math.max(2.6, maxRadius * 3.2);
+    } else if (formation === 'phalanx') {
+      cols = n <= 4 ? n : Math.min(10, Math.max(4, Math.ceil(n / 2.2)));
+      colSpacing = Math.max(1.7, maxRadius * 2.15);
+      rowSpacing = Math.max(1.8, maxRadius * 2.25);
+    } else if (formation === 'wedge') {
+      const colSpacing = Math.max(2.2, maxRadius * 2.8);
+      const rowSpacing = Math.max(2.1, maxRadius * 2.7);
+      const rightX = -fwdZ;
+      const rightZ = fwdX;
+
+      return sorted.map((unit, idx) => {
+        let row = 0;
+        let countBefore = 0;
+        while (countBefore + (row + 1) <= idx) {
+          countBefore += (row + 1);
+          row++;
+        }
+        const col = idx - countBefore;
+        const itemsInRow = row + 1;
+        const rightOffset = (col - (itemsInRow - 1) / 2) * colSpacing;
+        const fwdOffset = (Math.sqrt(n) * 0.5 - row) * rowSpacing;
+
+        const rawX = centerX + rightX * rightOffset + fwdX * fwdOffset;
+        const rawZ = centerZ + rightZ * rightOffset + fwdZ * fwdOffset;
+        const snapped = this.snapToWalkableSlot(rawX, rawZ, centerX, centerZ);
+        return {
+          unit,
+          rightOffset,
+          fwdOffset,
+          targetX: snapped.x,
+          targetZ: snapped.z,
+        };
+      });
     } else {
       // box
       cols = n <= 2 ? n : Math.max(2, Math.ceil(Math.sqrt(n)));
@@ -5263,6 +5342,94 @@ export class AoMEngine {
     this.emitHudSnapshot();
   }
 
+  public ungarrisonBuilding(buildingId: string) {
+    if (this.phase !== 'playing') return;
+    const b = this.buildings.get(buildingId);
+    if (!b || b.team !== 'player' || !b.garrisonedUnitIds || b.garrisonedUnitIds.length === 0) {
+      return;
+    }
+    const unitIds = [...b.garrisonedUnitIds];
+    b.garrisonedUnitIds = [];
+
+    const count = unitIds.length;
+    let ejectedCount = 0;
+    unitIds.forEach((uid, idx) => {
+      const u = this.units.get(uid);
+      if (u) {
+        const ang = (idx / Math.max(1, count)) * Math.PI * 2;
+        const dist = b.radius + 2.2;
+        const tx = THREE.MathUtils.clamp(b.mesh.position.x + Math.cos(ang) * dist, -PLAYABLE_HALF_SIZE + 2, PLAYABLE_HALF_SIZE - 2);
+        const tz = THREE.MathUtils.clamp(b.mesh.position.z + Math.sin(ang) * dist, -PLAYABLE_HALF_SIZE + 2, PLAYABLE_HALF_SIZE - 2);
+        u.mesh.position.set(tx, groundHeightAt(tx, tz, this.mapId), tz);
+        u.mesh.visible = true;
+        u.state = 'idle';
+        u.garrisonedInId = null;
+        u.targetPos = null;
+        u.waypoints = [];
+        u.rallyFlagPos = null;
+        u.repathTimer = 0;
+        ejectedCount++;
+      }
+    });
+
+    this.spawnRingVfx(b.mesh.position, b.radius + 2.0, 0x38bdf8, 0.7);
+    soundEngine.playBuildingPlaced();
+    this.notifyStatus(`🛡️ ${ejectedCount} unidade(s) desembarcada(s) da guarnição!`);
+    this.emitHudSnapshot();
+  }
+
+  public orderGarrison(units: UnitEntity[], building: BuildingEntity) {
+    if (this.phase !== 'playing' || !this.canGarrisonIn(building)) return;
+    const eligible = units.filter(
+      (u) =>
+        u.team === building.team &&
+        u.hp > 0 &&
+        !this.unitStats(u.kind, u.team).isGod &&
+        u.kind !== 'titan' &&
+        u.state !== 'garrisoned'
+    );
+    if (eligible.length === 0) return;
+
+    for (const u of eligible) {
+      const dist = u.mesh.position.distanceTo(building.mesh.position);
+      if (dist <= building.radius + 2.2) {
+        this.garrisonUnit(u, building);
+      } else {
+        u.state = 'move';
+        u.targetEntityId = building.id;
+        u.targetPos = building.mesh.position.clone();
+        u.waypoints = [];
+        u.rallyFlagPos = null;
+        u.repathTimer = 0;
+      }
+    }
+    this.spawnRingVfx(building.mesh.position, building.radius + 1.2, 0x60a5fa, 0.6);
+    this.notifyStatus(`🛡️ Tropas marchando para guarnecer ${this.buildingStats(building.kind, building.team).name}!`);
+    this.emitHudSnapshot();
+  }
+
+  public garrisonUnit(u: UnitEntity, building: BuildingEntity) {
+    const maxCap = building.maxGarrisonCapacity ?? this.getGarrisonCapacity(building.kind);
+    if (!building.garrisonedUnitIds) building.garrisonedUnitIds = [];
+    if (building.garrisonedUnitIds.length >= maxCap) {
+      this.notifyStatus('Guarnição cheia!');
+      u.state = 'idle';
+      u.targetEntityId = null;
+      return;
+    }
+    building.garrisonedUnitIds.push(u.id);
+    u.state = 'garrisoned';
+    u.garrisonedInId = building.id;
+    u.targetEntityId = null;
+    u.targetPos = null;
+    u.waypoints = [];
+    u.mesh.visible = false;
+    u.mesh.position.copy(building.mesh.position);
+    u.selected = false;
+    this.spawnRingVfx(building.mesh.position, building.radius + 0.6, 0xfacc15, 0.45);
+    this.emitHudSnapshot();
+  }
+
   private beginTownCenterOnSettlement(
     settlement: SettlementEntity,
     team: TeamId,
@@ -6125,6 +6292,29 @@ export class AoMEngine {
           this.emitHudSnapshot();
           return;
         }
+      }
+      if (targetB && targetB.team === 'player' && targetB.isConstructed && targetB.kind === 'sky_passage') {
+        const dist = selectedPlayerUnits[0].mesh.position.distanceTo(targetB.mesh.position);
+        if (dist <= targetB.radius + 9.5) {
+          this.teleportSkyPassage(targetB.id);
+        } else {
+          for (const u of selectedPlayerUnits) {
+            u.state = 'move';
+            u.targetEntityId = targetB.id;
+            u.targetPos = targetB.mesh.position.clone();
+            u.waypoints = [];
+            u.rallyFlagPos = null;
+            u.repathTimer = 0;
+          }
+          this.spawnRingVfx(targetB.mesh.position, targetB.radius + 1.5, 0x38bdf8, 0.6);
+          this.notifyStatus('Marchando para a Passagem Celeste para teletransporte...');
+        }
+        this.emitHudSnapshot();
+        return;
+      }
+      if (targetB && targetB.team === 'player' && targetB.isConstructed && this.canGarrisonIn(targetB)) {
+        this.orderGarrison(selectedPlayerUnits, targetB);
+        return;
       }
     }
 
@@ -7784,6 +7974,23 @@ export class AoMEngine {
           this.enemyDestroyedValue += bVal * 0.2;
         }
       }
+      if (target.garrisonedUnitIds && target.garrisonedUnitIds.length > 0) {
+        for (const uid of target.garrisonedUnitIds) {
+          const u = this.units.get(uid);
+          if (u) {
+            u.state = 'idle';
+            u.garrisonedInId = null;
+            u.mesh.visible = true;
+            u.hp = Math.max(1, Math.round(u.hp * 0.75));
+            const ang = Math.random() * Math.PI * 2;
+            const dist = target.radius + 1.8;
+            const tx = THREE.MathUtils.clamp(target.mesh.position.x + Math.cos(ang) * dist, -PLAYABLE_HALF_SIZE + 2, PLAYABLE_HALF_SIZE - 2);
+            const tz = THREE.MathUtils.clamp(target.mesh.position.z + Math.sin(ang) * dist, -PLAYABLE_HALF_SIZE + 2, PLAYABLE_HALF_SIZE - 2);
+            u.mesh.position.set(tx, groundHeightAt(tx, tz, this.mapId), tz);
+          }
+        }
+        target.garrisonedUnitIds = [];
+      }
       this.scene.remove(target.mesh);
       this.buildings.delete(target.id);
       if (target.kind === 'town_center' && target.settlementId) {
@@ -8467,6 +8674,22 @@ export class AoMEngine {
     }
 
     for (const u of [...this.units.values()]) {
+      if (u.state === 'garrisoned') {
+        const host = u.garrisonedInId ? this.buildings.get(u.garrisonedInId) : null;
+        if (!host || host.hp <= 0) {
+          u.state = 'idle';
+          u.garrisonedInId = null;
+          u.mesh.visible = true;
+          u.hp = Math.max(1, Math.round(u.hp * 0.75));
+        } else {
+          u.mesh.visible = false;
+          u.mesh.position.copy(host.mesh.position);
+          if (u.hp < u.maxHp) {
+            u.hp = Math.min(u.maxHp, u.hp + 4.5 * dt);
+          }
+          continue;
+        }
+      }
       const stats = this.unitStats(u.kind, u.team);
       const mods = this.computeUnitModifiers(u.kind, u.team, Boolean(u.isPromotedHero));
       if (stats.isGod && u.hp > 0 && u.hp < u.maxHp) {
@@ -8527,8 +8750,17 @@ export class AoMEngine {
           this.spawnRingVfx(woundedAlly.mesh.position, 0.85, 0x38bdf8, 0.35);
         }
       }
-      // Faraó / Filho de Osíris: Empodera edifícios próximos (+35% velocidade de produção e pesquisa + Monumentos)
+      // Faraó / Filho de Osíris: Aura Curativa + Empoderamento Divino (Retold)
       if ((u.kind === 'pharaoh' || u.kind === 'son_of_osiris') && u.hp > 0) {
+        u.empowerAura = true;
+        const healRate = u.kind === 'son_of_osiris' ? 14 : 9;
+        for (const ally of this.units.values()) {
+          if (ally.team === u.team && ally.hp > 0 && ally.hp < ally.maxHp && ally.state !== 'garrisoned') {
+            if (ally.mesh.position.distanceTo(u.mesh.position) <= 12.0) {
+              ally.hp = Math.min(ally.maxHp, ally.hp + healRate * dt);
+            }
+          }
+        }
         let empoweredAny = false;
         for (const b of this.buildings.values()) {
           if (b.team === u.team && b.isConstructed && b.mesh.position.distanceTo(u.mesh.position) <= b.radius + 9.0) {
@@ -8737,6 +8969,19 @@ export class AoMEngine {
             u.targetPos = null;
             u.formationYaw = null;
             u.formationSpeed = null;
+
+            if (u.targetEntityId) {
+              const targetB = this.buildings.get(u.targetEntityId);
+              if (targetB && targetB.team === u.team && targetB.isConstructed) {
+                if (this.canGarrisonIn(targetB)) {
+                  this.garrisonUnit(u, targetB);
+                  continue;
+                } else if (targetB.kind === 'sky_passage') {
+                  this.teleportSkyPassage(targetB.id);
+                  u.targetEntityId = null;
+                }
+              }
+            }
           }
         }
       } else if (u.state === 'gather') {
@@ -9971,14 +10216,17 @@ export class AoMEngine {
           if (enemy && !enemy.isBuilding) {
             const targetU = this.units.get(enemy.id);
             if (targetU) {
-              b.attackTimer =
+              const garrisonCount = b.garrisonedUnitIds ? b.garrisonedUnitIds.length : 0;
+              const garrisonRateMult = Math.max(0.55, 1 - garrisonCount * 0.05);
+              const baseInterval =
                 b.kind === 'mirror_tower'
                   ? 1.05
                   : b.kind === 'fortress' || b.kind === 'asgard_hill_fort'
                   ? 1.15
                   : 1.4;
+              b.attackTimer = baseInterval * garrisonRateMult;
               const bTechs = b.team === 'player' ? this.researchedTechs : this.enemyResearchedTechs;
-              let bAtkMult = 1;
+              let bAtkMult = 1 + garrisonCount * 0.12;
               if (bTechs.includes('copper_weapons')) bAtkMult += 0.10;
               if (bTechs.includes('bronze_weapons')) bAtkMult += 0.10;
               if (bTechs.includes('iron_weapons')) bAtkMult += 0.10;
@@ -11114,6 +11362,10 @@ export class AoMEngine {
       const canEmpowerSelectedMonument =
         b.team === 'player' && b.isConstructed && b.kind === 'monument' && this.pantheon === 'egyptian';
       const isisProtected = b.team === 'player' && b.kind === 'monument' && b.isConstructed && this.isTeamIsis('player');
+      const garrisonCap = this.getGarrisonCapacity(b.kind);
+      const garrisonedCount = b.garrisonedUnitIds ? b.garrisonedUnitIds.length : 0;
+      const canGarrison = b.team === 'player' && b.isConstructed && garrisonCap > 0;
+      const canUngarrison = canGarrison && garrisonedCount > 0;
 
       return {
         count: 1,
@@ -11148,6 +11400,10 @@ export class AoMEngine {
         isEmpowered,
         empoweredByLabel,
         isisProtected,
+        garrisonedCount: canGarrison ? garrisonedCount : undefined,
+        garrisonMaxCapacity: canGarrison ? garrisonCap : undefined,
+        canGarrison,
+        canUngarrison,
       };
     }
 
