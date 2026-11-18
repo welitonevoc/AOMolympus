@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import type { MaterialPalette } from '../../game/models';
-import { BiomeTreeStyle } from '../../game/mapGeography';
+import { BiomeTreeStyle } from '../maps';
 import { createAoMOakTreeMesh } from './oakTrees';
 
 interface CachedTreeMaterials {

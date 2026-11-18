@@ -23,39 +23,8 @@ export type ArchStyleId = 'greek' | 'egyptian' | 'norse' | 'atlantean' | 'chines
 
 export type DifficultyId = 'easy' | 'normal' | 'hard' | 'titan';
 
-export type MapId =
-  // 6 Novos Mapas de The Titans
-  | 'highland'
-  | 'islands'
-  | 'land_unknown'
-  | 'marsh'
-  | 'megalopolis'
-  | 'tundra'
-  // 21 Mapas Originais (Jogo Base)
-  | 'acropolis'
-  | 'alfheim'
-  | 'anatolia'
-  | 'archipelago'
-  | 'erebus'
-  | 'ghost_lake'
-  | 'jotunheim'
-  | 'king_of_the_hill'
-  | 'mediterranean'
-  | 'midgard'
-  | 'nile'
-  | 'nomad'
-  | 'oasis'
-  | 'savannah'
-  | 'sea_of_worms'
-  | 'sudden_death'
-  | 'team_migration'
-  | 'the_unknown'
-  | 'valley_of_the_kings'
-  | 'vinlandsaga'
-  | 'watering_hole'
-  // Mapas Bônus Preservados
-  | 'yucatan'
-  | 'yellow_river';
+import type { MapId, WorldSizeId } from '../TEXTURA/maps/mapCatalog';
+export type { MapId, WorldSizeId } from '../TEXTURA/maps/mapCatalog';
 
 export type TeamId = 'player' | 'enemy';
 export type ResourceType = 'food' | 'wood' | 'gold' | 'favor';
@@ -64,7 +33,6 @@ export type DamageType = 'hack' | 'pierce' | 'crush';
 
 export type GameTypeId = 'supremacy' | 'conquest' | 'lightning' | 'deathmatch' | 'regicide';
 export type VisibilityMode = 'normal' | 'explored' | 'revealed';
-export type WorldSizeId = 'normal' | 'large' | 'giant';
 
 export type UnitKind =
   | 'villager'
@@ -280,6 +248,8 @@ export type TechId =
   | 'hand_axe'
   | 'pickaxe'
   | 'plow'
+  | 'hunting_dogs'
+  | 'husbandry'
   | 'watch_tower'
   | 'medium_soldiers'
   | 'heavy_soldiers'
@@ -389,575 +359,8 @@ export const FORMATIONS: Record<FormationId, FormationSpec> = {
   },
 };
 
-export type MapExpansion = 'titans' | 'base' | 'bonus';
-export type MapSpecialRule =
-  | 'koth_vault'
-  | 'nomad'
-  | 'sudden_death'
-  | 'megalopolis'
-  | 'valley_guardians'
-  | 'land_unknown'
-  | 'the_unknown'
-  | 'sea_of_worms';
-export type MapWeatherKind = 'clear' | 'rain' | 'snow' | 'sandstorm';
-
-export interface MapConfig {
-  id: MapId;
-  name: string;
-  subtitle: string;
-  expansion: MapExpansion;
-  biomeLabel: string;
-  floraLabel: string;
-  faunaLabel: string;
-  specialRule?: MapSpecialRule;
-  weatherPool: MapWeatherKind[];
-  waterColorHex: number;
-  skyColorHex: number;
-  foliageHex: number;
-  foliageDarkHex: number;
-  cliffHex: number;
-  terrainTint: string;
-  terrainPatchA: string;
-  terrainPatchB: string;
-}
-
-export const MAPS: Record<MapId, MapConfig> = {
-  // ── OS 6 NOVOS MAPAS DE THE TITANS ──
-  highland: {
-    id: 'highland',
-    name: 'Terras Altas',
-    subtitle: 'Rio central caudaloso dividindo platôs e duas pontes de pedra',
-    expansion: 'titans',
-    biomeLabel: 'Montanha & Rio',
-    floraLabel: 'Carvalhos e Bétulas Alpinas',
-    faunaLabel: 'Cabra Montesa, Cervo e Urso',
-    weatherPool: ['clear', 'rain'],
-    waterColorHex: 0x165f82,
-    skyColorHex: 0xb7cde0,
-    foliageHex: 0x3b6f3b,
-    foliageDarkHex: 0x264b29,
-    cliffHex: 0x736f65,
-    terrainTint: '#4f6d43',
-    terrainPatchA: 'rgba(98, 128, 72, 0.24)',
-    terrainPatchB: 'rgba(110, 102, 86, 0.22)',
-  },
-  islands: {
-    id: 'islands',
-    name: 'Ilhas',
-    subtitle: 'Bases em ilhas separadas conectadas por recifes e passagens costeiras',
-    expansion: 'titans',
-    biomeLabel: 'Arquipélago Egeu',
-    floraLabel: 'Palmeiras e Carvalhos Costeiros',
-    faunaLabel: 'Javali, Cabra Montesa e Cervo',
-    weatherPool: ['clear', 'rain'],
-    waterColorHex: 0x0f7490,
-    skyColorHex: 0xbae6fd,
-    foliageHex: 0x3b7a3c,
-    foliageDarkHex: 0x235229,
-    cliffHex: 0xb09e79,
-    terrainTint: '#597848',
-    terrainPatchA: 'rgba(182, 166, 118, 0.22)',
-    terrainPatchB: 'rgba(54, 96, 52, 0.22)',
-  },
-  land_unknown: {
-    id: 'land_unknown',
-    name: 'Terra Desconhecida',
-    subtitle: 'Roleta continental aleatória a cada partida (sem grandes oceanos)',
-    expansion: 'titans',
-    biomeLabel: 'Aleatório Terrestre',
-    floraLabel: 'Flora Variável por Semente',
-    faunaLabel: 'Fauna Aleatória do Bioma',
-    specialRule: 'land_unknown',
-    weatherPool: ['clear', 'rain', 'sandstorm'],
-    waterColorHex: 0x1a6885,
-    skyColorHex: 0xcbd5e1,
-    foliageHex: 0x4b7438,
-    foliageDarkHex: 0x2d4d24,
-    cliffHex: 0x78716c,
-    terrainTint: '#63754d',
-    terrainPatchA: 'rgba(145, 138, 104, 0.24)',
-    terrainPatchB: 'rgba(62, 84, 52, 0.22)',
-  },
-  marsh: {
-    id: 'marsh',
-    name: 'Pântano',
-    subtitle: 'Terras alagadas com águas rasas navegáveis, florestas densas e emboscadas',
-    expansion: 'titans',
-    biomeLabel: 'Brejo Denso',
-    floraLabel: 'Ciprestes e Salgueiros do Brejo',
-    faunaLabel: 'Crocodilo, Hipopótamo e Javali',
-    weatherPool: ['rain', 'rain', 'clear'],
-    waterColorHex: 0x2f5a44,
-    skyColorHex: 0x99b1a3,
-    foliageHex: 0x2e5e38,
-    foliageDarkHex: 0x1b3b23,
-    cliffHex: 0x4b5548,
-    terrainTint: '#3e593e',
-    terrainPatchA: 'rgba(72, 104, 62, 0.26)',
-    terrainPatchB: 'rgba(42, 62, 46, 0.28)',
-  },
-  megalopolis: {
-    id: 'megalopolis',
-    name: 'Megalópole',
-    subtitle: 'Início com cidade avançada, torres de vigia, quartéis e múltiplos Centros',
-    expansion: 'titans',
-    biomeLabel: 'Metrópole Antiga',
-    floraLabel: 'Carvalhos Imperiais e Ciprestes',
-    faunaLabel: 'Cervo, Auroque e Javali',
-    specialRule: 'megalopolis',
-    weatherPool: ['clear', 'rain'],
-    waterColorHex: 0x1b6382,
-    skyColorHex: 0xc8daf0,
-    foliageHex: 0x3b7137,
-    foliageDarkHex: 0x264c26,
-    cliffHex: 0x9c9282,
-    terrainTint: '#5d7346',
-    terrainPatchA: 'rgba(176, 166, 144, 0.24)',
-    terrainPatchB: 'rgba(66, 94, 54, 0.22)',
-  },
-  tundra: {
-    id: 'tundra',
-    name: 'Tundra',
-    subtitle: 'Estepe congelada aberta com madeira escassa, nevascas e rebanhos árticos',
-    expansion: 'titans',
-    biomeLabel: 'Estepe Ártica',
-    floraLabel: 'Pinheiros Nevados Esparsos',
-    faunaLabel: 'Rena Ártica, Boi-Almiscarado e Lobo',
-    weatherPool: ['snow', 'snow', 'clear'],
-    waterColorHex: 0x3b6e8c,
-    skyColorHex: 0xdbeafe,
-    foliageHex: 0x2b4d44,
-    foliageDarkHex: 0xe2e8f0,
-    cliffHex: 0x64748b,
-    terrainTint: '#a6b5c4',
-    terrainPatchA: 'rgba(241, 245, 249, 0.34)',
-    terrainPatchB: 'rgba(100, 116, 139, 0.24)',
-  },
-
-  // ── OS 21 MAPAS ORIGINAIS (JOGO BASE) ──
-  acropolis: {
-    id: 'acropolis',
-    name: 'Acrópole',
-    subtitle: 'Platôs elevados defensáveis com ouro disputado nas planícies centrais',
-    expansion: 'base',
-    biomeLabel: 'Colina Helênica',
-    floraLabel: 'Carvalhos e Oliveiras da Arcádia',
-    faunaLabel: 'Cabra Montesa, Cervo e Javali',
-    weatherPool: ['clear', 'clear', 'rain'],
-    waterColorHex: 0x18587a,
-    skyColorHex: 0xc2d4e4,
-    foliageHex: 0x366938,
-    foliageDarkHex: 0x254d27,
-    cliffHex: 0x78716c,
-    terrainTint: '#596b45',
-    terrainPatchA: 'rgba(136, 132, 118, 0.22)',
-    terrainPatchB: 'rgba(65, 92, 52, 0.20)',
-  },
-  alfheim: {
-    id: 'alfheim',
-    name: 'Alfheim',
-    subtitle: 'Florestas nórdicas exuberantes cercadas por cadeias de montanhas e neve',
-    expansion: 'base',
-    biomeLabel: 'Bosque Nórdico',
-    floraLabel: 'Pinheiros Nórdicos e Bétulas',
-    faunaLabel: 'Cervo, Auroque, Urso e Javali',
-    weatherPool: ['clear', 'snow', 'rain'],
-    waterColorHex: 0x1e4a6b,
-    skyColorHex: 0xcbd5e1,
-    foliageHex: 0x2b5344,
-    foliageDarkHex: 0xdbeafe,
-    cliffHex: 0x64748b,
-    terrainTint: '#5b6c5a',
-    terrainPatchA: 'rgba(195, 210, 224, 0.22)',
-    terrainPatchB: 'rgba(52, 74, 62, 0.22)',
-  },
-  anatolia: {
-    id: 'anatolia',
-    name: 'Anatólia',
-    subtitle: 'Corredor central árido flanqueado por dois mares piscosos nos extremos',
-    expansion: 'base',
-    biomeLabel: 'Planalto Costeiro',
-    floraLabel: 'Acácias e Carvalhos Secos',
-    faunaLabel: 'Cabra Montesa, Gazela e Javali',
-    weatherPool: ['clear', 'sandstorm'],
-    waterColorHex: 0x0e7490,
-    skyColorHex: 0xe9d8bc,
-    foliageHex: 0x5c7432,
-    foliageDarkHex: 0x3f5222,
-    cliffHex: 0x9a7b56,
-    terrainTint: '#9a8455',
-    terrainPatchA: 'rgba(196, 168, 112, 0.24)',
-    terrainPatchB: 'rgba(110, 108, 62, 0.22)',
-  },
-  archipelago: {
-    id: 'archipelago',
-    name: 'Arquipélago',
-    subtitle: 'Conjunto fragmentado de ilhotas rasas e passagens costeiras estratégicas',
-    expansion: 'base',
-    biomeLabel: 'Ilhotas Tropicais',
-    floraLabel: 'Palmeiras e Arbustos Marinhos',
-    faunaLabel: 'Javali, Gazela e Crocodilo',
-    weatherPool: ['clear', 'rain'],
-    waterColorHex: 0x0284c7,
-    skyColorHex: 0xbae6fd,
-    foliageHex: 0x3c7d3b,
-    foliageDarkHex: 0x1f522c,
-    cliffHex: 0xbfa87e,
-    terrainTint: '#657e4a',
-    terrainPatchA: 'rgba(218, 198, 142, 0.26)',
-    terrainPatchB: 'rgba(54, 102, 54, 0.20)',
-  },
-  erebus: {
-    id: 'erebus',
-    name: 'Érebo',
-    subtitle: 'Terras vulcânicas do submundo com rios de lava e vegetação carbonizada',
-    expansion: 'base',
-    biomeLabel: 'Submundo Vulcânico',
-    floraLabel: 'Árvores Petrificadas e Cinzas',
-    faunaLabel: 'Lobo das Colinas e Javali',
-    weatherPool: ['clear', 'sandstorm'],
-    waterColorHex: 0x991b1b,
-    skyColorHex: 0x2e1f27,
-    foliageHex: 0x451a03,
-    foliageDarkHex: 0x292524,
-    cliffHex: 0x3f3f46,
-    terrainTint: '#362c2b',
-    terrainPatchA: 'rgba(120, 53, 15, 0.25)',
-    terrainPatchB: 'rgba(24, 24, 27, 0.32)',
-  },
-  ghost_lake: {
-    id: 'ghost_lake',
-    name: 'Lago Fantasma',
-    subtitle: 'Grande lago congelado plano no centro cercado por pinheiros gélidos',
-    expansion: 'base',
-    biomeLabel: 'Glaciar Congelado',
-    floraLabel: 'Pinheiros Nevados do Norte',
-    faunaLabel: 'Rena Ártica, Lobo e Urso',
-    weatherPool: ['snow', 'clear'],
-    waterColorHex: 0x7dd3fc,
-    skyColorHex: 0xdbeafe,
-    foliageHex: 0x29483e,
-    foliageDarkHex: 0xe2e8f0,
-    cliffHex: 0x94a3b8,
-    terrainTint: '#7e8f9c',
-    terrainPatchA: 'rgba(226, 232, 240, 0.28)',
-    terrainPatchB: 'rgba(64, 84, 96, 0.22)',
-  },
-  jotunheim: {
-    id: 'jotunheim',
-    name: 'Jotunheim',
-    subtitle: 'Desfiladeiros estreitos entre muralhas glaciais propícios à fortificação',
-    expansion: 'base',
-    biomeLabel: 'Cordilheira Glacial',
-    floraLabel: 'Pinheiros Nevados e Abetos',
-    faunaLabel: 'Urso Polar, Boi-Almiscarado e Lobo',
-    weatherPool: ['snow', 'snow', 'clear'],
-    waterColorHex: 0x0c4a6e,
-    skyColorHex: 0x94a3b8,
-    foliageHex: 0x1e3a34,
-    foliageDarkHex: 0xf1f5f9,
-    cliffHex: 0x475569,
-    terrainTint: '#9aa7b4',
-    terrainPatchA: 'rgba(241, 245, 249, 0.30)',
-    terrainPatchB: 'rgba(71, 85, 105, 0.24)',
-  },
-  king_of_the_hill: {
-    id: 'king_of_the_hill',
-    name: 'Rei da Colina',
-    subtitle: 'Colina central coroada por um Cofre da Abundância que decide a vitória',
-    expansion: 'base',
-    biomeLabel: 'Planalto Monumental',
-    floraLabel: 'Carvalhos Olímpicos',
-    faunaLabel: 'Auroque, Cervo e Javali',
-    specialRule: 'koth_vault',
-    weatherPool: ['clear', 'rain'],
-    waterColorHex: 0x1c5d7d,
-    skyColorHex: 0xcfe0f2,
-    foliageHex: 0x356934,
-    foliageDarkHex: 0x224924,
-    cliffHex: 0x8c8273,
-    terrainTint: '#557042',
-    terrainPatchA: 'rgba(164, 152, 114, 0.22)',
-    terrainPatchB: 'rgba(58, 86, 46, 0.22)',
-  },
-  mediterranean: {
-    id: 'mediterranean',
-    name: 'Mediterrâneo',
-    subtitle: 'Planície fértil cercada pelas águas cristalinas do Mar Egeu',
-    expansion: 'base',
-    biomeLabel: 'Costa Mediterrânea',
-    floraLabel: 'Carvalhos Gregos e Oliveiras',
-    faunaLabel: 'Cervo, Cabra Montesa e Javali',
-    weatherPool: ['clear', 'clear', 'rain'],
-    waterColorHex: 0x1a6885,
-    skyColorHex: 0xbcd0e2,
-    foliageHex: 0x2e5e32,
-    foliageDarkHex: 0x204726,
-    cliffHex: 0x6b7c4f,
-    terrainTint: '#4e6b3b',
-    terrainPatchA: 'rgba(98, 128, 62, 0.22)',
-    terrainPatchB: 'rgba(56, 82, 42, 0.22)',
-  },
-  midgard: {
-    id: 'midgard',
-    name: 'Midgard',
-    subtitle: 'Grande massa continental cercada por fiordes e águas costeiras',
-    expansion: 'base',
-    biomeLabel: 'Terra Média Nórdica',
-    floraLabel: 'Pinheiros Nórdicos e Bétulas',
-    faunaLabel: 'Auroque, Cervo, Rena e Lobo',
-    weatherPool: ['clear', 'rain', 'snow'],
-    waterColorHex: 0x174e6d,
-    skyColorHex: 0xbfd0de,
-    foliageHex: 0x2f5b43,
-    foliageDarkHex: 0x1e3f2d,
-    cliffHex: 0x64748b,
-    terrainTint: '#526b54',
-    terrainPatchA: 'rgba(138, 154, 134, 0.22)',
-    terrainPatchB: 'rgba(48, 72, 54, 0.24)',
-  },
-  nile: {
-    id: 'nile',
-    name: 'Rio Nilo',
-    subtitle: 'Dunas douradas divididas por um vale fértil de palmeiras e águas turquesa',
-    expansion: 'base',
-    biomeLabel: 'Deserto & Vale Fluvial',
-    floraLabel: 'Palmeiras do Nilo e Tamareiras',
-    faunaLabel: 'Crocodilo, Hipopótamo, Gazela e Camelo',
-    weatherPool: ['clear', 'sandstorm'],
-    waterColorHex: 0x0e8da8,
-    skyColorHex: 0xe6d5b8,
-    foliageHex: 0x4d7c2b,
-    foliageDarkHex: 0x3b6121,
-    cliffHex: 0xb48a5a,
-    terrainTint: '#b9935a',
-    terrainPatchA: 'rgba(222, 186, 122, 0.24)',
-    terrainPatchB: 'rgba(138, 102, 54, 0.20)',
-  },
-  nomad: {
-    id: 'nomad',
-    name: 'Nômade',
-    subtitle: 'Sem Centro da Cidade inicial — explore com aldeões dispersos e funde sua capital',
-    expansion: 'base',
-    biomeLabel: 'Fronteira Selvagem',
-    floraLabel: 'Bétulas e Carvalhos Dispersos',
-    faunaLabel: 'Gazela, Cervo, Javali e Lobo',
-    specialRule: 'nomad',
-    weatherPool: ['clear', 'rain'],
-    waterColorHex: 0x1e6b85,
-    skyColorHex: 0xcddde8,
-    foliageHex: 0x427038,
-    foliageDarkHex: 0x2c4f26,
-    cliffHex: 0x857866,
-    terrainTint: '#6b7749',
-    terrainPatchA: 'rgba(156, 148, 106, 0.24)',
-    terrainPatchB: 'rgba(72, 92, 54, 0.20)',
-  },
-  oasis: {
-    id: 'oasis',
-    name: 'Oásis',
-    subtitle: 'Deserto árido com madeira concentrada ao redor do lago sagrado central',
-    expansion: 'base',
-    biomeLabel: 'Deserto com Oásis',
-    floraLabel: 'Palmeiras Concentradas no Centro',
-    faunaLabel: 'Camelo, Gazela, Leão e Elefante',
-    weatherPool: ['clear', 'sandstorm', 'sandstorm'],
-    waterColorHex: 0x0ea5e9,
-    skyColorHex: 0xf3d9b1,
-    foliageHex: 0x4d7c2b,
-    foliageDarkHex: 0x365314,
-    cliffHex: 0xa16207,
-    terrainTint: '#c2995d',
-    terrainPatchA: 'rgba(234, 194, 130, 0.25)',
-    terrainPatchB: 'rgba(146, 105, 52, 0.20)',
-  },
-  savannah: {
-    id: 'savannah',
-    name: 'Savana',
-    subtitle: 'Planícies douradas abertas e poucas colinas — foco total em caça e cavalaria',
-    expansion: 'base',
-    biomeLabel: 'Savana Africana',
-    floraLabel: 'Acácias de Copa Larga',
-    faunaLabel: 'Elefante Selvagem, Gazela, Leão e Hipopótamo',
-    weatherPool: ['clear', 'sandstorm'],
-    waterColorHex: 0x267580,
-    skyColorHex: 0xf6deb5,
-    foliageHex: 0x65802d,
-    foliageDarkHex: 0x455a1d,
-    cliffHex: 0xa16f3b,
-    terrainTint: '#b48c4c',
-    terrainPatchA: 'rgba(218, 182, 104, 0.26)',
-    terrainPatchB: 'rgba(124, 114, 52, 0.22)',
-  },
-  sea_of_worms: {
-    id: 'sea_of_worms',
-    name: 'Mar de Vermes',
-    subtitle: 'Início protegido por Fortaleza próxima e lagoas sinuosas no centro',
-    expansion: 'base',
-    biomeLabel: 'Lagoa Serpenteante',
-    floraLabel: 'Ciprestes e Carvalhos Costeiros',
-    faunaLabel: 'Crocodilo, Cabra Montesa e Javali',
-    specialRule: 'sea_of_worms',
-    weatherPool: ['clear', 'rain'],
-    waterColorHex: 0x0d7a8c,
-    skyColorHex: 0xb7dbe8,
-    foliageHex: 0x346b3c,
-    foliageDarkHex: 0x20472a,
-    cliffHex: 0x877b68,
-    terrainTint: '#557249',
-    terrainPatchA: 'rgba(154, 148, 108, 0.22)',
-    terrainPatchB: 'rgba(54, 88, 52, 0.22)',
-  },
-  sudden_death: {
-    id: 'sudden_death',
-    name: 'Morte Súbita',
-    subtitle: 'Apenas uma Cidadela central reforçada por jogador — perdeu o Centro, perdeu!',
-    expansion: 'base',
-    biomeLabel: 'Cidadela Única',
-    floraLabel: 'Carvalhos e Pinheiros Antigos',
-    faunaLabel: 'Auroque, Javali e Lobo',
-    specialRule: 'sudden_death',
-    weatherPool: ['clear', 'rain'],
-    waterColorHex: 0x195370,
-    skyColorHex: 0xc7d2e0,
-    foliageHex: 0x346233,
-    foliageDarkHex: 0x214223,
-    cliffHex: 0x736e67,
-    terrainTint: '#566945',
-    terrainPatchA: 'rgba(130, 128, 110, 0.24)',
-    terrainPatchB: 'rgba(58, 76, 48, 0.22)',
-  },
-  team_migration: {
-    id: 'team_migration',
-    name: 'Migração em Equipe',
-    subtitle: 'Ilha inicial pobre em ouro — atravesse os bancos de areia rumo ao continente rico',
-    expansion: 'base',
-    biomeLabel: 'Costa & Continente Rico',
-    floraLabel: 'Bétulas e Palmeiras Costeiras',
-    faunaLabel: 'Gazela, Cervo e Urso',
-    weatherPool: ['clear', 'rain'],
-    waterColorHex: 0x0f7694,
-    skyColorHex: 0xc2e2f2,
-    foliageHex: 0x3c763a,
-    foliageDarkHex: 0x254f28,
-    cliffHex: 0x998e75,
-    terrainTint: '#5c7848',
-    terrainPatchA: 'rgba(196, 178, 128, 0.24)',
-    terrainPatchB: 'rgba(60, 96, 52, 0.22)',
-  },
-  the_unknown: {
-    id: 'the_unknown',
-    name: 'O Desconhecido',
-    subtitle: 'Mapa imprevisível: gera geografias, mares, ilhas e biomas surpresa por partida',
-    expansion: 'base',
-    biomeLabel: 'Caos Procedural',
-    floraLabel: 'Mistura Imprevista de Biomas',
-    faunaLabel: 'Fauna Surpresa a Cada Partida',
-    specialRule: 'the_unknown',
-    weatherPool: ['clear', 'rain', 'snow', 'sandstorm'],
-    waterColorHex: 0x166b8a,
-    skyColorHex: 0xc7d2fe,
-    foliageHex: 0x3b6f45,
-    foliageDarkHex: 0x24472d,
-    cliffHex: 0x78716c,
-    terrainTint: '#5b7256',
-    terrainPatchA: 'rgba(148, 152, 134, 0.24)',
-    terrainPatchB: 'rgba(58, 78, 62, 0.24)',
-  },
-  valley_of_the_kings: {
-    id: 'valley_of_the_kings',
-    name: 'Vale dos Reis',
-    subtitle: 'Ricas minas de ouro no desfiladeiro central protegidas por feras guardiãs',
-    expansion: 'base',
-    biomeLabel: 'Cânion Dourado Egípcio',
-    floraLabel: 'Palmeiras do Deserto',
-    faunaLabel: 'Leão, Crocodilo e Camelo',
-    specialRule: 'valley_guardians',
-    weatherPool: ['clear', 'sandstorm'],
-    waterColorHex: 0x168099,
-    skyColorHex: 0xf1d29e,
-    foliageHex: 0x527d2e,
-    foliageDarkHex: 0x38591e,
-    cliffHex: 0xa86c32,
-    terrainTint: '#c89b56',
-    terrainPatchA: 'rgba(232, 190, 118, 0.26)',
-    terrainPatchB: 'rgba(140, 88, 38, 0.24)',
-  },
-  vinlandsaga: {
-    id: 'vinlandsaga',
-    name: 'Vinlandsaga',
-    subtitle: 'Comece numa ilha nórdica pequena e marche até o rico continente de Vinland',
-    expansion: 'base',
-    biomeLabel: 'Fiorde & Vinland',
-    floraLabel: 'Bétulas e Pinheiros Nórdicos',
-    faunaLabel: 'Urso, Rena Ártica e Boi-Almiscarado',
-    weatherPool: ['clear', 'snow', 'rain'],
-    waterColorHex: 0x145070,
-    skyColorHex: 0xc6d8e8,
-    foliageHex: 0x2f6142,
-    foliageDarkHex: 0x1e402b,
-    cliffHex: 0x64748b,
-    terrainTint: '#587255',
-    terrainPatchA: 'rgba(182, 198, 208, 0.24)',
-    terrainPatchB: 'rgba(48, 78, 52, 0.22)',
-  },
-  watering_hole: {
-    id: 'watering_hole',
-    name: "Poço d'Água",
-    subtitle: 'Planalto seco pontilhado por lagoas rasas ricas em vida selvagem e caça',
-    expansion: 'base',
-    biomeLabel: 'Savana & Lagoas',
-    floraLabel: 'Acácias e Palmeiras nas Lagoas',
-    faunaLabel: 'Elefante Selvagem, Hipopótamo, Gazela e Leão',
-    weatherPool: ['clear', 'sandstorm'],
-    waterColorHex: 0x1c8da6,
-    skyColorHex: 0xf0d6a8,
-    foliageHex: 0x5d7d30,
-    foliageDarkHex: 0x3f591f,
-    cliffHex: 0x9c6e3d,
-    terrainTint: '#b88f52',
-    terrainPatchA: 'rgba(222, 184, 116, 0.24)',
-    terrainPatchB: 'rgba(110, 120, 56, 0.22)',
-  },
-
-  // ── MAPAS BÔNUS PRESERVADOS ──
-  yucatan: {
-    id: 'yucatan',
-    name: 'Yucatán',
-    subtitle: 'Selva tropical densa rica em caça, jaguares e templos antigos',
-    expansion: 'bonus',
-    biomeLabel: 'Selva Mesoamericana',
-    floraLabel: 'Árvores Tropicais e Palmeiral',
-    faunaLabel: 'Crocodilo, Javali e Cervo',
-    weatherPool: ['rain', 'clear'],
-    waterColorHex: 0x0d9488,
-    skyColorHex: 0xa7f3d0,
-    foliageHex: 0x15803d,
-    foliageDarkHex: 0x14532d,
-    cliffHex: 0x4d7c0f,
-    terrainTint: '#365e32',
-    terrainPatchA: 'rgba(34, 139, 74, 0.24)',
-    terrainPatchB: 'rgba(74, 92, 42, 0.22)',
-  },
-  yellow_river: {
-    id: 'yellow_river',
-    name: 'Rio Amarelo',
-    subtitle: 'Planícies férteis orientais cortadas por rio dourado e bambuzais',
-    expansion: 'bonus',
-    biomeLabel: 'Vale Oriental',
-    floraLabel: 'Salgueiros e Bambus Orientais',
-    faunaLabel: 'Cervo, Javali e Auroque',
-    weatherPool: ['clear', 'rain'],
-    waterColorHex: 0x856404,
-    skyColorHex: 0xfde68a,
-    foliageHex: 0x4d7c0f,
-    foliageDarkHex: 0x3f6212,
-    cliffHex: 0x854d0e,
-    terrainTint: '#6b703a',
-    terrainPatchA: 'rgba(161, 148, 72, 0.24)',
-    terrainPatchB: 'rgba(63, 98, 18, 0.22)',
-  },
-};
+export { MAPS } from '../TEXTURA/maps/mapCatalog';
+export type { MapConfig, MapExpansion, MapSpecialRule, MapWeatherKind } from '../TEXTURA/maps/mapCatalog';
 
 export interface ResourceCost {
   food?: number;
@@ -5093,188 +4496,517 @@ export const BUILDING_STATS: Record<BuildingKind, BuildingStats> = {
   },
 };
 
+export type FaunaCategory =
+  | 'herdable'
+  | 'hunt_passive'
+  | 'hunt_defensive'
+  | 'predator'
+  | 'aquatic_decor'
+  | 'set_animal';
+
 export type FaunaKind =
+  // 1. Animais de Rebanho (Herdables)
+  | 'cow'
+  | 'goat'
+  | 'pig'
+  | 'turkey'
+  | 'capybara'
+  | 'yak'
+  // 2A. Caça Mansa / Fuga (Passive Huntables)
   | 'gazelle'
   | 'deer'
+  | 'moose'
+  | 'reindeer'
+  | 'zebra'
+  | 'giraffe'
+  | 'chicken'
+  | 'camel'
+  // 2B. Caça Defensiva / Retaliam (Defensive Huntables)
   | 'boar'
   | 'aurochs'
-  | 'wolf'
-  | 'reindeer'
   | 'musk_ox'
-  | 'camel'
-  | 'lion'
-  | 'crocodile'
-  | 'goat'
-  | 'hippo'
+  | 'rhino'
   | 'elephant_wild'
-  | 'bear';
+  | 'hippo'
+  // 3. Predadores Agressivos (Predators)
+  | 'wolf'
+  | 'bear'
+  | 'lion'
+  | 'tiger'
+  | 'hyena'
+  | 'crocodile'
+  | 'alligator'
+  // 4. Fauna Aquática Decorativa
+  | 'sea_turtle'
+  | 'dolphin'
+  | 'whale'
+  // 5. Animal Especial de Set
+  | 'baboon';
 
 export interface FaunaStats {
   kind: FaunaKind;
   name: string;
   role: string;
+  category: FaunaCategory;
   maxHp: number;
   foodAmount: number;
+  maxFattenedFood?: number;
   attack: number;
   speed: number;
   radius: number;
   retaliates: boolean;
+  fleeOnHit?: boolean;
+  aggroRadius?: number;
+  canFatten?: boolean;
+  isAquatic?: boolean;
+  nonHarvestable?: boolean;
+  gatherRateMult?: number;
 }
 
 export const FAUNA_STATS: Record<FaunaKind, FaunaStats> = {
-  gazelle: {
-    kind: 'gazelle',
-    name: 'Gazela',
-    role: 'Fauna veloz — fonte rápida de Alimento para aldeões',
-    maxHp: 35,
-    foodAmount: 160,
+  // ── 1. ANIMAIS DE REBANHO (HERDABLES) ──
+  cow: {
+    kind: 'cow',
+    name: 'Vaca',
+    role: 'Animal de Rebanho — engorda com o tempo até 300 Alimento perto do Centro da Cidade',
+    category: 'herdable',
+    maxHp: 70,
+    foodAmount: 150,
+    maxFattenedFood: 300,
     attack: 0,
-    speed: 4.8,
-    radius: 0.45,
+    speed: 3.1,
+    radius: 0.65,
     retaliates: false,
-  },
-  deer: {
-    kind: 'deer',
-    name: 'Cervo',
-    role: 'Fauna silvestre dos bosques — rica em Alimento',
-    maxHp: 45,
-    foodAmount: 210,
-    attack: 0,
-    speed: 4.4,
-    radius: 0.50,
-    retaliates: false,
-  },
-  boar: {
-    kind: 'boar',
-    name: 'Javali Selvagem',
-    role: 'Caça agressiva que revida se atacada — alto Alimento',
-    maxHp: 95,
-    foodAmount: 280,
-    attack: 8,
-    speed: 3.9,
-    radius: 0.55,
-    retaliates: true,
-  },
-  aurochs: {
-    kind: 'aurochs',
-    name: 'Auroque',
-    role: 'Bovino robusto — rende grande quantidade de Alimento',
-    maxHp: 130,
-    foodAmount: 360,
-    attack: 10,
-    speed: 3.5,
-    radius: 0.72,
-    retaliates: true,
-  },
-  wolf: {
-    kind: 'wolf',
-    name: 'Lobo das Colinas',
-    role: 'Predador ágil das montanhas — pode ser caçado por alimento',
-    maxHp: 55,
-    foodAmount: 120,
-    attack: 7,
-    speed: 4.5,
-    radius: 0.45,
-    retaliates: true,
-  },
-  reindeer: {
-    kind: 'reindeer',
-    name: 'Rena Ártica',
-    role: 'Rebanho da tundra nevada — caça rápida abundante em Alimento',
-    maxHp: 50,
-    foodAmount: 215,
-    attack: 0,
-    speed: 4.5,
-    radius: 0.52,
-    retaliates: false,
-  },
-  musk_ox: {
-    kind: 'musk_ox',
-    name: 'Boi-Almiscarado',
-    role: 'Bovino lanudo das terras gélidas — defende o rebanho',
-    maxHp: 140,
-    foodAmount: 350,
-    attack: 11,
-    speed: 3.4,
-    radius: 0.72,
-    retaliates: true,
-  },
-  camel: {
-    kind: 'camel',
-    name: 'Camelo Selvagem',
-    role: 'Fauna resistente do deserto e oásis — boa reserva de Alimento',
-    maxHp: 75,
-    foodAmount: 240,
-    attack: 0,
-    speed: 4.0,
-    radius: 0.62,
-    retaliates: false,
-  },
-  lion: {
-    kind: 'lion',
-    name: 'Leão da Savana',
-    role: 'Predador territorial feroz das planícies e cânions',
-    maxHp: 90,
-    foodAmount: 165,
-    attack: 12,
-    speed: 4.7,
-    radius: 0.54,
-    retaliates: true,
-  },
-  crocodile: {
-    kind: 'crocodile',
-    name: 'Crocodilo do Nilo',
-    role: 'Predador anfíbio de rios, lagos e pântanos',
-    maxHp: 95,
-    foodAmount: 185,
-    attack: 11,
-    speed: 3.8,
-    radius: 0.62,
-    retaliates: true,
+    canFatten: true,
+    gatherRateMult: 1.05,
   },
   goat: {
     kind: 'goat',
-    name: 'Cabra Montesa',
-    role: 'Animal dócil das encostas e ilhas — abate seguro para Alimento',
-    maxHp: 38,
-    foodAmount: 150,
+    name: 'Cabra',
+    role: 'Animal de Rebanho — capturável ao aproximar tropas; engorda até 200 Alimento',
+    category: 'herdable',
+    maxHp: 45,
+    foodAmount: 100,
+    maxFattenedFood: 200,
     attack: 0,
     speed: 3.6,
     radius: 0.42,
     retaliates: false,
+    canFatten: true,
+    gatherRateMult: 1.05,
   },
-  hippo: {
-    kind: 'hippo',
-    name: 'Hipopótamo',
-    role: 'Besta pesada de rios e brejos — rende muito Alimento',
-    maxHp: 155,
-    foodAmount: 365,
-    attack: 13,
-    speed: 3.2,
-    radius: 0.78,
+  pig: {
+    kind: 'pig',
+    name: 'Porco',
+    role: 'Animal de Rebanho — engorda continuamente até 230 Alimento',
+    category: 'herdable',
+    maxHp: 50,
+    foodAmount: 115,
+    maxFattenedFood: 230,
+    attack: 0,
+    speed: 3.4,
+    radius: 0.48,
+    retaliates: false,
+    canFatten: true,
+    gatherRateMult: 1.05,
+  },
+  turkey: {
+    kind: 'turkey',
+    name: 'Peru',
+    role: 'Animal de Rebanho ágil — engorda até 180 Alimento no rebanho',
+    category: 'herdable',
+    maxHp: 35,
+    foodAmount: 85,
+    maxFattenedFood: 180,
+    attack: 0,
+    speed: 3.7,
+    radius: 0.36,
+    retaliates: false,
+    canFatten: true,
+    gatherRateMult: 1.05,
+  },
+  capybara: {
+    kind: 'capybara',
+    name: 'Capivara',
+    role: 'Animal de Rebanho dos rios e pântanos — engorda até 210 Alimento',
+    category: 'herdable',
+    maxHp: 55,
+    foodAmount: 105,
+    maxFattenedFood: 210,
+    attack: 0,
+    speed: 3.3,
+    radius: 0.46,
+    retaliates: false,
+    canFatten: true,
+    gatherRateMult: 1.05,
+  },
+  yak: {
+    kind: 'yak',
+    name: 'Iaque',
+    role: 'Animal de Rebanho das montanhas e Ásia — engorda até 280 Alimento',
+    category: 'herdable',
+    maxHp: 75,
+    foodAmount: 140,
+    maxFattenedFood: 280,
+    attack: 0,
+    speed: 3.1,
+    radius: 0.66,
+    retaliates: false,
+    canFatten: true,
+    gatherRateMult: 1.05,
+  },
+
+  // ── 2A. CAÇA MANSA / FUGA (PASSIVE HUNTABLES) ──
+  gazelle: {
+    kind: 'gazelle',
+    name: 'Gazela',
+    role: 'Caça Passiva — foge quando atacada; coleta mais rápida de carne (160 Alim.)',
+    category: 'hunt_passive',
+    maxHp: 35,
+    foodAmount: 160,
+    attack: 0,
+    speed: 4.9,
+    radius: 0.45,
+    retaliates: false,
+    fleeOnHit: true,
+    gatherRateMult: 1.35,
+  },
+  deer: {
+    kind: 'deer',
+    name: 'Cervo',
+    role: 'Caça Passiva — foge na direção oposta ao caçador (210 Alimento)',
+    category: 'hunt_passive',
+    maxHp: 45,
+    foodAmount: 210,
+    attack: 0,
+    speed: 4.5,
+    radius: 0.5,
+    retaliates: false,
+    fleeOnHit: true,
+    gatherRateMult: 1.35,
+  },
+  moose: {
+    kind: 'moose',
+    name: 'Alce',
+    role: 'Caça Passiva grande — foge se ferido; rende 260 Alimento',
+    category: 'hunt_passive',
+    maxHp: 65,
+    foodAmount: 260,
+    attack: 0,
+    speed: 4.4,
+    radius: 0.64,
+    retaliates: false,
+    fleeOnHit: true,
+    gatherRateMult: 1.35,
+  },
+  reindeer: {
+    kind: 'reindeer',
+    name: 'Caribu (Rena)',
+    role: 'Caça Passiva da tundra — foge ao ser atacada (215 Alimento)',
+    category: 'hunt_passive',
+    maxHp: 50,
+    foodAmount: 215,
+    attack: 0,
+    speed: 4.6,
+    radius: 0.52,
+    retaliates: false,
+    fleeOnHit: true,
+    gatherRateMult: 1.35,
+  },
+  zebra: {
+    kind: 'zebra',
+    name: 'Zebra',
+    role: 'Caça Passiva da savana — dispara em fuga ao sofrer dano (220 Alimento)',
+    category: 'hunt_passive',
+    maxHp: 52,
+    foodAmount: 220,
+    attack: 0,
+    speed: 4.8,
+    radius: 0.56,
+    retaliates: false,
+    fleeOnHit: true,
+    gatherRateMult: 1.35,
+  },
+  giraffe: {
+    kind: 'giraffe',
+    name: 'Girafa',
+    role: 'Caça Passiva alta da savana — foge quando caçada (300 Alimento)',
+    category: 'hunt_passive',
+    maxHp: 75,
+    foodAmount: 300,
+    attack: 0,
+    speed: 4.5,
+    radius: 0.65,
+    retaliates: false,
+    fleeOnHit: true,
+    gatherRateMult: 1.35,
+  },
+  chicken: {
+    kind: 'chicken',
+    name: 'Galinha',
+    role: 'Caça Inicial — não foge, mas tem pouca carne (75 Alim.) e coleta no ritmo das frutas',
+    category: 'hunt_passive',
+    maxHp: 20,
+    foodAmount: 75,
+    attack: 0,
+    speed: 2.8,
+    radius: 0.28,
+    retaliates: false,
+    fleeOnHit: false,
+    gatherRateMult: 0.72,
+  },
+  camel: {
+    kind: 'camel',
+    name: 'Camelo Selvagem',
+    role: 'Caça Passiva do deserto — foge ao ser atacado (240 Alimento)',
+    category: 'hunt_passive',
+    maxHp: 75,
+    foodAmount: 240,
+    attack: 0,
+    speed: 4.1,
+    radius: 0.62,
+    retaliates: false,
+    fleeOnHit: true,
+    gatherRateMult: 1.3,
+  },
+
+  // ── 2B. CAÇA DEFENSIVA (RETALIAM E PODEM SER ATRAÍDOS) ──
+  boar: {
+    kind: 'boar',
+    name: 'Javali Selvagem',
+    role: 'Caça Defensiva — retalia e persegue o caçador; atraia até o Celeiro ou Centro (350 Alim.)',
+    category: 'hunt_defensive',
+    maxHp: 110,
+    foodAmount: 350,
+    attack: 9,
+    speed: 4.0,
+    radius: 0.55,
     retaliates: true,
+    gatherRateMult: 1.4,
+  },
+  aurochs: {
+    kind: 'aurochs',
+    name: 'Auroque',
+    role: 'Caça Defensiva — bovino poderoso que revida ataques; 420 Alimento',
+    category: 'hunt_defensive',
+    maxHp: 145,
+    foodAmount: 420,
+    attack: 11,
+    speed: 3.6,
+    radius: 0.72,
+    retaliates: true,
+    gatherRateMult: 1.4,
+  },
+  musk_ox: {
+    kind: 'musk_ox',
+    name: 'Boi-Almiscarado',
+    role: 'Caça Defensiva ártica — retalia se provocado; 400 Alimento',
+    category: 'hunt_defensive',
+    maxHp: 145,
+    foodAmount: 400,
+    attack: 11,
+    speed: 3.5,
+    radius: 0.72,
+    retaliates: true,
+    gatherRateMult: 1.4,
+  },
+  rhino: {
+    kind: 'rhino',
+    name: 'Rinoceronte',
+    role: 'Caça Defensiva blindada — investe contra provocadores; 540 Alimento',
+    category: 'hunt_defensive',
+    maxHp: 210,
+    foodAmount: 540,
+    attack: 15,
+    speed: 3.7,
+    radius: 0.84,
+    retaliates: true,
+    gatherRateMult: 1.45,
   },
   elephant_wild: {
     kind: 'elephant_wild',
     name: 'Elefante Selvagem',
-    role: 'Colosso da savana — maior fonte de Alimento entre toda a fauna',
-    maxHp: 230,
-    foodAmount: 480,
-    attack: 16,
-    speed: 3.1,
+    role: 'Caça Defensiva colossal — perigosíssimo, mas fornece 750 Alimento',
+    category: 'hunt_defensive',
+    maxHp: 260,
+    foodAmount: 750,
+    attack: 18,
+    speed: 3.2,
     radius: 0.94,
     retaliates: true,
+    gatherRateMult: 1.5,
+  },
+  hippo: {
+    kind: 'hippo',
+    name: 'Hipopótamo',
+    role: 'Caça Defensiva fluvial — retalia com fúria; pode ser atraído para o Centro (450 Alim.)',
+    category: 'hunt_defensive',
+    maxHp: 175,
+    foodAmount: 450,
+    attack: 14,
+    speed: 3.3,
+    radius: 0.78,
+    retaliates: true,
+    gatherRateMult: 1.4,
+  },
+
+  // ── 3. PREDADORES AGRESSIVOS (PREDATORS) ──
+  wolf: {
+    kind: 'wolf',
+    name: 'Lobo',
+    role: 'Predador Agressivo — ataca aldeões e batedores próximos; deixa 120 Alimento',
+    category: 'predator',
+    maxHp: 60,
+    foodAmount: 120,
+    attack: 8,
+    speed: 4.5,
+    radius: 0.45,
+    retaliates: true,
+    aggroRadius: 7.5,
+    gatherRateMult: 1.15,
   },
   bear: {
     kind: 'bear',
-    name: 'Urso Selvagem',
-    role: 'Urso forte das florestas frias e montanhas — revida ataques',
-    maxHp: 135,
-    foodAmount: 250,
-    attack: 13,
-    speed: 3.8,
+    name: 'Urso',
+    role: 'Predador Agressivo pesado — ameaça letal no início da partida (240 Alim.)',
+    category: 'predator',
+    maxHp: 145,
+    foodAmount: 240,
+    attack: 14,
+    speed: 3.9,
     radius: 0.66,
     retaliates: true,
+    aggroRadius: 7.8,
+    gatherRateMult: 1.2,
+  },
+  lion: {
+    kind: 'lion',
+    name: 'Leão',
+    role: 'Predador Agressivo da savana e cânions — caça unidades próximas (180 Alim.)',
+    category: 'predator',
+    maxHp: 100,
+    foodAmount: 180,
+    attack: 13,
+    speed: 4.7,
+    radius: 0.54,
+    retaliates: true,
+    aggroRadius: 8.5,
+    gatherRateMult: 1.2,
+  },
+  tiger: {
+    kind: 'tiger',
+    name: 'Tigre',
+    role: 'Predador Agressivo das selvas e vales orientais — ágil e letal (190 Alim.)',
+    category: 'predator',
+    maxHp: 105,
+    foodAmount: 190,
+    attack: 14,
+    speed: 4.8,
+    radius: 0.55,
+    retaliates: true,
+    aggroRadius: 8.5,
+    gatherRateMult: 1.2,
+  },
+  hyena: {
+    kind: 'hyena',
+    name: 'Hiena',
+    role: 'Predador Agressivo do deserto — veloz em matilha; invocável por Set (145 Alim.)',
+    category: 'predator',
+    maxHp: 75,
+    foodAmount: 145,
+    attack: 10,
+    speed: 4.7,
+    radius: 0.46,
+    retaliates: true,
+    aggroRadius: 8.2,
+    gatherRateMult: 1.15,
+  },
+  crocodile: {
+    kind: 'crocodile',
+    name: 'Crocodilo',
+    role: 'Predador Agressivo anfíbio do Nilo e brejos (195 Alimento)',
+    category: 'predator',
+    maxHp: 105,
+    foodAmount: 195,
+    attack: 12,
+    speed: 3.8,
+    radius: 0.62,
+    retaliates: true,
+    aggroRadius: 7.8,
+    gatherRateMult: 1.2,
+  },
+  alligator: {
+    kind: 'alligator',
+    name: 'Jacaré',
+    role: 'Predador Agressivo de pântanos e selvas — embosca coletores (185 Alim.)',
+    category: 'predator',
+    maxHp: 100,
+    foodAmount: 185,
+    attack: 12,
+    speed: 3.7,
+    radius: 0.6,
+    retaliates: true,
+    aggroRadius: 7.5,
+    gatherRateMult: 1.2,
+  },
+
+  // ── 4. FAUNA AQUÁTICA DECORATIVA ──
+  sea_turtle: {
+    kind: 'sea_turtle',
+    name: 'Tartaruga Marinha',
+    role: 'Fauna Marinha Decorativa — nada serenamente pelas águas tropicais',
+    category: 'aquatic_decor',
+    maxHp: 100,
+    foodAmount: 0,
+    attack: 0,
+    speed: 2.2,
+    radius: 0.65,
+    retaliates: false,
+    isAquatic: true,
+    nonHarvestable: true,
+  },
+  dolphin: {
+    kind: 'dolphin',
+    name: 'Golfinho',
+    role: 'Fauna Marinha Decorativa — acompanha rotas navais com saltos sobre as ondas',
+    category: 'aquatic_decor',
+    maxHp: 100,
+    foodAmount: 0,
+    attack: 0,
+    speed: 3.8,
+    radius: 0.7,
+    retaliates: false,
+    isAquatic: true,
+    nonHarvestable: true,
+  },
+  whale: {
+    kind: 'whale',
+    name: 'Baleia',
+    role: 'Fauna Marinha Decorativa — gigante pacífica dos oceanos profundos',
+    category: 'aquatic_decor',
+    maxHp: 350,
+    foodAmount: 0,
+    attack: 0,
+    speed: 1.8,
+    radius: 1.6,
+    retaliates: false,
+    isAquatic: true,
+    nonHarvestable: true,
+  },
+
+  // ── 5. ANIMAL ESPECIAL DE SET ──
+  baboon: {
+    kind: 'baboon',
+    name: 'Babuíno de Set',
+    role: 'Animal de Set — batedor rápido e feroz invocado com Favor para exploração ou combate',
+    category: 'set_animal',
+    maxHp: 85,
+    foodAmount: 110,
+    attack: 9,
+    speed: 5.2,
+    radius: 0.42,
+    retaliates: true,
+    gatherRateMult: 1.1,
   },
 };
 
@@ -5370,6 +5102,14 @@ export interface SelectionSummary {
   cargoMax?: number;
   counterTags?: string[];
   damageType?: DamageType;
+  faunaCategory?: FaunaCategory;
+  faunaOwnerTeam?: TeamId | 'neutral';
+  canFatten?: boolean;
+  maxFattenedFood?: number;
+  canConvertFauna?: boolean;
+  canCommandFauna?: boolean;
+  nonHarvestableFauna?: boolean;
+  isInfiniteResource?: boolean;
 }
 
 export interface CampaignObjectiveHud {
@@ -5518,6 +5258,7 @@ export interface GameHudSnapshot {
   factionScores?: FactionScoreEntry[];
   aiPersonality?: AiPersonality;
   campaignScenarioId?: string;
+  isSetPlayer?: boolean;
 }
 
 export interface MatchStartOptions {

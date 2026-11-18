@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Castle, Crosshair, Eye, Maximize2, Minimize2, Swords, Trees } from 'lucide-react';
 import { groundHeightAt, MAP_HALF_SIZE, PLAYABLE_HALF_SIZE } from '../game/models';
-import { getActiveUnknownState, getEffectiveMapConfig, getMapBiomeVisuals, resolveEffectiveMapId } from '../game/mapGeography';
+import { getActiveUnknownState, getEffectiveMapConfig, getMapBiomeVisuals, resolveEffectiveMapId } from '../TEXTURA/maps';
 import { MapId, MinimapBlip, PANTHEONS, PantheonId } from '../game/types';
 
 export type MinimapFilterMode = 'all' | 'combat' | 'economy';

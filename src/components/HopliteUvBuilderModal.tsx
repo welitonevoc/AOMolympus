@@ -240,7 +240,7 @@ import {
   buildRa,
   getCachedRaTextures,
 } from '../civilizacao/egipcios/raModel';
-import { getEffectiveMapConfig, rollUnknownMapVariant } from '../game/mapGeography';
+import { getEffectiveMapConfig, rollUnknownMapVariant } from '../TEXTURA/maps';
 import {
   createBuildingMesh,
   createFaunaMesh,

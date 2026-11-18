@@ -277,6 +277,8 @@ export default function App() {
           onOrderPrayTemple={(templeId) => engineRef.current?.orderVillagersToPrayAtTemple(templeId)}
           onOrderEmpowerMonument={(buildingId) => engineRef.current?.orderEmpowerMonument(buildingId)}
           onSpreadOracles={() => engineRef.current?.orderOraclesToSpread()}
+          onSummonSetAnimal={(kind) => engineRef.current?.summonSetAnimal(kind)}
+          onConvertFauna={() => engineRef.current?.convertTargetOrNearestFauna()}
           inMatchMessages={inMatchMessages}
           onSendMatchChat={(channel, text) => multiplayerClient.sendMatchChat(text, channel)}
           onSendTribute={(slotIdx, res, amt) => engineRef.current?.sendAllyTribute(slotIdx, res, amt)}

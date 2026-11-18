@@ -41,7 +41,7 @@ import {
   getFaunaAccentMaterial,
   getFaunaCoatMaterial,
 } from '../TEXTURA';
-import { getMapBiomeVisuals, groundHeightAt as computeGeoGroundHeightAt } from './mapGeography';
+import { getMapBiomeVisuals, groundHeightAt as computeGeoGroundHeightAt } from '../TEXTURA/maps';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 export const MAP_HALF_SIZE = 74;
@@ -3702,6 +3702,243 @@ export function createFaunaMesh(
     root.userData.backRightLeg = backRightLeg;
     attachGroundMarkers(root, 0.66, pal, 'neutral');
     attachHealthBar(root, 1.65, 1.25, true);
+  } else if (kind === 'cow' || kind === 'yak') {
+    const isYak = kind === 'yak';
+    const leftLeg = part(new THREE.BoxGeometry(0.13, 0.46, 0.13), coatMat, -0.22, 0.23, 0.42);
+    const rightLeg = part(new THREE.BoxGeometry(0.13, 0.46, 0.13), coatMat, 0.22, 0.23, 0.42);
+    const backLeftLeg = part(new THREE.BoxGeometry(0.13, 0.46, 0.13), coatMat, -0.22, 0.23, -0.42);
+    const backRightLeg = part(new THREE.BoxGeometry(0.13, 0.46, 0.13), coatMat, 0.22, 0.23, -0.42);
+    part(new THREE.BoxGeometry(isYak ? 0.68 : 0.6, isYak ? 0.62 : 0.54, 1.18), coatMat, 0, 0.72, 0);
+    if (!isYak) {
+      // Dairy cow patches
+      part(new THREE.BoxGeometry(0.62, 0.28, 0.42), accentMat, 0, 0.78, -0.18);
+      part(new THREE.BoxGeometry(0.32, 0.16, 0.26), pal.skin, 0, 0.42, -0.22);
+    } else {
+      // Yak shaggy hump
+      part(new THREE.BoxGeometry(0.64, 0.34, 0.68), coatMat, 0, 1.06, 0.24);
+    }
+    part(new THREE.BoxGeometry(0.36, 0.36, 0.4), coatMat, 0, 0.84, 0.72);
+    part(new THREE.BoxGeometry(0.24, 0.18, 0.16), pal.skin, 0, 0.72, 0.94);
+    const hL = part(new THREE.ConeGeometry(0.045, isYak ? 0.46 : 0.3, 5), pal.ivory, -0.22, 1.04, 0.72);
+    hL.rotation.z = 0.95;
+    const hR = part(new THREE.ConeGeometry(0.045, isYak ? 0.46 : 0.3, 5), pal.ivory, 0.22, 1.04, 0.72);
+    hR.rotation.z = -0.95;
+
+    root.userData.leftLeg = leftLeg;
+    root.userData.rightLeg = rightLeg;
+    root.userData.backLeftLeg = backLeftLeg;
+    root.userData.backRightLeg = backRightLeg;
+    attachGroundMarkers(root, 0.62, pal, 'neutral');
+    attachHealthBar(root, 1.65, 1.2, true);
+  } else if (kind === 'pig' || kind === 'capybara') {
+    const isCapy = kind === 'capybara';
+    const leftLeg = part(new THREE.BoxGeometry(0.11, 0.24, 0.11), coatMat, -0.15, 0.12, 0.25);
+    const rightLeg = part(new THREE.BoxGeometry(0.11, 0.24, 0.11), coatMat, 0.15, 0.12, 0.25);
+    const backLeftLeg = part(new THREE.BoxGeometry(0.11, 0.24, 0.11), coatMat, -0.15, 0.12, -0.25);
+    const backRightLeg = part(new THREE.BoxGeometry(0.11, 0.24, 0.11), coatMat, 0.15, 0.12, -0.25);
+    part(new THREE.BoxGeometry(0.44, 0.38, isCapy ? 0.84 : 0.76), coatMat, 0, 0.4, 0);
+    part(new THREE.BoxGeometry(0.32, 0.3, 0.34), coatMat, 0, 0.46, 0.48);
+    part(new THREE.BoxGeometry(0.18, 0.14, 0.16), isCapy ? accentMat : pal.skin, 0, 0.4, 0.68);
+    if (!isCapy) {
+      part(new THREE.BoxGeometry(0.08, 0.12, 0.04), accentMat, -0.12, 0.63, 0.46);
+      part(new THREE.BoxGeometry(0.08, 0.12, 0.04), accentMat, 0.12, 0.63, 0.46);
+    }
+
+    root.userData.leftLeg = leftLeg;
+    root.userData.rightLeg = rightLeg;
+    root.userData.backLeftLeg = backLeftLeg;
+    root.userData.backRightLeg = backRightLeg;
+    attachGroundMarkers(root, 0.46, pal, 'neutral');
+    attachHealthBar(root, 1.25, 1.0, true);
+  } else if (kind === 'turkey' || kind === 'chicken') {
+    const isTurkey = kind === 'turkey';
+    const s = isTurkey ? 1.0 : 0.74;
+    const leftLeg = part(new THREE.BoxGeometry(0.05, 0.22 * s, 0.05), pal.goldOre, -0.09 * s, 0.11 * s, 0);
+    const rightLeg = part(new THREE.BoxGeometry(0.05, 0.22 * s, 0.05), pal.goldOre, 0.09 * s, 0.11 * s, 0);
+    part(new THREE.SphereGeometry(0.24 * s, 8, 6), coatMat, 0, 0.35 * s, 0);
+    part(new THREE.BoxGeometry(0.12 * s, 0.22 * s, 0.12 * s), coatMat, 0, 0.54 * s, 0.18 * s);
+    part(new THREE.ConeGeometry(0.05 * s, 0.14 * s, 4), pal.goldOre, 0, 0.58 * s, 0.3 * s).rotation.x = Math.PI / 2;
+    part(new THREE.BoxGeometry(0.04 * s, 0.1 * s, 0.1 * s), pal.berryRed, 0, 0.66 * s, 0.2 * s);
+    if (isTurkey) {
+      // Fan tail plumage
+      const fan = part(new THREE.CylinderGeometry(0.32, 0.08, 0.06, 8, 1, false, -Math.PI * 0.45, Math.PI * 0.9), accentMat, 0, 0.48, -0.26);
+      fan.rotation.x = Math.PI / 2.2;
+      fan.rotation.z = Math.PI;
+    }
+
+    root.userData.leftLeg = leftLeg;
+    root.userData.rightLeg = rightLeg;
+    attachGroundMarkers(root, isTurkey ? 0.36 : 0.28, pal, 'neutral');
+    attachHealthBar(root, isTurkey ? 1.1 : 0.9, 0.85, true);
+  } else if (kind === 'moose') {
+    const scale = 1.24;
+    const leftLeg = part(new THREE.BoxGeometry(0.12, 0.62 * scale, 0.12), coatMat, -0.18, 0.31 * scale, 0.38);
+    const rightLeg = part(new THREE.BoxGeometry(0.12, 0.62 * scale, 0.12), coatMat, 0.18, 0.31 * scale, 0.38);
+    const backLeftLeg = part(new THREE.BoxGeometry(0.12, 0.62 * scale, 0.12), coatMat, -0.18, 0.31 * scale, -0.38);
+    const backRightLeg = part(new THREE.BoxGeometry(0.12, 0.62 * scale, 0.12), coatMat, 0.18, 0.31 * scale, -0.38);
+    part(new THREE.BoxGeometry(0.48, 0.52, 1.15), coatMat, 0, 0.96, 0);
+    part(new THREE.BoxGeometry(0.44, 0.26, 0.46), coatMat, 0, 1.24, 0.28);
+    const neck = part(new THREE.BoxGeometry(0.24, 0.48, 0.28), coatMat, 0, 1.18, 0.58);
+    neck.rotation.x = 0.4;
+    part(new THREE.BoxGeometry(0.26, 0.26, 0.48), coatMat, 0, 1.38, 0.86);
+    // Broad palmate moose antlers
+    part(new THREE.BoxGeometry(0.44, 0.08, 0.28), accentMat, -0.32, 1.62, 0.74).rotation.z = 0.25;
+    part(new THREE.BoxGeometry(0.44, 0.08, 0.28), accentMat, 0.32, 1.62, 0.74).rotation.z = -0.25;
+
+    root.userData.leftLeg = leftLeg;
+    root.userData.rightLeg = rightLeg;
+    root.userData.backLeftLeg = backLeftLeg;
+    root.userData.backRightLeg = backRightLeg;
+    attachGroundMarkers(root, 0.64, pal, 'neutral');
+    attachHealthBar(root, 2.05, 1.25, true);
+  } else if (kind === 'zebra') {
+    const leftLeg = part(new THREE.BoxGeometry(0.1, 0.58, 0.1), coatMat, -0.16, 0.29, 0.36);
+    const rightLeg = part(new THREE.BoxGeometry(0.1, 0.58, 0.1), coatMat, 0.16, 0.29, 0.36);
+    const backLeftLeg = part(new THREE.BoxGeometry(0.1, 0.58, 0.1), coatMat, -0.16, 0.29, -0.36);
+    const backRightLeg = part(new THREE.BoxGeometry(0.1, 0.58, 0.1), coatMat, 0.16, 0.29, -0.36);
+    part(new THREE.BoxGeometry(0.42, 0.42, 1.04), coatMat, 0, 0.78, 0);
+    // Black stripes across back
+    for (const sz of [-0.32, -0.1, 0.12, 0.34]) {
+      part(new THREE.BoxGeometry(0.44, 0.36, 0.08), accentMat, 0, 0.81, sz);
+    }
+    const neck = part(new THREE.BoxGeometry(0.18, 0.5, 0.22), coatMat, 0, 1.1, 0.46);
+    neck.rotation.x = 0.35;
+    part(new THREE.BoxGeometry(0.1, 0.46, 0.08), accentMat, 0, 1.15, 0.36).rotation.x = 0.35;
+    part(new THREE.BoxGeometry(0.2, 0.22, 0.38), coatMat, 0, 1.32, 0.64);
+
+    root.userData.leftLeg = leftLeg;
+    root.userData.rightLeg = rightLeg;
+    root.userData.backLeftLeg = backLeftLeg;
+    root.userData.backRightLeg = backRightLeg;
+    attachGroundMarkers(root, 0.54, pal, 'neutral');
+    attachHealthBar(root, 1.75, 1.15, true);
+  } else if (kind === 'giraffe') {
+    const leftLeg = part(new THREE.BoxGeometry(0.11, 1.05, 0.11), coatMat, -0.18, 0.525, 0.36);
+    const rightLeg = part(new THREE.BoxGeometry(0.11, 1.05, 0.11), coatMat, 0.18, 0.525, 0.36);
+    const backLeftLeg = part(new THREE.BoxGeometry(0.11, 1.05, 0.11), coatMat, -0.18, 0.525, -0.36);
+    const backRightLeg = part(new THREE.BoxGeometry(0.11, 1.05, 0.11), coatMat, 0.18, 0.525, -0.36);
+    part(new THREE.BoxGeometry(0.46, 0.48, 0.96), coatMat, 0, 1.24, 0);
+    part(new THREE.BoxGeometry(0.48, 0.28, 0.32), accentMat, 0, 1.28, -0.1);
+    const neck = part(new THREE.BoxGeometry(0.18, 1.28, 0.2), coatMat, 0, 2.02, 0.42);
+    neck.rotation.x = 0.18;
+    part(new THREE.BoxGeometry(0.2, 0.2, 0.38), coatMat, 0, 2.68, 0.58);
+    part(new THREE.CylinderGeometry(0.025, 0.025, 0.18, 5), accentMat, -0.06, 2.84, 0.5);
+    part(new THREE.CylinderGeometry(0.025, 0.025, 0.18, 5), accentMat, 0.06, 2.84, 0.5);
+
+    root.userData.leftLeg = leftLeg;
+    root.userData.rightLeg = rightLeg;
+    root.userData.backLeftLeg = backLeftLeg;
+    root.userData.backRightLeg = backRightLeg;
+    attachGroundMarkers(root, 0.58, pal, 'neutral');
+    attachHealthBar(root, 3.15, 1.2, true);
+  } else if (kind === 'rhino') {
+    const leftLeg = part(new THREE.CylinderGeometry(0.15, 0.17, 0.42, 7), coatMat, -0.28, 0.21, 0.44);
+    const rightLeg = part(new THREE.CylinderGeometry(0.15, 0.17, 0.42, 7), coatMat, 0.28, 0.21, 0.44);
+    const backLeftLeg = part(new THREE.CylinderGeometry(0.15, 0.17, 0.42, 7), coatMat, -0.28, 0.21, -0.44);
+    const backRightLeg = part(new THREE.CylinderGeometry(0.15, 0.17, 0.42, 7), coatMat, 0.28, 0.21, -0.44);
+    part(new THREE.BoxGeometry(0.78, 0.64, 1.38), coatMat, 0, 0.68, 0);
+    part(new THREE.BoxGeometry(0.48, 0.44, 0.56), coatMat, 0, 0.66, 0.84);
+    const mainHorn = part(new THREE.ConeGeometry(0.08, 0.44, 6), accentMat, 0, 0.94, 1.08);
+    mainHorn.rotation.x = 0.25;
+    part(new THREE.ConeGeometry(0.05, 0.2, 6), accentMat, 0, 0.9, 0.88);
+
+    root.userData.leftLeg = leftLeg;
+    root.userData.rightLeg = rightLeg;
+    root.userData.backLeftLeg = backLeftLeg;
+    root.userData.backRightLeg = backRightLeg;
+    attachGroundMarkers(root, 0.76, pal, 'neutral');
+    attachHealthBar(root, 1.65, 1.35, true);
+  } else if (kind === 'tiger') {
+    const leftLeg = part(new THREE.BoxGeometry(0.11, 0.44, 0.11), coatMat, -0.15, 0.22, 0.36);
+    const rightLeg = part(new THREE.BoxGeometry(0.11, 0.44, 0.11), coatMat, 0.15, 0.22, 0.36);
+    const backLeftLeg = part(new THREE.BoxGeometry(0.11, 0.44, 0.11), coatMat, -0.15, 0.22, -0.36);
+    const backRightLeg = part(new THREE.BoxGeometry(0.11, 0.44, 0.11), coatMat, 0.15, 0.22, -0.36);
+    part(new THREE.BoxGeometry(0.42, 0.4, 1.02), coatMat, 0, 0.62, 0);
+    for (const sz of [-0.3, -0.06, 0.18]) {
+      part(new THREE.BoxGeometry(0.44, 0.3, 0.08), accentMat, 0, 0.65, sz);
+    }
+    part(new THREE.BoxGeometry(0.3, 0.26, 0.32), coatMat, 0, 0.74, 0.62);
+    const tail = part(new THREE.BoxGeometry(0.08, 0.08, 0.58), coatMat, 0, 0.62, -0.68);
+    tail.rotation.x = -0.3;
+
+    root.userData.leftLeg = leftLeg;
+    root.userData.rightLeg = rightLeg;
+    root.userData.backLeftLeg = backLeftLeg;
+    root.userData.backRightLeg = backRightLeg;
+    attachGroundMarkers(root, 0.54, pal, 'neutral');
+    attachHealthBar(root, 1.48, 1.15, true);
+  } else if (kind === 'hyena') {
+    const leftLeg = part(new THREE.BoxGeometry(0.1, 0.4, 0.1), coatMat, -0.13, 0.2, 0.3);
+    const rightLeg = part(new THREE.BoxGeometry(0.1, 0.4, 0.1), coatMat, 0.13, 0.2, 0.3);
+    const backLeftLeg = part(new THREE.BoxGeometry(0.1, 0.32, 0.1), coatMat, -0.13, 0.16, -0.3);
+    const backRightLeg = part(new THREE.BoxGeometry(0.1, 0.32, 0.1), coatMat, 0.13, 0.16, -0.3);
+    const torso = part(new THREE.BoxGeometry(0.34, 0.34, 0.84), coatMat, 0, 0.52, 0);
+    torso.rotation.x = 0.16;
+    part(new THREE.BoxGeometry(0.14, 0.16, 0.46), accentMat, 0, 0.7, 0.12);
+    part(new THREE.BoxGeometry(0.26, 0.24, 0.34), coatMat, 0, 0.68, 0.52);
+    part(new THREE.BoxGeometry(0.16, 0.13, 0.18), accentMat, 0, 0.62, 0.72);
+    part(new THREE.ConeGeometry(0.06, 0.14, 4), coatMat, -0.1, 0.86, 0.46);
+    part(new THREE.ConeGeometry(0.06, 0.14, 4), coatMat, 0.1, 0.86, 0.46);
+
+    root.userData.leftLeg = leftLeg;
+    root.userData.rightLeg = rightLeg;
+    root.userData.backLeftLeg = backLeftLeg;
+    root.userData.backRightLeg = backRightLeg;
+    attachGroundMarkers(root, 0.46, pal, 'neutral');
+    attachHealthBar(root, 1.35, 1.0, true);
+  } else if (kind === 'alligator') {
+    const leftLeg = part(new THREE.BoxGeometry(0.16, 0.14, 0.16), coatMat, -0.28, 0.08, 0.38);
+    const rightLeg = part(new THREE.BoxGeometry(0.16, 0.14, 0.16), coatMat, 0.28, 0.08, 0.38);
+    const backLeftLeg = part(new THREE.BoxGeometry(0.16, 0.14, 0.16), coatMat, -0.28, 0.08, -0.38);
+    const backRightLeg = part(new THREE.BoxGeometry(0.16, 0.14, 0.16), coatMat, 0.28, 0.08, -0.38);
+    part(new THREE.BoxGeometry(0.46, 0.22, 1.24), coatMat, 0, 0.18, 0);
+    part(new THREE.BoxGeometry(0.32, 0.16, 0.6), coatMat, 0, 0.16, 0.84);
+    part(new THREE.ConeGeometry(0.17, 1.0, 5), accentMat, 0, 0.15, -1.04).rotation.x = -Math.PI / 2;
+
+    root.userData.leftLeg = leftLeg;
+    root.userData.rightLeg = rightLeg;
+    root.userData.backLeftLeg = backLeftLeg;
+    root.userData.backRightLeg = backRightLeg;
+    attachGroundMarkers(root, 0.64, pal, 'neutral');
+    attachHealthBar(root, 0.98, 1.15, true);
+  } else if (kind === 'baboon') {
+    const leftLeg = part(new THREE.BoxGeometry(0.09, 0.34, 0.09), coatMat, -0.14, 0.17, 0.26);
+    const rightLeg = part(new THREE.BoxGeometry(0.09, 0.34, 0.09), coatMat, 0.14, 0.17, 0.26);
+    const backLeftLeg = part(new THREE.BoxGeometry(0.09, 0.32, 0.09), coatMat, -0.14, 0.16, -0.24);
+    const backRightLeg = part(new THREE.BoxGeometry(0.09, 0.32, 0.09), coatMat, 0.14, 0.16, -0.24);
+    const torso = part(new THREE.BoxGeometry(0.34, 0.34, 0.68), coatMat, 0, 0.46, 0);
+    torso.rotation.x = -0.18;
+    part(new THREE.BoxGeometry(0.26, 0.26, 0.3), coatMat, 0, 0.66, 0.38);
+    part(new THREE.BoxGeometry(0.16, 0.14, 0.22), accentMat, 0, 0.62, 0.58);
+    const tail = part(new THREE.BoxGeometry(0.06, 0.42, 0.06), coatMat, 0, 0.64, -0.38);
+    tail.rotation.x = -0.35;
+
+    root.userData.leftLeg = leftLeg;
+    root.userData.rightLeg = rightLeg;
+    root.userData.backLeftLeg = backLeftLeg;
+    root.userData.backRightLeg = backRightLeg;
+    attachGroundMarkers(root, 0.42, pal, 'neutral');
+    attachHealthBar(root, 1.25, 0.95, true);
+  } else if (kind === 'sea_turtle') {
+    const shell = part(new THREE.SphereGeometry(0.54, 10, 8), coatMat, 0, 0.22, 0);
+    shell.scale.set(1.0, 0.45, 1.25);
+    part(new THREE.SphereGeometry(0.18, 7, 6), accentMat, 0, 0.22, 0.74);
+    part(new THREE.BoxGeometry(0.44, 0.05, 0.22), accentMat, -0.52, 0.14, 0.32).rotation.y = 0.4;
+    part(new THREE.BoxGeometry(0.44, 0.05, 0.22), accentMat, 0.52, 0.14, 0.32).rotation.y = -0.4;
+    part(new THREE.BoxGeometry(0.28, 0.05, 0.16), accentMat, -0.4, 0.14, -0.46);
+    part(new THREE.BoxGeometry(0.28, 0.05, 0.16), accentMat, 0.4, 0.14, -0.46);
+  } else if (kind === 'dolphin') {
+    const body = part(new THREE.SphereGeometry(0.32, 10, 8), coatMat, 0, 0.25, 0);
+    body.scale.set(0.75, 0.72, 2.35);
+    part(new THREE.ConeGeometry(0.08, 0.38, 6), coatMat, 0, 0.22, 0.85).rotation.x = Math.PI / 2;
+    const dorsal = part(new THREE.ConeGeometry(0.12, 0.34, 4), accentMat, 0, 0.52, -0.05);
+    dorsal.rotation.x = -0.35;
+    part(new THREE.BoxGeometry(0.56, 0.05, 0.22), accentMat, 0, 0.25, -0.82);
+  } else if (kind === 'whale') {
+    const body = part(new THREE.SphereGeometry(0.72, 12, 8), coatMat, 0, 0.38, 0);
+    body.scale.set(0.95, 0.78, 2.95);
+    part(new THREE.BoxGeometry(0.82, 0.28, 2.2), pal.ivory, 0, 0.16, 0.25);
+    part(new THREE.BoxGeometry(1.45, 0.08, 0.48), accentMat, 0, 0.36, -2.15);
   } else {
     // Wolf
     const leftLeg = part(new THREE.BoxGeometry(0.1, 0.38, 0.1), coatMat, -0.13, 0.19, 0.32);

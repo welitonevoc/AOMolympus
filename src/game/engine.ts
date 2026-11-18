@@ -25,7 +25,7 @@ import {
   getMapBiomeVisuals,
   resolveEffectiveMapId,
   rollUnknownMapVariant,
-} from './mapGeography';
+} from '../TEXTURA/maps';
 import { NavigationGrid, ObstacleCircle, WATER_WALK_LIMIT } from './navigation';
 import {
   createContactShadowTexture,
@@ -201,6 +201,7 @@ interface ResourceNodeEntity {
   amount: number;
   maxAmount: number;
   selected: boolean;
+  subLabel?: string;
 }
 
 interface SettlementEntity {
@@ -235,6 +236,14 @@ interface FaunaEntity {
   selected: boolean;
   retaliateTargetId: string | null;
   attackTimer: number;
+  ownerTeam: TeamId | null;
+  fleeTimer: number;
+  fleeDirX: number;
+  fleeDirZ: number;
+  moveTarget: THREE.Vector3 | null;
+  attackTargetId: string | null;
+  isSetConverted?: boolean;
+  fattenFrac?: number;
 }
 
 interface ProjectileVfx {
@@ -344,6 +353,8 @@ export interface SerializedMatch {
     hp: number;
     foodAmount: number;
     isCarcass: boolean;
+    ownerTeam?: TeamId | null;
+    isSetConverted?: boolean;
   }[];
   relics?: {
     id: string;
@@ -1753,6 +1764,7 @@ export class AoMEngine {
       'yellow_river',
     ];
     if (aquaticMaps.includes(effMap) || aquaticMaps.includes(mapId)) {
+      const fishLabels = ['Cardume de Salmão', 'Cardume de Perca', 'Cardume de Mahi-Mahi'];
       let spawnedFish = 0;
       const targetFishCount = effMap === 'islands' || effMap === 'archipelago' || effMap === 'midgard' ? 10 : 6;
       for (let attempt = 0; attempt < 95 && spawnedFish < targetFishCount; attempt++) {
@@ -1767,8 +1779,24 @@ export class AoMEngine {
             }
           }
           if (!tooClose) {
-            this.spawnNode('fish_spot', fx, fz);
+            const fishNode = this.spawnNode('fish_spot', fx, fz);
+            fishNode.subLabel = fishLabels[spawnedFish % fishLabels.length];
             spawnedFish++;
+          }
+        }
+      }
+
+      // Decorative aquatic marine animals (Tartarugas, Golfinhos, Baleias)
+      if (mapProfile.aquaticDecorPool.length > 0) {
+        let spawnedDecor = 0;
+        const targetDecorCount = effMap === 'islands' || effMap === 'archipelago' || effMap === 'midgard' ? 5 : 3;
+        for (let attempt = 0; attempt < 75 && spawnedDecor < targetDecorCount; attempt++) {
+          const ax = (this.seededRng() - 0.5) * (PLAYABLE_HALF_SIZE * 1.72);
+          const az = (this.seededRng() - 0.5) * (PLAYABLE_HALF_SIZE * 1.72);
+          if (this.navGrid.isWaterTerrain(ax, az)) {
+            const decorKind = mapProfile.aquaticDecorPool[spawnedDecor % mapProfile.aquaticDecorPool.length];
+            this.spawnFauna(decorKind, ax, az);
+            spawnedDecor++;
           }
         }
       }
@@ -2003,6 +2031,11 @@ export class AoMEngine {
             ? 20
             : 16;
         this.revealFogCircle(b.mesh.position.x, b.mesh.position.z, sight);
+      }
+    }
+    for (const f of this.fauna.values()) {
+      if (f.ownerTeam === 'player' && !f.isCarcass) {
+        this.revealFogCircle(f.mesh.position.x, f.mesh.position.z, 11);
       }
     }
 
@@ -2914,7 +2947,8 @@ export class AoMEngine {
     const id = fixedId ?? `f_${this.nextId++}`;
     const stats = FAUNA_STATS[kind];
     const mesh = createFaunaMesh(kind, this.palette, !this.isSoftwareGl);
-    mesh.position.set(x, groundHeightAt(x, z, this.mapId), z);
+    const spawnY = stats.isAquatic ? -0.34 : groundHeightAt(x, z, this.mapId);
+    mesh.position.set(x, spawnY, z);
     mesh.rotation.y = Math.random() * Math.PI * 2;
     mesh.userData.entityType = 'fauna';
     mesh.userData.entityId = id;
@@ -2939,6 +2973,14 @@ export class AoMEngine {
       selected: false,
       retaliateTargetId: null,
       attackTimer: 0,
+      ownerTeam: null,
+      fleeTimer: 0,
+      fleeDirX: 0,
+      fleeDirZ: 0,
+      moveTarget: null,
+      attackTargetId: null,
+      isSetConverted: false,
+      fattenFrac: 0,
     };
     this.fauna.set(id, entity);
     return entity;
@@ -3802,6 +3844,162 @@ export class AoMEngine {
     if (this.teamPantheon(team) !== 'egyptian') return false;
     const godName = team === 'player' ? this.majorGodName : PANTHEONS[this.enemyPantheon].deity;
     return godName.toLowerCase() === 'rá' || godName.toLowerCase() === 'ra';
+  }
+
+  private isTeamSet(team: TeamId): boolean {
+    if (this.teamPantheon(team) !== 'egyptian') return false;
+    const godName = team === 'player' ? this.majorGodName : PANTHEONS[this.enemyPantheon].deity;
+    return godName.toLowerCase().includes('set');
+  }
+
+  private setFaunaOwnerVisual(f: FaunaEntity) {
+    const ring = f.mesh.userData.selectionRing as THREE.Mesh | undefined;
+    if (ring && ring.material) {
+      const mat = ring.material as THREE.MeshBasicMaterial;
+      if (f.ownerTeam === 'player') {
+        mat.color.setHex(0x38bdf8);
+      } else if (f.ownerTeam === 'enemy') {
+        mat.color.setHex(0xef4444);
+      } else {
+        mat.color.setHex(0xfacc15);
+      }
+    }
+  }
+
+  public summonSetAnimal(kind: 'baboon' | 'hyena' | 'crocodile' | 'hippo') {
+    if (this.phase !== 'playing') return;
+    if (!this.isTeamSet('player')) {
+      this.notifyStatus('Apenas seguidores do deus Set podem invocar Animais de Set.');
+      return;
+    }
+    const specs: Record<'baboon' | 'hyena' | 'crocodile' | 'hippo', { favor: number; minAge: AgeLevel }> = {
+      baboon: { favor: 8, minAge: 1 },
+      hyena: { favor: 12, minAge: 1 },
+      crocodile: { favor: 16, minAge: 2 },
+      hippo: { favor: 22, minAge: 3 },
+    };
+    const req = specs[kind];
+    if (this.age < req.minAge) {
+      this.notifyStatus(`${FAUNA_STATS[kind].name} exige Era ${req.minAge} para ser invocado.`);
+      return;
+    }
+    if (this.resources.favor < req.favor) {
+      this.notifyStatus(`Favor insuficiente (${req.favor} Favor necessários).`);
+      return;
+    }
+
+    let anchor: THREE.Vector3 | null = null;
+    for (const b of this.buildings.values()) {
+      if (b.team === 'player' && b.isConstructed && b.kind === 'temple') {
+        anchor = b.mesh.position;
+        break;
+      }
+    }
+    if (!anchor) {
+      for (const u of this.units.values()) {
+        if (u.team === 'player' && (u.kind === 'pharaoh' || u.kind === 'priest')) {
+          anchor = u.mesh.position;
+          break;
+        }
+      }
+    }
+    if (!anchor) {
+      anchor = this.findNearestTownCenter('player', new THREE.Vector3(0, 0, 0))?.mesh.position ?? null;
+    }
+    if (!anchor) {
+      this.notifyStatus('Construa um Templo ou Centro da Cidade para invocar Animais de Set.');
+      return;
+    }
+
+    let sx = anchor.x + 3.5;
+    let sz = anchor.z + 3.5;
+    for (let i = 0; i < 12; i++) {
+      const ang = (i / 12) * Math.PI * 2 + Math.random() * 0.4;
+      const rad = 4.2 + (i % 3) * 1.4;
+      const cx = THREE.MathUtils.clamp(anchor.x + Math.cos(ang) * rad, -PLAYABLE_HALF_SIZE + 3, PLAYABLE_HALF_SIZE - 3);
+      const cz = THREE.MathUtils.clamp(anchor.z + Math.sin(ang) * rad, -PLAYABLE_HALF_SIZE + 3, PLAYABLE_HALF_SIZE - 3);
+      if (this.isWalkableTerrainPoint(cx, cz)) {
+        sx = cx;
+        sz = cz;
+        break;
+      }
+    }
+
+    this.resources.favor -= req.favor;
+    const summoned = this.spawnFauna(kind, sx, sz);
+    summoned.ownerTeam = 'player';
+    summoned.isSetConverted = true;
+    summoned.maxHp = Math.round(summoned.maxHp * 1.2);
+    summoned.hp = summoned.maxHp;
+    this.setFaunaOwnerVisual(summoned);
+    this.spawnPillarVfx(summoned.mesh.position, 0xa855f7, 0.9);
+    this.spawnRingVfx(summoned.mesh.position, 1.8, 0xfacc15, 0.6);
+    soundEngine.playSelect();
+    this.notifyStatus(`🐺 Set invocou ${FAUNA_STATS[kind].name} Sagrado ao seu comando!`);
+    this.emitHudSnapshot();
+  }
+
+  public convertTargetOrNearestFauna() {
+    if (this.phase !== 'playing') return;
+    if (!this.isTeamSet('player')) {
+      this.notifyStatus('Apenas seguidores de Set podem converter animais selvagens.');
+      return;
+    }
+    let caster: UnitEntity | null = null;
+    for (const u of this.units.values()) {
+      if (u.team === 'player' && u.hp > 0 && (u.kind === 'priest' || u.kind === 'pharaoh' || u.kind === 'son_of_osiris')) {
+        if (u.selected || !caster) caster = u;
+      }
+    }
+    if (!caster) {
+      this.notifyStatus('Treine um Sacerdote ou use o Faraó para converter feras selvagens.');
+      return;
+    }
+
+    let target: FaunaEntity | null = null;
+    for (const f of this.fauna.values()) {
+      const fs = FAUNA_STATS[f.kind];
+      if (f.selected && !f.isCarcass && !fs.isAquatic && f.ownerTeam !== 'player') {
+        target = f;
+        break;
+      }
+    }
+    if (!target) {
+      let bestD = 18;
+      for (const f of this.fauna.values()) {
+        const fs = FAUNA_STATS[f.kind];
+        if (!f.isCarcass && !fs.isAquatic && f.ownerTeam !== 'player') {
+          const d = f.mesh.position.distanceTo(caster.mesh.position);
+          if (d < bestD) {
+            bestD = d;
+            target = f;
+          }
+        }
+      }
+    }
+    if (!target) {
+      this.notifyStatus('Selecione um animal selvagem ou aproxime um Sacerdote de uma fera livre (até 18m).');
+      return;
+    }
+
+    target.ownerTeam = 'player';
+    target.isSetConverted = true;
+    target.retaliateTargetId = null;
+    target.fleeTimer = 0;
+    target.maxHp = Math.round(target.maxHp * 1.15);
+    target.hp = target.maxHp;
+    for (const u of this.units.values()) {
+      if (u.team === 'player' && u.targetFaunaId === target.id) {
+        u.state = 'idle';
+        u.targetFaunaId = null;
+      }
+    }
+    this.setFaunaOwnerVisual(target);
+    this.spawnPillarVfx(target.mesh.position, 0xa855f7, 0.85);
+    this.spawnRingVfx(target.mesh.position, 1.6, 0x38bdf8, 0.55);
+    soundEngine.playSelect();
+    this.notifyStatus(`🔮 Sacerdote de Set converteu ${FAUNA_STATS[target.kind].name} para o seu exército!`);
+    this.emitHudSnapshot();
   }
 
   private isProtectedByIsisMonument(defendingTeam: TeamId, worldPos: THREE.Vector3): BuildingEntity | null {
@@ -5358,6 +5556,8 @@ export class AoMEngine {
         hp: f.hp,
         foodAmount: f.foodAmount,
         isCarcass: f.isCarcass,
+        ownerTeam: f.ownerTeam,
+        isSetConverted: f.isSetConverted || undefined,
       })),
       relics: [...this.relics.values()].map((r) => ({
         id: r.id,
@@ -5478,6 +5678,9 @@ export class AoMEngine {
           ent.hp = f.hp;
           ent.foodAmount = f.foodAmount;
           ent.isCarcass = f.isCarcass;
+          ent.ownerTeam = f.ownerTeam ?? null;
+          ent.isSetConverted = Boolean(f.isSetConverted);
+          this.setFaunaOwnerVisual(ent);
           if (ent.isCarcass) {
             const bodyGrp = (ent.mesh.userData.bodyGroup as THREE.Object3D | undefined) ?? ent.mesh;
             bodyGrp.rotation.z = Math.PI / 2.2;
@@ -5905,6 +6108,46 @@ export class AoMEngine {
 
     if (e.button === 2) {
       const selUnits = [...this.units.values()].filter((u) => u.team === 'player' && u.selected);
+      const selOwnedFauna =
+        selUnits.length === 0
+          ? [...this.fauna.values()].filter((f) => f.ownerTeam === 'player' && !f.isCarcass && f.selected)
+          : [];
+      if (selOwnedFauna.length > 0) {
+        const pickedRight = this.pickEntityFromEvent(e.clientX, e.clientY);
+        if (pickedRight.type === 'unit' && pickedRight.id) {
+          const targetU = this.units.get(pickedRight.id);
+          if (targetU && this.getDiplomacy('player', targetU.team) === 'enemy') {
+            for (const f of selOwnedFauna) {
+              if (FAUNA_STATS[f.kind].attack > 0) {
+                f.attackTargetId = targetU.id;
+                f.moveTarget = null;
+              }
+            }
+            this.spawnRingVfx(targetU.mesh.position, 1.2, 0xef4444, 0.45);
+            soundEngine.playSelect();
+            return;
+          }
+        }
+        const pt = this.getGroundPointFromEvent(e.clientX, e.clientY);
+        if (pt) {
+          const cx = THREE.MathUtils.clamp(pt.x, -PLAYABLE_HALF_SIZE + 2, PLAYABLE_HALF_SIZE - 2);
+          const cz = THREE.MathUtils.clamp(pt.z, -PLAYABLE_HALF_SIZE + 2, PLAYABLE_HALF_SIZE - 2);
+          for (let i = 0; i < selOwnedFauna.length; i++) {
+            const ang = (i / Math.max(1, selOwnedFauna.length)) * Math.PI * 2;
+            const spread = selOwnedFauna.length > 1 ? 1.4 : 0;
+            selOwnedFauna[i].moveTarget = new THREE.Vector3(
+              cx + Math.cos(ang) * spread,
+              groundHeightAt(cx, cz, this.mapId),
+              cz + Math.sin(ang) * spread
+            );
+            selOwnedFauna[i].attackTargetId = null;
+          }
+          this.spawnRingVfx(new THREE.Vector3(cx, groundHeightAt(cx, cz, this.mapId), cz), 1.2, 0x38bdf8, 0.45);
+          soundEngine.playSelect();
+        }
+        return;
+      }
+
       const selB = selUnits.length === 0 ? this.getSelectedPlayerBuilding() : null;
       if (selB) {
         this.setBuildingRallyPointFromEvent(selB, e.clientX, e.clientY);
@@ -5961,6 +6204,26 @@ export class AoMEngine {
         this.commitCommandOrderAt(e.clientX, e.clientY, []);
         this.emitHudSnapshot();
         return;
+      }
+    }
+
+    if (!additive && selectedPlayerUnits.length === 0) {
+      const selOwnedFauna = [...this.fauna.values()].filter(
+        (f) => f.ownerTeam === 'player' && !f.isCarcass && f.selected
+      );
+      if (selOwnedFauna.length > 0 && picked.type === null) {
+        const pt = this.getGroundPointFromEvent(e.clientX, e.clientY);
+        if (pt) {
+          const cx = THREE.MathUtils.clamp(pt.x, -PLAYABLE_HALF_SIZE + 2, PLAYABLE_HALF_SIZE - 2);
+          const cz = THREE.MathUtils.clamp(pt.z, -PLAYABLE_HALF_SIZE + 2, PLAYABLE_HALF_SIZE - 2);
+          for (const f of selOwnedFauna) {
+            f.moveTarget = new THREE.Vector3(cx, groundHeightAt(cx, cz, this.mapId), cz);
+            f.attackTargetId = null;
+          }
+          this.spawnRingVfx(new THREE.Vector3(cx, groundHeightAt(cx, cz, this.mapId), cz), 1.2, 0x38bdf8, 0.45);
+          soundEngine.playSelect();
+          return;
+        }
       }
     }
 
@@ -6554,6 +6817,11 @@ export class AoMEngine {
     if (this.phase !== 'playing') return;
     for (const f of this.fauna.values()) {
       if (f.selected) {
+        const fs = FAUNA_STATS[f.kind];
+        if (fs.isAquatic) {
+          this.notifyStatus(`${fs.name} faz parte da fauna marinha decorativa e não pode ser caçada.`);
+          return;
+        }
         const vills = this.getFallbackVillagers(f.mesh.position);
         if (vills.length === 0) {
           this.notifyStatus('Nenhum Aldeão disponível para caçar.');
@@ -6574,8 +6842,10 @@ export class AoMEngine {
         this.triggerUnitVoice(vills, f.isCarcass ? 'work' : 'attack');
         this.notifyStatus(
           f.isCarcass
-            ? `Aldeões enviados para coletar Alimento de ${FAUNA_STATS[f.kind].name}!`
-            : `Aldeões enviados para caçar ${FAUNA_STATS[f.kind].name}!`
+            ? `Aldeões enviados para coletar Alimento de ${fs.name}!`
+            : f.ownerTeam === 'player' && fs.category === 'herdable'
+            ? `Aldeões enviados para abater ${fs.name} do rebanho (${Math.round(f.foodAmount)} Alimento)!`
+            : `Aldeões enviados para caçar ${fs.name}!`
         );
         this.emitHudSnapshot();
         return;
@@ -7206,6 +7476,49 @@ export class AoMEngine {
     if (picked.type === 'fauna' && picked.id) {
       const animal = this.fauna.get(picked.id);
       if (animal) {
+        const fStats = FAUNA_STATS[animal.kind];
+        if (fStats.isAquatic) {
+          this.notifyStatus(`${fStats.name} é fauna marinha decorativa (use Cardumes de Peixes com Barcos Pesqueiros).`);
+          return;
+        }
+        // Set Priest / Pharaoh converts wild animals into friendly Set beasts!
+        const hasWorkers = selectedPlayerUnits.some((u) => this.isWorkerKind(u.kind));
+        const setCasters = selectedPlayerUnits.filter(
+          (u) => u.kind === 'priest' || u.kind === 'pharaoh' || u.kind === 'son_of_osiris'
+        );
+        if (
+          this.isTeamSet('player') &&
+          !animal.isCarcass &&
+          animal.ownerTeam !== 'player' &&
+          setCasters.length > 0 &&
+          !hasWorkers
+        ) {
+          const caster = setCasters[0];
+          const d = caster.mesh.position.distanceTo(animal.mesh.position);
+          if (d <= 22) {
+            animal.ownerTeam = 'player';
+            animal.isSetConverted = true;
+            animal.retaliateTargetId = null;
+            animal.fleeTimer = 0;
+            animal.maxHp = Math.round(animal.maxHp * 1.15);
+            animal.hp = animal.maxHp;
+            this.setFaunaOwnerVisual(animal);
+            this.spawnPillarVfx(animal.mesh.position, 0xa855f7, 0.85);
+            this.spawnRingVfx(animal.mesh.position, 1.6, 0x38bdf8, 0.55);
+            soundEngine.playSelect();
+            this.notifyStatus(`🔮 Sacerdote de Set converteu ${fStats.name}!`);
+            this.emitHudSnapshot();
+            return;
+          }
+          this.issueFormationMove(setCasters, animal.mesh.position.x, animal.mesh.position.z, [], this.formation);
+          this.notifyStatus(`Aproximando Sacerdote para converter ${fStats.name}...`);
+          return;
+        }
+        // Avoid attacking own Set guard animals when clicking right on them with troops
+        if (animal.ownerTeam === 'player' && !animal.isCarcass && fStats.category !== 'herdable' && !hasWorkers) {
+          return;
+        }
+
         let ordered = false;
         const hunters = selectedPlayerUnits.some(
           (u) => this.isWorkerKind(u.kind) || u.kind === 'ox_cart'
@@ -9698,7 +10011,11 @@ export class AoMEngine {
     let nextAnimal: FaunaEntity | null = null;
     let bestScore = maxDist;
     for (const cand of this.fauna.values()) {
-      if (cand.foodAmount <= 0 || FAUNA_STATS[cand.kind].retaliates) continue;
+      const fStats = FAUNA_STATS[cand.kind];
+      if (cand.foodAmount <= 0 || fStats.isAquatic) continue;
+      if (!cand.isCarcass && (fStats.category === 'predator' || fStats.retaliates || (cand.isSetConverted && fStats.category !== 'herdable'))) {
+        continue;
+      }
       const d = Math.hypot(cand.mesh.position.x - origin.x, cand.mesh.position.z - origin.z);
       // Prefer already felled carcasses first
       const score = cand.isCarcass ? d * 0.5 : d;
@@ -10290,13 +10607,18 @@ export class AoMEngine {
                 }
                 const isDwarfGold = u.kind === 'norse_dwarf' && node.resourceType === 'gold';
                 const isFishing = u.kind === 'fishing_ship';
+                const isInfiniteNode = node.kind === 'fish_spot';
                 const swingTake = isFishing ? 6 : isDwarfGold ? 6 : 5;
                 const maxCarry = isFishing ? 20 : isDwarfGold ? 20 : 15;
-                const take = Math.min(swingTake, node.amount);
-                node.amount -= take;
+                const take = isInfiniteNode ? swingTake : Math.min(swingTake, node.amount);
+                if (!isInfiniteNode) {
+                  node.amount -= take;
+                } else {
+                  node.amount = node.maxAmount;
+                }
                 u.carryType = node.resourceType;
                 u.carryAmount += take;
-                if (node.amount <= 0) {
+                if (!isInfiniteNode && node.amount <= 0) {
                   const depletedType = node.resourceType;
                   const depletedPos = node.mesh.position.clone();
                   this.scene.remove(node.mesh);
@@ -10372,6 +10694,14 @@ export class AoMEngine {
         }
 
         const fStats = FAUNA_STATS[animal.kind];
+        if (fStats.isAquatic) {
+          u.state = 'idle';
+          u.targetFaunaId = null;
+          continue;
+        }
+        const teamTechs = u.team === 'player' ? this.researchedTechs : this.enemyResearchedTechs;
+        const hasHuntingDogs = teamTechs.includes('hunting_dogs');
+        const hasHusbandry = teamTechs.includes('husbandry');
         const dist = Math.hypot(
           animal.mesh.position.x - u.mesh.position.x,
           animal.mesh.position.z - u.mesh.position.z
@@ -10401,15 +10731,31 @@ export class AoMEngine {
             } else {
               soundEngine.playSwordHit();
             }
-            const huntDmg = isEconomicWorker ? 24 : Math.max(stats.attack, 20);
+            const isOwnedSlaughter = animal.ownerTeam === u.team && fStats.category === 'herdable';
+            const huntDmg = isOwnedSlaughter
+              ? animal.hp + 10
+              : isEconomicWorker
+              ? Math.round(24 * (hasHuntingDogs ? 1.3 : 1))
+              : Math.max(stats.attack, 20);
             animal.hp -= huntDmg;
-            if (fStats.retaliates && !animal.retaliateTargetId) {
+            if (fStats.retaliates && !animal.retaliateTargetId && !isOwnedSlaughter) {
               animal.retaliateTargetId = u.id;
+            } else if (fStats.fleeOnHit && animal.hp > 0) {
+              const fdx = animal.mesh.position.x - u.mesh.position.x;
+              const fdz = animal.mesh.position.z - u.mesh.position.z;
+              const flen = Math.max(0.01, Math.hypot(fdx, fdz));
+              animal.fleeDirX = fdx / flen;
+              animal.fleeDirZ = fdz / flen;
+              animal.fleeTimer = 3.4;
+              animal.wanderTarget = null;
             }
             if (animal.hp <= 0) {
               animal.hp = 0;
               animal.isCarcass = true;
               animal.retaliateTargetId = null;
+              animal.fleeTimer = 0;
+              animal.moveTarget = null;
+              animal.attackTargetId = null;
               animal.wanderTarget = null;
               const bodyGrp = (animal.mesh.userData.bodyGroup as THREE.Object3D | undefined) ?? animal.mesh;
               bodyGrp.rotation.z = Math.PI / 2.2;
@@ -10436,7 +10782,17 @@ export class AoMEngine {
           if (!poseAnim && u.mesh.userData.rightArm) {
             u.mesh.userData.rightArm.rotation.x = -0.6 + Math.sin(u.animPhase) * 0.55;
           }
-          u.gatherTimer += dt * mods.gatherFoodMult;
+          const isHerdable = fStats.category === 'herdable';
+          const isHuntOrPred =
+            fStats.category === 'hunt_passive' ||
+            fStats.category === 'hunt_defensive' ||
+            fStats.category === 'predator';
+          const catGatherMult =
+            (fStats.gatherRateMult ?? 1.0) *
+            (isHerdable && hasHusbandry ? 1.35 : 1.0) *
+            (isHuntOrPred && hasHuntingDogs ? 1.3 : 1.0);
+          const carryCap = isHerdable && hasHusbandry ? 23 : 15;
+          u.gatherTimer += dt * mods.gatherFoodMult * catGatherMult;
           if (u.gatherTimer >= 0.9) {
             u.gatherTimer = 0;
             if (u.kind === 'citizen') {
@@ -10489,7 +10845,7 @@ export class AoMEngine {
                   this.repositionOxCartsNearResource(u.team, carcassPos, nextAnimal.mesh.position);
                 }
               }
-              if (u.carryAmount >= 15 || !u.targetFaunaId) {
+              if (u.carryAmount >= carryCap || !u.targetFaunaId) {
                 u.state = 'return';
                 u.waypoints = [];
                 u.repathTimer = 0;
@@ -11956,6 +12312,7 @@ export class AoMEngine {
     for (const f of [...this.fauna.values()]) {
       const fStats = FAUNA_STATS[f.kind];
       f.attackTimer = Math.max(0, f.attackTimer - dt);
+      f.fleeTimer = Math.max(0, f.fleeTimer - dt);
 
       if (f.isCarcass) {
         if (f.mesh.userData.selectionRing) {
@@ -11966,35 +12323,171 @@ export class AoMEngine {
         continue;
       }
 
+      // 1. Fauna Aquática Decorativa (Tartaruga, Golfinho, Baleia) — patrulha nas águas
+      if (fStats.isAquatic) {
+        if (dt > 0) {
+          f.wanderTimer -= dt;
+          if (!f.wanderTarget || f.wanderTimer <= 0) {
+            const ang = Math.random() * Math.PI * 2;
+            const rad = 5 + Math.random() * 12;
+            const wx = THREE.MathUtils.clamp(f.homeX + Math.cos(ang) * rad, -PLAYABLE_HALF_SIZE + 4, PLAYABLE_HALF_SIZE - 4);
+            const wz = THREE.MathUtils.clamp(f.homeZ + Math.sin(ang) * rad, -PLAYABLE_HALF_SIZE + 4, PLAYABLE_HALF_SIZE - 4);
+            if (this.navGrid.isWaterTerrain(wx, wz)) {
+              f.wanderTarget = new THREE.Vector3(wx, -0.34, wz);
+            }
+            f.wanderTimer = 3.5 + Math.random() * 3.5;
+          }
+          if (f.wanderTarget) {
+            const dx = f.wanderTarget.x - f.mesh.position.x;
+            const dz = f.wanderTarget.z - f.mesh.position.z;
+            const dist = Math.hypot(dx, dz);
+            if (dist < 0.8) {
+              f.wanderTarget = null;
+            } else {
+              const step = Math.min(dist, fStats.speed * 0.65 * dt);
+              const nx = f.mesh.position.x + (dx / dist) * step;
+              const nz = f.mesh.position.z + (dz / dist) * step;
+              if (this.navGrid.isWaterTerrain(nx, nz)) {
+                f.animPhase += dt * 3.0;
+                const jumpY = f.kind === 'dolphin' ? Math.max(-0.36, -0.32 + Math.sin(f.animPhase) * 0.24) : -0.34 + Math.sin(f.animPhase * 0.6) * 0.06;
+                f.mesh.position.set(nx, jumpY, nz);
+                f.mesh.rotation.y = Math.atan2(dx, dz);
+              } else {
+                f.wanderTarget = null;
+              }
+            }
+          }
+        }
+        if (f.mesh.userData.selectionRing) {
+          f.mesh.userData.selectionRing.visible = f.selected;
+        }
+        continue;
+      }
+
+      // 2. Animais de Rebanho (Herdables): captura por proximidade + engorda gradual
+      if (fStats.category === 'herdable' && dt > 0) {
+        let nearestUnitTeam: TeamId | null = null;
+        let nearestUnitDist = 4.8;
+        let ownerGuardPresent = false;
+        for (const u of this.units.values()) {
+          if (u.hp <= 0 || u.state === 'garrisoned') continue;
+          const d = Math.hypot(u.mesh.position.x - f.mesh.position.x, u.mesh.position.z - f.mesh.position.z);
+          if (f.ownerTeam && u.team === f.ownerTeam && d <= 6.2) {
+            ownerGuardPresent = true;
+          }
+          if (d < nearestUnitDist) {
+            nearestUnitDist = d;
+            nearestUnitTeam = u.team;
+          }
+        }
+        if (nearestUnitTeam && (!f.ownerTeam || (f.ownerTeam !== nearestUnitTeam && !ownerGuardPresent))) {
+          const prevOwner = f.ownerTeam;
+          f.ownerTeam = nearestUnitTeam;
+          this.setFaunaOwnerVisual(f);
+          if (nearestUnitTeam === 'player' && prevOwner !== 'player') {
+            this.spawnRingVfx(f.mesh.position, 1.35, 0x38bdf8, 0.45);
+            this.notifyStatus(`🐑 Rebanho capturado: ${fStats.name} (engorda gradualmente perto da sua base)!`);
+          }
+        }
+
+        if (fStats.maxFattenedFood && f.foodAmount < fStats.maxFattenedFood) {
+          const fattenRate = f.ownerTeam ? 2.2 : 0.45;
+          f.foodAmount = Math.min(fStats.maxFattenedFood, f.foodAmount + fattenRate * dt);
+          f.maxFood = Math.max(f.maxFood, Math.round(f.foodAmount));
+          const baseFood = fStats.foodAmount;
+          const frac = THREE.MathUtils.clamp((f.foodAmount - baseFood) / Math.max(1, fStats.maxFattenedFood - baseFood), 0, 1);
+          f.fattenFrac = frac;
+          const baseScale = this.getFaunaScale(f.kind);
+          const swell = 1 + frac * 0.14;
+          f.mesh.scale.set(baseScale.x * swell, baseScale.y * (1 + frac * 0.1), baseScale.z * swell);
+        }
+      }
+
+      // 3. Predadores Agressivos & Bestas Convertidas de Set: aggro proativo
+      if (!f.retaliateTargetId && !f.attackTargetId && fStats.attack > 0) {
+        if (fStats.aggroRadius && !f.ownerTeam) {
+          let bestU: UnitEntity | null = null;
+          let bestD = fStats.aggroRadius;
+          for (const u of this.units.values()) {
+            if (u.hp <= 0 || u.state === 'garrisoned' || this.unitStats(u.kind, u.team).isNaval) continue;
+            const d = u.mesh.position.distanceTo(f.mesh.position);
+            if (d < bestD) {
+              bestD = d;
+              bestU = u;
+            }
+          }
+          if (bestU) f.retaliateTargetId = bestU.id;
+        } else if (f.ownerTeam) {
+          let bestEnemyId: string | null = null;
+          let bestD = 9.5;
+          for (const u of this.units.values()) {
+            if (u.hp <= 0 || u.state === 'garrisoned' || this.getDiplomacy(f.ownerTeam, u.team) !== 'enemy') continue;
+            const d = u.mesh.position.distanceTo(f.mesh.position);
+            if (d < bestD) {
+              bestD = d;
+              bestEnemyId = u.id;
+            }
+          }
+          if (bestEnemyId) f.attackTargetId = bestEnemyId;
+        }
+      }
+
       let moveDest: THREE.Vector3 | null = null;
       let moveSpeed = fStats.speed * 0.45;
 
-      // Aggressive fauna retaliates against its hunter if nearby
-      if (f.retaliateTargetId) {
-        const hunter = this.units.get(f.retaliateTargetId);
-        if (!hunter || hunter.mesh.position.distanceTo(f.mesh.position) > 16) {
+      // 4. Combate Ativo (Caça Defensiva / Predadores / Animais de Set)
+      const activeCombatTargetId = f.attackTargetId ?? f.retaliateTargetId;
+      if (activeCombatTargetId) {
+        const targetU = this.units.get(activeCombatTargetId);
+        const maxChase = f.ownerTeam ? 24 : fStats.retaliates ? 30 : 18;
+        if (!targetU || targetU.hp <= 0 || targetU.state === 'garrisoned' || targetU.mesh.position.distanceTo(f.mesh.position) > maxChase) {
           f.retaliateTargetId = null;
+          f.attackTargetId = null;
         } else {
-          const dist = f.mesh.position.distanceTo(hunter.mesh.position);
-          if (dist > fStats.radius + 0.9) {
-            moveDest = hunter.mesh.position;
+          const dist = f.mesh.position.distanceTo(targetU.mesh.position);
+          if (dist > fStats.radius + 1.0) {
+            moveDest = targetU.mesh.position;
             moveSpeed = fStats.speed;
           } else {
             f.mesh.rotation.y = Math.atan2(
-              hunter.mesh.position.x - f.mesh.position.x,
-              hunter.mesh.position.z - f.mesh.position.z
+              targetU.mesh.position.x - f.mesh.position.x,
+              targetU.mesh.position.z - f.mesh.position.z
             );
             if (f.attackTimer <= 0) {
-              f.attackTimer = 1.35;
-              this.damageUnit(hunter, fStats.attack, 'enemy');
+              f.attackTimer = 1.3;
+              const attackerTeam: TeamId = f.ownerTeam ?? 'enemy';
+              this.damageUnit(targetU, fStats.attack, attackerTeam);
               soundEngine.playSwordHit();
             }
           }
         }
       }
 
-      // Gentle grazing/wandering around herd origin
-      if (!moveDest && !f.retaliateTargetId) {
+      // 5. Fuga na direção oposta (Caça Passiva)
+      if (!moveDest && f.fleeTimer > 0 && fStats.fleeOnHit) {
+        const fx = THREE.MathUtils.clamp(f.mesh.position.x + f.fleeDirX * 4.0, -PLAYABLE_HALF_SIZE + 3, PLAYABLE_HALF_SIZE - 3);
+        const fz = THREE.MathUtils.clamp(f.mesh.position.z + f.fleeDirZ * 4.0, -PLAYABLE_HALF_SIZE + 3, PLAYABLE_HALF_SIZE - 3);
+        moveDest = new THREE.Vector3(fx, groundHeightAt(fx, fz, this.mapId), fz);
+        moveSpeed = fStats.speed;
+        f.homeX = f.mesh.position.x;
+        f.homeZ = f.mesh.position.z;
+      }
+
+      // 6. Movimento comandado (Rebanhos & Bestas de Set)
+      if (!moveDest && f.moveTarget) {
+        const dMove = Math.hypot(f.moveTarget.x - f.mesh.position.x, f.moveTarget.z - f.mesh.position.z);
+        if (dMove < 0.55) {
+          f.homeX = f.mesh.position.x;
+          f.homeZ = f.mesh.position.z;
+          f.moveTarget = null;
+        } else {
+          moveDest = f.moveTarget;
+          moveSpeed = fStats.speed;
+        }
+      }
+
+      // 7. Pastagem leve ao redor da origem
+      if (!moveDest && !activeCombatTargetId && f.fleeTimer <= 0) {
         f.wanderTimer -= dt;
         if (f.wanderTimer <= 0) {
           if (f.wanderTarget) {
@@ -12002,7 +12495,7 @@ export class AoMEngine {
             f.wanderTimer = 1.8 + Math.random() * 2.8;
           } else {
             const ang = Math.random() * Math.PI * 2;
-            const r = 2 + Math.random() * 6.5;
+            const r = 2 + Math.random() * 5.5;
             const wx = THREE.MathUtils.clamp(f.homeX + Math.cos(ang) * r, -PLAYABLE_HALF_SIZE + 3, PLAYABLE_HALF_SIZE - 3);
             const wz = THREE.MathUtils.clamp(f.homeZ + Math.sin(ang) * r, -PLAYABLE_HALF_SIZE + 3, PLAYABLE_HALF_SIZE - 3);
             if (this.isWalkableTerrainPoint(wx, wz)) {
@@ -12035,6 +12528,8 @@ export class AoMEngine {
             if (f.mesh.userData.backRightLeg) f.mesh.userData.backRightLeg.rotation.x = swing;
           } else {
             f.wanderTarget = null;
+            f.moveTarget = null;
+            f.fleeDirX = -f.fleeDirX;
           }
         }
       } else if (dt > 0) {
@@ -12045,10 +12540,11 @@ export class AoMEngine {
       }
 
       if (f.mesh.userData.selectionRing) {
-        f.mesh.userData.selectionRing.visible = f.selected;
+        f.mesh.userData.selectionRing.visible = f.selected || f.ownerTeam === 'player';
       }
       const foodRatio = f.foodAmount / Math.max(1, f.maxFood);
-      this.updateHealthBarVisual(f.mesh, f.hp, f.maxHp, f.selected, undefined, foodRatio);
+      const hpBarColor = f.ownerTeam === 'player' ? 0x38bdf8 : f.ownerTeam === 'enemy' ? 0xef4444 : undefined;
+      this.updateHealthBarVisual(f.mesh, f.hp, f.maxHp, f.selected, hpBarColor, foodRatio);
     }
   }
 
@@ -12745,12 +13241,14 @@ export class AoMEngine {
 
       // Periodically let enemy AI research economy/military upgrades if it owns the matching building
       const enemyTechOrder: TechId[] = [
+        'hunting_dogs',
         'hand_axe',
         'pickaxe',
         'medium_soldiers',
         'copper_weapons',
         'copper_mail',
         'copper_shields',
+        'husbandry',
         'plow',
         'omniscience',
         'heavy_soldiers',
@@ -13105,27 +13603,54 @@ export class AoMEngine {
     if (selFauna.length > 0) {
       const f = selFauna[0];
       const fStats = FAUNA_STATS[f.kind];
+      const isSetPlayer = this.isTeamSet('player');
+      const canFatten = Boolean(!f.isCarcass && fStats.category === 'herdable' && fStats.maxFattenedFood && f.foodAmount < fStats.maxFattenedFood);
+      const ownerTag =
+        f.ownerTeam === 'player'
+          ? f.isSetConverted
+            ? 'Animal de Set (Aliado)'
+            : 'Rebanho Aliado'
+          : f.ownerTeam === 'enemy'
+          ? 'Rebanho Inimigo'
+          : undefined;
       return {
         count: 1,
         primaryType: 'fauna',
         entityId: f.id,
         faunaKind: f.kind,
-        kindLabel: f.isCarcass ? `${fStats.name} (Carcaça)` : fStats.name,
+        faunaCategory: fStats.category,
+        faunaOwnerTeam: f.ownerTeam ?? undefined,
+        canFatten,
+        maxFattenedFood: fStats.maxFattenedFood,
+        canConvertFauna: Boolean(isSetPlayer && !f.isCarcass && !fStats.isAquatic && f.ownerTeam !== 'player'),
+        canCommandFauna: Boolean(f.ownerTeam === 'player' && !f.isCarcass && !fStats.isAquatic),
+        nonHarvestableFauna: Boolean(fStats.isAquatic),
+        kindLabel: f.isCarcass
+          ? `${fStats.name} (Carcaça)`
+          : ownerTag
+          ? `${fStats.name} · ${ownerTag}`
+          : fStats.name,
         roleLabel: f.isCarcass
           ? 'Carcaça abatida — pronta para coleta contínua de Alimento por Aldeões.'
           : fStats.role,
-        team: 'neutral',
+        team: f.ownerTeam ?? 'neutral',
         hp: Math.round(f.isCarcass ? f.foodAmount : f.hp),
         maxHp: f.isCarcass ? f.maxFood : f.maxHp,
         attack: fStats.attack > 0 ? fStats.attack : undefined,
         speed: fStats.speed,
-        resourceType: 'food',
-        resourceAmount: Math.round(f.foodAmount),
-        resourceMaxAmount: f.maxFood,
+        resourceType: fStats.isAquatic ? undefined : 'food',
+        resourceAmount: fStats.isAquatic ? undefined : Math.round(f.foodAmount),
+        resourceMaxAmount: fStats.isAquatic ? undefined : f.maxFood,
         isCarcass: f.isCarcass,
         screenPos: this.projectWorldToScreen(f.mesh.position, 2.5),
-        taskLabel: f.isCarcass
-          ? `Alimento disponível: ${Math.round(f.foodAmount)} / ${f.maxFood}`
+        taskLabel: fStats.isAquatic
+          ? 'Fauna Marinha Decorativa (ambientação oceânica)'
+          : f.isCarcass
+          ? `Carne disponível: ${Math.round(f.foodAmount)} / ${f.maxFood}`
+          : canFatten
+          ? `Engordando: ${Math.round(f.foodAmount)} / ${fStats.maxFattenedFood} · Vida: ${Math.round(f.hp)}/${f.maxHp}`
+          : f.ownerTeam === 'player' && f.isSetConverted
+          ? `Fera Sagrada de Set — clique direito para mover/atacar · Carne: ${Math.round(f.foodAmount)}`
           : `Alimento: ${Math.round(f.foodAmount)} / ${f.maxFood} · Vida: ${Math.round(f.hp)}/${f.maxHp}`,
         hasVillagerSelected: false,
       };
@@ -13138,7 +13663,7 @@ export class AoMEngine {
         berry: 'Fonte Frutífera',
         tree: `Floresta (${mapCfg.floraLabel.split(' e ')[0]})`,
         gold_mine: 'Veio de Ouro',
-        fish_spot: 'Cardume de Peixes',
+        fish_spot: n.subLabel ?? 'Cardume de Peixes',
       };
       const resLabel: Record<ResourceType, string> = {
         food: 'Alimento',
@@ -13146,20 +13671,26 @@ export class AoMEngine {
         gold: 'Ouro',
         favor: 'Favor',
       };
+      const isInfinite = n.kind === 'fish_spot';
       return {
         count: 1,
         primaryType: 'resource',
         entityId: n.id,
         kindLabel: labelMap[n.kind],
-        roleLabel: `Fonte de ${resLabel[n.resourceType]} — Aldeões colhem continuamente até esgotar.`,
+        roleLabel: isInfinite
+          ? 'Fonte infinita de Alimento coletada por Barcos Pesqueiros a partir de Docas.'
+          : `Fonte de ${resLabel[n.resourceType]} — Aldeões colhem continuamente até esgotar.`,
         team: 'neutral',
         hp: Math.round(n.amount),
         maxHp: n.maxAmount,
         resourceType: n.resourceType,
         resourceAmount: Math.round(n.amount),
         resourceMaxAmount: n.maxAmount,
+        isInfiniteResource: isInfinite,
         screenPos: this.projectWorldToScreen(n.mesh.position, n.kind === 'tree' ? 5.3 : 2.6),
-        taskLabel: `${resLabel[n.resourceType]} restante: ${Math.round(n.amount)} / ${n.maxAmount}`,
+        taskLabel: isInfinite
+          ? `${resLabel[n.resourceType]}: Fonte Infinita (Barco Pesqueiro)`
+          : `${resLabel[n.resourceType]} restante: ${Math.round(n.amount)} / ${n.maxAmount}`,
         hasVillagerSelected: false,
       };
     }
@@ -13527,6 +14058,7 @@ export class AoMEngine {
       villagerPriority: this.villagerPriority,
       aiPersonality: this.aiPersonality,
       campaignScenarioId: this.campaignScenarioId,
+      isSetPlayer: this.isTeamSet('player'),
       controlGroups: Array.from(this.controlGroups.entries())
         .filter(([, ids]) => ids.some((id) => {
           const u = this.units.get(id);

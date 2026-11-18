@@ -4,7 +4,7 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { MapId } from './types';
-import { resolveEffectiveMapId } from './mapGeography';
+import { resolveEffectiveMapId } from '../TEXTURA/maps';
 
 const _v3A = new THREE.Vector3();
 const _v3B = new THREE.Vector3();
@@ -484,6 +484,21 @@ export class VisualEffectsManager {
     this.biomeMotes.frustumCulled = false;
     this.biomeMotes.renderOrder = 6;
     this.scene.add(this.biomeMotes);
+
+    // Customize ambient soaring birds per biome (gaivotas, corvos, abutres, falcões)
+    const birdMat = this.birdMesh.material as THREE.MeshBasicMaterial;
+    const isNordicRaven =
+      effId === 'tundra' || effId === 'jotunheim' || effId === 'midgard' || effId === 'vinlandsaga' || effId === 'ghost_lake';
+    const isDesertVulture =
+      effId === 'nile' || effId === 'oasis' || effId === 'savannah' || effId === 'watering_hole';
+    const isErebusBird = effId === 'erebus';
+    birdMat.color.setHex(
+      isErebusBird ? 0x7c2d12 : isNordicRaven ? 0x1e293b : isDesertVulture ? 0x5c3c24 : 0xf8fafc
+    );
+    for (let i = 0; i < this.birdCount; i++) {
+      this.birdStates[i].speed = isDesertVulture ? 0.19 + (i % 4) * 0.04 : 0.26 + (i % 4) * 0.06;
+      this.birdStates[i].height = isErebusBird ? 17 + (i % 4) * 2.5 : 14.5 + (i % 4) * 2.4;
+    }
   }
 
   public setCamera(camera: THREE.Camera) {

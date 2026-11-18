@@ -65,6 +65,8 @@ function getTechTheme(techId: TechId): PaletteTheme {
     case 'hand_axe':
     case 'pickaxe':
     case 'plow':
+    case 'hunting_dogs':
+    case 'husbandry':
       return THEMES.economy;
     case 'watch_tower':
     case 'engineers':
@@ -381,6 +383,28 @@ function renderArtwork(techId: TechId) {
           <path d="M7 22 H24" stroke="#84cc16" strokeWidth="2.2" strokeLinecap="round" />
           <path d="M9 12 L18 21 L23 17" fill="none" stroke="#fde68a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
           <circle cx="12" cy="20" r="2.6" fill="none" stroke="#d97706" strokeWidth="2" />
+        </g>
+      );
+
+    case 'hunting_dogs':
+      return (
+        <g>
+          {/* Hunting spear & swift hound silhouette */}
+          <path d="M7 25 L24 8" stroke="#fde68a" strokeWidth="2.2" strokeLinecap="round" />
+          <path d="M21.5 7.5 L26 6.5 L24.5 11 Z" fill="#f8fafc" />
+          <path d="M9 18 C11 14 16 14 18 16.5 L21 15 L22 18 L18.5 19.5 L17 24 H14.5 L15 20 H11.5 L10 24 H8 Z" fill="#d97706" stroke="#fef3c7" strokeWidth="0.9" />
+        </g>
+      );
+
+    case 'husbandry':
+      return (
+        <g>
+          {/* Horned herd animal & pasture */}
+          <path d="M7 24 H25" stroke="#84cc16" strokeWidth="2.2" strokeLinecap="round" />
+          <path d="M10 12 C9 9 11.5 8 13 10.5 H19 C20.5 8 23 9 22 12 L21 19 H11 Z" fill="#e7dac3" stroke="#78350f" strokeWidth="1.2" />
+          <circle cx="14" cy="14" r="1.1" fill="#451a03" />
+          <circle cx="18" cy="14" r="1.1" fill="#451a03" />
+          <path d="M14 17 H18" stroke="#b45309" strokeWidth="1.4" strokeLinecap="round" />
         </g>
       );
 

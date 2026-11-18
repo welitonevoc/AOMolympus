@@ -6,7 +6,7 @@ import {
   getEffectiveMapConfig,
   getMapBiomeVisuals,
   groundHeightAt,
-} from '../game/mapGeography';
+} from '../TEXTURA/maps';
 import {
   createFaunaMesh,
   createPlentyVaultMesh,

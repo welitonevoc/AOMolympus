@@ -165,6 +165,8 @@ interface GameHUDProps {
   onAssignControlGroup?: (group: number) => void;
   onEmbarkTransport?: (shipId?: string) => void;
   onDisembarkTransport?: (shipId: string) => void;
+  onSummonSetAnimal?: (kind: 'baboon' | 'hyena' | 'crocodile' | 'hippo') => void;
+  onConvertFauna?: () => void;
   onRestart: () => void;
   onReturnTitle: () => void;
 }
@@ -239,6 +241,25 @@ function formatCost(cost: { food?: number; wood?: number; gold?: number; favor?:
   return parts.join(' · ');
 }
 
+function getFaunaCategoryLabel(cat?: string): string {
+  switch (cat) {
+    case 'herdable':
+      return 'Rebanho';
+    case 'hunt_passive':
+      return 'Caça Mansa';
+    case 'hunt_defensive':
+      return 'Caça Defensiva';
+    case 'predator':
+      return 'Predador';
+    case 'aquatic_decor':
+      return 'Fauna Marinha';
+    case 'set_animal':
+      return 'Animal de Set';
+    default:
+      return 'Fauna';
+  }
+}
+
 export function GameHUD({
   hud,
   muted,
@@ -297,6 +318,8 @@ export function GameHUD({
   onAssignControlGroup,
   onEmbarkTransport,
   onDisembarkTransport,
+  onSummonSetAnimal,
+  onConvertFauna,
   onRestart,
   onReturnTitle,
 }: GameHUDProps) {
@@ -1395,7 +1418,7 @@ export function GameHUD({
                   {hud.selection.primaryType === 'fauna'
                     ? hud.selection.isCarcass
                       ? 'Abatido'
-                      : 'Caça'
+                      : getFaunaCategoryLabel(hud.selection.faunaCategory)
                     : hud.selection.resourceType === 'wood'
                     ? 'Madeira'
                     : hud.selection.resourceType === 'gold'
@@ -1423,61 +1446,111 @@ export function GameHUD({
                 </div>
               )}
 
-              {hud.selection.resourceMaxAmount !== undefined && hud.selection.resourceMaxAmount > 0 && (
+              {hud.selection.isInfiniteResource ? (
                 <div className="mt-1">
-                  <div className="flex items-center justify-between text-[10px] text-[#fde68a]">
+                  <div className="flex items-center justify-between text-[10px] text-[#7dd3fc]">
                     <span className="flex items-center gap-1">
-                      {hud.selection.resourceType === 'wood' ? (
-                        <Trees className="h-3 w-3 text-[#4ade80]" />
-                      ) : hud.selection.resourceType === 'gold' ? (
-                        <Coins className="h-3 w-3 text-[#facc15]" />
-                      ) : (
-                        <Wheat className="h-3 w-3 text-[#fb923c]" />
-                      )}
-                      <span>Restante</span>
+                      <Waves className="h-3 w-3 text-[#38bdf8]" />
+                      <span>Pesca</span>
                     </span>
-                    <span className="font-mono-num font-bold text-white">
-                      {hud.selection.resourceAmount ?? 0}/{hud.selection.resourceMaxAmount}
-                    </span>
+                    <span className="font-mono-num font-bold text-white">∞ Infinito</span>
                   </div>
-                  <div className="mt-0.5 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
-                    <div
-                      className={`h-full transition-all ${
-                        hud.selection.resourceType === 'wood'
-                          ? 'bg-[#4ade80]'
-                          : hud.selection.resourceType === 'gold'
-                          ? 'bg-[#facc15]'
-                          : 'bg-[#fb923c]'
-                      }`}
-                      style={{
-                        width: `${Math.max(
-                          2,
-                          Math.min(100, ((hud.selection.resourceAmount ?? 0) / hud.selection.resourceMaxAmount) * 100)
-                        )}%`,
-                      }}
-                    />
+                </div>
+              ) : (
+                hud.selection.resourceMaxAmount !== undefined &&
+                hud.selection.resourceMaxAmount > 0 && (
+                  <div className="mt-1">
+                    <div className="flex items-center justify-between text-[10px] text-[#fde68a]">
+                      <span className="flex items-center gap-1">
+                        {hud.selection.resourceType === 'wood' ? (
+                          <Trees className="h-3 w-3 text-[#4ade80]" />
+                        ) : hud.selection.resourceType === 'gold' ? (
+                          <Coins className="h-3 w-3 text-[#facc15]" />
+                        ) : (
+                          <Wheat className="h-3 w-3 text-[#fb923c]" />
+                        )}
+                        <span>Restante</span>
+                      </span>
+                      <span className="font-mono-num font-bold text-white">
+                        {hud.selection.resourceAmount ?? 0}/{hud.selection.resourceMaxAmount}
+                      </span>
+                    </div>
+                    <div className="mt-0.5 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+                      <div
+                        className={`h-full transition-all ${
+                          hud.selection.resourceType === 'wood'
+                            ? 'bg-[#4ade80]'
+                            : hud.selection.resourceType === 'gold'
+                            ? 'bg-[#facc15]'
+                            : 'bg-[#fb923c]'
+                        }`}
+                        style={{
+                          width: `${Math.max(
+                            2,
+                            Math.min(100, ((hud.selection.resourceAmount ?? 0) / hud.selection.resourceMaxAmount) * 100)
+                          )}%`,
+                        }}
+                      />
+                    </div>
                   </div>
+                )
+              )}
+
+              {hud.selection.canFatten && hud.selection.maxFattenedFood && (
+                <div className="mt-1 text-[10px] text-emerald-300 font-medium">
+                  Engorda até {hud.selection.maxFattenedFood} Alim.
                 </div>
               )}
 
-              {onOrderVillagersToTarget && (
-                <button
-                  type="button"
-                  onClick={onOrderVillagersToTarget}
-                  className="mt-2 flex w-full items-center justify-center gap-1.5 rounded bg-[#d4af37] px-2 py-1 text-[11px] font-bold text-[#0b0e14] hover:bg-[#e5c45e] cursor-pointer"
-                >
-                  {hud.selection.primaryType === 'fauna' && !hud.selection.isCarcass ? (
-                    <>
-                      <Swords className="h-3 w-3" />
-                      <span>Caçar</span>
-                    </>
-                  ) : (
-                    <>
-                      <Hammer className="h-3 w-3" />
-                      <span>Colher</span>
-                    </>
+              {hud.selection.canCommandFauna && (
+                <div className="mt-1 text-[10px] text-[#7dd3fc] font-medium">
+                  Sob seu comando · Clique direito move/ataca
+                </div>
+              )}
+
+              {hud.selection.nonHarvestableFauna ? (
+                <div className="mt-1.5 rounded border border-white/10 bg-[#141c28] px-2 py-1 text-[10px] text-[#94a3b8]">
+                  Ambientação marinha — não coletável
+                </div>
+              ) : (
+                <div className="mt-2 flex flex-col gap-1">
+                  {onOrderVillagersToTarget && (
+                    <button
+                      type="button"
+                      onClick={onOrderVillagersToTarget}
+                      className="flex w-full items-center justify-center gap-1.5 rounded bg-[#d4af37] px-2 py-1 text-[11px] font-bold text-[#0b0e14] hover:bg-[#e5c45e] cursor-pointer"
+                    >
+                      {hud.selection.primaryType === 'fauna' && !hud.selection.isCarcass ? (
+                        hud.selection.faunaCategory === 'herdable' && hud.selection.faunaOwnerTeam === 'player' ? (
+                          <>
+                            <Wheat className="h-3 w-3" />
+                            <span>Abater p/ Carne</span>
+                          </>
+                        ) : (
+                          <>
+                            <Swords className="h-3 w-3" />
+                            <span>Caçar</span>
+                          </>
+                        )
+                      ) : (
+                        <>
+                          <Hammer className="h-3 w-3" />
+                          <span>Colher</span>
+                        </>
+                      )}
+                    </button>
                   )}
-                </button>
+                  {hud.selection.canConvertFauna && onConvertFauna && (
+                    <button
+                      type="button"
+                      onClick={onConvertFauna}
+                      className="flex w-full items-center justify-center gap-1.5 rounded border border-amber-400/60 bg-[#2a1c0b] px-2 py-1 text-[10px] font-bold text-amber-200 hover:bg-[#3c270e] cursor-pointer"
+                    >
+                      <Sparkles className="h-3 w-3 text-amber-300" />
+                      <span>Converter (Set)</span>
+                    </button>
+                  )}
+                </div>
               )}
             </div>
           </div>
@@ -2119,6 +2192,61 @@ export function GameHUD({
                           </button>
                         )}
 
+                        {hud.isSetPlayer &&
+                          onSummonSetAnimal &&
+                          (selectedPlayerBuildingKind === 'temple' ||
+                            selectedPlayerBuildingKind === 'town_center' ||
+                            selectedPlayerBuildingKind === 'village_center') && (
+                            <div className="flex flex-col gap-1 rounded border border-amber-500/40 bg-[#1e1509] p-1.5">
+                              <div className="flex items-center justify-between text-[10px] font-bold text-amber-300">
+                                <span className="flex items-center gap-1">
+                                  <Sparkles className="h-3 w-3 text-amber-400" />
+                                  <span>Animais de Set (Favor)</span>
+                                </span>
+                                <span className="font-mono-num text-[9px] text-amber-200/80">
+                                  {Math.floor(hud.resources.favor)} Fav
+                                </span>
+                              </div>
+                              <div className="grid grid-cols-2 sm:grid-cols-4 gap-1">
+                                {(
+                                  [
+                                    { kind: 'baboon', label: 'Babuíno', cost: 8, minAge: 1 },
+                                    { kind: 'hyena', label: 'Hiena', cost: 12, minAge: 1 },
+                                    { kind: 'crocodile', label: 'Crocodilo', cost: 16, minAge: 2 },
+                                    { kind: 'hippo', label: 'Hipopótamo', cost: 22, minAge: 3 },
+                                  ] as const
+                                ).map((sa) => {
+                                  const locked = hud.age < sa.minAge || hud.resources.favor < sa.cost;
+                                  return (
+                                    <button
+                                      key={sa.kind}
+                                      type="button"
+                                      disabled={locked}
+                                      onClick={() => onSummonSetAnimal(sa.kind)}
+                                      title={
+                                        hud.age < sa.minAge
+                                          ? `Disponível a partir da Era ${sa.minAge}`
+                                          : `Invocar ${sa.label} de Set por ${sa.cost} Favor`
+                                      }
+                                      className={`flex flex-col items-start rounded border px-1.5 py-1 text-left transition-colors cursor-pointer ${
+                                        locked
+                                          ? 'border-white/10 bg-[#10131b] text-[#64748b] cursor-not-allowed'
+                                          : 'border-amber-400/50 bg-[#2b1d0b] text-amber-100 hover:border-amber-300 hover:bg-[#3a270f]'
+                                      }`}
+                                    >
+                                      <span className="text-[10px] font-semibold leading-tight truncate w-full">
+                                        {sa.label}
+                                      </span>
+                                      <span className="font-mono-num text-[9px] text-amber-300/90">
+                                        {hud.age < sa.minAge ? AGE_NAMES[sa.minAge] : `${sa.cost} Fav`}
+                                      </span>
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+
                         {selectedPlayerBuildingKind === 'monument' && (
                           <div className="flex flex-col gap-1 rounded border border-[#facc15]/35 bg-[#1b170d] p-2">
                             <div className="flex flex-wrap items-center justify-between gap-1 text-[10px]">
@@ -2538,6 +2666,36 @@ export function GameHUD({
                     </button>
                   )}
 
+                  {hud.isSetPlayer &&
+                    (hud.selection.unitKind === 'priest' ||
+                      hud.selection.unitKind === 'pharaoh' ||
+                      hud.selection.unitKind === 'son_of_osiris') && (
+                      <div className="flex items-center gap-1">
+                        {onConvertFauna && (
+                          <button
+                            type="button"
+                            onClick={onConvertFauna}
+                            title="Converter o animal selvagem mais próximo para lutar por Set"
+                            className="flex flex-1 items-center justify-center gap-1 rounded border border-amber-400/60 bg-[#2a1c0b] px-2 py-1 text-[10px] font-bold text-amber-200 hover:bg-[#3b270e] cursor-pointer"
+                          >
+                            <Sparkles className="h-3 w-3 text-amber-300 shrink-0" />
+                            <span>Converter Fera</span>
+                          </button>
+                        )}
+                        {onSummonSetAnimal && (
+                          <button
+                            type="button"
+                            disabled={hud.resources.favor < 12}
+                            onClick={() => onSummonSetAnimal('hyena')}
+                            title="Invocar Hiena de Set (12 Favor)"
+                            className="rounded border border-amber-400/50 bg-[#241809] px-2 py-1 text-[10px] font-bold text-amber-200 hover:bg-[#35230d] disabled:opacity-45 cursor-pointer"
+                          >
+                            +Hiena 12F
+                          </button>
+                        )}
+                      </div>
+                    )}
+
                   {hud.selection.unitKind === 'oracle' && (
                     <div className="flex flex-col gap-1">
                       <div className="flex items-center justify-between rounded border border-[#38bdf8]/40 bg-[#0d1e2e] px-2 py-1 text-[10px]">
@@ -2625,13 +2783,20 @@ export function GameHUD({
                   <p className="text-[11px] leading-snug text-[#94a3b8]">
                     {hud.selection.primaryType === 'settlement'
                       ? 'Assentamento neutro: envie Aldeões para fundar um novo Centro da Cidade.'
+                      : hud.selection.nonHarvestableFauna
+                      ? 'Fauna marinha decorativa: compõe a vida oceânica do mapa e não fornece recursos.'
+                      : hud.selection.canCommandFauna
+                      ? 'Animal sob seu comando: clique com o botão direito para mover, pastorear ou atacar.'
                       : hud.selection.primaryType === 'resource' || hud.selection.primaryType === 'fauna'
-                      ? 'Selecione Aldeões ou clique abaixo para enviar trabalhadores automaticamente.'
+                      ? hud.selection.isInfiniteResource
+                        ? 'Cardume infinito: selecione Barcos de Pesca ou Aldeões para coleta contínua de alimento.'
+                        : 'Selecione Aldeões ou clique abaixo para enviar trabalhadores automaticamente.'
                       : 'Selecione um Aldeão para construir, uma Estrutura para treinar/pesquisar ou Tropas para comandar.'}
                   </p>
 
                   <div className="flex flex-wrap gap-1.5">
                     {(hud.selection.primaryType === 'fauna' || hud.selection.primaryType === 'resource') &&
+                      !hud.selection.nonHarvestableFauna &&
                       onOrderVillagersToTarget && (
                         <button
                           type="button"
@@ -2643,11 +2808,23 @@ export function GameHUD({
                             {hud.selection.primaryType === 'fauna'
                               ? hud.selection.isCarcass
                                 ? 'Colher Carne'
+                                : hud.selection.faunaCategory === 'herdable' && hud.selection.faunaOwnerTeam === 'player'
+                                ? 'Abater p/ Carne'
                                 : 'Caçar Animal'
                               : 'Colher Recurso'}
                           </span>
                         </button>
                       )}
+                    {hud.selection.canConvertFauna && onConvertFauna && (
+                      <button
+                        type="button"
+                        onClick={onConvertFauna}
+                        className="flex flex-1 items-center justify-center gap-1.5 rounded border border-amber-400/60 bg-[#2a1c0b] px-2.5 py-1.5 text-[11px] font-bold text-amber-200 hover:bg-[#3c270e] cursor-pointer"
+                      >
+                        <Sparkles className="h-3.5 w-3.5 text-amber-300" />
+                        <span>Converter (Set)</span>
+                      </button>
+                    )}
                     <button
                       type="button"
                       onClick={onFocusTownCenter}
@@ -2786,14 +2963,28 @@ export function GameHUD({
                     </div>
                   )}
 
-                  {hud.selection.primaryType === 'fauna' &&
+                  {hud.selection.isInfiniteResource ? (
+                    <div className="text-[10px] font-mono-num text-[#7dd3fc]">
+                      Cardume: ∞ Infinito (Pesca Contínua)
+                    </div>
+                  ) : hud.selection.primaryType === 'fauna' &&
                     !hud.selection.isCarcass &&
                     hud.selection.resourceMaxAmount &&
-                    hud.selection.resourceMaxAmount > 0 && (
-                      <div className="text-[10px] font-mono-num text-[#fde68a]">
+                    hud.selection.resourceMaxAmount > 0 ? (
+                    <div className="flex flex-col gap-0.5 text-[10px]">
+                      <div className="font-mono-num text-[#fde68a]">
                         Alimento: {hud.selection.resourceAmount}/{hud.selection.resourceMaxAmount}
+                        {hud.selection.canFatten && hud.selection.maxFattenedFood
+                          ? ` (engorda até ${hud.selection.maxFattenedFood})`
+                          : ''}
                       </div>
-                    )}
+                      {hud.selection.faunaCategory && (
+                        <div className="text-[#94a3b8]">
+                          Categoria: <span className="text-[#cbd5e1]">{getFaunaCategoryLabel(hud.selection.faunaCategory)}</span>
+                        </div>
+                      )}
+                    </div>
+                  ) : null}
                 </div>
               </div>
 

@@ -1,4 +1,5 @@
-import { FaunaKind, MapId, MAPS, MapWeatherKind } from './types';
+import { FaunaKind } from '../../game/types';
+import { MapId, MAPS, MapWeatherKind, WorldSizeId } from './mapCatalog';
 
 export type BiomeTreeStyle =
   | 'oak'
@@ -41,6 +42,8 @@ export interface MapResourceProfile {
   faunaSpawns: [FaunaKind, number, number][];
   /** Dominant hunt kinds for Great Hunt god power */
   huntPool: FaunaKind[];
+  /** Decorative ambient marine life pool for water/island/river maps */
+  aquaticDecorPool: ('sea_turtle' | 'dolphin' | 'whale')[];
 }
 
 export const MAP_HALF_SIZE_GEO = 74;
@@ -48,7 +51,17 @@ export const PLAYABLE_HALF_SIZE_GEO = 58;
 
 export interface UnknownRollState {
   seed: number;
-  terrainTemplate: 'highland' | 'oasis' | 'savannah' | 'marsh' | 'tundra' | 'acropolis' | 'islands' | 'archipelago' | 'valley_of_the_kings' | 'midgard';
+  terrainTemplate:
+    | 'highland'
+    | 'oasis'
+    | 'savannah'
+    | 'marsh'
+    | 'tundra'
+    | 'acropolis'
+    | 'islands'
+    | 'archipelago'
+    | 'valley_of_the_kings'
+    | 'midgard';
   biomeTemplate: Exclude<MapId, 'land_unknown' | 'the_unknown'>;
   noiseOffsetX: number;
   noiseOffsetZ: number;
@@ -471,7 +484,6 @@ export function groundHeightAt(x: number, z: number, mapId: MapId = 'mediterrane
   }
 
   if (effectiveKey === 'highland') {
-    // Wide central river along x - z = 0, bridged by TWO solid stone/sand fords at (-15,-15) & (15,15)
     const riverDist = Math.abs(x - z) / Math.SQRT2;
     const fordA = Math.hypot(x + 15, z + 15);
     const fordB = Math.hypot(x - 15, z - 15);
@@ -485,7 +497,6 @@ export function groundHeightAt(x: number, z: number, mapId: MapId = 'mediterrane
   }
 
   if (effectiveKey === 'islands') {
-    // Two main starting islands + central treasure island, joined by shallow navigable sandbars (y >= -0.22)
     const dCenter = Math.hypot(x, z);
     const onPlayerIsland = Math.max(0, 1 - Math.max(0, distPlayer - 15) / 8);
     const onEnemyIsland = Math.max(0, 1 - Math.max(0, distEnemy - 15) / 8);
@@ -498,7 +509,6 @@ export function groundHeightAt(x: number, z: number, mapId: MapId = 'mediterrane
   }
 
   if (effectiveKey === 'archipelago') {
-    // 5 stepping-stone islets connected by shallow coral reefs (walkable >= -0.24)
     const d1 = Math.hypot(x + 34, z - 34);
     const d2 = Math.hypot(x - 34, z + 34);
     const d3 = Math.hypot(x, z);
@@ -514,11 +524,8 @@ export function groundHeightAt(x: number, z: number, mapId: MapId = 'mediterrane
   }
 
   if (effectiveKey === 'team_migration' || effectiveKey === 'vinlandsaga') {
-    // Starting islands on NW/SE flanks? Wait: player is (-34,34) SW, enemy is (34,-34) NE.
-    // Center/NW/SE forms the rich main continent! Small starter island connects via wide shallow fjord.
     const onPlayerIsle = Math.max(0, 1 - Math.max(0, distPlayer - 12.5) / 6);
     const onEnemyIsle = Math.max(0, 1 - Math.max(0, distEnemy - 12.5) / 6);
-    // Rich central + flanking continent along x - z corridor
     const distContinent = Math.hypot(x * 0.85, z * 0.85);
     const onContinent = Math.max(0, 1 - Math.max(0, distContinent - 20) / 8);
     const channelBridge = Math.abs(x + z) / Math.SQRT2 < 6.0 && Math.hypot(x, z) < 42;
@@ -529,7 +536,6 @@ export function groundHeightAt(x: number, z: number, mapId: MapId = 'mediterrane
   }
 
   if (effectiveKey === 'marsh') {
-    // Waterlogged wetlands with winding shallow pools (-0.25) and dry forest islands (0.45..0.95)
     const bogWave = Math.sin(sx * 0.085) * Math.cos(sz * 0.085) + Math.sin((sx - sz) * 0.06) * 0.55;
     const pool = bogWave * 0.58 * baseFlatten;
     return Math.max(-3.6, 0.36 + pool + shoreDrop);
@@ -541,7 +547,6 @@ export function groundHeightAt(x: number, z: number, mapId: MapId = 'mediterrane
   }
 
   if (effectiveKey === 'anatolia') {
-    // Wide fertile central corridor; deep sea basins on NW (-38,-38) & SE (38,38) edges
     const dSeaNW = Math.hypot(x + 42, z + 42);
     const dSeaSE = Math.hypot(x - 42, z - 42);
     const seaBasin =
@@ -552,7 +557,6 @@ export function groundHeightAt(x: number, z: number, mapId: MapId = 'mediterrane
   }
 
   if (effectiveKey === 'midgard') {
-    // Large central rounded continent ringed by Nordic fjords & walkable coastal shallows
     const r = Math.hypot(x, z);
     const rimDip = r > 44 ? -Math.min(2.6, (r - 44) * 0.22) : 0;
     const hills = (Math.sin(sx * 0.06) * Math.cos(sz * 0.06) * 1.1 + 0.35) * baseFlatten;
@@ -560,7 +564,6 @@ export function groundHeightAt(x: number, z: number, mapId: MapId = 'mediterrane
   }
 
   if (effectiveKey === 'king_of_the_hill') {
-    // Prominent flat-topped central hill plateau (r < 11) with gentle slopes up to y ~ 2.0
     const r = Math.hypot(x, z);
     const hillCore = Math.max(0, 1 - Math.max(0, r - 9.5) / 14) * 1.75;
     const outerFlat = Math.sin(sx * 0.05) * Math.cos(sz * 0.05) * 0.48 * baseFlatten;
@@ -568,13 +571,11 @@ export function groundHeightAt(x: number, z: number, mapId: MapId = 'mediterrane
   }
 
   if (effectiveKey === 'savannah') {
-    // Open sweeping grassy plain with small low mesa ridges
     const plain = (Math.sin(sx * 0.04) * Math.cos(sz * 0.04) * 0.55 + Math.cos(sx * 0.09) * 0.2) * baseFlatten;
     return Math.max(-3.6, 0.42 + plain + shoreDrop);
   }
 
   if (effectiveKey === 'watering_hole') {
-    // Arid savanna dotted by 5 shallow wildlife water holes (y ~ -0.24 so fauna/units wade edges cleanly)
     const holes: [number, number, number][] = [
       [0, 0, 8.5],
       [-20, -16, 6.5],
@@ -594,7 +595,6 @@ export function groundHeightAt(x: number, z: number, mapId: MapId = 'mediterrane
   }
 
   if (effectiveKey === 'valley_of_the_kings') {
-    // Rich sunken central canyon corridor framed by desert dunes along NW & SE rims
     const canyonDist = Math.abs(x + z) / Math.SQRT2;
     const flankingDunes = canyonDist > 16 ? Math.min(2.4, (canyonDist - 16) * 0.14) * baseFlatten : 0;
     const ripples = Math.sin(sx * 0.065) * Math.cos(sz * 0.065) * 0.65 * baseFlatten;
@@ -602,7 +602,6 @@ export function groundHeightAt(x: number, z: number, mapId: MapId = 'mediterrane
   }
 
   if (effectiveKey === 'sea_of_worms') {
-    // Winding S-curve shallow lagoon/canal in the center with solid bridges
     const curveCenter = Math.sin(x * 0.09) * 14;
     const wormDist = Math.abs(z - curveCenter);
     const bridgeBlend = Math.min(1, Math.max(0, (Math.hypot(x, z) - 7.5) / 6));
@@ -661,24 +660,23 @@ export function groundHeightAt(x: number, z: number, mapId: MapId = 'mediterrane
     return Math.max(-3.6, 0.48 + ridges + shoreDrop);
   }
 
-  // Mediterranean / Megalopolis / Nomad / Sudden Death default gentle coastal plateau
   const hill =
     (Math.sin(sx * 0.065) * Math.cos(sz * 0.065) * 1.35 + Math.sin((sx + sz) * 0.09) * 0.55) * baseFlatten;
   return Math.max(-3.6, 0.35 + hill + shoreDrop);
 }
 
 /**
- * Generates authentic Flora, Gold, Berry, Settlement & Fauna distributions tailored per map.
+ * Generates authentic Flora, Gold, Berry, Settlement & All-5-Category Fauna distributions tailored per map.
  */
 export function buildMapResourceProfile(
   mapId: MapId,
-  worldSize: 'normal' | 'large' | 'giant'
+  worldSize: WorldSizeId
 ): MapResourceProfile {
   const eff = resolveEffectiveMapId(mapId);
 
   const defaultSettlements: [number, number][] =
     eff === 'sudden_death'
-      ? [] // Sudden Death: single fortified Citadel per team — no extra TC expansion spots
+      ? []
       : eff === 'king_of_the_hill'
       ? [
           [-18, 42],
@@ -732,7 +730,6 @@ export function buildMapResourceProfile(
   }
 
   if (eff === 'valley_of_the_kings') {
-    // Rich central canyon filled with massive gold mines
     goldSpots = [
       [-28, 42, 850],
       [28, -42, 850],
@@ -743,7 +740,6 @@ export function buildMapResourceProfile(
       [0, 0, 1800],
     ];
   } else if (eff === 'team_migration' || eff === 'vinlandsaga') {
-    // Scarce starter island gold; rich center continent gold
     goldSpots = [
       [-31, 41, 550],
       [31, -41, 550],
@@ -762,7 +758,6 @@ export function buildMapResourceProfile(
     goldSpots.push([-32, -8, 1100], [32, 8, 1100]);
   }
 
-  // Biome-authentic tree density
   let treeClusters: [number, number, number][] = [
     [-47, 34, 6],
     [-24, 49, 5],
@@ -775,7 +770,6 @@ export function buildMapResourceProfile(
   ];
 
   if (eff === 'tundra') {
-    // Scarce wood in Tundra
     treeClusters = [
       [-45, 34, 3],
       [45, -34, 3],
@@ -785,7 +779,6 @@ export function buildMapResourceProfile(
       [10, -12, 2],
     ];
   } else if (eff === 'oasis') {
-    // Wood concentrated tightly around the central Oasis lake + minimal palm cluster near bases
     treeClusters = [
       [-44, 33, 3],
       [44, -33, 3],
@@ -797,10 +790,8 @@ export function buildMapResourceProfile(
       [12, 12, 4],
     ];
   } else if (eff === 'marsh' || eff === 'yucatan' || eff === 'alfheim') {
-    // Dense sprawling forest groves
     treeClusters.push([-32, 16, 7], [32, -16, 7], [-16, -32, 6], [16, 32, 6]);
   } else if (eff === 'king_of_the_hill') {
-    // Clear the central hill summit at (0,0) for the Plenty Vault; trees ring the base
     treeClusters = [
       [-46, 35, 6],
       [-23, 48, 5],
@@ -817,205 +808,233 @@ export function buildMapResourceProfile(
     treeClusters.push([-34, -34, 5], [34, 34, 5]);
   }
 
-  // Biome-authentic Fauna herds
-  const herdsByMap: Record<Exclude<MapId, 'land_unknown' | 'the_unknown'>, { huntPool: FaunaKind[]; spawns: [FaunaKind, number, number][] }> = {
+  // Biome-authentic Fauna herds across all AoM: Retold categories:
+  // Herdables (cow, goat, pig, turkey, capybara, yak), Starter Chickens, Passive Huntables, Defensive Lurable Huntables & Predators
+  const herdsByMap: Record<
+    Exclude<MapId, 'land_unknown' | 'the_unknown'>,
+    { huntPool: FaunaKind[]; spawns: [FaunaKind, number, number][] }
+  > = {
     tundra: {
-      huntPool: ['reindeer', 'musk_ox', 'reindeer', 'wolf'],
+      huntPool: ['reindeer', 'moose', 'musk_ox', 'wolf'],
       spawns: [
-        ['reindeer', -28, 27], ['reindeer', -26, 25], ['reindeer', -24, 26],
+        ['yak', -30, 31], ['yak', -28, 32], ['yak', 30, -31], ['yak', 28, -32],
+        ['reindeer', -28, 27], ['reindeer', -26, 25], ['moose', -24, 26],
         ['musk_ox', -39, 24], ['musk_ox', -41, 22],
-        ['reindeer', 28, -27], ['reindeer', 26, -25], ['musk_ox', 39, -24],
-        ['reindeer', -12, 8], ['reindeer', -10, 10], ['musk_ox', 12, -8], ['musk_ox', 10, -10],
-        ['wolf', -16, -14], ['wolf', 16, 14], ['bear', 0, -12], ['bear', 0, 12],
+        ['reindeer', 28, -27], ['moose', 26, -25], ['musk_ox', 39, -24],
+        ['reindeer', -12, 8], ['moose', 12, -8], ['wolf', -16, -14], ['wolf', 16, 14], ['bear', 0, -12], ['bear', 0, 12],
       ],
     },
     ghost_lake: {
-      huntPool: ['reindeer', 'deer', 'wolf', 'bear'],
+      huntPool: ['reindeer', 'moose', 'musk_ox', 'bear'],
       spawns: [
-        ['reindeer', -29, 26], ['reindeer', -27, 24], ['deer', -40, 24],
-        ['reindeer', 29, -26], ['reindeer', 27, -24], ['deer', 40, -24],
+        ['yak', -30, 31], ['yak', 30, -31],
+        ['reindeer', -29, 26], ['reindeer', -27, 24], ['moose', -40, 24],
+        ['reindeer', 29, -26], ['moose', 27, -24], ['deer', 40, -24],
         ['musk_ox', -22, -16], ['musk_ox', 22, 16],
         ['wolf', -12, -6], ['wolf', 12, 6], ['bear', -20, 10], ['bear', 20, -10],
       ],
     },
     jotunheim: {
-      huntPool: ['musk_ox', 'reindeer', 'bear', 'wolf'],
+      huntPool: ['musk_ox', 'moose', 'reindeer', 'bear'],
       spawns: [
-        ['reindeer', -28, 26], ['reindeer', -26, 24], ['musk_ox', -38, 24],
-        ['reindeer', 28, -26], ['musk_ox', 38, -24],
+        ['yak', -30, 30], ['yak', 30, -30],
+        ['reindeer', -28, 26], ['moose', -26, 24], ['musk_ox', -38, 24],
+        ['reindeer', 28, -26], ['moose', 38, -24],
         ['bear', -14, 10], ['bear', 14, -10], ['wolf', -6, -6], ['wolf', 6, 6],
       ],
     },
     nile: {
       huntPool: ['gazelle', 'camel', 'hippo', 'crocodile'],
       spawns: [
+        ['goat', -30, 30], ['goat', -29, 32], ['goat', 30, -30], ['goat', 29, -32],
+        ['chicken', -37, 36], ['chicken', -38, 37], ['chicken', 37, -36], ['chicken', 38, -37],
         ['gazelle', -28, 27], ['gazelle', -26, 25], ['camel', -39, 25],
         ['gazelle', 28, -27], ['gazelle', 26, -25], ['camel', 39, -25],
-        ['hippo', -10, -6], ['hippo', 10, 6], ['crocodile', -14, -12], ['crocodile', 14, 12],
-        ['gazelle', -22, 18], ['gazelle', 22, -18],
+        ['hippo', -10, -6], ['hippo', 10, 6], ['crocodile', -14, -12], ['crocodile', 14, 12], ['hyena', 8, 16], ['hyena', -8, -16],
       ],
     },
     oasis: {
-      huntPool: ['camel', 'gazelle', 'elephant_wild', 'lion'],
+      huntPool: ['camel', 'gazelle', 'elephant_wild', 'hyena'],
       spawns: [
-        ['camel', -28, 27], ['camel', -26, 25], ['gazelle', -39, 25],
+        ['goat', -30, 30], ['goat', 30, -30],
+        ['chicken', -37, 36], ['chicken', 37, -36],
+        ['camel', -28, 27], ['gazelle', -26, 25], ['gazelle', -39, 25],
         ['camel', 28, -27], ['gazelle', 39, -25],
         ['elephant_wild', -14, 6], ['elephant_wild', 14, -6],
-        ['lion', -16, -12], ['lion', 16, 12], ['gazelle', -22, 18], ['gazelle', 22, -18],
+        ['lion', -16, -12], ['lion', 16, 12], ['hyena', -22, 18], ['hyena', 22, -18],
       ],
     },
     valley_of_the_kings: {
-      huntPool: ['camel', 'gazelle', 'lion', 'crocodile'],
+      huntPool: ['camel', 'gazelle', 'hyena', 'lion'],
       spawns: [
+        ['goat', -30, 31], ['goat', 30, -31],
         ['camel', -28, 27], ['gazelle', -26, 25], ['gazelle', -38, 25],
         ['camel', 28, -27], ['gazelle', 38, -25],
-        // Desert predator guardians near rich central gold canyon
-        ['lion', -8, 4], ['lion', 8, -4], ['lion', -3, -8], ['lion', 3, 8],
+        ['lion', -8, 4], ['lion', 8, -4], ['hyena', -3, -8], ['hyena', 3, 8],
         ['crocodile', -12, 12], ['crocodile', 12, -12],
       ],
     },
     savannah: {
-      huntPool: ['gazelle', 'elephant_wild', 'hippo', 'lion'],
+      huntPool: ['zebra', 'giraffe', 'rhino', 'elephant_wild'],
       spawns: [
-        ['gazelle', -28, 27], ['gazelle', -26, 25], ['gazelle', -24, 24],
-        ['elephant_wild', -39, 24], ['elephant_wild', -41, 22],
-        ['gazelle', 28, -27], ['gazelle', 26, -25], ['elephant_wild', 39, -24],
-        ['hippo', -12, 14], ['hippo', 12, -14],
-        ['lion', -16, -12], ['lion', 16, 12], ['gazelle', 0, 14], ['gazelle', 0, -14],
+        ['goat', -30, 30], ['goat', 30, -30],
+        ['zebra', -28, 27], ['zebra', -26, 25], ['giraffe', -24, 24],
+        ['rhino', -39, 24], ['elephant_wild', -41, 22],
+        ['zebra', 28, -27], ['giraffe', 26, -25], ['rhino', 39, -24],
+        ['elephant_wild', -12, 14], ['elephant_wild', 12, -14],
+        ['lion', -16, -12], ['lion', 16, 12], ['hyena', 0, 14], ['hyena', 0, -14],
       ],
     },
     watering_hole: {
-      huntPool: ['elephant_wild', 'hippo', 'gazelle', 'lion'],
+      huntPool: ['zebra', 'giraffe', 'rhino', 'hippo'],
       spawns: [
-        ['gazelle', -28, 27], ['gazelle', -26, 25], ['elephant_wild', -18, 17],
-        ['gazelle', 28, -27], ['elephant_wild', 18, -17],
-        ['hippo', -4, 4], ['hippo', 4, -4], ['hippo', -20, -14], ['hippo', 20, 14],
-        ['lion', -14, -18], ['lion', 14, 18], ['crocodile', 2, 6],
+        ['goat', -30, 31], ['goat', 30, -31],
+        ['zebra', -28, 27], ['giraffe', -26, 25], ['rhino', -18, 17],
+        ['zebra', 28, -27], ['elephant_wild', 18, -17],
+        ['hippo', -4, 4], ['hippo', 4, -4], ['rhino', -20, -14], ['hippo', 20, 14],
+        ['lion', -14, -18], ['hyena', 14, 18], ['crocodile', 2, 6],
       ],
     },
     marsh: {
-      huntPool: ['crocodile', 'hippo', 'boar', 'deer'],
+      huntPool: ['boar', 'deer', 'hippo', 'alligator'],
       spawns: [
+        ['capybara', -30, 31], ['capybara', -29, 32], ['pig', 30, -31], ['capybara', 29, -32],
         ['deer', -28, 27], ['boar', -39, 24], ['deer', 28, -27], ['boar', 39, -24],
-        ['crocodile', -18, 18], ['crocodile', 18, -18], ['crocodile', -8, -8], ['crocodile', 8, 8],
+        ['crocodile', -18, 18], ['alligator', 18, -18], ['alligator', -8, -8], ['crocodile', 8, 8],
         ['hippo', -24, 12], ['hippo', 24, -12], ['boar', -14, 22], ['boar', 14, -22],
       ],
     },
     highland: {
-      huntPool: ['goat', 'deer', 'bear', 'boar'],
+      huntPool: ['deer', 'moose', 'boar', 'bear'],
       spawns: [
-        ['goat', -28, 27], ['goat', -26, 25], ['deer', -39, 25],
-        ['goat', 28, -27], ['goat', 26, -25], ['deer', 39, -25],
+        ['goat', -30, 30], ['cow', -28, 31], ['goat', 30, -30], ['cow', 28, -31],
+        ['moose', -28, 27], ['deer', -39, 25], ['moose', 28, -27], ['deer', 39, -25],
         ['bear', -18, -12], ['bear', 18, 12], ['boar', -20, 22], ['boar', 20, -22],
         ['wolf', -10, 16], ['wolf', 10, -16],
       ],
     },
     acropolis: {
-      huntPool: ['goat', 'deer', 'boar', 'wolf'],
+      huntPool: ['deer', 'boar', 'aurochs', 'wolf'],
       spawns: [
-        ['goat', -28, 27], ['goat', -26, 25], ['deer', -39, 25],
-        ['goat', 28, -27], ['deer', 39, -25],
+        ['goat', -30, 31], ['goat', -29, 30], ['goat', 30, -31], ['goat', 29, -30],
+        ['chicken', -37, 36], ['chicken', -38, 35], ['chicken', 37, -36], ['chicken', 38, -35],
+        ['deer', -39, 25], ['deer', 39, -25],
         ['boar', -18, 26], ['boar', 18, -26],
         ['aurochs', -6, -6], ['aurochs', 6, 6], ['wolf', -14, -10], ['wolf', 14, 10],
       ],
     },
     islands: {
-      huntPool: ['goat', 'boar', 'deer', 'gazelle'],
+      huntPool: ['boar', 'deer', 'gazelle', 'goat'],
       spawns: [
-        ['goat', -28, 27], ['goat', -26, 25], ['boar', -39, 24],
-        ['goat', 28, -27], ['boar', 39, -24],
+        ['pig', -30, 30], ['goat', -29, 32], ['pig', 30, -30], ['goat', 29, -32],
+        ['chicken', -37, 36], ['chicken', 37, -36],
+        ['boar', -39, 24], ['boar', 39, -24],
         ['deer', -4, 4], ['deer', 4, -4], ['boar', 0, -6],
       ],
     },
     archipelago: {
-      huntPool: ['boar', 'goat', 'crocodile', 'gazelle'],
+      huntPool: ['boar', 'deer', 'gazelle', 'crocodile'],
       spawns: [
-        ['goat', -28, 27], ['boar', -38, 25], ['goat', 28, -27], ['boar', 38, -25],
+        ['pig', -30, 30], ['goat', 30, -30],
+        ['chicken', -37, 36], ['chicken', 37, -36],
+        ['boar', -38, 25], ['boar', 38, -25],
         ['crocodile', -20, -18], ['crocodile', 20, 18], ['deer', -3, 3], ['deer', 3, -3],
       ],
     },
     anatolia: {
-      huntPool: ['goat', 'gazelle', 'boar', 'lion'],
+      huntPool: ['gazelle', 'boar', 'aurochs', 'lion'],
       spawns: [
-        ['goat', -28, 27], ['gazelle', -26, 25], ['boar', -39, 25],
-        ['goat', 28, -27], ['gazelle', 26, -25], ['boar', 39, -25],
+        ['goat', -30, 30], ['turkey', -29, 31], ['goat', 30, -30], ['turkey', 29, -31],
+        ['gazelle', -26, 25], ['boar', -39, 25],
+        ['gazelle', 26, -25], ['boar', 39, -25],
         ['aurochs', -10, 8], ['aurochs', 10, -8], ['lion', 0, -14], ['lion', 0, 14],
       ],
     },
     alfheim: {
-      huntPool: ['deer', 'boar', 'aurochs', 'bear'],
+      huntPool: ['deer', 'moose', 'aurochs', 'bear'],
       spawns: [
-        ['deer', -28, 27], ['deer', -26, 25], ['boar', -39, 25],
+        ['cow', -30, 30], ['cow', -28, 31], ['cow', 30, -30], ['cow', 28, -31],
+        ['moose', -28, 27], ['deer', -26, 25], ['boar', -39, 25],
         ['deer', 28, -27], ['boar', 39, -25],
         ['aurochs', -14, 14], ['aurochs', 14, -14],
         ['bear', -18, -16], ['bear', 18, 16], ['wolf', 10, 6], ['wolf', -10, -6],
       ],
     },
     midgard: {
-      huntPool: ['aurochs', 'deer', 'reindeer', 'wolf'],
+      huntPool: ['moose', 'deer', 'aurochs', 'wolf'],
       spawns: [
-        ['deer', -28, 27], ['reindeer', -26, 25], ['aurochs', -39, 25],
+        ['cow', -30, 30], ['pig', -29, 32], ['cow', 30, -30], ['pig', 29, -32],
+        ['moose', -28, 27], ['reindeer', -26, 25], ['aurochs', -39, 25],
         ['deer', 28, -27], ['aurochs', 39, -25],
         ['boar', -18, 28], ['boar', 18, -28],
         ['bear', -16, -12], ['bear', 16, 12], ['wolf', 8, -8], ['wolf', -8, 8],
       ],
     },
     vinlandsaga: {
-      huntPool: ['bear', 'reindeer', 'musk_ox', 'deer'],
+      huntPool: ['moose', 'reindeer', 'musk_ox', 'bear'],
       spawns: [
-        ['deer', -28, 27], ['goat', -38, 26], ['deer', 28, -27], ['goat', 38, -26],
+        ['cow', -30, 30], ['turkey', -29, 31], ['cow', 30, -30], ['turkey', 29, -31],
+        ['moose', -28, 27], ['deer', -38, 26], ['moose', 28, -27], ['deer', 38, -26],
         ['reindeer', -8, 12], ['reindeer', 8, -12], ['musk_ox', -14, -12], ['musk_ox', 14, 12],
         ['bear', -4, -4], ['bear', 4, 4],
       ],
     },
     erebus: {
-      huntPool: ['boar', 'wolf', 'bear', 'aurochs'],
+      huntPool: ['boar', 'aurochs', 'wolf', 'bear'],
       spawns: [
+        ['pig', -30, 30], ['goat', 30, -30],
         ['boar', -28, 27], ['boar', -39, 25], ['boar', 28, -27], ['boar', 39, -25],
         ['wolf', -16, 16], ['wolf', 16, -16], ['bear', -18, -10], ['bear', 18, 10],
       ],
     },
     yucatan: {
-      huntPool: ['boar', 'deer', 'crocodile', 'gazelle'],
+      huntPool: ['deer', 'boar', 'tiger', 'alligator'],
       spawns: [
+        ['capybara', -30, 30], ['turkey', -29, 31], ['capybara', 30, -30], ['turkey', 29, -31],
         ['deer', -28, 27], ['boar', -26, 25], ['deer', -39, 25],
         ['deer', 28, -27], ['boar', 39, -25],
-        ['crocodile', -16, 14], ['crocodile', 16, -14], ['lion', -10, -14], ['lion', 10, 14],
+        ['alligator', -16, 14], ['alligator', 16, -14], ['tiger', -10, -14], ['tiger', 10, 14],
       ],
     },
     yellow_river: {
-      huntPool: ['deer', 'boar', 'aurochs', 'goat'],
+      huntPool: ['deer', 'boar', 'aurochs', 'tiger'],
       spawns: [
-        ['deer', -28, 27], ['deer', -26, 25], ['boar', -39, 25],
-        ['deer', 28, -27], ['boar', 39, -25],
-        ['aurochs', -14, 12], ['aurochs', 14, -12], ['goat', -20, 20], ['goat', 20, -20],
+        ['yak', -30, 30], ['pig', -29, 31], ['yak', 30, -30], ['pig', 29, -31],
+        ['chicken', -37, 36], ['chicken', 37, -36],
+        ['deer', -28, 27], ['boar', -39, 25], ['deer', 28, -27], ['boar', 39, -25],
+        ['aurochs', -14, 12], ['aurochs', 14, -12], ['tiger', -20, 20], ['tiger', 20, -20],
       ],
     },
     sea_of_worms: {
-      huntPool: ['crocodile', 'goat', 'boar', 'deer'],
+      huntPool: ['deer', 'boar', 'alligator', 'crocodile'],
       spawns: [
-        ['goat', -28, 27], ['boar', -39, 25], ['goat', 28, -27], ['boar', 39, -25],
-        ['crocodile', -12, 8], ['crocodile', 12, -8], ['deer', -20, 18], ['deer', 20, -18],
+        ['pig', -30, 30], ['goat', 30, -30],
+        ['boar', -39, 25], ['boar', 39, -25],
+        ['alligator', -12, 8], ['crocodile', 12, -8], ['deer', -20, 18], ['deer', 20, -18],
       ],
     },
     king_of_the_hill: {
-      huntPool: ['aurochs', 'deer', 'boar', 'goat'],
+      huntPool: ['aurochs', 'deer', 'boar', 'wolf'],
       spawns: [
-        ['deer', -28, 27], ['goat', -26, 25], ['boar', -39, 25],
-        ['deer', 28, -27], ['boar', 39, -25],
+        ['cow', -30, 30], ['cow', 30, -30],
+        ['chicken', -37, 36], ['chicken', 37, -36],
+        ['deer', -28, 27], ['boar', -39, 25], ['deer', 28, -27], ['boar', 39, -25],
         ['aurochs', -18, 18], ['aurochs', 18, -18], ['wolf', -16, -12], ['wolf', 16, 12],
       ],
     },
     megalopolis: {
-      huntPool: ['deer', 'boar', 'aurochs', 'goat'],
+      huntPool: ['deer', 'boar', 'aurochs', 'gazelle'],
       spawns: [
+        ['cow', -30, 28], ['pig', -28, 30], ['cow', 30, -28], ['pig', 28, -30],
+        ['chicken', -38, 34], ['chicken', 38, -34],
         ['deer', -24, 24], ['boar', -44, 24], ['deer', 24, -24], ['boar', 44, -24],
-        ['aurochs', -10, -8], ['aurochs', 10, 8], ['goat', -18, 20], ['goat', 18, -20],
+        ['aurochs', -10, -8], ['aurochs', 10, 8],
       ],
     },
     nomad: {
       huntPool: ['gazelle', 'deer', 'boar', 'aurochs'],
       spawns: [
+        ['cow', -30, 30], ['goat', 30, -30],
         ['gazelle', -28, 27], ['deer', -39, 25], ['gazelle', 28, -27], ['deer', 39, -25],
         ['boar', -18, 28], ['boar', 18, -28], ['aurochs', -4, -4], ['aurochs', 6, 6],
         ['wolf', 11, 5], ['wolf', -11, -5],
@@ -1024,24 +1043,27 @@ export function buildMapResourceProfile(
     sudden_death: {
       huntPool: ['aurochs', 'boar', 'deer', 'wolf'],
       spawns: [
+        ['cow', -30, 30], ['pig', 30, -30],
         ['deer', -28, 27], ['boar', -39, 25], ['deer', 28, -27], ['boar', 39, -25],
         ['aurochs', -12, 12], ['aurochs', 12, -12], ['wolf', -8, -8], ['wolf', 8, 8],
       ],
     },
     team_migration: {
-      huntPool: ['deer', 'gazelle', 'bear', 'boar'],
+      huntPool: ['deer', 'gazelle', 'boar', 'bear'],
       spawns: [
+        ['pig', -30, 30], ['turkey', 30, -30],
         ['gazelle', -29, 28], ['boar', -38, 26], ['gazelle', 29, -28], ['boar', 38, -26],
         ['deer', -8, 10], ['deer', 8, -10], ['aurochs', -12, -10], ['aurochs', 12, 10],
         ['bear', 0, -14], ['bear', 0, 14],
       ],
     },
     mediterranean: {
-      huntPool: ['deer', 'boar', 'goat', 'gazelle'],
+      huntPool: ['deer', 'boar', 'gazelle', 'aurochs'],
       spawns: [
-        ['gazelle', -28, 27], ['gazelle', -26, 25], ['deer', -39, 25],
-        ['goat', -25, 22], ['deer', -46, 23], ['boar', -18, 28],
-        ['gazelle', 25, -22], ['goat', 27, -19], ['deer', 46, -23], ['boar', 18, -28],
+        ['cow', -30, 30], ['goat', -29, 31], ['cow', 30, -30], ['goat', 29, -31],
+        ['chicken', -37, 36], ['chicken', -38, 35], ['chicken', 37, -36], ['chicken', 38, -35],
+        ['gazelle', -28, 27], ['deer', -39, 25], ['boar', -18, 28],
+        ['gazelle', 25, -22], ['deer', 46, -23], ['boar', 18, -28],
         ['aurochs', -4, -4], ['wolf', 11, 5], ['wolf', -11, -5],
       ],
     },
@@ -1058,6 +1080,17 @@ export function buildMapResourceProfile(
     );
   }
 
+  const coldMarineMaps: Exclude<MapId, 'land_unknown' | 'the_unknown'>[] = [
+    'midgard',
+    'vinlandsaga',
+    'ghost_lake',
+    'tundra',
+    'highland',
+  ];
+  const aquaticDecorPool: ('sea_turtle' | 'dolphin' | 'whale')[] = coldMarineMaps.includes(eff)
+    ? ['whale', 'dolphin']
+    : ['sea_turtle', 'dolphin', 'whale'];
+
   return {
     treeClusters,
     goldSpots,
@@ -1065,5 +1098,6 @@ export function buildMapResourceProfile(
     settlementSpots: defaultSettlements,
     faunaSpawns,
     huntPool: herdData.huntPool,
+    aquaticDecorPool,
   };
 }
