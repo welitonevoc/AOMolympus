@@ -34,6 +34,13 @@ import {
   createTerrainTexture,
 } from './textures';
 import {
+  attachWindSwayShader,
+  createTerrainNormalTexture,
+  createTerrainRoughnessTexture,
+  upgradeWaterMaterial,
+  VisualEffectsManager,
+} from './visualEngine';
+import {
   GOD_POWERS,
   TECH_SPECS,
   getCivBuildingSpec,
@@ -142,6 +149,8 @@ interface UnitEntity {
   transportedInId?: string | null;
   factionSlot?: number;
   leashOrigin?: THREE.Vector3 | null;
+  hitFlashTimer?: number;
+  wakeTimer?: number;
 }
 
 interface BuildingEntity {
@@ -505,8 +514,14 @@ export class AoMEngine {
   private maxAniso = 1;
   private palette: MaterialPalette;
   private waterMesh: THREE.Mesh | null = null;
+  private waterUniforms: { uTime: { value: number }; uIsLava: { value: number }; uIsIce: { value: number } } | null = null;
+  private windUniforms: { uTime: { value: number } }[] = [];
   private terrainMesh: THREE.Mesh | null = null;
   private terrainTex: THREE.CanvasTexture | null = null;
+  private terrainNormalTex: THREE.CanvasTexture | null = null;
+  private terrainRoughTex: THREE.CanvasTexture | null = null;
+  private vfxManager: VisualEffectsManager | null = null;
+  private currentSunOffset = new THREE.Vector3(55, 82, 42);
   private placementGhost: THREE.Group | null = null;
   private godPowerRing: THREE.Mesh | null = null;
   private navGrid = new NavigationGrid();
@@ -809,6 +824,8 @@ export class AoMEngine {
     const maxAniso = this.renderer.capabilities.getMaxAnisotropy();
     this.maxAniso = maxAniso;
     this.terrainTex = createTerrainTexture(maxAniso);
+    this.terrainNormalTex = createTerrainNormalTexture(maxAniso);
+    this.terrainRoughTex = createTerrainRoughnessTexture(maxAniso);
     const marbleTex = createMarbleTexture(maxAniso);
     const shadowTex = createContactShadowTexture();
     const ringPlayerTex = createSelectionRingTexture('#facc15');
@@ -819,6 +836,17 @@ export class AoMEngine {
       ringPlayerTex,
       ringEnemyTex,
       PANTHEONS[this.pantheon].bannerHex
+    );
+    this.windUniforms = [
+      attachWindSwayShader(this.palette.foliagePine),
+      attachWindSwayShader(this.palette.foliageDark),
+    ];
+
+    this.vfxManager = new VisualEffectsManager(
+      this.scene,
+      this.renderer,
+      this.camera,
+      this.isSoftwareGl
     );
 
     this.setupLighting();
@@ -974,6 +1002,9 @@ export class AoMEngine {
 
     const terrainMat = new THREE.MeshStandardMaterial({
       map: this.terrainTex,
+      normalMap: this.terrainNormalTex,
+      normalScale: new THREE.Vector2(0.75, 0.75),
+      roughnessMap: this.terrainRoughTex,
       vertexColors: true,
       roughness: 0.92,
       metalness: 0.02,
@@ -983,21 +1014,24 @@ export class AoMEngine {
     this.terrainMesh.receiveShadow = !this.isSoftwareGl;
     this.scene.add(this.terrainMesh);
 
-    // Surrounding ocean / river / lava water plane
-    const waterGeo = new THREE.PlaneGeometry(340, 340, 24, 24);
+    // Surrounding ocean / river / lava water plane with procedural wave & Fresnel shader
+    const waterSegs = this.isSoftwareGl ? 24 : 68;
+    const waterGeo = new THREE.PlaneGeometry(340, 340, waterSegs, waterSegs);
     waterGeo.rotateX(-Math.PI / 2);
     const waterMat = new THREE.MeshStandardMaterial({
       color: mapCfg.waterColorHex,
       emissive: bio.waterEmissiveHex ?? 0x000000,
       emissiveIntensity: bio.waterEmissiveIntensity ?? 0,
-      roughness: effId === 'ghost_lake' || effId === 'tundra' ? 0.08 : 0.18,
-      metalness: 0.35,
+      roughness: effId === 'ghost_lake' || effId === 'tundra' ? 0.08 : 0.16,
+      metalness: 0.42,
       transparent: true,
       opacity: 0.9,
     });
+    this.waterUniforms = upgradeWaterMaterial(waterMat, mapId).uniforms;
     this.waterMesh = new THREE.Mesh(waterGeo, waterMat);
     this.waterMesh.position.y = -0.68;
     this.scene.add(this.waterMesh);
+    this.vfxManager?.rebuildBiomeMotes(mapId);
 
     // Terrain-conforming Fog of War overlay mesh
     if (this.fogMesh) {
@@ -1085,6 +1119,7 @@ export class AoMEngine {
       this.kothVaultMesh = null;
     }
     if (this.godPowerRing) this.godPowerRing.visible = false;
+    this.vfxManager?.clearMatchVisuals();
     this.hideAllOrderVisuals();
   }
 
@@ -2777,6 +2812,7 @@ export class AoMEngine {
     const bScale = this.getBuildingScale(kind);
     if (!isConstructed) {
       mesh.scale.set(bScale.x, bScale.y * 0.25, bScale.z);
+      this.vfxManager?.syncBuildingScaffolding(mesh, this.getCivBuildingRadius(kind, team), 0.1, false);
     } else {
       mesh.scale.copy(bScale);
     }
@@ -7499,6 +7535,7 @@ export class AoMEngine {
     this.orthoCamera.updateProjectionMatrix();
 
     this.renderer.setSize(w, h);
+    this.vfxManager?.resize(w, h, this.renderer.getPixelRatio());
   };
 
   // --- VISUAL EFFECTS ---
@@ -8782,9 +8819,21 @@ export class AoMEngine {
 
   private damageUnit(target: UnitEntity, amount: number, attackerTeam: TeamId) {
     target.hp -= amount;
+    target.hitFlashTimer = 0.12;
     this.spawnSparkParticleVfx(target.mesh.position);
+    this.vfxManager?.spawnParticles(
+      target.mesh.position.x,
+      target.mesh.position.y + 0.9,
+      target.mesh.position.z,
+      amount >= 28 ? 6 : 3,
+      { colorHex: amount >= 28 ? 0xfacc15 : 0xf87171, speed: 2.8, upSpeed: 2.2, lifetime: 0.42, startScale: 0.45, endScale: 0.05 }
+    );
+    if (amount >= 30 && target.hp > 0) {
+      this.vfxManager?.spawnFloatingPopup(target.mesh.position, `-${Math.round(amount)}`, '#f87171');
+    }
     if (target.hp <= 0) {
-      const deadCost = this.unitStats(target.kind, target.team).cost;
+      const deadStats = this.unitStats(target.kind, target.team);
+      const deadCost = deadStats.cost;
       const deadVal =
         (deadCost.food ?? 0) + (deadCost.wood ?? 0) + (deadCost.gold ?? 0) + (deadCost.favor ?? 0) * 10;
       if (target.team === 'enemy') {
@@ -8812,8 +8861,18 @@ export class AoMEngine {
         }
         target.cargoIds = [];
       }
-      this.scene.remove(target.mesh);
+      target.selected = false;
       this.units.delete(target.id);
+      if (this.vfxManager) {
+        this.vfxManager.spawnUnitDeathVisual(
+          target.mesh,
+          deadStats.isNaval ? -0.22 : groundHeightAt(target.mesh.position.x, target.mesh.position.z, this.mapId),
+          Boolean(deadStats.isMythic || deadStats.isHero || deadStats.isGod || target.isPromotedHero),
+          Boolean(deadStats.isNaval)
+        );
+      } else {
+        this.scene.remove(target.mesh);
+      }
       soundEngine.playUnitDeath();
       if (attackerTeam === 'player' && target.team === 'enemy') {
         this.stats.enemiesDefeated++;
@@ -9931,34 +9990,91 @@ export class AoMEngine {
         poseAnim(dt, u.state === 'move' || isCaravanMoving, effectiveSpeed, attackT, u.state, resType, u.carryAmount);
       }
 
-      // 3D Procedural Limb Animations (when in 3D mode)
+      // Squash-and-stretch hit impact feedback & naval wave buoyancy + wake trails
+      if ((u.hitFlashTimer ?? 0) > 0) {
+        u.hitFlashTimer = Math.max(0, (u.hitFlashTimer ?? 0) - dt);
+        const flashNorm = (u.hitFlashTimer ?? 0) / 0.12;
+        const pulse = 1 + Math.sin(flashNorm * Math.PI) * 0.11;
+        const baseScale = this.getUnitScale(u.kind);
+        u.mesh.scale.set(baseScale.x * pulse, baseScale.y * (1 / Math.sqrt(pulse)), baseScale.z * pulse);
+        if ((u.hitFlashTimer ?? 0) <= 0) {
+          u.mesh.scale.copy(baseScale);
+        }
+      }
+
+      if (stats.isNaval) {
+        const bobPhase = this.elapsedSeconds * 2.2 + u.animPhase * 0.4;
+        u.mesh.rotation.z = THREE.MathUtils.damp(u.mesh.rotation.z, Math.sin(bobPhase) * 0.05, 8, dt);
+        u.mesh.rotation.x = THREE.MathUtils.damp(u.mesh.rotation.x, Math.cos(bobPhase * 0.85) * 0.035, 8, dt);
+        if (u.state === 'move' || u.state === 'gather' || u.state === 'return') {
+          u.wakeTimer = (u.wakeTimer ?? 0) - dt;
+          if ((u.wakeTimer ?? 0) <= 0) {
+            u.wakeTimer = 0.22;
+            this.vfxManager?.spawnWaterWake(u.mesh.position.x, u.mesh.position.z, u.mesh.rotation.y);
+          }
+        }
+      }
+
+      // 3D Procedural Limb & Torso Pose Blending (when in 3D mode)
       if (poseAnim) {
         // handled by animatePose above
       } else if (u.state === 'idle') {
-        if (u.mesh.userData.leftLeg) u.mesh.userData.leftLeg.rotation.x *= 0.85;
-        if (u.mesh.userData.rightLeg) u.mesh.userData.rightLeg.rotation.x *= 0.85;
+        const breath = Math.sin(this.elapsedSeconds * 2.4 + u.mesh.id) * 0.035;
+        if (u.mesh.userData.leftLeg) {
+          u.mesh.userData.leftLeg.rotation.x = THREE.MathUtils.damp(u.mesh.userData.leftLeg.rotation.x, 0, 10, dt);
+        }
+        if (u.mesh.userData.rightLeg) {
+          u.mesh.userData.rightLeg.rotation.x = THREE.MathUtils.damp(u.mesh.userData.rightLeg.rotation.x, 0, 10, dt);
+        }
+        if (u.mesh.userData.leftArm) {
+          u.mesh.userData.leftArm.rotation.x = THREE.MathUtils.damp(u.mesh.userData.leftArm.rotation.x, breath, 8, dt);
+          u.mesh.userData.leftArm.rotation.y = THREE.MathUtils.damp(u.mesh.userData.leftArm.rotation.y, 0, 8, dt);
+        }
         if (u.mesh.userData.rightArm) {
-          u.mesh.userData.rightArm.rotation.x = THREE.MathUtils.damp(u.mesh.userData.rightArm.rotation.x, 0, 8, dt);
+          u.mesh.userData.rightArm.rotation.x = THREE.MathUtils.damp(u.mesh.userData.rightArm.rotation.x, -breath, 8, dt);
           if (u.mesh.userData.rightArm.position.z !== undefined) {
             u.mesh.userData.rightArm.position.z = THREE.MathUtils.damp(u.mesh.userData.rightArm.position.z, 0, 8, dt);
           }
         }
+        if (!stats.isNaval) {
+          u.mesh.rotation.x = THREE.MathUtils.damp(u.mesh.rotation.x, 0, 10, dt);
+        }
       } else if (u.state === 'move') {
+        const stride = Math.sin(u.animPhase * 8) * 0.58;
         if (u.mesh.userData.leftLeg) {
-          u.mesh.userData.leftLeg.rotation.x = Math.sin(u.animPhase * 8) * 0.55;
+          u.mesh.userData.leftLeg.rotation.x = THREE.MathUtils.damp(u.mesh.userData.leftLeg.rotation.x, stride, 14, dt);
         }
         if (u.mesh.userData.rightLeg) {
-          u.mesh.userData.rightLeg.rotation.x = -Math.sin(u.animPhase * 8) * 0.55;
+          u.mesh.userData.rightLeg.rotation.x = THREE.MathUtils.damp(u.mesh.userData.rightLeg.rotation.x, -stride, 14, dt);
+        }
+        if (u.mesh.userData.leftArm) {
+          u.mesh.userData.leftArm.rotation.x = THREE.MathUtils.damp(u.mesh.userData.leftArm.rotation.x, -stride * 0.45, 12, dt);
         }
         if (u.mesh.userData.rightArm && u.manualAttackTimer <= 0) {
-          u.mesh.userData.rightArm.rotation.x = -0.2 + Math.sin(u.animPhase * 8) * 0.22;
+          u.mesh.userData.rightArm.rotation.x = THREE.MathUtils.damp(
+            u.mesh.userData.rightArm.rotation.x,
+            -0.2 + stride * 0.42,
+            12,
+            dt
+          );
+        }
+        if (!stats.isNaval) {
+          u.mesh.rotation.x = THREE.MathUtils.damp(u.mesh.rotation.x, 0.06, 10, dt);
         }
       } else if (u.state === 'pray' || u.state === 'empower') {
-        if (u.mesh.userData.leftLeg) u.mesh.userData.leftLeg.rotation.x *= 0.85;
-        if (u.mesh.userData.rightLeg) u.mesh.userData.rightLeg.rotation.x *= 0.85;
+        if (u.mesh.userData.leftLeg) {
+          u.mesh.userData.leftLeg.rotation.x = THREE.MathUtils.damp(u.mesh.userData.leftLeg.rotation.x, 0, 10, dt);
+        }
+        if (u.mesh.userData.rightLeg) {
+          u.mesh.userData.rightLeg.rotation.x = THREE.MathUtils.damp(u.mesh.userData.rightLeg.rotation.x, 0, 10, dt);
+        }
         const chantWave = -0.95 + Math.sin(u.animPhase * 1.4) * 0.14;
-        if (u.mesh.userData.rightArm) u.mesh.userData.rightArm.rotation.x = chantWave;
-        if (u.mesh.userData.leftArm) u.mesh.userData.leftArm.rotation.x = chantWave;
+        if (u.mesh.userData.rightArm) {
+          u.mesh.userData.rightArm.rotation.x = THREE.MathUtils.damp(u.mesh.userData.rightArm.rotation.x, chantWave, 9, dt);
+        }
+        if (u.mesh.userData.leftArm) {
+          u.mesh.userData.leftArm.rotation.x = THREE.MathUtils.damp(u.mesh.userData.leftArm.rotation.x, chantWave, 9, dt);
+        }
       }
 
       // While manualAttackTimer > 0 (`atacar()`), lock movement and play the attack animation
@@ -10441,6 +10557,11 @@ export class AoMEngine {
           if (u.carryType && u.carryAmount > 0) {
             const pool = u.team === 'player' ? this.resources : this.enemyResources;
             pool[u.carryType] += u.carryAmount;
+            if (u.team === 'player') {
+              const resLabel = u.carryType === 'gold' ? 'Ouro' : u.carryType === 'wood' ? 'Mad.' : 'Alim.';
+              const resColor = u.carryType === 'gold' ? '#fde047' : u.carryType === 'wood' ? '#86efac' : '#fdba74';
+              this.vfxManager?.spawnFloatingPopup(u.mesh.position, `+${Math.round(u.carryAmount)} ${resLabel}`, resColor);
+            }
             if (dropOff.oxCart) {
               // Track cumulative resources deposited into this mobile Ox Cart and show deposit ring
               dropOff.oxCart.carryAmount += u.carryAmount;
@@ -10538,9 +10659,20 @@ export class AoMEngine {
           b.hp = Math.min(b.maxHp, b.hp + b.maxHp * progressDelta * 0.75);
           const bScale = this.getBuildingScale(b.kind);
           b.mesh.scale.set(bScale.x, bScale.y * (0.25 + 0.75 * b.buildProgress), bScale.z);
+          this.vfxManager?.syncBuildingScaffolding(b.mesh, b.radius, b.buildProgress, b.buildProgress >= 1);
+          if (Math.random() < dt * 4.5) {
+            this.vfxManager?.spawnParticles(
+              b.mesh.position.x + (Math.random() - 0.5) * b.radius,
+              b.mesh.position.y + 0.5,
+              b.mesh.position.z + (Math.random() - 0.5) * b.radius,
+              1,
+              { colorHex: 0xd6c7a9, speed: 1.1, upSpeed: 1.6, lifetime: 0.55, startScale: 0.5, endScale: 1.1, gravity: -0.4 }
+            );
+          }
           if (b.buildProgress >= 1) {
             b.isConstructed = true;
             b.mesh.scale.copy(bScale);
+            this.vfxManager?.syncBuildingScaffolding(b.mesh, b.radius, 1, true);
             b.hp = b.maxHp;
             u.waypoints = [];
             soundEngine.playBuild();
@@ -10860,6 +10992,12 @@ export class AoMEngine {
               soundEngine.playArrow();
             } else {
               soundEngine.playSwordHit();
+              this.vfxManager?.spawnSlashArc(
+                u.mesh.position,
+                u.mesh.rotation.y,
+                stats.isHero || stats.isMythic ? 0xfacc15 : u.team === 'player' ? 0xe0f2fe : 0xfca5a5,
+                stats.isMythic || u.kind === 'titan' ? 1.55 : 1.0
+              );
               // Cyclops Grab & Throw special ability against human / non-giant enemies!
               let threwTarget = false;
               if (u.kind === 'cyclops' && targetU && (u.specialCooldown ?? 0) <= 0) {
@@ -12057,6 +12195,26 @@ export class AoMEngine {
       }
       p.mesh.position.lerpVectors(p.start, p.end, p.progress);
       p.mesh.position.y += Math.sin(p.progress * Math.PI) * p.arcHeight;
+      if (p.isBoulder || p.isFireball || p.isFireArrow || p.isPoisonArrow || p.isPetrify) {
+        if (Math.random() < dt * 28) {
+          this.vfxManager?.spawnParticles(
+            p.mesh.position.x,
+            p.mesh.position.y,
+            p.mesh.position.z,
+            1,
+            {
+              colorHex: p.isFireball || p.isFireArrow ? 0xf97316 : p.isPoisonArrow ? 0x4ade80 : p.isPetrify ? 0x2dd4bf : 0xcbd5e1,
+              speed: 0.35,
+              upSpeed: 0.35,
+              lifetime: 0.28,
+              startScale: p.isBoulder || p.isFireball ? 0.6 : 0.3,
+              endScale: 0.04,
+              gravity: -0.2,
+              spread: 0.1,
+            }
+          );
+        }
+      }
       if (p.isBoulder || p.isFireball) {
         p.mesh.rotation.x += dt * 7.5;
         p.mesh.rotation.z += dt * 5.2;
@@ -13468,8 +13626,13 @@ export class AoMEngine {
 
     this.updateCameraTransform(dt);
 
-    if (this.waterMesh) {
+    if (this.waterUniforms) {
+      this.waterUniforms.uTime.value = now * 0.001;
+    } else if (this.waterMesh) {
       this.waterMesh.position.y = -0.68 + Math.sin(now * 0.0012) * 0.05;
+    }
+    for (const wu of this.windUniforms) {
+      wu.uTime.value = now * 0.001;
     }
 
     this.fpsFrames += 1;
@@ -13776,6 +13939,7 @@ export class AoMEngine {
             this.scene.fog.color.lerp(_targetSkyColor, staticDamp);
           }
         }
+        this.currentSunOffset.copy(_targetSunPos);
       }
 
       this.updateUnits(simDt);
@@ -13797,9 +13961,20 @@ export class AoMEngine {
       this.updateFogOfWar(simDt);
     }
 
+    if (this.sunLight) {
+      this.vfxManager?.updateShadowFrustumFollow(this.sunLight, this.camTarget, this.currentSunOffset);
+    }
+    const isNightOrDusk = this.eclipseTimer > 0 || this.dayTimeLabel === 'Entardecer' || this.dayTimeLabel === 'Noite';
+    this.vfxManager?.updateNightLights(this.buildings.values(), this.camTarget, isNightOrDusk, this.elapsedSeconds);
+    this.vfxManager?.update(dt, this.elapsedSeconds);
+
     this.updateTransientVfx(dt);
     this.updateOrderVisuals(now);
-    this.renderer.render(this.scene, this.camera);
+    if (this.vfxManager) {
+      this.vfxManager.render(this.renderer, this.camera);
+    } else {
+      this.renderer.render(this.scene, this.camera);
+    }
 
     this.hudSyncTimer += dt;
     if (this.hudSyncTimer >= 0.14) {
@@ -14242,6 +14417,16 @@ export class AoMEngine {
     canvas.removeEventListener('webglcontextlost', this.onContextLost);
 
     this.clearEntities();
+    this.vfxManager?.dispose();
+    this.vfxManager = null;
+    if (this.terrainNormalTex) {
+      this.terrainNormalTex.dispose();
+      this.terrainNormalTex = null;
+    }
+    if (this.terrainRoughTex) {
+      this.terrainRoughTex.dispose();
+      this.terrainRoughTex = null;
+    }
     if (this.particleGlowTex) {
       this.particleGlowTex.dispose();
       this.particleGlowTex = null;
