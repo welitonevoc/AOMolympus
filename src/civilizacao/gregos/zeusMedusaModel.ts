@@ -190,7 +190,7 @@ export interface MedusaBuildResult {
 }
 
 export function buildMedusa(
-  textures: MedusaTextures,
+  textures: MedusaTextures = createMedusaTextures(),
   team: TeamId = 'player',
   _enableShadows = true
 ): MedusaBuildResult {

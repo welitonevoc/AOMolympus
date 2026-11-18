@@ -712,7 +712,7 @@ export function animateColossusModel(
       colossus.rightArm.elbow.rotation.set(-0.85 + 0.65 * slam, 0, 0);
       colossus.leftArm.arm.rotation.set(-1.65 + 1.25 * slam, -0.25, -0.35);
       colossus.leftArm.elbow.rotation.set(-0.65 + 0.35 * slam, 0, 0);
-      colossus.slashTrail.material.opacity = Math.sin(p * Math.PI) * 0.85;
+      (colossus.slashTrail.material as THREE.Material).opacity = Math.sin(p * Math.PI) * 0.85;
     } else {
       const k = (attackProgress - 0.65) / 0.35;
       const rem = 1 - k;
@@ -720,7 +720,7 @@ export function animateColossusModel(
       colossus.rightArm.elbow.rotation.set(-0.20 * rem - 0.45 * k, 0, 0);
       colossus.leftArm.arm.rotation.set(-0.40 * rem - 0.22 * k, -0.15, -0.28);
       colossus.leftArm.elbow.rotation.set(-0.30, 0, 0);
-      colossus.slashTrail.material.opacity = 0;
+      (colossus.slashTrail.material as THREE.Material).opacity = 0;
     }
   } else if (normalizedAction === 'devorar') {
     const chew = Math.sin(elapsed * 4.5);

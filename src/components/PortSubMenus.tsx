@@ -71,6 +71,7 @@ import {
   WorldSizeId,
 } from '../game/types';
 import { EraIcon, getEraSubtitle } from './EraIcon';
+import { MultiplayerOnlineHub } from './MultiplayerOnlineHub';
 import { SkirmishSetupFlow } from './SkirmishSetupFlow';
 import { TechIcon } from './TechIcon';
 
@@ -141,22 +142,6 @@ export function PortSubMenus({
   const [newProfileName, setNewProfileName] = useState('');
   const [selectedProfile, setSelectedProfile] = useState(options.playerName);
 
-  const [lanIp, setLanIp] = useState('127.0.0.1');
-  const [lanPort, setLanPort] = useState(options.networkPort || 2300);
-  const [hostGameName, setHostGameName] = useState(`Sala de ${options.playerName}`);
-  const [hostMaxPlayers, setHostMaxPlayers] = useState(4);
-  const [hostPublic, setHostPublic] = useState(true);
-  const [lanGames, setLanGames] = useState([
-    { name: 'Batalha no Mar Egeu (LAN)', ip: '192.168.1.14', port: 2300, players: 2, max: 4 },
-    { name: 'Cerco de Troia (Local)', ip: '127.0.0.1', port: 2300, players: 1, max: 2 },
-  ]);
-  const [selectedLanIdx, setSelectedLanIdx] = useState(0);
-  const [lobbyMessages, setLobbyMessages] = useState<string[]>([
-    'Sistema: Sala criada e aguardando jogadores na rede local.',
-  ]);
-  const [lobbyChatInput, setLobbyChatInput] = useState('');
-  const [lobbyReady, setLobbyReady] = useState(true);
-
   const [recordedMatches] = useState<RecordedMatchRecord[]>(() => loadRecordedMatches());
   const [selectedRecordedIdx, setSelectedRecordedIdx] = useState(0);
   const [selectedCustomScnIdx, setSelectedCustomScnIdx] = useState(0);
@@ -165,8 +150,6 @@ export function PortSubMenus({
   const [historyCiv, setHistoryCiv] = useState<PantheonId>('greek');
   const [techTreeCiv, setTechTreeCiv] = useState<PantheonId>(skirmish.pantheon);
   const [updateCheckMsg, setUpdateCheckMsg] = useState<string | null>(null);
-  const [esoUser, setEsoUser] = useState(options.playerName);
-  const [esoNotice, setEsoNotice] = useState<string | null>(null);
   const [musicTrackTick, setMusicTrackTick] = useState(0);
   const [mapFilter, setMapFilter] = useState<'all' | 'titans' | 'base' | 'bonus'>('all');
 
@@ -843,7 +826,6 @@ export function PortSubMenus({
                 onClick={() => {
                   const nextPort = options.networkPort >= 2305 ? 2300 : options.networkPort + 1;
                   onUpdateOptions({ ...options, networkPort: nextPort });
-                  setLanPort(nextPort);
                   clickSound();
                 }}
                 className="flex h-11 items-center justify-between rounded border border-white/15 bg-[#171d29] px-4 text-sm font-semibold text-[#f3d27a] cursor-pointer"
@@ -853,11 +835,11 @@ export function PortSubMenus({
               </button>
               <button
                 type="button"
-                onClick={() => navTo('MULTIPLAYER_LAN')}
+                onClick={() => navTo('UI_MP_ESO')}
                 className="flex h-11 items-center justify-center gap-2 rounded border border-[#d4af37]/55 bg-[#2a1f12] text-sm font-bold text-[#f3d27a] hover:bg-[#3a2a18] cursor-pointer"
               >
                 <Network className="h-4 w-4" />
-                <span>Abrir Multiplayer LAN</span>
+                <span>Abrir Lobbies Online (6x6)</span>
               </button>
             </>
           )}
@@ -905,373 +887,22 @@ export function PortSubMenus({
     );
   }
 
-  // ── 5. MULTIPLAYER LAN / IP DIRETO / HOST DIALOG / LOBBY (engine_multiplayer.cpp) ──
-  if (menuState === 'MULTIPLAYER_LAN' || menuState === 'UI_HOST_GAME_DIALOG') {
+  // ── 5, 6, 7. GLOBAL ONLINE MULTIPLAYER HUB (6x6 / UP TO 12 PLAYERS, CRESTS, COLORS, CHAT) ──
+  if (
+    menuState === 'MULTIPLAYER_LAN' ||
+    menuState === 'UI_HOST_GAME_DIALOG' ||
+    menuState === 'MULTIPLAYER_LOBBY' ||
+    menuState === 'UI_MP_ESO'
+  ) {
     return (
-      <div className="flex flex-col gap-4">
-        {renderPanelHeader(
-          'MULTIJOGADOR — LAN / IP DIRETO',
-          'Descoberta de salas locais, conexão por IP direto e criação de sala',
-          'SUB_MULTIPLAYER'
-        )}
-
-        {menuState === 'UI_HOST_GAME_DIALOG' ? (
-          <div className="mx-auto flex w-full max-w-md flex-col gap-3 rounded border border-[#d4af37]/45 bg-[#131822] p-4">
-            <h3 className="font-display text-base font-bold text-[#f3d27a]">Hospedar Novo Jogo</h3>
-            <label className="flex flex-col gap-1 text-xs text-[#cbd5e1]">
-              <span>Nome da Sala</span>
-              <input
-                type="text"
-                value={hostGameName}
-                onChange={(e) => setHostGameName(e.target.value)}
-                className="rounded border border-white/15 bg-[#0e121a] px-3 py-2 text-sm text-white focus:border-[#f3d27a] focus:outline-none"
-              />
-            </label>
-            <div className="flex items-center justify-between gap-2 text-xs text-[#cbd5e1]">
-              <span>Máximo de Jogadores</span>
-              <div className="flex gap-1">
-                {[2, 4, 6, 8].map((n) => (
-                  <button
-                    key={n}
-                    type="button"
-                    onClick={() => setHostMaxPlayers(n)}
-                    className={`rounded border px-2.5 py-1 font-mono-num cursor-pointer ${
-                      hostMaxPlayers === n
-                        ? 'border-[#f3d27a] bg-[#262f40] text-[#f3d27a]'
-                        : 'border-white/10 bg-[#171c26]'
-                    }`}
-                  >
-                    {n}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="flex items-center justify-between gap-2 text-xs text-[#cbd5e1]">
-              <span>Visibilidade</span>
-              <div className="flex gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => setHostPublic(true)}
-                  className={`rounded border px-3 py-1 cursor-pointer ${
-                    hostPublic ? 'border-[#f3d27a] bg-[#262f40] text-[#f3d27a]' : 'border-white/10 bg-[#171c26]'
-                  }`}
-                >
-                  Pública
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setHostPublic(false)}
-                  className={`rounded border px-3 py-1 cursor-pointer ${
-                    !hostPublic ? 'border-[#f3d27a] bg-[#262f40] text-[#f3d27a]' : 'border-white/10 bg-[#171c26]'
-                  }`}
-                >
-                  Privada
-                </button>
-              </div>
-            </div>
-            <div className="mt-2 flex gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  clickSound();
-                  setLobbyMessages([
-                    `Sistema: Sala "${hostGameName}" criada (${hostPublic ? 'Pública' : 'Privada'}, máx. ${hostMaxPlayers} jogadores).`,
-                  ]);
-                  setMenuState('MULTIPLAYER_LOBBY');
-                }}
-                className="flex-1 rounded border border-[#f5d77f] bg-[#d4af37] py-2 text-xs font-bold text-[#0d1017] cursor-pointer"
-              >
-                OK — Criar Sala
-              </button>
-              <button
-                type="button"
-                onClick={() => navTo('MULTIPLAYER_LAN')}
-                className="rounded border border-white/15 bg-[#181e29] px-4 py-2 text-xs text-[#cbd5e1] cursor-pointer"
-              >
-                Cancelar
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-            <div className="lg:col-span-7 flex flex-col gap-3 rounded border border-[#d4af37]/25 bg-[#131822] p-3.5">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-[#f3d27a]">Jogos na Rede LAN</span>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => navTo('UI_PROFILE_SELECT')}
-                    className="rounded border border-white/15 bg-[#181e29] px-2.5 py-1 text-[11px] text-[#e6dfd1] hover:border-[#f3d27a] cursor-pointer"
-                  >
-                    Perfil: {options.playerName}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      clickSound();
-                      setLanGames((prev) => [...prev]);
-                    }}
-                    className="flex items-center gap-1 rounded border border-[#d4af37]/40 bg-[#181e29] px-2.5 py-1 text-[11px] text-[#f3d27a] cursor-pointer"
-                  >
-                    <RefreshCw className="h-3 w-3" />
-                    <span>Atualizar</span>
-                  </button>
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-1.5">
-                {lanGames.map((g, idx) => (
-                  <button
-                    key={`${g.ip}-${idx}`}
-                    type="button"
-                    onClick={() => {
-                      clickSound();
-                      setSelectedLanIdx(idx);
-                    }}
-                    className={`flex items-center justify-between rounded border px-3 py-2 text-left text-xs cursor-pointer ${
-                      selectedLanIdx === idx
-                        ? 'border-[#f3d27a] bg-[#262f40] text-white'
-                        : 'border-white/10 bg-[#171c26] text-[#cbd5e1]'
-                    }`}
-                  >
-                    <span className="font-semibold">{g.name}</span>
-                    <span className="font-mono-num text-[11px] text-[#f3d27a]">
-                      {g.ip}:{g.port} [{g.players}/{g.max}]
-                    </span>
-                  </button>
-                ))}
-              </div>
-
-              <div className="flex flex-wrap gap-2 pt-2 border-t border-white/10">
-                <button
-                  type="button"
-                  onClick={() => navTo('UI_HOST_GAME_DIALOG')}
-                  className="flex-1 rounded border border-[#f5d77f] bg-gradient-to-b from-[#e0bc56] to-[#98721b] py-2 text-xs font-bold text-[#0d1017] cursor-pointer"
-                >
-                  Hospedar Jogo
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const g = lanGames[selectedLanIdx];
-                    setHostGameName(g?.name ?? 'Sala LAN');
-                    navTo('MULTIPLAYER_LOBBY');
-                  }}
-                  className="flex-1 rounded border border-[#d4af37]/50 bg-[#1a2230] py-2 text-xs font-semibold text-[#f3d27a] hover:bg-[#242e40] cursor-pointer"
-                >
-                  Entrar na Sala
-                </button>
-              </div>
-            </div>
-
-            <div className="lg:col-span-5 flex flex-col gap-3 rounded border border-white/10 bg-[#131822] p-3.5">
-              <h3 className="text-xs font-bold text-[#f3d27a]">Conexão por IP Direto</h3>
-              <label className="flex flex-col gap-1 text-xs text-[#cbd5e1]">
-                <span>Endereço IP</span>
-                <input
-                  type="text"
-                  value={lanIp}
-                  onChange={(e) => setLanIp(e.target.value)}
-                  className="rounded border border-white/15 bg-[#0e121a] px-3 py-1.5 font-mono-num text-xs text-white focus:border-[#f3d27a] focus:outline-none"
-                />
-              </label>
-              <div className="flex items-center justify-between gap-2 text-xs">
-                <span className="text-[#cbd5e1]">Porta: <strong className="font-mono-num text-[#f3d27a]">{lanPort}</strong></span>
-                <div className="flex gap-1">
-                  {[-10, -1, 1, 10].map((d) => (
-                    <button
-                      key={d}
-                      type="button"
-                      onClick={() => setLanPort((p) => Math.max(1024, Math.min(65535, p + d)))}
-                      className="rounded border border-white/15 bg-[#181e29] px-2 py-0.5 font-mono-num text-[11px] text-[#e6dfd1] cursor-pointer"
-                    >
-                      {d > 0 ? `+${d}` : d}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div className="flex gap-1.5">
-                {['127.0.0.1', '192.168.1.1'].map((preset) => (
-                  <button
-                    key={preset}
-                    type="button"
-                    onClick={() => setLanIp(preset)}
-                    className="rounded border border-white/10 bg-[#171c26] px-2.5 py-1 font-mono-num text-[11px] text-[#9ca3af] hover:text-white cursor-pointer"
-                  >
-                    {preset}
-                  </button>
-                ))}
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setHostGameName(`Direto (${lanIp}:${lanPort})`);
-                  navTo('MULTIPLAYER_LOBBY');
-                }}
-                className="mt-auto rounded border border-[#d4af37]/50 bg-[#1d2536] py-2 text-xs font-semibold text-[#f3d27a] hover:bg-[#263148] cursor-pointer"
-              >
-                Conectar por IP
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  // ── 6. MULTIPLAYER LOBBY ──
-  if (menuState === 'MULTIPLAYER_LOBBY') {
-    return (
-      <div className="flex flex-col gap-4">
-        {renderPanelHeader(
-          `SALA DE ESPERA: ${hostGameName}`,
-          'Configure os slots dos jogadores, mapa e inicie a partida',
-          'MULTIPLAYER_LAN'
-        )}
-
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-          <div className="lg:col-span-7 flex flex-col gap-2 rounded border border-[#d4af37]/25 bg-[#131822] p-3.5">
-            <div className="flex items-center justify-between text-xs border-b border-white/10 pb-2">
-              <span className="font-semibold text-[#f3d27a]">Jogadores na Sala</span>
-              <span className="text-[#9ca3af]">Mapa: {MAPS[skirmish.mapId].name}</span>
-            </div>
-            <div className="flex items-center justify-between rounded border border-[#4ade80]/50 bg-[#16271f] px-3 py-2 text-xs">
-              <span className="font-bold text-white">
-                1. {options.playerName} (Anfitrião)
-              </span>
-              <span className="text-[#f3d27a]">
-                {PANTHEONS[skirmish.pantheon].name} · {skirmish.minorGod}
-              </span>
-              <span className={lobbyReady ? 'text-[#86efac] font-bold' : 'text-[#9ca3af]'}>
-                {lobbyReady ? 'PRONTO' : 'AGUARDANDO'}
-              </span>
-            </div>
-            <div className="flex items-center justify-between rounded border border-white/10 bg-[#171c26] px-3 py-2 text-xs">
-              <span className="text-[#cbd5e1]">2. Computador ({DIFFICULTIES.find((d) => d.id === skirmish.difficulty)?.label})</span>
-              <span className="text-[#fca5a5]">{PANTHEONS[skirmish.enemyPantheon].name}</span>
-              <span className="text-[#86efac]">PRONTO</span>
-            </div>
-
-            <div className="mt-2">
-              {renderMapPicker(
-                skirmish.mapId,
-                (id) => onUpdateSkirmish({ ...skirmish, mapId: id }),
-                true
-              )}
-            </div>
-          </div>
-
-          <div className="lg:col-span-5 flex flex-col justify-between gap-2 rounded border border-white/10 bg-[#131822] p-3.5">
-            <div className="text-xs font-bold text-[#f3d27a]">Chat da Sala</div>
-            <div className="h-32 overflow-y-auto rounded border border-white/10 bg-[#0d1118] p-2 text-xs text-[#cbd5e1] space-y-1">
-              {lobbyMessages.map((msg, i) => (
-                <div key={i}>{msg}</div>
-              ))}
-            </div>
-            <div className="flex gap-1.5">
-              <input
-                type="text"
-                value={lobbyChatInput}
-                onChange={(e) => setLobbyChatInput(e.target.value)}
-                placeholder="Enviar mensagem..."
-                className="flex-1 rounded border border-white/15 bg-[#0e121a] px-2.5 py-1.5 text-xs text-white focus:border-[#f3d27a] focus:outline-none"
-              />
-              <button
-                type="button"
-                onClick={() => {
-                  if (!lobbyChatInput.trim()) return;
-                  setLobbyMessages((prev) => [...prev, `${options.playerName}: ${lobbyChatInput.trim()}`]);
-                  setLobbyChatInput('');
-                }}
-                className="rounded border border-[#d4af37]/50 bg-[#1d2536] px-3 py-1.5 text-xs font-semibold text-[#f3d27a] cursor-pointer"
-              >
-                Enviar
-              </button>
-            </div>
-            <div className="flex gap-2 pt-2 border-t border-white/10">
-              <button
-                type="button"
-                onClick={() => setLobbyReady((r) => !r)}
-                className="rounded border border-white/15 bg-[#181e29] px-3 py-2 text-xs font-semibold text-[#e6dfd1] cursor-pointer"
-              >
-                {lobbyReady ? 'Cancelar Pronto' : 'Pronto'}
-              </button>
-              <button
-                type="button"
-                onClick={() =>
-                  onStartMatch(skirmish.pantheon, skirmish.difficulty, skirmish.mapId, skirmish.revealedMap, {
-                    startingAge: skirmish.startingAge,
-                    startingResources: skirmish.startingResources,
-                    enemyPantheon: skirmish.enemyPantheon,
-                    majorGodName: skirmish.minorGod,
-                    gameType: skirmish.gameType,
-                    visibilityMode: skirmish.visibilityMode,
-                    worldSize: skirmish.worldSize,
-                    dayNightCycle: skirmish.dayNightCycle,
-                    titansEnabled: skirmish.titansEnabled,
-                    treatyMinutes: skirmish.treatyMinutes,
-                    scenarioTitle: hostGameName,
-                    gameSpeed: options.gameSpeed,
-                  })
-                }
-                className="flex-1 rounded border border-[#f5d77f] bg-gradient-to-b from-[#e0bc56] to-[#98721b] py-2 text-xs font-bold text-[#0d1017] cursor-pointer"
-              >
-                Iniciar Partida
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // ── 7. UI_MP_ESO (Online ESO / Player Login) ──
-  if (menuState === 'UI_MP_ESO') {
-    return (
-      <div className="flex flex-col gap-4">
-        {renderPanelHeader(
-          'ESO — ENSEMBLE STUDIOS ONLINE',
-          'Conta de jogador online e acesso ao modo multijogador',
-          'SUB_MULTIPLAYER'
-        )}
-        <div className="mx-auto flex w-full max-w-md flex-col gap-3 rounded border border-[#d4af37]/35 bg-[#131822] p-5">
-          <label className="flex flex-col gap-1 text-xs text-[#cbd5e1]">
-            <span>Nome da Conta ESO</span>
-            <input
-              type="text"
-              value={esoUser}
-              onChange={(e) => setEsoUser(e.target.value)}
-              className="rounded border border-white/15 bg-[#0e121a] px-3 py-2 text-sm text-white focus:border-[#f3d27a] focus:outline-none"
-            />
-          </label>
-          {esoNotice && (
-            <div className="rounded border border-[#d4af37]/30 bg-[#1a202c] p-2.5 text-xs text-[#fde68a]">
-              {esoNotice}
-            </div>
-          )}
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                clickSound();
-                setEsoNotice(
-                  `Conta "${esoUser}" validada localmente. Use LAN / IP Direto para criar ou entrar em salas imediatas.`
-                );
-              }}
-              className="flex-1 rounded border border-[#f5d77f] bg-[#d4af37] py-2 text-xs font-bold text-[#0d1017] cursor-pointer"
-            >
-              Conectar ESO
-            </button>
-            <button
-              type="button"
-              onClick={() => navTo('MULTIPLAYER_LAN')}
-              className="rounded border border-[#d4af37]/50 bg-[#1d2536] px-4 py-2 text-xs font-semibold text-[#f3d27a] cursor-pointer"
-            >
-              Ir para LAN
-            </button>
-          </div>
-        </div>
-      </div>
+      <MultiplayerOnlineHub
+        initialMode={menuState === 'UI_HOST_GAME_DIALOG' ? 'private' : 'global'}
+        options={options}
+        skirmish={skirmish}
+        onUpdateOptions={onUpdateOptions}
+        onStartMatch={onStartMatch}
+        onBack={() => navTo('SUB_MULTIPLAYER')}
+      />
     );
   }
 

@@ -540,12 +540,12 @@ export function GameHUD({
   return (
     <>
       {/* TOP-LEFT: AoM Duel Scoreboard (F4) & Quiet Match Indicators */}
-      <div className="pointer-events-none fixed top-0 left-2.5 z-20 flex flex-col items-start gap-1.5 max-w-[min(300px,34vw)]">
+      <div className="pointer-events-none fixed top-[68px] sm:top-[72px] lg:top-0 left-1.5 sm:left-2.5 z-20 flex flex-col items-start gap-1 sm:gap-1.5 max-w-[min(240px,46vw)] sm:max-w-[min(280px,42vw)] lg:max-w-[min(300px,34vw)]">
         {showDuelScore ? (
           <div
             aria-label="Placar do Duelo (F4)"
             title="Pontuação ao estilo Age of Mythology: Economia (Recursos, Aldeões e Centros) + Militar (Exército e Baixas) + Evolução/Tecnologias + Sociedade (F4 para ocultar)"
-            className="pointer-events-auto flex flex-col justify-center rounded-b-md border-x border-b border-[#c8a962]/60 bg-[#10141e]/95 px-2.5 py-1.5 shadow-[0_8px_20px_rgba(0,0,0,0.75)] min-w-[186px]"
+            className="pointer-events-auto flex flex-col justify-center rounded-md lg:rounded-t-none lg:rounded-b-md border lg:border-t-0 border-[#c8a962]/60 bg-[#10141e]/95 px-2 sm:px-2.5 py-1 sm:py-1.5 shadow-[0_8px_20px_rgba(0,0,0,0.75)] min-w-[148px] sm:min-w-[186px]"
           >
             {(() => {
               const duelists = [
@@ -630,16 +630,21 @@ export function GameHUD({
             type="button"
             onClick={() => setShowDuelScore(true)}
             title="Mostrar Placar do Duelo (F4)"
-            className="pointer-events-auto rounded-b-md border-x border-b border-[#c8a962]/45 bg-[#10141e]/92 px-2.5 py-1 text-[10px] font-semibold text-[#cbd5e1] hover:text-[#fde68a] cursor-pointer shadow-md whitespace-nowrap"
+            className="pointer-events-auto rounded-md lg:rounded-t-none lg:rounded-b-md border lg:border-t-0 border-[#c8a962]/45 bg-[#10141e]/92 px-2 sm:px-2.5 py-1 text-[10px] font-semibold text-[#cbd5e1] hover:text-[#fde68a] cursor-pointer shadow-md whitespace-nowrap"
           >
             Duelo (F4)
           </button>
         )}
 
-        {(options.showFps || hud.treatyRemaining > 0 || hud.kothState || hud.mapRuleTag) && (
+        {(options.showFps || hud.treatyRemaining > 0 || hud.kothState || hud.mapRuleTag || hud.multiplayerRoster) && (
           <div className="flex flex-wrap items-center gap-2 text-[11px] font-mono-num text-[#f3efe6] drop-shadow-[0_1px_2px_rgba(0,0,0,0.95)] pl-0.5">
             {options.showFps && hud.fps !== undefined && (
               <span className="text-emerald-300 font-semibold">{hud.fps} FPS</span>
+            )}
+            {hud.multiplayerRoster && (
+              <span className="rounded border border-[#d4af37]/45 bg-[#101622]/90 px-1.5 py-0.5 text-[10px] font-semibold text-[#f3d27a]">
+                {hud.multiplayerRoster.formatLabel} · Sala {hud.multiplayerRoster.roomCode} · Time {hud.multiplayerRoster.playerTeam}
+              </span>
             )}
             {hud.mapRuleTag && (
               <span className="text-[10px] font-semibold text-[#f3d27a]">
@@ -672,15 +677,15 @@ export function GameHUD({
       {/* TOP-CENTER: Redesigned AoM Retold Era Pediment, God Powers, Clock, Below-Clock Notices & Idle Banners */}
       <header
         aria-label="Painel das Eras, Poderes Divinos, Relógio e Estandartes"
-        className="pointer-events-none fixed top-0 left-1/2 z-20 -translate-x-1/2 flex flex-col items-center"
+        className="pointer-events-none fixed top-0 left-1/2 z-20 -translate-x-1/2 flex flex-col items-center max-w-[calc(100vw-0.5rem)]"
       >
-        <div className="flex items-start gap-2">
+        <div className="flex items-start gap-1 sm:gap-2 max-w-full">
           {/* Redesigned Era Pediment Plaque */}
-          <div className="pointer-events-auto relative flex flex-col items-center rounded-b-lg border-x border-b border-[#c8a962]/75 bg-gradient-to-b from-[#171d2c]/98 via-[#121722]/96 to-[#0c1018]/98 px-3 pb-1.5 pt-1.5 shadow-[0_10px_26px_rgba(0,0,0,0.85)] min-w-[320px] sm:min-w-[404px]">
+          <div className="pointer-events-auto relative flex flex-col items-center rounded-b-lg border-x border-b border-[#c8a962]/75 bg-gradient-to-b from-[#171d2c]/98 via-[#121722]/96 to-[#0c1018]/98 px-2 sm:px-3 pb-1 sm:pb-1.5 pt-1 sm:pt-1.5 shadow-[0_10px_26px_rgba(0,0,0,0.85)] w-[min(calc(100vw-0.75rem),410px)] sm:w-auto sm:min-w-[360px] lg:min-w-[404px]">
             <div className="pointer-events-none absolute inset-x-3 top-0 h-[2px] bg-gradient-to-r from-transparent via-[#f3d27a]/85 to-transparent" />
 
             {/* Tier 1: Active Era Emblem + Connected 5-Era Track + Evolution Control */}
-            <div className="flex w-full items-center justify-between gap-3 border-b border-[#c8a962]/25 pb-1.5">
+            <div className="flex w-full items-center justify-between gap-2 sm:gap-3 border-b border-[#c8a962]/25 pb-1 sm:pb-1.5">
               <button
                 type="button"
                 onClick={() => setShowAgeBonuses((v) => !v)}
@@ -1041,8 +1046,8 @@ export function GameHUD({
       </header>
 
       {/* TOP-RIGHT: Minimal Classical Utility Strip */}
-      <div className="fixed top-0 right-2.5 z-20 flex flex-col items-end gap-1">
-        <div className="flex items-center gap-0.5 rounded-b-md border-x border-b border-[#c8a962]/50 bg-[#141821]/94 px-1.5 py-1 shadow-lg">
+      <div className="fixed top-[68px] sm:top-[72px] lg:top-0 right-1.5 sm:right-2.5 z-20 flex flex-col items-end gap-1">
+        <div className="flex items-center gap-0.5 rounded-md lg:rounded-t-none lg:rounded-b-md border lg:border-t-0 border-[#c8a962]/50 bg-[#141821]/94 px-1 sm:px-1.5 py-0.5 sm:py-1 shadow-lg">
           <button
             type="button"
             onClick={() => setActiveDialog((d) => (d === 'techtree' ? 'none' : 'techtree'))}
@@ -1346,11 +1351,11 @@ export function GameHUD({
         </div>
 
         {/* Main AoM: Retold Bottom Strip (Bronze/Obsidian Resource Ledger + Command Dock + Diamond Minimap) */}
-        <div className="pointer-events-auto flex flex-col md:flex-row items-stretch md:items-end justify-between gap-2 px-1.5 pb-1.5">
+        <div className="pointer-events-auto flex flex-col md:flex-row items-stretch md:items-end justify-between gap-1.5 md:gap-2 px-1.5 pb-1.5">
           {/* ZONE 1 (BOTTOM-LEFT): AoM Retold Resource & Population Ledger */}
-          <div className="relative md:w-[164px] shrink-0 rounded-md border-2 border-[#c8a962]/70 bg-[#0d111a]/96 px-2.5 py-2 text-xs shadow-[0_10px_28px_rgba(0,0,0,0.85)]">
+          <div className="relative md:w-[164px] shrink-0 rounded-md border-2 border-[#c8a962]/70 bg-[#0d111a]/96 px-2 py-1 md:px-2.5 md:py-2 text-xs shadow-[0_10px_28px_rgba(0,0,0,0.85)]">
             {showFavorPanel && (
-              <div className="absolute bottom-full left-0 mb-2 w-72 rounded-md border-2 border-[#38bdf8]/65 bg-[#0b101b]/98 p-2.5 text-[11px] text-[#f3efe6] shadow-[0_12px_32px_rgba(0,0,0,0.9)] z-30">
+              <div className="absolute bottom-full left-0 mb-2 w-[min(288px,92vw)] rounded-md border-2 border-[#38bdf8]/65 bg-[#0b101b]/98 p-2.5 text-[11px] text-[#f3efe6] shadow-[0_12px_32px_rgba(0,0,0,0.9)] z-30">
                 <div className="flex items-center justify-between gap-2 border-b border-[#38bdf8]/30 pb-1.5">
                   <div className="flex items-center gap-1.5 font-display text-xs font-bold text-[#7dd3fc]">
                     <ResourceIcon kind="favor" size={16} />
@@ -1510,7 +1515,7 @@ export function GameHUD({
           </div>
 
           {/* CENTER STONE/BRONZE AoM: RETOLD COMMAND PANEL + PORTRAIT/SPECS + QUEUE */}
-          <div className="flex-1 max-w-[990px] grid grid-cols-1 md:grid-cols-12 gap-2 rounded-md border-2 border-[#c8a962]/70 bg-[#0d111a]/96 p-2 shadow-[0_10px_28px_rgba(0,0,0,0.85)]">
+          <div className="flex-1 max-w-[990px] grid grid-cols-1 md:grid-cols-12 gap-1.5 md:gap-2 rounded-md border-2 border-[#c8a962]/70 bg-[#0d111a]/96 p-1.5 sm:p-2 shadow-[0_10px_28px_rgba(0,0,0,0.85)]">
             {/* ZONE 2 (LEFT-CENTER): Retold Context-Strict Command Grid */}
             <div className="md:col-span-5 flex flex-col justify-between gap-1.5 md:border-r border-[#c8a962]/20 md:pr-2">
               <div className="flex items-center justify-between gap-1.5 border-b border-[#c8a962]/25 pb-1">
@@ -1665,7 +1670,7 @@ export function GameHUD({
                     </button>
                   )}
 
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-1 max-h-[124px] overflow-y-auto pr-0.5">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-1 max-h-[88px] sm:max-h-[124px] overflow-y-auto pr-0.5">
                     {buildingList.map((b) => {
                       const tcAtMax =
                         b.kind === 'town_center' && hud.playerTownCenterCount >= hud.maxTownCenters;
@@ -1829,7 +1834,7 @@ export function GameHUD({
                     const showSkyPassage = selectedPlayerBuildingKind === 'sky_passage';
 
                     return (
-                      <div className="flex flex-1 flex-col gap-1.5 max-h-[148px] overflow-y-auto pr-0.5">
+                      <div className="flex flex-1 flex-col gap-1.5 max-h-[96px] sm:max-h-[148px] overflow-y-auto pr-0.5">
                         {showAgeUp && nextAge && nextAgeCost && (
                           <button
                             type="button"
@@ -2584,7 +2589,7 @@ export function GameHUD({
           </div>
 
           {/* ZONE 4 (BOTTOM-RIGHT): AoM: The Titans Diamond Minimap */}
-          <div className="flex items-center justify-center md:justify-end shrink-0">
+          <div className="fixed bottom-[196px] sm:bottom-[228px] right-1.5 z-20 md:static flex items-center justify-end shrink-0">
             <Minimap
               blips={hud.minimapBlips}
               pantheon={hud.pantheon}
@@ -2625,16 +2630,16 @@ export function GameHUD({
 
       {/* MINOR GOD AGE-UP SELECTION MODAL (RETOLD PORTRAITS & BENEFITS) */}
       {hud.pendingMinorGodAge !== null && hud.phase === 'playing' && (
-        <div className="fixed inset-0 z-30 flex items-center justify-center bg-[#0b0e13]/82 p-4">
-          <div className="w-full max-w-3xl rounded-xl border-2 border-[#c8a962]/70 bg-[#0d111a] p-5 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-[#c8a962]/30 pb-3">
-              <div className="flex items-center gap-3">
-                <EraIcon age={hud.pendingMinorGodAge} pantheon={hud.pantheon} size={38} active />
-                <div>
-                  <h3 className="font-display text-lg font-bold text-[#f3d27a]">
+        <div className="fixed inset-0 z-30 flex items-center justify-center bg-[#0b0e13]/82 p-2.5 sm:p-4">
+          <div className="w-full max-w-3xl max-h-[calc(100dvh-1.25rem)] flex flex-col overflow-hidden rounded-xl border-2 border-[#c8a962]/70 bg-[#0d111a] p-3.5 sm:p-5 shadow-2xl">
+            <div className="flex items-center justify-between gap-2 border-b border-[#c8a962]/30 pb-2.5 sm:pb-3 shrink-0">
+              <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+                <EraIcon age={hud.pendingMinorGodAge} pantheon={hud.pantheon} size={34} active />
+                <div className="min-w-0">
+                  <h3 className="font-display text-sm sm:text-lg font-bold text-[#f3d27a] truncate">
                     Avançar para a {AGE_NAMES[hud.pendingMinorGodAge]} · {getEraSubtitle(hud.pendingMinorGodAge, hud.pantheon)}
                   </h3>
-                  <p className="text-xs text-[#9ca3af]">
+                  <p className="text-[11px] sm:text-xs text-[#9ca3af] line-clamp-2">
                     Escolha o Deus Menor que concederá Poder Divino, Unidade Mítica e Tecnologias para {playerPantheon.name} ({hud.majorGodName})
                   </p>
                 </div>
@@ -2642,13 +2647,13 @@ export function GameHUD({
               <button
                 type="button"
                 onClick={onCancelMinorGod}
-                className="rounded border border-[#c8a962]/35 bg-[#151b28] px-3 py-1.5 text-xs font-semibold text-[#e6dfd1] hover:border-[#f3d27a] cursor-pointer"
+                className="shrink-0 rounded border border-[#c8a962]/35 bg-[#151b28] px-2.5 sm:px-3 py-1 sm:py-1.5 text-xs font-semibold text-[#e6dfd1] hover:border-[#f3d27a] cursor-pointer"
               >
                 Cancelar
               </button>
             </div>
 
-            <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[75vh] overflow-y-auto pr-0.5">
+            <div className="mt-3 sm:mt-4 grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 flex-1 min-h-0 overflow-y-auto pr-0.5">
               {getMinorGodChoicesForAge(hud.majorGodName, hud.pantheon, hud.pendingMinorGodAge).map((mg) => {
                 const gp = GOD_POWERS[mg.godPower];
                 const PowerIcon = getGodPowerIcon(mg.godPower);
@@ -2765,10 +2770,10 @@ export function GameHUD({
 
       {/* IN-GAME PORT DIALOGS (uitechtree, uiobjectivesdialog, uiplayerstatusdialog, uitributedlg) */}
       {activeDialog !== 'none' && hud.phase === 'playing' && (
-        <div className="fixed inset-0 z-30 flex items-center justify-center bg-[#0b0e13]/70 p-4">
-          <div className="w-full max-w-3xl rounded-xl border border-[#d4af37]/50 bg-[#12161f] p-5 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-[#d4af37]/25 pb-2.5">
-              <h3 className="font-display text-lg font-bold text-[#f3d27a]">
+        <div className="fixed inset-0 z-30 flex items-center justify-center bg-[#0b0e13]/70 p-2.5 sm:p-4">
+          <div className="w-full max-w-3xl max-h-[calc(100dvh-1.25rem)] flex flex-col overflow-hidden rounded-xl border border-[#d4af37]/50 bg-[#12161f] p-3.5 sm:p-5 shadow-2xl">
+            <div className="flex items-center justify-between gap-2 border-b border-[#d4af37]/25 pb-2.5 shrink-0">
+              <h3 className="font-display text-sm sm:text-lg font-bold text-[#f3d27a] truncate">
                 {activeDialog === 'techtree'
                   ? `Árvore Tecnológica — ${playerPantheon.name} (${hud.majorGodName})`
                   : activeDialog === 'objectives'
@@ -2782,14 +2787,14 @@ export function GameHUD({
               <button
                 type="button"
                 onClick={() => setActiveDialog('none')}
-                className="rounded border border-[#d4af37]/40 bg-[#181e29] px-3 py-1 text-xs font-semibold text-[#e6dfd1] hover:border-[#f3d27a] cursor-pointer"
+                className="shrink-0 rounded border border-[#d4af37]/40 bg-[#181e29] px-3 py-1 text-xs font-semibold text-[#e6dfd1] hover:border-[#f3d27a] cursor-pointer"
               >
                 Fechar
               </button>
             </div>
 
             {activeDialog === 'techtree' && (
-              <div className="mt-3 space-y-3 max-h-[65vh] overflow-y-auto text-xs pr-0.5">
+              <div className="mt-3 space-y-3 flex-1 min-h-0 overflow-y-auto text-xs pr-0.5">
                 <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5">
                   {([1, 2, 3, 4, 5] as AgeLevel[]).map((era) => {
                     const current = hud.age === era;
@@ -3034,7 +3039,7 @@ export function GameHUD({
             )}
 
             {activeDialog === 'player_options' && (
-              <div className="mt-4 space-y-2.5 text-xs">
+              <div className="mt-3 sm:mt-4 space-y-2 flex-1 min-h-0 overflow-y-auto pr-0.5 text-xs">
                 <button
                   type="button"
                   onClick={() =>
@@ -3233,11 +3238,11 @@ export function GameHUD({
 
       {/* IN-GAME MENU MODAL (mainGameMenu from uimain2.xmb) */}
       {hud.phase === 'paused' && (
-        <div className="fixed inset-0 z-30 flex items-center justify-center bg-[#0b0e13]/75 p-4">
-          <div className="w-full max-w-sm rounded-xl border border-[#d4af37]/50 bg-[#12161f] p-5 text-center shadow-2xl">
+        <div className="fixed inset-0 z-30 flex items-center justify-center bg-[#0b0e13]/75 p-2.5 sm:p-4">
+          <div className="w-full max-w-sm max-h-[calc(100dvh-1.25rem)] overflow-y-auto rounded-xl border border-[#d4af37]/50 bg-[#12161f] p-4 sm:p-5 text-center shadow-2xl">
             {pausePrompt === 'menu' && (
               <>
-                <h2 className="font-display text-2xl font-bold text-[#f3d27a]">Menu do Jogo</h2>
+                <h2 className="font-display text-xl sm:text-2xl font-bold text-[#f3d27a]">Menu do Jogo</h2>
                 <p className="mt-1 text-xs text-[#9ca3af]">
                   WASD move · Q/E gira · Roda do Mouse zoom · Esc/F10 pausa
                 </p>
@@ -3360,16 +3365,16 @@ export function GameHUD({
 
       {/* POST-GAME SCREEN (uipostgamescreen.xmb with Tabs) */}
       {(hud.phase === 'victory' || hud.phase === 'defeat') && (
-        <div className="fixed inset-0 z-30 flex items-center justify-center bg-[#0b0e13]/82 p-4">
-          <div className="w-full max-w-lg rounded-xl border border-[#d4af37]/50 bg-[#12161f] p-6 text-center shadow-2xl">
-            <div className="mx-auto mb-2.5 flex h-12 w-12 items-center justify-center rounded-full border border-[#d4af37]/40 bg-[#1b212e]">
+        <div className="fixed inset-0 z-30 flex items-center justify-center bg-[#0b0e13]/82 p-2.5 sm:p-4">
+          <div className="w-full max-w-lg max-h-[calc(100dvh-1.25rem)] overflow-y-auto rounded-xl border border-[#d4af37]/50 bg-[#12161f] p-4 sm:p-6 text-center shadow-2xl">
+            <div className="mx-auto mb-2 flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full border border-[#d4af37]/40 bg-[#1b212e]">
               {hud.phase === 'victory' ? (
-                <Crown className="h-6 w-6 text-[#facc15]" />
+                <Crown className="h-5 w-5 sm:h-6 sm:w-6 text-[#facc15]" />
               ) : (
-                <Shield className="h-6 w-6 text-[#ef4444]" />
+                <Shield className="h-5 w-5 sm:h-6 sm:w-6 text-[#ef4444]" />
               )}
             </div>
-            <h2 className="font-display text-3xl font-bold text-[#f8f4ea]">
+            <h2 className="font-display text-2xl sm:text-3xl font-bold text-[#f8f4ea]">
               {hud.phase === 'victory' ? 'Vitória Gloriosa' : 'Derrota no Vale'}
             </h2>
             <p className="mt-1 text-xs text-[#9ca3af]">

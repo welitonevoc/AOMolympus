@@ -11,7 +11,8 @@
   body,
   #root {
     width: 100%;
-    height: 100%;
+    height: 100vh;
+    height: 100dvh;
     margin: 0;
     padding: 0;
     overflow: hidden;
@@ -19,6 +20,26 @@
     background-color: #0b0e13;
     color: #f3efe6;
     user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(212, 175, 55, 0.35) rgba(11, 14, 19, 0.4);
+  }
+
+  *::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: rgba(11, 14, 19, 0.4);
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background-color: rgba(212, 175, 55, 0.38);
+    border-radius: 9999px;
   }
 }
 

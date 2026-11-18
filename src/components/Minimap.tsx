@@ -469,8 +469,12 @@ export function Minimap({
     setHoverInfo(null);
   };
 
-  const wrapperSizeClass = expanded ? 'h-[208px] w-[212px]' : 'h-[154px] w-[158px]';
-  const diamondSizeClass = expanded ? 'h-[144px] w-[144px]' : 'h-[106px] w-[106px]';
+  const wrapperSizeClass = expanded
+    ? 'h-[172px] w-[176px] sm:h-[208px] sm:w-[212px]'
+    : 'h-[112px] w-[116px] sm:h-[140px] sm:w-[144px] lg:h-[154px] lg:w-[158px]';
+  const diamondSizeClass = expanded
+    ? 'h-[120px] w-[120px] sm:h-[144px] sm:w-[144px]'
+    : 'h-[78px] w-[78px] sm:h-[96px] sm:w-[96px] lg:h-[106px] lg:w-[106px]';
 
   return (
     <div className={`relative flex items-center justify-center shrink-0 select-none ${wrapperSizeClass}`}>

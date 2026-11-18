@@ -1,3 +1,5 @@
+import type { MultiplayerMatchRoster } from './multiplayerTypes';
+
 export type PantheonId =
   | 'greek'
   | 'egyptian'
@@ -5046,6 +5048,9 @@ export interface GameHudSnapshot {
   prayingVillagerCount?: number;
   empoweredMonumentCount?: number;
   oracleVisionSummary?: { count: number; avgEfficiencyPct: number; fullVisionCount: number };
+  playerColorHex?: number;
+  playerCrestId?: string;
+  multiplayerRoster?: MultiplayerMatchRoster;
 }
 
 export interface MatchStartOptions {
@@ -5062,6 +5067,9 @@ export interface MatchStartOptions {
   dayNightCycle?: boolean;
   titansEnabled?: boolean;
   treatyMinutes?: number;
+  playerColorHex?: number;
+  playerCrestId?: string;
+  multiplayerRoster?: MultiplayerMatchRoster;
 }
 
 export type AoMScaleProfile = 'classic_aom' | 'monumental' | 'realistic' | 'compact';

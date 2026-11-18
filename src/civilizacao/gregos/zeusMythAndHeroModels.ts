@@ -650,8 +650,9 @@ function buildManticore(team: TeamId, pal: MaterialPalette, enableShadows: boole
 // ============================================================================
 // 3. MEDUSA (Coiled Serpent Lower Body + Writhing Snake Hair + Petrifying Bow)
 // ============================================================================
-function buildMedusa(team: TeamId, _pal: MaterialPalette, enableShadows: boolean): THREE.Group {
-  const model = buildZeusMedusaModel({ teamId: team, scale: 0.85 });
+function buildMedusa(_team: TeamId, _pal: MaterialPalette, enableShadows: boolean): THREE.Group {
+  const model = buildZeusMedusaModel();
+  model.root.scale.setScalar(0.85);
   const root = model.root;
   let elapsed = 0;
   root.userData.animatePose = (dt: number, moving: boolean, speed: number, attackT: number | null) => {

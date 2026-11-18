@@ -167,7 +167,7 @@ export default function App() {
   };
 
   return (
-    <div className="relative h-screen w-screen overflow-hidden bg-[#07090e] select-none font-sans text-white">
+    <div className="relative h-[100dvh] w-full overflow-hidden bg-[#07090e] select-none font-sans text-white">
       {/* 3D Canvas Container */}
       <div ref={containerRef} className="absolute inset-0 z-0 h-full w-full" />
 

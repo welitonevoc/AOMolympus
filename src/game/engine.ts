@@ -547,6 +547,9 @@ export class AoMEngine {
   private gameSpeed = 1.0;
   private cameraSensitivity = 1.0;
   private scenarioTitle: string | undefined = undefined;
+  private playerColorHex: number | undefined = undefined;
+  private playerCrestId: string | undefined = undefined;
+  private multiplayerRoster: MatchStartOptions['multiplayerRoster'] = undefined;
   public hopliteRenderMode: '3d' | 'sprite' | 'brg' | 'uv2d' = '3d';
   public hopliteArmorTier: 1 | 2 | 3 | 4 = 3;
   public globalScaleConfig: AoMGlobalScaleConfig = { ...DEFAULT_AOM_SCALE_CONFIG };
@@ -1103,6 +1106,9 @@ export class AoMEngine {
       rollUnknownMapVariant(mapId);
     }
     this.scenarioTitle = isTitlePreview ? undefined : extras?.scenarioTitle;
+    this.playerColorHex = isTitlePreview ? undefined : extras?.playerColorHex;
+    this.playerCrestId = isTitlePreview ? undefined : extras?.playerCrestId;
+    this.multiplayerRoster = isTitlePreview ? undefined : extras?.multiplayerRoster;
     if (extras?.gameSpeed) {
       this.gameSpeed = Math.max(0.5, Math.min(2.0, extras.gameSpeed));
     } else if (this.gameType === 'lightning') {
@@ -1111,7 +1117,7 @@ export class AoMEngine {
     this.rebuildTerrainForMap(mapId);
     this.weatherTimer = 0;
     this.setWeather(isTitlePreview ? 'clear' : getMapBiomeVisuals(mapId).weatherPool[0] ?? 'clear');
-    this.palette.tunicPlayer.color.setHex(PANTHEONS[pantheon].bannerHex);
+    this.palette.tunicPlayer.color.setHex(this.playerColorHex ?? PANTHEONS[pantheon].bannerHex);
 
     this.elapsedSeconds = 0;
     const startAge: AgeLevel = this.gameType === 'deathmatch' ? 4 : (extras?.startingAge ?? 1);
@@ -11550,6 +11556,9 @@ export class AoMEngine {
       stats: { ...this.stats },
       fps: this.fpsEstimate,
       scenarioTitle: this.scenarioTitle,
+      playerColorHex: this.playerColorHex,
+      playerCrestId: this.playerCrestId,
+      multiplayerRoster: this.multiplayerRoster,
       projectionMode: this.projectionMode,
       hopliteRenderMode: this.hopliteRenderMode,
       hopliteArmorTier: this.hopliteArmorTier,

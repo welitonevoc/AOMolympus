@@ -196,7 +196,7 @@ function sculpt(
 }
 
 export interface HydraBuildOptions {
-  teamId?: TeamId;
+  teamId?: TeamId | 'gaia' | 'red';
   textures?: HydraTextures;
   scale?: number;
 }
@@ -209,7 +209,7 @@ export function buildZeusHydra(options: HydraBuildOptions = {}): HydraBuildResul
   if (options.teamId === 'gaia') {
     teamBlueHex = 0x15803d;
     teamEmissiveHex = 0x166534;
-  } else if (options.teamId === 'red') {
+  } else if (options.teamId === 'enemy' || options.teamId === 'red') {
     teamBlueHex = 0xb91c1c;
     teamEmissiveHex = 0x991b1b;
   }

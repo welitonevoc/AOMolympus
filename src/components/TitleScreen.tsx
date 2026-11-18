@@ -177,17 +177,17 @@ export function TitleScreen({
     return (
       <div
         onClick={() => nav('MAIN_MENU')}
-        className="fixed inset-0 z-30 flex flex-col items-center justify-end pb-14 p-6 text-center cursor-pointer select-none"
+        className="fixed inset-0 z-30 flex flex-col items-center justify-end pb-8 sm:pb-14 p-4 sm:p-6 text-center cursor-pointer select-none"
       >
         <OlympusTitleBackdrop paused={uvModalOpen} cinematicMode={true} />
 
-        <div className="relative z-10 animate-aom-crest max-w-xl rounded-xl border border-[#d4af37]/40 bg-[#080d17]/88 px-10 py-8 shadow-[0_28px_72px_rgba(0,0,0,0.85)]">
-          <h1 className="font-display text-3xl sm:text-4xl font-bold tracking-[0.05em] text-[#f6e6b8] text-balance">
+        <div className="relative z-10 animate-aom-crest w-full max-w-xl rounded-xl border border-[#d4af37]/40 bg-[#080d17]/88 px-5 py-5 sm:px-10 sm:py-8 shadow-[0_28px_72px_rgba(0,0,0,0.85)]">
+          <h1 className="font-display text-2xl sm:text-4xl font-bold tracking-[0.05em] text-[#f6e6b8] text-balance">
             Age of Mythology: Olympus
           </h1>
           {renderOlympusFiligree()}
           <p className="mt-2 text-xs tracking-wide text-[#cbd5e1]">
-            Clique na tela ou pressione qualquer tecla para continuar
+            Toque na tela ou pressione qualquer tecla para continuar
           </p>
         </div>
       </div>
@@ -195,7 +195,16 @@ export function TitleScreen({
   }
 
   const isCompact = COMPACT_MENU_STATES.has(menuState);
-  const containerWidth = isCompact ? 'max-w-[400px]' : 'max-w-5xl';
+  const isMultiplayerWide =
+    menuState === 'UI_MP_ESO' ||
+    menuState === 'MULTIPLAYER_LAN' ||
+    menuState === 'MULTIPLAYER_LOBBY' ||
+    menuState === 'UI_HOST_GAME_DIALOG';
+  const containerWidth = isCompact
+    ? 'max-w-[400px]'
+    : isMultiplayerWide
+    ? 'max-w-6xl'
+    : 'max-w-5xl';
 
   const renderMenuBtn = (
     label: string,
@@ -207,15 +216,15 @@ export function TitleScreen({
       key={label}
       type="button"
       onClick={onClick}
-      className={`group flex min-h-[42px] w-full items-center justify-between rounded-lg border px-4 py-2 text-sm font-semibold tracking-wide transition-all duration-150 cursor-pointer whitespace-nowrap shrink-0 focus-visible:outline-2 focus-visible:outline-[#f3d27a] ${
+      className={`group flex min-h-[38px] sm:min-h-[42px] w-full items-center justify-between rounded-lg border px-3.5 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold tracking-wide transition-all duration-150 cursor-pointer whitespace-nowrap shrink-0 focus-visible:outline-2 focus-visible:outline-[#f3d27a] ${
         highlight
           ? 'border-[#f3d27a]/85 bg-gradient-to-r from-[#d4af37] via-[#e4c158] to-[#c99e28] text-[#090d16] font-bold shadow-[0_8px_24px_rgba(212,175,55,0.28)] hover:brightness-105'
           : 'border-white/10 bg-[#121826]/92 text-[#ece6d9] hover:border-[#d4af37]/60 hover:bg-[#192235] hover:translate-x-0.5'
       }`}
     >
-      <span className="flex items-center gap-3">
+      <span className="flex items-center gap-2.5 sm:gap-3 truncate">
         {icon}
-        <span>{label}</span>
+        <span className="truncate">{label}</span>
       </span>
       <span
         aria-hidden="true"
@@ -229,7 +238,7 @@ export function TitleScreen({
   );
 
   return (
-    <div className="fixed inset-0 z-30 flex items-center justify-center p-4 sm:p-6">
+    <div className="fixed inset-0 z-30 flex items-center justify-center p-2.5 sm:p-5 md:p-6">
       {/* Epic Real-Time Animated 3D Mount Olympus Scene */}
       <OlympusTitleBackdrop
         paused={uvModalOpen}
@@ -242,15 +251,15 @@ export function TitleScreen({
       )}
 
       {/* Top-Right Minimal Utility Strip */}
-      <div className="fixed top-4 right-4 z-40 flex items-center gap-1.5 rounded-lg border border-white/12 bg-[#0b101b]/92 p-1 shadow-lg">
+      <div className="fixed top-2 right-2 sm:top-4 sm:right-4 z-40 flex items-center gap-1 sm:gap-1.5 rounded-lg border border-white/12 bg-[#0b101b]/92 p-1 shadow-lg">
         <button
           type="button"
           onClick={() => nav('UI_PROFILE_SELECT')}
           title="Selecionar Perfil de Jogador"
-          className="flex h-8 items-center gap-1.5 rounded px-2.5 text-xs font-medium text-[#f3d27a] hover:bg-[#182032] cursor-pointer transition-colors whitespace-nowrap shrink-0"
+          className="flex h-7 sm:h-8 items-center gap-1.5 rounded px-2 sm:px-2.5 text-[11px] sm:text-xs font-medium text-[#f3d27a] hover:bg-[#182032] cursor-pointer transition-colors whitespace-nowrap shrink-0"
         >
-          <User className="h-3.5 w-3.5" />
-          <span>{options.playerName}</span>
+          <User className="h-3.5 w-3.5 shrink-0" />
+          <span className="max-w-[96px] sm:max-w-[160px] truncate">{options.playerName}</span>
         </button>
 
         <button
@@ -281,7 +290,7 @@ export function TitleScreen({
 
       {/* Bottom-Right Live Olympus Scene Stage Bar */}
       {isCompact && (
-        <div className="fixed bottom-4 right-4 z-40 flex items-center gap-2.5 rounded-lg border border-[#d4af37]/30 bg-[#0b101b]/92 px-3 py-1.5 shadow-xl">
+        <div className="fixed bottom-2 right-2 sm:bottom-4 sm:right-4 z-40 flex items-center gap-2 rounded-lg border border-[#d4af37]/30 bg-[#0b101b]/92 px-2.5 py-1 sm:px-3 sm:py-1.5 shadow-xl">
           <span className="hidden sm:inline text-[11px] font-medium text-[#cbd5e1] whitespace-nowrap">
             Monte Olimpo
           </span>
@@ -316,7 +325,7 @@ export function TitleScreen({
 
       {/* Main Architectural Menu Container */}
       <div
-        className={`relative z-10 w-full ${containerWidth} max-h-[calc(100vh-2rem)] flex flex-col transition-all duration-300 ${
+        className={`relative z-10 w-full ${containerWidth} max-h-[calc(100dvh-1.25rem)] sm:max-h-[calc(100dvh-2.5rem)] flex flex-col transition-all duration-300 ${
           isCompact && cinematicView
             ? 'scale-95 opacity-0 pointer-events-none'
             : 'scale-100 opacity-100'
@@ -324,8 +333,8 @@ export function TitleScreen({
       >
         <div className="animate-aom-panel flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-[#d4af37]/40 bg-[#090e1a]/86 shadow-[0_28px_72px_rgba(0,0,0,0.85)]">
           {/* Monumental Header Crest */}
-          <div className="animate-aom-crest border-b border-white/10 bg-gradient-to-b from-[#131b2b] to-[#0d1320] px-6 pt-5 pb-3.5 text-center">
-            <h1 className="font-display text-2xl font-bold tracking-[0.04em] text-[#f7e9c3] text-balance">
+          <div className="animate-aom-crest border-b border-white/10 bg-gradient-to-b from-[#131b2b] to-[#0d1320] px-4 pt-3.5 pb-2.5 sm:px-6 sm:pt-5 sm:pb-3.5 text-center shrink-0">
+            <h1 className="font-display text-lg sm:text-2xl font-bold tracking-[0.04em] text-[#f7e9c3] text-balance">
               Age of Mythology: Olympus
             </h1>
 
@@ -333,9 +342,9 @@ export function TitleScreen({
           </div>
 
           {/* Menu Body */}
-          <div className="relative flex-1 overflow-y-auto px-5 py-4 sm:px-6">
+          <div className="relative flex-1 overflow-y-auto px-3.5 py-3 sm:px-6 sm:py-4">
             {menuState === 'MAIN_MENU' && (
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-1.5 sm:gap-2">
                 {hasSavedMatch &&
                   renderMenuBtn(
                     'Continuar Partida Salva',
@@ -494,18 +503,18 @@ export function TitleScreen({
             {menuState === 'SUB_MULTIPLAYER' && (
               <div className="flex flex-col gap-2">
                 <div className="mb-1 text-center font-display text-xs font-bold uppercase tracking-widest text-[#d4af37]">
-                  Multijogador
+                  Multijogador Global (até 6x6)
                 </div>
                 {renderMenuBtn(
-                  'LAN / IP Direto',
-                  () => nav('MULTIPLAYER_LAN'),
-                  <Network className="h-4 w-4 text-[#0b0e14]" />,
+                  'Lobbies Online Globais (até 12 Jog.)',
+                  () => nav('UI_MP_ESO'),
+                  <Globe className="h-4 w-4 text-[#0b0e14]" />,
                   true
                 )}
                 {renderMenuBtn(
-                  'Online (ESO)',
-                  () => nav('UI_MP_ESO'),
-                  <Globe className="h-4 w-4 text-[#d4af37]" />
+                  'Criar Sala Privada / Código',
+                  () => nav('UI_HOST_GAME_DIALOG'),
+                  <Network className="h-4 w-4 text-[#d4af37]" />
                 )}
                 <div className="mt-1 border-t border-white/8 pt-2">
                   {renderMenuBtn(

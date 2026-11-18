@@ -50,8 +50,13 @@ export function OlympusTitleBackdrop({
       scene.background = new THREE.Color(0x28566e);
       scene.fog = new THREE.FogExp2(0x6e857a, 0.011);
 
-      const camera = new THREE.PerspectiveCamera(42, width / height, 0.1, 180);
-      camera.position.set(0, 1.85, 18.4);
+      const initAspect = width / Math.max(1, height);
+      const getResponsiveFov = (asp: number) => (asp < 0.75 ? 54 : asp < 1.05 ? 48 : 42);
+      const getPortraitPullback = (asp: number) =>
+        asp < 1.0 ? Math.min(4.8, (1.0 - asp) * 7.2) : 0;
+
+      const camera = new THREE.PerspectiveCamera(getResponsiveFov(initAspect), initAspect, 0.1, 180);
+      camera.position.set(0, 1.85, 18.4 + getPortraitPullback(initAspect));
       camera.lookAt(0, 5.3, -1.5);
 
       const renderer = new THREE.WebGLRenderer({
@@ -610,7 +615,9 @@ export function OlympusTitleBackdrop({
         if (!entry) return;
         const w = Math.max(1, Math.floor(entry.contentRect.width));
         const h = Math.max(1, Math.floor(entry.contentRect.height));
-        camera.aspect = w / h;
+        const asp = w / h;
+        camera.aspect = asp;
+        camera.fov = getResponsiveFov(asp);
         camera.updateProjectionMatrix();
         renderer.setSize(w, h);
       });
@@ -662,9 +669,11 @@ export function OlympusTitleBackdrop({
         simTime += dt;
 
         const isCine = cinematicRef.current;
+        const portraitPullback = getPortraitPullback(camera.aspect);
         const baseCamX = Math.sin(simTime * 0.14) * (isCine ? 4.2 : 2.1);
         const baseCamY = 1.85 + Math.sin(simTime * 0.22) * 0.38;
-        const baseCamZ = (isCine ? 16.8 : 18.4) + Math.cos(simTime * 0.14) * 0.85;
+        const baseCamZ =
+          (isCine ? 16.8 : 18.4) + portraitPullback + Math.cos(simTime * 0.14) * 0.85;
 
         const targetCamX = baseCamX + (prefersReducedMotion ? 0 : mouseNormX * 0.8);
         const targetCamY = baseCamY - (prefersReducedMotion ? 0 : mouseNormY * 0.35);

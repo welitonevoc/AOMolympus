@@ -387,7 +387,7 @@ export function SkirmishSetupFlow({
               </button>
             </div>
 
-            <div className="flex max-h-[430px] flex-col gap-4 overflow-y-auto pr-1">
+            <div className="flex max-h-[300px] sm:max-h-[380px] lg:max-h-[430px] flex-col gap-4 overflow-y-auto pr-1">
               {rosterFilter !== 'coming_soon' &&
                 playableGroups.map(({ pantheon, meta, gods }) => (
                   <div key={pantheon.id} className="flex flex-col gap-2">
@@ -474,7 +474,7 @@ export function SkirmishSetupFlow({
                         </span>
                       </div>
 
-                      <div className="grid grid-cols-3 gap-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
                         {gods.map((god) => {
                           const isSelected = previewGod.id === god.id;
                           const imgSrc = getMajorGodPortrait(god.id, god.pantheon);
@@ -521,11 +521,11 @@ export function SkirmishSetupFlow({
           </div>
 
           {/* Right: Selected God Portrait, Lore, Powers & Continue CTA */}
-          <div className="lg:col-span-5 flex flex-col justify-between gap-3 rounded-lg border border-white/10 bg-[#131823] p-4">
+          <div className="lg:col-span-5 flex flex-col justify-between gap-3 rounded-lg border border-white/10 bg-[#131823] p-3 sm:p-4">
             <div className="flex flex-col gap-3">
               {/* Hero Portrait + Name */}
-              <div className="flex gap-3.5 items-start">
-                <div className="relative h-44 w-32 shrink-0 overflow-hidden rounded-lg border border-[#d4af37]/40 bg-[#0b0f18]">
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-3.5 items-center sm:items-start text-center sm:text-left">
+                <div className="relative h-36 w-28 sm:h-44 sm:w-32 shrink-0 overflow-hidden rounded-lg border border-[#d4af37]/40 bg-[#0b0f18]">
                   <SafeImage
                     src={previewPortrait}
                     alt={previewGod.name}
@@ -540,7 +540,7 @@ export function SkirmishSetupFlow({
                     {PANTHEON_DISPLAY_META[previewGod.pantheon].label}
                     {previewGod.comingSoon ? ' · Em breve' : ' · Disponível'}
                   </div>
-                  <h3 className="mt-0.5 font-display text-2xl font-bold leading-tight text-[#f5e6bf]">
+                  <h3 className="mt-0.5 font-display text-xl sm:text-2xl font-bold leading-tight text-[#f5e6bf]">
                     {previewGod.name}
                   </h3>
                   <p className="text-xs font-medium text-[#cbd5e1]">
@@ -727,7 +727,7 @@ export function SkirmishSetupFlow({
 
               {/* Selected Map Photo + Description Card */}
               <div className="overflow-hidden rounded-lg border border-white/10 bg-[#0d121b]">
-                <div className="relative h-44 sm:h-48 w-full overflow-hidden">
+                <div className="relative h-36 sm:h-44 md:h-48 w-full overflow-hidden">
                   <SafeImage
                     src={getMapLandscapeImage(selectedMap.id)}
                     alt={selectedMap.name}
@@ -741,14 +741,14 @@ export function SkirmishSetupFlow({
                       background: `linear-gradient(to top, rgba(13,18,27,0.96) 5%, rgba(13,18,27,0.35) 55%, transparent 100%)`,
                     }}
                   />
-                  <div className="absolute inset-x-0 bottom-0 p-3.5">
+                  <div className="absolute inset-x-0 bottom-0 p-3 sm:p-3.5">
                     <div className="text-[11px] font-semibold text-[#e5c45e]">
                       {selectedMap.biomeLabel} · {EXPANSION_LABELS[selectedMap.expansion]}
                       {selectedMap.specialRule
                         ? ` · ${SPECIAL_RULE_LABELS[selectedMap.specialRule]}`
                         : ''}
                     </div>
-                    <h3 className="font-display text-xl font-bold text-[#f8f4ea]">
+                    <h3 className="font-display text-lg sm:text-xl font-bold text-[#f8f4ea]">
                       {selectedMap.name}
                     </h3>
                   </div>
@@ -768,7 +768,7 @@ export function SkirmishSetupFlow({
               </div>
 
               {/* Clean Map Grid with Thumbnail Strip */}
-              <div className="grid max-h-48 grid-cols-2 sm:grid-cols-3 gap-1.5 overflow-y-auto pr-1">
+              <div className="grid max-h-40 sm:max-h-48 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-1.5 overflow-y-auto pr-1">
                 {filteredMaps.map((m) => {
                   const active = selectedMap.id === m.id;
                   return (
@@ -835,7 +835,7 @@ export function SkirmishSetupFlow({
 
                   <div className="mt-2">
                     <div className="mb-1 text-[11px] font-semibold text-[#cbd5e1]">Dificuldade</div>
-                    <div className="grid grid-cols-4 gap-1 rounded border border-white/10 bg-[#0e131c] p-0.5">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-1 rounded border border-white/10 bg-[#0e131c] p-0.5">
                       {difficulties.map((d) => (
                         <button
                           key={d.id}
@@ -888,7 +888,7 @@ export function SkirmishSetupFlow({
                 </div>
 
                 {/* Starting Age & Visibility */}
-                <div className="grid grid-cols-2 gap-2.5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   <div>
                     <div className="mb-1.5 text-[11px] font-semibold text-[#cbd5e1]">
                       Era Inicial
@@ -990,7 +990,7 @@ export function SkirmishSetupFlow({
 
                   {showAdvancedRules && (
                     <div className="mt-2.5 flex flex-col gap-2 text-xs">
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <div>
                           <div className="mb-1 text-[11px] font-semibold text-[#cbd5e1]">
                             Tamanho do Mundo

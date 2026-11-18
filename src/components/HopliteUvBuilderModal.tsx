@@ -3341,7 +3341,7 @@ export function HopliteUvBuilderModal({
           scene.fog = new THREE.FogExp2(0x080d1a, 0.016);
           addPedestal(2.2, 2.4, 0xfacc15);
 
-          const medusaRig = buildStudioMedusa({ teamId: 'player', scale: 1.0 });
+          const medusaRig = buildStudioMedusa();
           const medusaGroup = new THREE.Group();
           medusaGroup.add(medusaRig.root);
 
@@ -4247,24 +4247,24 @@ export function HopliteUvBuilderModal({
           </button>
         </div>
       ) : (
-        <header className="absolute top-3 left-3 right-3 z-20 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[#d4af37]/30 bg-[#0d121c]/95 px-3.5 py-2 shadow-[0_12px_36px_rgba(0,0,0,0.65)]">
+        <header className="absolute top-2 left-2 right-2 sm:top-3 sm:left-3 sm:right-3 z-20 flex flex-wrap items-center justify-between gap-1.5 sm:gap-2 rounded-xl border border-[#d4af37]/30 bg-[#0d121c]/95 px-2.5 py-1.5 sm:px-3.5 sm:py-2 shadow-[0_12px_36px_rgba(0,0,0,0.65)]">
           {/* Brand Title */}
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#d4af37]/40 bg-[#d4af37]/15 text-[#f5e3b0]">
-              <Box className="h-4 w-4" />
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="flex h-7 w-7 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-lg border border-[#d4af37]/40 bg-[#d4af37]/15 text-[#f5e3b0]">
+              <Box className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             </div>
-            <div className="leading-tight">
-              <div className="font-display text-sm font-bold text-[#f5e3b0]">
+            <div className="leading-tight min-w-0">
+              <div className="font-display text-xs sm:text-sm font-bold text-[#f5e3b0] truncate">
                 Estúdio 3D · Galeria Mitológica
               </div>
-              <div className="text-[10px] text-[#9ca3af] hidden sm:block">
+              <div className="text-[10px] text-[#9ca3af] hidden md:block truncate">
                 Arraste para orbitar · Scroll para zoom · Botão direito para deslocar
               </div>
             </div>
           </div>
 
           {/* 7 Studio Categories */}
-          <nav className="flex items-center gap-1 rounded-lg border border-white/10 bg-[#080b12] p-1 overflow-x-auto max-w-full">
+          <nav className="order-3 lg:order-none w-full lg:w-auto flex items-center gap-1 rounded-lg border border-white/10 bg-[#080b12] p-1 overflow-x-auto max-w-full">
             {(
               [
                 { id: 'unit', label: 'Unidades & Deuses', icon: Crown },
@@ -4384,11 +4384,11 @@ export function HopliteUvBuilderModal({
       {/* 3. Left Collapsible Catalog Drawer */}
       {!cinemaMode && (
         <aside
-          className={`absolute top-20 bottom-20 left-3 z-20 flex items-start transition-transform duration-200 pointer-events-none ${
+          className={`absolute top-[92px] sm:top-24 lg:top-20 bottom-16 sm:bottom-20 left-2 sm:left-3 z-20 flex items-start transition-transform duration-200 pointer-events-none ${
             leftDrawerOpen ? 'translate-x-0' : '-translate-x-[calc(100%-2.25rem)]'
           }`}
         >
-          <div className="pointer-events-auto flex h-full w-72 sm:w-80 flex-col rounded-xl border border-white/12 bg-[#0d121c]/95 shadow-[0_18px_48px_rgba(0,0,0,0.75)] overflow-hidden">
+          <div className="pointer-events-auto flex h-full w-[min(268px,calc(100vw-3.25rem))] sm:w-80 flex-col rounded-xl border border-white/12 bg-[#0d121c]/95 shadow-[0_18px_48px_rgba(0,0,0,0.75)] overflow-hidden">
             {/* Drawer Content based on Category */}
             {(galleryCategory === 'unit' || galleryCategory === 'building') && (
               <div className="border-b border-white/10 p-3 space-y-2.5 bg-[#111827]/70">
@@ -4947,7 +4947,7 @@ export function HopliteUvBuilderModal({
       {/* 4. Right Collapsible Geographic / Spec Card */}
       {!cinemaMode && (
         <aside
-          className={`hidden md:flex absolute top-20 bottom-20 right-3 z-20 items-start transition-transform duration-200 pointer-events-none ${
+          className={`hidden md:flex absolute top-24 lg:top-20 bottom-20 right-3 z-20 items-start transition-transform duration-200 pointer-events-none ${
             specDrawerOpen ? 'translate-x-0' : 'translate-x-[calc(100%-2.25rem)]'
           }`}
         >
@@ -5481,7 +5481,7 @@ export function HopliteUvBuilderModal({
 
       {/* 5. Compact Bottom Studio Control Dock */}
       {!cinemaMode && (
-        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 rounded-xl border border-white/15 bg-[#0d121c]/95 px-2.5 py-2 shadow-[0_16px_42px_rgba(0,0,0,0.85)] max-w-[96vw] overflow-x-auto">
+        <div className="absolute bottom-2 sm:bottom-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1 sm:gap-1.5 rounded-xl border border-white/15 bg-[#0d121c]/95 px-2 py-1.5 sm:px-2.5 sm:py-2 shadow-[0_16px_42px_rgba(0,0,0,0.85)] max-w-[96vw] overflow-x-auto">
           {/* Category-Specific Controls */}
           {galleryCategory === 'unit' && selectedUnit === 'zeus' && selectedCiv === 'greek' ? (
             <>
@@ -6674,8 +6674,10 @@ export function HopliteUvBuilderModal({
                   key={t.tier}
                   type="button"
                   onClick={() => {
-                    setBuildingAge(t.tier as any);
-                    onSelectTier(t.tier);
+                    setBuildingAge(t.tier);
+                    if (t.tier <= 4) {
+                      onSelectTier(t.tier as 1 | 2 | 3 | 4);
+                    }
                   }}
                   className={`rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
                     buildingAge === t.tier
@@ -6787,8 +6789,10 @@ export function HopliteUvBuilderModal({
                   key={t.tier}
                   type="button"
                   onClick={() => {
-                    setBuildingAge(t.tier as any);
-                    onSelectTier(t.tier);
+                    setBuildingAge(t.tier);
+                    if (t.tier <= 4) {
+                      onSelectTier(t.tier as 1 | 2 | 3 | 4);
+                    }
                   }}
                   className={`rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
                     buildingAge === t.tier
