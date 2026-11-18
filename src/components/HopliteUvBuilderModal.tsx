@@ -99,6 +99,25 @@ import {
   NorseWorkerTask,
 } from '../civilizacao/nordicos/norseVillagerModel';
 import {
+  buildAtlanteanCitizen,
+  buildAtlanteanLlama,
+  ATLANTEAN_GOD_THEMES,
+  AtlanteanCitizenInstance,
+  AtlanteanLlamaInstance,
+  AtlanteanAction,
+} from '../civilizacao/atlantes/atlanteanVillagerModel';
+import {
+  buildEgyptianLaborer,
+  EGYPTIAN_GOD_THEMES,
+  EgyptianLaborerInstance,
+  EgyptianLaborerAction,
+} from '../civilizacao/egipcios/egyptianVillagerModel';
+import {
+  buildGreekFortress as buildGreekFortressStudio,
+  GREEK_FORTRESS_THEMES,
+  GreekFortressAction,
+} from '../civilizacao/gregos/greekFortressModel';
+import {
   animateZeus,
   buildZeus,
   createZeusTempleEnvironment,
@@ -472,12 +491,20 @@ export function HopliteUvBuilderModal({
   const [hopliteAction, setHopliteAction] = useState<ZeusHopliteAction>('guarda');
   const [villagerGender, setVillagerGender] = useState<'homem' | 'mulher' | 'ambos'>('ambos');
   const [villagerTask, setVillagerTask] = useState<'vigilia' | 'andar' | 'madeira' | 'ouro' | 'fruta' | 'construir'>('vigilia');
+  const [egyptianLaborerGender, setEgyptianLaborerGender] = useState<'homem' | 'mulher' | 'ambos'>('ambos');
+  const [egyptianLaborerTask, setEgyptianLaborerTask] = useState<EgyptianLaborerAction>('vigilia');
+  const [atlanteanCitizenMode, setAtlanteanCitizenMode] = useState<'todos' | 'homem' | 'mulher'>('todos');
+  const [atlanteanCitizenTask, setAtlanteanCitizenTask] = useState<AtlanteanAction>('vigilia');
+  const [atlanteanIsHero, setAtlanteanIsHero] = useState<boolean>(false);
   const [norseWorkerMode, setNorseWorkerMode] = useState<NorseWorkerRole | 'todos'>('todos');
   const [norseWorkerTask, setNorseWorkerTask] = useState<NorseWorkerTask>('vigilia');
+  const [fortressAction, setFortressAction] = useState<GreekFortressAction>('guarnicao');
   const [focusDivine, setFocusDivine] = useState<boolean>(false);
   const [myrmidonFury, setMyrmidonFury] = useState<boolean>(true);
 
   // Refs synced without recreating WebGLRenderer
+  const fortressActionRef = useRef(fortressAction);
+  fortressActionRef.current = fortressAction;
   const animStateRef = useRef(animState);
   animStateRef.current = animState;
   const autoRotateRef = useRef(autoRotate3D);
@@ -502,6 +529,16 @@ export function HopliteUvBuilderModal({
   villagerGenderRef.current = villagerGender;
   const villagerTaskRef = useRef(villagerTask);
   villagerTaskRef.current = villagerTask;
+  const egyptianLaborerGenderRef = useRef(egyptianLaborerGender);
+  egyptianLaborerGenderRef.current = egyptianLaborerGender;
+  const egyptianLaborerTaskRef = useRef(egyptianLaborerTask);
+  egyptianLaborerTaskRef.current = egyptianLaborerTask;
+  const atlanteanCitizenModeRef = useRef(atlanteanCitizenMode);
+  atlanteanCitizenModeRef.current = atlanteanCitizenMode;
+  const atlanteanCitizenTaskRef = useRef(atlanteanCitizenTask);
+  atlanteanCitizenTaskRef.current = atlanteanCitizenTask;
+  const atlanteanIsHeroRef = useRef(atlanteanIsHero);
+  atlanteanIsHeroRef.current = atlanteanIsHero;
   const norseWorkerModeRef = useRef(norseWorkerMode);
   norseWorkerModeRef.current = norseWorkerMode;
   const norseWorkerTaskRef = useRef(norseWorkerTask);
@@ -1575,19 +1612,113 @@ export function HopliteUvBuilderModal({
           environmentGroup.add(refVillager);
         }
       } else if (galleryCategory === 'building') {
-        scene.background = defaultBg.clone();
-        scene.fog = new THREE.FogExp2(0x0b0e14, 0.014);
-        addPedestal(3.1, 3.4, 0xd4af37);
+        if (selectedCiv === 'greek' && selectedBuilding === 'fortress') {
+          const godKey = (
+            selectedMajorGod.toLowerCase() === 'poseidon'
+              ? 'poseidon'
+              : selectedMajorGod.toLowerCase() === 'hades'
+              ? 'hades'
+              : 'zeus'
+          ) as 'zeus' | 'poseidon' | 'hades';
+          const theme = GREEK_FORTRESS_THEMES[godKey] || GREEK_FORTRESS_THEMES.zeus;
 
-        group = createBuildingMesh(
-          selectedBuilding,
-          'player',
-          pal,
-          !isSoftwareGl,
-          selectedCiv,
-          selectedMajorGod,
-          buildingAge
-        );
+          scene.background = new THREE.Color(theme.bgHex);
+          scene.fog = new THREE.FogExp2(theme.bgHex, 0.016);
+          addPedestal(3.2, 3.5, theme.goldColor);
+
+          const effTier = buildingAge >= 4 ? 4 : 3;
+          const fortress = buildGreekFortressStudio(godKey, effTier, !isSoftwareGl);
+          group = fortress.root;
+
+          const arrowGeo = new THREE.CylinderGeometry(0.016, 0.016, 0.75, 6);
+          arrowGeo.rotateX(Math.PI / 2);
+          const arrowMat = new THREE.MeshBasicMaterial({ color: theme.arrowHex });
+          const activeArrows: Array<{ mesh: THREE.Mesh; start: THREE.Vector3; target: THREE.Vector3; progress: number; speed: number }> = [];
+
+          let volleyTimer = 0;
+          function spawnVolley(isT4: boolean) {
+            const count = isT4 ? 8 : 5;
+            const originY = isT4 ? 4.4 : 3.2;
+            for (let i = 0; i < count; i++) {
+              const a = (i / count) * Math.PI * 2 + Math.random() * 0.4;
+              const dist = 4.6 + Math.random() * 2.8;
+              const start = new THREE.Vector3(Math.cos(a) * 1.4, originY, Math.sin(a) * 1.4);
+              const target = new THREE.Vector3(Math.cos(a) * dist, 0.05, Math.sin(a) * dist);
+
+              const mesh = new THREE.Mesh(arrowGeo, arrowMat);
+              mesh.position.copy(start);
+              environmentGroup.add(mesh);
+
+              activeArrows.push({ mesh, start, target, progress: 0, speed: 1.45 + Math.random() * 0.35 });
+            }
+          }
+
+          let lastTierApplied = effTier;
+
+          group.userData.animatePose = (dt: number) => {
+            const act = fortressActionRef.current;
+            const currentT = buildingAge >= 4 ? 4 : 3;
+            if (currentT !== lastTierApplied) {
+              lastTierApplied = currentT;
+              fortress.setTier(currentT);
+            }
+
+            if (fortress.apexCrystal) {
+              fortress.apexCrystal.rotation.y += dt * 1.4;
+              fortress.apexCrystal.position.y = 3.22 + Math.sin(simTime * 2.6) * 0.06;
+            }
+
+            // Aura Divina
+            const targetAura = act === 'bencao' ? 0.78 : (currentT === 4 ? 0.25 : 0.0);
+            const ringMat = fortress.divineRing.material as THREE.MeshBasicMaterial;
+            ringMat.opacity = THREE.MathUtils.damp(ringMat.opacity, targetAura, 4, dt);
+            fortress.divineRing.rotation.z += dt * 0.4;
+            fortress.divineRing.scale.setScalar(1 + Math.sin(simTime * 3.5) * 0.04);
+
+            // Disparo de flechas
+            if (act === 'defesa') {
+              volleyTimer -= dt;
+              if (volleyTimer <= 0) {
+                volleyTimer = 0.75;
+                spawnVolley(currentT === 4);
+              }
+            }
+
+            for (let i = activeArrows.length - 1; i >= 0; i--) {
+              const ar = activeArrows[i];
+              ar.progress += dt * ar.speed;
+              const p = Math.min(1, ar.progress);
+              const pos = new THREE.Vector3().lerpVectors(ar.start, ar.target, p);
+              pos.y += Math.sin(p * Math.PI) * 1.35;
+              ar.mesh.position.copy(pos);
+
+              const nextP = Math.min(1, p + 0.04);
+              const nextPos = new THREE.Vector3().lerpVectors(ar.start, ar.target, nextP);
+              nextPos.y += Math.sin(nextP * Math.PI) * 1.35;
+              ar.mesh.lookAt(nextPos);
+
+              if (p >= 1) {
+                environmentGroup.remove(ar.mesh);
+                ar.mesh.geometry.dispose();
+                activeArrows.splice(i, 1);
+              }
+            }
+          };
+        } else {
+          scene.background = defaultBg.clone();
+          scene.fog = new THREE.FogExp2(0x0b0e14, 0.014);
+          addPedestal(3.1, 3.4, 0xd4af37);
+
+          group = createBuildingMesh(
+            selectedBuilding,
+            'player',
+            pal,
+            !isSoftwareGl,
+            selectedCiv,
+            selectedMajorGod,
+            buildingAge
+          );
+        }
 
         if (showHumanScale) {
           const refVillager = createUnitMesh('villager', 'player', pal, !isSoftwareGl, selectedCiv, selectedMajorGod);
@@ -2315,6 +2446,359 @@ export function HopliteUvBuilderModal({
             animateStudioNorseWorker(norseMan, dt, t, -0.82, 0, currentTask, effMode);
             animateStudioNorseWorker(norseDwarf, dt, t, 0.0, 0.9, currentTask, effMode);
             animateStudioNorseWorker(norseWoman, dt, t, 0.82, 1.8, currentTask, effMode);
+          };
+        } else if (
+          selectedCiv === 'egyptian' &&
+          selectedUnit === 'villager'
+        ) {
+          const godKey = (
+            selectedMajorGod.toLowerCase() === 'isis' || selectedMajorGod.toLowerCase() === 'ísis'
+              ? 'isis'
+              : selectedMajorGod.toLowerCase() === 'set'
+              ? 'set'
+              : 'ra'
+          ) as 'ra' | 'isis' | 'set';
+          const theme = EGYPTIAN_GOD_THEMES[godKey] || EGYPTIAN_GOD_THEMES.ra;
+
+          scene.background = new THREE.Color(theme.bgHex);
+          scene.fog = new THREE.FogExp2(theme.bgHex, 0.02);
+          addPedestal(2.2, 2.4, theme.accentHex);
+
+          const maleLaborer = buildEgyptianLaborer(false, godKey, !isSoftwareGl);
+          const femaleLaborer = buildEgyptianLaborer(true, godKey, !isSoftwareGl);
+          const laborerRoot = new THREE.Group();
+          laborerRoot.add(maleLaborer.root);
+          laborerRoot.add(femaleLaborer.root);
+          group = laborerRoot;
+
+          const animateStudioEgyptianLaborer = (
+            v: EgyptianLaborerInstance,
+            _dt: number,
+            t: number,
+            offsetX: number,
+            phaseOffset: number,
+            task: EgyptianLaborerAction
+          ) => {
+            if (!v.root.visible) return;
+
+            let vx = offsetX;
+            let vz = 0;
+            let vy = 0;
+            let yaw = 0;
+            let pitch = 0;
+            let torsoYaw = 0;
+            const breath = Math.sin(t * 2.3 + phaseOffset) * 0.018;
+
+            if (task === 'andar') {
+              const a = t * 0.95 + phaseOffset;
+              const R = v.isFemale ? 1.6 : 2.0;
+              vx = Math.cos(a) * R;
+              vz = Math.sin(a) * R;
+              yaw = -a;
+              pitch = 0.06;
+
+              const stride = t * 5.6 + phaseOffset;
+              const sinS = Math.sin(stride);
+              const cosS = Math.cos(stride);
+              vy = Math.abs(cosS) * 0.04;
+              torsoYaw = sinS * 0.08;
+
+              v.legs.L.hip.rotation.x = -0.12 + sinS * 0.36;
+              v.legs.L.knee.rotation.x = 0.18 + Math.max(0, -cosS) * 0.36;
+              v.legs.R.hip.rotation.x = -0.12 - sinS * 0.36;
+              v.legs.R.knee.rotation.x = 0.18 + Math.max(0, cosS) * 0.36;
+
+              v.rightArm.arm.rotation.set(-0.15 - sinS * 0.35, 0.08, 0.14);
+              v.rightArm.elbow.rotation.set(-0.25, 0, 0.08);
+              v.leftArm.arm.rotation.set(-0.15 + sinS * 0.35, -0.08, -0.14);
+              v.leftArm.elbow.rotation.set(-0.25, 0, -0.08);
+            } else if (task === 'madeira' || task === 'ouro' || task === 'construir') {
+              vx = offsetX;
+              vz = 0.25;
+              yaw = v.isFemale ? -0.22 : 0.22;
+
+              const speed = task === 'construir' ? 5.2 : 3.8;
+              const swing = (t * speed + phaseOffset) % (Math.PI * 2);
+              const strike = Math.sin(swing);
+
+              pitch = 0.14 + strike * 0.16;
+              torsoYaw = -0.18 + strike * 0.28;
+
+              v.rightArm.arm.rotation.set(-1.35 + strike * 0.95, 0.18, 0.25);
+              v.rightArm.elbow.rotation.set(-0.65 + strike * 0.35, 0.1, 0.1);
+              v.leftArm.arm.rotation.set(-0.65 + strike * 0.35, -0.25, -0.22);
+              v.leftArm.elbow.rotation.set(-0.85, -0.15, 0.15);
+
+              v.legs.L.hip.rotation.set(-0.22, -0.10, -0.06);
+              v.legs.L.knee.rotation.set(0.28, 0, 0);
+              v.legs.R.hip.rotation.set(0.18, 0.10, 0.06);
+              v.legs.R.knee.rotation.set(0.22, 0, 0);
+
+              if (strike > 0.92) {
+                spawnSpark(new THREE.Vector3(vx, 0.6, 0.8));
+              }
+            } else if (task === 'fruta') {
+              vx = offsetX;
+              vz = 0.28;
+              yaw = v.isFemale ? -0.20 : 0.20;
+
+              const pick = Math.sin(t * 3.4 + phaseOffset);
+              pitch = 0.22 + pick * 0.08;
+              torsoYaw = pick * 0.18;
+
+              v.leftArm.arm.rotation.set(-0.55, -0.28, -0.24);
+              v.leftArm.elbow.rotation.set(-1.05, -0.2, 0.2);
+
+              v.rightArm.arm.rotation.set(-0.95 - pick * 0.35, 0.22 - pick * 0.25, 0.22);
+              v.rightArm.elbow.rotation.set(-0.55 - pick * 0.45, 0.15, 0.15);
+
+              v.legs.L.hip.rotation.set(-0.18, -0.08, -0.04);
+              v.legs.L.knee.rotation.set(0.26, 0, 0);
+              v.legs.R.hip.rotation.set(0.16, 0.08, 0.04);
+              v.legs.R.knee.rotation.set(0.22, 0, 0);
+            } else {
+              vx = offsetX;
+              vz = 0;
+              yaw = Math.sin(t * 0.45 + phaseOffset) * 0.12 + (v.isFemale ? -0.14 : 0.14);
+
+              v.rightArm.arm.rotation.set(-0.14, 0.08, 0.16 + Math.sin(t * 1.8 + phaseOffset) * 0.02);
+              v.rightArm.elbow.rotation.set(-0.32, 0.06, 0.08);
+              v.leftArm.arm.rotation.set(-0.14, -0.08, -0.16 - Math.cos(t * 1.8 + phaseOffset) * 0.02);
+              v.leftArm.elbow.rotation.set(-0.32, -0.06, -0.08);
+
+              v.legs.L.hip.rotation.set(-0.12, -0.08, -0.04);
+              v.legs.L.knee.rotation.set(0.16, 0, 0);
+              v.legs.R.hip.rotation.set(0.10, 0.08, 0.04);
+              v.legs.R.knee.rotation.set(0.14, 0, 0);
+            }
+
+            v.root.position.set(vx, vy, vz);
+            v.root.rotation.set(0, yaw, 0);
+            v.body.position.y = 1.00 * v.heightScale + breath;
+            v.body.rotation.set(pitch, torsoYaw, 0);
+          };
+
+          group.userData.animatePose = (dt: number) => {
+            const currentGender = egyptianLaborerGenderRef.current;
+            const currentTask = egyptianLaborerTaskRef.current;
+
+            maleLaborer.root.visible = currentGender === 'ambos' || currentGender === 'homem';
+            femaleLaborer.root.visible = currentGender === 'ambos' || currentGender === 'mulher';
+
+            maleLaborer.setToolMode(currentTask);
+            femaleLaborer.setToolMode(currentTask);
+
+            const maleOffset = currentGender === 'ambos' ? -0.58 : 0;
+            const femaleOffset = currentGender === 'ambos' ? 0.58 : 0;
+
+            const t = simTime;
+            animateStudioEgyptianLaborer(maleLaborer, dt, t, maleOffset, 0, currentTask);
+            animateStudioEgyptianLaborer(femaleLaborer, dt, t, femaleOffset, 1.4, currentTask);
+          };
+        } else if (
+          selectedCiv === 'atlantean' &&
+          (selectedUnit === 'villager' || selectedUnit === 'citizen')
+        ) {
+          const godKey = (
+            selectedMajorGod.toLowerCase() === 'urano' || selectedMajorGod.toLowerCase() === 'oranos'
+              ? 'oranos'
+              : selectedMajorGod.toLowerCase() === 'gaia'
+              ? 'gaia'
+              : 'kronos'
+          ) as 'kronos' | 'oranos' | 'gaia';
+          const theme = ATLANTEAN_GOD_THEMES[godKey] || ATLANTEAN_GOD_THEMES.kronos;
+
+          scene.background = new THREE.Color(theme.bgHex);
+          scene.fog = new THREE.FogExp2(theme.bgHex, 0.02);
+          addPedestal(2.4, 2.6, theme.ringHex);
+
+          const atlanteanMan = buildAtlanteanCitizen(false, godKey, !isSoftwareGl);
+          const atlanteanWoman = buildAtlanteanCitizen(true, godKey, !isSoftwareGl);
+          const atlanteanLlama = buildAtlanteanLlama(godKey, !isSoftwareGl);
+
+          const atlanteanRoot = new THREE.Group();
+          atlanteanRoot.add(atlanteanMan.root);
+          atlanteanRoot.add(atlanteanWoman.root);
+          atlanteanRoot.add(atlanteanLlama.root);
+          group = atlanteanRoot;
+
+          const animateStudioAtlanteanCitizen = (
+            c: AtlanteanCitizenInstance,
+            dt: number,
+            t: number,
+            offsetX: number,
+            phaseOffset: number,
+            task: AtlanteanAction,
+            mode: string,
+            isHero: boolean
+          ) => {
+            if (!c.root.visible) return;
+
+            let vx = offsetX;
+            let vz = 0;
+            let vy = 0;
+            let yaw = 0;
+            let pitch = 0;
+            let torsoYaw = 0;
+            const breath = Math.sin(t * 2.3 + phaseOffset) * 0.016;
+
+            if (task === 'andar') {
+              const a = t * 0.92 + phaseOffset * 0.4;
+              const R = c.isFemale ? 1.6 : 2.0;
+              vx = Math.cos(a) * R;
+              vz = Math.sin(a) * R;
+              yaw = -a;
+              pitch = 0.06;
+
+              const stride = t * 5.6 + phaseOffset;
+              const sinS = Math.sin(stride);
+              const cosS = Math.cos(stride);
+              vy = Math.abs(cosS) * 0.04;
+              torsoYaw = sinS * 0.08;
+
+              c.legs.L.hip.rotation.x = -0.12 + sinS * 0.36;
+              c.legs.L.knee.rotation.x = 0.18 + Math.max(0, -cosS) * 0.36;
+              c.legs.R.hip.rotation.x = -0.12 - sinS * 0.36;
+              c.legs.R.knee.rotation.x = 0.18 + Math.max(0, cosS) * 0.36;
+
+              c.rightArm.arm.rotation.set(-0.15 - sinS * 0.35, 0.08, 0.14);
+              c.rightArm.elbow.rotation.set(-0.25, 0, 0.08);
+              c.leftArm.arm.rotation.set(-0.15 + sinS * 0.35, -0.08, -0.14);
+              c.leftArm.elbow.rotation.set(-0.25, 0, -0.08);
+            } else if (task === 'madeira' || task === 'ouro' || task === 'construir') {
+              vx = mode === 'todos' ? offsetX : -0.25;
+              vz = 0.25;
+              yaw = mode === 'todos' ? -offsetX * 0.42 : 0.15;
+
+              const speed = isHero ? 5.2 : 3.9;
+              const swing = (t * speed + phaseOffset) % (Math.PI * 2);
+              const strike = Math.sin(swing);
+
+              pitch = 0.14 + strike * 0.16;
+              torsoYaw = -0.18 + strike * 0.28;
+
+              c.rightArm.arm.rotation.set(-1.35 + strike * 0.95, 0.18, 0.25);
+              c.rightArm.elbow.rotation.set(-0.65 + strike * 0.35, 0.1, 0.1);
+              c.leftArm.arm.rotation.set(-0.65 + strike * 0.35, -0.25, -0.22);
+              c.leftArm.elbow.rotation.set(-0.85, -0.15, 0.15);
+
+              c.legs.L.hip.rotation.set(-0.22, -0.10, -0.06);
+              c.legs.L.knee.rotation.set(0.28, 0, 0);
+              c.legs.R.hip.rotation.set(0.18, 0.10, 0.06);
+              c.legs.R.knee.rotation.set(0.22, 0, 0);
+
+              if (strike > 0.92) {
+                spawnSpark(new THREE.Vector3(vx, 0.6, 0.8));
+              }
+            } else if (task === 'fruta') {
+              vx = mode === 'todos' ? offsetX : -0.25;
+              vz = 0.28;
+              yaw = mode === 'todos' ? -offsetX * 0.42 : 0.15;
+
+              const pick = Math.sin(t * 3.4 + phaseOffset);
+              pitch = 0.22 + pick * 0.08;
+              torsoYaw = pick * 0.18;
+
+              c.leftArm.arm.rotation.set(-0.55, -0.28, -0.24);
+              c.leftArm.elbow.rotation.set(-1.05, -0.2, 0.2);
+
+              c.rightArm.arm.rotation.set(-0.95 - pick * 0.35, 0.22 - pick * 0.25, 0.22);
+              c.rightArm.elbow.rotation.set(-0.55 - pick * 0.45, 0.15, 0.15);
+
+              c.legs.L.hip.rotation.set(-0.18, -0.08, -0.04);
+              c.legs.L.knee.rotation.set(0.26, 0, 0);
+              c.legs.R.hip.rotation.set(0.16, 0.08, 0.04);
+              c.legs.R.knee.rotation.set(0.22, 0, 0);
+            } else {
+              vx = offsetX;
+              vz = 0;
+              yaw = Math.sin(t * 0.45 + phaseOffset) * 0.12 + (mode === 'todos' ? -offsetX * 0.14 : 0);
+
+              c.rightArm.arm.rotation.set(-0.14, 0.08, 0.16 + Math.sin(t * 1.8 + phaseOffset) * 0.02);
+              c.rightArm.elbow.rotation.set(-0.32, 0.06, 0.08);
+              c.leftArm.arm.rotation.set(-0.14, -0.08, -0.16 - Math.cos(t * 1.8 + phaseOffset) * 0.02);
+              c.leftArm.elbow.rotation.set(-0.32, -0.06, -0.08);
+
+              c.legs.L.hip.rotation.set(-0.12, -0.08, -0.04);
+              c.legs.L.knee.rotation.set(0.16, 0, 0);
+              c.legs.R.hip.rotation.set(0.10, 0.08, 0.04);
+              c.legs.R.knee.rotation.set(0.14, 0, 0);
+            }
+
+            c.root.position.set(vx, vy, vz);
+            c.root.rotation.set(0, yaw, 0);
+            c.body.position.y = 1.00 * c.heightScale + breath;
+            c.body.rotation.set(pitch, torsoYaw, 0);
+
+            if (isHero) {
+              c.heroGroundAura.rotation.z += dt * 1.6;
+              c.heroGroundAura.scale.setScalar(1 + Math.sin(t * 5) * 0.08);
+            }
+          };
+
+          const animateStudioLlama = (
+            llama: AtlanteanLlamaInstance,
+            _dt: number,
+            t: number,
+            task: AtlanteanAction,
+            mode: string
+          ) => {
+            let lx = mode === 'todos' ? 0.95 : 0.65;
+            let lz = -0.10;
+            let ly = 0;
+            let yaw = -0.22 + Math.sin(t * 0.6) * 0.08;
+
+            if (task === 'andar') {
+              const a = t * 0.92 - 0.55;
+              const R = 1.85;
+              lx = Math.cos(a) * R;
+              lz = Math.sin(a) * R;
+              yaw = -a;
+
+              const stride = t * 6.4;
+              ly = Math.abs(Math.cos(stride)) * 0.04;
+              for (const lg of llama.legs) {
+                lg.pivot.rotation.x = Math.sin(stride + lg.phase) * 0.36;
+              }
+            } else {
+              for (const lg of llama.legs) {
+                lg.pivot.rotation.x = 0;
+              }
+              llama.head.rotation.y = Math.sin(t * 1.4) * 0.18;
+              llama.head.rotation.x = Math.cos(t * 1.1) * 0.08;
+            }
+
+            llama.root.position.set(lx, ly, lz);
+            llama.root.rotation.set(0, yaw, 0);
+          };
+
+          let lastHeroState = false;
+
+          group.userData.animatePose = (dt: number) => {
+            const currentMode = atlanteanCitizenModeRef.current;
+            const currentTask = atlanteanCitizenTaskRef.current;
+            const isHero = atlanteanIsHeroRef.current;
+
+            if (isHero !== lastHeroState) {
+              lastHeroState = isHero;
+              atlanteanMan.setHeroState(isHero);
+              atlanteanWoman.setHeroState(isHero);
+            }
+
+            atlanteanMan.root.visible = currentMode === 'todos' || currentMode === 'homem';
+            atlanteanWoman.root.visible = currentMode === 'todos' || currentMode === 'mulher';
+            atlanteanLlama.root.visible = true;
+
+            atlanteanMan.setToolMode(currentTask);
+            atlanteanWoman.setToolMode(currentTask);
+
+            const manX = currentMode === 'todos' ? -0.78 : -0.28;
+            const womanX = currentMode === 'todos' ? 0.12 : -0.28;
+
+            const t = simTime;
+            animateStudioAtlanteanCitizen(atlanteanMan, dt, t, manX, 0, currentTask, currentMode, isHero);
+            animateStudioAtlanteanCitizen(atlanteanWoman, dt, t, womanX, 1.3, currentTask, currentMode, isHero);
+            animateStudioLlama(atlanteanLlama, dt, t, currentTask, currentMode);
           };
         } else if (
           selectedCiv === 'greek' &&
@@ -4834,6 +5318,182 @@ export function HopliteUvBuilderModal({
                 );
               })}
             </>
+          ) : galleryCategory === 'unit' && selectedCiv === 'egyptian' && selectedUnit === 'villager' ? (
+            <>
+              {/* Controles de Gênero do Trabalhador Egípcio */}
+              {(
+                [
+                  { id: 'ambos', label: 'Ambos', icon: Users },
+                  { id: 'homem', label: 'Homem', icon: User },
+                  { id: 'mulher', label: 'Mulher', icon: User },
+                ] as const
+              ).map((g) => {
+                const Icon = g.icon;
+                const god = selectedMajorGod.toLowerCase();
+                const activeColor =
+                  god === 'isis' || god === 'ísis'
+                    ? 'bg-teal-400 text-slate-950 shadow'
+                    : god === 'set'
+                    ? 'bg-orange-500 text-slate-950 shadow'
+                    : 'bg-amber-400 text-slate-950 shadow';
+                const inactiveColor =
+                  god === 'isis' || god === 'ísis'
+                    ? 'border border-teal-400/30 text-teal-200 hover:bg-teal-400/15'
+                    : god === 'set'
+                    ? 'border border-orange-400/30 text-orange-200 hover:bg-orange-400/15'
+                    : 'border border-amber-400/30 text-amber-200 hover:bg-amber-400/15';
+
+                return (
+                  <button
+                    key={g.id}
+                    type="button"
+                    onClick={() => setEgyptianLaborerGender(g.id)}
+                    className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      egyptianLaborerGender === g.id ? activeColor : inactiveColor
+                    }`}
+                  >
+                    <Icon className="h-3.5 w-3.5" />
+                    <span>{g.label}</span>
+                  </button>
+                );
+              })}
+              <div className="h-4 w-px bg-white/20 mx-1" />
+              {/* Tarefas e Ferramentas Egípcias */}
+              {(
+                [
+                  { id: 'vigilia', label: 'Vigília', icon: Shield },
+                  { id: 'andar', label: 'Andando', icon: Play },
+                  { id: 'madeira', label: 'Palmeira', icon: Trees },
+                  { id: 'ouro', label: 'Ouro', icon: Sparkles },
+                  { id: 'fruta', label: 'Tâmaras', icon: Sun },
+                  { id: 'construir', label: 'Templo', icon: Hammer },
+                ] as const
+              ).map((t) => {
+                const Icon = t.icon;
+                const god = selectedMajorGod.toLowerCase();
+                const activeColor =
+                  god === 'isis' || god === 'ísis'
+                    ? 'bg-teal-400 text-slate-950 shadow'
+                    : god === 'set'
+                    ? 'bg-orange-500 text-slate-950 shadow'
+                    : 'bg-amber-400 text-slate-950 shadow';
+                const inactiveColor =
+                  god === 'isis' || god === 'ísis'
+                    ? 'border border-teal-400/30 text-teal-200 hover:bg-teal-400/15'
+                    : god === 'set'
+                    ? 'border border-orange-400/30 text-orange-200 hover:bg-orange-400/15'
+                    : 'border border-amber-400/30 text-amber-200 hover:bg-amber-400/15';
+
+                return (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => setEgyptianLaborerTask(t.id)}
+                    className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      egyptianLaborerTask === t.id ? activeColor : inactiveColor
+                    }`}
+                  >
+                    <Icon className="h-3.5 w-3.5" />
+                    <span>{t.label}</span>
+                  </button>
+                );
+              })}
+            </>
+          ) : galleryCategory === 'unit' && selectedCiv === 'atlantean' && (selectedUnit === 'villager' || selectedUnit === 'citizen') ? (
+            <>
+              {/* Botão de Promoção a Herói Atlante */}
+              <button
+                type="button"
+                onClick={() => setAtlanteanIsHero(!atlanteanIsHero)}
+                className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                  atlanteanIsHero
+                    ? 'bg-gradient-to-r from-amber-300 via-amber-500 to-amber-600 text-slate-950 shadow-lg shadow-amber-500/50 ring-2 ring-yellow-200'
+                    : 'border border-amber-400/40 text-amber-300 bg-amber-950/40 hover:bg-amber-900/40'
+                }`}
+              >
+                <Crown className="h-3.5 w-3.5" />
+                <span>{atlanteanIsHero ? 'Herói Ativo' : 'Promover Herói'}</span>
+              </button>
+              <div className="h-4 w-px bg-white/20 mx-1" />
+              {/* Modo do Cidadão Atlante */}
+              {(
+                [
+                  { id: 'todos', label: 'Casal + Lhama', icon: Users },
+                  { id: 'homem', label: 'Cidadão', icon: User },
+                  { id: 'mulher', label: 'Cidadã', icon: User },
+                ] as const
+              ).map((m) => {
+                const Icon = m.icon;
+                const god = selectedMajorGod.toLowerCase();
+                const activeColor =
+                  god === 'gaia'
+                    ? 'bg-emerald-500 text-slate-950 shadow'
+                    : god === 'urano' || god === 'oranos'
+                    ? 'bg-amber-400 text-slate-950 shadow'
+                    : 'bg-sky-400 text-slate-950 shadow';
+                const inactiveColor =
+                  god === 'gaia'
+                    ? 'border border-emerald-400/30 text-emerald-200 hover:bg-emerald-400/15'
+                    : god === 'urano' || god === 'oranos'
+                    ? 'border border-amber-400/30 text-amber-200 hover:bg-amber-400/15'
+                    : 'border border-sky-400/30 text-sky-200 hover:bg-sky-400/15';
+
+                return (
+                  <button
+                    key={m.id}
+                    type="button"
+                    onClick={() => setAtlanteanCitizenMode(m.id)}
+                    className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      atlanteanCitizenMode === m.id ? activeColor : inactiveColor
+                    }`}
+                  >
+                    <Icon className="h-3.5 w-3.5" />
+                    <span>{m.label}</span>
+                  </button>
+                );
+              })}
+              <div className="h-4 w-px bg-white/20 mx-1" />
+              {/* Tarefas e Ferramentas Atlantes */}
+              {(
+                [
+                  { id: 'vigilia', label: 'Vigília', icon: Shield },
+                  { id: 'andar', label: 'Com Lhama', icon: Play },
+                  { id: 'madeira', label: 'Madeira', icon: Trees },
+                  { id: 'ouro', label: 'Ouro', icon: Sparkles },
+                  { id: 'fruta', label: 'Frutas', icon: Sun },
+                  { id: 'construir', label: 'Construir', icon: Hammer },
+                ] as const
+              ).map((t) => {
+                const Icon = t.icon;
+                const god = selectedMajorGod.toLowerCase();
+                const activeColor =
+                  god === 'gaia'
+                    ? 'bg-emerald-500 text-slate-950 shadow'
+                    : god === 'urano' || god === 'oranos'
+                    ? 'bg-amber-400 text-slate-950 shadow'
+                    : 'bg-sky-400 text-slate-950 shadow';
+                const inactiveColor =
+                  god === 'gaia'
+                    ? 'border border-emerald-400/30 text-emerald-200 hover:bg-emerald-400/15'
+                    : god === 'urano' || god === 'oranos'
+                    ? 'border border-amber-400/30 text-amber-200 hover:bg-amber-400/15'
+                    : 'border border-sky-400/30 text-sky-200 hover:bg-sky-400/15';
+
+                return (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => setAtlanteanCitizenTask(t.id)}
+                    className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      atlanteanCitizenTask === t.id ? activeColor : inactiveColor
+                    }`}
+                  >
+                    <Icon className="h-3.5 w-3.5" />
+                    <span>{t.label}</span>
+                  </button>
+                );
+              })}
+            </>
           ) : galleryCategory === 'unit' ? (
             <>
               <button
@@ -4880,6 +5540,121 @@ export function HopliteUvBuilderModal({
                   <span>{myrmidonFury ? 'Fúria de Zeus: ON' : 'Fúria de Zeus: OFF'}</span>
                 </button>
               )}
+            </>
+          ) : galleryCategory === 'building' && selectedCiv === 'greek' && selectedBuilding === 'fortress' ? (
+            <>
+              {/* Deuses Patronos da Fortaleza Grega */}
+              {(
+                [
+                  { id: 'Zeus', label: 'Zeus', icon: Zap, active: 'bg-gradient-to-r from-amber-300 to-blue-600 text-slate-950 font-black shadow-lg shadow-amber-500/30 ring-1 ring-amber-300' },
+                  { id: 'Poseidon', label: 'Poseidon', icon: Waves, active: 'bg-gradient-to-r from-teal-300 to-sky-600 text-slate-950 font-black shadow-lg shadow-teal-500/30 ring-1 ring-teal-300' },
+                  { id: 'Hades', label: 'Hades', icon: Skull, active: 'bg-gradient-to-r from-orange-500 to-purple-800 text-white font-black shadow-lg shadow-orange-500/30 ring-1 ring-orange-400' },
+                ] as const
+              ).map((g) => {
+                const Icon = g.icon;
+                const isSel = selectedMajorGod.toLowerCase() === g.id.toLowerCase();
+                return (
+                  <button
+                    key={g.id}
+                    type="button"
+                    onClick={() => setSelectedMajorGod(g.id)}
+                    className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      isSel
+                        ? g.active
+                        : 'border border-white/10 text-[#cbd5e1] hover:bg-white/10'
+                    }`}
+                  >
+                    <Icon className="h-3.5 w-3.5" />
+                    <span>{g.label}</span>
+                  </button>
+                );
+              })}
+
+              <div className="h-4 w-px bg-white/20 mx-1" />
+
+              {/* Tiers T3 (Heroica) e T4 (Mítica) */}
+              <button
+                type="button"
+                onClick={() => {
+                  setBuildingAge(3);
+                  onSelectTier(3);
+                }}
+                className={`rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                  buildingAge <= 3
+                    ? 'bg-gradient-to-r from-amber-300 to-amber-500 text-slate-950 shadow-md font-black'
+                    : 'border border-white/10 text-[#cbd5e1] hover:bg-white/10'
+                }`}
+              >
+                <span>T3 • Era Heroica</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setBuildingAge(4);
+                  onSelectTier(4);
+                }}
+                className={`rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                  buildingAge >= 4
+                    ? 'bg-gradient-to-r from-amber-300 to-amber-500 text-slate-950 shadow-md font-black'
+                    : 'border border-white/10 text-[#cbd5e1] hover:bg-white/10'
+                }`}
+              >
+                <span>T4 • Era Mítica</span>
+              </button>
+
+              <div className="h-4 w-px bg-white/20 mx-1" />
+
+              {/* Ações da Fortaleza */}
+              {(
+                [
+                  { id: 'guarnicao', label: 'Guarnição Ativa', icon: Shield },
+                  { id: 'defesa', label: 'Disparo de Flechas', icon: Sparkles },
+                  { id: 'bencao', label: 'Aura Divina', icon: Sun },
+                ] as const
+              ).map((act) => {
+                const Icon = act.icon;
+                const god = selectedMajorGod.toLowerCase();
+                const activeColor =
+                  god === 'poseidon'
+                    ? 'bg-teal-400 text-slate-950 shadow'
+                    : god === 'hades'
+                    ? 'bg-orange-500 text-white shadow'
+                    : 'bg-amber-400 text-slate-950 shadow';
+                const inactiveColor =
+                  god === 'poseidon'
+                    ? 'border border-teal-400/30 text-teal-200 hover:bg-teal-400/15'
+                    : god === 'hades'
+                    ? 'border border-orange-400/30 text-orange-200 hover:bg-orange-400/15'
+                    : 'border border-amber-400/30 text-amber-200 hover:bg-amber-400/15';
+
+                return (
+                  <button
+                    key={act.id}
+                    type="button"
+                    onClick={() => setFortressAction(act.id)}
+                    className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      fortressAction === act.id ? activeColor : inactiveColor
+                    }`}
+                  >
+                    <Icon className="h-3.5 w-3.5" />
+                    <span>{act.label}</span>
+                  </button>
+                );
+              })}
+
+              <div className="h-4 w-px bg-white/20 mx-1" />
+              <button
+                type="button"
+                onClick={() => setShowHumanScale((v) => !v)}
+                className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                  showHumanScale
+                    ? 'bg-sky-500/20 text-sky-200 border border-sky-400/50'
+                    : 'border border-white/12 text-[#9ca3af] hover:text-white'
+                }`}
+              >
+                <Users className="h-3.5 w-3.5" />
+                <span>Escala Aldeão</span>
+              </button>
             </>
           ) : galleryCategory === 'building' ? (
             <>

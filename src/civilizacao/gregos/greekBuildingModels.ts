@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { BuildingKind, PantheonId, TeamId } from '../../game/types';
+import { buildGreekFortress as buildProceduralGreekFortress } from './greekFortressModel';
 
 // ─── Procedural Greek Marble, Terracotta & Bronze Textures ─────────────────
 
@@ -631,82 +632,20 @@ function buildGreekTemple(group: THREE.Group, mats: GreekMaterials): { beaconCry
   return { beaconCrystal };
 }
 
-function buildGreekFortress(group: THREE.Group, mats: GreekMaterials, age: number = 3): { metropolisHalo?: THREE.Object3D; metropolisCrystal?: THREE.Object3D } {
+function buildGreekFortress(
+  group: THREE.Group,
+  _mats: GreekMaterials,
+  age: number = 3,
+  godKey: string = 'zeus'
+): { metropolisHalo?: THREE.Object3D; metropolisCrystal?: THREE.Object3D } {
   const tier = Math.max(3, Math.min(5, Math.round(age)));
-
-  // 1. Expanded Plinth Base (grows from T3 to T5)
-  const baseW = 4.8 + (tier - 3) * 0.5;
-  const base = new THREE.Mesh(new THREE.BoxGeometry(baseW, 0.45, baseW), mats.stoneGrey);
-  base.position.y = 0.225;
-  group.add(base);
-
-  // 2. Central Fortress Keep
-  const keepW = 3.2 + (tier - 3) * 0.3;
-  const keepH = 2.8 + (tier - 3) * 0.4;
-  const keep = new THREE.Mesh(new THREE.BoxGeometry(keepW, keepH, keepW), mats.marble);
-  keep.position.set(0, 0.45 + keepH * 0.5, 0);
-  group.add(keep);
-
-  // 3. Four Corner Defensive Bastion Towers (larger at T4+)
-  const towerOffset = 1.8 + (tier - 3) * 0.2;
-  const towerH = 3.4 + (tier - 3) * 0.5;
-  for (const [bx, bz] of [[-towerOffset, -towerOffset], [towerOffset, -towerOffset], [-towerOffset, towerOffset], [towerOffset, towerOffset]]) {
-    const tower = new THREE.Mesh(new THREE.BoxGeometry(1.1 + (tier - 3) * 0.15, towerH, 1.1 + (tier - 3) * 0.15), mats.stoneGrey);
-    tower.position.set(bx, 0.45 + towerH * 0.5, bz);
-    group.add(tower);
-
-    // Crenellations / battlements on top of towers at T3+
-    const cap = new THREE.Mesh(new THREE.BoxGeometry(1.25, 0.35, 1.25), mats.bronzeTrim);
-    cap.position.set(bx, 0.45 + towerH + 0.18, bz);
-    group.add(cap);
-  }
-
-  // 4. T3+ Flanking Armory / Siege Wings & Bronze Gates
-  if (tier >= 3) {
-    const gate = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.6, 0.2), mats.bronzeTrim);
-    gate.position.set(0, 0.45 + 0.8, baseW * 0.5);
-    group.add(gate);
-  }
-
-  if (tier >= 4) {
-    // T4 Bastion Wall extensions & catapult platforms
-    for (const sx of [-2.4, 2.4]) {
-      const wing = new THREE.Mesh(new THREE.BoxGeometry(1.2, 2.0, 2.2), mats.marbleDark);
-      wing.position.set(sx, 0.45 + 1.0, 0);
-      group.add(wing);
-    }
-  }
-
-  // 5. T5 DIVINE FORTRESS METROPOLIS CROWN
-  let metropolisHalo: THREE.Object3D | undefined;
-  let metropolisCrystal: THREE.Object3D | undefined;
-
-  if (tier >= 5) {
-    const upperCitadel = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.3, 0.9, 8), mats.goldTrim);
-    upperCitadel.position.set(0, 0.45 + keepH + 0.45, 0);
-    group.add(upperCitadel);
-
-    const spire = new THREE.Mesh(new THREE.ConeGeometry(0.65, 1.8, 8), mats.goldTrim);
-    spire.position.set(0, 0.45 + keepH + 1.8, 0);
-    group.add(spire);
-
-    const halo = new THREE.Mesh(new THREE.TorusGeometry(1.35, 0.08, 10, 32), mats.olympianGlow);
-    halo.rotation.x = Math.PI / 2;
-    const haloY = 0.45 + keepH + 2.7;
-    halo.position.set(0, haloY, 0);
-    halo.userData.baseY = haloY;
-    group.add(halo);
-    metropolisHalo = halo;
-
-    const crystal = new THREE.Mesh(new THREE.OctahedronGeometry(0.42, 0), mats.olympianGlow);
-    const crystalY = 0.45 + keepH + 3.05;
-    crystal.position.set(0, crystalY, 0);
-    crystal.userData.baseY = crystalY;
-    group.add(crystal);
-    metropolisCrystal = crystal;
-  }
-
-  return { metropolisHalo, metropolisCrystal };
+  const effTier = tier >= 4 ? 4 : 3;
+  const fortress = buildProceduralGreekFortress(godKey, effTier, true);
+  group.add(fortress.root);
+  return {
+    metropolisHalo: fortress.divineRing,
+    metropolisCrystal: fortress.apexCrystal
+  };
 }
 
 function buildGreekHouse(group: THREE.Group, mats: GreekMaterials): void {
@@ -781,7 +720,8 @@ export function createGreekBuildingMesh(
   pal: any,
   enableShadows = true,
   age = 1,
-  pantheon: PantheonId = 'greek'
+  pantheon: PantheonId = 'greek',
+  majorGod?: string
 ): GreekBuildingBuildResult {
   const group = new THREE.Group();
   const mats = createGreekMaterials(team, pal);
@@ -857,10 +797,12 @@ export function createGreekBuildingMesh(
       break;
     }
     case 'fortress': {
-      const res = buildGreekFortress(group, mats, age);
+      const rawGod = (majorGod || String(pantheon || 'zeus')).toLowerCase();
+      const effGod = rawGod.includes('poseidon') ? 'poseidon' : rawGod.includes('hades') ? 'hades' : 'zeus';
+      const res = buildGreekFortress(group, mats, age, effGod);
       metropolisHalo = res.metropolisHalo;
       metropolisCrystal = res.metropolisCrystal;
-      group.scale.setScalar(1.68 + (age - 3) * 0.06);
+      group.scale.setScalar(1.22 + (age - 3) * 0.05);
       markerRadius = 3.4 + (age - 3) * 0.25;
       barHeight = 5.0 + (age - 3) * 0.45;
       barWidth = 3.2 + (age - 3) * 0.15;

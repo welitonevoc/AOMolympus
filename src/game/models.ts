@@ -1109,7 +1109,7 @@ export function createBuildingMesh(
   }
 
   if (look.style === 'greek') {
-    const built = createGreekBuildingMesh(kind, team, pal, enableShadows, age, pantheon);
+    const built = createGreekBuildingMesh(kind, team, pal, enableShadows, age, pantheon, majorGod);
     root.add(built.group);
     if (built.beaconCrystal) {
       root.userData.beaconCrystal = built.beaconCrystal;
