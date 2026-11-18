@@ -100,6 +100,7 @@ const SPECIAL_RULE_LABELS: Record<NonNullable<MapConfig['specialRule']>, string>
   the_unknown: 'Bioma e mares imprevisíveis',
   valley_guardians: 'Guardiões protegem minas centrais',
   sea_of_worms: 'Lagoas sinuosas com Fortaleza',
+  total_war: 'Ilha central e mares contestados (Total War)',
 };
 
 const EXPANSION_LABELS: Record<MapConfig['expansion'], string> = {

@@ -1,12 +1,12 @@
 import * as THREE from 'three';
-import { createBiomeTreeMesh, FAUNA_TEXTURA_CATALOG } from '../TEXTURA';
+import { createBiomeTreeMesh, FAUNA_TEXTURA_CATALOG } from '../textura';
 import {
   BiomeTreeStyle,
   buildMapResourceProfile,
   getEffectiveMapConfig,
   getMapBiomeVisuals,
   groundHeightAt,
-} from '../TEXTURA/maps';
+} from '../textura/maps';
 import {
   createFaunaMesh,
   createPlentyVaultMesh,

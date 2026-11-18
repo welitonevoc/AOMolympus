@@ -2,6 +2,11 @@ import * as THREE from 'three';
 import type { MaterialPalette } from '../../game/models';
 import { BiomeTreeStyle } from '../maps';
 import { createAoMOakTreeMesh } from './oakTrees';
+import {
+  cloneGlbForestTree,
+  GLB_SUPPORTED_TREE_STYLES,
+  onForestPackGlbReady,
+} from './forestPackGlb';
 
 interface CachedTreeMaterials {
   birchBark: THREE.MeshStandardMaterial;
@@ -78,7 +83,7 @@ function addMesh(
   return m;
 }
 
-export function createBiomeTreeMesh(
+function createProceduralBiomeTreeMesh(
   style: BiomeTreeStyle,
   pal: MaterialPalette,
   enableShadows: boolean,
@@ -238,3 +243,41 @@ export function createBiomeTreeMesh(
   addMesh(canopyGroup, new THREE.DodecahedronGeometry(0.82 * scaleVar, 1), m.orientalLeaf, 0.62, 3.32 * scaleVar, -0.28, enableShadows);
   return root;
 }
+
+export function createBiomeTreeMesh(
+  style: BiomeTreeStyle,
+  pal: MaterialPalette,
+  enableShadows: boolean,
+  variantSeed = 0
+): THREE.Group {
+  // Mix 3D GLB forest oaks with AoM sprite oaks, and use 3D GLB silhouettes for other forest biomes
+  const shouldUseGlb =
+    GLB_SUPPORTED_TREE_STYLES.has(style) && (style !== 'oak' || variantSeed % 2 === 0);
+
+  if (!shouldUseGlb) {
+    return createProceduralBiomeTreeMesh(style, pal, enableShadows, variantSeed);
+  }
+
+  const readyGlb = cloneGlbForestTree(style, enableShadows, variantSeed);
+  if (readyGlb) {
+    return readyGlb;
+  }
+
+  // Instant procedural fallback while low_poly_forest_tree_pack.glb loads asynchronously
+  const wrapper = createProceduralBiomeTreeMesh(style, pal, enableShadows, variantSeed);
+  onForestPackGlbReady(() => {
+    const upgraded = cloneGlbForestTree(style, enableShadows, variantSeed);
+    if (!upgraded) return;
+    while (wrapper.children.length > 0) {
+      wrapper.remove(wrapper.children[0]);
+    }
+    while (upgraded.children.length > 0) {
+      wrapper.add(upgraded.children[0]);
+    }
+    wrapper.userData.oakCanopyGroup = upgraded.userData.oakCanopyGroup;
+    wrapper.userData.isGlbForestTree = true;
+    wrapper.userData.glbTreeVariant = upgraded.userData.glbTreeVariant;
+  });
+  return wrapper;
+}
+

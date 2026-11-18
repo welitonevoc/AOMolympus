@@ -207,6 +207,7 @@ export function PortSubMenus({
     the_unknown: 'Aleatório',
     valley_guardians: 'Guardiões do Vale',
     sea_of_worms: 'Mar de Vermes',
+    total_war: 'Guerra Total',
   };
 
   const renderMapPicker = (

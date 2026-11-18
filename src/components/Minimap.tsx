@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Castle, Crosshair, Eye, Maximize2, Minimize2, Swords, Trees } from 'lucide-react';
-import { groundHeightAt, MAP_HALF_SIZE, PLAYABLE_HALF_SIZE } from '../game/models';
-import { getActiveUnknownState, getEffectiveMapConfig, getMapBiomeVisuals, resolveEffectiveMapId } from '../TEXTURA/maps';
-import { MapId, MinimapBlip, PANTHEONS, PantheonId } from '../game/types';
+import { getWorldSizeSpec, groundHeightAt } from '../game/models';
+import { getActiveTotalWarState, getActiveUnknownState, getEffectiveMapConfig, getMapBiomeVisuals, resolveEffectiveMapId } from '../textura/maps';
+import { MapId, MinimapBlip, PANTHEONS, PantheonId, WorldSizeId } from '../game/types';
 
 export type MinimapFilterMode = 'all' | 'combat' | 'economy';
 
@@ -10,6 +10,7 @@ interface MinimapProps {
   blips: MinimapBlip[];
   pantheon: PantheonId;
   mapId: MapId;
+  worldSize?: WorldSizeId;
   revealedMap?: boolean;
   fogGrid?: number[];
   fogGridSize?: number;
@@ -34,12 +35,17 @@ function hexToRgb(hex: number): [number, number, number] {
   return [(hex >> 16) & 255, (hex >> 8) & 255, hex & 255];
 }
 
-function createTerrainBackdrop(mapId: MapId): HTMLCanvasElement {
+function createTerrainBackdrop(mapId: MapId, worldSize: WorldSizeId = 'normal'): HTMLCanvasElement {
   const off = document.createElement('canvas');
   off.width = CANVAS_SIZE;
   off.height = CANVAS_SIZE;
   const ctx = off.getContext('2d');
   if (!ctx) return off;
+
+  const sizeSpec = getWorldSizeSpec(worldSize);
+  const mapHalfSize = sizeSpec.mapHalfSize;
+  const playableHalfSize = sizeSpec.playableHalfSize;
+  const worldScale = sizeSpec.worldScale;
 
   const img = ctx.createImageData(CANVAS_SIZE, CANVAS_SIZE);
   const data = img.data;
@@ -56,10 +62,10 @@ function createTerrainBackdrop(mapId: MapId): HTMLCanvasElement {
   const [fr, fg, fb] = hexToRgb(bio.fertileHex);
 
   for (let py = 0; py < CANVAS_SIZE; py++) {
-    const wz = ((py / CANVAS_SIZE) * 2 - 1) * MAP_HALF_SIZE;
+    const wz = ((py / CANVAS_SIZE) * 2 - 1) * mapHalfSize;
     for (let px = 0; px < CANVAS_SIZE; px++) {
-      const wx = ((px / CANVAS_SIZE) * 2 - 1) * MAP_HALF_SIZE;
-      const h = groundHeightAt(wx, wz, mapId);
+      const wx = ((px / CANVAS_SIZE) * 2 - 1) * mapHalfSize;
+      const h = groundHeightAt(wx, wz, mapId, worldSize);
 
       let r = wr;
       let g = wg;
@@ -81,7 +87,7 @@ function createTerrainBackdrop(mapId: MapId): HTMLCanvasElement {
         b = sb;
       } else {
         const diagDist = Math.abs(wx + wz) / Math.SQRT2;
-        const onRoad = diagDist < 4.5 && Math.hypot(wx, wz) < 50;
+        const onRoad = diagDist < 4.5 * worldScale && Math.hypot(wx, wz) < 50 * worldScale;
         const hillShade = Math.max(-20, Math.min(28, (h - 0.5) * 16));
 
         if (onRoad) {
@@ -93,8 +99,8 @@ function createTerrainBackdrop(mapId: MapId): HTMLCanvasElement {
           g = hg + hillShade * 0.75;
           b = hb + hillShade * 0.7;
         } else if (
-          ((eff === 'nile' || eff === 'yellow_river' || eff === 'highland') && Math.abs(wx - wz) / Math.SQRT2 < 10.5) ||
-          (eff === 'oasis' && Math.hypot(wx, wz) < 17)
+          ((eff === 'nile' || eff === 'yellow_river' || eff === 'highland') && Math.abs(wx - wz) / Math.SQRT2 < 10.5 * worldScale) ||
+          (eff === 'oasis' && Math.hypot(wx, wz) < 17 * worldScale)
         ) {
           r = fr + hillShade * 0.8;
           g = fg + hillShade * 0.9;
@@ -116,7 +122,7 @@ function createTerrainBackdrop(mapId: MapId): HTMLCanvasElement {
 
   ctx.putImageData(img, 0, 0);
 
-  const pad = ((MAP_HALF_SIZE - PLAYABLE_HALF_SIZE) / (MAP_HALF_SIZE * 2)) * CANVAS_SIZE;
+  const pad = ((mapHalfSize - playableHalfSize) / (mapHalfSize * 2)) * CANVAS_SIZE;
   ctx.strokeStyle = 'rgba(212, 175, 55, 0.32)';
   ctx.lineWidth = 2;
   ctx.strokeRect(pad, pad, CANVAS_SIZE - pad * 2, CANVAS_SIZE - pad * 2);
@@ -128,6 +134,7 @@ export function Minimap({
   blips,
   pantheon,
   mapId,
+  worldSize = 'normal',
   revealedMap = false,
   fogGrid,
   fogGridSize = 32,
@@ -146,8 +153,11 @@ export function Minimap({
   const [hoverInfo, setHoverInfo] = useState<string | null>(null);
   const [pings, setPings] = useState<MinimapPing[]>([]);
 
+  const sizeSpec = getWorldSizeSpec(worldSize);
+  const mapHalfSize = sizeSpec.mapHalfSize;
   const unknownSeed = getActiveUnknownState(mapId)?.seed ?? 0;
-  const terrainBackdrop = useMemo(() => createTerrainBackdrop(mapId), [mapId, unknownSeed]);
+  const totalWarSeed = mapId === 'total_war' ? getActiveTotalWarState().seed : 0;
+  const terrainBackdrop = useMemo(() => createTerrainBackdrop(mapId, worldSize), [mapId, worldSize, unknownSeed, totalWarSeed]);
   const playerColor = PANTHEONS[pantheon].primaryColor;
 
   // Summarize allied buildings, allied units, and revealed enemies (buildings + units)
@@ -186,8 +196,8 @@ export function Minimap({
     ctx.drawImage(terrainBackdrop, 0, 0, CANVAS_SIZE, CANVAS_SIZE);
 
     const toMini = (wx: number, wz: number) => ({
-      mx: ((wx + MAP_HALF_SIZE) / (MAP_HALF_SIZE * 2)) * CANVAS_SIZE,
-      my: ((wz + MAP_HALF_SIZE) / (MAP_HALF_SIZE * 2)) * CANVAS_SIZE,
+      mx: ((wx + mapHalfSize) / (mapHalfSize * 2)) * CANVAS_SIZE,
+      my: ((wz + mapHalfSize) / (mapHalfSize * 2)) * CANVAS_SIZE,
     });
 
     const showEconomy = filterMode === 'all' || filterMode === 'economy';
@@ -360,7 +370,7 @@ export function Minimap({
 
     // 8. Camera Viewport Frustum Reticle + Center Crosshair
     const cam = toMini(cameraTarget.x, cameraTarget.z);
-    const zoomScale = Math.max(0.45, Math.min(2.1, cameraDistance / 36));
+    const zoomScale = Math.max(0.4, Math.min(2.1, (cameraDistance / 36) / sizeSpec.worldScale));
     ctx.save();
     ctx.translate(cam.mx, cam.my);
     ctx.rotate(-cameraYaw);
@@ -392,6 +402,8 @@ export function Minimap({
     fogGridSize,
     filterMode,
     pings,
+    mapHalfSize,
+    sizeSpec.worldScale,
   ]);
 
   const toWorldCoords = (e: React.PointerEvent<HTMLCanvasElement>) => {
@@ -408,14 +420,14 @@ export function Minimap({
     const nx = Math.max(0, Math.min(1, lx / side + 0.5));
     const nz = Math.max(0, Math.min(1, ly / side + 0.5));
     return {
-      wx: (nx * 2 - 1) * MAP_HALF_SIZE,
-      wz: (nz * 2 - 1) * MAP_HALF_SIZE,
+      wx: (nx * 2 - 1) * mapHalfSize,
+      wz: (nz * 2 - 1) * mapHalfSize,
     };
   };
 
   const findHoveredBlip = (wx: number, wz: number): MinimapBlip | null => {
     let closest: MinimapBlip | null = null;
-    let bestDist = 7.5; // world-unit hover radius
+    let bestDist = 7.5 * sizeSpec.worldScale; // world-unit hover radius
     for (const b of blips) {
       if (b.category === 'node' && filterMode === 'combat') continue;
       if (b.category === 'unit' && filterMode === 'economy') continue;

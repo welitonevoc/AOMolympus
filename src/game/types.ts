@@ -23,8 +23,8 @@ export type ArchStyleId = 'greek' | 'egyptian' | 'norse' | 'atlantean' | 'chines
 
 export type DifficultyId = 'easy' | 'normal' | 'hard' | 'titan';
 
-import type { MapId, WorldSizeId } from '../TEXTURA/maps/mapCatalog';
-export type { MapId, WorldSizeId } from '../TEXTURA/maps/mapCatalog';
+import type { MapId, WorldSizeId } from '../textura/maps/mapCatalog';
+export type { MapId, WorldSizeId } from '../textura/maps/mapCatalog';
 
 export type TeamId = 'player' | 'enemy';
 export type ResourceType = 'food' | 'wood' | 'gold' | 'favor';
@@ -359,8 +359,8 @@ export const FORMATIONS: Record<FormationId, FormationSpec> = {
   },
 };
 
-export { MAPS } from '../TEXTURA/maps/mapCatalog';
-export type { MapConfig, MapExpansion, MapSpecialRule, MapWeatherKind } from '../TEXTURA/maps/mapCatalog';
+export { MAPS } from '../textura/maps/mapCatalog';
+export type { MapConfig, MapExpansion, MapSpecialRule, MapWeatherKind } from '../textura/maps/mapCatalog';
 
 export interface ResourceCost {
   food?: number;

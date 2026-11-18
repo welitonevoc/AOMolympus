@@ -13,6 +13,7 @@ import {
   createResourceMesh,
   createSettlementMesh,
   createUnitMesh,
+  getWorldSizeSpec,
   groundHeightAt,
   MAP_HALF_SIZE,
   MaterialPalette,
@@ -21,11 +22,18 @@ import {
 } from './models';
 import {
   buildMapResourceProfile,
+  computeTotalWarCircularSpawns,
+  getActiveTotalWarEnv,
+  getActiveTotalWarState,
+  getActiveUnknownState,
   getEffectiveMapConfig,
   getMapBiomeVisuals,
   resolveEffectiveMapId,
+  rollTotalWarVariant,
   rollUnknownMapVariant,
-} from '../TEXTURA/maps';
+  TOTAL_WAR_XS_SPEC,
+} from '../textura/maps';
+import { preloadForestPackGlb } from '../textura';
 import { NavigationGrid, ObstacleCircle, WATER_WALK_LIMIT } from './navigation';
 import {
   createContactShadowTexture,
@@ -292,6 +300,9 @@ export interface SerializedMatch {
   gameType?: GameTypeId;
   visibilityMode?: VisibilityMode;
   worldSize?: WorldSizeId;
+  matchSeed?: number;
+  unknownSeed?: number;
+  totalWarSeed?: number;
   revealedMap?: boolean;
   dayNightCycle?: boolean;
   titansEnabled?: boolean;
@@ -376,8 +387,8 @@ const _ndc = new THREE.Vector2();
 const _raycaster = new THREE.Raycaster();
 const _groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -0.35);
 const MIN_CAM_DISTANCE = 11;
-const MAX_CAM_DISTANCE = 84;
-const FOG_GRID_SIZE = 64;
+const DEFAULT_MAX_CAM_DISTANCE = 84;
+const DEFAULT_FOG_GRID_SIZE = 64;
 const MINIMAP_FOG_SIZE = 32;
 const MAX_TOWN_CENTERS = 3;
 const MAX_VILLAGE_CENTERS = 3;
@@ -564,6 +575,11 @@ export class AoMEngine {
   private gameType: GameTypeId = 'supremacy';
   private visibilityMode: VisibilityMode = 'normal';
   private worldSize: WorldSizeId = 'normal';
+  private mapHalfSize = MAP_HALF_SIZE;
+  private playableHalfSize = PLAYABLE_HALF_SIZE;
+  private baseOffset = 34;
+  private worldScale = 1;
+  private fogGridSize = DEFAULT_FOG_GRID_SIZE;
   private dayNightCycle = true;
   private dayTimeLabel = 'Dia';
   private currentWeather: 'clear' | 'rain' | 'snow' | 'sandstorm' = 'clear';
@@ -691,13 +707,17 @@ export class AoMEngine {
 
   // Fog of War state (0 = unexplored smoke, 1 = explored fog, 2 = visible)
   private revealedMap = false;
-  private fogState = new Uint8Array(FOG_GRID_SIZE * FOG_GRID_SIZE);
-  private fogDisplay = new Float32Array(FOG_GRID_SIZE * FOG_GRID_SIZE);
-  private fogTexData = new Uint8Array(FOG_GRID_SIZE * FOG_GRID_SIZE * 4);
+  private fogState = new Uint8Array(DEFAULT_FOG_GRID_SIZE * DEFAULT_FOG_GRID_SIZE);
+  private fogDisplay = new Float32Array(DEFAULT_FOG_GRID_SIZE * DEFAULT_FOG_GRID_SIZE);
+  private fogTexData = new Uint8Array(DEFAULT_FOG_GRID_SIZE * DEFAULT_FOG_GRID_SIZE * 4);
   private fogTex: THREE.DataTexture | null = null;
   private fogMesh: THREE.Mesh | null = null;
   private fogUpdateTimer = 0;
   private minimapFogCache: number[] = new Array(MINIMAP_FOG_SIZE * MINIMAP_FOG_SIZE).fill(0);
+
+  private get maxCamDistance(): number {
+    return this.worldSize === 'giant' ? 116 : this.worldSize === 'large' ? 98 : DEFAULT_MAX_CAM_DISTANCE;
+  }
 
   private activeBuildMode: BuildingKind | null = null;
   private activeGodPowerMode: GodPowerId | null = null;
@@ -861,6 +881,7 @@ export class AoMEngine {
     );
 
     this.setupLighting();
+    preloadForestPackGlb();
     this.rebuildTerrainForMap(this.mapId);
     this.setupPreviewHelpers();
     this.initOrderVisuals();
@@ -911,13 +932,34 @@ export class AoMEngine {
 
   private rebuildTerrainForMap(mapId: MapId) {
     this.mapId = mapId;
+    const sizeSpec = getWorldSizeSpec(this.worldSize);
+    this.mapHalfSize = sizeSpec.mapHalfSize;
+    this.playableHalfSize = sizeSpec.playableHalfSize;
+    this.baseOffset = sizeSpec.baseOffset;
+    this.worldScale = sizeSpec.worldScale;
+
+    if (this.fogGridSize !== sizeSpec.fogGridSize) {
+      this.fogGridSize = sizeSpec.fogGridSize;
+      this.fogState = new Uint8Array(this.fogGridSize * this.fogGridSize);
+      this.fogDisplay = new Float32Array(this.fogGridSize * this.fogGridSize);
+      this.fogTexData = new Uint8Array(this.fogGridSize * this.fogGridSize * 4);
+      if (this.fogTex) {
+        this.fogTex.dispose();
+        this.fogTex = null;
+      }
+    }
+
+    this.perspCamera.far = Math.max(320, Math.round(320 * this.worldScale * 0.95));
+    this.perspCamera.updateProjectionMatrix();
+
     const mapCfg = getEffectiveMapConfig(mapId);
     const bio = getMapBiomeVisuals(mapId);
     const effId = resolveEffectiveMapId(mapId);
 
     // Sync sky, fog and biome foliage palette
     this.scene.background = new THREE.Color(mapCfg.skyColorHex);
-    this.scene.fog = new THREE.FogExp2(mapCfg.skyColorHex, effId === 'erebus' ? 0.0062 : 0.0044);
+    const baseFogDensity = effId === 'erebus' ? 0.0062 : 0.0044;
+    this.scene.fog = new THREE.FogExp2(mapCfg.skyColorHex, baseFogDensity / Math.sqrt(Math.max(1, this.worldScale)));
     this.palette.foliagePine.color.setHex(mapCfg.foliageHex);
     this.palette.foliageDark.color.setHex(mapCfg.foliageDarkHex);
 
@@ -944,8 +986,8 @@ export class AoMEngine {
       this.waterMesh = null;
     }
 
-    const size = MAP_HALF_SIZE * 2;
-    const segs = 76;
+    const size = this.mapHalfSize * 2;
+    const segs = sizeSpec.terrainSegments;
     const geo = new THREE.PlaneGeometry(size, size, segs, segs);
     geo.rotateX(-Math.PI / 2);
 
@@ -953,7 +995,7 @@ export class AoMEngine {
     for (let i = 0; i < pos.count; i++) {
       const x = pos.getX(i);
       const z = pos.getZ(i);
-      pos.setY(i, groundHeightAt(x, z, mapId));
+      pos.setY(i, groundHeightAt(x, z, mapId, this.worldSize));
     }
     geo.computeVertexNormals();
 
@@ -968,6 +1010,7 @@ export class AoMEngine {
     const cCliff = new THREE.Color(mapCfg.cliffHex);
     const cFertile = new THREE.Color(bio.fertileHex);
     const tmp = new THREE.Color();
+    const ws = this.worldScale;
 
     for (let i = 0; i < pos.count; i++) {
       const x = pos.getX(i);
@@ -976,20 +1019,22 @@ export class AoMEngine {
       const ny = norm.getY(i);
       const slope = Math.max(0, 1 - ny);
 
-      // Diagonal road between bases (-34,34) -> (34,-34)
+      // Diagonal road between opposing bases (-bo, bo) -> (bo, -bo)
       const diagDist = Math.abs(x + z) / Math.SQRT2;
-      const roadBlend = Math.max(0, 1 - diagDist / 6.5) * (Math.hypot(x, z) < 52 ? 0.58 : 0);
+      const roadBlend = Math.max(0, 1 - diagDist / (6.5 * ws)) * (Math.hypot(x, z) < 52 * ws ? 0.58 : 0);
 
       tmp.copy(cBase);
       if (effId === 'nile' || effId === 'yellow_river' || effId === 'highland') {
         const riverDist = Math.abs(x - z) / Math.SQRT2;
-        if (riverDist < 12) {
-          tmp.lerp(cFertile, Math.max(0, 1 - riverDist / 12) * 0.85);
+        if (riverDist < 12 * ws) {
+          tmp.lerp(cFertile, Math.max(0, 1 - riverDist / (12 * ws)) * 0.85);
         }
-      } else if (effId === 'oasis' && Math.hypot(x, z) < 16) {
-        tmp.lerp(cFertile, (1 - Math.hypot(x, z) / 16) * 0.85);
+      } else if (effId === 'oasis' && Math.hypot(x, z) < 16 * ws) {
+        tmp.lerp(cFertile, (1 - Math.hypot(x, z) / (16 * ws)) * 0.85);
       } else if (effId === 'watering_hole' && y < 0.25) {
         tmp.lerp(cFertile, 0.72);
+      } else if (effId === 'total_war' && Math.hypot(x, z) < 22 * ws) {
+        tmp.lerp(cFertile, (1 - Math.hypot(x, z) / (22 * ws)) * 0.52);
       }
       if (y > 1.05) {
         tmp.lerp(cHigh, Math.min(1, (y - 1.05) * 0.65));
@@ -1027,13 +1072,13 @@ export class AoMEngine {
 
     // Surrounding ocean / river / lava water plane with procedural wave & Fresnel shader
     const waterSegs = this.isSoftwareGl ? 24 : 68;
-    const waterGeo = new THREE.PlaneGeometry(340, 340, waterSegs, waterSegs);
+    const waterGeo = new THREE.PlaneGeometry(sizeSpec.waterSize, sizeSpec.waterSize, waterSegs, waterSegs);
     waterGeo.rotateX(-Math.PI / 2);
     const waterMat = new THREE.MeshStandardMaterial({
       color: mapCfg.waterColorHex,
       emissive: bio.waterEmissiveHex ?? 0x000000,
       emissiveIntensity: bio.waterEmissiveIntensity ?? 0,
-      roughness: effId === 'ghost_lake' || effId === 'tundra' ? 0.08 : 0.16,
+      roughness: effId === 'ghost_lake' || effId === 'tundra' || (effId === 'total_war' && getActiveTotalWarEnv() === 'frozen') ? 0.08 : 0.16,
       metalness: 0.42,
       transparent: true,
       opacity: 0.9,
@@ -1052,19 +1097,20 @@ export class AoMEngine {
       this.fogMesh = null;
     }
     if (!this.fogTex) {
-      this.fogTex = new THREE.DataTexture(this.fogTexData, FOG_GRID_SIZE, FOG_GRID_SIZE, THREE.RGBAFormat);
+      this.fogTex = new THREE.DataTexture(this.fogTexData, this.fogGridSize, this.fogGridSize, THREE.RGBAFormat);
       this.fogTex.magFilter = THREE.LinearFilter;
       this.fogTex.minFilter = THREE.LinearFilter;
       this.fogTex.flipY = true;
       this.fogTex.needsUpdate = true;
     }
-    const fogGeo = new THREE.PlaneGeometry(size, size, 52, 52);
+    const fogMeshSegs = Math.min(96, Math.round(this.fogGridSize * 0.85));
+    const fogGeo = new THREE.PlaneGeometry(size, size, fogMeshSegs, fogMeshSegs);
     fogGeo.rotateX(-Math.PI / 2);
     const fogPos = fogGeo.attributes.position;
     for (let i = 0; i < fogPos.count; i++) {
       const fx = fogPos.getX(i);
       const fz = fogPos.getZ(i);
-      const gy = Math.max(-0.35, groundHeightAt(fx, fz, mapId));
+      const gy = Math.max(-0.35, groundHeightAt(fx, fz, mapId, this.worldSize));
       fogPos.setY(i, gy + 0.55);
     }
     const fogMat = new THREE.MeshBasicMaterial({
@@ -1076,7 +1122,7 @@ export class AoMEngine {
     this.fogMesh.renderOrder = 6;
     this.scene.add(this.fogMesh);
 
-    this.navGrid.rebuildTerrain(mapId);
+    this.navGrid.rebuildTerrain(mapId, this.worldSize);
   }
 
   private setupPreviewHelpers() {
@@ -1182,6 +1228,12 @@ export class AoMEngine {
     this.difficulty = difficulty;
     this.gameType = extras?.gameType ?? 'supremacy';
     this.worldSize = extras?.worldSize ?? 'normal';
+    const sizeSpec = getWorldSizeSpec(this.worldSize);
+    this.mapHalfSize = sizeSpec.mapHalfSize;
+    this.playableHalfSize = sizeSpec.playableHalfSize;
+    this.baseOffset = sizeSpec.baseOffset;
+    this.worldScale = sizeSpec.worldScale;
+
     this.visibilityMode = isTitlePreview
       ? 'revealed'
       : extras?.visibilityMode ?? (revealedMap ? 'revealed' : 'normal');
@@ -1204,8 +1256,11 @@ export class AoMEngine {
     this.kothPlayerHold = 0;
     this.kothEnemyHold = 0;
     this.kothTrickleTimer = 0;
+    this.matchSeed = extras?.matchSeed ?? 0;
     if (!isTitlePreview) {
-      rollUnknownMapVariant(mapId);
+      const seedArg = this.matchSeed > 0 ? this.matchSeed : undefined;
+      rollUnknownMapVariant(mapId, seedArg);
+      rollTotalWarVariant(mapId, seedArg);
     }
     this.scenarioTitle = isTitlePreview ? undefined : extras?.scenarioTitle;
     this.playerColorHex = isTitlePreview ? undefined : extras?.playerColorHex;
@@ -1215,7 +1270,6 @@ export class AoMEngine {
     this.villagerPriority = 'manual';
     this.villagerPriorityTimer = 0;
     this.controlGroups.clear();
-    this.matchSeed = extras?.matchSeed ?? 0;
     if (this.matchSeed > 0) {
       let seedState = this.matchSeed >>> 0;
       this.seededRng = () => {
@@ -1328,93 +1382,115 @@ export class AoMEngine {
     const isMegalopolis = mapId === 'megalopolis';
     const isSuddenDeath = mapId === 'sudden_death';
     const isSeaOfWorms = mapId === 'sea_of_worms';
+    const isTotalWar = mapId === 'total_war';
 
     if (isNomad) {
       this.resources.food += 140;
       this.resources.wood += 220;
       this.enemyResources.food += 140;
       this.enemyResources.wood += 220;
+    } else if (isTotalWar && !isTitlePreview) {
+      const warChest = TOTAL_WAR_XS_SPEC.playableTreasuryResource;
+      this.resources = {
+        food: Math.max(this.resources.food, warChest),
+        wood: Math.max(this.resources.wood, warChest),
+        gold: Math.max(this.resources.gold, warChest),
+        favor: Math.max(this.resources.favor, TOTAL_WAR_XS_SPEC.startingFavor),
+      };
+      this.enemyResources = {
+        food: Math.max(this.enemyResources.food, warChest),
+        wood: Math.max(this.enemyResources.wood, warChest),
+        gold: Math.max(this.enemyResources.gold, warChest),
+        favor: Math.max(this.enemyResources.favor, TOTAL_WAR_XS_SPEC.startingFavor),
+      };
     }
 
-    // Player base (-34, 34) — skipped in Nomad so players choose their own Town Center site
+    const bo = this.baseOffset;
+    const ws = this.worldScale;
+    const pBaseX = -bo;
+    const pBaseZ = bo;
+    const eBaseX = bo;
+    const eBaseZ = -bo;
+
+    // Player base (-bo, bo) — skipped in Nomad so players choose their own Town Center site
     if (!isNomad) {
-      const playerTc = this.spawnBuilding('town_center', 'player', -34, 34, true);
+      const playerTc = this.spawnBuilding('town_center', 'player', pBaseX, pBaseZ, true);
       if (isSuddenDeath) {
         playerTc.maxHp = Math.round(playerTc.maxHp * 1.5);
         playerTc.hp = playerTc.maxHp;
       }
-      this.spawnBuilding('house', 'player', -41, 28, true);
+      this.spawnBuilding('house', 'player', pBaseX - 7, pBaseZ - 6, true);
       if (isMegalopolis) {
-        this.spawnBuilding('town_center', 'player', -15, 42, true);
-        this.spawnBuilding('tower', 'player', -24, 24, true);
-        this.spawnBuilding('tower', 'player', -38, 19, true);
-        this.spawnBuilding('barracks', 'player', -27, 30, true);
-        this.spawnBuilding('house', 'player', -42, 36, true);
-        this.spawnBuilding('armory', 'player', -30, 41, true);
+        this.spawnBuilding('town_center', 'player', -15 * ws, 42 * ws, true);
+        this.spawnBuilding('tower', 'player', pBaseX + 10, pBaseZ - 10, true);
+        this.spawnBuilding('tower', 'player', pBaseX - 4, pBaseZ - 15, true);
+        this.spawnBuilding('barracks', 'player', pBaseX + 7, pBaseZ - 4, true);
+        this.spawnBuilding('house', 'player', pBaseX - 8, pBaseZ + 2, true);
+        this.spawnBuilding('armory', 'player', pBaseX + 4, pBaseZ + 7, true);
       } else if (isSeaOfWorms) {
-        this.spawnBuilding('fortress', 'player', -23, 27, true);
+        this.spawnBuilding('fortress', 'player', pBaseX + 11, pBaseZ - 7, true);
       }
-      if (isDeathmatch) {
-        this.spawnBuilding('barracks', 'player', -26, 26, true);
-        this.spawnBuilding('temple', 'player', -42, 39, true);
+      if (isDeathmatch || isTotalWar) {
+        this.spawnBuilding('barracks', 'player', pBaseX + 8, pBaseZ - 8, true);
+        this.spawnBuilding('temple', 'player', pBaseX - 8, pBaseZ + 5, true);
       }
     }
 
     this.playerPharaohRespawnTimer = 0;
     this.enemyPharaohRespawnTimer = 0;
     if (this.pantheon === 'atlantean') {
-      this.spawnUnit('citizen', 'player', -30, 38);
-      this.spawnUnit('citizen', 'player', -28, 34);
-      this.spawnUnit('citizen', 'player', -34, 40);
+      this.spawnUnit('citizen', 'player', pBaseX + 4, pBaseZ + 4);
+      this.spawnUnit('citizen', 'player', pBaseX + 6, pBaseZ);
+      this.spawnUnit('citizen', 'player', pBaseX, pBaseZ + 6);
       if (isNomad) {
-        this.spawnUnit('citizen', 'player', -22, 36);
-        this.spawnUnit('citizen', 'player', -36, 24);
+        this.spawnUnit('citizen', 'player', pBaseX + 12, pBaseZ + 2);
+        this.spawnUnit('citizen', 'player', pBaseX - 2, pBaseZ - 10);
       }
-      this.spawnUnit('oracle', 'player', -31, 31);
-      this.spawnUnit('oracle', 'player', -29, 30);
+      this.spawnUnit('oracle', 'player', pBaseX + 3, pBaseZ - 3);
+      this.spawnUnit('oracle', 'player', pBaseX + 5, pBaseZ - 4);
       if (!isNomad) {
-        this.spawnUnit('murmillo', 'player', -27, 29);
-        this.spawnUnit('murmillo', 'player', -25, 31);
+        this.spawnUnit('murmillo', 'player', pBaseX + 7, pBaseZ - 5);
+        this.spawnUnit('murmillo', 'player', pBaseX + 9, pBaseZ - 3);
       }
     } else if (this.pantheon === 'chinese') {
-      this.spawnUnit('chinese_peasant', 'player', -30, 38);
-      this.spawnUnit('chinese_peasant', 'player', -28, 34);
-      this.spawnUnit('chinese_peasant', 'player', -34, 40);
-      this.spawnUnit('kuafu', 'player', -32, 36);
+      this.spawnUnit('chinese_peasant', 'player', pBaseX + 4, pBaseZ + 4);
+      this.spawnUnit('chinese_peasant', 'player', pBaseX + 6, pBaseZ);
+      this.spawnUnit('chinese_peasant', 'player', pBaseX, pBaseZ + 6);
+      this.spawnUnit('kuafu', 'player', pBaseX + 2, pBaseZ + 2);
       if (isNomad) {
-        this.spawnUnit('chinese_peasant', 'player', -22, 36);
-        this.spawnUnit('chinese_peasant', 'player', -36, 24);
+        this.spawnUnit('chinese_peasant', 'player', pBaseX + 12, pBaseZ + 2);
+        this.spawnUnit('chinese_peasant', 'player', pBaseX - 2, pBaseZ - 10);
       }
       if (!isNomad) {
-        this.spawnUnit('halberdier', 'player', -27, 29);
-        this.spawnUnit('halberdier', 'player', -25, 31);
+        this.spawnUnit('halberdier', 'player', pBaseX + 7, pBaseZ - 5);
+        this.spawnUnit('halberdier', 'player', pBaseX + 9, pBaseZ - 3);
       }
     } else {
-      this.spawnUnit('villager', 'player', -30, 38);
-      this.spawnUnit('villager', 'player', -28, 34);
-      this.spawnUnit('villager', 'player', -34, 40);
+      this.spawnUnit('villager', 'player', pBaseX + 4, pBaseZ + 4);
+      this.spawnUnit('villager', 'player', pBaseX + 6, pBaseZ);
+      this.spawnUnit('villager', 'player', pBaseX, pBaseZ + 6);
       if (isNomad) {
-        this.spawnUnit('villager', 'player', -22, 36);
-        this.spawnUnit('villager', 'player', -36, 24);
+        this.spawnUnit('villager', 'player', pBaseX + 12, pBaseZ + 2);
+        this.spawnUnit('villager', 'player', pBaseX - 2, pBaseZ - 10);
       }
       if (this.pantheon === 'egyptian') {
-        this.spawnUnit('pharaoh', 'player', -31, 31);
-        this.spawnUnit('priest', 'player', -29, 30);
+        this.spawnUnit('pharaoh', 'player', pBaseX + 3, pBaseZ - 3);
+        this.spawnUnit('priest', 'player', pBaseX + 5, pBaseZ - 4);
         if (!isNomad) {
-          this.spawnUnit('egypt_spearman', 'player', -27, 29);
-          this.spawnUnit('egypt_spearman', 'player', -25, 31);
+          this.spawnUnit('egypt_spearman', 'player', pBaseX + 7, pBaseZ - 5);
+          this.spawnUnit('egypt_spearman', 'player', pBaseX + 9, pBaseZ - 3);
         }
       } else if (this.pantheon === 'norse' || this.pantheon === 'jotunn') {
-        this.spawnUnit('ox_cart', 'player', -31, 35);
-        this.spawnUnit('norse_dwarf', 'player', -32, 37);
-        this.spawnUnit('hersir', 'player', -29, 30);
+        this.spawnUnit('ox_cart', 'player', pBaseX + 3, pBaseZ + 1);
+        this.spawnUnit('norse_dwarf', 'player', pBaseX + 2, pBaseZ + 3);
+        this.spawnUnit('hersir', 'player', pBaseX + 5, pBaseZ - 4);
         if (!isNomad) {
-          this.spawnUnit('ulfsark', 'player', -27, 29);
-          this.spawnUnit('ulfsark', 'player', -25, 31);
+          this.spawnUnit('ulfsark', 'player', pBaseX + 7, pBaseZ - 5);
+          this.spawnUnit('ulfsark', 'player', pBaseX + 9, pBaseZ - 3);
         }
       } else if (!isNomad) {
-        this.spawnUnit('hoplite', 'player', -27, 29);
-        this.spawnUnit('hoplite', 'player', -25, 31);
+        this.spawnUnit('hoplite', 'player', pBaseX + 7, pBaseZ - 5);
+        this.spawnUnit('hoplite', 'player', pBaseX + 9, pBaseZ - 3);
       }
     }
 
@@ -1429,82 +1505,82 @@ export class AoMEngine {
           : this.pantheon === 'chinese'
           ? 'nezha'
           : 'hero';
-      const regent = this.spawnUnit(regentKind, 'player', -32, 30);
+      const regent = this.spawnUnit(regentKind, 'player', pBaseX + 2, pBaseZ - 4);
       if (this.pantheon === 'atlantean') {
         this.applyHeroPromotionToUnit(regent);
       }
       this.regentUnitId = regent.id;
     }
 
-    // Enemy base (34, -34) — skipped in Nomad
+    // Enemy base (bo, -bo) — skipped in Nomad
     if (!isNomad) {
-      const enemyTc = this.spawnBuilding('town_center', 'enemy', 34, -34, true);
+      const enemyTc = this.spawnBuilding('town_center', 'enemy', eBaseX, eBaseZ, true);
       if (isSuddenDeath) {
         enemyTc.maxHp = Math.round(enemyTc.maxHp * 1.5);
         enemyTc.hp = enemyTc.maxHp;
       }
-      this.spawnBuilding('barracks', 'enemy', 26, -29, true);
-      this.spawnBuilding('house', 'enemy', 41, -28, true);
+      this.spawnBuilding('barracks', 'enemy', eBaseX - 8, eBaseZ + 5, true);
+      this.spawnBuilding('house', 'enemy', eBaseX + 7, eBaseZ + 6, true);
       if (isMegalopolis) {
-        this.spawnBuilding('town_center', 'enemy', 15, -42, true);
-        this.spawnBuilding('tower', 'enemy', 24, -24, true);
-        this.spawnBuilding('tower', 'enemy', 38, -19, true);
-        this.spawnBuilding('house', 'enemy', 42, -36, true);
+        this.spawnBuilding('town_center', 'enemy', 15 * ws, -42 * ws, true);
+        this.spawnBuilding('tower', 'enemy', eBaseX - 10, eBaseZ + 10, true);
+        this.spawnBuilding('tower', 'enemy', eBaseX + 4, eBaseZ + 15, true);
+        this.spawnBuilding('house', 'enemy', eBaseX + 8, eBaseZ - 2, true);
       } else if (isSeaOfWorms) {
-        this.spawnBuilding('fortress', 'enemy', 23, -27, true);
+        this.spawnBuilding('fortress', 'enemy', eBaseX - 11, eBaseZ + 7, true);
       }
       if (difficulty !== 'normal' && difficulty !== 'easy') {
-        this.spawnBuilding('tower', 'enemy', 24, -22, true);
+        this.spawnBuilding('tower', 'enemy', eBaseX - 10, eBaseZ + 12, true);
       }
     }
 
     if (this.enemyPantheon === 'atlantean') {
-      this.spawnUnit('citizen', 'enemy', 31, -38);
-      this.spawnUnit('citizen', 'enemy', 38, -31);
+      this.spawnUnit('citizen', 'enemy', eBaseX - 3, eBaseZ - 4);
+      this.spawnUnit('citizen', 'enemy', eBaseX + 4, eBaseZ + 3);
       if (isNomad) {
-        this.spawnUnit('citizen', 'enemy', 23, -35);
-        this.spawnUnit('citizen', 'enemy', 36, -24);
+        this.spawnUnit('citizen', 'enemy', eBaseX - 11, eBaseZ - 1);
+        this.spawnUnit('citizen', 'enemy', eBaseX + 2, eBaseZ + 10);
       }
-      this.spawnUnit('oracle', 'enemy', 30, -30);
+      this.spawnUnit('oracle', 'enemy', eBaseX - 4, eBaseZ + 4);
       if (!isNomad) {
-        this.spawnUnit('murmillo', 'enemy', 25, -26);
-        this.spawnUnit('murmillo', 'enemy', 27, -24);
+        this.spawnUnit('murmillo', 'enemy', eBaseX - 9, eBaseZ + 8);
+        this.spawnUnit('murmillo', 'enemy', eBaseX - 7, eBaseZ + 10);
       }
     } else if (this.enemyPantheon === 'chinese') {
-      this.spawnUnit('chinese_peasant', 'enemy', 31, -38);
-      this.spawnUnit('chinese_peasant', 'enemy', 38, -31);
-      this.spawnUnit('kuafu', 'enemy', 33, -36);
+      this.spawnUnit('chinese_peasant', 'enemy', eBaseX - 3, eBaseZ - 4);
+      this.spawnUnit('chinese_peasant', 'enemy', eBaseX + 4, eBaseZ + 3);
+      this.spawnUnit('kuafu', 'enemy', eBaseX - 1, eBaseZ - 2);
       if (isNomad) {
-        this.spawnUnit('chinese_peasant', 'enemy', 23, -35);
-        this.spawnUnit('chinese_peasant', 'enemy', 36, -24);
+        this.spawnUnit('chinese_peasant', 'enemy', eBaseX - 11, eBaseZ - 1);
+        this.spawnUnit('chinese_peasant', 'enemy', eBaseX + 2, eBaseZ + 10);
       }
       if (!isNomad) {
-        this.spawnUnit('halberdier', 'enemy', 25, -26);
-        this.spawnUnit('halberdier', 'enemy', 27, -24);
+        this.spawnUnit('halberdier', 'enemy', eBaseX - 9, eBaseZ + 8);
+        this.spawnUnit('halberdier', 'enemy', eBaseX - 7, eBaseZ + 10);
       }
     } else {
-      this.spawnUnit('villager', 'enemy', 31, -38);
-      this.spawnUnit('villager', 'enemy', 38, -31);
+      this.spawnUnit('villager', 'enemy', eBaseX - 3, eBaseZ - 4);
+      this.spawnUnit('villager', 'enemy', eBaseX + 4, eBaseZ + 3);
       if (isNomad) {
-        this.spawnUnit('villager', 'enemy', 23, -35);
-        this.spawnUnit('villager', 'enemy', 36, -24);
+        this.spawnUnit('villager', 'enemy', eBaseX - 11, eBaseZ - 1);
+        this.spawnUnit('villager', 'enemy', eBaseX + 2, eBaseZ + 10);
       }
       if (this.enemyPantheon === 'egyptian') {
-        this.spawnUnit('pharaoh', 'enemy', 30, -30);
+        this.spawnUnit('pharaoh', 'enemy', eBaseX - 4, eBaseZ + 4);
         if (!isNomad) {
-          this.spawnUnit('egypt_spearman', 'enemy', 25, -26);
-          this.spawnUnit('egypt_spearman', 'enemy', 27, -24);
+          this.spawnUnit('egypt_spearman', 'enemy', eBaseX - 9, eBaseZ + 8);
+          this.spawnUnit('egypt_spearman', 'enemy', eBaseX - 7, eBaseZ + 10);
         }
       } else if (this.enemyPantheon === 'norse' || this.enemyPantheon === 'jotunn') {
-        this.spawnUnit('ox_cart', 'enemy', 32, -35);
-        this.spawnUnit('hersir', 'enemy', 29, -29);
+        this.spawnUnit('ox_cart', 'enemy', eBaseX - 2, eBaseZ - 1);
+        this.spawnUnit('hersir', 'enemy', eBaseX - 5, eBaseZ + 5);
         if (!isNomad) {
-          this.spawnUnit('ulfsark', 'enemy', 25, -26);
-          this.spawnUnit('ulfsark', 'enemy', 27, -24);
+          this.spawnUnit('ulfsark', 'enemy', eBaseX - 9, eBaseZ + 8);
+          this.spawnUnit('ulfsark', 'enemy', eBaseX - 7, eBaseZ + 10);
         }
       } else if (!isNomad) {
-        this.spawnUnit('hoplite', 'enemy', 25, -26);
-        this.spawnUnit('hoplite', 'enemy', 27, -24);
+        this.spawnUnit('hoplite', 'enemy', eBaseX - 9, eBaseZ + 8);
+        this.spawnUnit('hoplite', 'enemy', eBaseX - 7, eBaseZ + 10);
       }
     }
 
@@ -1518,6 +1594,9 @@ export class AoMEngine {
       const selfTeam = rosterFactions[this.localSlotIndex]?.teamIndex ?? 1;
       let allySubIdx = 0;
       let enemySubIdx = 0;
+      const circularSpawns = isTotalWar
+        ? computeTotalWarCircularSpawns(rosterFactions.length, this.playableHalfSize)
+        : null;
 
       for (let i = 0; i < rosterFactions.length; i++) {
         const mf = rosterFactions[i];
@@ -1548,11 +1627,13 @@ export class AoMEngine {
         if (!isTitlePreview && !mf.isSelf && !isNomad) {
           if (fTeam === 'player') {
             allySubIdx++;
+            const circPt = circularSpawns?.[i];
             const ang = -Math.PI * 0.72 + allySubIdx * 0.24;
-            const ax = THREE.MathUtils.clamp(Math.cos(ang) * 44, -PLAYABLE_HALF_SIZE + 8, PLAYABLE_HALF_SIZE - 8);
-            const az = THREE.MathUtils.clamp(Math.sin(ang) * 44, -PLAYABLE_HALF_SIZE + 8, PLAYABLE_HALF_SIZE - 8);
-            if (this.isWalkableTerrainPoint(ax, az)) {
-              const b = this.spawnBuilding('village_center', 'player', ax, az, true);
+            const rawAx = circPt ? circPt.x : Math.cos(ang) * (44 * ws);
+            const rawAz = circPt ? circPt.z : Math.sin(ang) * (44 * ws);
+            const safeSlot = this.snapToWalkableSlot(rawAx, rawAz, pBaseX, pBaseZ);
+            if (this.isWalkableTerrainPoint(safeSlot.x, safeSlot.z)) {
+              const b = this.spawnBuilding('village_center', 'player', safeSlot.x, safeSlot.z, true);
               b.factionSlot = mf.slotIndex;
               const guardKind: UnitKind =
                 mf.pantheon === 'egyptian'
@@ -1564,19 +1645,21 @@ export class AoMEngine {
                   : mf.pantheon === 'chinese'
                   ? 'halberdier'
                   : 'hoplite';
-              const g1 = this.spawnUnit(guardKind, 'player', ax + 3, az - 2);
-              const g2 = this.spawnUnit(guardKind, 'player', ax - 3, az + 2);
+              const g1 = this.spawnUnit(guardKind, 'player', safeSlot.x + 3, safeSlot.z - 2);
+              const g2 = this.spawnUnit(guardKind, 'player', safeSlot.x - 3, safeSlot.z + 2);
               g1.factionSlot = mf.slotIndex;
               g2.factionSlot = mf.slotIndex;
             }
           } else {
             enemySubIdx++;
             if (enemySubIdx > 1) {
+              const circPt = circularSpawns?.[i];
               const ang = Math.PI * 0.28 + (enemySubIdx - 1) * 0.24;
-              const ex = THREE.MathUtils.clamp(Math.cos(ang) * 44, -PLAYABLE_HALF_SIZE + 8, PLAYABLE_HALF_SIZE - 8);
-              const ez = THREE.MathUtils.clamp(Math.sin(ang) * 44, -PLAYABLE_HALF_SIZE + 8, PLAYABLE_HALF_SIZE - 8);
-              if (this.isWalkableTerrainPoint(ex, ez)) {
-                const b = this.spawnBuilding('village_center', 'enemy', ex, ez, true);
+              const rawEx = circPt ? circPt.x : Math.cos(ang) * (44 * ws);
+              const rawEz = circPt ? circPt.z : Math.sin(ang) * (44 * ws);
+              const safeSlot = this.snapToWalkableSlot(rawEx, rawEz, eBaseX, eBaseZ);
+              if (this.isWalkableTerrainPoint(safeSlot.x, safeSlot.z)) {
+                const b = this.spawnBuilding('village_center', 'enemy', safeSlot.x, safeSlot.z, true);
                 b.factionSlot = mf.slotIndex;
                 const guardKind: UnitKind =
                   mf.pantheon === 'egyptian'
@@ -1588,8 +1671,8 @@ export class AoMEngine {
                     : mf.pantheon === 'chinese'
                     ? 'halberdier'
                     : 'hoplite';
-                const e1 = this.spawnUnit(guardKind, 'enemy', ex - 3, ez + 2);
-                const e2 = this.spawnUnit(guardKind, 'enemy', ex + 3, ez - 2);
+                const e1 = this.spawnUnit(guardKind, 'enemy', safeSlot.x - 3, safeSlot.z + 2);
+                const e2 = this.spawnUnit(guardKind, 'enemy', safeSlot.x + 3, safeSlot.z - 2);
                 e1.factionSlot = mf.slotIndex;
                 e2.factionSlot = mf.slotIndex;
               }
@@ -1642,15 +1725,15 @@ export class AoMEngine {
         if (sb.wood) this.resources.wood += sb.wood;
         if (sb.gold) this.resources.gold += sb.gold;
         if (sb.favor) this.resources.favor += sb.favor;
-        if (sb.heroKind && this.isWalkableTerrainPoint(-28, 22)) {
-          this.spawnUnit(sb.heroKind, 'player', -28, 22);
+        if (sb.heroKind && this.isWalkableTerrainPoint(pBaseX + 6, pBaseZ - 12)) {
+          this.spawnUnit(sb.heroKind, 'player', pBaseX + 6, pBaseZ - 12);
         }
         if (sb.extraUnits) {
           let uIdx = 0;
           for (const entry of sb.extraUnits) {
             for (let k = 0; k < entry.count; k++) {
-              const sx = -26 + (uIdx % 4) * 1.8;
-              const sz = 24 + Math.floor(uIdx / 4) * 1.8;
+              const sx = pBaseX + 8 + (uIdx % 4) * 1.8;
+              const sz = pBaseZ - 10 + Math.floor(uIdx / 4) * 1.8;
               if (this.isWalkableTerrainPoint(sx, sz)) {
                 this.spawnUnit(entry.kind, 'player', sx, sz);
               }
@@ -1669,22 +1752,25 @@ export class AoMEngine {
     // Map-authentic Settlements, Berries, Gold, Biome Trees & Fauna
     const mapProfile = buildMapResourceProfile(mapId, this.worldSize);
     for (const [sx, sz] of mapProfile.settlementSpots) {
-      if (isMegalopolis && ((sx === -15 && sz === 42) || (sx === 15 && sz === -42))) {
+      if (
+        isMegalopolis &&
+        (Math.hypot(sx - -15 * ws, sz - 42 * ws) < 4 || Math.hypot(sx - 15 * ws, sz - -42 * ws) < 4)
+      ) {
         continue;
       }
-      if (groundHeightAt(sx, sz, mapId) >= WATER_WALK_LIMIT) {
+      if (groundHeightAt(sx, sz, mapId, this.worldSize) >= WATER_WALK_LIMIT) {
         this.spawnSettlement(sx, sz);
       }
     }
 
     for (const [bx, bz] of mapProfile.berrySpots) {
-      if (groundHeightAt(bx, bz, mapId) >= WATER_WALK_LIMIT && this.isClearOfSettlements(bx, bz, 3.6)) {
+      if (groundHeightAt(bx, bz, mapId, this.worldSize) >= WATER_WALK_LIMIT && this.isClearOfSettlements(bx, bz, 3.6)) {
         this.spawnNode('berry', bx, bz);
       }
     }
 
     for (const [gx, gz, customAmount] of mapProfile.goldSpots) {
-      if (groundHeightAt(gx, gz, mapId) >= WATER_WALK_LIMIT && this.isClearOfSettlements(gx, gz, 3.6)) {
+      if (groundHeightAt(gx, gz, mapId, this.worldSize) >= WATER_WALK_LIMIT && this.isClearOfSettlements(gx, gz, 3.6)) {
         const gNode = this.spawnNode('gold_mine', gx, gz);
         if (customAmount) {
           gNode.amount = customAmount;
@@ -1697,10 +1783,10 @@ export class AoMEngine {
     for (const [cx, cz, count] of mapProfile.treeClusters) {
       for (let i = 0; i < count; i++) {
         const ang = (i / count) * Math.PI * 2 + tIdx * 0.4;
-        const rad = 2.2 + (i % 3) * 1.9;
+        const rad = (2.2 + (i % 3) * 1.9) * Math.sqrt(ws);
         const tx = cx + Math.cos(ang) * rad;
         const tz = cz + Math.sin(ang) * rad;
-        if (groundHeightAt(tx, tz, mapId) >= WATER_WALK_LIMIT && this.isClearOfSettlements(tx, tz, 4.8)) {
+        if (groundHeightAt(tx, tz, mapId, this.worldSize) >= WATER_WALK_LIMIT && this.isClearOfSettlements(tx, tz, 4.8)) {
           this.spawnNode('tree', tx, tz);
         }
         tIdx++;
@@ -1708,16 +1794,34 @@ export class AoMEngine {
     }
 
     for (const [fKind, fx, fz] of mapProfile.faunaSpawns) {
-      if (groundHeightAt(fx, fz, mapId) >= WATER_WALK_LIMIT && this.isClearOfSettlements(fx, fz, 3.6)) {
+      if (groundHeightAt(fx, fz, mapId, this.worldSize) >= WATER_WALK_LIMIT && this.isClearOfSettlements(fx, fz, 3.6)) {
         this.spawnFauna(fKind, fx, fz);
       }
     }
 
     if (mapId === 'king_of_the_hill') {
       const vaultMesh = createPlentyVaultMesh(this.palette, !this.isSoftwareGl);
-      vaultMesh.position.set(0, groundHeightAt(0, 0, mapId), 0);
+      vaultMesh.position.set(0, groundHeightAt(0, 0, mapId, this.worldSize), 0);
       this.scene.add(vaultMesh);
       this.kothVaultMesh = vaultMesh;
+    }
+
+    // Vale dos Reis: Guardiões selvagens extra protegem as minas centrais do desfiladeiro
+    const effRuleMap = resolveEffectiveMapId(mapId);
+    if (effRuleMap === 'valley_of_the_kings') {
+      const guardianCoords: [FaunaKind, number, number][] = [
+        ['lion', -4 * ws, 4 * ws],
+        ['lion', 4 * ws, -4 * ws],
+        ['crocodile', -8 * ws, -8 * ws],
+        ['crocodile', 8 * ws, 8 * ws],
+      ];
+      for (const [gKind, gx, gz] of guardianCoords) {
+        if (groundHeightAt(gx, gz, mapId, this.worldSize) >= WATER_WALK_LIMIT && this.isClearOfSettlements(gx, gz, 3.2)) {
+          const g = this.spawnFauna(gKind, gx, gz);
+          g.maxHp = Math.round(g.maxHp * 1.35);
+          g.hp = g.maxHp;
+        }
+      }
     }
 
     if (isNomad && !isTitlePreview) {
@@ -1728,19 +1832,32 @@ export class AoMEngine {
       this.notifyStatus('💀 Morte Súbita: Apenas uma Cidadela reforçada por jogador — proteja-a a todo custo!');
     } else if (mapId === 'king_of_the_hill' && !isTitlePreview) {
       this.notifyStatus('👑 Rei da Colina: Capture e segure o Cofre da Abundância no monte central por 90s para vencer!');
+    } else if (mapId === 'valley_of_the_kings' && !isTitlePreview) {
+      this.notifyStatus('🏜️ Vale dos Reis: Guardiões ferozes vigiam as minas de ouro ricas no cânion central!');
+    } else if (isTotalWar && !isTitlePreview) {
+      const envLabel = getActiveTotalWarEnv() === 'frozen' ? 'Atlântico Norte Ártico' : 'Mediterrâneo Tropical';
+      this.notifyStatus(
+        `⚔️ ${TOTAL_WAR_XS_SPEC.title} (${envLabel}): Cofres de guerra liberados (${TOTAL_WAR_XS_SPEC.playableTreasuryResource.toLocaleString('pt-BR')} recursos) — destrua todas as estruturas inimigas!`
+      );
     }
 
     // Collectible Relics scattered across map flanks
     const relicDefs: [string, string, number, number][] = [
-      ['Cálice de Atena', '+15 Ouro & +2 Favor a cada 5s ao ser guardada no Templo', -20, -14],
-      ['Elmo de Aquiles', '+15 Alimento & +2 Favor a cada 5s ao ser guardada no Templo', 20, 14],
-      ['Lira de Apolo', '+15 Madeira & +2 Favor a cada 5s ao ser guardada no Templo', -10, 10],
+      ['Cálice de Atena', '+15 Ouro & +2 Favor a cada 5s ao ser guardada no Templo', -20 * ws, -14 * ws],
+      ['Elmo de Aquiles', '+15 Alimento & +2 Favor a cada 5s ao ser guardada no Templo', 20 * ws, 14 * ws],
+      ['Lira de Apolo', '+15 Madeira & +2 Favor a cada 5s ao ser guardada no Templo', -10 * ws, 10 * ws],
     ];
-    if (this.worldSize !== 'normal') {
-      relicDefs.push(['Escudo de Ájax', '+20 Ouro & +3 Favor a cada 5s ao ser guardada no Templo', 10, -10]);
+    if (this.worldSize !== 'normal' || isTotalWar) {
+      relicDefs.push(['Escudo de Ájax', '+20 Ouro & +3 Favor a cada 5s ao ser guardada no Templo', 10 * ws, -10 * ws]);
+    }
+    if (isTotalWar) {
+      relicDefs.push(
+        ['Velo de Ouro', '+20 Alimento & +3 Favor a cada 5s ao ser guardada no Templo', -26 * ws, -26 * ws],
+        ['Tridente de Nereu', '+20 Madeira & +3 Favor a cada 5s ao ser guardada no Templo', 26 * ws, 26 * ws]
+      );
     }
     for (const [rName, rBonus, rx, rz] of relicDefs) {
-      if (groundHeightAt(rx, rz, mapId) >= WATER_WALK_LIMIT && this.isClearOfSettlements(rx, rz, 3.5)) {
+      if (groundHeightAt(rx, rz, mapId, this.worldSize) >= WATER_WALK_LIMIT && this.isClearOfSettlements(rx, rz, 3.5)) {
         this.spawnRelic(rName, rBonus, rx, rz);
       }
     }
@@ -1762,14 +1879,17 @@ export class AoMEngine {
       'anatolia',
       'team_migration',
       'yellow_river',
+      'total_war',
     ];
     if (aquaticMaps.includes(effMap) || aquaticMaps.includes(mapId)) {
       const fishLabels = ['Cardume de Salmão', 'Cardume de Perca', 'Cardume de Mahi-Mahi'];
       let spawnedFish = 0;
-      const targetFishCount = effMap === 'islands' || effMap === 'archipelago' || effMap === 'midgard' ? 10 : 6;
-      for (let attempt = 0; attempt < 95 && spawnedFish < targetFishCount; attempt++) {
-        const fx = (this.seededRng() - 0.5) * (PLAYABLE_HALF_SIZE * 1.78);
-        const fz = (this.seededRng() - 0.5) * (PLAYABLE_HALF_SIZE * 1.78);
+      const baseFishCount =
+        effMap === 'islands' || effMap === 'archipelago' || effMap === 'midgard' || effMap === 'total_war' ? 10 : 6;
+      const targetFishCount = Math.round(baseFishCount * ws);
+      for (let attempt = 0; attempt < 140 && spawnedFish < targetFishCount; attempt++) {
+        const fx = (this.seededRng() - 0.5) * (this.playableHalfSize * 1.82);
+        const fz = (this.seededRng() - 0.5) * (this.playableHalfSize * 1.82);
         if (this.navGrid.isWaterTerrain(fx, fz)) {
           let tooClose = false;
           for (const existing of this.nodes.values()) {
@@ -1789,10 +1909,12 @@ export class AoMEngine {
       // Decorative aquatic marine animals (Tartarugas, Golfinhos, Baleias)
       if (mapProfile.aquaticDecorPool.length > 0) {
         let spawnedDecor = 0;
-        const targetDecorCount = effMap === 'islands' || effMap === 'archipelago' || effMap === 'midgard' ? 5 : 3;
-        for (let attempt = 0; attempt < 75 && spawnedDecor < targetDecorCount; attempt++) {
-          const ax = (this.seededRng() - 0.5) * (PLAYABLE_HALF_SIZE * 1.72);
-          const az = (this.seededRng() - 0.5) * (PLAYABLE_HALF_SIZE * 1.72);
+        const baseDecorCount =
+          effMap === 'islands' || effMap === 'archipelago' || effMap === 'midgard' || effMap === 'total_war' ? 5 : 3;
+        const targetDecorCount = Math.round(baseDecorCount * ws);
+        for (let attempt = 0; attempt < 95 && spawnedDecor < targetDecorCount; attempt++) {
+          const ax = (this.seededRng() - 0.5) * (this.playableHalfSize * 1.76);
+          const az = (this.seededRng() - 0.5) * (this.playableHalfSize * 1.76);
           if (this.navGrid.isWaterTerrain(ax, az)) {
             const decorKind = mapProfile.aquaticDecorPool[spawnedDecor % mapProfile.aquaticDecorPool.length];
             this.spawnFauna(decorKind, ax, az);
@@ -1806,13 +1928,13 @@ export class AoMEngine {
     this.initFogOfWar();
 
     if (isTitlePreview) {
-      this.camDesiredTarget.set(-14, 0, 14);
-      this.camTarget.set(-14, 0, 14);
+      this.camDesiredTarget.set(-14 * ws, 0, 14 * ws);
+      this.camTarget.set(-14 * ws, 0, 14 * ws);
       this.camDesiredDistance = 42;
       this.camDistance = 42;
     } else {
-      this.camDesiredTarget.set(-32, 0, 32);
-      this.camTarget.set(-32, 0, 32);
+      this.camDesiredTarget.set(pBaseX + 2, 0, pBaseZ - 2);
+      this.camTarget.set(pBaseX + 2, 0, pBaseZ - 2);
       this.camDesiredDistance = 36;
       this.camDistance = 36;
       soundEngine.playAgeTransitionComplete(startAge, this.pantheon, false);
@@ -1883,59 +2005,65 @@ export class AoMEngine {
   }
 
   private worldToFogCell(x: number, z: number): { gx: number; gy: number } {
-    const u = (x + MAP_HALF_SIZE) / (MAP_HALF_SIZE * 2);
-    const v = (z + MAP_HALF_SIZE) / (MAP_HALF_SIZE * 2);
-    const gx = Math.max(0, Math.min(FOG_GRID_SIZE - 1, Math.floor(u * FOG_GRID_SIZE)));
-    const gy = Math.max(0, Math.min(FOG_GRID_SIZE - 1, Math.floor(v * FOG_GRID_SIZE)));
+    const u = (x + this.mapHalfSize) / (this.mapHalfSize * 2);
+    const v = (z + this.mapHalfSize) / (this.mapHalfSize * 2);
+    const gx = Math.max(0, Math.min(this.fogGridSize - 1, Math.floor(u * this.fogGridSize)));
+    const gy = Math.max(0, Math.min(this.fogGridSize - 1, Math.floor(v * this.fogGridSize)));
     return { gx, gy };
   }
 
   private isWorldExplored(x: number, z: number): boolean {
     if (this.revealedMap) return true;
     const { gx, gy } = this.worldToFogCell(x, z);
-    return this.fogState[gy * FOG_GRID_SIZE + gx] >= 1;
+    return this.fogState[gy * this.fogGridSize + gx] >= 1;
   }
 
   private isWorldVisible(x: number, z: number): boolean {
     if (this.revealedMap) return true;
     const { gx, gy } = this.worldToFogCell(x, z);
-    return this.fogState[gy * FOG_GRID_SIZE + gx] === 2;
+    return this.fogState[gy * this.fogGridSize + gx] === 2;
   }
 
   private revealFogCircle(wx: number, wz: number, radiusWorld: number) {
-    const cellWorld = (MAP_HALF_SIZE * 2) / FOG_GRID_SIZE;
+    const cellWorld = (this.mapHalfSize * 2) / this.fogGridSize;
     const cellRadius = Math.ceil(radiusWorld / cellWorld);
     const rSq = radiusWorld * radiusWorld;
     const center = this.worldToFogCell(wx, wz);
 
     const minX = Math.max(0, center.gx - cellRadius);
-    const maxX = Math.min(FOG_GRID_SIZE - 1, center.gx + cellRadius);
+    const maxX = Math.min(this.fogGridSize - 1, center.gx + cellRadius);
     const minY = Math.max(0, center.gy - cellRadius);
-    const maxY = Math.min(FOG_GRID_SIZE - 1, center.gy + cellRadius);
+    const maxY = Math.min(this.fogGridSize - 1, center.gy + cellRadius);
 
     for (let gy = minY; gy <= maxY; gy++) {
-      const cz = ((gy + 0.5) / FOG_GRID_SIZE * 2 - 1) * MAP_HALF_SIZE;
+      const cz = ((gy + 0.5) / this.fogGridSize * 2 - 1) * this.mapHalfSize;
       const dz = cz - wz;
       for (let gx = minX; gx <= maxX; gx++) {
-        const cx = ((gx + 0.5) / FOG_GRID_SIZE * 2 - 1) * MAP_HALF_SIZE;
+        const cx = ((gx + 0.5) / this.fogGridSize * 2 - 1) * this.mapHalfSize;
         const dx = cx - wx;
         if (dx * dx + dz * dz <= rSq) {
-          this.fogState[gy * FOG_GRID_SIZE + gx] = 2;
+          this.fogState[gy * this.fogGridSize + gx] = 2;
         }
       }
     }
   }
 
   private syncMinimapFogCache() {
+    const ratio = this.fogGridSize / MINIMAP_FOG_SIZE;
     for (let my = 0; my < MINIMAP_FOG_SIZE; my++) {
-      const gy0 = my * 2;
+      const gy0 = Math.floor(my * ratio);
+      const gy1 = Math.min(this.fogGridSize - 1, Math.floor((my + 1) * ratio) - 1);
       for (let mx = 0; mx < MINIMAP_FOG_SIZE; mx++) {
-        const gx0 = mx * 2;
-        const v00 = this.fogState[gy0 * FOG_GRID_SIZE + gx0];
-        const v10 = this.fogState[gy0 * FOG_GRID_SIZE + gx0 + 1];
-        const v01 = this.fogState[(gy0 + 1) * FOG_GRID_SIZE + gx0];
-        const v11 = this.fogState[(gy0 + 1) * FOG_GRID_SIZE + gx0 + 1];
-        this.minimapFogCache[my * MINIMAP_FOG_SIZE + mx] = Math.max(v00, v10, v01, v11);
+        const gx0 = Math.floor(mx * ratio);
+        const gx1 = Math.min(this.fogGridSize - 1, Math.floor((mx + 1) * ratio) - 1);
+        let best = 0;
+        for (let gy = gy0; gy <= gy1; gy++) {
+          for (let gx = gx0; gx <= gx1; gx++) {
+            const v = this.fogState[gy * this.fogGridSize + gx];
+            if (v > best) best = v;
+          }
+        }
+        this.minimapFogCache[my * MINIMAP_FOG_SIZE + mx] = best;
       }
     }
   }
@@ -2672,7 +2800,7 @@ export class AoMEngine {
 
     let spawnX = x;
     let spawnZ = z;
-    let spawnY = groundHeightAt(spawnX, spawnZ, this.mapId);
+    let spawnY = groundHeightAt(spawnX, spawnZ, this.mapId, this.worldSize);
     if (stats.isNaval) {
       if (!this.navGrid.isWaterTerrain(spawnX, spawnZ)) {
         const curCell = this.navGrid.worldToCell(spawnX, spawnZ);
@@ -2839,7 +2967,7 @@ export class AoMEngine {
       majorGod,
       teamAge
     );
-    mesh.position.set(x, groundHeightAt(x, z, this.mapId), z);
+    mesh.position.set(x, groundHeightAt(x, z, this.mapId, this.worldSize), z);
     mesh.userData.entityType = 'building';
     mesh.userData.entityId = id;
     const bScale = this.getBuildingScale(kind);
@@ -2877,7 +3005,7 @@ export class AoMEngine {
   private spawnNode(kind: ResourceNodeKind, x: number, z: number, fixedId?: string): ResourceNodeEntity {
     const id = fixedId ?? `n_${this.nextId++}`;
     const mesh = createResourceMesh(kind, this.palette, !this.isSoftwareGl, this.mapId, this.treeVariantCounter++);
-    mesh.position.set(x, groundHeightAt(x, z, this.mapId), z);
+    mesh.position.set(x, groundHeightAt(x, z, this.mapId, this.worldSize), z);
     mesh.rotation.y = ((x * 13 + z * 7) % 6.28);
     mesh.userData.entityType = 'node';
     mesh.userData.entityId = id;
@@ -2907,7 +3035,7 @@ export class AoMEngine {
   private spawnSettlement(x: number, z: number, fixedId?: string): SettlementEntity {
     const id = fixedId ?? `s_${this.nextId++}`;
     const mesh = createSettlementMesh(this.palette, !this.isSoftwareGl);
-    mesh.position.set(x, groundHeightAt(x, z, this.mapId), z);
+    mesh.position.set(x, groundHeightAt(x, z, this.mapId, this.worldSize), z);
     mesh.userData.entityType = 'settlement';
     mesh.userData.entityId = id;
     const sScale = this.getSettlementScale();
@@ -2926,7 +3054,7 @@ export class AoMEngine {
   private spawnRelic(name: string, bonusLabel: string, x: number, z: number, fixedId?: string): RelicEntity {
     const id = fixedId ?? `r_${this.nextId++}`;
     const mesh = createRelicMesh(this.palette, !this.isSoftwareGl);
-    mesh.position.set(x, groundHeightAt(x, z, this.mapId), z);
+    mesh.position.set(x, groundHeightAt(x, z, this.mapId, this.worldSize), z);
     mesh.userData.entityType = 'relic';
     mesh.userData.entityId = id;
     this.scene.add(mesh);
@@ -2947,7 +3075,7 @@ export class AoMEngine {
     const id = fixedId ?? `f_${this.nextId++}`;
     const stats = FAUNA_STATS[kind];
     const mesh = createFaunaMesh(kind, this.palette, !this.isSoftwareGl);
-    const spawnY = stats.isAquatic ? -0.34 : groundHeightAt(x, z, this.mapId);
+    const spawnY = stats.isAquatic ? -0.34 : groundHeightAt(x, z, this.mapId, this.worldSize);
     mesh.position.set(x, spawnY, z);
     mesh.rotation.y = Math.random() * Math.PI * 2;
     mesh.userData.entityType = 'fauna';
@@ -3916,8 +4044,8 @@ export class AoMEngine {
     for (let i = 0; i < 12; i++) {
       const ang = (i / 12) * Math.PI * 2 + Math.random() * 0.4;
       const rad = 4.2 + (i % 3) * 1.4;
-      const cx = THREE.MathUtils.clamp(anchor.x + Math.cos(ang) * rad, -PLAYABLE_HALF_SIZE + 3, PLAYABLE_HALF_SIZE - 3);
-      const cz = THREE.MathUtils.clamp(anchor.z + Math.sin(ang) * rad, -PLAYABLE_HALF_SIZE + 3, PLAYABLE_HALF_SIZE - 3);
+      const cx = THREE.MathUtils.clamp(anchor.x + Math.cos(ang) * rad, -this.playableHalfSize + 3, this.playableHalfSize - 3);
+      const cz = THREE.MathUtils.clamp(anchor.z + Math.sin(ang) * rad, -this.playableHalfSize + 3, this.playableHalfSize - 3);
       if (this.isWalkableTerrainPoint(cx, cz)) {
         sx = cx;
         sz = cz;
@@ -4062,8 +4190,8 @@ export class AoMEngine {
       this.notifyStatus(`${spec.name}! Chuva sagrada concedeu +260 Alimento e +140 Madeira!`);
     } else if (id === 'create_gold') {
       soundEngine.playFanfare(false);
-      const gx = THREE.MathUtils.clamp(worldPos.x, -PLAYABLE_HALF_SIZE + 4, PLAYABLE_HALF_SIZE - 4);
-      const gz = THREE.MathUtils.clamp(worldPos.z, -PLAYABLE_HALF_SIZE + 4, PLAYABLE_HALF_SIZE - 4);
+      const gx = THREE.MathUtils.clamp(worldPos.x, -this.playableHalfSize + 4, this.playableHalfSize - 4);
+      const gz = THREE.MathUtils.clamp(worldPos.z, -this.playableHalfSize + 4, this.playableHalfSize - 4);
       const mine = this.spawnNode('gold_mine', gx, gz);
       mine.amount = 1000;
       mine.maxAmount = 1000;
@@ -4100,8 +4228,8 @@ export class AoMEngine {
       let spawned = 0;
       for (let i = 0; i < huntKinds.length; i++) {
         const ang = (i / huntKinds.length) * Math.PI * 2;
-        const fx = THREE.MathUtils.clamp(worldPos.x + Math.cos(ang) * 2.5, -PLAYABLE_HALF_SIZE + 3, PLAYABLE_HALF_SIZE - 3);
-        const fz = THREE.MathUtils.clamp(worldPos.z + Math.sin(ang) * 2.5, -PLAYABLE_HALF_SIZE + 3, PLAYABLE_HALF_SIZE - 3);
+        const fx = THREE.MathUtils.clamp(worldPos.x + Math.cos(ang) * 2.5, -this.playableHalfSize + 3, this.playableHalfSize - 3);
+        const fz = THREE.MathUtils.clamp(worldPos.z + Math.sin(ang) * 2.5, -this.playableHalfSize + 3, this.playableHalfSize - 3);
         if (this.isWalkableTerrainPoint(fx, fz)) {
           this.spawnFauna(huntKinds[i], fx, fz);
           spawned++;
@@ -4153,8 +4281,8 @@ export class AoMEngine {
       let count = 0;
       for (let i = 0; i < 4; i++) {
         const ang = (i / 4) * Math.PI * 2 + Math.PI / 4;
-        const sx = THREE.MathUtils.clamp(center.x + Math.cos(ang) * 5.8, -PLAYABLE_HALF_SIZE + 2, PLAYABLE_HALF_SIZE - 2);
-        const sz = THREE.MathUtils.clamp(center.z + Math.sin(ang) * 5.8, -PLAYABLE_HALF_SIZE + 2, PLAYABLE_HALF_SIZE - 2);
+        const sx = THREE.MathUtils.clamp(center.x + Math.cos(ang) * 5.8, -this.playableHalfSize + 2, this.playableHalfSize - 2);
+        const sz = THREE.MathUtils.clamp(center.z + Math.sin(ang) * 5.8, -this.playableHalfSize + 2, this.playableHalfSize - 2);
         if (this.isWalkableTerrainPoint(sx, sz)) {
           this.spawnUnit('hoplite', 'player', sx, sz);
           count++;
@@ -4273,10 +4401,10 @@ export class AoMEngine {
         for (let i = 0; i < selectedUnits.length; i++) {
           const u = selectedUnits[i];
           const ang = (i / selectedUnits.length) * Math.PI * 2;
-          const sx = THREE.MathUtils.clamp(worldPos.x + Math.cos(ang) * 2.4, -PLAYABLE_HALF_SIZE + 2, PLAYABLE_HALF_SIZE - 2);
-          const sz = THREE.MathUtils.clamp(worldPos.z + Math.sin(ang) * 2.4, -PLAYABLE_HALF_SIZE + 2, PLAYABLE_HALF_SIZE - 2);
+          const sx = THREE.MathUtils.clamp(worldPos.x + Math.cos(ang) * 2.4, -this.playableHalfSize + 2, this.playableHalfSize - 2);
+          const sz = THREE.MathUtils.clamp(worldPos.z + Math.sin(ang) * 2.4, -this.playableHalfSize + 2, this.playableHalfSize - 2);
           if (this.isWalkableTerrainPoint(sx, sz)) {
-            u.mesh.position.set(sx, groundHeightAt(sx, sz, this.mapId), sz);
+            u.mesh.position.set(sx, groundHeightAt(sx, sz, this.mapId, this.worldSize), sz);
             u.waypoints = [];
             u.targetPos = null;
           }
@@ -4293,8 +4421,8 @@ export class AoMEngine {
       if (isBh && this.pantheon === 'atlantean') {
         for (let i = 0; i < 3; i++) {
           const ang = (i / 3) * Math.PI * 2;
-          const sx = THREE.MathUtils.clamp(worldPos.x + Math.cos(ang) * 2.4, -PLAYABLE_HALF_SIZE + 2, PLAYABLE_HALF_SIZE - 2);
-          const sz = THREE.MathUtils.clamp(worldPos.z + Math.sin(ang) * 2.4, -PLAYABLE_HALF_SIZE + 2, PLAYABLE_HALF_SIZE - 2);
+          const sx = THREE.MathUtils.clamp(worldPos.x + Math.cos(ang) * 2.4, -this.playableHalfSize + 2, this.playableHalfSize - 2);
+          const sz = THREE.MathUtils.clamp(worldPos.z + Math.sin(ang) * 2.4, -this.playableHalfSize + 2, this.playableHalfSize - 2);
           if (this.isWalkableTerrainPoint(sx, sz)) {
             this.spawnUnit('tartarian_spawn', 'player', sx, sz);
           }
@@ -4319,8 +4447,8 @@ export class AoMEngine {
           : 'minotaur';
       for (let i = 0; i < count; i++) {
         const ang = (i / count) * Math.PI * 2;
-        const sx = THREE.MathUtils.clamp(worldPos.x + Math.cos(ang) * 2.2, -PLAYABLE_HALF_SIZE + 2, PLAYABLE_HALF_SIZE - 2);
-        const sz = THREE.MathUtils.clamp(worldPos.z + Math.sin(ang) * 2.2, -PLAYABLE_HALF_SIZE + 2, PLAYABLE_HALF_SIZE - 2);
+        const sx = THREE.MathUtils.clamp(worldPos.x + Math.cos(ang) * 2.2, -this.playableHalfSize + 2, this.playableHalfSize - 2);
+        const sz = THREE.MathUtils.clamp(worldPos.z + Math.sin(ang) * 2.2, -this.playableHalfSize + 2, this.playableHalfSize - 2);
         if (this.isWalkableTerrainPoint(sx, sz)) {
           this.spawnUnit(summonKind, 'player', sx, sz);
         }
@@ -4448,7 +4576,7 @@ export class AoMEngine {
     }
 
     if (cmd.kind === 'god_power' && cmd.powerId && cmd.x !== undefined && cmd.z !== undefined) {
-      const targetPos = new THREE.Vector3(cmd.x, groundHeightAt(cmd.x, cmd.z, this.mapId), cmd.z);
+      const targetPos = new THREE.Vector3(cmd.x, groundHeightAt(cmd.x, cmd.z, this.mapId, this.worldSize), cmd.z);
       const spec = GOD_POWERS[cmd.powerId];
       if (spec) {
         this.spawnPillarVfx(targetPos, senderTeam === 'player' ? 0x38bdf8 : 0xef4444, 1.8);
@@ -4809,13 +4937,13 @@ export class AoMEngine {
       passenger.transportedInId = null;
       passenger.targetEntityId = null;
       passenger.mesh.visible = true;
-      passenger.mesh.position.set(slot.x, groundHeightAt(slot.x, slot.z, this.mapId), slot.z);
+      passenger.mesh.position.set(slot.x, groundHeightAt(slot.x, slot.z, this.mapId, this.worldSize), slot.z);
       passenger.selected = true;
       unloaded++;
     }
     if (unloaded > 0) {
       ship.selected = false;
-      this.spawnRingVfx(new THREE.Vector3(basePos.x, groundHeightAt(basePos.x, basePos.z, this.mapId), basePos.z), 2.5, 0xfacc15, 0.65);
+      this.spawnRingVfx(new THREE.Vector3(basePos.x, groundHeightAt(basePos.x, basePos.z, this.mapId, this.worldSize), basePos.z), 2.5, 0xfacc15, 0.65);
       soundEngine.playSelect();
       this.notifyStatus(`⚓ ${unloaded} unidade(s) desembarcadas em terra firme!`);
       this.emitHudSnapshot();
@@ -4852,11 +4980,11 @@ export class AoMEngine {
           const dz = u.mesh.position.z - center.z;
           const len = Math.max(0.01, Math.hypot(dx, dz));
           const factor = (1 - dist / radius) * knockbackDistance + 2.0;
-          const nx = THREE.MathUtils.clamp(u.mesh.position.x + (dx / len) * factor, -PLAYABLE_HALF_SIZE, PLAYABLE_HALF_SIZE);
-          const nz = THREE.MathUtils.clamp(u.mesh.position.z + (dz / len) * factor, -PLAYABLE_HALF_SIZE, PLAYABLE_HALF_SIZE);
-          if (groundHeightAt(nx, nz, this.mapId) >= WATER_WALK_LIMIT && this.navGrid.isTerrainWalkable(nx, nz)) {
-            u.mesh.position.set(nx, groundHeightAt(nx, nz, this.mapId), nz);
-          }
+      const nx = THREE.MathUtils.clamp(u.mesh.position.x + (dx / len) * factor, -this.playableHalfSize, this.playableHalfSize);
+      const nz = THREE.MathUtils.clamp(u.mesh.position.z + (dz / len) * factor, -this.playableHalfSize, this.playableHalfSize);
+      if (groundHeightAt(nx, nz, this.mapId, this.worldSize) >= WATER_WALK_LIMIT && this.navGrid.isTerrainWalkable(nx, nz)) {
+        u.mesh.position.set(nx, groundHeightAt(nx, nz, this.mapId, this.worldSize), nz);
+      }
         }
       }
     }
@@ -4871,8 +4999,8 @@ export class AoMEngine {
   }
 
   public jumpCameraTo(worldX: number, worldZ: number) {
-    const clampedX = THREE.MathUtils.clamp(worldX, -PLAYABLE_HALF_SIZE, PLAYABLE_HALF_SIZE);
-    const clampedZ = THREE.MathUtils.clamp(worldZ, -PLAYABLE_HALF_SIZE, PLAYABLE_HALF_SIZE);
+    const clampedX = THREE.MathUtils.clamp(worldX, -this.playableHalfSize, this.playableHalfSize);
+    const clampedZ = THREE.MathUtils.clamp(worldZ, -this.playableHalfSize, this.playableHalfSize);
     this.camDesiredTarget.set(clampedX, 0, clampedZ);
     this.camTarget.set(clampedX, 0, clampedZ);
     this.updateCameraTransform(0.016);
@@ -4883,7 +5011,7 @@ export class AoMEngine {
     this.camDesiredDistance = THREE.MathUtils.clamp(
       this.camDesiredDistance + delta,
       MIN_CAM_DISTANCE,
-      MAX_CAM_DISTANCE
+      this.maxCamDistance
     );
     this.emitHudSnapshot();
   }
@@ -4955,7 +5083,7 @@ export class AoMEngine {
         return;
       }
     }
-    this.jumpCameraTo(-32, 32);
+    this.jumpCameraTo(-this.baseOffset + 2, this.baseOffset - 2);
   }
 
   private panCameraByScreenDelta(dx: number, dy: number) {
@@ -4967,40 +5095,40 @@ export class AoMEngine {
     const rz = -Math.sin(this.camYaw);
     this.camDesiredTarget.x = THREE.MathUtils.clamp(
       this.camDesiredTarget.x + (-dx * rx + dy * fx) * panScale,
-      -PLAYABLE_HALF_SIZE,
-      PLAYABLE_HALF_SIZE
+      -this.playableHalfSize,
+      this.playableHalfSize
     );
     this.camDesiredTarget.z = THREE.MathUtils.clamp(
       this.camDesiredTarget.z + (-dx * rz + dy * fz) * panScale,
-      -PLAYABLE_HALF_SIZE,
-      PLAYABLE_HALF_SIZE
+      -this.playableHalfSize,
+      this.playableHalfSize
     );
   }
 
   private isWalkableTerrainPoint(x: number, z: number): boolean {
-    if (Math.abs(x) > PLAYABLE_HALF_SIZE || Math.abs(z) > PLAYABLE_HALF_SIZE) return false;
-    if (groundHeightAt(x, z, this.mapId) < WATER_WALK_LIMIT) return false;
+    if (Math.abs(x) > this.playableHalfSize || Math.abs(z) > this.playableHalfSize) return false;
+    if (groundHeightAt(x, z, this.mapId, this.worldSize) < WATER_WALK_LIMIT) return false;
     return this.navGrid.isTerrainWalkable(x, z);
   }
 
   private snapToWalkableSlot(x: number, z: number, fallbackX: number, fallbackZ: number): { x: number; z: number } {
-    const cx = THREE.MathUtils.clamp(x, -PLAYABLE_HALF_SIZE, PLAYABLE_HALF_SIZE);
-    const cz = THREE.MathUtils.clamp(z, -PLAYABLE_HALF_SIZE, PLAYABLE_HALF_SIZE);
+    const cx = THREE.MathUtils.clamp(x, -this.playableHalfSize, this.playableHalfSize);
+    const cz = THREE.MathUtils.clamp(z, -this.playableHalfSize, this.playableHalfSize);
     if (this.isWalkableTerrainPoint(cx, cz)) {
       return { x: cx, z: cz };
     }
     for (const rad of [1.2, 2.4, 3.6]) {
       for (let i = 0; i < 8; i++) {
         const ang = (i / 8) * Math.PI * 2;
-        const tx = THREE.MathUtils.clamp(cx + Math.cos(ang) * rad, -PLAYABLE_HALF_SIZE, PLAYABLE_HALF_SIZE);
-        const tz = THREE.MathUtils.clamp(cz + Math.sin(ang) * rad, -PLAYABLE_HALF_SIZE, PLAYABLE_HALF_SIZE);
+        const tx = THREE.MathUtils.clamp(cx + Math.cos(ang) * rad, -this.playableHalfSize, this.playableHalfSize);
+        const tz = THREE.MathUtils.clamp(cz + Math.sin(ang) * rad, -this.playableHalfSize, this.playableHalfSize);
         if (this.isWalkableTerrainPoint(tx, tz)) {
           return { x: tx, z: tz };
         }
       }
     }
-    const fx = THREE.MathUtils.clamp(fallbackX, -PLAYABLE_HALF_SIZE, PLAYABLE_HALF_SIZE);
-    const fz = THREE.MathUtils.clamp(fallbackZ, -PLAYABLE_HALF_SIZE, PLAYABLE_HALF_SIZE);
+    const fx = THREE.MathUtils.clamp(fallbackX, -this.playableHalfSize, this.playableHalfSize);
+    const fz = THREE.MathUtils.clamp(fallbackZ, -this.playableHalfSize, this.playableHalfSize);
     return { x: fx, z: fz };
   }
 
@@ -5260,8 +5388,8 @@ export class AoMEngine {
     explicitFwdZ?: number
   ) {
     if (units.length === 0) return;
-    const clampedX = THREE.MathUtils.clamp(destX, -PLAYABLE_HALF_SIZE, PLAYABLE_HALF_SIZE);
-    const clampedZ = THREE.MathUtils.clamp(destZ, -PLAYABLE_HALF_SIZE, PLAYABLE_HALF_SIZE);
+    const clampedX = THREE.MathUtils.clamp(destX, -this.playableHalfSize, this.playableHalfSize);
+    const clampedZ = THREE.MathUtils.clamp(destZ, -this.playableHalfSize, this.playableHalfSize);
 
     let cx = 0;
     let cz = 0;
@@ -5366,13 +5494,13 @@ export class AoMEngine {
 
         const wx = THREE.MathUtils.clamp(
           wp.x + sRightX * slot.rightOffset + sFwdX * slot.fwdOffset,
-          -PLAYABLE_HALF_SIZE,
-          PLAYABLE_HALF_SIZE
+          -this.playableHalfSize,
+          this.playableHalfSize
         );
         const wz = THREE.MathUtils.clamp(
           wp.z + sRightZ * slot.rightOffset + sFwdZ * slot.fwdOffset,
-          -PLAYABLE_HALF_SIZE,
-          PLAYABLE_HALF_SIZE
+          -this.playableHalfSize,
+          this.playableHalfSize
         );
         if (this.isWalkableTerrainPoint(wx, wz)) {
           waypoints.push(new THREE.Vector3(wx, 0, wz));
@@ -5403,11 +5531,11 @@ export class AoMEngine {
     const selectedPlayerUnits = [...this.units.values()].filter((u) => u.team === 'player' && u.selected);
     if (selectedPlayerUnits.length === 0) return;
 
-    const clampedX = THREE.MathUtils.clamp(worldX, -PLAYABLE_HALF_SIZE, PLAYABLE_HALF_SIZE);
-    const clampedZ = THREE.MathUtils.clamp(worldZ, -PLAYABLE_HALF_SIZE, PLAYABLE_HALF_SIZE);
+    const clampedX = THREE.MathUtils.clamp(worldX, -this.playableHalfSize, this.playableHalfSize);
+    const clampedZ = THREE.MathUtils.clamp(worldZ, -this.playableHalfSize, this.playableHalfSize);
     this.issueFormationMove(selectedPlayerUnits, clampedX, clampedZ, [], this.formation);
 
-    this.spawnRingVfx(new THREE.Vector3(clampedX, groundHeightAt(clampedX, clampedZ, this.mapId), clampedZ), 1.4, 0xfacc15, 0.45);
+    this.spawnRingVfx(new THREE.Vector3(clampedX, groundHeightAt(clampedX, clampedZ, this.mapId, this.worldSize), clampedZ), 1.4, 0xfacc15, 0.45);
     this.triggerUnitVoice(selectedPlayerUnits, 'move');
   }
 
@@ -5495,6 +5623,7 @@ export class AoMEngine {
       gameType: this.gameType,
       visibilityMode: this.visibilityMode,
       worldSize: this.worldSize,
+      matchSeed: this.matchSeed,
       revealedMap: this.revealedMap,
       dayNightCycle: this.dayNightCycle,
       titansEnabled: this.titansEnabled,
@@ -5593,6 +5722,15 @@ export class AoMEngine {
       this.enemyPantheon = data.enemyPantheon ?? getRivalPantheon(this.pantheon, savedMap);
       this.gameType = data.gameType ?? 'supremacy';
       this.worldSize = data.worldSize ?? 'normal';
+      const sizeSpec = getWorldSizeSpec(this.worldSize);
+      this.mapHalfSize = sizeSpec.mapHalfSize;
+      this.playableHalfSize = sizeSpec.playableHalfSize;
+      this.baseOffset = sizeSpec.baseOffset;
+      this.worldScale = sizeSpec.worldScale;
+      this.matchSeed = data.matchSeed ?? 0;
+      const seedArg = this.matchSeed > 0 ? this.matchSeed : undefined;
+      rollUnknownMapVariant(savedMap, seedArg);
+      rollTotalWarVariant(savedMap, seedArg);
       this.revealedMap = Boolean(data.revealedMap);
       this.visibilityMode = data.visibilityMode ?? (this.revealedMap ? 'revealed' : 'normal');
       this.dayNightCycle = Boolean(data.dayNightCycle);
@@ -5607,7 +5745,7 @@ export class AoMEngine {
       this.rebuildTerrainForMap(savedMap);
       if (savedMap === 'king_of_the_hill') {
         const vaultMesh = createPlentyVaultMesh(this.palette, !this.isSoftwareGl);
-        vaultMesh.position.set(0, groundHeightAt(0, 0, savedMap), 0);
+        vaultMesh.position.set(0, groundHeightAt(0, 0, savedMap, this.worldSize), 0);
         this.scene.add(vaultMesh);
         this.kothVaultMesh = vaultMesh;
       }
@@ -5705,7 +5843,7 @@ export class AoMEngine {
       this.combatCueCooldown = 0;
       this.musicCheckTimer = 0;
       this.phase = 'playing';
-      this.jumpCameraTo(-32, 32);
+      this.jumpCameraTo(-this.baseOffset + 2, this.baseOffset - 2);
       soundEngine.playFanfare(false);
       soundEngine.startMatchMusic(this.pantheon, this.scenarioTitle);
       this.notifyStatus('Partida carregada!');
@@ -5936,7 +6074,7 @@ export class AoMEngine {
         this.camDesiredDistance = THREE.MathUtils.clamp(
           this.camDesiredDistance * (this.prevPinchDist / curDist),
           MIN_CAM_DISTANCE,
-          MAX_CAM_DISTANCE
+          this.maxCamDistance
         );
       }
       this.panCameraByScreenDelta(curMid.x - this.prevPinchMid.x, curMid.y - this.prevPinchMid.y);
@@ -5957,10 +6095,10 @@ export class AoMEngine {
       if (pt) {
         const snapped = this.snapBuildingCoords(
           this.activeBuildMode,
-          THREE.MathUtils.clamp(pt.x, -PLAYABLE_HALF_SIZE + 4, PLAYABLE_HALF_SIZE - 4),
-          THREE.MathUtils.clamp(pt.z, -PLAYABLE_HALF_SIZE + 4, PLAYABLE_HALF_SIZE - 4)
+          THREE.MathUtils.clamp(pt.x, -this.playableHalfSize + 4, this.playableHalfSize - 4),
+          THREE.MathUtils.clamp(pt.z, -this.playableHalfSize + 4, this.playableHalfSize - 4)
         );
-        this.placementGhost.position.set(snapped.x, groundHeightAt(snapped.x, snapped.z, this.mapId), snapped.z);
+        this.placementGhost.position.set(snapped.x, groundHeightAt(snapped.x, snapped.z, this.mapId, this.worldSize), snapped.z);
         const valid = this.canPlaceBuildingAt(this.activeBuildMode, snapped.x, snapped.z);
         this.placementGhost.traverse((obj) => {
           if ((obj as THREE.Mesh).isMesh) {
@@ -5974,7 +6112,7 @@ export class AoMEngine {
     if (this.activeGodPowerMode && this.godPowerRing) {
       const pt = this.getGroundPointFromEvent(e.clientX, e.clientY);
       if (pt) {
-        this.godPowerRing.position.set(pt.x, groundHeightAt(pt.x, pt.z, this.mapId) + 0.12, pt.z);
+        this.godPowerRing.position.set(pt.x, groundHeightAt(pt.x, pt.z, this.mapId, this.worldSize) + 0.12, pt.z);
       }
     }
 
@@ -5984,10 +6122,10 @@ export class AoMEngine {
       if (selB) {
         const pt = this.getGroundPointFromEvent(e.clientX, e.clientY);
         if (pt) {
-          const cx = THREE.MathUtils.clamp(pt.x, -PLAYABLE_HALF_SIZE + 2, PLAYABLE_HALF_SIZE - 2);
-          const cz = THREE.MathUtils.clamp(pt.z, -PLAYABLE_HALF_SIZE + 2, PLAYABLE_HALF_SIZE - 2);
+          const cx = THREE.MathUtils.clamp(pt.x, -this.playableHalfSize + 2, this.playableHalfSize - 2);
+          const cz = THREE.MathUtils.clamp(pt.z, -this.playableHalfSize + 2, this.playableHalfSize - 2);
           if (!this.rallyHoverPos) this.rallyHoverPos = new THREE.Vector3();
-          this.rallyHoverPos.set(cx, groundHeightAt(cx, cz, this.mapId), cz);
+          this.rallyHoverPos.set(cx, groundHeightAt(cx, cz, this.mapId, this.worldSize), cz);
         } else {
           this.rallyHoverPos = null;
         }
@@ -6130,19 +6268,19 @@ export class AoMEngine {
         }
         const pt = this.getGroundPointFromEvent(e.clientX, e.clientY);
         if (pt) {
-          const cx = THREE.MathUtils.clamp(pt.x, -PLAYABLE_HALF_SIZE + 2, PLAYABLE_HALF_SIZE - 2);
-          const cz = THREE.MathUtils.clamp(pt.z, -PLAYABLE_HALF_SIZE + 2, PLAYABLE_HALF_SIZE - 2);
+          const cx = THREE.MathUtils.clamp(pt.x, -this.playableHalfSize + 2, this.playableHalfSize - 2);
+          const cz = THREE.MathUtils.clamp(pt.z, -this.playableHalfSize + 2, this.playableHalfSize - 2);
           for (let i = 0; i < selOwnedFauna.length; i++) {
             const ang = (i / Math.max(1, selOwnedFauna.length)) * Math.PI * 2;
             const spread = selOwnedFauna.length > 1 ? 1.4 : 0;
             selOwnedFauna[i].moveTarget = new THREE.Vector3(
               cx + Math.cos(ang) * spread,
-              groundHeightAt(cx, cz, this.mapId),
+              groundHeightAt(cx, cz, this.mapId, this.worldSize),
               cz + Math.sin(ang) * spread
             );
             selOwnedFauna[i].attackTargetId = null;
           }
-          this.spawnRingVfx(new THREE.Vector3(cx, groundHeightAt(cx, cz, this.mapId), cz), 1.2, 0x38bdf8, 0.45);
+          this.spawnRingVfx(new THREE.Vector3(cx, groundHeightAt(cx, cz, this.mapId, this.worldSize), cz), 1.2, 0x38bdf8, 0.45);
           soundEngine.playSelect();
         }
         return;
@@ -6214,13 +6352,13 @@ export class AoMEngine {
       if (selOwnedFauna.length > 0 && picked.type === null) {
         const pt = this.getGroundPointFromEvent(e.clientX, e.clientY);
         if (pt) {
-          const cx = THREE.MathUtils.clamp(pt.x, -PLAYABLE_HALF_SIZE + 2, PLAYABLE_HALF_SIZE - 2);
-          const cz = THREE.MathUtils.clamp(pt.z, -PLAYABLE_HALF_SIZE + 2, PLAYABLE_HALF_SIZE - 2);
+          const cx = THREE.MathUtils.clamp(pt.x, -this.playableHalfSize + 2, this.playableHalfSize - 2);
+          const cz = THREE.MathUtils.clamp(pt.z, -this.playableHalfSize + 2, this.playableHalfSize - 2);
           for (const f of selOwnedFauna) {
-            f.moveTarget = new THREE.Vector3(cx, groundHeightAt(cx, cz, this.mapId), cz);
+            f.moveTarget = new THREE.Vector3(cx, groundHeightAt(cx, cz, this.mapId, this.worldSize), cz);
             f.attackTargetId = null;
           }
-          this.spawnRingVfx(new THREE.Vector3(cx, groundHeightAt(cx, cz, this.mapId), cz), 1.2, 0x38bdf8, 0.45);
+          this.spawnRingVfx(new THREE.Vector3(cx, groundHeightAt(cx, cz, this.mapId, this.worldSize), cz), 1.2, 0x38bdf8, 0.45);
           soundEngine.playSelect();
           return;
         }
@@ -6362,8 +6500,8 @@ export class AoMEngine {
   }
 
   private canPlaceBuildingAt(kind: BuildingKind, x: number, z: number, team: TeamId = 'player'): boolean {
-    if (Math.abs(x) > PLAYABLE_HALF_SIZE - 4 || Math.abs(z) > PLAYABLE_HALF_SIZE - 4) return false;
-    const gh = groundHeightAt(x, z, this.mapId);
+    if (Math.abs(x) > this.playableHalfSize - 4 || Math.abs(z) > this.playableHalfSize - 4) return false;
+    const gh = groundHeightAt(x, z, this.mapId, this.worldSize);
     if (kind === 'dock') {
       if (gh < -1.1) return false;
     } else {
@@ -6445,9 +6583,9 @@ export class AoMEngine {
     candidates.forEach((u, idx) => {
       const ang = (idx / Math.max(1, candidates.length)) * Math.PI * 2;
       const ringR = dest.radius + 2.2 + Math.floor(idx / 8) * 1.3;
-      const tx = THREE.MathUtils.clamp(dest.mesh.position.x + Math.cos(ang) * ringR, -PLAYABLE_HALF_SIZE + 2, PLAYABLE_HALF_SIZE - 2);
-      const tz = THREE.MathUtils.clamp(dest.mesh.position.z + Math.sin(ang) * ringR, -PLAYABLE_HALF_SIZE + 2, PLAYABLE_HALF_SIZE - 2);
-      u.mesh.position.set(tx, groundHeightAt(tx, tz, this.mapId), tz);
+      const tx = THREE.MathUtils.clamp(dest.mesh.position.x + Math.cos(ang) * ringR, -this.playableHalfSize + 2, this.playableHalfSize - 2);
+      const tz = THREE.MathUtils.clamp(dest.mesh.position.z + Math.sin(ang) * ringR, -this.playableHalfSize + 2, this.playableHalfSize - 2);
+      u.mesh.position.set(tx, groundHeightAt(tx, tz, this.mapId, this.worldSize), tz);
       u.state = 'idle';
       u.targetPos = null;
       u.waypoints = [];
@@ -6476,9 +6614,9 @@ export class AoMEngine {
       if (u) {
         const ang = (idx / Math.max(1, count)) * Math.PI * 2;
         const dist = b.radius + 2.2;
-        const tx = THREE.MathUtils.clamp(b.mesh.position.x + Math.cos(ang) * dist, -PLAYABLE_HALF_SIZE + 2, PLAYABLE_HALF_SIZE - 2);
-        const tz = THREE.MathUtils.clamp(b.mesh.position.z + Math.sin(ang) * dist, -PLAYABLE_HALF_SIZE + 2, PLAYABLE_HALF_SIZE - 2);
-        u.mesh.position.set(tx, groundHeightAt(tx, tz, this.mapId), tz);
+        const tx = THREE.MathUtils.clamp(b.mesh.position.x + Math.cos(ang) * dist, -this.playableHalfSize + 2, this.playableHalfSize - 2);
+        const tz = THREE.MathUtils.clamp(b.mesh.position.z + Math.sin(ang) * dist, -this.playableHalfSize + 2, this.playableHalfSize - 2);
+        u.mesh.position.set(tx, groundHeightAt(tx, tz, this.mapId, this.worldSize), tz);
         u.mesh.visible = true;
         u.state = 'idle';
         u.garrisonedInId = null;
@@ -6606,8 +6744,8 @@ export class AoMEngine {
 
     const kind = this.activeBuildMode;
     const stats = this.buildingStats(kind, 'player');
-    const rawX = THREE.MathUtils.clamp(pt.x, -PLAYABLE_HALF_SIZE + 4, PLAYABLE_HALF_SIZE - 4);
-    const rawZ = THREE.MathUtils.clamp(pt.z, -PLAYABLE_HALF_SIZE + 4, PLAYABLE_HALF_SIZE - 4);
+    const rawX = THREE.MathUtils.clamp(pt.x, -this.playableHalfSize + 4, this.playableHalfSize - 4);
+    const rawZ = THREE.MathUtils.clamp(pt.z, -this.playableHalfSize + 4, this.playableHalfSize - 4);
     const { x, z } = this.snapBuildingCoords(kind, rawX, rawZ);
 
     if (!this.canPlaceBuildingAt(kind, x, z)) {
@@ -6696,7 +6834,7 @@ export class AoMEngine {
     }
     cx /= selectedPlayerUnits.length;
     cz /= selectedPlayerUnits.length;
-    const startPt = new THREE.Vector3(cx, groundHeightAt(cx, cz, this.mapId), cz);
+    const startPt = new THREE.Vector3(cx, groundHeightAt(cx, cz, this.mapId, this.worldSize), cz);
     this.commandDragWaypoints = [startPt.clone()];
     this.commandDragTargetPos.copy(startPt);
     this.commandDragTargetElevation = 0;
@@ -6768,9 +6906,9 @@ export class AoMEngine {
     if (!targetPos) {
       const pt = this.getGroundPointFromEvent(clientX, clientY);
       if (!pt) return;
-      const cx = THREE.MathUtils.clamp(pt.x, -PLAYABLE_HALF_SIZE, PLAYABLE_HALF_SIZE);
-      const cz = THREE.MathUtils.clamp(pt.z, -PLAYABLE_HALF_SIZE, PLAYABLE_HALF_SIZE);
-      targetPos = new THREE.Vector3(cx, groundHeightAt(cx, cz, this.mapId), cz);
+      const cx = THREE.MathUtils.clamp(pt.x, -this.playableHalfSize, this.playableHalfSize);
+      const cz = THREE.MathUtils.clamp(pt.z, -this.playableHalfSize, this.playableHalfSize);
+      targetPos = new THREE.Vector3(cx, groundHeightAt(cx, cz, this.mapId, this.worldSize), cz);
       elevation = 0;
       previewKind = 'flag';
     }
@@ -7212,8 +7350,8 @@ export class AoMEngine {
     }
 
     const tc = this.findNearestTownCenter('player', oracles[0].mesh.position);
-    const originX = tc ? tc.mesh.position.x : -32;
-    const originZ = tc ? tc.mesh.position.z : 32;
+    const originX = tc ? tc.mesh.position.x : -this.baseOffset + 2;
+    const originZ = tc ? tc.mesh.position.z : this.baseOffset - 2;
     const ringRadius = 24;
     let moved = 0;
     for (let i = 0; i < oracles.length; i++) {
@@ -7221,19 +7359,19 @@ export class AoMEngine {
       const ang = (i / Math.max(1, oracles.length)) * Math.PI * 2 + 0.45;
       const destX = THREE.MathUtils.clamp(
         originX + Math.cos(ang) * (ringRadius + (i % 2) * 14),
-        -PLAYABLE_HALF_SIZE + 5,
-        PLAYABLE_HALF_SIZE - 5
+        -this.playableHalfSize + 5,
+        this.playableHalfSize - 5
       );
       const destZ = THREE.MathUtils.clamp(
         originZ + Math.sin(ang) * (ringRadius + (i % 2) * 14),
-        -PLAYABLE_HALF_SIZE + 5,
-        PLAYABLE_HALF_SIZE - 5
+        -this.playableHalfSize + 5,
+        this.playableHalfSize - 5
       );
       if (this.isWalkableTerrainPoint(destX, destZ)) {
         const path = this.navGrid.findPath(o.mesh.position.x, o.mesh.position.z, destX, destZ);
         o.state = 'move';
         o.waypoints = path;
-        o.targetPos = o.waypoints.shift() ?? new THREE.Vector3(destX, groundHeightAt(destX, destZ, this.mapId), destZ);
+        o.targetPos = o.waypoints.shift() ?? new THREE.Vector3(destX, groundHeightAt(destX, destZ, this.mapId, this.worldSize), destZ);
         o.targetEntityId = null;
         o.formationYaw = null;
         o.formationSpeed = null;
@@ -7617,8 +7755,8 @@ export class AoMEngine {
     // Move formation along dragged trail (or A* path) to ground point
     const pt = this.getGroundPointFromEvent(clientX, clientY);
     if (!pt) return;
-    const clampedX = THREE.MathUtils.clamp(pt.x, -PLAYABLE_HALF_SIZE, PLAYABLE_HALF_SIZE);
-    const clampedZ = THREE.MathUtils.clamp(pt.z, -PLAYABLE_HALF_SIZE, PLAYABLE_HALF_SIZE);
+    const clampedX = THREE.MathUtils.clamp(pt.x, -this.playableHalfSize, this.playableHalfSize);
+    const clampedZ = THREE.MathUtils.clamp(pt.z, -this.playableHalfSize, this.playableHalfSize);
 
     // If a loaded Transport Ship is commanded onto walkable dry land, sail to nearest shore water & disembark!
     const loadedTransports = selectedPlayerUnits.filter(
@@ -7636,7 +7774,7 @@ export class AoMEngine {
           tShip.targetPos = tShip.waypoints.shift() ?? new THREE.Vector3(wPos.x, -0.22, wPos.z);
           tShip.tradeTargetBuildingId = `disembark:${clampedX.toFixed(1)},${clampedZ.toFixed(1)}`;
         }
-        this.spawnRingVfx(new THREE.Vector3(clampedX, groundHeightAt(clampedX, clampedZ, this.mapId), clampedZ), 1.8, 0x38bdf8, 0.6);
+        this.spawnRingVfx(new THREE.Vector3(clampedX, groundHeightAt(clampedX, clampedZ, this.mapId, this.worldSize), clampedZ), 1.8, 0x38bdf8, 0.6);
         this.notifyStatus('⛵ Navio de Transporte navegando para desembarcar tropas na margem!');
         this.emitHudSnapshot();
         return;
@@ -7645,7 +7783,7 @@ export class AoMEngine {
 
     this.issueFormationMove(selectedPlayerUnits, clampedX, clampedZ, customWaypoints, this.formation);
 
-    this.spawnRingVfx(new THREE.Vector3(clampedX, groundHeightAt(clampedX, clampedZ, this.mapId), clampedZ), 1.4, 0xfacc15, 0.45);
+    this.spawnRingVfx(new THREE.Vector3(clampedX, groundHeightAt(clampedX, clampedZ, this.mapId, this.worldSize), clampedZ), 1.4, 0xfacc15, 0.45);
     this.triggerUnitVoice(selectedPlayerUnits, 'move');
     this.emitHudSnapshot();
   }
@@ -7653,7 +7791,7 @@ export class AoMEngine {
   private onWheel = (e: WheelEvent) => {
     e.preventDefault();
     const prevDist = this.camDesiredDistance;
-    const nextDist = THREE.MathUtils.clamp(prevDist + e.deltaY * 0.036, MIN_CAM_DISTANCE, MAX_CAM_DISTANCE);
+    const nextDist = THREE.MathUtils.clamp(prevDist + e.deltaY * 0.036, MIN_CAM_DISTANCE, this.maxCamDistance);
     this.camDesiredDistance = nextDist;
 
     // Gently pull camera target toward pointer ground point when zooming in
@@ -7663,13 +7801,13 @@ export class AoMEngine {
         const pull = Math.min(0.24, ((prevDist - nextDist) / prevDist) * 0.7);
         this.camDesiredTarget.x = THREE.MathUtils.clamp(
           THREE.MathUtils.lerp(this.camDesiredTarget.x, pt.x, pull),
-          -PLAYABLE_HALF_SIZE,
-          PLAYABLE_HALF_SIZE
+          -this.playableHalfSize,
+          this.playableHalfSize
         );
         this.camDesiredTarget.z = THREE.MathUtils.clamp(
           THREE.MathUtils.lerp(this.camDesiredTarget.z, pt.z, pull),
-          -PLAYABLE_HALF_SIZE,
-          PLAYABLE_HALF_SIZE
+          -this.playableHalfSize,
+          this.playableHalfSize
         );
       }
     }
@@ -7836,7 +7974,7 @@ export class AoMEngine {
     this.perspCamera.updateProjectionMatrix();
 
     const zoomT = THREE.MathUtils.clamp(
-      (this.camDistance - MIN_CAM_DISTANCE) / (MAX_CAM_DISTANCE - MIN_CAM_DISTANCE),
+      (this.camDistance - MIN_CAM_DISTANCE) / (this.maxCamDistance - MIN_CAM_DISTANCE),
       0,
       1
     );
@@ -7862,7 +8000,7 @@ export class AoMEngine {
       opacity: 0.9,
     });
     const mesh = new THREE.Mesh(geo, mat);
-    mesh.position.set(pos.x, groundHeightAt(pos.x, pos.z, this.mapId) + 0.14, pos.z);
+    mesh.position.set(pos.x, groundHeightAt(pos.x, pos.z, this.mapId, this.worldSize) + 0.14, pos.z);
     this.scene.add(mesh);
     this.transientVfx.push({
       object: mesh,
@@ -7884,7 +8022,7 @@ export class AoMEngine {
       side: THREE.DoubleSide,
     });
     const mesh = new THREE.Mesh(geo, mat);
-    mesh.position.set(pos.x, groundHeightAt(pos.x, pos.z, this.mapId) + 14, pos.z);
+    mesh.position.set(pos.x, groundHeightAt(pos.x, pos.z, this.mapId, this.worldSize) + 14, pos.z);
     this.scene.add(mesh);
     this.transientVfx.push({
       object: mesh,
@@ -7900,7 +8038,7 @@ export class AoMEngine {
 
   private spawnLightningBoltVfx(center: THREE.Vector3, radius: number) {
     const group = new THREE.Group();
-    const groundY = groundHeightAt(center.x, center.z, this.mapId);
+    const groundY = groundHeightAt(center.x, center.z, this.mapId, this.worldSize);
     const boltMats: THREE.LineBasicMaterial[] = [];
 
     // Main jagged bolt + 3 secondary forked strikes (from lightning.xml / generate_lightning_bolt pattern)
@@ -7910,7 +8048,7 @@ export class AoMEngine {
       const offsetR = s === 0 ? 0 : radius * (0.25 + Math.random() * 0.35);
       const tx = center.x + Math.cos(ang) * offsetR;
       const tz = center.z + Math.sin(ang) * offsetR;
-      const ty = groundHeightAt(tx, tz, this.mapId);
+      const ty = groundHeightAt(tx, tz, this.mapId, this.worldSize);
 
       const pts: THREE.Vector3[] = [];
       const segments = 10;
@@ -7979,7 +8117,7 @@ export class AoMEngine {
       const r = (i === 0 ? 0 : 0.35 + Math.random() * 0.55) * radius * 0.75;
       const tx = center.x + Math.cos(ang) * r;
       const tz = center.z + Math.sin(ang) * r;
-      const ty = groundHeightAt(tx, tz, this.mapId);
+      const ty = groundHeightAt(tx, tz, this.mapId, this.worldSize);
 
       const meteorGroup = new THREE.Group();
       const coreMesh = new THREE.Mesh(
@@ -8048,7 +8186,7 @@ export class AoMEngine {
     const mesh = new THREE.Mesh(geo, mat);
     mesh.position.set(
       pos.x + (Math.random() - 0.5) * 0.6,
-      groundHeightAt(pos.x, pos.z, this.mapId) + 0.1,
+      groundHeightAt(pos.x, pos.z, this.mapId, this.worldSize) + 0.1,
       pos.z + (Math.random() - 0.5) * 0.6
     );
     this.scene.add(mesh);
@@ -8138,7 +8276,7 @@ export class AoMEngine {
     const speed = opts.speed ?? 1.0;
     const gravity = opts.gravity ?? 10.5;
     const swirl = opts.swirl ?? (opts.behavior === 'vortex' ? 4.2 : 1.1);
-    const groundY = groundHeightAt(pos.x, pos.z, this.mapId);
+    const groundY = groundHeightAt(pos.x, pos.z, this.mapId, this.worldSize);
 
     const positions = new Float32Array(count * 3);
     const colors = new Float32Array(count * 3);
@@ -9042,7 +9180,7 @@ export class AoMEngine {
   // --- SIMULATION TICK ---
   private updateCameraTransform(dt: number) {
     const zoomT = THREE.MathUtils.clamp(
-      (this.camDistance - MIN_CAM_DISTANCE) / (MAX_CAM_DISTANCE - MIN_CAM_DISTANCE),
+      (this.camDistance - MIN_CAM_DISTANCE) / (this.maxCamDistance - MIN_CAM_DISTANCE),
       0,
       1
     );
@@ -9064,8 +9202,8 @@ export class AoMEngine {
       const rz = -Math.sin(this.camYaw);
       this.camDesiredTarget.x += (fx * moveForward + rx * moveRight) * panSpeed * dt;
       this.camDesiredTarget.z += (fz * moveForward + rz * moveRight) * panSpeed * dt;
-      this.camDesiredTarget.x = THREE.MathUtils.clamp(this.camDesiredTarget.x, -PLAYABLE_HALF_SIZE, PLAYABLE_HALF_SIZE);
-      this.camDesiredTarget.z = THREE.MathUtils.clamp(this.camDesiredTarget.z, -PLAYABLE_HALF_SIZE, PLAYABLE_HALF_SIZE);
+      this.camDesiredTarget.x = THREE.MathUtils.clamp(this.camDesiredTarget.x, -this.playableHalfSize, this.playableHalfSize);
+      this.camDesiredTarget.z = THREE.MathUtils.clamp(this.camDesiredTarget.z, -this.playableHalfSize, this.playableHalfSize);
     } else if (this.followSelectedHoplite) {
       const tracked = [...this.units.values()].find((u) => u.team === 'player' && u.selected && u.kind === 'hoplite');
       if (tracked) {
@@ -9166,7 +9304,7 @@ export class AoMEngine {
             passenger.transportedInId = null;
             passenger.mesh.visible = true;
             passenger.hp = Math.max(1, Math.round(passenger.hp * 0.55));
-            passenger.mesh.position.set(sWorld.x, groundHeightAt(sWorld.x, sWorld.z, this.mapId), sWorld.z);
+            passenger.mesh.position.set(sWorld.x, groundHeightAt(sWorld.x, sWorld.z, this.mapId, this.worldSize), sWorld.z);
           } else {
             this.scene.remove(passenger.mesh);
             this.units.delete(passenger.id);
@@ -9179,7 +9317,7 @@ export class AoMEngine {
       if (this.vfxManager) {
         this.vfxManager.spawnUnitDeathVisual(
           target.mesh,
-          deadStats.isNaval ? -0.22 : groundHeightAt(target.mesh.position.x, target.mesh.position.z, this.mapId),
+          deadStats.isNaval ? -0.22 : groundHeightAt(target.mesh.position.x, target.mesh.position.z, this.mapId, this.worldSize),
           Boolean(deadStats.isMythic || deadStats.isHero || deadStats.isGod || target.isPromotedHero),
           Boolean(deadStats.isNaval)
         );
@@ -9225,13 +9363,13 @@ export class AoMEngine {
         for (const dir of [-1, 1]) {
           const sx = THREE.MathUtils.clamp(
             target.mesh.position.x + dir * 0.95,
-            -PLAYABLE_HALF_SIZE + 1,
-            PLAYABLE_HALF_SIZE - 1
+            -this.playableHalfSize + 1,
+            this.playableHalfSize - 1
           );
           const sz = THREE.MathUtils.clamp(
             target.mesh.position.z + (dir === 1 ? 0.55 : -0.55),
-            -PLAYABLE_HALF_SIZE + 1,
-            PLAYABLE_HALF_SIZE - 1
+            -this.playableHalfSize + 1,
+            this.playableHalfSize - 1
           );
           this.spawnUnit('promethean_offspring', target.team, sx, sz);
         }
@@ -9266,9 +9404,9 @@ export class AoMEngine {
             u.hp = Math.max(1, Math.round(u.hp * 0.75));
             const ang = Math.random() * Math.PI * 2;
             const dist = target.radius + 1.8;
-            const tx = THREE.MathUtils.clamp(target.mesh.position.x + Math.cos(ang) * dist, -PLAYABLE_HALF_SIZE + 2, PLAYABLE_HALF_SIZE - 2);
-            const tz = THREE.MathUtils.clamp(target.mesh.position.z + Math.sin(ang) * dist, -PLAYABLE_HALF_SIZE + 2, PLAYABLE_HALF_SIZE - 2);
-            u.mesh.position.set(tx, groundHeightAt(tx, tz, this.mapId), tz);
+            const tx = THREE.MathUtils.clamp(target.mesh.position.x + Math.cos(ang) * dist, -this.playableHalfSize + 2, this.playableHalfSize - 2);
+            const tz = THREE.MathUtils.clamp(target.mesh.position.z + Math.sin(ang) * dist, -this.playableHalfSize + 2, this.playableHalfSize - 2);
+            u.mesh.position.set(tx, groundHeightAt(tx, tz, this.mapId, this.worldSize), tz);
           }
         }
         target.garrisonedUnitIds = [];
@@ -9475,9 +9613,9 @@ export class AoMEngine {
     const len = Math.hypot(dx, dz);
     const dirX = len > 0.2 ? dx / len : 0.7;
     const dirZ = len > 0.2 ? dz / len : 0.7;
-    const parkX = THREE.MathUtils.clamp(resourcePos.x + dirX * 2.25, -PLAYABLE_HALF_SIZE + 2, PLAYABLE_HALF_SIZE - 2);
-    const parkZ = THREE.MathUtils.clamp(resourcePos.z + dirZ * 2.25, -PLAYABLE_HALF_SIZE + 2, PLAYABLE_HALF_SIZE - 2);
-    const dest = new THREE.Vector3(parkX, groundHeightAt(parkX, parkZ, this.mapId), parkZ);
+    const parkX = THREE.MathUtils.clamp(resourcePos.x + dirX * 2.25, -this.playableHalfSize + 2, this.playableHalfSize - 2);
+    const parkZ = THREE.MathUtils.clamp(resourcePos.z + dirZ * 2.25, -this.playableHalfSize + 2, this.playableHalfSize - 2);
+    const dest = new THREE.Vector3(parkX, groundHeightAt(parkX, parkZ, this.mapId, this.worldSize), parkZ);
     oxCart.state = 'move';
     oxCart.waypoints = [dest];
     oxCart.targetPos = dest;
@@ -9761,8 +9899,8 @@ export class AoMEngine {
 
     const oldX = u.mesh.position.x;
     const oldZ = u.mesh.position.z;
-    let nx = THREE.MathUtils.clamp(oldX + _vec3A.x * step, -PLAYABLE_HALF_SIZE, PLAYABLE_HALF_SIZE);
-    let nz = THREE.MathUtils.clamp(oldZ + _vec3A.z * step, -PLAYABLE_HALF_SIZE, PLAYABLE_HALF_SIZE);
+    let nx = THREE.MathUtils.clamp(oldX + _vec3A.x * step, -this.playableHalfSize, this.playableHalfSize);
+    let nz = THREE.MathUtils.clamp(oldZ + _vec3A.z * step, -this.playableHalfSize, this.playableHalfSize);
 
     const isShip = Boolean(this.unitStats(u.kind, u.team).isNaval);
     const uRad = this.getUnitRadius(u.kind);
@@ -9770,7 +9908,7 @@ export class AoMEngine {
       if (isShip) {
         return this.navGrid.isWaterTerrain(x, z);
       }
-      if (groundHeightAt(x, z, this.mapId) < WATER_WALK_LIMIT || !this.navGrid.isTerrainWalkable(x, z)) {
+      if (groundHeightAt(x, z, this.mapId, this.worldSize) < WATER_WALK_LIMIT || !this.navGrid.isTerrainWalkable(x, z)) {
         return false;
       }
       for (const b of this.buildings.values()) {
@@ -9796,7 +9934,7 @@ export class AoMEngine {
       }
     }
 
-    u.mesh.position.set(nx, isShip ? -0.22 : groundHeightAt(nx, nz, this.mapId), nz);
+    u.mesh.position.set(nx, isShip ? -0.22 : groundHeightAt(nx, nz, this.mapId, this.worldSize), nz);
     if (Math.hypot(nx - oldX, nz - oldZ) > 0.001) {
       u.mesh.rotation.y = Math.atan2(nx - oldX, nz - oldZ);
       if (!isShip && Math.random() < 0.09) {
@@ -9943,8 +10081,8 @@ export class AoMEngine {
           }
         }
 
-        ux = THREE.MathUtils.clamp(ux, -PLAYABLE_HALF_SIZE, PLAYABLE_HALF_SIZE);
-        uz = THREE.MathUtils.clamp(uz, -PLAYABLE_HALF_SIZE, PLAYABLE_HALF_SIZE);
+        ux = THREE.MathUtils.clamp(ux, -this.playableHalfSize, this.playableHalfSize);
+        uz = THREE.MathUtils.clamp(uz, -this.playableHalfSize, this.playableHalfSize);
 
         if (isShip) {
           if (!this.navGrid.isWaterTerrain(ux, uz)) {
@@ -9958,7 +10096,7 @@ export class AoMEngine {
           }
           u.mesh.position.set(ux, -0.22, uz);
         } else {
-          if (groundHeightAt(ux, uz, this.mapId) < WATER_WALK_LIMIT || !this.navGrid.isTerrainWalkable(ux, uz)) {
+          if (groundHeightAt(ux, uz, this.mapId, this.worldSize) < WATER_WALK_LIMIT || !this.navGrid.isTerrainWalkable(ux, uz)) {
             const curCell = this.navGrid.worldToCell(ux, uz);
             const safeCell = this.navGrid.nearestWalkableCell(curCell.gx, curCell.gz, curCell.gx, curCell.gz, 4);
             if (safeCell) {
@@ -9967,7 +10105,7 @@ export class AoMEngine {
               uz = THREE.MathUtils.lerp(uz, safeWorld.z, 0.35);
             }
           }
-          u.mesh.position.set(ux, groundHeightAt(ux, uz, this.mapId), uz);
+          u.mesh.position.set(ux, groundHeightAt(ux, uz, this.mapId, this.worldSize), uz);
         }
       }
     }
@@ -10064,7 +10202,7 @@ export class AoMEngine {
             u.state = 'idle';
             u.transportedInId = null;
             u.mesh.visible = true;
-            u.mesh.position.set(safePos.x, groundHeightAt(safePos.x, safePos.z, this.mapId), safePos.z);
+            u.mesh.position.set(safePos.x, groundHeightAt(safePos.x, safePos.z, this.mapId, this.worldSize), safePos.z);
             u.hp = Math.max(1, Math.round(u.hp * 0.65));
           } else {
             u.mesh.visible = false;
@@ -11033,8 +11171,8 @@ export class AoMEngine {
             u.waypoints = [];
             soundEngine.playBuild();
             if (b.kind === 'titan_gate') {
-              const tx = THREE.MathUtils.clamp(b.mesh.position.x + 2.8, -PLAYABLE_HALF_SIZE, PLAYABLE_HALF_SIZE);
-              const tz = THREE.MathUtils.clamp(b.mesh.position.z + 2.8, -PLAYABLE_HALF_SIZE, PLAYABLE_HALF_SIZE);
+              const tx = THREE.MathUtils.clamp(b.mesh.position.x + 2.8, -this.playableHalfSize, this.playableHalfSize);
+              const tz = THREE.MathUtils.clamp(b.mesh.position.z + 2.8, -this.playableHalfSize, this.playableHalfSize);
               this.spawnUnit('titan', b.team, tx, tz);
               this.spawnPillarVfx(b.mesh.position, 0xa855f7, 2.0);
               soundEngine.playFanfare(true);
@@ -11365,10 +11503,10 @@ export class AoMEngine {
                   const dz = targetU.mesh.position.z - u.mesh.position.z;
                   const len = Math.max(0.01, Math.hypot(dx, dz));
                   const throwDist = 7.5;
-                  const destX = THREE.MathUtils.clamp(u.mesh.position.x + (dx / len) * throwDist, -PLAYABLE_HALF_SIZE, PLAYABLE_HALF_SIZE);
-                  const destZ = THREE.MathUtils.clamp(u.mesh.position.z + (dz / len) * throwDist, -PLAYABLE_HALF_SIZE, PLAYABLE_HALF_SIZE);
+                  const destX = THREE.MathUtils.clamp(u.mesh.position.x + (dx / len) * throwDist, -this.playableHalfSize, this.playableHalfSize);
+                  const destZ = THREE.MathUtils.clamp(u.mesh.position.z + (dz / len) * throwDist, -this.playableHalfSize, this.playableHalfSize);
                   if (this.isWalkableTerrainPoint(destX, destZ)) {
-                    targetU.mesh.position.set(destX, groundHeightAt(destX, destZ, this.mapId), destZ);
+                    targetU.mesh.position.set(destX, groundHeightAt(destX, destZ, this.mapId, this.worldSize), destZ);
                   }
                   targetU.frozenTimer = Math.max(targetU.frozenTimer, 0.85);
                   this.damageUnit(targetU, computedDamage + 35, u.team);
@@ -11510,11 +11648,12 @@ export class AoMEngine {
         let bestWx: number | null = null;
         let bestWz: number | null = null;
         let bestDist = Infinity;
-        for (let gy = 2; gy < FOG_GRID_SIZE - 2; gy += 3) {
-          for (let gx = 2; gx < FOG_GRID_SIZE - 2; gx += 3) {
-            if (this.fogState[gy * FOG_GRID_SIZE + gx] !== 0) continue;
-            const wx = ((gx + 0.5) / FOG_GRID_SIZE - 0.5) * (PLAYABLE_HALF_SIZE * 2);
-            const wz = ((gy + 0.5) / FOG_GRID_SIZE - 0.5) * (PLAYABLE_HALF_SIZE * 2);
+        for (let gy = 2; gy < this.fogGridSize - 2; gy += 3) {
+          for (let gx = 2; gx < this.fogGridSize - 2; gx += 3) {
+            if (this.fogState[gy * this.fogGridSize + gx] !== 0) continue;
+            const wx = ((gx + 0.5) / this.fogGridSize - 0.5) * (this.mapHalfSize * 2);
+            const wz = ((gy + 0.5) / this.fogGridSize - 0.5) * (this.mapHalfSize * 2);
+            if (Math.abs(wx) > this.playableHalfSize - 2 || Math.abs(wz) > this.playableHalfSize - 2) continue;
             const validCell = stats.isNaval ? this.navGrid.isWaterTerrain(wx, wz) : this.isWalkableTerrainPoint(wx, wz);
             if (!validCell) continue;
             const d = Math.hypot(wx - u.mesh.position.x, wz - u.mesh.position.z);
@@ -11527,9 +11666,9 @@ export class AoMEngine {
         }
         if (bestWx === null || bestWz === null) {
           const ang = this.seededRng() * Math.PI * 2;
-          const r = 18 + this.seededRng() * 28;
-          const cx = THREE.MathUtils.clamp(Math.cos(ang) * r, -PLAYABLE_HALF_SIZE + 6, PLAYABLE_HALF_SIZE - 6);
-          const cz = THREE.MathUtils.clamp(Math.sin(ang) * r, -PLAYABLE_HALF_SIZE + 6, PLAYABLE_HALF_SIZE - 6);
+          const r = (18 + this.seededRng() * 28) * this.worldScale;
+          const cx = THREE.MathUtils.clamp(Math.cos(ang) * r, -this.playableHalfSize + 6, this.playableHalfSize - 6);
+          const cz = THREE.MathUtils.clamp(Math.sin(ang) * r, -this.playableHalfSize + 6, this.playableHalfSize - 6);
           if (stats.isNaval ? this.navGrid.isWaterTerrain(cx, cz) : this.isWalkableTerrainPoint(cx, cz)) {
             bestWx = cx;
             bestWz = cz;
@@ -11712,8 +11851,8 @@ export class AoMEngine {
               Math.atan2(b.rallyPoint.z - b.mesh.position.z, b.rallyPoint.x - b.mesh.position.x) +
               (Math.random() - 0.5) * 0.25;
           }
-          let sx = THREE.MathUtils.clamp(b.mesh.position.x + Math.cos(ang) * dist, -PLAYABLE_HALF_SIZE, PLAYABLE_HALF_SIZE);
-          let sz = THREE.MathUtils.clamp(b.mesh.position.z + Math.sin(ang) * dist, -PLAYABLE_HALF_SIZE, PLAYABLE_HALF_SIZE);
+          let sx = THREE.MathUtils.clamp(b.mesh.position.x + Math.cos(ang) * dist, -this.playableHalfSize, this.playableHalfSize);
+          let sz = THREE.MathUtils.clamp(b.mesh.position.z + Math.sin(ang) * dist, -this.playableHalfSize, this.playableHalfSize);
 
           if (spawnedStats.isNaval) {
             const dCell = this.navGrid.worldToCell(sx, sz);
@@ -11739,8 +11878,8 @@ export class AoMEngine {
           if (spawnedDirectlyAtRally && b.rallyPoint) {
             const jitterAng = Math.random() * Math.PI * 2;
             const jitterR = Math.random() * 0.65;
-            sx = THREE.MathUtils.clamp(b.rallyPoint.x + Math.cos(jitterAng) * jitterR, -PLAYABLE_HALF_SIZE, PLAYABLE_HALF_SIZE);
-            sz = THREE.MathUtils.clamp(b.rallyPoint.z + Math.sin(jitterAng) * jitterR, -PLAYABLE_HALF_SIZE, PLAYABLE_HALF_SIZE);
+            sx = THREE.MathUtils.clamp(b.rallyPoint.x + Math.cos(jitterAng) * jitterR, -this.playableHalfSize, this.playableHalfSize);
+            sz = THREE.MathUtils.clamp(b.rallyPoint.z + Math.sin(jitterAng) * jitterR, -this.playableHalfSize, this.playableHalfSize);
           }
 
           const spawned = this.spawnUnit(job.kind, b.team, sx, sz);
@@ -12210,9 +12349,9 @@ export class AoMEngine {
         if (this.campaignSpawnedWaveIds.has(waveKey)) continue;
         if (this.elapsedSeconds >= wave.atSeconds) {
           this.campaignSpawnedWaveIds.add(waveKey);
-          const enemyTc = this.findNearestTownCenter('enemy', new THREE.Vector3(34, 0, -34));
-          const ox = enemyTc ? enemyTc.mesh.position.x - 4 : 30;
-          const oz = enemyTc ? enemyTc.mesh.position.z + 4 : -30;
+          const enemyTc = this.findNearestTownCenter('enemy', new THREE.Vector3(this.baseOffset, 0, -this.baseOffset));
+          const ox = enemyTc ? enemyTc.mesh.position.x - 4 : this.baseOffset - 4;
+          const oz = enemyTc ? enemyTc.mesh.position.z + 4 : -this.baseOffset + 4;
           const waveUnits: UnitEntity[] = [];
           for (const entry of wave.units) {
             for (let i = 0; i < entry.count; i++) {
@@ -12220,7 +12359,7 @@ export class AoMEngine {
               waveUnits.push(this.spawnUnit(entry.kind, 'enemy', slot.x, slot.z));
             }
           }
-          const playerTc = this.findNearestTownCenter('player', new THREE.Vector3(-34, 0, 34));
+          const playerTc = this.findNearestTownCenter('player', new THREE.Vector3(-this.baseOffset, 0, this.baseOffset));
           if (waveUnits.length > 0 && playerTc) {
             this.issueFormationMove(waveUnits, playerTc.mesh.position.x, playerTc.mesh.position.z, [], 'line');
           }
@@ -12239,9 +12378,9 @@ export class AoMEngine {
 
     // Grant reinforcements upon stage completion
     if (stage.reinforcements && stage.reinforcements.length > 0) {
-      const playerTc = this.findNearestTownCenter('player', new THREE.Vector3(-34, 0, 34));
-      const rx = playerTc ? playerTc.mesh.position.x + 4 : -30;
-      const rz = playerTc ? playerTc.mesh.position.z - 4 : 30;
+      const playerTc = this.findNearestTownCenter('player', new THREE.Vector3(-this.baseOffset, 0, this.baseOffset));
+      const rx = playerTc ? playerTc.mesh.position.x + 4 : -this.baseOffset + 4;
+      const rz = playerTc ? playerTc.mesh.position.z - 4 : this.baseOffset - 4;
       for (const reinf of stage.reinforcements) {
         for (let i = 0; i < reinf.count; i++) {
           const slot = this.snapToWalkableSlot(rx + (i % 4) * 1.6, rz - Math.floor(i / 4) * 1.6, rx, rz);
@@ -12330,8 +12469,8 @@ export class AoMEngine {
           if (!f.wanderTarget || f.wanderTimer <= 0) {
             const ang = Math.random() * Math.PI * 2;
             const rad = 5 + Math.random() * 12;
-            const wx = THREE.MathUtils.clamp(f.homeX + Math.cos(ang) * rad, -PLAYABLE_HALF_SIZE + 4, PLAYABLE_HALF_SIZE - 4);
-            const wz = THREE.MathUtils.clamp(f.homeZ + Math.sin(ang) * rad, -PLAYABLE_HALF_SIZE + 4, PLAYABLE_HALF_SIZE - 4);
+            const wx = THREE.MathUtils.clamp(f.homeX + Math.cos(ang) * rad, -this.playableHalfSize + 4, this.playableHalfSize - 4);
+            const wz = THREE.MathUtils.clamp(f.homeZ + Math.sin(ang) * rad, -this.playableHalfSize + 4, this.playableHalfSize - 4);
             if (this.navGrid.isWaterTerrain(wx, wz)) {
               f.wanderTarget = new THREE.Vector3(wx, -0.34, wz);
             }
@@ -12465,9 +12604,9 @@ export class AoMEngine {
 
       // 5. Fuga na direção oposta (Caça Passiva)
       if (!moveDest && f.fleeTimer > 0 && fStats.fleeOnHit) {
-        const fx = THREE.MathUtils.clamp(f.mesh.position.x + f.fleeDirX * 4.0, -PLAYABLE_HALF_SIZE + 3, PLAYABLE_HALF_SIZE - 3);
-        const fz = THREE.MathUtils.clamp(f.mesh.position.z + f.fleeDirZ * 4.0, -PLAYABLE_HALF_SIZE + 3, PLAYABLE_HALF_SIZE - 3);
-        moveDest = new THREE.Vector3(fx, groundHeightAt(fx, fz, this.mapId), fz);
+        const fx = THREE.MathUtils.clamp(f.mesh.position.x + f.fleeDirX * 4.0, -this.playableHalfSize + 3, this.playableHalfSize - 3);
+        const fz = THREE.MathUtils.clamp(f.mesh.position.z + f.fleeDirZ * 4.0, -this.playableHalfSize + 3, this.playableHalfSize - 3);
+        moveDest = new THREE.Vector3(fx, groundHeightAt(fx, fz, this.mapId, this.worldSize), fz);
         moveSpeed = fStats.speed;
         f.homeX = f.mesh.position.x;
         f.homeZ = f.mesh.position.z;
@@ -12496,10 +12635,10 @@ export class AoMEngine {
           } else {
             const ang = Math.random() * Math.PI * 2;
             const r = 2 + Math.random() * 5.5;
-            const wx = THREE.MathUtils.clamp(f.homeX + Math.cos(ang) * r, -PLAYABLE_HALF_SIZE + 3, PLAYABLE_HALF_SIZE - 3);
-            const wz = THREE.MathUtils.clamp(f.homeZ + Math.sin(ang) * r, -PLAYABLE_HALF_SIZE + 3, PLAYABLE_HALF_SIZE - 3);
+            const wx = THREE.MathUtils.clamp(f.homeX + Math.cos(ang) * r, -this.playableHalfSize + 3, this.playableHalfSize - 3);
+            const wz = THREE.MathUtils.clamp(f.homeZ + Math.sin(ang) * r, -this.playableHalfSize + 3, this.playableHalfSize - 3);
             if (this.isWalkableTerrainPoint(wx, wz)) {
-              f.wanderTarget = new THREE.Vector3(wx, groundHeightAt(wx, wz, this.mapId), wz);
+              f.wanderTarget = new THREE.Vector3(wx, groundHeightAt(wx, wz, this.mapId, this.worldSize), wz);
             }
             f.wanderTimer = 2.5 + Math.random() * 2.5;
           }
@@ -12518,7 +12657,7 @@ export class AoMEngine {
           const nx = f.mesh.position.x + (dx / dist) * step;
           const nz = f.mesh.position.z + (dz / dist) * step;
           if (this.isWalkableTerrainPoint(nx, nz)) {
-            f.mesh.position.set(nx, groundHeightAt(nx, nz, this.mapId), nz);
+            f.mesh.position.set(nx, groundHeightAt(nx, nz, this.mapId, this.worldSize), nz);
             f.mesh.rotation.y = Math.atan2(dx, dz);
             f.animPhase += dt * moveSpeed * 2.5;
             const swing = Math.sin(f.animPhase) * 0.45;
@@ -12897,10 +13036,13 @@ export class AoMEngine {
         }
       }
 
+      const enemyBaseX = tc ? tc.mesh.position.x : this.baseOffset;
+      const enemyBaseZ = tc ? tc.mesh.position.z : -this.baseOffset;
+
       const enemyHouseStats = this.buildingStats('house', 'enemy');
       if (enemyPop.current + 3 >= enemyPop.cap && this.canAfford(this.enemyResources, enemyHouseStats.cost)) {
-        const hx = 38 + Math.random() * 8;
-        const hz = -24 - Math.random() * 10;
+        const hx = enemyBaseX + 4 + Math.random() * 8;
+        const hz = enemyBaseZ + 10 - Math.random() * 10;
         if (this.canPlaceBuildingAt('house', hx, hz, 'enemy')) {
           this.deductCost(this.enemyResources, enemyHouseStats.cost);
           this.spawnBuilding('house', 'enemy', hx, hz, true);
@@ -12909,41 +13051,49 @@ export class AoMEngine {
       }
       const enemyArcheryStats = this.buildingStats('archery_range', 'enemy');
       if (!archeryRange && this.enemyAge >= 2 && this.canAfford(this.enemyResources, enemyArcheryStats.cost)) {
-        if (this.canPlaceBuildingAt('archery_range', 22, -33, 'enemy')) {
+        const ax = enemyBaseX - 12;
+        const az = enemyBaseZ + 1;
+        if (this.canPlaceBuildingAt('archery_range', ax, az, 'enemy')) {
           this.deductCost(this.enemyResources, enemyArcheryStats.cost);
-          this.spawnBuilding('archery_range', 'enemy', 22, -33, true);
+          this.spawnBuilding('archery_range', 'enemy', ax, az, true);
           this.syncNavObstacles();
         }
       }
       const enemyStableStats = this.buildingStats('stable', 'enemy');
       if (!stable && this.enemyAge >= 2 && this.canAfford(this.enemyResources, enemyStableStats.cost)) {
-        if (this.canPlaceBuildingAt('stable', 30, -22, 'enemy')) {
+        const sx = enemyBaseX - 4;
+        const sz = enemyBaseZ + 12;
+        if (this.canPlaceBuildingAt('stable', sx, sz, 'enemy')) {
           this.deductCost(this.enemyResources, enemyStableStats.cost);
-          this.spawnBuilding('stable', 'enemy', 30, -22, true);
+          this.spawnBuilding('stable', 'enemy', sx, sz, true);
           this.syncNavObstacles();
         }
       }
       const enemyTempleStats = this.buildingStats('temple', 'enemy');
       if (!hasTemple && this.enemyAge >= 2 && this.canAfford(this.enemyResources, enemyTempleStats.cost)) {
-        if (this.canPlaceBuildingAt('temple', 28, -38, 'enemy')) {
+        const tx = enemyBaseX - 6;
+        const tz = enemyBaseZ - 4;
+        if (this.canPlaceBuildingAt('temple', tx, tz, 'enemy')) {
           this.deductCost(this.enemyResources, enemyTempleStats.cost);
-          this.spawnBuilding('temple', 'enemy', 28, -38, true);
+          this.spawnBuilding('temple', 'enemy', tx, tz, true);
           this.syncNavObstacles();
         }
       }
       if (this.enemyPantheon === 'atlantean' && !market && this.enemyAge >= 2) {
         const enemyMarketStats = this.buildingStats('market', 'enemy');
-        if (this.canAfford(this.enemyResources, enemyMarketStats.cost) && this.canPlaceBuildingAt('market', 40, -39, 'enemy')) {
+        const mx = enemyBaseX + 6;
+        const mz = enemyBaseZ - 5;
+        if (this.canAfford(this.enemyResources, enemyMarketStats.cost) && this.canPlaceBuildingAt('market', mx, mz, 'enemy')) {
           this.deductCost(this.enemyResources, enemyMarketStats.cost);
-          this.spawnBuilding('market', 'enemy', 40, -39, true);
+          this.spawnBuilding('market', 'enemy', mx, mz, true);
           this.syncNavObstacles();
         }
       }
       const maxAiFarms = pers === 'economic' ? 5 : 3;
       const enemyFarmStats = this.buildingStats('farm', 'enemy');
       if (farmCount < maxAiFarms && this.enemyAge >= 2 && this.canAfford(this.enemyResources, enemyFarmStats.cost)) {
-        const fx = 28 + Math.random() * 12;
-        const fz = -30 - Math.random() * 12;
+        const fx = enemyBaseX - 6 + Math.random() * 12;
+        const fz = enemyBaseZ + 4 - Math.random() * 12;
         if (this.canPlaceBuildingAt('farm', fx, fz, 'enemy')) {
           this.deductCost(this.enemyResources, enemyFarmStats.cost);
           this.spawnBuilding('farm', 'enemy', fx, fz, true);
@@ -12954,8 +13104,8 @@ export class AoMEngine {
       const maxAiTowers = pers === 'defensive' ? 4 : 1;
       if (towerCount < maxAiTowers && this.enemyAge >= 2) {
         const enemyTowerStats = this.buildingStats('tower', 'enemy');
-        const tx = 20 + Math.random() * 12;
-        const tz = -18 - Math.random() * 10;
+        const tx = enemyBaseX - 14 + Math.random() * 12;
+        const tz = enemyBaseZ + 16 - Math.random() * 10;
         if (this.canAfford(this.enemyResources, enemyTowerStats.cost) && this.canPlaceBuildingAt('tower', tx, tz, 'enemy')) {
           this.deductCost(this.enemyResources, enemyTowerStats.cost);
           this.spawnBuilding('tower', 'enemy', tx, tz, true);
@@ -12964,17 +13114,21 @@ export class AoMEngine {
       }
       const enemySiegeStats = this.buildingStats('siege_works', 'enemy');
       if (!siegeWorks && this.enemyAge >= 3 && this.canAfford(this.enemyResources, enemySiegeStats.cost)) {
-        if (this.canPlaceBuildingAt('siege_works', 19, -24, 'enemy')) {
+        const swx = enemyBaseX - 15;
+        const swz = enemyBaseZ + 10;
+        if (this.canPlaceBuildingAt('siege_works', swx, swz, 'enemy')) {
           this.deductCost(this.enemyResources, enemySiegeStats.cost);
-          this.spawnBuilding('siege_works', 'enemy', 19, -24, true);
+          this.spawnBuilding('siege_works', 'enemy', swx, swz, true);
           this.syncNavObstacles();
         }
       }
       const enemyFortStats = this.buildingStats('fortress', 'enemy');
       if (!fortress && this.enemyAge >= 3 && this.canAfford(this.enemyResources, enemyFortStats.cost)) {
-        if (this.canPlaceBuildingAt('fortress', 24, -26, 'enemy')) {
+        const ftx = enemyBaseX - 10;
+        const ftz = enemyBaseZ + 8;
+        if (this.canPlaceBuildingAt('fortress', ftx, ftz, 'enemy')) {
           this.deductCost(this.enemyResources, enemyFortStats.cost);
-          this.spawnBuilding('fortress', 'enemy', 24, -26, true);
+          this.spawnBuilding('fortress', 'enemy', ftx, ftz, true);
           this.syncNavObstacles();
         }
       }
@@ -12995,7 +13149,7 @@ export class AoMEngine {
       if ((this.enemyAge >= 2 || enemyTcCount === 0) && enemyTcCount < MAX_TOWN_CENTERS) {
         const enemyTcCost = this.buildingStats('town_center', 'enemy').cost;
         if (enemyTcCount === 0 || this.canAfford(this.enemyResources, enemyTcCost)) {
-          const settlement = this.findNearestSettlement(34, -34, 52);
+          const settlement = this.findNearestSettlement(this.baseOffset, -this.baseOffset, Math.round(52 * this.worldScale));
           if (settlement) {
             const enemyBuilders = [...this.units.values()]
               .filter((u) => u.team === 'enemy' && this.isWorkerKind(u.kind))
@@ -13292,7 +13446,7 @@ export class AoMEngine {
       );
       if (combatUnits.length >= minRaidCount) {
         const playerTc = this.findNearestTownCenter('player', new THREE.Vector3(0, 0, 0));
-        const dest = playerTc ? playerTc.mesh.position : new THREE.Vector3(-34, 0, 34);
+        const dest = playerTc ? playerTc.mesh.position : new THREE.Vector3(-this.baseOffset, 0, this.baseOffset);
         const enemyForm: FormationId = this.enemyAge >= 3 ? 'line' : 'box';
         this.issueFormationMove(combatUnits, dest.x, dest.z, [], enemyForm);
         this.notifyStatus('Atenção: Tropas inimigas marchando pelo vale!');
@@ -14631,9 +14785,9 @@ export class AoMEngine {
     if (!targetPos) {
       const pt = this.getGroundPointFromEvent(clientX, clientY);
       if (pt) {
-        const cx = THREE.MathUtils.clamp(pt.x, -PLAYABLE_HALF_SIZE + 2, PLAYABLE_HALF_SIZE - 2);
-        const cz = THREE.MathUtils.clamp(pt.z, -PLAYABLE_HALF_SIZE + 2, PLAYABLE_HALF_SIZE - 2);
-        targetPos = new THREE.Vector3(cx, groundHeightAt(cx, cz, this.mapId), cz);
+        const cx = THREE.MathUtils.clamp(pt.x, -this.playableHalfSize + 2, this.playableHalfSize - 2);
+        const cz = THREE.MathUtils.clamp(pt.z, -this.playableHalfSize + 2, this.playableHalfSize - 2);
+        targetPos = new THREE.Vector3(cx, groundHeightAt(cx, cz, this.mapId, this.worldSize), cz);
       }
     }
     if (!targetPos) return;
@@ -14696,7 +14850,7 @@ export class AoMEngine {
         const count = Math.min(64, pts.length);
         for (let i = 0; i < count; i++) {
           const p = pts[i];
-          attr.setXYZ(i, p.x, groundHeightAt(p.x, p.z, this.mapId) + 0.16, p.z);
+          attr.setXYZ(i, p.x, groundHeightAt(p.x, p.z, this.mapId, this.worldSize) + 0.16, p.z);
         }
         attr.needsUpdate = true;
         line.geometry.setDrawRange(0, count);
@@ -14718,7 +14872,7 @@ export class AoMEngine {
           const frac = k / (steps + 0.2);
           const wx = a.x + (b.x - a.x) * frac;
           const wz = a.z + (b.z - a.z) * frac;
-          const wy = groundHeightAt(wx, wz, this.mapId) + 0.2;
+          const wy = groundHeightAt(wx, wz, this.mapId, this.worldSize) + 0.2;
           const wave = 0.78 + 0.28 * Math.sin(pulsePhase - dotIdx * 0.65);
           const sc = (isPreview ? 1.15 : 0.9) * wave;
           dotPos.set(wx, wy, wz);
@@ -14735,7 +14889,7 @@ export class AoMEngine {
       const idx = markerCounts[kind]++;
       if (idx >= 28) return;
       const m = this.acquireOrderMarker(kind, idx);
-      const gy = groundHeightAt(x, z, this.mapId);
+      const gy = groundHeightAt(x, z, this.mapId, this.worldSize);
       const bob = kind === 'flag' ? 0 : Math.sin(nowMs * 0.0045 + idx) * 0.18;
       m.position.set(x, gy + extraY + bob, z);
       if (m.userData.spinTarget) {
@@ -14772,7 +14926,7 @@ export class AoMEngine {
       const bPos = selBuilding.mesh.position;
       if (selBuilding.rallyPoint && this.rallyArrowGroup) {
         const rp = selBuilding.rallyPoint;
-        const gy = groundHeightAt(rp.x, rp.z, this.mapId);
+        const gy = groundHeightAt(rp.x, rp.z, this.mapId, this.worldSize);
         this.rallyArrowGroup.position.set(rp.x, gy, rp.z);
         this.rallyArrowGroup.rotation.y = Math.atan2(rp.x - bPos.x, rp.z - bPos.z);
         const arrowBody = this.rallyArrowGroup.userData.arrowBody as THREE.Object3D | undefined;
@@ -14788,7 +14942,7 @@ export class AoMEngine {
         const hp = this.rallyHoverPos;
         const distFromBuilding = Math.hypot(hp.x - bPos.x, hp.z - bPos.z);
         if (distFromBuilding > selBuilding.radius + 0.8) {
-          const gy = groundHeightAt(hp.x, hp.z, this.mapId);
+          const gy = groundHeightAt(hp.x, hp.z, this.mapId, this.worldSize);
           this.rallyPreviewArrowGroup.position.set(hp.x, gy, hp.z);
           this.rallyPreviewArrowGroup.rotation.y = Math.atan2(hp.x - bPos.x, hp.z - bPos.z);
           const arrowBody = this.rallyPreviewArrowGroup.userData.arrowBody as THREE.Object3D | undefined;

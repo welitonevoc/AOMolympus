@@ -185,6 +185,7 @@ const MAP_LANDSCAPE_IMAGES: Record<MapId, string> = {
   // ── Bonus ──
   yucatan: mapSavannahJungleImg,
   yellow_river: mapSavannahJungleImg,
+  total_war: mapAegeanIslandsImg,
 };
 
 export function getMapLandscapeImage(mapId: MapId): string {

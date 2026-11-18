@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { AgeLevel, BuildingKind, FaunaKind, MapId, PANTHEONS, PantheonId, ResourceNodeKind, TeamId, UnitKind } from './types';
+import { AgeLevel, BuildingKind, FaunaKind, MapId, PANTHEONS, PantheonId, ResourceNodeKind, TeamId, UnitKind, WorldSizeId } from './types';
 import { createGreekUnitMesh } from '../civilizacao/gregos/gregosModels';
 import { createZeusMilitaryUnitMesh, ZeusMilitaryUnitKind } from '../civilizacao/gregos/zeusMilitaryModels';
 import { createZeusMythOrHeroMesh, ZeusMythOrHeroKind } from '../civilizacao/gregos/zeusMythAndHeroModels';
@@ -40,19 +40,25 @@ import {
   createBiomeTreeMesh,
   getFaunaAccentMaterial,
   getFaunaCoatMaterial,
-} from '../TEXTURA';
-import { getMapBiomeVisuals, groundHeightAt as computeGeoGroundHeightAt } from '../TEXTURA/maps';
+} from '../textura';
+import { getMapBiomeVisuals, getWorldSizeSpec, groundHeightAt as computeGeoGroundHeightAt, WORLD_SIZE_SPECS } from '../textura/maps';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 export const MAP_HALF_SIZE = 74;
 export const PLAYABLE_HALF_SIZE = 58;
+export { getWorldSizeSpec, WORLD_SIZE_SPECS };
 
 /**
- * Deterministic heightfield per AoM map biome.
+ * Deterministic heightfield per AoM map biome & WorldSizeId.
  * Delegates to shared mapGeography engine so Mesh, Minimap, NavGrid & Spawners match 100%.
  */
-export function groundHeightAt(x: number, z: number, mapId: MapId = 'mediterranean'): number {
-  return computeGeoGroundHeightAt(x, z, mapId);
+export function groundHeightAt(
+  x: number,
+  z: number,
+  mapId: MapId = 'mediterranean',
+  worldSize: WorldSizeId = 'normal'
+): number {
+  return computeGeoGroundHeightAt(x, z, mapId, worldSize);
 }
 
 export interface MaterialPalette {

@@ -3158,6 +3158,7 @@ export function GameHUD({
               blips={hud.minimapBlips}
               pantheon={hud.pantheon}
               mapId={hud.mapId}
+              worldSize={hud.worldSize}
               revealedMap={hud.revealedMap}
               fogGrid={hud.fogGrid}
               fogGridSize={hud.fogGridSize}
@@ -3179,6 +3180,7 @@ export function GameHUD({
             blips={hud.minimapBlips}
             pantheon={hud.pantheon}
             mapId={hud.mapId}
+            worldSize={hud.worldSize}
             revealedMap={hud.revealedMap}
             fogGrid={hud.fogGrid}
             fogGridSize={hud.fogGridSize}

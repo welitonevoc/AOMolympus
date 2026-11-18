@@ -4,7 +4,7 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { MapId } from './types';
-import { resolveEffectiveMapId } from '../TEXTURA/maps';
+import { resolveEffectiveMapId } from '../textura/maps';
 
 const _v3A = new THREE.Vector3();
 const _v3B = new THREE.Vector3();

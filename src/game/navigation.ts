@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import { groundHeightAt, PLAYABLE_HALF_SIZE } from './models';
-import { MapId } from './types';
+import { getWorldSizeSpec, groundHeightAt, PLAYABLE_HALF_SIZE } from './models';
+import { MapId, WorldSizeId } from './types';
 
 export const WATER_WALK_LIMIT = -0.34;
 export const MAX_WALKABLE_SLOPE_RAD = 0.68;
@@ -19,31 +19,44 @@ export interface ObstacleCircle {
  */
 export class NavigationGrid {
   public readonly cellSize = 2.0;
-  public readonly width: number;
-  public readonly height: number;
+  public width: number;
+  public height: number;
+  private playableHalfSize: number = PLAYABLE_HALF_SIZE;
   private mapId: MapId = 'mediterranean';
+  private worldSize: WorldSizeId = 'normal';
   private terrainBlocked: Uint8Array;
   private waterGrid: Uint8Array;
   private dynamicBlocked: Uint8Array;
 
   constructor() {
-    this.width = Math.round((PLAYABLE_HALF_SIZE * 2) / this.cellSize);
+    this.width = Math.round((this.playableHalfSize * 2) / this.cellSize);
     this.height = this.width;
     this.terrainBlocked = new Uint8Array(this.width * this.height);
     this.waterGrid = new Uint8Array(this.width * this.height);
     this.dynamicBlocked = new Uint8Array(this.width * this.height);
   }
 
-  public rebuildTerrain(mapId: MapId) {
+  public rebuildTerrain(mapId: MapId, worldSize: WorldSizeId = 'normal') {
     this.mapId = mapId;
-    this.terrainBlocked.fill(0);
-    this.waterGrid.fill(0);
+    this.worldSize = worldSize;
+    this.playableHalfSize = getWorldSizeSpec(worldSize).playableHalfSize;
+    const nextWidth = Math.round((this.playableHalfSize * 2) / this.cellSize);
+    if (nextWidth !== this.width) {
+      this.width = nextWidth;
+      this.height = nextWidth;
+      this.terrainBlocked = new Uint8Array(this.width * this.height);
+      this.waterGrid = new Uint8Array(this.width * this.height);
+      this.dynamicBlocked = new Uint8Array(this.width * this.height);
+    } else {
+      this.terrainBlocked.fill(0);
+      this.waterGrid.fill(0);
+    }
     const step = this.cellSize * 0.5;
     for (let gz = 0; gz < this.height; gz++) {
       for (let gx = 0; gx < this.width; gx++) {
-        const wx = -PLAYABLE_HALF_SIZE + (gx + 0.5) * this.cellSize;
-        const wz = -PLAYABLE_HALF_SIZE + (gz + 0.5) * this.cellSize;
-        const h = groundHeightAt(wx, wz, mapId);
+        const wx = -this.playableHalfSize + (gx + 0.5) * this.cellSize;
+        const wz = -this.playableHalfSize + (gz + 0.5) * this.cellSize;
+        const h = groundHeightAt(wx, wz, mapId, worldSize);
         const idx = gz * this.width + gx;
         if (h < WATER_WALK_LIMIT - 0.04) {
           this.waterGrid[idx] = 1;
@@ -52,10 +65,10 @@ export class NavigationGrid {
           this.terrainBlocked[idx] = 1;
           continue;
         }
-        const hx1 = groundHeightAt(wx + step, wz, mapId);
-        const hx0 = groundHeightAt(wx - step, wz, mapId);
-        const hz1 = groundHeightAt(wx, wz + step, mapId);
-        const hz0 = groundHeightAt(wx, wz - step, mapId);
+        const hx1 = groundHeightAt(wx + step, wz, mapId, worldSize);
+        const hx0 = groundHeightAt(wx - step, wz, mapId, worldSize);
+        const hz1 = groundHeightAt(wx, wz + step, mapId, worldSize);
+        const hz0 = groundHeightAt(wx, wz - step, mapId, worldSize);
         const dhx = (hx1 - hx0) / this.cellSize;
         const dhz = (hz1 - hz0) / this.cellSize;
         const slope = Math.atan(Math.hypot(dhx, dhz));
@@ -70,15 +83,15 @@ export class NavigationGrid {
     this.dynamicBlocked.fill(0);
     for (const obs of obstacles) {
       const r = obs.radius;
-      const minGx = Math.max(0, Math.floor((obs.x - r + PLAYABLE_HALF_SIZE) / this.cellSize));
-      const maxGx = Math.min(this.width - 1, Math.floor((obs.x + r + PLAYABLE_HALF_SIZE) / this.cellSize));
-      const minGz = Math.max(0, Math.floor((obs.z - r + PLAYABLE_HALF_SIZE) / this.cellSize));
-      const maxGz = Math.min(this.height - 1, Math.floor((obs.z + r + PLAYABLE_HALF_SIZE) / this.cellSize));
+      const minGx = Math.max(0, Math.floor((obs.x - r + this.playableHalfSize) / this.cellSize));
+      const maxGx = Math.min(this.width - 1, Math.floor((obs.x + r + this.playableHalfSize) / this.cellSize));
+      const minGz = Math.max(0, Math.floor((obs.z - r + this.playableHalfSize) / this.cellSize));
+      const maxGz = Math.min(this.height - 1, Math.floor((obs.z + r + this.playableHalfSize) / this.cellSize));
 
       for (let gz = minGz; gz <= maxGz; gz++) {
-        const cz = -PLAYABLE_HALF_SIZE + (gz + 0.5) * this.cellSize;
+        const cz = -this.playableHalfSize + (gz + 0.5) * this.cellSize;
         for (let gx = minGx; gx <= maxGx; gx++) {
-          const cx = -PLAYABLE_HALF_SIZE + (gx + 0.5) * this.cellSize;
+          const cx = -this.playableHalfSize + (gx + 0.5) * this.cellSize;
           if (Math.hypot(cx - obs.x, cz - obs.z) <= r + this.cellSize * 0.28) {
             this.dynamicBlocked[gz * this.width + gx] = 1;
           }
@@ -109,23 +122,23 @@ export class NavigationGrid {
   }
 
   public isWaterTerrain(wx: number, wz: number): boolean {
-    const h = groundHeightAt(wx, wz, this.mapId);
+    const h = groundHeightAt(wx, wz, this.mapId, this.worldSize);
     if (h < WATER_WALK_LIMIT - 0.04) return true;
     const c = this.worldToCell(wx, wz);
     return this.waterGrid[c.gz * this.width + c.gx] === 1;
   }
 
   public worldToCell(wx: number, wz: number): { gx: number; gz: number } {
-    const gx = Math.max(0, Math.min(this.width - 1, Math.floor((wx + PLAYABLE_HALF_SIZE) / this.cellSize)));
-    const gz = Math.max(0, Math.min(this.height - 1, Math.floor((wz + PLAYABLE_HALF_SIZE) / this.cellSize)));
+    const gx = Math.max(0, Math.min(this.width - 1, Math.floor((wx + this.playableHalfSize) / this.cellSize)));
+    const gz = Math.max(0, Math.min(this.height - 1, Math.floor((wz + this.playableHalfSize) / this.cellSize)));
     return { gx, gz };
   }
 
   public cellToWorld(gx: number, gz: number): THREE.Vector3 {
     return new THREE.Vector3(
-      -PLAYABLE_HALF_SIZE + (gx + 0.5) * this.cellSize,
+      -this.playableHalfSize + (gx + 0.5) * this.cellSize,
       0,
-      -PLAYABLE_HALF_SIZE + (gz + 0.5) * this.cellSize
+      -this.playableHalfSize + (gz + 0.5) * this.cellSize
     );
   }
 
@@ -262,7 +275,7 @@ export class NavigationGrid {
 
     let found = false;
     let iterations = 0;
-    const maxIterations = 2600;
+    const maxIterations = Math.max(2600, Math.round(this.width * this.height * 0.95));
 
     while (open.length > 0 && iterations++ < maxIterations) {
       let bestPos = 0;
@@ -403,7 +416,7 @@ export class NavigationGrid {
 
     let found = false;
     let iterations = 0;
-    const maxIterations = 2600;
+    const maxIterations = Math.max(2600, Math.round(this.width * this.height * 0.95));
 
     while (open.length > 0 && iterations++ < maxIterations) {
       let bestPos = 0;
