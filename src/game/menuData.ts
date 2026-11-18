@@ -35,6 +35,7 @@ export type PortMenuState =
   | 'UI_OPTIONS_CONTROLS'
   | 'UI_HOTKEYS'
   | 'UI_EDITOR'
+  | 'UI_RMS_LAB'
   | 'UI_HISTORY'
   | 'UI_TECHTREE'
   | 'CREDITS'

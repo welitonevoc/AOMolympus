@@ -6,6 +6,7 @@ import {
   Crown,
   Eye,
   EyeOff,
+  FileCode2,
   Film,
   Globe,
   HardDrive,
@@ -199,7 +200,8 @@ export function TitleScreen({
     menuState === 'UI_MP_ESO' ||
     menuState === 'MULTIPLAYER_LAN' ||
     menuState === 'MULTIPLAYER_LOBBY' ||
-    menuState === 'UI_HOST_GAME_DIALOG';
+    menuState === 'UI_HOST_GAME_DIALOG' ||
+    menuState === 'UI_RMS_LAB';
   const containerWidth = isCompact
     ? 'max-w-[400px]'
     : isMultiplayerWide
@@ -486,6 +488,11 @@ export function TitleScreen({
                   <Swords className="h-4 w-4 text-[#0b0e14]" />,
                   true
                 )}
+                {renderMenuBtn(
+                  'Laboratório de Mapas (.xs)',
+                  () => nav('UI_RMS_LAB'),
+                  <FileCode2 className="h-4 w-4 text-[#d4af37]" />
+                )}
                 {renderMenuBtn('Campanhas', () => nav('UI_CAMPAIGN'))}
                 {renderMenuBtn('Carregar Cenário', () => nav('UI_LOAD_SCENARIO'))}
                 {renderMenuBtn('Carregar Jogo Salvo', () => nav('UI_GAME_LIST'))}
@@ -532,6 +539,11 @@ export function TitleScreen({
                   Mais Recursos
                 </div>
                 {renderMenuBtn('Jogos Gravados', () => nav('UI_RECORDED_GAMES'))}
+                {renderMenuBtn(
+                  'Laboratório de Mapas (.xs / RMS)',
+                  () => nav('UI_RMS_LAB'),
+                  <FileCode2 className="h-4 w-4 text-[#d4af37]" />
+                )}
                 {renderMenuBtn(
                   'Editor de Cenários',
                   () => nav('UI_EDITOR'),

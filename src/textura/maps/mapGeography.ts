@@ -1,5 +1,6 @@
 import { FaunaKind } from '../../game/types';
-import { getWorldSizeSpec, MapConfig, MapId, MAPS, MapWeatherKind, WorldSizeId } from './mapCatalog';
+import { getWorldSizeSpec, MapBiomeKind, MapConfig, MapId, MAPS, MapWeatherKind, WorldSizeId } from './mapCatalog';
+import { getActiveRmsMap } from './rmsRuntime';
 import { TotalWarEnvironment, TOTAL_WAR_XS_SPEC } from './totalWarXsImporter';
 
 export type BiomeTreeStyle =
@@ -457,6 +458,24 @@ const BIOME_VISUALS: Record<Exclude<MapId, 'land_unknown' | 'the_unknown'>, MapB
     berryStyle: 'temperate',
     weatherPool: ['clear', 'rain'],
   },
+  rms_custom: {
+    terrainPalette: [0x557540, 0x9d8a64, 0xcab688, 0x6b7c4f],
+    fertileHex: 0x58823a,
+    treeStyle: 'oak',
+    secondaryTreeStyle: 'birch',
+    rockStyle: 'stone',
+    berryStyle: 'temperate',
+    weatherPool: ['clear', 'rain'],
+  },
+};
+
+const RMS_BIOME_TO_MAP: Record<MapBiomeKind, Exclude<MapId, 'land_unknown' | 'the_unknown' | 'rms_custom'>> = {
+  temperate: 'mediterranean',
+  frozen: 'tundra',
+  desert: 'valley_of_the_kings',
+  savannah: 'savannah',
+  tropical: 'yucatan',
+  volcanic: 'erebus',
 };
 
 const TOTAL_WAR_FROZEN_VISUALS: MapBiomeVisuals = {
@@ -471,6 +490,13 @@ const TOTAL_WAR_FROZEN_VISUALS: MapBiomeVisuals = {
 
 export function getMapBiomeVisuals(mapId: MapId): MapBiomeVisuals {
   const eff = resolveEffectiveMapId(mapId);
+  if (eff === 'rms_custom') {
+    const rms = getActiveRmsMap();
+    if (rms) {
+      const proxy = RMS_BIOME_TO_MAP[rms.biome] ?? 'mediterranean';
+      return BIOME_VISUALS[proxy];
+    }
+  }
   if (eff === 'total_war') {
     return activeTotalWar.environment === 'frozen' ? TOTAL_WAR_FROZEN_VISUALS : BIOME_VISUALS.total_war;
   }
@@ -478,6 +504,20 @@ export function getMapBiomeVisuals(mapId: MapId): MapBiomeVisuals {
 }
 
 export function getEffectiveMapConfig(mapId: MapId): MapConfig {
+  if (mapId === 'rms_custom') {
+    const rms = getActiveRmsMap();
+    if (rms) {
+      const proxy = MAPS[RMS_BIOME_TO_MAP[rms.biome] ?? 'mediterranean'];
+      return {
+        ...proxy,
+        id: 'rms_custom',
+        name: rms.title || MAPS.rms_custom.name,
+        subtitle: `Script RMS · Semente ${rms.seed} · ${rms.playerCount} jogadores · ${rms.seaType}`,
+        specialRule: 'rms_custom',
+      };
+    }
+    return MAPS.rms_custom;
+  }
   if (mapId === 'land_unknown' || mapId === 'the_unknown') {
     const eff = resolveEffectiveMapId(mapId);
     const base = MAPS[eff];
@@ -524,6 +564,10 @@ export function groundHeightAt(
   mapId: MapId = 'mediterranean',
   worldSize: WorldSizeId = 'normal'
 ): number {
+  if (mapId === 'rms_custom') {
+    const rms = getActiveRmsMap();
+    if (rms) return rms.sampleHeight(worldX, worldZ);
+  }
   const spec = getWorldSizeSpec(worldSize);
   const invScale = 1 / spec.worldScale;
   const x = worldX * invScale;
@@ -1255,7 +1299,37 @@ export function buildMapResourceProfile(
               ['wolf', -10, -10], ['wolf', 10, 10],
             ],
     },
+    rms_custom: {
+      huntPool: ['deer', 'boar', 'aurochs', 'wolf'],
+      spawns: [],
+    },
   };
+
+  if (eff === 'rms_custom') {
+    const rms = getActiveRmsMap();
+    const biomeKey = rms?.biome ?? 'temperate';
+    const huntPool: FaunaKind[] =
+      biomeKey === 'frozen'
+        ? ['reindeer', 'moose', 'musk_ox', 'bear']
+        : biomeKey === 'desert'
+        ? ['gazelle', 'camel', 'lion', 'hyena']
+        : biomeKey === 'savannah'
+        ? ['zebra', 'giraffe', 'rhino', 'lion']
+        : biomeKey === 'tropical'
+        ? ['deer', 'boar', 'tiger', 'alligator']
+        : ['deer', 'boar', 'aurochs', 'wolf'];
+    const aquaticDecorPool: ('sea_turtle' | 'dolphin' | 'whale')[] =
+      biomeKey === 'frozen' ? ['whale', 'dolphin'] : ['sea_turtle', 'dolphin', 'whale'];
+    return {
+      treeClusters: [],
+      goldSpots: [],
+      berrySpots: [],
+      settlementSpots: [],
+      faunaSpawns: [],
+      huntPool,
+      aquaticDecorPool,
+    };
+  }
 
   const herdData = herdsByMap[eff] ?? herdsByMap.mediterranean;
   const faunaSpawns = [...herdData.spawns];

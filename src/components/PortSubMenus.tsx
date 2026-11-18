@@ -73,6 +73,7 @@ import {
 } from '../game/types';
 import { EraIcon, getEraSubtitle } from './EraIcon';
 import { MultiplayerOnlineHub } from './MultiplayerOnlineHub';
+import { RmsMapLab } from './RmsMapLab';
 import { SkirmishSetupFlow } from './SkirmishSetupFlow';
 import { TechIcon } from './TechIcon';
 
@@ -208,6 +209,7 @@ export function PortSubMenus({
     valley_guardians: 'Guardiões do Vale',
     sea_of_worms: 'Mar de Vermes',
     total_war: 'Guerra Total',
+    rms_custom: 'Script .xs (RMS)',
   };
 
   const renderMapPicker = (
@@ -1201,6 +1203,19 @@ export function PortSubMenus({
     );
   }
 
+  // ── 10b. UI_RMS_LAB (Random Map Scripting Lab) ──
+  if (menuState === 'UI_RMS_LAB') {
+    return (
+      <RmsMapLab
+        defaultPantheon={skirmish.pantheon}
+        defaultDifficulty={options.defaultDifficulty || 'normal'}
+        gameSpeed={options.gameSpeed}
+        onBack={() => setMenuState('SUB_SINGLE_PLAYER')}
+        onStartMatch={onStartMatch}
+      />
+    );
+  }
+
   // ── 11. UI_EDITOR ──
   if (menuState === 'UI_EDITOR') {
     return (
@@ -1235,7 +1250,17 @@ export function PortSubMenus({
               ))}
             </div>
           </div>
-          <div className="sm:col-span-2 flex justify-end pt-2 border-t border-white/10">
+          <div className="sm:col-span-2 flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-white/10">
+            <button
+              type="button"
+              onClick={() => {
+                clickSound();
+                setMenuState('UI_RMS_LAB');
+              }}
+              className="flex items-center gap-2 rounded border border-[#d4af37]/45 bg-[#1b2436] px-4 py-2 text-xs font-semibold text-[#f3d27a] hover:bg-[#232f46] cursor-pointer"
+            >
+              <span>Abrir Laboratório de Mapas (.xs / RMS)</span>
+            </button>
             <button
               type="button"
               onClick={() =>

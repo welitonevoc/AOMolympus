@@ -186,6 +186,7 @@ const MAP_LANDSCAPE_IMAGES: Record<MapId, string> = {
   yucatan: mapSavannahJungleImg,
   yellow_river: mapSavannahJungleImg,
   total_war: mapAegeanIslandsImg,
+  rms_custom: mapOlympusCitadelImg,
 };
 
 export function getMapLandscapeImage(mapId: MapId): string {

@@ -5281,6 +5281,14 @@ export interface MatchStartOptions {
   playerColorHex?: number;
   playerCrestId?: string;
   multiplayerRoster?: MultiplayerMatchRoster;
+  rmsConfig?: {
+    scriptId: string;
+    title: string;
+    xsCode: string;
+    xmlCode?: string;
+    seed: number;
+    playerCount?: number;
+  };
 }
 
 export type AoMScaleProfile = 'classic_aom' | 'monumental' | 'realistic' | 'compact';

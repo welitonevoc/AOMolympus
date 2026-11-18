@@ -31,7 +31,10 @@ export type MapId =
   // Mapas Bônus Preservados
   | 'yucatan'
   | 'yellow_river'
-  | 'total_war';
+  | 'total_war'
+  | 'rms_custom';
+
+export type MapBiomeKind = 'temperate' | 'frozen' | 'desert' | 'savannah' | 'tropical' | 'volcanic';
 
 export type WorldSizeId = 'normal' | 'large' | 'giant';
 
@@ -101,7 +104,8 @@ export type MapSpecialRule =
   | 'land_unknown'
   | 'the_unknown'
   | 'sea_of_worms'
-  | 'total_war';
+  | 'total_war'
+  | 'rms_custom';
 export type MapWeatherKind = 'clear' | 'rain' | 'snow' | 'sandstorm';
 
 export interface MapConfig {
@@ -677,6 +681,25 @@ export const MAPS: Record<MapId, MapConfig> = {
     cliffHex: 0x7a766d,
     terrainTint: '#567545',
     terrainPatchA: 'rgba(196, 174, 122, 0.24)',
+    terrainPatchB: 'rgba(54, 88, 52, 0.22)',
+  },
+  rms_custom: {
+    id: 'rms_custom',
+    name: 'Mapa Procedural (.xs)',
+    subtitle: 'Gerado em tempo real pelo motor RMS a partir de scripts .xs e .xml compatíveis com AoM: Retold',
+    expansion: 'bonus',
+    biomeLabel: 'Procedural (.xs / .xml)',
+    floraLabel: 'Definida pelo Script .xs',
+    faunaLabel: 'Definida pelo Script .xs',
+    specialRule: 'rms_custom',
+    weatherPool: ['clear', 'rain'],
+    waterColorHex: 0x166b8a,
+    skyColorHex: 0xbcd0e2,
+    foliageHex: 0x356e38,
+    foliageDarkHex: 0x224a26,
+    cliffHex: 0x78716c,
+    terrainTint: '#557242',
+    terrainPatchA: 'rgba(154, 148, 108, 0.24)',
     terrainPatchB: 'rgba(54, 88, 52, 0.22)',
   },
 };

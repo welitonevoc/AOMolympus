@@ -1,7 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Castle, Crosshair, Eye, Maximize2, Minimize2, Swords, Trees } from 'lucide-react';
 import { getWorldSizeSpec, groundHeightAt } from '../game/models';
-import { getActiveTotalWarState, getActiveUnknownState, getEffectiveMapConfig, getMapBiomeVisuals, resolveEffectiveMapId } from '../textura/maps';
+import {
+  getActiveRmsMap,
+  getActiveTotalWarState,
+  getActiveUnknownState,
+  getEffectiveMapConfig,
+  getMapBiomeVisuals,
+  resolveEffectiveMapId,
+} from '../textura/maps';
 import { MapId, MinimapBlip, PANTHEONS, PantheonId, WorldSizeId } from '../game/types';
 
 export type MinimapFilterMode = 'all' | 'combat' | 'economy';
@@ -60,6 +67,7 @@ function createTerrainBackdrop(mapId: MapId, worldSize: WorldSizeId = 'normal'):
   const [sr, sg, sb] = hexToRgb(bio.terrainPalette[2]);
   const [hr, hg, hb] = hexToRgb(bio.terrainPalette[3]);
   const [fr, fg, fb] = hexToRgb(bio.fertileHex);
+  const activeRms = mapId === 'rms_custom' ? getActiveRmsMap() : null;
 
   for (let py = 0; py < CANVAS_SIZE; py++) {
     const wz = ((py / CANVAS_SIZE) * 2 - 1) * mapHalfSize;
@@ -86,29 +94,58 @@ function createTerrainBackdrop(mapId: MapId, worldSize: WorldSizeId = 'normal'):
         g = sg;
         b = sb;
       } else {
-        const diagDist = Math.abs(wx + wz) / Math.SQRT2;
-        const onRoad = diagDist < 4.5 * worldScale && Math.hypot(wx, wz) < 50 * worldScale;
         const hillShade = Math.max(-20, Math.min(28, (h - 0.5) * 16));
-
-        if (onRoad) {
-          r = rr + hillShade * 0.55;
-          g = rg + hillShade * 0.55;
-          b = rb + hillShade * 0.55;
-        } else if (h > 1.35) {
-          r = hr + hillShade * 0.75;
-          g = hg + hillShade * 0.75;
-          b = hb + hillShade * 0.7;
-        } else if (
-          ((eff === 'nile' || eff === 'yellow_river' || eff === 'highland') && Math.abs(wx - wz) / Math.SQRT2 < 10.5 * worldScale) ||
-          (eff === 'oasis' && Math.hypot(wx, wz) < 17 * worldScale)
-        ) {
-          r = fr + hillShade * 0.8;
-          g = fg + hillShade * 0.9;
-          b = fb + hillShade * 0.6;
+        if (activeRms) {
+          const tCode = activeRms.sampleTerrainCode(wx, wz);
+          if (tCode === 2) {
+            r = rr + hillShade * 0.55;
+            g = rg + hillShade * 0.55;
+            b = rb + hillShade * 0.55;
+          } else if (tCode === 3) {
+            r = sr + hillShade * 0.6;
+            g = sg + hillShade * 0.6;
+            b = sb + hillShade * 0.5;
+          } else if (tCode === 4) {
+            r = hr + hillShade * 0.7;
+            g = hg + hillShade * 0.7;
+            b = hb + hillShade * 0.7;
+          } else if (tCode === 5 || tCode === 7) {
+            r = fr + hillShade * 0.75;
+            g = fg + hillShade * 0.85;
+            b = fb + hillShade * 0.6;
+          } else if (tCode === 6) {
+            r = 224 + hillShade * 0.45;
+            g = 234 + hillShade * 0.45;
+            b = 244 + hillShade * 0.45;
+          } else {
+            r = br + hillShade * 0.85;
+            g = bg + hillShade * 0.95;
+            b = bb + hillShade * 0.75;
+          }
         } else {
-          r = br + hillShade * 0.85;
-          g = bg + hillShade * 0.95;
-          b = bb + hillShade * 0.75;
+          const diagDist = Math.abs(wx + wz) / Math.SQRT2;
+          const onRoad = diagDist < 4.5 * worldScale && Math.hypot(wx, wz) < 50 * worldScale;
+
+          if (onRoad) {
+            r = rr + hillShade * 0.55;
+            g = rg + hillShade * 0.55;
+            b = rb + hillShade * 0.55;
+          } else if (h > 1.35) {
+            r = hr + hillShade * 0.75;
+            g = hg + hillShade * 0.75;
+            b = hb + hillShade * 0.7;
+          } else if (
+            ((eff === 'nile' || eff === 'yellow_river' || eff === 'highland') && Math.abs(wx - wz) / Math.SQRT2 < 10.5 * worldScale) ||
+            (eff === 'oasis' && Math.hypot(wx, wz) < 17 * worldScale)
+          ) {
+            r = fr + hillShade * 0.8;
+            g = fg + hillShade * 0.9;
+            b = fb + hillShade * 0.6;
+          } else {
+            r = br + hillShade * 0.85;
+            g = bg + hillShade * 0.95;
+            b = bb + hillShade * 0.75;
+          }
         }
       }
 
@@ -157,7 +194,11 @@ export function Minimap({
   const mapHalfSize = sizeSpec.mapHalfSize;
   const unknownSeed = getActiveUnknownState(mapId)?.seed ?? 0;
   const totalWarSeed = mapId === 'total_war' ? getActiveTotalWarState().seed : 0;
-  const terrainBackdrop = useMemo(() => createTerrainBackdrop(mapId, worldSize), [mapId, worldSize, unknownSeed, totalWarSeed]);
+  const rmsSeed = mapId === 'rms_custom' ? getActiveRmsMap()?.seed ?? 0 : 0;
+  const terrainBackdrop = useMemo(
+    () => createTerrainBackdrop(mapId, worldSize),
+    [mapId, worldSize, unknownSeed, totalWarSeed, rmsSeed]
+  );
   const playerColor = PANTHEONS[pantheon].primaryColor;
 
   // Summarize allied buildings, allied units, and revealed enemies (buildings + units)

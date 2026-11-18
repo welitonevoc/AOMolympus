@@ -101,6 +101,7 @@ const SPECIAL_RULE_LABELS: Record<NonNullable<MapConfig['specialRule']>, string>
   valley_guardians: 'Guardiões protegem minas centrais',
   sea_of_worms: 'Lagoas sinuosas com Fortaleza',
   total_war: 'Ilha central e mares contestados (Total War)',
+  rms_custom: 'Mapa gerado em tempo real por script .xs (RMS)',
 };
 
 const EXPANSION_LABELS: Record<MapConfig['expansion'], string> = {

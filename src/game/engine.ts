@@ -22,15 +22,20 @@ import {
 } from './models';
 import {
   buildMapResourceProfile,
+  clearActiveRmsMap,
+  compileRmsScript,
   computeTotalWarCircularSpawns,
+  getActiveRmsMap,
   getActiveTotalWarEnv,
   getActiveTotalWarState,
   getActiveUnknownState,
   getEffectiveMapConfig,
   getMapBiomeVisuals,
   resolveEffectiveMapId,
+  RMS_SCRIPT_LIBRARY,
   rollTotalWarVariant,
   rollUnknownMapVariant,
+  setActiveRmsMap,
   TOTAL_WAR_XS_SPEC,
 } from '../textura/maps';
 import { preloadForestPackGlb } from '../textura';
@@ -1009,8 +1014,11 @@ export class AoMEngine {
     const cHigh = new THREE.Color(hHex);
     const cCliff = new THREE.Color(mapCfg.cliffHex);
     const cFertile = new THREE.Color(bio.fertileHex);
+    const cSnow = new THREE.Color(0xe6eff7);
+    const cForestFloor = new THREE.Color(bio.fertileHex).multiplyScalar(0.76);
     const tmp = new THREE.Color();
     const ws = this.worldScale;
+    const activeRms = mapId === 'rms_custom' ? getActiveRmsMap() : null;
 
     for (let i = 0; i < pos.count; i++) {
       const x = pos.getX(i);
@@ -1019,34 +1027,53 @@ export class AoMEngine {
       const ny = norm.getY(i);
       const slope = Math.max(0, 1 - ny);
 
-      // Diagonal road between opposing bases (-bo, bo) -> (bo, -bo)
-      const diagDist = Math.abs(x + z) / Math.SQRT2;
-      const roadBlend = Math.max(0, 1 - diagDist / (6.5 * ws)) * (Math.hypot(x, z) < 52 * ws ? 0.58 : 0);
-
       tmp.copy(cBase);
-      if (effId === 'nile' || effId === 'yellow_river' || effId === 'highland') {
-        const riverDist = Math.abs(x - z) / Math.SQRT2;
-        if (riverDist < 12 * ws) {
-          tmp.lerp(cFertile, Math.max(0, 1 - riverDist / (12 * ws)) * 0.85);
+      if (activeRms) {
+        const tCode = activeRms.sampleTerrainCode(x, z);
+        if (tCode === 2) tmp.lerp(cRoad, 0.84);
+        else if (tCode === 3) tmp.lerp(cSand, 0.78);
+        else if (tCode === 4) tmp.lerp(cCliff, 0.72);
+        else if (tCode === 5) tmp.lerp(cFertile, 0.74);
+        else if (tCode === 6) tmp.lerp(cSnow, 0.78);
+        else if (tCode === 7) tmp.lerp(cForestFloor, 0.62);
+        if (y > 1.05) {
+          tmp.lerp(cHigh, Math.min(0.85, (y - 1.05) * 0.55));
         }
-      } else if (effId === 'oasis' && Math.hypot(x, z) < 16 * ws) {
-        tmp.lerp(cFertile, (1 - Math.hypot(x, z) / (16 * ws)) * 0.85);
-      } else if (effId === 'watering_hole' && y < 0.25) {
-        tmp.lerp(cFertile, 0.72);
-      } else if (effId === 'total_war' && Math.hypot(x, z) < 22 * ws) {
-        tmp.lerp(cFertile, (1 - Math.hypot(x, z) / (22 * ws)) * 0.52);
-      }
-      if (y > 1.05) {
-        tmp.lerp(cHigh, Math.min(1, (y - 1.05) * 0.65));
-      }
-      if (roadBlend > 0) {
-        tmp.lerp(cRoad, roadBlend);
-      }
-      if (slope > 0.08) {
-        tmp.lerp(cCliff, Math.min(1, (slope - 0.08) * 5.2));
-      }
-      if (y < 0.15) {
-        tmp.lerp(cSand, Math.min(1, (0.15 - y) * 1.4));
+        if (slope > 0.08) {
+          tmp.lerp(cCliff, Math.min(1, (slope - 0.08) * 5.0));
+        }
+        if (y < 0.15) {
+          tmp.lerp(cSand, Math.min(1, (0.15 - y) * 1.35));
+        }
+      } else {
+        // Diagonal road between opposing bases (-bo, bo) -> (bo, -bo)
+        const diagDist = Math.abs(x + z) / Math.SQRT2;
+        const roadBlend = Math.max(0, 1 - diagDist / (6.5 * ws)) * (Math.hypot(x, z) < 52 * ws ? 0.58 : 0);
+
+        if (effId === 'nile' || effId === 'yellow_river' || effId === 'highland') {
+          const riverDist = Math.abs(x - z) / Math.SQRT2;
+          if (riverDist < 12 * ws) {
+            tmp.lerp(cFertile, Math.max(0, 1 - riverDist / (12 * ws)) * 0.85);
+          }
+        } else if (effId === 'oasis' && Math.hypot(x, z) < 16 * ws) {
+          tmp.lerp(cFertile, (1 - Math.hypot(x, z) / (16 * ws)) * 0.85);
+        } else if (effId === 'watering_hole' && y < 0.25) {
+          tmp.lerp(cFertile, 0.72);
+        } else if (effId === 'total_war' && Math.hypot(x, z) < 22 * ws) {
+          tmp.lerp(cFertile, (1 - Math.hypot(x, z) / (22 * ws)) * 0.52);
+        }
+        if (y > 1.05) {
+          tmp.lerp(cHigh, Math.min(1, (y - 1.05) * 0.65));
+        }
+        if (roadBlend > 0) {
+          tmp.lerp(cRoad, roadBlend);
+        }
+        if (slope > 0.08) {
+          tmp.lerp(cCliff, Math.min(1, (slope - 0.08) * 5.2));
+        }
+        if (y < 0.15) {
+          tmp.lerp(cSand, Math.min(1, (0.15 - y) * 1.4));
+        }
       }
 
       colors[i * 3] = tmp.r;
@@ -1078,7 +1105,13 @@ export class AoMEngine {
       color: mapCfg.waterColorHex,
       emissive: bio.waterEmissiveHex ?? 0x000000,
       emissiveIntensity: bio.waterEmissiveIntensity ?? 0,
-      roughness: effId === 'ghost_lake' || effId === 'tundra' || (effId === 'total_war' && getActiveTotalWarEnv() === 'frozen') ? 0.08 : 0.16,
+      roughness:
+        effId === 'ghost_lake' ||
+        effId === 'tundra' ||
+        (effId === 'total_war' && getActiveTotalWarEnv() === 'frozen') ||
+        activeRms?.biome === 'frozen'
+          ? 0.08
+          : 0.16,
       metalness: 0.42,
       transparent: true,
       opacity: 0.9,
@@ -1261,6 +1294,28 @@ export class AoMEngine {
       const seedArg = this.matchSeed > 0 ? this.matchSeed : undefined;
       rollUnknownMapVariant(mapId, seedArg);
       rollTotalWarVariant(mapId, seedArg);
+      if (mapId === 'rms_custom') {
+        const rmsSeed = extras?.rmsConfig?.seed ?? (this.matchSeed > 0 ? this.matchSeed : (Date.now() % 89999) + 1000);
+        const rmsPlayers = Math.max(
+          2,
+          extras?.rmsConfig?.playerCount ?? (extras?.multiplayerRoster?.factions?.length ?? 2)
+        );
+        const fallbackTpl = RMS_SCRIPT_LIBRARY[0];
+        const compiled = compileRmsScript({
+          xsCode: extras?.rmsConfig?.xsCode || fallbackTpl.xsCode,
+          xmlCode: extras?.rmsConfig?.xmlCode ?? fallbackTpl.xmlCode,
+          seed: rmsSeed,
+          worldSize: this.worldSize,
+          playerCount: rmsPlayers,
+          scriptId: extras?.rmsConfig?.scriptId ?? fallbackTpl.id,
+          title: extras?.rmsConfig?.title ?? extras?.scenarioTitle ?? fallbackTpl.name,
+        });
+        setActiveRmsMap(compiled.map);
+      } else {
+        clearActiveRmsMap();
+      }
+    } else {
+      clearActiveRmsMap();
     }
     this.scenarioTitle = isTitlePreview ? undefined : extras?.scenarioTitle;
     this.playerColorHex = isTitlePreview ? undefined : extras?.playerColorHex;
@@ -1405,12 +1460,33 @@ export class AoMEngine {
       };
     }
 
+    const activeRms = mapId === 'rms_custom' ? getActiveRmsMap() : null;
+    if (activeRms?.triggersSummary.grantResources && !isTitlePreview) {
+      const gr = activeRms.triggersSummary.grantResources;
+      this.resources = {
+        food: Math.max(this.resources.food, gr.food),
+        wood: Math.max(this.resources.wood, gr.wood),
+        gold: Math.max(this.resources.gold, gr.gold),
+        favor: Math.max(this.resources.favor, gr.favor),
+      };
+      this.enemyResources = {
+        food: Math.max(this.enemyResources.food, gr.food),
+        wood: Math.max(this.enemyResources.wood, gr.wood),
+        gold: Math.max(this.enemyResources.gold, gr.gold),
+        favor: Math.max(this.enemyResources.favor, gr.favor),
+      };
+    }
+
     const bo = this.baseOffset;
     const ws = this.worldScale;
-    const pBaseX = -bo;
-    const pBaseZ = bo;
-    const eBaseX = bo;
-    const eBaseZ = -bo;
+    const rmsP1 = activeRms?.players[0];
+    const rmsP2 = activeRms && activeRms.players.length >= 2
+      ? activeRms.players[Math.floor(activeRms.players.length / 2)]
+      : undefined;
+    const pBaseX = rmsP1 ? rmsP1.x : -bo;
+    const pBaseZ = rmsP1 ? rmsP1.z : bo;
+    const eBaseX = rmsP2 ? rmsP2.x : bo;
+    const eBaseZ = rmsP2 ? rmsP2.z : -bo;
 
     // Player base (-bo, bo) — skipped in Nomad so players choose their own Town Center site
     if (!isNomad) {
@@ -1594,7 +1670,9 @@ export class AoMEngine {
       const selfTeam = rosterFactions[this.localSlotIndex]?.teamIndex ?? 1;
       let allySubIdx = 0;
       let enemySubIdx = 0;
-      const circularSpawns = isTotalWar
+      const circularSpawns = activeRms
+        ? activeRms.players.map((p) => ({ x: p.x, z: p.z }))
+        : isTotalWar
         ? computeTotalWarCircularSpawns(rosterFactions.length, this.playableHalfSize)
         : null;
 
@@ -1841,24 +1919,109 @@ export class AoMEngine {
       );
     }
 
-    // Collectible Relics scattered across map flanks
-    const relicDefs: [string, string, number, number][] = [
-      ['Cálice de Atena', '+15 Ouro & +2 Favor a cada 5s ao ser guardada no Templo', -20 * ws, -14 * ws],
-      ['Elmo de Aquiles', '+15 Alimento & +2 Favor a cada 5s ao ser guardada no Templo', 20 * ws, 14 * ws],
-      ['Lira de Apolo', '+15 Madeira & +2 Favor a cada 5s ao ser guardada no Templo', -10 * ws, 10 * ws],
-    ];
-    if (this.worldSize !== 'normal' || isTotalWar) {
-      relicDefs.push(['Escudo de Ájax', '+20 Ouro & +3 Favor a cada 5s ao ser guardada no Templo', 10 * ws, -10 * ws]);
+    // Spawn exact RMS-generated objects (Settlements, Gold, Berries, Trees, Fauna, Relics, Fish, Marine Life)
+    let rmsSpawnedRelics = 0;
+    if (activeRms) {
+      const relicNames = [
+        'Cálice de Atena',
+        'Elmo de Aquiles',
+        'Lira de Apolo',
+        'Escudo de Ájax',
+        'Velo de Ouro',
+        'Tridente de Nereu',
+        'Selo de Osíris',
+        'Anel de Draupnir',
+      ];
+      const relicBonuses = [
+        '+15 Ouro & +2 Favor a cada 5s ao ser guardada no Templo',
+        '+15 Alimento & +2 Favor a cada 5s ao ser guardada no Templo',
+        '+15 Madeira & +2 Favor a cada 5s ao ser guardada no Templo',
+        '+20 Ouro & +3 Favor a cada 5s ao ser guardada no Templo',
+      ];
+      for (const obj of activeRms.objects) {
+        if (obj.category === 'town_center' || obj.category === 'decor') continue;
+        const nearStartBase =
+          Math.hypot(obj.x - pBaseX, obj.z - pBaseZ) < 10 || Math.hypot(obj.x - eBaseX, obj.z - eBaseZ) < 10;
+
+        if (obj.category === 'settlement') {
+          if (!nearStartBase && groundHeightAt(obj.x, obj.z, mapId, this.worldSize) >= WATER_WALK_LIMIT) {
+            this.spawnSettlement(obj.x, obj.z);
+          }
+        } else if (obj.category === 'gold') {
+          if (!nearStartBase && groundHeightAt(obj.x, obj.z, mapId, this.worldSize) >= WATER_WALK_LIMIT && this.isClearOfSettlements(obj.x, obj.z, 3.4)) {
+            const gNode = this.spawnNode('gold_mine', obj.x, obj.z);
+            if (obj.amount) {
+              gNode.amount = obj.amount;
+              gNode.maxAmount = obj.amount;
+            }
+          }
+        } else if (obj.category === 'berry') {
+          if (groundHeightAt(obj.x, obj.z, mapId, this.worldSize) >= WATER_WALK_LIMIT && this.isClearOfSettlements(obj.x, obj.z, 3.2)) {
+            this.spawnNode('berry', obj.x, obj.z);
+          }
+        } else if (obj.category === 'tree') {
+          if (!nearStartBase && groundHeightAt(obj.x, obj.z, mapId, this.worldSize) >= WATER_WALK_LIMIT && this.isClearOfSettlements(obj.x, obj.z, 4.4)) {
+            this.spawnNode('tree', obj.x, obj.z);
+          }
+        } else if (obj.category === 'fauna') {
+          if (groundHeightAt(obj.x, obj.z, mapId, this.worldSize) >= WATER_WALK_LIMIT && this.isClearOfSettlements(obj.x, obj.z, 3.0)) {
+            this.spawnFauna(obj.faunaKind ?? 'deer', obj.x, obj.z);
+          }
+        } else if (obj.category === 'relic') {
+          if (groundHeightAt(obj.x, obj.z, mapId, this.worldSize) >= WATER_WALK_LIMIT && this.isClearOfSettlements(obj.x, obj.z, 3.2)) {
+            const idx = rmsSpawnedRelics++;
+            this.spawnRelic(
+              relicNames[idx % relicNames.length],
+              relicBonuses[idx % relicBonuses.length],
+              obj.x,
+              obj.z
+            );
+          }
+        } else if (obj.category === 'fish') {
+          if (groundHeightAt(obj.x, obj.z, mapId, this.worldSize) < WATER_WALK_LIMIT) {
+            const fishNode = this.spawnNode('fish_spot', obj.x, obj.z);
+            fishNode.subLabel = obj.subLabel ?? 'Cardume de Salmão';
+          }
+        } else if (obj.category === 'marine_decor') {
+          if (groundHeightAt(obj.x, obj.z, mapId, this.worldSize) < WATER_WALK_LIMIT) {
+            this.spawnFauna(obj.faunaKind ?? 'dolphin', obj.x, obj.z);
+          }
+        } else if (obj.category === 'vault' && !this.kothVaultMesh) {
+          const vaultMesh = createPlentyVaultMesh(this.palette, !this.isSoftwareGl);
+          vaultMesh.position.set(obj.x, groundHeightAt(obj.x, obj.z, mapId, this.worldSize), obj.z);
+          this.scene.add(vaultMesh);
+          this.kothVaultMesh = vaultMesh;
+        }
+      }
+
+      if (!isTitlePreview) {
+        const msg =
+          activeRms.triggersSummary.introMessage ||
+          `${activeRms.title} — Semente ${activeRms.seed} (${activeRms.areas.length} áreas, ${activeRms.objects.length} objetos)`;
+        this.notifyStatus(`🗺️ RMS: ${msg}`);
+      }
     }
-    if (isTotalWar) {
-      relicDefs.push(
-        ['Velo de Ouro', '+20 Alimento & +3 Favor a cada 5s ao ser guardada no Templo', -26 * ws, -26 * ws],
-        ['Tridente de Nereu', '+20 Madeira & +3 Favor a cada 5s ao ser guardada no Templo', 26 * ws, 26 * ws]
-      );
-    }
-    for (const [rName, rBonus, rx, rz] of relicDefs) {
-      if (groundHeightAt(rx, rz, mapId, this.worldSize) >= WATER_WALK_LIMIT && this.isClearOfSettlements(rx, rz, 3.5)) {
-        this.spawnRelic(rName, rBonus, rx, rz);
+
+    // Collectible Relics scattered across map flanks (skipped when RMS script already placed relics)
+    if (rmsSpawnedRelics === 0) {
+      const relicDefs: [string, string, number, number][] = [
+        ['Cálice de Atena', '+15 Ouro & +2 Favor a cada 5s ao ser guardada no Templo', -20 * ws, -14 * ws],
+        ['Elmo de Aquiles', '+15 Alimento & +2 Favor a cada 5s ao ser guardada no Templo', 20 * ws, 14 * ws],
+        ['Lira de Apolo', '+15 Madeira & +2 Favor a cada 5s ao ser guardada no Templo', -10 * ws, 10 * ws],
+      ];
+      if (this.worldSize !== 'normal' || isTotalWar) {
+        relicDefs.push(['Escudo de Ájax', '+20 Ouro & +3 Favor a cada 5s ao ser guardada no Templo', 10 * ws, -10 * ws]);
+      }
+      if (isTotalWar) {
+        relicDefs.push(
+          ['Velo de Ouro', '+20 Alimento & +3 Favor a cada 5s ao ser guardada no Templo', -26 * ws, -26 * ws],
+          ['Tridente de Nereu', '+20 Madeira & +3 Favor a cada 5s ao ser guardada no Templo', 26 * ws, 26 * ws]
+        );
+      }
+      for (const [rName, rBonus, rx, rz] of relicDefs) {
+        if (groundHeightAt(rx, rz, mapId, this.worldSize) >= WATER_WALK_LIMIT && this.isClearOfSettlements(rx, rz, 3.5)) {
+          this.spawnRelic(rName, rBonus, rx, rz);
+        }
       }
     }
 
