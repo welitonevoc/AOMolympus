@@ -1069,7 +1069,7 @@ export function createBuildingMesh(
   }
 
   if (look.style === 'norse') {
-    const built = createNorseBuildingMesh(kind, team, pal, enableShadows, age, pantheon);
+    const built = createNorseBuildingMesh(kind, team, pal, enableShadows, age, pantheon, majorGod);
     root.add(built.group);
     if (built.beaconCrystal) {
       root.userData.beaconCrystal = built.beaconCrystal;
@@ -1089,7 +1089,7 @@ export function createBuildingMesh(
   }
 
   if (look.style === 'egyptian') {
-    const built = createEgyptianBuildingMesh(kind, team, pal, enableShadows, age, pantheon);
+    const built = createEgyptianBuildingMesh(kind, team, pal, enableShadows, age, pantheon, majorGod);
     root.add(built.group);
     if (built.beaconCrystal) {
       root.userData.beaconCrystal = built.beaconCrystal;
@@ -1129,7 +1129,7 @@ export function createBuildingMesh(
   }
 
   if (look.style === 'atlantean') {
-    const built = createAtlanteanBuildingMesh(kind, team, pal, enableShadows, age, pantheon);
+    const built = createAtlanteanBuildingMesh(kind, team, pal, enableShadows, age, pantheon, majorGod);
     root.add(built.group);
     if (built.beaconCrystal) {
       root.userData.beaconCrystal = built.beaconCrystal;

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { BuildingKind, PantheonId, TeamId } from '../../game/types';
+import { buildProceduralEgyptianTemple } from './egyptianTempleModel';
 
 // ─── Procedural Egyptian Sandstone, Hieroglyph, Lapis & Gold Textures ───────
 
@@ -540,49 +541,13 @@ function buildEgyptianBarracks(group: THREE.Group, mats: EgyptianMaterials): voi
 
 // ─── 3. GRAND TEMPLE OF RA / ISIS (Templo Sagrado Egípcio) ───────────────────
 
-function buildEgyptianTemple(group: THREE.Group, mats: EgyptianMaterials): { beaconCrystal: THREE.Object3D } {
-  const base = new THREE.Mesh(
-    new THREE.BoxGeometry(4.6, 0.4, 4.6),
-    mats.sandstoneDark
-  );
-  base.position.y = 0.2;
-  group.add(base);
-
-  const pyramidBody = new THREE.Mesh(
-    new THREE.ConeGeometry(3.3, 3.4, 4),
-    mats.sandstone
-  );
-  pyramidBody.position.y = 0.4 + 1.7;
-  pyramidBody.rotation.y = Math.PI / 4;
-  group.add(pyramidBody);
-
-  // Four Guardian Sphinx Statues at the Base Corners
-  for (const [sx, sz] of [
-    [-1.7, -1.7],
-    [1.7, -1.7],
-    [-1.7, 1.7],
-    [1.7, 1.7],
-  ]) {
-    const sphinx = buildCrouchingSphinx(mats);
-    sphinx.position.set(sx, 0.4, sz);
-    sphinx.rotation.y = Math.atan2(sx, sz);
-    group.add(sphinx);
-  }
-
-  // Sacred Canopic Relic Shrine beside temple steps
-  const relicShrine = buildCanopicRelicShrine(mats);
-  relicShrine.position.set(0, 0.4, 2.15);
-  group.add(relicShrine);
-
-  // Golden Solar Beacon Crystal hovering above Pyramid Apex
-  const beaconCrystal = new THREE.Mesh(
-    new THREE.OctahedronGeometry(0.42, 0),
-    mats.goldSolar
-  );
-  beaconCrystal.position.y = 4.4;
-  group.add(beaconCrystal);
-
-  return { beaconCrystal };
+function buildEgyptianTemple(
+  group: THREE.Group,
+  _mats: EgyptianMaterials,
+  age: number = 1,
+  godKey: string = 'ra'
+): { beaconCrystal: THREE.Object3D } {
+  return buildProceduralEgyptianTemple(group, age, godKey);
 }
 
 // ─── 4. FORTRESS (Migdal Citadel / Fortaleza) ───────────────────────────────
@@ -785,7 +750,8 @@ export function createEgyptianBuildingMesh(
   pal: any,
   enableShadows = true,
   age = 1,
-  pantheon: PantheonId = 'egyptian'
+  pantheon: PantheonId = 'egyptian',
+  majorGod?: string
 ): EgyptianBuildingBuildResult {
   const group = new THREE.Group();
   const mats = createEgyptianMaterials(team, pal);
@@ -819,12 +785,14 @@ export function createEgyptianBuildingMesh(
       barWidth = 2.55;
       break;
     case 'temple': {
-      const res = buildEgyptianTemple(group, mats);
+      const rawGod = (majorGod || String(pantheon || 'ra')).toLowerCase();
+      const effGod = rawGod.includes('isis') ? 'isis' : rawGod.includes('set') ? 'set' : 'ra';
+      const res = buildEgyptianTemple(group, mats, age, effGod);
       beaconCrystal = res.beaconCrystal;
-      group.scale.setScalar(1.82);
-      markerRadius = 3.1;
-      barHeight = 5.8;
-      barWidth = 2.9;
+      group.scale.setScalar(1.2 + (age - 1) * 0.08);
+      markerRadius = 2.6 + (age - 1) * 0.15;
+      barHeight = 4.4 + (age - 1) * 0.3;
+      barWidth = 2.6 + (age - 1) * 0.1;
       break;
     }
     case 'fortress':

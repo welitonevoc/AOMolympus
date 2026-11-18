@@ -1,6 +1,9 @@
 import * as THREE from 'three';
 import { TeamId } from '../../game/types';
 import { MaterialPalette } from '../../game/models';
+import { buildMedusa as buildZeusMedusaModel, animateMedusaModel } from './zeusMedusaModel';
+import { buildZeusHydra as buildZeusHydraModel, animateHydraModel } from './zeusHydraModel';
+import { buildZeusColossus as buildZeusColossusModel, animateColossusModel } from './zeusColossusModel';
 
 export type ZeusMythOrHeroKind =
   | 'cyclops'
@@ -647,226 +650,48 @@ function buildManticore(team: TeamId, pal: MaterialPalette, enableShadows: boole
 // ============================================================================
 // 3. MEDUSA (Coiled Serpent Lower Body + Writhing Snake Hair + Petrifying Bow)
 // ============================================================================
-function buildMedusa(team: TeamId, pal: MaterialPalette, enableShadows: boolean): THREE.Group {
-  const root = new THREE.Group();
-  const geos = getSculptGeos();
-  const tex = getMythTextures();
-  const teamMat = team === 'player' ? pal.tunicPlayer : pal.tunicEnemy;
-  const scaleMat = new THREE.MeshStandardMaterial({ map: tex.serpentScales, roughness: 0.45, metalness: 0.2 });
-
-  // Coiled serpent lower body
-  const coilBase = new THREE.Mesh(new THREE.TorusGeometry(0.36, 0.14, 10, 22), scaleMat);
-  coilBase.rotation.x = Math.PI / 2;
-  coilBase.position.y = 0.14;
-  const coilMid = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.28, 0.62, 12), scaleMat);
-  coilMid.position.y = 0.44;
-  const tailTip = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.65, 8), scaleMat);
-  tailTip.rotation.x = -Math.PI / 2.4;
-  tailTip.position.set(0, 0.16, -0.52);
-  root.add(coilBase, coilMid, tailTip);
-
-  // Upper armored Gorgon torso
-  const torso = new THREE.Mesh(geos.humanTorso, pal.bronze);
-  torso.position.y = 0.72;
-  const sash = new THREE.Mesh(new THREE.CylinderGeometry(0.21, 0.24, 0.22, 10), teamMat);
-  sash.position.y = 0.78;
-  const head = new THREE.Mesh(new THREE.SphereGeometry(0.19, 12, 10), scaleMat);
-  head.position.set(0, 1.48, 0);
-  const eyeGlow = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.045, 0.08), pal.crystalGlow);
-  eyeGlow.position.set(0, 1.5, 0.16);
-  root.add(torso, sash, head, eyeGlow);
-
-  // Crown of Writhing Snakes
-  for (let i = 0; i < 7; i++) {
-    const ang = (i / 7) * Math.PI * 2;
-    const snake = new THREE.Mesh(new THREE.ConeGeometry(0.045, 0.34, 6), pal.jade);
-    snake.position.set(Math.cos(ang) * 0.18, 1.66, Math.sin(ang) * 0.18);
-    snake.rotation.z = -Math.cos(ang) * 0.6;
-    snake.rotation.x = Math.sin(ang) * 0.6;
-    root.add(snake);
-  }
-
-  const leftArm = new THREE.Group();
-  leftArm.position.set(-0.26, 1.18, 0.1);
-  const bow = new THREE.Mesh(geos.recurveBow, pal.gold);
-  bow.position.set(0, 0, 0.22);
-  const petrifyArrow = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.65, 6), pal.crystalGlow);
-  petrifyArrow.rotation.x = Math.PI / 2;
-  petrifyArrow.position.set(0, 0, 0.28);
-  leftArm.add(bow, petrifyArrow);
-  root.add(leftArm);
-
-  const rightArm = new THREE.Mesh(geos.heroLimb, scaleMat);
-  rightArm.position.set(0.26, 1.04, 0.08);
-  root.add(rightArm);
-
-  setPoseHelper(root, { leftArm, rightArm, torso, tail: tailTip });
-  makeShadows(root, enableShadows);
-  return root;
-}
-
-// ============================================================================
-// 4. HYDRA (Multi-headed 5-Necked Scaled Swamp Dragon)
-// ============================================================================
-function buildHydra(team: TeamId, pal: MaterialPalette, enableShadows: boolean): THREE.Group {
-  const root = new THREE.Group();
-  const geos = getSculptGeos();
-  const tex = getMythTextures();
-  const teamMat = team === 'player' ? pal.tunicPlayer : pal.tunicEnemy;
-  const scaleMat = new THREE.MeshStandardMaterial({ map: tex.serpentScales, roughness: 0.42, metalness: 0.22 });
-
-  const body = new THREE.Mesh(geos.horseBody, scaleMat);
-  body.scale.set(1.55, 1.25, 1.35);
-  body.position.set(0, 0.85, -0.1);
-  const crest = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.42, 1.25), teamMat);
-  crest.position.set(0, 1.32, -0.1);
-  root.add(body, crest);
-
-  const leftLeg = new THREE.Mesh(geos.giantLimb, scaleMat);
-  leftLeg.scale.setScalar(0.72);
-  leftLeg.position.set(-0.44, 0.42, 0.45);
-  const rightLeg = new THREE.Mesh(geos.giantLimb, scaleMat);
-  rightLeg.scale.setScalar(0.72);
-  rightLeg.position.set(0.44, 0.42, 0.45);
-  const backL = new THREE.Mesh(geos.giantLimb, scaleMat);
-  backL.scale.setScalar(0.72);
-  backL.position.set(-0.44, 0.42, -0.58);
-  const backR = new THREE.Mesh(geos.giantLimb, scaleMat);
-  backR.scale.setScalar(0.72);
-  backR.position.set(0.44, 0.42, -0.58);
-  root.add(leftLeg, rightLeg, backL, backR);
-
-  const tail = new THREE.Mesh(new THREE.ConeGeometry(0.22, 1.45, 8), scaleMat);
-  tail.rotation.x = -Math.PI / 2.2;
-  tail.position.set(0, 0.72, -1.25);
-  root.add(tail);
-
-  // 5 Sinuous Dragon Necks & Horned Heads
-  const headGroups: THREE.Group[] = [];
-  const neckAngles = [-0.48, -0.24, 0, 0.24, 0.48];
-  for (let i = 0; i < neckAngles.length; i++) {
-    const nGrp = new THREE.Group();
-    nGrp.position.set(neckAngles[i] * 0.75, 1.15, 0.56);
-    nGrp.rotation.y = neckAngles[i] * 0.65;
-    nGrp.rotation.x = 0.28 + (i % 2) * 0.14;
-
-    const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.16, 1.05, 8), scaleMat);
-    neck.position.y = 0.5;
-    const dHead = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.22, 0.44), scaleMat);
-    dHead.position.set(0, 1.06, 0.14);
-    const crestHorn = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.26, 6), pal.gold);
-    crestHorn.rotation.x = -0.55;
-    crestHorn.position.set(0, 1.24, 0.02);
-    const fangs = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.14, 5), pal.ivory);
-    fangs.rotation.x = Math.PI;
-    fangs.position.set(0, 0.94, 0.3);
-    nGrp.add(neck, dHead, crestHorn, fangs);
-    root.add(nGrp);
-    headGroups.push(nGrp);
-  }
-
-  let hydraClock = 0;
-  root.userData.leftLeg = leftLeg;
-  root.userData.rightLeg = rightLeg;
+function buildMedusa(team: TeamId, _pal: MaterialPalette, enableShadows: boolean): THREE.Group {
+  const model = buildZeusMedusaModel({ teamId: team, scale: 0.85 });
+  const root = model.root;
+  let elapsed = 0;
   root.userData.animatePose = (dt: number, moving: boolean, speed: number, attackT: number | null) => {
-    hydraClock += dt * (moving ? Math.max(4, speed * 1.8) : 3.2);
-    if (moving) {
-      const s = Math.sin(hydraClock) * 0.42;
-      leftLeg.rotation.x = s;
-      rightLeg.rotation.x = -s;
-      backL.rotation.x = -s;
-      backR.rotation.x = s;
-    } else {
-      leftLeg.rotation.x = THREE.MathUtils.damp(leftLeg.rotation.x, 0, 8, dt);
-      rightLeg.rotation.x = THREE.MathUtils.damp(rightLeg.rotation.x, 0, 8, dt);
-      backL.rotation.x = THREE.MathUtils.damp(backL.rotation.x, 0, 8, dt);
-      backR.rotation.x = THREE.MathUtils.damp(backR.rotation.x, 0, 8, dt);
-    }
-    const strike = attackT !== null ? Math.sin(attackT * Math.PI) * 0.62 : 0;
-    for (let i = 0; i < headGroups.length; i++) {
-      const wave = Math.sin(hydraClock + i * 1.1) * 0.14;
-      headGroups[i].rotation.x = 0.28 + wave + strike;
-    }
-    tail.rotation.y = Math.sin(hydraClock * 0.9) * 0.22;
+    elapsed += dt * (moving ? Math.max(3, speed * 1.5) : 2.0);
+    const mode = attackT !== null ? 'flechas' : (moving ? 'auto' : 'vigilia');
+    animateMedusaModel(model, elapsed, mode, false, attackT !== null ? attackT : 0);
   };
-
   makeShadows(root, enableShadows);
   return root;
 }
 
 // ============================================================================
-// 5. COLOSSUS (Towering Hephaestus Bronze Giant with Molten Forge Veins)
+// 4. HYDRA (Multi-headed 5-Necked Scaled Dragon • Evolutive Heads)
 // ============================================================================
-function buildColossus(team: TeamId, pal: MaterialPalette, enableShadows: boolean): THREE.Group {
-  const root = new THREE.Group();
-  const geos = getSculptGeos();
-  const tex = getMythTextures();
-  const teamMat = team === 'player' ? pal.tunicPlayer : pal.tunicEnemy;
-  const bronzeMat = new THREE.MeshStandardMaterial({
-    map: tex.colossusBronze,
-    roughness: 0.32,
-    metalness: 0.88,
-    emissive: 0x9a3412,
-    emissiveIntensity: 0.25,
-  });
-  const moltenMat = new THREE.MeshStandardMaterial({
-    color: 0xfdba74,
-    emissive: 0xf97316,
-    emissiveIntensity: 1.4,
-    roughness: 0.25,
-  });
+function buildHydra(team: TeamId, _pal: MaterialPalette, enableShadows: boolean): THREE.Group {
+  const model = buildZeusHydraModel({ teamId: team, scale: 0.82 });
+  const root = model.root;
+  let elapsed = 0;
+  root.userData.animatePose = (dt: number, moving: boolean, speed: number, attackT: number | null) => {
+    elapsed += dt * (moving ? Math.max(3.5, speed * 1.8) : 2.2);
+    const biteStrike = attackT !== null ? Math.sin(attackT * Math.PI) * 1.2 : 0;
+    animateHydraModel(model, elapsed, dt, biteStrike, moving);
+  };
+  makeShadows(root, enableShadows);
+  return root;
+}
 
-  const leftLeg = new THREE.Mesh(geos.giantLimb, bronzeMat);
-  leftLeg.scale.set(1.15, 1.15, 1.15);
-  leftLeg.position.set(-0.36, 0.66, 0);
-  const rightLeg = new THREE.Mesh(geos.giantLimb, bronzeMat);
-  rightLeg.scale.set(1.15, 1.15, 1.15);
-  rightLeg.position.set(0.36, 0.66, 0);
-  root.add(leftLeg, rightLeg);
-
-  const torso = new THREE.Mesh(geos.humanTorso, bronzeMat);
-  torso.scale.set(2.55, 2.3, 2.15);
-  torso.position.y = 1.24;
-  const core = new THREE.Mesh(new THREE.OctahedronGeometry(0.32, 0), moltenMat);
-  core.position.set(0, 2.02, 0.45);
-  const belt = new THREE.Mesh(new THREE.BoxGeometry(1.18, 0.26, 0.96), teamMat);
-  belt.position.y = 1.34;
-  const pL = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.42, 0.64), pal.gold);
-  pL.position.set(-0.78, 2.38, 0);
-  pL.rotation.z = 0.22;
-  const pR = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.42, 0.64), pal.gold);
-  pR.position.set(0.78, 2.38, 0);
-  pR.rotation.z = -0.22;
-  const helm = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.38, 0.56, 8), bronzeMat);
-  helm.position.set(0, 2.86, 0);
-  const visor = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.08, 0.14), moltenMat);
-  visor.position.set(0, 2.88, 0.32);
-  const crown = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.36, 0.12, 8), pal.gold);
-  crown.position.set(0, 3.16, 0);
-  root.add(torso, core, belt, pL, pR, helm, visor, crown);
-
-  const leftArm = new THREE.Group();
-  leftArm.position.set(-0.88, 2.28, 0);
-  const lLimb = new THREE.Mesh(geos.giantLimb, bronzeMat);
-  lLimb.position.y = -0.36;
-  const fistL = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.36, 0.38), pal.gold);
-  fistL.position.y = -0.92;
-  leftArm.add(lLimb, fistL);
-  root.add(leftArm);
-
-  const rightArm = new THREE.Group();
-  rightArm.position.set(0.88, 2.28, 0);
-  const rLimb = new THREE.Mesh(geos.giantLimb, bronzeMat);
-  rLimb.position.y = -0.36;
-  const hammerShaft = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.065, 1.8, 8), pal.steel);
-  hammerShaft.rotation.x = Math.PI / 2.2;
-  hammerShaft.position.set(0, -0.78, 0.68);
-  const hammerHead = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.52, 0.72), bronzeMat);
-  hammerHead.position.set(0, -0.68, 1.48);
-  rightArm.add(rLimb, hammerShaft, hammerHead);
-  root.add(rightArm);
-
-  setPoseHelper(root, { leftLeg, rightLeg, leftArm, rightArm, torso });
+// ============================================================================
+// 5. COLOSSUS (Towering Hephaestus Bronze Giant with Zeus Lightning Cuirass)
+// ============================================================================
+function buildColossus(team: TeamId, _pal: MaterialPalette, enableShadows: boolean): THREE.Group {
+  const model = buildZeusColossusModel({ teamId: team, tier: 1, scale: 0.75 });
+  const root = model.root;
+  let elapsed = 0;
+  root.userData.animatePose = (dt: number, moving: boolean, speed: number, attackT: number | null) => {
+    elapsed += dt * (moving ? Math.max(3.2, speed * 1.6) : 2.0);
+    const action = attackT !== null ? 'slam' : (moving ? 'marcha' : 'vigilia');
+    const attackProgress = attackT !== null ? attackT : 0;
+    animateColossusModel(model, elapsed, dt, action, attackProgress);
+  };
   makeShadows(root, enableShadows);
   return root;
 }

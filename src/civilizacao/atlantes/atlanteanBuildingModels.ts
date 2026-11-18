@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { BuildingKind, PantheonId, TeamId } from '../../game/types';
+import { buildAtlanteanFortress as buildProceduralAtlanteanFortress } from './atlanteanFortressModel';
 
 // ─── Procedural Atlantean Obsidian & Orichalcum Textures ─────────────────────
 
@@ -493,18 +494,19 @@ function buildAtlanteanTemple(group: THREE.Group, mats: AtlanteanMaterials): { b
   return { beaconCrystal };
 }
 
-function buildAtlanteanFortress(group: THREE.Group, mats: AtlanteanMaterials): void {
-  const base = new THREE.Mesh(new THREE.BoxGeometry(4.8, 0.45, 4.8), mats.obsidianDark);
-  base.position.y = 0.225;
-  group.add(base);
-  const keep = new THREE.Mesh(new THREE.BoxGeometry(3.2, 3.0, 3.2), mats.obsidian);
-  keep.position.set(0, 0.45 + 1.5, 0);
-  group.add(keep);
-  for (const [bx, bz] of [[-1.8, -1.8], [1.8, -1.8], [-1.8, 1.8], [1.8, 1.8]]) {
-    const bastion = new THREE.Mesh(new THREE.BoxGeometry(1.1, 3.6, 1.1), mats.orichalcum);
-    bastion.position.set(bx, 0.45 + 1.8, bz);
-    group.add(bastion);
-  }
+function buildAtlanteanFortress(
+  group: THREE.Group,
+  _mats: AtlanteanMaterials,
+  age: number = 3,
+  godKey: string = 'kronos'
+): { metropolisHalo?: THREE.Object3D; metropolisCrystal?: THREE.Object3D } {
+  const effTier = age >= 4 ? 4 : 3;
+  const fortress = buildProceduralAtlanteanFortress(godKey, effTier, true);
+  group.add(fortress.root);
+  return {
+    metropolisHalo: fortress.divineRing,
+    metropolisCrystal: fortress.coreCrystal
+  };
 }
 
 function buildAtlanteanHouse(group: THREE.Group, mats: AtlanteanMaterials): void {
@@ -573,7 +575,8 @@ export function createAtlanteanBuildingMesh(
   pal: any,
   enableShadows = true,
   age = 1,
-  pantheon: PantheonId = 'atlantean'
+  pantheon: PantheonId = 'atlantean',
+  majorGod?: string
 ): AtlanteanBuildingBuildResult {
   const group = new THREE.Group();
   const mats = createAtlanteanMaterials(team, pal);
@@ -648,13 +651,23 @@ export function createAtlanteanBuildingMesh(
       barWidth = 2.8;
       break;
     }
-    case 'fortress':
-      buildAtlanteanFortress(group, mats);
-      group.scale.setScalar(1.68);
-      markerRadius = 3.4;
-      barHeight = 5.0;
-      barWidth = 3.2;
+    case 'fortress': {
+      const rawGod = (majorGod || String(pantheon || 'kronos')).toLowerCase();
+      const effGod =
+        rawGod.includes('oranos') || rawGod.includes('urano')
+          ? 'oranos'
+          : rawGod.includes('gaia')
+          ? 'gaia'
+          : 'kronos';
+      const res = buildAtlanteanFortress(group, mats, age, effGod);
+      metropolisHalo = res.metropolisHalo;
+      metropolisCrystal = res.metropolisCrystal;
+      group.scale.setScalar(1.22 + (age - 3) * 0.05);
+      markerRadius = 3.4 + (age - 3) * 0.25;
+      barHeight = 5.0 + (age - 3) * 0.45;
+      barWidth = 3.2 + (age - 3) * 0.15;
       break;
+    }
     case 'house':
       buildAtlanteanHouse(group, mats);
       group.scale.setScalar(1.45);

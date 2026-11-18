@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { BuildingKind, PantheonId, TeamId } from '../../game/types';
 import { buildGreekFortress as buildProceduralGreekFortress } from './greekFortressModel';
+import { buildProceduralGreekTemple } from './greekTempleModel';
 
 // ─── Procedural Greek Marble, Terracotta & Bronze Textures ─────────────────
 
@@ -606,30 +607,13 @@ function buildGreekMarket(group: THREE.Group, mats: GreekMaterials): void {
 
 // ─── Other Greek buildings ──────────────────────────────────────────────────
 
-function buildGreekTemple(group: THREE.Group, mats: GreekMaterials): { beaconCrystal: THREE.Object3D } {
-  for (let s = 0; s < 3; s++) {
-    const step = new THREE.Mesh(new THREE.BoxGeometry(4.8 - s * 0.25, 0.14, 4.8 - s * 0.25), mats.marble);
-    step.position.y = 0.07 + s * 0.14;
-    group.add(step);
-  }
-
-  for (const x of [-1.8, 1.8]) {
-    for (let z = -1.8; z <= 1.8; z += 1.2) {
-      const col = buildDoricColumn(2.5, mats);
-      col.position.set(x, 0.42, z);
-      group.add(col);
-    }
-  }
-
-  const cella = new THREE.Mesh(new THREE.BoxGeometry(2.4, 2.3, 3.0), mats.marble);
-  cella.position.set(0, 0.42 + 1.15, 0);
-  group.add(cella);
-
-  const beaconCrystal = new THREE.Mesh(new THREE.OctahedronGeometry(0.5, 0), mats.olympianGlow);
-  beaconCrystal.position.y = 4.4;
-  group.add(beaconCrystal);
-
-  return { beaconCrystal };
+function buildGreekTemple(
+  group: THREE.Group,
+  _mats: GreekMaterials,
+  age: number = 1,
+  godKey: string = 'zeus'
+): { beaconCrystal: THREE.Object3D } {
+  return buildProceduralGreekTemple(group, age, godKey);
 }
 
 function buildGreekFortress(
@@ -788,12 +772,14 @@ export function createGreekBuildingMesh(
       barWidth = 2.4;
       break;
     case 'temple': {
-      const res = buildGreekTemple(group, mats);
+      const rawGod = (majorGod || String(pantheon || 'zeus')).toLowerCase();
+      const effGod = rawGod.includes('poseidon') ? 'poseidon' : rawGod.includes('hades') ? 'hades' : 'zeus';
+      const res = buildGreekTemple(group, mats, age, effGod);
       beaconCrystal = res.beaconCrystal;
-      group.scale.setScalar(1.8);
-      markerRadius = 3.0;
-      barHeight = 5.6;
-      barWidth = 2.8;
+      group.scale.setScalar(1.2 + (age - 1) * 0.08);
+      markerRadius = 2.6 + (age - 1) * 0.15;
+      barHeight = 4.4 + (age - 1) * 0.3;
+      barWidth = 2.6 + (age - 1) * 0.1;
       break;
     }
     case 'fortress': {

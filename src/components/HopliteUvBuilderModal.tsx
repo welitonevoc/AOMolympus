@@ -118,6 +118,44 @@ import {
   GreekFortressAction,
 } from '../civilizacao/gregos/greekFortressModel';
 import {
+  buildAtlanteanFortress as buildAtlanteanFortressStudio,
+  ATLANTEAN_FORTRESS_THEMES,
+  AtlanteanFortressAction,
+} from '../civilizacao/atlantes/atlanteanFortressModel';
+import {
+  buildNorseHillFort as buildNorseFortressStudio,
+  NORSE_FORTRESS_THEMES,
+  NorseFortressAction,
+} from '../civilizacao/nordicos/norseFortressModel';
+import {
+  buildGreekTempleStudio,
+  GREEK_TEMPLE_THEMES,
+  GreekTempleGodKey,
+  GreekTempleAction,
+} from '../civilizacao/gregos/greekTempleModel';
+import {
+  buildEgyptianTempleStudio,
+  EGYPT_TEMPLE_THEMES,
+  EgyptianTempleGodKey,
+  EgyptianTempleAction,
+} from '../civilizacao/egipcios/egyptianTempleModel';
+import {
+  buildMedusa as buildStudioMedusa,
+  animateMedusaModel as animateStudioMedusa,
+  MedusaBuildResult,
+} from '../civilizacao/gregos/zeusMedusaModel';
+import {
+  buildZeusColossus as buildStudioColossus,
+  animateColossusModel as animateStudioColossus,
+  COLOSSUS_TIERS,
+  ColossusBuildResult,
+} from '../civilizacao/gregos/zeusColossusModel';
+import {
+  buildZeusHydra as buildStudioHydra,
+  animateHydraModel as animateStudioHydra,
+  HydraBuildResult,
+} from '../civilizacao/gregos/zeusHydraModel';
+import {
   animateZeus,
   buildZeus,
   createZeusTempleEnvironment,
@@ -499,12 +537,48 @@ export function HopliteUvBuilderModal({
   const [norseWorkerMode, setNorseWorkerMode] = useState<NorseWorkerRole | 'todos'>('todos');
   const [norseWorkerTask, setNorseWorkerTask] = useState<NorseWorkerTask>('vigilia');
   const [fortressAction, setFortressAction] = useState<GreekFortressAction>('guarnicao');
+  const [atlanteanFortressAction, setAtlanteanFortressAction] = useState<AtlanteanFortressAction>('guarnicao');
+  const [norseFortressAction, setNorseFortressAction] = useState<NorseFortressAction>('guarnicao');
+  const [templeAction, setTempleAction] = useState<'favor' | 'milagre'>('favor');
   const [focusDivine, setFocusDivine] = useState<boolean>(false);
   const [myrmidonFury, setMyrmidonFury] = useState<boolean>(true);
 
+  // Zeus Myth Units Studio States
+  const [medusaMode, setMedusaMode] = useState<'auto' | 'flechas' | 'vigilia'>('auto');
+  const [medusaGazeCooldown, setMedusaGazeCooldown] = useState<number>(0);
+  const [colossusTier, setColossusTier] = useState<number>(1);
+  const [colossusAction, setColossusAction] = useState<'slam' | 'marcha' | 'eat_tree' | 'vigilia'>('slam');
+  const [hydraActionMode, setHydraActionMode] = useState<'combate' | 'vigilia' | 'manual_bite'>('combate');
+  const [hydraTargetCount, setHydraTargetCount] = useState<number>(1);
+  const [hydraHeads, setHydraHeads] = useState<number>(1);
+  const [hydraTotalDamage, setHydraTotalDamage] = useState<number>(0);
+  const [hydraTotalHits, setHydraTotalHits] = useState<number>(0);
+
   // Refs synced without recreating WebGLRenderer
+  const medusaModeRef = useRef(medusaMode);
+  medusaModeRef.current = medusaMode;
+  const medusaGazeCooldownRef = useRef(medusaGazeCooldown);
+  medusaGazeCooldownRef.current = medusaGazeCooldown;
+  const colossusTierRef = useRef(colossusTier);
+  colossusTierRef.current = colossusTier;
+  const colossusActionRef = useRef(colossusAction);
+  colossusActionRef.current = colossusAction;
+  const hydraActionModeRef = useRef(hydraActionMode);
+  hydraActionModeRef.current = hydraActionMode;
+  const hydraTargetCountRef = useRef(hydraTargetCount);
+  hydraTargetCountRef.current = hydraTargetCount;
+  const hydraHeadsRef = useRef(hydraHeads);
+  hydraHeadsRef.current = hydraHeads;
+  const hydraTotalDamageRef = useRef(hydraTotalDamage);
+  hydraTotalDamageRef.current = hydraTotalDamage;
   const fortressActionRef = useRef(fortressAction);
   fortressActionRef.current = fortressAction;
+  const atlanteanFortressActionRef = useRef(atlanteanFortressAction);
+  atlanteanFortressActionRef.current = atlanteanFortressAction;
+  const norseFortressActionRef = useRef(norseFortressAction);
+  norseFortressActionRef.current = norseFortressAction;
+  const templeActionRef = useRef(templeAction);
+  templeActionRef.current = templeAction;
   const animStateRef = useRef(animState);
   animStateRef.current = animState;
   const autoRotateRef = useRef(autoRotate3D);
@@ -697,9 +771,20 @@ export function HopliteUvBuilderModal({
       };
     }
     if (galleryCategory === 'building') {
-      const dist = buildingAge === 5 ? 10.4 : 8.6;
+      const isTemple = selectedBuilding === 'temple';
+      if (isTemple && focusHead) {
+        const dist = 5.2;
+        const ty = buildingAge === 5 ? 2.25 : 1.45;
+        return {
+          target: [0, ty, 0],
+          offset: [dist * 0.25, dist * 0.20, dist * 0.94],
+          baseDist: dist,
+        };
+      }
+      const dist = isTemple ? (buildingAge === 5 ? 13.0 : 8.5 + (buildingAge - 1) * 1.0) : (buildingAge === 5 ? 10.4 : 8.6);
+      const ty = isTemple ? 1.45 + buildingAge * 0.12 : 1.55;
       return {
-        target: [0, 1.55, 0],
+        target: [0, ty, 0],
         offset: [dist * 0.64, dist * 0.44, dist * 0.64],
         baseDist: dist,
       };
@@ -720,6 +805,35 @@ export function HopliteUvBuilderModal({
       return {
         target: [0, focusY, 0],
         offset: [0, dist * 0.14, dist],
+        baseDist: dist,
+      };
+    }
+
+    if (selectedCiv === 'greek' && selectedUnit === 'medusa') {
+      const dist = focusHead ? 3.2 : 5.4;
+      const fy = focusHead ? 1.6 : 1.35;
+      return {
+        target: [0, fy, 0.2],
+        offset: [dist * 0.35, dist * 0.22, dist * 0.9],
+        baseDist: dist,
+      };
+    }
+    if (selectedCiv === 'greek' && selectedUnit === 'colossus') {
+      const dist = focusHead ? 4.2 : 7.6;
+      const fy = focusHead ? 3.0 : 2.1;
+      return {
+        target: [0, fy, 0],
+        offset: [dist * 0.42, dist * 0.26, dist * 0.86],
+        baseDist: dist,
+      };
+    }
+    if (selectedCiv === 'greek' && selectedUnit === 'hydra') {
+      const dist = focusHead ? 5.2 : 8.8;
+      const fy = focusHead ? 2.05 : 1.45;
+      const fz = focusHead ? 0.25 : 0.75;
+      return {
+        target: [0, fy, fz],
+        offset: [dist * 0.38, dist * 0.26, dist * 0.88],
         baseDist: dist,
       };
     }
@@ -837,10 +951,12 @@ export function HopliteUvBuilderModal({
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [isOpen, onClose]);
 
-  // Smoothly update camera focus when toggling focusDivine on Gods
+  // Smoothly update camera focus when toggling focusDivine on Gods or Temples
   useEffect(() => {
-    if (!isOpen || galleryCategory !== 'unit') return;
-    if (!isGreekOrEgyptianGod(selectedUnit, selectedCiv)) return;
+    if (!isOpen) return;
+    const isTemple = galleryCategory === 'building' && selectedBuilding === 'temple';
+    const isGod = galleryCategory === 'unit' && isGreekOrEgyptianGod(selectedUnit, selectedCiv);
+    if (!isTemple && !isGod) return;
     const framing = getFramingForSubject(focusDivine);
     const ctrl = controlsRef.current;
     const cam = cameraRef.current;
@@ -1703,6 +1819,412 @@ export function HopliteUvBuilderModal({
                 activeArrows.splice(i, 1);
               }
             }
+          };
+        } else if (selectedCiv === 'atlantean' && selectedBuilding === 'fortress') {
+          const rawGod = selectedMajorGod.toLowerCase();
+          const godKey = (
+            rawGod.includes('oranos') || rawGod.includes('urano')
+              ? 'oranos'
+              : rawGod.includes('gaia')
+              ? 'gaia'
+              : 'kronos'
+          ) as 'kronos' | 'oranos' | 'gaia';
+          const theme = ATLANTEAN_FORTRESS_THEMES[godKey] || ATLANTEAN_FORTRESS_THEMES.kronos;
+
+          scene.background = new THREE.Color(theme.bgHex);
+          scene.fog = new THREE.FogExp2(theme.bgHex, 0.016);
+          addPedestal(3.4, 3.7, theme.orichalcum);
+
+          const effTier = buildingAge >= 4 ? 4 : 3;
+          const fortress = buildAtlanteanFortressStudio(godKey, effTier, !isSoftwareGl);
+          group = fortress.root;
+
+          const boltGeo = new THREE.CylinderGeometry(0.022, 0.022, 0.85, 6);
+          boltGeo.rotateX(Math.PI / 2);
+          const boltMat = new THREE.MeshBasicMaterial({ color: theme.boltHex });
+          const activeBolts: Array<{ mesh: THREE.Mesh; start: THREE.Vector3; target: THREE.Vector3; progress: number; speed: number }> = [];
+
+          let boltTimer = 0;
+          function spawnAtlanteanVolley(isT4: boolean) {
+            const count = isT4 ? 8 : 6;
+            const originY = isT4 ? 3.4 : 3.2;
+            for (let i = 0; i < count; i++) {
+              const a = (i / count) * Math.PI * 2 + Math.random() * 0.4;
+              const dist = 4.6 + Math.random() * 2.8;
+              const start = new THREE.Vector3(Math.cos(a) * 1.4, originY, Math.sin(a) * 1.4);
+              const target = new THREE.Vector3(Math.cos(a) * dist, 0.05, Math.sin(a) * dist);
+
+              const mesh = new THREE.Mesh(boltGeo, boltMat);
+              mesh.position.copy(start);
+              environmentGroup.add(mesh);
+
+              activeBolts.push({ mesh, start, target, progress: 0, speed: 1.55 + Math.random() * 0.35 });
+            }
+          }
+
+          let lastTierApplied = effTier;
+
+          group.userData.animatePose = (dt: number) => {
+            const act = atlanteanFortressActionRef.current;
+            const currentT = buildingAge >= 4 ? 4 : 3;
+            if (currentT !== lastTierApplied) {
+              lastTierApplied = currentT;
+              fortress.setTier(currentT);
+            }
+
+            if (fortress.coreCrystal) {
+              fortress.coreCrystal.rotation.y += dt * 1.6;
+              fortress.coreCrystal.position.y = 3.15 + Math.sin(simTime * 2.6) * 0.08;
+            }
+
+            // Aura de Atlântida
+            const targetAura = act === 'bencao' ? 0.78 : (currentT === 4 ? 0.25 : 0.0);
+            const ringMat = fortress.divineRing.material as THREE.MeshBasicMaterial;
+            ringMat.opacity = THREE.MathUtils.damp(ringMat.opacity, targetAura, 4, dt);
+            fortress.divineRing.rotation.z += dt * 0.4;
+            fortress.divineRing.scale.setScalar(1 + Math.sin(simTime * 3.5) * 0.04);
+
+            // Rajada de Oricalco
+            if (act === 'defesa') {
+              boltTimer -= dt;
+              if (boltTimer <= 0) {
+                boltTimer = 0.72;
+                spawnAtlanteanVolley(currentT === 4);
+              }
+            }
+
+            for (let i = activeBolts.length - 1; i >= 0; i--) {
+              const b = activeBolts[i];
+              b.progress += dt * b.speed;
+              const p = Math.min(1, b.progress);
+              const pos = new THREE.Vector3().lerpVectors(b.start, b.target, p);
+              pos.y += Math.sin(p * Math.PI) * 1.25;
+              b.mesh.position.copy(pos);
+
+              const nextP = Math.min(1, p + 0.04);
+              const nextPos = new THREE.Vector3().lerpVectors(b.start, b.target, nextP);
+              nextPos.y += Math.sin(nextP * Math.PI) * 1.25;
+              b.mesh.lookAt(nextPos);
+
+              if (p >= 1) {
+                environmentGroup.remove(b.mesh);
+                b.mesh.geometry.dispose();
+                activeBolts.splice(i, 1);
+              }
+            }
+          };
+        } else if (selectedCiv === 'norse' && selectedBuilding === 'fortress') {
+          const rawGod = selectedMajorGod.toLowerCase();
+          const godKey = (
+            rawGod.includes('thor')
+              ? 'thor'
+              : rawGod.includes('loki')
+              ? 'loki'
+              : rawGod.includes('freyr')
+              ? 'freyr'
+              : 'odin'
+          ) as 'odin' | 'thor' | 'loki' | 'freyr';
+          const theme = NORSE_FORTRESS_THEMES[godKey] || NORSE_FORTRESS_THEMES.odin;
+
+          scene.background = new THREE.Color(theme.bgHex);
+          scene.fog = new THREE.FogExp2(theme.bgHex, 0.016);
+          addPedestal(3.4, 3.7, theme.goldColor);
+
+          const effTier = buildingAge >= 4 ? 4 : 3;
+          const fortress = buildNorseFortressStudio(godKey, effTier, !isSoftwareGl);
+          group = fortress.root;
+
+          const spearGeo = new THREE.CylinderGeometry(0.018, 0.018, 0.88, 6);
+          spearGeo.rotateX(Math.PI / 2);
+          const spearMat = new THREE.MeshBasicMaterial({ color: theme.spearHex });
+          const activeSpears: Array<{ mesh: THREE.Mesh; start: THREE.Vector3; target: THREE.Vector3; progress: number; speed: number }> = [];
+
+          let volleyTimer = 0;
+          function spawnNorseVolley(isT4: boolean) {
+            const count = isT4 ? 8 : 5;
+            const originY = isT4 ? 3.8 : 2.8;
+            for (let i = 0; i < count; i++) {
+              const a = (i / count) * Math.PI * 2 + Math.random() * 0.4;
+              const dist = 4.6 + Math.random() * 2.8;
+              const start = new THREE.Vector3(Math.cos(a) * 1.5, originY, Math.sin(a) * 1.5);
+              const target = new THREE.Vector3(Math.cos(a) * dist, 0.05, Math.sin(a) * dist);
+
+              const mesh = new THREE.Mesh(spearGeo, spearMat);
+              mesh.position.copy(start);
+              environmentGroup.add(mesh);
+
+              activeSpears.push({ mesh, start, target, progress: 0, speed: 1.45 + Math.random() * 0.35 });
+            }
+          }
+
+          const SNOW_COUNT = 240;
+          const snowPos = new Float32Array(SNOW_COUNT * 3);
+          for (let i = 0; i < SNOW_COUNT; i++) {
+            snowPos[i * 3] = (Math.random() - 0.5) * 12;
+            snowPos[i * 3 + 1] = Math.random() * 5.5;
+            snowPos[i * 3 + 2] = (Math.random() - 0.5) * 12;
+          }
+          const snowGeo = new THREE.BufferGeometry();
+          snowGeo.setAttribute('position', new THREE.BufferAttribute(snowPos, 3));
+          const snowMat = new THREE.PointsMaterial({ color: 0xe0f2fe, size: 0.08, transparent: true, opacity: 0.0 });
+          const snowPoints = new THREE.Points(snowGeo, snowMat);
+          environmentGroup.add(snowPoints);
+
+          let lastTierApplied = effTier;
+          let lastFrostState = false;
+
+          group.userData.animatePose = (dt: number) => {
+            const act = norseFortressActionRef.current;
+            const currentT = buildingAge >= 4 ? 4 : 3;
+            if (currentT !== lastTierApplied) {
+              lastTierApplied = currentT;
+              fortress.setTier(currentT);
+            }
+
+            const isFrost = act === 'geada';
+            if (isFrost !== lastFrostState) {
+              lastFrostState = isFrost;
+              fortress.setFrostState(isFrost);
+            }
+
+            const targetFrostOpacity = isFrost ? 0.85 : (currentT === 4 ? 0.22 : 0.0);
+            const ringMat = fortress.frostRing.material as THREE.MeshBasicMaterial;
+            ringMat.opacity = THREE.MathUtils.damp(ringMat.opacity, targetFrostOpacity, 4, dt);
+            fortress.frostRing.rotation.z += dt * 0.35;
+
+            snowMat.opacity = THREE.MathUtils.damp(snowMat.opacity, isFrost ? 0.9 : 0.0, 4, dt);
+            if (snowMat.opacity > 0.02) {
+              const sAttr = snowGeo.attributes.position;
+              for (let i = 0; i < SNOW_COUNT; i++) {
+                let sy = sAttr.getY(i) - dt * 1.4;
+                if (sy < 0) sy = 5.5;
+                sAttr.setY(i, sy);
+              }
+              sAttr.needsUpdate = true;
+            }
+
+            if (act === 'defesa') {
+              volleyTimer -= dt;
+              if (volleyTimer <= 0) {
+                volleyTimer = 0.72;
+                spawnNorseVolley(currentT === 4);
+              }
+            }
+
+            for (let i = activeSpears.length - 1; i >= 0; i--) {
+              const sp = activeSpears[i];
+              sp.progress += dt * sp.speed;
+              const p = Math.min(1, sp.progress);
+              const pos = new THREE.Vector3().lerpVectors(sp.start, sp.target, p);
+              pos.y += Math.sin(p * Math.PI) * 1.35;
+              sp.mesh.position.copy(pos);
+
+              const nextP = Math.min(1, p + 0.04);
+              const nextPos = new THREE.Vector3().lerpVectors(sp.start, sp.target, nextP);
+              nextPos.y += Math.sin(nextP * Math.PI) * 1.35;
+              sp.mesh.lookAt(nextPos);
+
+              if (p >= 1) {
+                environmentGroup.remove(sp.mesh);
+                sp.mesh.geometry.dispose();
+                activeSpears.splice(i, 1);
+              }
+            }
+          };
+        } else if (selectedCiv === 'greek' && selectedBuilding === 'temple') {
+          const rawGod = selectedMajorGod.toLowerCase();
+          const godKey = (
+            rawGod.includes('poseidon') ? 'poseidon' : rawGod.includes('hades') ? 'hades' : 'zeus'
+          ) as GreekTempleGodKey;
+          const theme = GREEK_TEMPLE_THEMES[godKey] || GREEK_TEMPLE_THEMES.zeus;
+
+          scene.background = new THREE.Color(theme.bgHex);
+          scene.fog = new THREE.FogExp2(theme.bgHex, 0.015);
+          addPedestal(3.6, 4.0, theme.goldHex);
+
+          const effTier = Math.max(1, Math.min(5, buildingAge));
+          const temple = buildGreekTempleStudio(godKey, effTier, !isSoftwareGl);
+          group = temple.root;
+
+          // Miracle light beam
+          const miracleBeam = new THREE.Mesh(
+            new THREE.CylinderGeometry(1.15, 2.25, 14, 32, 1, true),
+            new THREE.MeshBasicMaterial({
+              color: theme.glowHex,
+              transparent: true,
+              opacity: 0.0,
+              blending: THREE.AdditiveBlending,
+              side: THREE.DoubleSide,
+              depthWrite: false
+            })
+          );
+          miracleBeam.position.y = 7.0;
+          environmentGroup.add(miracleBeam);
+
+          // Favor particles
+          const FAVOR_N = 140;
+          const favorPos = new Float32Array(FAVOR_N * 3);
+          const favorSpeed = new Float32Array(FAVOR_N);
+          for (let i = 0; i < FAVOR_N; i++) {
+            const a = Math.random() * Math.PI * 2;
+            const r = 0.8 + Math.random() * 2.8;
+            favorPos[i * 3] = Math.cos(a) * r;
+            favorPos[i * 3 + 1] = Math.random() * 5.5;
+            favorPos[i * 3 + 2] = Math.sin(a) * r;
+            favorSpeed[i] = 0.45 + Math.random() * 0.75;
+          }
+          const favorGeo = new THREE.BufferGeometry();
+          favorGeo.setAttribute('position', new THREE.BufferAttribute(favorPos, 3));
+          const favorMat = new THREE.PointsMaterial({
+            color: theme.glowHex,
+            size: 0.11,
+            transparent: true,
+            opacity: 0.85,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
+          });
+          const favorPoints = new THREE.Points(favorGeo, favorMat);
+          environmentGroup.add(favorPoints);
+
+          let lastTierApplied = effTier;
+          let elapsed = 0;
+
+          group.userData.animatePose = (dt: number) => {
+            elapsed += dt;
+            const currentT = Math.max(1, Math.min(5, buildingAge));
+            if (currentT !== lastTierApplied) {
+              lastTierApplied = currentT;
+              temple.setTier(currentT);
+            }
+
+            // Animate flames
+            temple.allFlames.forEach((fl, idx) => {
+              fl.scale.set(
+                1 + Math.sin(elapsed * 12 + idx) * 0.14,
+                1 + Math.cos(elapsed * 15 + idx) * 0.22,
+                1 + Math.sin(elapsed * 11 + idx) * 0.14
+              );
+            });
+
+            // Action: favor vs milagre
+            const act = templeActionRef.current;
+            const isMiracle = act === 'milagre';
+
+            const beamTarget = isMiracle ? 0.65 : 0.0;
+            const mbMat = miracleBeam.material as THREE.MeshBasicMaterial;
+            mbMat.opacity = THREE.MathUtils.damp(mbMat.opacity, beamTarget, 4, dt);
+            miracleBeam.rotation.y += dt * 1.2;
+
+            const ringTarget = isMiracle ? 0.85 : (0.18 + currentT * 0.04);
+            const ringMat = temple.favorRing.material as THREE.MeshBasicMaterial;
+            ringMat.opacity = THREE.MathUtils.damp(ringMat.opacity, ringTarget, 4, dt);
+            temple.favorRing.rotation.z += dt * 0.35;
+
+            // Particles update
+            const fAttr = favorGeo.attributes.position;
+            const speedMult = isMiracle ? 2.8 : 1.0;
+            for (let i = 0; i < FAVOR_N; i++) {
+              let fy = fAttr.getY(i) + favorSpeed[i] * dt * speedMult;
+              if (fy > 6.2) fy = 0.2;
+              fAttr.setY(i, fy);
+            }
+            fAttr.needsUpdate = true;
+          };
+        } else if (selectedCiv === 'egyptian' && selectedBuilding === 'temple') {
+          const rawGod = selectedMajorGod.toLowerCase();
+          const godKey = (
+            rawGod.includes('isis') ? 'isis' : rawGod.includes('set') ? 'set' : 'ra'
+          ) as EgyptianTempleGodKey;
+          const theme = EGYPT_TEMPLE_THEMES[godKey] || EGYPT_TEMPLE_THEMES.ra;
+
+          scene.background = new THREE.Color(theme.bgHex);
+          scene.fog = new THREE.FogExp2(theme.bgHex, 0.015);
+          addPedestal(3.6, 4.0, theme.goldHex);
+
+          const effTier = Math.max(1, Math.min(5, buildingAge));
+          const temple = buildEgyptianTempleStudio(godKey, effTier, !isSoftwareGl);
+          group = temple.root;
+
+          // Solar beam for milagre
+          const solarBeam = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.85, 2.45, 14, 32, 1, true),
+            new THREE.MeshBasicMaterial({
+              color: theme.glowHex,
+              transparent: true,
+              opacity: 0.0,
+              blending: THREE.AdditiveBlending,
+              side: THREE.DoubleSide,
+              depthWrite: false
+            })
+          );
+          solarBeam.position.y = 7.0;
+          environmentGroup.add(solarBeam);
+
+          // Favor particles
+          const FAVOR_N = 140;
+          const favorPos = new Float32Array(FAVOR_N * 3);
+          const favorSpeed = new Float32Array(FAVOR_N);
+          for (let i = 0; i < FAVOR_N; i++) {
+            const a = Math.random() * Math.PI * 2;
+            const r = 0.8 + Math.random() * 2.8;
+            favorPos[i * 3] = Math.cos(a) * r;
+            favorPos[i * 3 + 1] = Math.random() * 5.5;
+            favorPos[i * 3 + 2] = Math.sin(a) * r;
+            favorSpeed[i] = 0.45 + Math.random() * 0.75;
+          }
+          const favorGeo = new THREE.BufferGeometry();
+          favorGeo.setAttribute('position', new THREE.BufferAttribute(favorPos, 3));
+          const favorMat = new THREE.PointsMaterial({
+            color: theme.glowHex,
+            size: 0.11,
+            transparent: true,
+            opacity: 0.85,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
+          });
+          const favorPoints = new THREE.Points(favorGeo, favorMat);
+          environmentGroup.add(favorPoints);
+
+          let lastTierApplied = effTier;
+          let elapsed = 0;
+
+          group.userData.animatePose = (dt: number) => {
+            elapsed += dt;
+            const currentT = Math.max(1, Math.min(5, buildingAge));
+            if (currentT !== lastTierApplied) {
+              lastTierApplied = currentT;
+              temple.setTier(currentT);
+            }
+
+            temple.allFlames.forEach((fl, idx) => {
+              fl.scale.set(
+                1 + Math.sin(elapsed * 12 + idx) * 0.14,
+                1 + Math.cos(elapsed * 15 + idx) * 0.22,
+                1 + Math.sin(elapsed * 11 + idx) * 0.14
+              );
+            });
+
+            const act = templeActionRef.current;
+            const isMiracle = act === 'milagre';
+
+            const beamTarget = isMiracle ? 0.65 : 0.0;
+            const sbMat = solarBeam.material as THREE.MeshBasicMaterial;
+            sbMat.opacity = THREE.MathUtils.damp(sbMat.opacity, beamTarget, 4, dt);
+            solarBeam.rotation.y += dt * 1.2;
+
+            const ringTarget = isMiracle ? 0.85 : (0.18 + currentT * 0.04);
+            const ringMat = temple.favorRing.material as THREE.MeshBasicMaterial;
+            ringMat.opacity = THREE.MathUtils.damp(ringMat.opacity, ringTarget, 4, dt);
+            temple.favorRing.rotation.z += dt * 0.35;
+
+            const fAttr = favorGeo.attributes.position;
+            const speedMult = isMiracle ? 2.8 : 1.0;
+            for (let i = 0; i < FAVOR_N; i++) {
+              let fy = fAttr.getY(i) + favorSpeed[i] * dt * speedMult;
+              if (fy > 6.2) fy = 0.2;
+              fAttr.setY(i, fy);
+            }
+            fAttr.needsUpdate = true;
           };
         } else {
           scene.background = defaultBg.clone();
@@ -2814,6 +3336,295 @@ export function HopliteUvBuilderModal({
           if (selectedUnit === 'myrmidon') {
             group.userData.setCombatFury?.(myrmidonFuryRef.current ? 1.0 : 0.0);
           }
+        } else if (selectedCiv === 'greek' && selectedUnit === 'medusa') {
+          scene.background = new THREE.Color(0x080d1a);
+          scene.fog = new THREE.FogExp2(0x080d1a, 0.016);
+          addPedestal(2.2, 2.4, 0xfacc15);
+
+          const medusaRig = buildStudioMedusa({ teamId: 'player', scale: 1.0 });
+          const medusaGroup = new THREE.Group();
+          medusaGroup.add(medusaRig.root);
+
+          // Alvo: Soldado inimigo que é petrificado pelo olhar
+          const targetRoot = new THREE.Group();
+          targetRoot.position.set(0, 0, 2.6);
+          targetRoot.rotation.y = Math.PI;
+
+          const soldierMat = new THREE.MeshStandardMaterial({
+            color: 0xb91c1c,
+            roughness: 0.35,
+            metalness: 0.6,
+          });
+          const stoneTargetMat = new THREE.MeshStandardMaterial({
+            color: 0x94a3b8,
+            roughness: 0.88,
+            metalness: 0.05,
+          });
+
+          const soldierMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.26, 1.25, 10), soldierMat);
+          soldierMesh.position.y = 0.65;
+          const soldierHead = new THREE.Mesh(new THREE.SphereGeometry(0.18, 12, 10), soldierMat);
+          soldierHead.position.y = 1.45;
+          const soldierShield = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.38, 0.06, 14), soldierMat);
+          soldierShield.rotation.z = Math.PI / 2;
+          soldierShield.position.set(-0.35, 0.85, 0.1);
+          targetRoot.add(soldierMesh, soldierHead, soldierShield);
+          medusaGroup.add(targetRoot);
+
+          // Cone do feixe petrificante
+          const gazeGeo = new THREE.ConeGeometry(0.9, 2.8, 16, 1, true);
+          gazeGeo.rotateX(-Math.PI / 2);
+          gazeGeo.translate(0, 0, 1.4);
+          const gazeMat = new THREE.MeshBasicMaterial({
+            color: 0x10b981,
+            transparent: true,
+            opacity: 0.0,
+            side: THREE.DoubleSide,
+            depthWrite: false,
+          });
+          const gazeBeam = new THREE.Mesh(gazeGeo, gazeMat);
+          gazeBeam.position.set(0, 1.45, 0.1);
+          medusaGroup.add(gazeBeam);
+
+          group = medusaGroup;
+
+          let gazeTimer = 0;
+          let isPetrified = false;
+
+          group.userData.triggerGaze = () => {
+            if (medusaGazeCooldownRef.current <= 0) {
+              gazeTimer = 3.5;
+              isPetrified = true;
+              setMedusaGazeCooldown(20);
+            }
+          };
+
+          group.userData.animatePose = (dt: number) => {
+            const mode = medusaModeRef.current;
+            const t = simTime;
+
+            if (gazeTimer > 0) {
+              gazeTimer -= dt;
+              gazeMat.opacity = Math.min(0.75, gazeTimer * 0.8);
+              if (gazeTimer <= 0) {
+                isPetrified = false;
+                gazeMat.opacity = 0;
+              }
+            } else if (mode === 'auto' && Math.sin(t * 0.28) > 0.94 && medusaGazeCooldownRef.current <= 0) {
+              gazeTimer = 3.2;
+              isPetrified = true;
+              setMedusaGazeCooldown(20);
+            }
+
+            if (medusaGazeCooldownRef.current > 0) {
+              setMedusaGazeCooldown((prev) => Math.max(0, prev - dt));
+            }
+
+            const activeMat = isPetrified ? stoneTargetMat : soldierMat;
+            soldierMesh.material = activeMat;
+            soldierHead.material = activeMat;
+            soldierShield.material = activeMat;
+
+            const bowProgress = (t * 1.4) % 1.0;
+            const gazeActive = gazeTimer > 0;
+            animateStudioMedusa(medusaRig, t, mode, gazeActive, bowProgress);
+
+            if (gazeActive && Math.random() < 0.4) {
+              spawnSpark(new THREE.Vector3((Math.random() - 0.5) * 0.6, 1.0, 2.5));
+            }
+          };
+        } else if (selectedCiv === 'greek' && selectedUnit === 'colossus') {
+          scene.background = new THREE.Color(0x09101c);
+          scene.fog = new THREE.FogExp2(0x09101c, 0.016);
+          addPedestal(2.8, 3.0, 0xd97706);
+
+          const colossusGroup = new THREE.Group();
+          let currentRigTier = colossusTierRef.current;
+          let colossusRig = buildStudioColossus({
+            teamId: 'player',
+            tier: currentRigTier,
+            scale: 0.95,
+          });
+          colossusGroup.add(colossusRig.root);
+
+          // Árvore sagrada de cura ao lado
+          const treeRoot = new THREE.Group();
+          treeRoot.position.set(1.85, 0, 0.4);
+          const woodMat = new THREE.MeshStandardMaterial({ color: 0x5c3d22, roughness: 0.8 });
+          const leavesMat = new THREE.MeshStandardMaterial({ color: 0x166534, roughness: 0.6 });
+          const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.28, 2.4, 8), woodMat);
+          trunk.position.y = 1.2;
+          const foliage1 = new THREE.Mesh(new THREE.SphereGeometry(0.85, 8, 8), leavesMat);
+          foliage1.position.set(0, 2.3, 0);
+          foliage1.scale.set(1.1, 0.9, 1.1);
+          const foliage2 = new THREE.Mesh(new THREE.SphereGeometry(0.65, 8, 8), leavesMat);
+          foliage2.position.set(0.15, 2.9, -0.1);
+          treeRoot.add(trunk, foliage1, foliage2);
+          colossusGroup.add(treeRoot);
+
+          group = colossusGroup;
+
+          let lastActionProgress = 0;
+
+          group.userData.setTier = (t: number) => {
+            if (t !== currentRigTier) {
+              currentRigTier = t;
+              colossusGroup.remove(colossusRig.root);
+              colossusRig = buildStudioColossus({
+                teamId: 'player',
+                tier: currentRigTier,
+                scale: 0.95,
+              });
+              colossusGroup.add(colossusRig.root);
+            }
+          };
+
+          group.userData.animatePose = (dt: number) => {
+            const targetTier = colossusTierRef.current;
+            if (targetTier !== currentRigTier) {
+              group.userData.setTier(targetTier);
+            }
+
+            const action = colossusActionRef.current;
+            const t = simTime;
+
+            if (action === 'slam') {
+              lastActionProgress = (t * 0.95) % 1.0;
+              if (lastActionProgress > 0.58 && lastActionProgress < 0.65) {
+                spawnSpark(new THREE.Vector3(0, 0.1, 1.2));
+              }
+            } else if (action === 'eat_tree') {
+              lastActionProgress = (t * 0.85) % 1.0;
+              foliage1.rotation.y = Math.sin(t * 5.0) * 0.08;
+              if (Math.random() < 0.35) {
+                spawnSpark(new THREE.Vector3(1.2 + Math.random() * 0.4, 1.8, 0.3));
+              }
+            } else if (action === 'marcha') {
+              lastActionProgress = (t * 1.2) % 1.0;
+            } else {
+              lastActionProgress = 0;
+            }
+
+            animateStudioColossus(colossusRig, t, dt, action, lastActionProgress);
+          };
+        } else if (selectedCiv === 'greek' && selectedUnit === 'hydra') {
+          scene.background = new THREE.Color(0x08101e);
+          scene.fog = new THREE.FogExp2(0x08101e, 0.016);
+          addPedestal(3.2, 3.4, 0x1d4ed8);
+
+          const hydraRig = buildStudioHydra({ teamId: 'player', scale: 0.95 });
+          const hydraGroup = new THREE.Group();
+          hydraGroup.add(hydraRig.root);
+
+          // Soldados inimigos na arena
+          const enemySoldiersRoot = new THREE.Group();
+          enemySoldiersRoot.position.set(0, 0, 2.55);
+          const armorMat = new THREE.MeshStandardMaterial({ color: 0xb91c1c, metalness: 0.65, roughness: 0.35 });
+          const skinMat = new THREE.MeshStandardMaterial({ color: 0xc98d62, roughness: 0.5 });
+          const bronzeMat = new THREE.MeshStandardMaterial({ color: 0xd97706, metalness: 0.82, roughness: 0.28 });
+
+          const soldierNodes = [-0.92, 0.0, 0.92].map((xOff, idx) => {
+            const sGroup = new THREE.Group();
+            sGroup.position.set(xOff, 0, idx === 1 ? 0 : -0.22);
+            sGroup.rotation.y = Math.PI;
+
+            const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.24, 0.75, 10), armorMat);
+            torso.position.y = 0.8;
+            const head = new THREE.Mesh(new THREE.SphereGeometry(0.15, 12, 10), skinMat);
+            head.position.y = 1.35;
+            const shield = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.34, 0.05, 14), bronzeMat);
+            shield.rotation.z = Math.PI / 2;
+            shield.position.set(-0.32, 0.85, 0.08);
+            sGroup.add(torso, head, shield);
+            enemySoldiersRoot.add(sGroup);
+            return { group: sGroup, isCenter: idx === 1, hitFlash: 0 };
+          });
+          hydraGroup.add(enemySoldiersRoot);
+
+          group = hydraGroup;
+
+          let biteTimer = 0;
+          let biteImpactDone = false;
+          let currentHeadCount = hydraHeadsRef.current;
+
+          group.userData.triggerBite = () => {
+            biteTimer = 0.01;
+            biteImpactDone = false;
+          };
+
+          group.userData.setHeadCount = (cnt: number) => {
+            hydraRig.setHeadCount(cnt);
+            currentHeadCount = cnt;
+          };
+
+          group.userData.animatePose = (dt: number) => {
+            const action = hydraActionModeRef.current;
+            const targets = hydraTargetCountRef.current;
+            const desiredHeads = hydraHeadsRef.current;
+            const t = simTime;
+
+            if (desiredHeads !== currentHeadCount) {
+              group.userData.setHeadCount(desiredHeads);
+            }
+
+            soldierNodes.forEach((s) => {
+              s.group.visible = s.isCenter || targets === 3;
+            });
+
+            let biteStrike = 0;
+            if (action === 'combate' || action === 'manual_bite') {
+              biteTimer += dt * 0.95;
+              if (biteTimer >= 1.0) {
+                biteTimer %= 1.0;
+                biteImpactDone = false;
+              }
+
+              if (biteTimer < 0.34) {
+                const p = biteTimer / 0.34;
+                biteStrike = -0.35 * Math.sin(p * Math.PI * 0.5);
+              } else if (biteTimer < 0.62) {
+                const p = (biteTimer - 0.34) / 0.28;
+                biteStrike = -0.35 + 1.35 * Math.sin(p * Math.PI * 0.5);
+
+                if (p > 0.78 && !biteImpactDone) {
+                  biteImpactDone = true;
+                  soldierNodes.forEach((s) => {
+                    if (s.group.visible) {
+                      s.hitFlash = 0.25;
+                      spawnSpark(new THREE.Vector3(s.group.position.x, 0.65, 2.55));
+                    }
+                  });
+
+                  setHydraTotalHits((h) => h + 1);
+                  setHydraTotalDamage((prevDmg) => {
+                    const dmgStep = currentHeadCount * 30 * targets;
+                    const newDmg = Math.min(1600, prevDmg + dmgStep);
+                    const autoHeads = Math.min(5, 1 + Math.floor(newDmg / 400));
+                    if (autoHeads > currentHeadCount) {
+                      setHydraHeads(autoHeads);
+                      group.userData.setHeadCount(autoHeads);
+                    }
+                    return newDmg;
+                  });
+                }
+              } else {
+                const rem = 1 - (biteTimer - 0.62) / 0.38;
+                biteStrike = 1.0 * rem;
+              }
+            }
+
+            soldierNodes.forEach((s) => {
+              if (s.hitFlash > 0) {
+                s.hitFlash = Math.max(0, s.hitFlash - dt);
+                const knock = Math.sin((s.hitFlash / 0.25) * Math.PI) * 0.18;
+                s.group.position.z = (s.isCenter ? 0 : -0.22) + knock;
+              } else {
+                s.group.position.z = s.isCenter ? 0 : -0.22;
+              }
+            });
+
+            animateStudioHydra(hydraRig, t, dt, biteStrike, false);
+          };
         } else {
           scene.background = defaultBg.clone();
           scene.fog = new THREE.FogExp2(0x0b0e14, 0.015);
@@ -4506,12 +5317,52 @@ export function HopliteUvBuilderModal({
                 </div>
 
                 <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-2.5 text-[11px]">
-                  <div className="font-bold text-amber-300">
-                    {BUILDING_ERA_SPECS[buildingAge - 1]?.title}
-                  </div>
-                  <div className="mt-0.5 text-[#fde68a]/90">
-                    {BUILDING_ERA_SPECS[buildingAge - 1]?.desc}
-                  </div>
+                  {selectedCiv === 'greek' && selectedBuilding === 'temple' ? (
+                    (() => {
+                      const rawGod = selectedMajorGod.toLowerCase();
+                      const godKey = (
+                        rawGod.includes('poseidon') ? 'poseidon' : rawGod.includes('hades') ? 'hades' : 'zeus'
+                      ) as GreekTempleGodKey;
+                      const info = GREEK_TEMPLE_THEMES[godKey]?.tiers[buildingAge];
+                      return (
+                        <>
+                          <div className="font-bold text-amber-300">
+                            {info?.title || `Templo Grego • Tier ${buildingAge}`}
+                          </div>
+                          <div className="mt-0.5 text-[#fde68a]/90">
+                            {info?.sub || BUILDING_ERA_SPECS[buildingAge - 1]?.desc}
+                          </div>
+                        </>
+                      );
+                    })()
+                  ) : selectedCiv === 'egyptian' && selectedBuilding === 'temple' ? (
+                    (() => {
+                      const rawGod = selectedMajorGod.toLowerCase();
+                      const godKey = (
+                        rawGod.includes('isis') ? 'isis' : rawGod.includes('set') ? 'set' : 'ra'
+                      ) as EgyptianTempleGodKey;
+                      const info = EGYPT_TEMPLE_THEMES[godKey]?.tiers[buildingAge];
+                      return (
+                        <>
+                          <div className="font-bold text-amber-300">
+                            {info?.title || `Templo Egípcio • Tier ${buildingAge}`}
+                          </div>
+                          <div className="mt-0.5 text-[#fde68a]/90">
+                            {info?.sub || BUILDING_ERA_SPECS[buildingAge - 1]?.desc}
+                          </div>
+                        </>
+                      );
+                    })()
+                  ) : (
+                    <>
+                      <div className="font-bold text-amber-300">
+                        {BUILDING_ERA_SPECS[buildingAge - 1]?.title}
+                      </div>
+                      <div className="mt-0.5 text-[#fde68a]/90">
+                        {BUILDING_ERA_SPECS[buildingAge - 1]?.desc}
+                      </div>
+                    </>
+                  )}
                 </div>
 
                 {activeBuildingStats && (
@@ -5494,6 +6345,247 @@ export function HopliteUvBuilderModal({
                 );
               })}
             </>
+          ) : galleryCategory === 'unit' && selectedCiv === 'greek' && selectedUnit === 'medusa' ? (
+            <>
+              {/* Controles da Medusa de Zeus */}
+              <button
+                type="button"
+                onClick={() => setMedusaMode('auto')}
+                className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                  medusaMode === 'auto'
+                    ? 'bg-gradient-to-r from-amber-300 to-amber-500 text-slate-950 font-black shadow-lg shadow-amber-500/30 ring-1 ring-amber-300'
+                    : 'border border-amber-400/30 text-amber-200 hover:bg-amber-400/15'
+                }`}
+              >
+                <Swords className="h-3.5 w-3.5" />
+                <span>🏹 Combate Auto</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setMedusaMode('flechas')}
+                className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                  medusaMode === 'flechas'
+                    ? 'bg-gradient-to-r from-amber-300 to-amber-500 text-slate-950 font-black shadow-lg shadow-amber-500/30 ring-1 ring-amber-300'
+                    : 'border border-amber-400/30 text-amber-200 hover:bg-amber-400/15'
+                }`}
+              >
+                <Flame className="h-3.5 w-3.5" />
+                <span>🎯 Só Flechas</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setMedusaMode('vigilia')}
+                className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                  medusaMode === 'vigilia'
+                    ? 'bg-gradient-to-r from-amber-300 to-amber-500 text-slate-950 font-black shadow-lg shadow-amber-500/30 ring-1 ring-amber-300'
+                    : 'border border-amber-400/30 text-amber-200 hover:bg-amber-400/15'
+                }`}
+              >
+                <Shield className="h-3.5 w-3.5" />
+                <span>🛡️ Vigília</span>
+              </button>
+              <div className="h-4 w-px bg-white/20 mx-1" />
+              <button
+                type="button"
+                onClick={() => entityMeshRef.current?.userData?.triggerGaze?.()}
+                disabled={medusaGazeCooldown > 0}
+                className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                  medusaGazeCooldown > 0
+                    ? 'bg-emerald-950/60 border border-emerald-500/30 text-emerald-300/60 cursor-not-allowed'
+                    : 'bg-gradient-to-r from-emerald-500 to-teal-600 text-slate-950 font-black shadow-lg shadow-emerald-500/40 hover:scale-105 active:scale-95 ring-1 ring-emerald-300'
+                }`}
+              >
+                <Zap className="h-3.5 w-3.5" />
+                <span>
+                  {medusaGazeCooldown > 0
+                    ? `⏳ Olhar (${Math.ceil(medusaGazeCooldown)}s)`
+                    : '⚡ Olhar Petrificante'}
+                </span>
+              </button>
+            </>
+          ) : galleryCategory === 'unit' && selectedCiv === 'greek' && selectedUnit === 'colossus' ? (
+            <>
+              {/* Tiers do Colosso de Zeus */}
+              {(
+                [
+                  { tier: 1, label: 'Bronze' },
+                  { tier: 2, label: 'Prata (Talos)' },
+                  { tier: 3, label: 'Ouro (Rodes)' },
+                ] as const
+              ).map((spec) => (
+                <button
+                  key={spec.tier}
+                  type="button"
+                  onClick={() => setColossusTier(spec.tier)}
+                  className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                    colossusTier === spec.tier
+                      ? spec.tier === 3
+                        ? 'bg-gradient-to-r from-amber-300 to-yellow-500 text-slate-950 font-black shadow-lg shadow-amber-400/30 ring-1 ring-amber-300'
+                        : spec.tier === 2
+                        ? 'bg-gradient-to-r from-slate-200 to-sky-300 text-slate-950 font-black shadow-lg shadow-sky-400/30 ring-1 ring-sky-300'
+                        : 'bg-gradient-to-r from-amber-600 to-amber-700 text-amber-50 font-black shadow-lg shadow-amber-600/30 ring-1 ring-amber-500'
+                      : 'border border-amber-400/30 text-amber-200 hover:bg-amber-400/15'
+                  }`}
+                >
+                  <Crown className="h-3.5 w-3.5" />
+                  <span>{spec.label}</span>
+                </button>
+              ))}
+              <div className="h-4 w-px bg-white/20 mx-1" />
+              {/* Ações do Colosso */}
+              <button
+                type="button"
+                onClick={() => setColossusAction('slam')}
+                className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                  colossusAction === 'slam'
+                    ? 'bg-amber-400 text-slate-950 shadow'
+                    : 'border border-amber-400/30 text-amber-200 hover:bg-amber-400/15'
+                }`}
+              >
+                <Swords className="h-3.5 w-3.5" />
+                <span>⚔️ Montante</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setColossusAction('marcha')}
+                className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                  colossusAction === 'marcha'
+                    ? 'bg-amber-400 text-slate-950 shadow'
+                    : 'border border-amber-400/30 text-amber-200 hover:bg-amber-400/15'
+                }`}
+              >
+                <Play className="h-3.5 w-3.5" />
+                <span>🛡️ Marcha</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setColossusAction('eat_tree')}
+                className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                  colossusAction === 'eat_tree'
+                    ? 'bg-emerald-400 text-slate-950 shadow ring-1 ring-emerald-300'
+                    : 'border border-emerald-400/30 text-emerald-200 hover:bg-emerald-400/15'
+                }`}
+              >
+                <Trees className="h-3.5 w-3.5" />
+                <span>🌲 Devorar Árvore</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setColossusAction('vigilia')}
+                className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                  colossusAction === 'vigilia'
+                    ? 'bg-amber-400 text-slate-950 shadow'
+                    : 'border border-amber-400/30 text-amber-200 hover:bg-amber-400/15'
+                }`}
+              >
+                <Shield className="h-3.5 w-3.5" />
+                <span>Vigília</span>
+              </button>
+            </>
+          ) : galleryCategory === 'unit' && selectedCiv === 'greek' && selectedUnit === 'hydra' ? (
+            <>
+              {/* Controles da Hidra de Zeus */}
+              <button
+                type="button"
+                onClick={() => setHydraActionMode('combate')}
+                className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                  hydraActionMode === 'combate'
+                    ? 'bg-gradient-to-r from-amber-400 to-amber-600 text-slate-950 font-black shadow-lg shadow-amber-500/30 ring-1 ring-amber-300'
+                    : 'border border-amber-400/30 text-amber-200 hover:bg-amber-400/15'
+                }`}
+              >
+                <Swords className="h-3.5 w-3.5" />
+                <span>🐉 Auto Bote</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setHydraActionMode('vigilia')}
+                className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                  hydraActionMode === 'vigilia'
+                    ? 'bg-gradient-to-r from-amber-400 to-amber-600 text-slate-950 font-black shadow-lg shadow-amber-500/30 ring-1 ring-amber-300'
+                    : 'border border-amber-400/30 text-amber-200 hover:bg-amber-400/15'
+                }`}
+              >
+                <Shield className="h-3.5 w-3.5" />
+                <span>Vigília</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => entityMeshRef.current?.userData?.triggerBite?.()}
+                className="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold border border-amber-400/40 text-amber-200 hover:bg-amber-400/20 active:scale-95 transition cursor-pointer whitespace-nowrap"
+              >
+                <Zap className="h-3.5 w-3.5" />
+                <span>⚡ Morder</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setHydraTotalDamage(0);
+                  setHydraTotalHits(0);
+                  setHydraHeads(1);
+                  entityMeshRef.current?.userData?.setHeadCount?.(1);
+                }}
+                className="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold border border-red-400/30 text-red-300 hover:bg-red-400/15 transition cursor-pointer whitespace-nowrap"
+              >
+                <RotateCcw className="h-3.5 w-3.5" />
+                <span>Reset</span>
+              </button>
+              <div className="h-4 w-px bg-white/20 mx-1" />
+              {/* Alvos da Hidra */}
+              <button
+                type="button"
+                onClick={() => setHydraTargetCount(1)}
+                className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                  hydraTargetCount === 1
+                    ? 'bg-blue-500 text-white shadow ring-1 ring-blue-300'
+                    : 'border border-blue-400/30 text-blue-200 hover:bg-blue-400/15'
+                }`}
+              >
+                <User className="h-3.5 w-3.5" />
+                <span>1 Soldado</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setHydraTargetCount(3)}
+                className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                  hydraTargetCount === 3
+                    ? 'bg-blue-500 text-white shadow ring-1 ring-blue-300'
+                    : 'border border-blue-400/30 text-blue-200 hover:bg-blue-400/15'
+                }`}
+              >
+                <Users className="h-3.5 w-3.5" />
+                <span>3 Soldados</span>
+              </button>
+              <div className="h-4 w-px bg-white/20 mx-1" />
+              {/* Seletor Manual de Cabeças */}
+              {[1, 2, 3, 4, 5].map((cnt) => (
+                <button
+                  key={cnt}
+                  type="button"
+                  onClick={() => {
+                    setHydraHeads(cnt);
+                    entityMeshRef.current?.userData?.setHeadCount?.(cnt);
+                  }}
+                  className={`flex items-center gap-0.5 rounded-lg px-2 py-1 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                    hydraHeads === cnt
+                      ? 'bg-gradient-to-r from-amber-400 to-amber-600 text-slate-950 font-black shadow'
+                      : 'border border-amber-400/30 text-amber-200/80 hover:bg-amber-400/15'
+                  }`}
+                >
+                  <span>{cnt} Cab ({cnt * 30})</span>
+                </button>
+              ))}
+              {/* HUD Badge de Dano e Barra */}
+              <div className="flex items-center gap-2 rounded-lg bg-slate-900/80 border border-amber-400/30 px-2.5 py-1 text-xs">
+                <span className="font-bold text-amber-300">💥 {hydraTotalDamage}/1600</span>
+                <div className="w-16 h-2 rounded-full bg-slate-800 overflow-hidden border border-white/10">
+                  <div
+                    className="h-full bg-gradient-to-r from-amber-400 to-amber-600 transition-all duration-300"
+                    style={{ width: `${Math.min(100, Math.round((hydraTotalDamage / 1600) * 100))}%` }}
+                  />
+                </div>
+              </div>
+            </>
           ) : galleryCategory === 'unit' ? (
             <>
               <button
@@ -5540,6 +6632,232 @@ export function HopliteUvBuilderModal({
                   <span>{myrmidonFury ? 'Fúria de Zeus: ON' : 'Fúria de Zeus: OFF'}</span>
                 </button>
               )}
+            </>
+          ) : galleryCategory === 'building' && selectedCiv === 'greek' && selectedBuilding === 'temple' ? (
+            <>
+              {/* Deuses Patronos do Templo Grego */}
+              {(
+                [
+                  { id: 'Zeus', label: '⚡ Zeus', active: 'bg-gradient-to-r from-amber-300 to-blue-600 text-slate-950 font-black shadow-lg shadow-amber-500/30 ring-1 ring-amber-300' },
+                  { id: 'Poseidon', label: '🔱 Poseidon', active: 'bg-gradient-to-r from-teal-300 to-sky-600 text-slate-950 font-black shadow-lg shadow-teal-500/30 ring-1 ring-teal-300' },
+                  { id: 'Hades', label: '💀 Hades', active: 'bg-gradient-to-r from-orange-500 to-purple-800 text-white font-black shadow-lg shadow-orange-500/30 ring-1 ring-orange-400' },
+                ] as const
+              ).map((g) => {
+                const isSel = selectedMajorGod.toLowerCase() === g.id.toLowerCase();
+                return (
+                  <button
+                    key={g.id}
+                    type="button"
+                    onClick={() => setSelectedMajorGod(g.id)}
+                    className={`rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      isSel ? g.active : 'border border-white/10 text-[#cbd5e1] hover:bg-white/10'
+                    }`}
+                  >
+                    <span>{g.label}</span>
+                  </button>
+                );
+              })}
+
+              <div className="h-4 w-px bg-white/20 mx-1" />
+
+              {/* Tiers T1 a T5 */}
+              {(
+                [
+                  { tier: 1, label: 'T1 • Altar' },
+                  { tier: 2, label: 'T2 • Santuário' },
+                  { tier: 3, label: 'T3 • Heroico' },
+                  { tier: 4, label: 'T4 • Mítico' },
+                  { tier: 5, label: 'T5 • Maravilha' },
+                ] as const
+              ).map((t) => (
+                <button
+                  key={t.tier}
+                  type="button"
+                  onClick={() => {
+                    setBuildingAge(t.tier as any);
+                    onSelectTier(t.tier);
+                  }}
+                  className={`rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                    buildingAge === t.tier
+                      ? t.tier === 5
+                        ? 'bg-gradient-to-r from-yellow-200 via-amber-400 to-amber-600 text-slate-950 shadow-lg font-black ring-1 ring-amber-200'
+                        : 'bg-gradient-to-r from-amber-300 to-amber-500 text-slate-950 shadow-md font-black'
+                      : 'border border-white/10 text-[#cbd5e1] hover:bg-white/10'
+                  }`}
+                >
+                  <span>{t.label}</span>
+                </button>
+              ))}
+
+              <div className="h-4 w-px bg-white/20 mx-1" />
+
+              {/* Ações do Templo */}
+              <button
+                type="button"
+                onClick={() => setTempleAction('favor')}
+                className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                  templeAction === 'favor'
+                    ? 'bg-sky-400 text-slate-950 shadow'
+                    : 'border border-sky-400/30 text-sky-200 hover:bg-sky-400/15'
+                }`}
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+                <span>Gerando Favor Divino</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setTempleAction('milagre')}
+                className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                  templeAction === 'milagre'
+                    ? 'bg-amber-400 text-slate-950 shadow ring-1 ring-amber-300 font-black'
+                    : 'border border-amber-400/30 text-amber-200 hover:bg-amber-400/15'
+                }`}
+              >
+                <Sun className="h-3.5 w-3.5" />
+                <span>Invocar Milagre Supremo</span>
+              </button>
+
+              <div className="h-4 w-px bg-white/20 mx-1" />
+
+              <button
+                type="button"
+                onClick={() => setFocusDivine((v) => !v)}
+                className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                  focusDivine
+                    ? 'bg-sky-500 text-slate-950 shadow font-black'
+                    : 'border border-sky-400/40 text-sky-200 hover:bg-sky-500/20'
+                }`}
+              >
+                <Eye className="h-3.5 w-3.5" />
+                <span>{focusDivine ? 'Visão Geral' : 'Focar Estátua Divina'}</span>
+              </button>
+
+              <div className="h-4 w-px bg-white/20 mx-1" />
+              <button
+                type="button"
+                onClick={() => setShowHumanScale((v) => !v)}
+                className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                  showHumanScale
+                    ? 'bg-sky-500/20 text-sky-200 border border-sky-400/50'
+                    : 'border border-white/12 text-[#9ca3af] hover:text-white'
+                }`}
+              >
+                <Users className="h-3.5 w-3.5" />
+                <span>Escala Aldeão</span>
+              </button>
+            </>
+          ) : galleryCategory === 'building' && selectedCiv === 'egyptian' && selectedBuilding === 'temple' ? (
+            <>
+              {/* Deuses Patronos do Templo Egípcio */}
+              {(
+                [
+                  { id: 'Ra', label: '☀️ Rá', active: 'bg-gradient-to-r from-amber-300 to-amber-600 text-slate-950 font-black shadow-lg shadow-amber-500/30 ring-1 ring-amber-300' },
+                  { id: 'Isis', label: '🪷 Ísis', active: 'bg-gradient-to-r from-teal-300 to-sky-600 text-slate-950 font-black shadow-lg shadow-teal-500/30 ring-1 ring-teal-300' },
+                  { id: 'Set', label: '🏜️ Set', active: 'bg-gradient-to-r from-red-600 to-orange-700 text-white font-black shadow-lg shadow-red-500/30 ring-1 ring-orange-400' },
+                ] as const
+              ).map((g) => {
+                const isSel = selectedMajorGod.toLowerCase() === g.id.toLowerCase();
+                return (
+                  <button
+                    key={g.id}
+                    type="button"
+                    onClick={() => setSelectedMajorGod(g.id)}
+                    className={`rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      isSel ? g.active : 'border border-white/10 text-[#cbd5e1] hover:bg-white/10'
+                    }`}
+                  >
+                    <span>{g.label}</span>
+                  </button>
+                );
+              })}
+
+              <div className="h-4 w-px bg-white/20 mx-1" />
+
+              {/* Tiers T1 a T5 */}
+              {(
+                [
+                  { tier: 1, label: 'T1 • Altar' },
+                  { tier: 2, label: 'T2 • Santuário' },
+                  { tier: 3, label: 'T3 • Pilones' },
+                  { tier: 4, label: 'T4 • Esfinge' },
+                  { tier: 5, label: 'T5 • Pirâmide' },
+                ] as const
+              ).map((t) => (
+                <button
+                  key={t.tier}
+                  type="button"
+                  onClick={() => {
+                    setBuildingAge(t.tier as any);
+                    onSelectTier(t.tier);
+                  }}
+                  className={`rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                    buildingAge === t.tier
+                      ? t.tier === 5
+                        ? 'bg-gradient-to-r from-yellow-200 via-amber-400 to-amber-600 text-slate-950 shadow-lg font-black ring-1 ring-amber-200'
+                        : 'bg-gradient-to-r from-amber-300 to-amber-500 text-slate-950 shadow-md font-black'
+                      : 'border border-white/10 text-[#cbd5e1] hover:bg-white/10'
+                  }`}
+                >
+                  <span>{t.label}</span>
+                </button>
+              ))}
+
+              <div className="h-4 w-px bg-white/20 mx-1" />
+
+              {/* Ações do Templo */}
+              <button
+                type="button"
+                onClick={() => setTempleAction('favor')}
+                className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                  templeAction === 'favor'
+                    ? 'bg-sky-400 text-slate-950 shadow'
+                    : 'border border-sky-400/30 text-sky-200 hover:bg-sky-400/15'
+                }`}
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+                <span>Gerando Favor Divino</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setTempleAction('milagre')}
+                className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                  templeAction === 'milagre'
+                    ? 'bg-amber-400 text-slate-950 shadow ring-1 ring-amber-300 font-black'
+                    : 'border border-amber-400/30 text-amber-200 hover:bg-amber-400/15'
+                }`}
+              >
+                <Sun className="h-3.5 w-3.5" />
+                <span>Sopro Solar</span>
+              </button>
+
+              <div className="h-4 w-px bg-white/20 mx-1" />
+
+              <button
+                type="button"
+                onClick={() => setFocusDivine((v) => !v)}
+                className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                  focusDivine
+                    ? 'bg-sky-500 text-slate-950 shadow font-black'
+                    : 'border border-sky-400/40 text-sky-200 hover:bg-sky-500/20'
+                }`}
+              >
+                <Eye className="h-3.5 w-3.5" />
+                <span>{focusDivine ? 'Visão Geral' : 'Focar Estátua / Ápice'}</span>
+              </button>
+
+              <div className="h-4 w-px bg-white/20 mx-1" />
+              <button
+                type="button"
+                onClick={() => setShowHumanScale((v) => !v)}
+                className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                  showHumanScale
+                    ? 'bg-sky-500/20 text-sky-200 border border-sky-400/50'
+                    : 'border border-white/12 text-[#9ca3af] hover:text-white'
+                }`}
+              >
+                <Users className="h-3.5 w-3.5" />
+                <span>Escala Aldeão</span>
+              </button>
             </>
           ) : galleryCategory === 'building' && selectedCiv === 'greek' && selectedBuilding === 'fortress' ? (
             <>
@@ -5634,6 +6952,239 @@ export function HopliteUvBuilderModal({
                     onClick={() => setFortressAction(act.id)}
                     className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
                       fortressAction === act.id ? activeColor : inactiveColor
+                    }`}
+                  >
+                    <Icon className="h-3.5 w-3.5" />
+                    <span>{act.label}</span>
+                  </button>
+                );
+              })}
+
+              <div className="h-4 w-px bg-white/20 mx-1" />
+              <button
+                type="button"
+                onClick={() => setShowHumanScale((v) => !v)}
+                className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                  showHumanScale
+                    ? 'bg-sky-500/20 text-sky-200 border border-sky-400/50'
+                    : 'border border-white/12 text-[#9ca3af] hover:text-white'
+                }`}
+              >
+                <Users className="h-3.5 w-3.5" />
+                <span>Escala Aldeão</span>
+              </button>
+            </>
+          ) : galleryCategory === 'building' && selectedCiv === 'atlantean' && selectedBuilding === 'fortress' ? (
+            <>
+              {/* Deuses Patronos Atlantes */}
+              {(
+                [
+                  { id: 'Kronos', label: '⏳ Kronos', active: 'bg-gradient-to-r from-sky-400 to-indigo-700 text-white font-black shadow-lg shadow-sky-500/30 ring-1 ring-sky-300' },
+                  { id: 'Oranos', label: '🌪️ Oranos', active: 'bg-gradient-to-r from-amber-300 to-sky-600 text-slate-950 font-black shadow-lg shadow-amber-500/30 ring-1 ring-amber-300' },
+                  { id: 'Gaia', label: '🌿 Gaia', active: 'bg-gradient-to-r from-emerald-400 to-emerald-800 text-white font-black shadow-lg shadow-emerald-500/30 ring-1 ring-emerald-300' },
+                ] as const
+              ).map((g) => {
+                const rawGod = selectedMajorGod.toLowerCase();
+                const isSel = rawGod === g.id.toLowerCase() || (g.id === 'Oranos' && rawGod === 'urano') || (g.id === 'Kronos' && rawGod === 'cronos');
+                return (
+                  <button
+                    key={g.id}
+                    type="button"
+                    onClick={() => setSelectedMajorGod(g.id)}
+                    className={`rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      isSel
+                        ? g.active
+                        : 'border border-white/10 text-[#cbd5e1] hover:bg-white/10'
+                    }`}
+                  >
+                    <span>{g.label}</span>
+                  </button>
+                );
+              })}
+
+              <div className="h-4 w-px bg-white/20 mx-1" />
+
+              {/* Tiers T3 (Palácio 3 Cúpulas) e T4 (Cidadela Imperial) */}
+              <button
+                type="button"
+                onClick={() => {
+                  setBuildingAge(3);
+                  onSelectTier(3);
+                }}
+                className={`rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                  buildingAge <= 3
+                    ? 'bg-gradient-to-r from-amber-300 to-amber-500 text-slate-950 shadow-md font-black'
+                    : 'border border-white/10 text-[#cbd5e1] hover:bg-white/10'
+                }`}
+              >
+                <span>T3 • Palácio (3 Cúpulas)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setBuildingAge(4);
+                  onSelectTier(4);
+                }}
+                className={`rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                  buildingAge >= 4
+                    ? 'bg-gradient-to-r from-amber-300 to-amber-500 text-slate-950 shadow-md font-black'
+                    : 'border border-white/10 text-[#cbd5e1] hover:bg-white/10'
+                }`}
+              >
+                <span>T4 • Cidadela Imperial</span>
+              </button>
+
+              <div className="h-4 w-px bg-white/20 mx-1" />
+
+              {/* Ações da Fortaleza Atlante */}
+              {(
+                [
+                  { id: 'guarnicao', label: 'Guarnição Ativa', icon: Shield },
+                  { id: 'defesa', label: 'Rajada de Oricalco', icon: Sparkles },
+                  { id: 'bencao', label: 'Aura de Atlântida', icon: Sun },
+                ] as const
+              ).map((act) => {
+                const Icon = act.icon;
+                const god = selectedMajorGod.toLowerCase();
+                const activeColor =
+                  god === 'gaia'
+                    ? 'bg-emerald-500 text-slate-950 shadow'
+                    : god === 'oranos' || god === 'urano'
+                    ? 'bg-amber-400 text-slate-950 shadow'
+                    : 'bg-sky-400 text-slate-950 shadow';
+                const inactiveColor =
+                  god === 'gaia'
+                    ? 'border border-emerald-400/30 text-emerald-200 hover:bg-emerald-400/15'
+                    : god === 'oranos' || god === 'urano'
+                    ? 'border border-amber-400/30 text-amber-200 hover:bg-amber-400/15'
+                    : 'border border-sky-400/30 text-sky-200 hover:bg-sky-400/15';
+
+                return (
+                  <button
+                    key={act.id}
+                    type="button"
+                    onClick={() => setAtlanteanFortressAction(act.id)}
+                    className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      atlanteanFortressAction === act.id ? activeColor : inactiveColor
+                    }`}
+                  >
+                    <Icon className="h-3.5 w-3.5" />
+                    <span>{act.label}</span>
+                  </button>
+                );
+              })}
+
+              <div className="h-4 w-px bg-white/20 mx-1" />
+              <button
+                type="button"
+                onClick={() => setShowHumanScale((v) => !v)}
+                className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                  showHumanScale
+                    ? 'bg-sky-500/20 text-sky-200 border border-sky-400/50'
+                    : 'border border-white/12 text-[#9ca3af] hover:text-white'
+                }`}
+              >
+                <Users className="h-3.5 w-3.5" />
+                <span>Escala Aldeão</span>
+              </button>
+            </>
+          ) : galleryCategory === 'building' && selectedCiv === 'norse' && selectedBuilding === 'fortress' ? (
+            <>
+              {/* Deuses Patronos Nórdicos */}
+              {(
+                [
+                  { id: 'Odin', label: '🐺 Odin', active: 'bg-gradient-to-r from-sky-400 to-blue-700 text-white font-black shadow-lg shadow-sky-500/30 ring-1 ring-sky-300' },
+                  { id: 'Thor', label: '🔨 Thor', active: 'bg-gradient-to-r from-red-500 to-amber-500 text-slate-950 font-black shadow-lg shadow-red-500/30 ring-1 ring-amber-300' },
+                  { id: 'Loki', label: '🐍 Loki', active: 'bg-gradient-to-r from-emerald-400 to-emerald-800 text-white font-black shadow-lg shadow-emerald-500/30 ring-1 ring-emerald-300' },
+                  { id: 'Freyr', label: '🌾 Freyr', active: 'bg-gradient-to-r from-amber-300 to-lime-600 text-slate-950 font-black shadow-lg shadow-amber-500/30 ring-1 ring-lime-400' },
+                ] as const
+              ).map((g) => {
+                const rawGod = selectedMajorGod.toLowerCase();
+                const isSel = rawGod === g.id.toLowerCase();
+                return (
+                  <button
+                    key={g.id}
+                    type="button"
+                    onClick={() => setSelectedMajorGod(g.id)}
+                    className={`rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      isSel
+                        ? g.active
+                        : 'border border-white/10 text-[#cbd5e1] hover:bg-white/10'
+                    }`}
+                  >
+                    <span>{g.label}</span>
+                  </button>
+                );
+              })}
+
+              <div className="h-4 w-px bg-white/20 mx-1" />
+
+              {/* Tiers T3 (Hill Fort Heroico) e T4 (Cidadela de Valhalla) */}
+              <button
+                type="button"
+                onClick={() => {
+                  setBuildingAge(3);
+                  onSelectTier(3);
+                }}
+                className={`rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                  buildingAge <= 3
+                    ? 'bg-gradient-to-r from-amber-300 to-amber-500 text-slate-950 shadow-md font-black'
+                    : 'border border-white/10 text-[#cbd5e1] hover:bg-white/10'
+                }`}
+              >
+                <span>T3 • Hill Fort Heroico</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setBuildingAge(4);
+                  onSelectTier(4);
+                }}
+                className={`rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                  buildingAge >= 4
+                    ? 'bg-gradient-to-r from-amber-300 to-amber-500 text-slate-950 shadow-md font-black'
+                    : 'border border-white/10 text-[#cbd5e1] hover:bg-white/10'
+                }`}
+              >
+                <span>T4 • Cidadela de Valhalla</span>
+              </button>
+
+              <div className="h-4 w-px bg-white/20 mx-1" />
+
+              {/* Ações do Hill Fort Nórdico */}
+              {(
+                [
+                  { id: 'guarnicao', label: 'Guarnição Ativa', icon: Shield },
+                  { id: 'defesa', label: 'Saraivada de Lanças', icon: Sparkles },
+                  { id: 'geada', label: 'Geada de Fim de Inverno', icon: Sun },
+                ] as const
+              ).map((act) => {
+                const Icon = act.icon;
+                const god = selectedMajorGod.toLowerCase();
+                const activeColor =
+                  god === 'thor'
+                    ? 'bg-red-500 text-white shadow'
+                    : god === 'loki'
+                    ? 'bg-emerald-500 text-slate-950 shadow'
+                    : god === 'freyr'
+                    ? 'bg-yellow-400 text-slate-950 shadow'
+                    : 'bg-sky-400 text-slate-950 shadow';
+                const inactiveColor =
+                  god === 'thor'
+                    ? 'border border-red-400/30 text-red-200 hover:bg-red-400/15'
+                    : god === 'loki'
+                    ? 'border border-emerald-400/30 text-emerald-200 hover:bg-emerald-400/15'
+                    : god === 'freyr'
+                    ? 'border border-yellow-400/30 text-yellow-200 hover:bg-yellow-400/15'
+                    : 'border border-sky-400/30 text-sky-200 hover:bg-sky-400/15';
+
+                return (
+                  <button
+                    key={act.id}
+                    type="button"
+                    onClick={() => setNorseFortressAction(act.id)}
+                    className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      norseFortressAction === act.id ? activeColor : inactiveColor
                     }`}
                   >
                     <Icon className="h-3.5 w-3.5" />

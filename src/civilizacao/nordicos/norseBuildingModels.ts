@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { BuildingKind, PantheonId, TeamId } from '../../game/types';
+import { buildNorseHillFort as buildProceduralNorseHillFort } from './norseFortressModel';
 
 // ─── Procedural Wood-and-Stone Nordic Building Textures ─────────────────────
 
@@ -1191,84 +1192,16 @@ function buildNorseStaveTemple(
 
 function buildNorseHillFort(
   group: THREE.Group,
-  mats: NorseMaterials
-): void {
-  // 1. Raised Earth-and-Granite Motte Mound
-  const motteMound = new THREE.Mesh(
-    new THREE.CylinderGeometry(1.75, 2.15, 0.48, 12),
-    mats.graniteStone
-  );
-  motteMound.position.y = 0.24;
-  group.add(motteMound);
-
-  // 2. Perimeter Sharpened-Log Timber Palisade Wall with 4 Corner Watchtowers
-  const palisadeRadius = 1.48;
-  const numLogs = 36;
-  for (let i = 0; i < numLogs; i++) {
-    const angle = (i / numLogs) * Math.PI * 2;
-    // Leave opening at front gate (angle near 0)
-    if (Math.abs(Math.sin(angle)) < 0.24 && Math.cos(angle) > 0) continue;
-    const lx = Math.sin(angle) * palisadeRadius;
-    const lz = Math.cos(angle) * palisadeRadius;
-    const logH = 0.72 + (i % 3) * 0.05;
-    const log = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.06, 0.075, logH, 6),
-      mats.darkBeam
-    );
-    log.position.set(lx, 0.48 + logH * 0.5, lz);
-    group.add(log);
-  }
-
-  // Four Corner Timber Watchtowers with Viking Shields
-  for (const [tx, tz] of [
-    [-1.08, -1.08],
-    [1.08, -1.08],
-    [-1.08, 1.08],
-    [1.08, 1.08],
-  ]) {
-    const towerBase = new THREE.Mesh(
-      new THREE.BoxGeometry(0.56, 1.15, 0.56),
-      mats.timberWall
-    );
-    towerBase.position.set(tx, 0.48 + 0.575, tz);
-    group.add(towerBase);
-
-    const towerRoof = new THREE.Mesh(
-      new THREE.ConeGeometry(0.46, 0.48, 4),
-      mats.shingleRoof
-    );
-    towerRoof.rotation.y = Math.PI / 4;
-    towerRoof.position.set(tx, 0.48 + 1.38, tz);
-    group.add(towerRoof);
-  }
-
-  // 3. Towering Central Jarl's Keep inside the Hill Fort
-  const centralKeep = new THREE.Mesh(
-    new THREE.BoxGeometry(1.25, 1.25, 1.35),
-    mats.timberWall
-  );
-  centralKeep.position.set(0, 0.48 + 0.625, -0.08);
-  group.add(centralKeep);
-
-  const keepRoof = buildPitchedStaveRoof(
-    1.48,
-    0.82,
-    1.55,
-    mats.shingleRoof,
-    mats.darkBeam,
-    mats.carvedTrim,
-    true
-  );
-  keepRoof.position.set(0, 0.48 + 1.25, -0.08);
-  group.add(keepRoof);
-
-  // Heavy Iron-Bound Gatehouse Arch at Front
-  const gatehouse = new THREE.Mesh(
-    new THREE.BoxGeometry(0.75, 0.92, 0.36),
-    mats.carvedTrim
-  );
-  gatehouse.position.set(0, 0.48 + 0.46, 1.45);
-  group.add(gatehouse);
+  _mats: NorseMaterials,
+  age: number = 3,
+  godKey: string = 'odin'
+): { metropolisHalo?: THREE.Object3D; metropolisCrystal?: THREE.Object3D } {
+  const effTier = age >= 4 ? 4 : 3;
+  const fortress = buildProceduralNorseHillFort(godKey, effTier, true);
+  group.add(fortress.root);
+  return {
+    metropolisHalo: fortress.frostRing
+  };
 }
 
 // ─── 5. OTHER NORDIC BUILDINGS (House, Armory, Siege, Tower, Market, Farm, Titan Gate) ───
@@ -1587,7 +1520,8 @@ export function createNorseBuildingMesh(
   pal: any,
   enableShadows = true,
   age = 1,
-  pantheon: PantheonId = 'norse'
+  pantheon: PantheonId = 'norse',
+  majorGod?: string
 ): NorseBuildingBuildResult {
   const group = new THREE.Group();
   const mats = createNorseMaterials(team, pal);
@@ -1641,13 +1575,24 @@ export function createNorseBuildingMesh(
       barWidth = 2.8;
       break;
     }
-    case 'fortress':
-      buildNorseHillFort(group, mats);
-      group.scale.setScalar(1.65);
-      markerRadius = 3.4;
-      barHeight = 5.2;
-      barWidth = 3.2;
+    case 'fortress': {
+      const rawGod = (majorGod || String(pantheon || 'odin')).toLowerCase();
+      const effGod = rawGod.includes('thor')
+        ? 'thor'
+        : rawGod.includes('loki')
+        ? 'loki'
+        : rawGod.includes('freyr')
+        ? 'freyr'
+        : 'odin';
+      const res = buildNorseHillFort(group, mats, age, effGod);
+      metropolisHalo = res.metropolisHalo;
+      metropolisCrystal = res.metropolisCrystal;
+      group.scale.setScalar(1.22 + (age - 3) * 0.05);
+      markerRadius = 3.4 + (age - 3) * 0.25;
+      barHeight = 5.0 + (age - 3) * 0.45;
+      barWidth = 3.2 + (age - 3) * 0.15;
       break;
+    }
     case 'house':
       buildNorseHouse(group, mats);
       group.scale.setScalar(1.48);
