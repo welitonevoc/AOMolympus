@@ -28,6 +28,12 @@ import { createNorseBuildingMesh } from '../civilizacao/nordicos/norseBuildingMo
 import { createEgyptianBuildingMesh } from '../civilizacao/egipcios/egyptianBuildingModels';
 import { createGreekBuildingMesh } from '../civilizacao/gregos/greekBuildingModels';
 import { createAtlanteanBuildingMesh } from '../civilizacao/atlantes/atlanteanBuildingModels';
+import {
+  createChineseBuildingMesh,
+  createChineseDragonTitanMesh,
+  createChineseUnitMesh,
+  getChineseUnitMarkerSpec,
+} from '../civilizacao/chineses/chineseModels';
 import { createExpandedBuildingMesh, isExpandedBuildingKind } from './expandedBuildingModels';
 import {
   createAoMOakTreeMesh,
@@ -549,7 +555,7 @@ function attachHealthBar(group: THREE.Group, height: number, width: number, with
 }
 
 interface CivLook {
-  style: 'greek' | 'egyptian' | 'norse' | 'atlantean';
+  style: 'greek' | 'egyptian' | 'norse' | 'atlantean' | 'chinese';
   wallMat: THREE.Material;
   trimMat: THREE.Material;
   roofMat: THREE.Material;
@@ -716,6 +722,44 @@ function getCivLook(pantheon: PantheonId, pal: MaterialPalette, majorGod?: strin
         titanCoreMat: pal.goldOre,
       };
     }
+
+    // CHINESES: Fu Xi, Nü Wa, Shennong
+    if (mg.includes('fu xi')) {
+      return {
+        style: 'chinese',
+        wallMat: pal.crimson,
+        trimMat: pal.gold,
+        roofMat: pal.jade,
+        armorMat: pal.gold,
+        mountMat: pal.ivory,
+        titanBodyMat: pal.jade,
+        titanCoreMat: pal.goldOre,
+      };
+    }
+    if (mg.includes('nü wa') || mg.includes('nu wa')) {
+      return {
+        style: 'chinese',
+        wallMat: pal.ivory,
+        trimMat: pal.jade,
+        roofMat: pal.jade,
+        armorMat: pal.jade,
+        mountMat: pal.ivory,
+        titanBodyMat: pal.jade,
+        titanCoreMat: pal.crystalGlow,
+      };
+    }
+    if (mg.includes('shennong')) {
+      return {
+        style: 'chinese',
+        wallMat: pal.crimson,
+        trimMat: pal.bronze,
+        roofMat: pal.gold,
+        armorMat: pal.bronze,
+        mountMat: pal.furBrown,
+        titanBodyMat: pal.ember,
+        titanCoreMat: pal.goldOre,
+      };
+    }
   }
 
   // Fallbacks de estilo por panteão
@@ -729,7 +773,7 @@ function getCivLook(pantheon: PantheonId, pal: MaterialPalette, majorGod?: strin
     case 'atlantean':
       return { style, wallMat: pal.ivory, trimMat: pal.orichalcum, roofMat: pal.turquoise, armorMat: pal.orichalcum, mountMat: pal.ivory, titanBodyMat: pal.orichalcum, titanCoreMat: pal.crystalGlow };
     case 'chinese':
-      return { style: 'atlantean', wallMat: pal.ivory, trimMat: pal.gold, roofMat: pal.crimson, armorMat: pal.jade, mountMat: pal.ivory, titanBodyMat: pal.jade, titanCoreMat: pal.goldOre };
+      return { style: 'chinese', wallMat: pal.crimson, trimMat: pal.gold, roofMat: pal.jade, armorMat: pal.jade, mountMat: pal.ivory, titanBodyMat: pal.jade, titanCoreMat: pal.goldOre };
     case 'aztec':
       return { style: 'egyptian', wallMat: pal.sandstoneDark, trimMat: pal.jade, roofMat: pal.gold, armorMat: pal.jade, mountMat: pal.furBrown, titanBodyMat: pal.jade, titanCoreMat: pal.ember };
     case 'roman':
@@ -1148,6 +1192,20 @@ export function createBuildingMesh(
     return root;
   }
 
+  if (look.style === 'chinese') {
+    const built = createChineseBuildingMesh(kind, team, pal, enableShadows, age, pantheon, majorGod);
+    root.add(built.group);
+    if (built.beaconCrystal) {
+      root.userData.beaconCrystal = built.beaconCrystal;
+    }
+    if (built.vortexRing) {
+      root.userData.vortexRing = built.vortexRing;
+    }
+    attachGroundMarkers(root, built.markerRadius, pal, team);
+    attachHealthBar(root, built.barHeight, built.barWidth);
+    return root;
+  }
+
   if (kind === 'town_center') {
     buildSimpleTownCenter(root, team, pal, look, enableShadows, age);
     return root;
@@ -1513,10 +1571,11 @@ export function createUnitMesh(
     return m;
   };
 
-  if (kind === 'fishing_ship' || kind === 'war_trireme') {
+  if (kind === 'fishing_ship' || kind === 'war_trireme' || kind === 'transport_ship') {
     const isWar = kind === 'war_trireme';
-    const hullLen = isWar ? 2.55 : 1.75;
-    const hullW = isWar ? 0.88 : 0.72;
+    const isTransport = kind === 'transport_ship';
+    const hullLen = isWar ? 2.55 : isTransport ? 2.85 : 1.75;
+    const hullW = isWar ? 0.88 : isTransport ? 1.18 : 0.72;
     const hullGroup = new THREE.Group();
     root.add(hullGroup);
 
@@ -1539,9 +1598,9 @@ export function createUnitMesh(
     };
 
     // Main curved hull + deck
-    addShipPart(new THREE.BoxGeometry(hullW, 0.36, hullLen), pal.timber, 0, 0.32, 0);
-    addShipPart(new THREE.BoxGeometry(hullW * 0.86, 0.08, hullLen * 0.9), look.wallMat, 0, 0.52, 0);
-    // Prow + bronze ram (for war_trireme) or fishing net boom (for fishing_ship)
+    addShipPart(new THREE.BoxGeometry(hullW, isTransport ? 0.44 : 0.36, hullLen), pal.timber, 0, 0.32, 0);
+    addShipPart(new THREE.BoxGeometry(hullW * 0.88, 0.08, hullLen * 0.9), look.wallMat, 0, isTransport ? 0.56 : 0.52, 0);
+    // Prow + bronze ram (for war_trireme) or boarding ramp (for transport_ship) or fishing net boom
     addShipPart(
       new THREE.ConeGeometry(hullW * 0.44, 0.72, 4),
       pal.timber,
@@ -1568,22 +1627,27 @@ export function createUnitMesh(
         addShipPart(new THREE.CylinderGeometry(0.14, 0.14, 0.05, 8), look.trimMat, -hullW * 0.52, 0.54, sz, 0, 0, Math.PI / 2);
         addShipPart(new THREE.CylinderGeometry(0.14, 0.14, 0.05, 8), look.trimMat, hullW * 0.52, 0.54, sz, 0, 0, Math.PI / 2);
       }
+    } else if (isTransport) {
+      // Wide troop benches + raised bulwarks + bow disembarkation ramp
+      addShipPart(new THREE.BoxGeometry(0.75, 0.08, 0.45), pal.bronze, 0, 0.52, hullLen * 0.52, 0.28, 0, 0);
+      addShipPart(new THREE.BoxGeometry(0.16, 0.2, hullLen * 0.72), look.trimMat, -hullW * 0.36, 0.65, -0.1);
+      addShipPart(new THREE.BoxGeometry(0.16, 0.2, hullLen * 0.72), look.trimMat, hullW * 0.36, 0.65, -0.1);
     } else {
       // Fishing net & basket on stern
       addShipPart(new THREE.CylinderGeometry(0.22, 0.16, 0.32, 8), pal.bronze, 0, 0.68, -0.45);
       addShipPart(new THREE.BoxGeometry(0.45, 0.14, 0.42), pal.goldOre, 0, 0.72, 0.42);
     }
     // Mast + Square Billowing Sail + Banner Pennant
-    addShipPart(new THREE.CylinderGeometry(0.055, 0.07, isWar ? 2.15 : 1.65, 6), pal.timber, 0, isWar ? 1.5 : 1.25, 0);
-    addShipPart(new THREE.BoxGeometry(isWar ? 1.48 : 1.05, 0.06, 0.06), pal.timber, 0, isWar ? 2.18 : 1.78, 0);
+    addShipPart(new THREE.CylinderGeometry(0.055, 0.07, isWar ? 2.15 : isTransport ? 1.95 : 1.65, 6), pal.timber, 0, isWar ? 1.5 : 1.38, isTransport ? -0.35 : 0);
+    addShipPart(new THREE.BoxGeometry(isWar ? 1.48 : isTransport ? 1.35 : 1.05, 0.06, 0.06), pal.timber, 0, isWar ? 2.18 : 1.95, isTransport ? -0.35 : 0);
     addShipPart(
-      new THREE.BoxGeometry(isWar ? 1.4 : 0.98, isWar ? 1.15 : 0.85, 0.06),
+      new THREE.BoxGeometry(isWar ? 1.4 : isTransport ? 1.25 : 0.98, isWar ? 1.15 : 0.95, 0.06),
       teamMat,
       0,
-      isWar ? 1.58 : 1.32,
-      0.08
+      isWar ? 1.58 : 1.45,
+      isTransport ? -0.27 : 0.08
     );
-    addShipPart(new THREE.BoxGeometry(0.45, 0.24, 0.05), look.trimMat, 0.22, isWar ? 2.48 : 2.02, 0);
+    addShipPart(new THREE.BoxGeometry(0.45, 0.24, 0.05), look.trimMat, 0.22, isWar ? 2.48 : 2.25, isTransport ? -0.35 : 0);
 
     let waveT = Math.random() * 6.28;
     root.userData.animatePose = (dt: number, moving: boolean) => {
@@ -1593,8 +1657,8 @@ export function createUnitMesh(
       hullGroup.rotation.x = moving ? -0.05 : Math.sin(waveT * 0.6) * 0.025;
     };
 
-    attachGroundMarkers(root, isWar ? 1.25 : 1.05, pal, team);
-    attachHealthBar(root, isWar ? 2.85 : 2.35, isWar ? 1.85 : 1.45);
+    attachGroundMarkers(root, isTransport ? 1.42 : isWar ? 1.25 : 1.05, pal, team);
+    attachHealthBar(root, isWar ? 2.85 : 2.6, isTransport ? 2.0 : isWar ? 1.85 : 1.45);
     return root;
   }
 
@@ -1758,6 +1822,38 @@ export function createUnitMesh(
       );
     };
     const mSpec = getAtlanteanUnitMarkerSpec(kind);
+    attachGroundMarkers(root, mSpec.markerRadius, pal, team);
+    attachHealthBar(root, mSpec.barHeight, mSpec.barWidth);
+    return root;
+  }
+
+  const isExplicitChineseUnit =
+    kind === 'chinese_peasant' ||
+    kind === 'kuafu' ||
+    kind === 'halberdier' ||
+    kind === 'chu_ko_nu' ||
+    kind === 'tiger_cavalry' ||
+    kind === 'fire_lance' ||
+    kind === 'nezha' ||
+    kind === 'jiang_ziya' ||
+    kind === 'qilin' ||
+    kind === 'taotie' ||
+    kind === 'yazi' ||
+    kind === 'azure_dragon';
+
+  if (isExplicitChineseUnit || (look.style === 'chinese' && !isGodKind && kind !== 'titan')) {
+    const chnMesh = createChineseUnitMesh(kind, team, pal, enableShadows);
+    root.add(chnMesh);
+    root.userData.chnMesh = chnMesh;
+    root.userData.animatePose = chnMesh.userData.animatePose;
+    root.userData.leftLeg = chnMesh.userData.leftLeg;
+    root.userData.rightLeg = chnMesh.userData.rightLeg;
+    root.userData.leftArm = chnMesh.userData.leftArm;
+    root.userData.rightArm = chnMesh.userData.rightArm;
+    root.userData.updateBrg = (dt: number, state: string) => {
+      chnMesh.userData.animatePose?.(dt, state === 'move', 3.2, state === 'attack' ? 0.5 : null);
+    };
+    const mSpec = getChineseUnitMarkerSpec(kind);
     attachGroundMarkers(root, mSpec.markerRadius, pal, team);
     attachHealthBar(root, mSpec.barHeight, mSpec.barWidth);
     return root;
@@ -2704,6 +2800,26 @@ export function createUnitMesh(
     }
 
     // ==============================================================
+    // 3B. TITÃ CHINÊS: DRAGÃO CELESTIAL IMPERIAL
+    // ==============================================================
+    if (
+      godKey.includes('fu xi') ||
+      godKey.includes('nü wa') ||
+      godKey.includes('nu wa') ||
+      godKey.includes('shennong') ||
+      look.style === 'chinese'
+    ) {
+      const chnTitan = createChineseDragonTitanMesh(pal, enableShadows);
+      root.add(chnTitan);
+      root.userData.beaconCrystal = chnTitan.userData.beaconCrystal;
+      root.userData.animatePose = chnTitan.userData.animatePose;
+      root.userData.updateBrg = chnTitan.userData.updateBrg;
+      attachGroundMarkers(root, 2.35, pal, team);
+      attachHealthBar(root, 9.5, 3.0);
+      return root;
+    }
+
+    // ==============================================================
     // 4. TITÃS HUMANÓIDES (DEMAIS PANTEÕES)
     // ==============================================================
     const leftLeg = part(geos.giantLimb, look.titanBodyMat, -0.75, 1.55, 0);
@@ -3207,6 +3323,33 @@ export function createResourceMesh(
     }
     attachGroundMarkers(root, 0.95, pal, 'neutral');
     attachHealthBar(root, 1.55, 1.35);
+  } else if (kind === 'fish_spot') {
+    // Cardume aquático animado com peixes prateados e anéis de água
+    const ripple = add(
+      new THREE.Mesh(
+        new THREE.TorusGeometry(1.08, 0.055, 8, 24),
+        pal.crystalGlow
+      ),
+      0,
+      0.16,
+      0
+    );
+    ripple.rotation.x = Math.PI / 2;
+    const school = new THREE.Group();
+    root.add(school);
+    root.userData.fishSchoolGroup = school;
+    const fishBodyGeo = new THREE.ConeGeometry(0.12, 0.42, 6);
+    for (let i = 0; i < 6; i++) {
+      const ang = (i / 6) * Math.PI * 2;
+      const dist = 0.42 + (i % 2) * 0.25;
+      const fish = new THREE.Mesh(fishBodyGeo, i % 2 === 0 ? pal.iceBlue : pal.goldOre);
+      fish.position.set(Math.cos(ang) * dist, 0.14 + (i % 3) * 0.04, Math.sin(ang) * dist);
+      fish.rotation.z = Math.PI / 2;
+      fish.rotation.y = -ang;
+      school.add(fish);
+    }
+    attachGroundMarkers(root, 1.35, pal, 'neutral');
+    attachHealthBar(root, 1.45, 1.45);
   } else {
     // Gold Mine (biome-tinted rocky outcropping with golden crystalline veins)
     const rockOuterMat =

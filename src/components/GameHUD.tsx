@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
+  Anchor,
   ArrowRightLeft,
   BookOpen,
   BoxSelect,
@@ -9,6 +10,7 @@ import {
   ChevronUp,
   Clock,
   Coins,
+  Compass,
   Crosshair,
   Crown,
   Eye,
@@ -24,6 +26,7 @@ import {
   Lock,
   LogOut,
   Menu,
+  MessageSquare,
   Moon,
   Mountain,
   Orbit,
@@ -33,6 +36,7 @@ import {
   RotateCcw,
   RotateCw,
   Save,
+  Send,
   Shield,
   Skull,
   SlidersHorizontal,
@@ -66,11 +70,13 @@ import {
   TECH_SPECS,
 } from '../game/divineData';
 import { getMinorGodPortrait } from '../game/mediaAssets';
+import { AI_PERSONALITY_LABELS, ChatMessage, getMpColorById } from '../game/multiplayerTypes';
 import {
   AGE_COSTS,
   AGE_NAMES,
   AgeLevel,
   BuildingKind,
+  CombatStance,
   FormationId,
   FORMATIONS,
   GameHudSnapshot,
@@ -82,6 +88,7 @@ import {
   ResourceType,
   TechId,
   UnitKind,
+  VillagerPriorityPreset,
 } from '../game/types';
 import { soundEngine } from '../game/audio';
 import { AnimatedPortrait } from './AnimatedPortrait';
@@ -148,6 +155,16 @@ interface GameHUDProps {
   onOrderPrayTemple?: (templeId?: string) => void;
   onOrderEmpowerMonument?: (buildingId?: string) => void;
   onSpreadOracles?: () => void;
+  inMatchMessages?: ChatMessage[];
+  onSendMatchChat?: (channel: 'all' | 'team', text: string) => void;
+  onSendTribute?: (targetSlot: number, resource: 'food' | 'wood' | 'gold', amount: number) => void;
+  onSetVillagerPriority?: (preset: VillagerPriorityPreset) => void;
+  onToggleAutoScout?: () => void;
+  onSetUnitStance?: (stance: CombatStance) => void;
+  onSelectControlGroup?: (group: number, forceFocus?: boolean) => void;
+  onAssignControlGroup?: (group: number) => void;
+  onEmbarkTransport?: (shipId?: string) => void;
+  onDisembarkTransport?: (shipId: string) => void;
   onRestart: () => void;
   onReturnTitle: () => void;
 }
@@ -270,6 +287,16 @@ export function GameHUD({
   onOrderPrayTemple,
   onOrderEmpowerMonument,
   onSpreadOracles,
+  inMatchMessages = [],
+  onSendMatchChat,
+  onSendTribute,
+  onSetVillagerPriority,
+  onToggleAutoScout,
+  onSetUnitStance,
+  onSelectControlGroup,
+  onAssignControlGroup,
+  onEmbarkTransport,
+  onDisembarkTransport,
   onRestart,
   onReturnTitle,
 }: GameHUDProps) {
@@ -278,6 +305,9 @@ export function GameHUD({
   const [showFavorPanel, setShowFavorPanel] = useState(false);
   const [showDuelScore, setShowDuelScore] = useState(true);
   const [showCameraBar, setShowCameraBar] = useState(false);
+  const [showMatchChat, setShowMatchChat] = useState(false);
+  const [chatChannel, setChatChannel] = useState<'all' | 'team'>('all');
+  const [chatInput, setChatInput] = useState('');
   const [activeDialog, setActiveDialog] = useState<InGameDialog>('none');
   const [pausePrompt, setPausePrompt] = useState<PausePrompt>('menu');
   const [postGameTab, setPostGameTab] = useState<PostGameTab>('summary');
@@ -289,6 +319,11 @@ export function GameHUD({
   // Keyboard shortcuts: H toggles bottom dock, F4 toggles Duel Scoreboard (AoM), F10 opens Menu
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      const tag = target?.tagName?.toLowerCase();
+      if (tag === 'input' || tag === 'textarea' || tag === 'select' || target?.isContentEditable) {
+        return;
+      }
       if (e.code === 'KeyH') {
         setDockCollapsed((prev) => !prev);
       } else if (e.code === 'F4') {
@@ -355,11 +390,32 @@ export function GameHUD({
     hud.titansEnabled
   );
   const unitKinds: UnitKind[] =
-    hud.pantheon === 'egyptian'
+    hud.pantheon === 'chinese'
+      ? [
+          'chinese_peasant',
+          'kuafu',
+          'fishing_ship',
+          'war_trireme',
+          'transport_ship',
+          'halberdier',
+          'chu_ko_nu',
+          'tiger_cavalry',
+          'fire_lance',
+          'ram',
+          'siege',
+          'nezha',
+          'jiang_ziya',
+          'qilin',
+          'taotie',
+          'yazi',
+          'azure_dragon',
+        ]
+      : hud.pantheon === 'egyptian'
       ? [
           'villager',
           'fishing_ship',
           'war_trireme',
+          'transport_ship',
           'priest',
           'pharaoh',
           'son_of_osiris',
@@ -397,6 +453,7 @@ export function GameHUD({
           'ox_cart',
           'fishing_ship',
           'war_trireme',
+          'transport_ship',
           'hersir',
           'godi',
           'ulfsark',
@@ -435,6 +492,7 @@ export function GameHUD({
           'llama_caravan',
           'fishing_ship',
           'war_trireme',
+          'transport_ship',
           'murmillo',
           'katapeltes',
           'turma',
@@ -462,6 +520,7 @@ export function GameHUD({
           'villager',
           'fishing_ship',
           'war_trireme',
+          'transport_ship',
           'hoplite',
           'hipaspist',
           ...(hud.pantheon === 'greek' && hud.majorGodName.toLowerCase().includes('zeus')
@@ -551,32 +610,50 @@ export function GameHUD({
             className="pointer-events-auto flex flex-col justify-center rounded-md lg:rounded-t-none lg:rounded-b-md border lg:border-t-0 border-[#c8a962]/60 bg-[#10141e]/95 px-2 sm:px-2.5 py-1 sm:py-1.5 shadow-[0_8px_20px_rgba(0,0,0,0.75)] min-w-[148px] sm:min-w-[186px]"
           >
             {(() => {
-              const duelists = [
-                {
-                  id: 'player' as const,
-                  label: `${options.playerName} (${hud.majorGodName})`,
-                  score: hud.playerScore,
-                  breakdown: hud.playerScoreBreakdown,
-                  age: hud.age,
-                  color: '#60a5fa',
-                },
-                {
-                  id: 'enemy' as const,
-                  label: `Rival (${hud.enemyMajorGodName})`,
-                  score: hud.enemyScore,
-                  breakdown: hud.enemyScoreBreakdown,
-                  age: hud.enemyAge,
-                  color: '#f87171',
-                },
-              ].sort((a, b) => b.score - a.score);
+              const hasMultiRoster = Boolean(hud.factionScores && hud.factionScores.length > 2);
+              const duelists = hasMultiRoster
+                ? [...(hud.factionScores ?? [])]
+                    .sort((a, b) => b.score - a.score)
+                    .map((f) => ({
+                      id: `slot-${f.slotIndex}`,
+                      label: `${f.label} (${f.majorGod})`,
+                      score: f.score,
+                      breakdown: f.team === 'player' ? hud.playerScoreBreakdown : hud.enemyScoreBreakdown,
+                      age: f.age,
+                      color: f.colorHex,
+                      teamTag: `T${f.teamIndex}`,
+                      defeated: f.defeated,
+                    }))
+                : [
+                    {
+                      id: 'player',
+                      label: `${options.playerName} (${hud.majorGodName})`,
+                      score: hud.playerScore,
+                      breakdown: hud.playerScoreBreakdown,
+                      age: hud.age,
+                      color: '#60a5fa',
+                      teamTag: 'T1',
+                      defeated: false,
+                    },
+                    {
+                      id: 'enemy',
+                      label: `Rival (${hud.enemyMajorGodName})`,
+                      score: hud.enemyScore,
+                      breakdown: hud.enemyScoreBreakdown,
+                      age: hud.enemyAge,
+                      color: '#f87171',
+                      teamTag: 'T2',
+                      defeated: false,
+                    },
+                  ].sort((a, b) => b.score - a.score);
 
-              const tied = duelists[0].score === duelists[1].score;
+              const tied = duelists.length >= 2 && duelists[0].score === duelists[1].score;
               return (
                 <div className="flex flex-col gap-0.5">
                   <div className="flex items-center justify-between gap-3 text-[10px] font-semibold tracking-wide text-[#c8a962] border-b border-white/10 pb-0.5 mb-0.5">
                     <span className="flex items-center gap-1 uppercase">
                       <Swords className="h-2.5 w-2.5 text-[#d4af37]" />
-                      <span>Duelo</span>
+                      <span>{hasMultiRoster ? `Coalizão (${duelists.length})` : 'Duelo'}</span>
                     </span>
                     <button
                       type="button"
@@ -587,43 +664,52 @@ export function GameHUD({
                       F4
                     </button>
                   </div>
-                  {duelists.map((d, idx) => {
-                    const isLeader = !tied && idx === 0;
-                    return (
-                      <div
-                        key={d.id}
-                        title={`${d.label} · Era ${d.age} | Econ ${d.breakdown.economy} · Mil ${d.breakdown.military} · Evol/Tech ${d.breakdown.technology} · Centros/Soc ${d.breakdown.society}`}
-                        className="flex items-center justify-between gap-2.5 text-[11px] whitespace-nowrap"
-                      >
-                        <div className="flex items-center gap-1 min-w-0">
-                          <span
-                            className={`text-[9px] font-bold shrink-0 ${
-                              isLeader ? 'text-[#facc15]' : 'text-[#64748b]'
-                            }`}
-                            aria-label={isLeader ? 'Líder' : 'Segundo'}
-                          >
-                            {isLeader ? '▲' : '·'}
-                          </span>
-                          <span
-                            className="font-semibold truncate max-w-[125px]"
-                            style={{ color: d.color }}
-                          >
-                            {d.label}
-                          </span>
-                          <span className="font-mono-num text-[9px] text-[#94a3b8] shrink-0">
-                            E{d.age}
-                          </span>
-                        </div>
-                        <span
-                          className={`font-mono-num font-bold shrink-0 ${
-                            isLeader ? 'text-[#fde68a]' : 'text-[#cbd5e1]'
+                  <div className="flex flex-col gap-0.5 max-h-36 overflow-y-auto pr-0.5">
+                    {duelists.map((d, idx) => {
+                      const isLeader = !tied && idx === 0;
+                      return (
+                        <div
+                          key={d.id}
+                          title={`${d.label} · Era ${d.age} | Econ ${d.breakdown.economy} · Mil ${d.breakdown.military} · Evol/Tech ${d.breakdown.technology} · Centros/Soc ${d.breakdown.society}`}
+                          className={`flex items-center justify-between gap-2 text-[11px] whitespace-nowrap ${
+                            d.defeated ? 'opacity-45 line-through' : ''
                           }`}
                         >
-                          {d.score}
-                        </span>
-                      </div>
-                    );
-                  })}
+                          <div className="flex items-center gap-1 min-w-0">
+                            <span
+                              className={`text-[9px] font-bold shrink-0 ${
+                                isLeader ? 'text-[#facc15]' : 'text-[#64748b]'
+                              }`}
+                              aria-label={isLeader ? 'Líder' : 'Segundo'}
+                            >
+                              {isLeader ? '▲' : '·'}
+                            </span>
+                            {hasMultiRoster && (
+                              <span className="font-mono-num text-[8px] text-[#94a3b8] shrink-0">
+                                {d.teamTag}
+                              </span>
+                            )}
+                            <span
+                              className="font-semibold truncate max-w-[125px]"
+                              style={{ color: d.color }}
+                            >
+                              {d.label}
+                            </span>
+                            <span className="font-mono-num text-[9px] text-[#94a3b8] shrink-0">
+                              E{d.age}
+                            </span>
+                          </div>
+                          <span
+                            className={`font-mono-num font-bold shrink-0 ${
+                              isLeader ? 'text-[#fde68a]' : 'text-[#cbd5e1]'
+                            }`}
+                          >
+                            {d.score}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               );
             })()}
@@ -672,6 +758,50 @@ export function GameHUD({
               >
                 Cofre: Você {hud.kothState.playerHold}/{hud.kothState.targetHold}s · IA {hud.kothState.enemyHold}/{hud.kothState.targetHold}s
               </span>
+            )}
+          </div>
+        )}
+
+        {/* Scripted Campaign Mission Tracker Card */}
+        {hud.campaignMissionState && (
+          <div className="pointer-events-auto mt-1 w-full rounded-md border border-[#d4af37]/55 bg-[#0e1420]/94 p-2 text-xs shadow-lg">
+            <div className="flex items-center justify-between gap-2 border-b border-white/10 pb-1">
+              <span className="font-display text-[11px] font-bold text-[#f3d27a] truncate">
+                {hud.campaignMissionState.title}
+              </span>
+              <span className="font-mono-num text-[9px] font-bold text-[#94a3b8] shrink-0">
+                Etapa {hud.campaignMissionState.stageIndex + 1}/{hud.campaignMissionState.totalStages}
+              </span>
+            </div>
+            <div className="mt-1.5 space-y-1">
+              {hud.campaignMissionState.objectives.map((obj) => (
+                <div
+                  key={obj.id}
+                  className={`flex items-start justify-between gap-1.5 text-[10px] leading-snug ${
+                    obj.done ? 'text-emerald-300' : 'text-[#e2e8f0]'
+                  }`}
+                >
+                  <span className="flex items-start gap-1 min-w-0">
+                    {obj.done ? (
+                      <Check className="mt-0.5 h-3 w-3 shrink-0 text-emerald-400" />
+                    ) : (
+                      <span className="mt-1 h-1.5 w-1.5 rounded-full bg-[#d4af37] shrink-0" />
+                    )}
+                    <span className={obj.done ? 'line-through opacity-80' : ''}>{obj.label}</span>
+                  </span>
+                  {obj.progressText && (
+                    <span className="font-mono-num text-[9px] text-[#fde68a] shrink-0">
+                      {obj.progressText}
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+            {hud.campaignMissionState.dialogue && (
+              <div className="mt-2 rounded border border-[#d4af37]/30 bg-[#171d2c] px-2 py-1.5 text-[10px] leading-snug">
+                <div className="font-bold text-[#f3d27a]">{hud.campaignMissionState.dialogue.speaker}:</div>
+                <div className="text-[#cbd5e1] italic">&ldquo;{hud.campaignMissionState.dialogue.text}&rdquo;</div>
+              </div>
             )}
           </div>
         )}
@@ -1103,6 +1233,24 @@ export function GameHUD({
           >
             <ArrowRightLeft className="h-3.5 w-3.5" />
           </button>
+          {hud.multiplayerRoster && onSendMatchChat && (
+            <button
+              type="button"
+              onClick={() => setShowMatchChat((v) => !v)}
+              title="Chat da Partida (Todos / Equipe)"
+              aria-label="Chat da Partida"
+              className={`relative flex h-7 w-7 items-center justify-center rounded cursor-pointer transition-colors ${
+                showMatchChat
+                  ? 'bg-[#d4af37] text-[#0b0e14]'
+                  : 'text-[#cbd5e1] hover:bg-white/10 hover:text-white'
+              }`}
+            >
+              <MessageSquare className="h-3.5 w-3.5" />
+              {inMatchMessages.length > 0 && !showMatchChat && (
+                <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-[#38bdf8]" />
+              )}
+            </button>
+          )}
 
           <div className="mx-0.5 h-4 w-px bg-white/10" />
 
@@ -1341,8 +1489,104 @@ export function GameHUD({
           dockCollapsed ? 'translate-y-[calc(100%-24px)]' : 'translate-y-0'
         }`}
       >
-        {/* Collapse Toggle Handle centered cleanly over the bottom bar */}
-        <div className="flex justify-center">
+        {/* Collapse Toggle Handle + AoM Retold Macro QoL & Control Groups Strip */}
+        <div className="flex flex-wrap items-end justify-center gap-1.5 px-1.5">
+          {!dockCollapsed && (onSetVillagerPriority || onToggleAutoScout || onSelectControlGroup) && (
+            <div className="pointer-events-auto hidden md:flex items-center gap-1.5 rounded-t border border-b-0 border-[#c8a962]/45 bg-[#0d111a]/95 px-2 py-0.5 text-[10px]">
+              {onSetVillagerPriority && (
+                <div className="flex items-center gap-0.5" title="Prioridade Automática de Aldeões (AoM: Retold)">
+                  <span className="mr-1 text-[9px] font-semibold uppercase tracking-wider text-[#94a3b8]">
+                    Aldeões:
+                  </span>
+                  {(
+                    [
+                      { id: 'manual', label: 'Manual' },
+                      { id: 'balanced', label: 'Equil' },
+                      { id: 'food', label: 'Alim' },
+                      { id: 'wood', label: 'Mad' },
+                      { id: 'gold', label: 'Ouro' },
+                      { id: 'wonder', label: 'Marav' },
+                    ] as { id: VillagerPriorityPreset; label: string }[]
+                  ).map((p) => {
+                    const active = (hud.villagerPriority ?? 'manual') === p.id;
+                    return (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => onSetVillagerPriority(p.id)}
+                        className={`rounded-sm px-1.5 py-0.5 font-semibold cursor-pointer transition-colors ${
+                          active
+                            ? 'bg-[#d4af37] text-[#0b0e14]'
+                            : 'text-[#cbd5e1] hover:bg-white/10 hover:text-white'
+                        }`}
+                      >
+                        {p.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {onToggleAutoScout && (
+                <>
+                  <div className="h-3.5 w-px bg-white/15" />
+                  <button
+                    type="button"
+                    onClick={onToggleAutoScout}
+                    title="Alternar Auto-Explorar para unidade selecionada ou batedor disponível (Z)"
+                    className={`flex items-center gap-1 rounded-sm border px-1.5 py-0.5 font-semibold cursor-pointer ${
+                      hud.selection.autoScout
+                        ? 'border-emerald-400 bg-emerald-950/70 text-emerald-200'
+                        : 'border-white/15 bg-[#151c2c] text-[#cbd5e1] hover:border-[#f3d27a]'
+                    }`}
+                  >
+                    <Compass className="h-3 w-3 text-[#38bdf8]" />
+                    <span>Auto-Explorar (Z)</span>
+                  </button>
+                </>
+              )}
+
+              {onSelectControlGroup && (
+                <>
+                  <div className="h-3.5 w-px bg-white/15" />
+                  <div className="flex items-center gap-0.5" title="Grupos de Controle (Ctrl+1..9 para definir, 1..9 para selecionar)">
+                    {[1, 2, 3, 4, 5].map((g) => {
+                      const entry = hud.controlGroups?.find((cg) => cg.group === g);
+                      return (
+                        <button
+                          key={g}
+                          type="button"
+                          onClick={(e) => {
+                            if (e.ctrlKey || e.metaKey) {
+                              onAssignControlGroup?.(g);
+                            } else if (entry) {
+                              onSelectControlGroup(g, e.shiftKey || e.detail >= 2);
+                            } else if (hud.selection.primaryType === 'unit' && hud.selection.team === 'player') {
+                              onAssignControlGroup?.(g);
+                            }
+                          }}
+                          title={
+                            entry
+                              ? `Grupo ${g} (${entry.count} unid.) — Clique para selecionar, clique duplo para focar, Ctrl+Clique para redefinir`
+                              : `Grupo ${g} vazio — Clique com unidades selecionadas ou pressione Ctrl+${g}`
+                          }
+                          className={`flex items-center gap-0.5 rounded-sm border px-1.5 py-0.5 font-mono-num text-[9px] font-bold cursor-pointer ${
+                            entry
+                              ? 'border-[#d4af37]/65 bg-[#1b2234] text-[#fde68a] hover:bg-[#26314a]'
+                              : 'border-white/10 bg-[#111724] text-[#64748b] hover:text-[#cbd5e1]'
+                          }`}
+                        >
+                          <span>{g}</span>
+                          {entry && <span className="text-[8px] text-[#38bdf8]">({entry.count})</span>}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
           <button
             type="button"
             onClick={() => setDockCollapsed((p) => !p)}
@@ -1385,6 +1629,8 @@ export function GameHUD({
                     ? 'Egípcios: Construa até 5 Monumentos passivos. Faraó e Sacerdotes de Rá energizam; Ísis cura e protege.'
                     : hud.pantheon === 'norse'
                     ? 'Nórdicos: Unidades e navios geram favor em combate (Hersir 3,4×, Odin +25% no Grande Salão, Bragi +1 por Ulfsark abatido).'
+                    : hud.pantheon === 'chinese'
+                    ? 'Chineses: Templos, Jardins/Monumentos e bestas sagradas (Qilin) irradiam energia Yin-Yang gerando Favor.'
                     : 'Atlantes: Oráculos parados e espaçados geram favor conforme alcance de visão (Leto +15%, Réia +25%, Teia +10%).'}
                 </p>
 
@@ -2157,8 +2403,86 @@ export function GameHUD({
                   })()
                 )
               ) : hud.selection.primaryType === 'unit' && hud.selection.team === 'player' ? (
-                /* CASE C: Player Military / Hero / Mythic / God Unit Selected -> Formations & Stop */
-                <div className="flex flex-1 flex-col justify-between gap-2">
+                /* CASE C: Player Military / Hero / Mythic / Naval / God Unit Selected -> Stances, Naval Transport, Formations & Stop */
+                <div className="flex flex-1 flex-col justify-between gap-1.5">
+                  {onSetUnitStance && (
+                    <div className="flex items-center gap-1" role="group" aria-label="Postura de Combate">
+                      {(
+                        [
+                          { id: 'aggressive', label: 'Agressivo', title: 'Persegue e ataca inimigos próximos' },
+                          { id: 'defensive', label: 'Defensivo', title: 'Defende área local e retorna à posição' },
+                          { id: 'stand_ground', label: 'Manter', title: 'Mantém posição fixa sem perseguir' },
+                        ] as { id: CombatStance; label: string; title: string }[]
+                      ).map((st) => {
+                        const active = (hud.selection.stance ?? 'aggressive') === st.id;
+                        return (
+                          <button
+                            key={st.id}
+                            type="button"
+                            onClick={() => onSetUnitStance(st.id)}
+                            title={st.title}
+                            className={`flex-1 rounded border py-1 text-[9px] font-semibold transition-colors cursor-pointer ${
+                              active
+                                ? 'border-[#f3d27a] bg-[#2a220e] text-[#fde68a]'
+                                : 'border-[#c8a962]/25 bg-[#131926] text-[#cbd5e1] hover:border-[#f3d27a]'
+                            }`}
+                          >
+                            {st.label}
+                          </button>
+                        );
+                      })}
+                      {onToggleAutoScout && !hud.selection.isNaval && (
+                        <button
+                          type="button"
+                          onClick={onToggleAutoScout}
+                          title="Auto-Explorar (Tecla Z)"
+                          className={`rounded border px-1.5 py-1 text-[9px] font-semibold cursor-pointer ${
+                            hud.selection.autoScout
+                              ? 'border-emerald-400 bg-emerald-950/70 text-emerald-200'
+                              : 'border-[#c8a962]/25 bg-[#131926] text-[#38bdf8] hover:border-[#38bdf8]'
+                          }`}
+                        >
+                          <Compass className="h-3 w-3" />
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                  {hud.selection.isTransport && hud.selection.entityId && (
+                    <div className="flex flex-col gap-1 rounded border border-[#38bdf8]/45 bg-[#0e2030] p-1.5">
+                      <div className="flex items-center justify-between text-[10px]">
+                        <span className="flex items-center gap-1 font-semibold text-[#7dd3fc]">
+                          <Anchor className="h-3 w-3" />
+                          <span>Transporte Naval</span>
+                        </span>
+                        <span className="font-mono-num font-bold text-[#fde68a]">
+                          {hud.selection.cargoCount ?? 0}/{hud.selection.cargoMax ?? 8} tropas
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-1">
+                        {onEmbarkTransport && (
+                          <button
+                            type="button"
+                            onClick={() => onEmbarkTransport(hud.selection.entityId)}
+                            className="rounded border border-[#38bdf8]/55 bg-[#133046] px-1.5 py-1 text-[9px] font-bold text-[#bae6fd] hover:bg-[#1a415e] cursor-pointer"
+                          >
+                            Embarcar Tropas
+                          </button>
+                        )}
+                        {onDisembarkTransport && (
+                          <button
+                            type="button"
+                            disabled={(hud.selection.cargoCount ?? 0) === 0}
+                            onClick={() => onDisembarkTransport(hud.selection.entityId!)}
+                            className="rounded border border-[#f59e0b]/60 bg-[#2d1e0a] px-1.5 py-1 text-[9px] font-bold text-[#fde68a] hover:bg-[#3f2a0e] disabled:opacity-45 cursor-pointer"
+                          >
+                            Desembarcar Margem
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
                   <div>
                     <div className="mb-1 text-[10px] text-[#94a3b8]">Formação do Esquadrão</div>
                     <div
@@ -2446,6 +2770,19 @@ export function GameHUD({
                           <span className="font-mono-num font-semibold">{hud.selection.popCost}</span>
                         </div>
                       )}
+                    </div>
+                  )}
+
+                  {hud.selection.counterTags && hud.selection.counterTags.length > 0 && (
+                    <div className="flex flex-wrap gap-1 pt-0.5">
+                      {hud.selection.counterTags.map((tag) => (
+                        <span
+                          key={tag}
+                          className="rounded-sm border border-[#d4af37]/35 bg-[#1b2232] px-1.5 py-0.5 text-[9px] font-semibold text-[#fde68a]"
+                        >
+                          {tag}
+                        </span>
+                      ))}
                     </div>
                   )}
 
@@ -2975,31 +3312,119 @@ export function GameHUD({
             )}
 
             {activeDialog === 'diplomacy' && (
-              <div className="mt-4 space-y-2 text-xs">
-                <div className="grid grid-cols-4 rounded bg-[#1b2230] px-3 py-2 font-bold text-[#f3d27a]">
-                  <span>Jogador</span>
-                  <span>Civilização</span>
-                  <span>Era Atual</span>
-                  <span>Postura</span>
+              <div className="mt-4 space-y-2 text-xs flex-1 min-h-0 overflow-y-auto pr-0.5">
+                <div className="grid grid-cols-12 rounded bg-[#1b2230] px-3 py-2 font-bold text-[#f3d27a]">
+                  <span className="col-span-4">Jogador</span>
+                  <span className="col-span-3">Civilização</span>
+                  <span className="col-span-2">Era</span>
+                  <span className="col-span-1 text-right">Pts</span>
+                  <span className="col-span-2 text-right">Postura</span>
                 </div>
-                <div className="grid grid-cols-4 items-center rounded border border-white/10 bg-[#161b26] px-3 py-2 text-white">
-                  <span className="font-semibold">{options.playerName}</span>
-                  <span>{playerPantheon.name} ({hud.majorGodName})</span>
-                  <span className="flex items-center gap-1.5">
-                    <EraIcon age={hud.age} pantheon={hud.pantheon} size={18} active />
-                    <span>{AGE_NAMES[hud.age]}</span>
-                  </span>
-                  <span className="text-[#86efac] font-semibold">Você</span>
-                </div>
-                <div className="grid grid-cols-4 items-center rounded border border-white/10 bg-[#161b26] px-3 py-2 text-[#cbd5e1]">
-                  <span className="font-semibold">IA ({hud.difficulty.toUpperCase()})</span>
-                  <span>{PANTHEONS[hud.enemyPantheon].name} ({PANTHEONS[hud.enemyPantheon].deity})</span>
-                  <span className="flex items-center gap-1.5">
-                    <EraIcon age={hud.enemyAge} pantheon={hud.enemyPantheon} size={18} active />
-                    <span>{AGE_NAMES[hud.enemyAge]}</span>
-                  </span>
-                  <span className="text-[#fca5a5] font-semibold">Inimigo</span>
-                </div>
+                {hud.factionScores && hud.factionScores.length > 0 ? (
+                  hud.factionScores.map((f) => {
+                    const isAlly = f.team === 'player' && !f.isSelf;
+                    const persLabel = !f.isHuman && f.aiPersonality
+                      ? AI_PERSONALITY_LABELS[f.aiPersonality]?.label.split(' ')[0]
+                      : null;
+                    return (
+                      <div
+                        key={f.slotIndex}
+                        className={`flex flex-col gap-1.5 rounded border px-3 py-2 ${
+                          f.isSelf
+                            ? 'border-[#d4af37]/60 bg-[#182235] text-white'
+                            : 'border-white/10 bg-[#161b26] text-[#cbd5e1]'
+                        } ${f.defeated ? 'opacity-50' : ''}`}
+                      >
+                        <div className="grid grid-cols-12 items-center gap-1">
+                          <div className="col-span-4 flex items-center gap-1.5 min-w-0">
+                            <span
+                              className="h-2.5 w-2.5 rounded-full shrink-0 border border-white/30"
+                              style={{ backgroundColor: f.colorHex }}
+                            />
+                            <span className="font-semibold truncate">{f.label}</span>
+                            {persLabel && (
+                              <span className="rounded bg-[#0f1624] px-1 py-0.5 text-[9px] text-[#94a3b8] shrink-0">
+                                {persLabel}
+                              </span>
+                            )}
+                          </div>
+                          <span className="col-span-3 truncate">
+                            {PANTHEONS[f.pantheon]?.name ?? f.pantheon} ({f.majorGod})
+                          </span>
+                          <span className="col-span-2 flex items-center gap-1 min-w-0">
+                            <EraIcon age={f.age} pantheon={f.pantheon} size={16} active />
+                            <span className="truncate">{AGE_NAMES[f.age].replace('Era ', '')}</span>
+                          </span>
+                          <span className="col-span-1 text-right font-mono-num font-bold text-[#fde68a]">
+                            {f.score}
+                          </span>
+                          <span
+                            className={`col-span-2 text-right font-semibold ${
+                              f.defeated
+                                ? 'text-slate-400'
+                                : f.isSelf
+                                ? 'text-[#86efac]'
+                                : isAlly
+                                ? 'text-[#7dd3fc]'
+                                : 'text-[#fca5a5]'
+                            }`}
+                          >
+                            {f.defeated
+                              ? 'Derrotado'
+                              : f.isSelf
+                              ? 'Você'
+                              : isAlly
+                              ? `Aliado T${f.teamIndex}`
+                              : `Inimigo T${f.teamIndex}`}
+                          </span>
+                        </div>
+                        {isAlly && !f.defeated && onSendTribute && (
+                          <div className="flex flex-wrap items-center justify-end gap-1.5 border-t border-white/8 pt-1.5 text-[10px]">
+                            <span className="text-[#94a3b8]">Enviar Tributo (+100):</span>
+                            {(
+                              [
+                                { res: 'food', label: 'Alim' },
+                                { res: 'wood', label: 'Mad' },
+                                { res: 'gold', label: 'Ouro' },
+                              ] as const
+                            ).map((item) => (
+                              <button
+                                key={item.res}
+                                type="button"
+                                disabled={hud.resources[item.res] < 100}
+                                onClick={() => onSendTribute(f.slotIndex, item.res, 100)}
+                                className="rounded border border-[#d4af37]/45 bg-[#1b2436] px-2 py-0.5 font-semibold text-[#fde68a] hover:bg-[#26324a] disabled:opacity-40 cursor-pointer"
+                              >
+                                +100 {item.label}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })
+                ) : (
+                  <>
+                    <div className="grid grid-cols-4 items-center rounded border border-white/10 bg-[#161b26] px-3 py-2 text-white">
+                      <span className="font-semibold">{options.playerName}</span>
+                      <span>{playerPantheon.name} ({hud.majorGodName})</span>
+                      <span className="flex items-center gap-1.5">
+                        <EraIcon age={hud.age} pantheon={hud.pantheon} size={18} active />
+                        <span>{AGE_NAMES[hud.age]}</span>
+                      </span>
+                      <span className="text-[#86efac] font-semibold">Você</span>
+                    </div>
+                    <div className="grid grid-cols-4 items-center rounded border border-white/10 bg-[#161b26] px-3 py-2 text-[#cbd5e1]">
+                      <span className="font-semibold">IA ({hud.difficulty.toUpperCase()})</span>
+                      <span>{PANTHEONS[hud.enemyPantheon].name} ({PANTHEONS[hud.enemyPantheon].deity})</span>
+                      <span className="flex items-center gap-1.5">
+                        <EraIcon age={hud.enemyAge} pantheon={hud.enemyPantheon} size={18} active />
+                        <span>{AGE_NAMES[hud.enemyAge]}</span>
+                      </span>
+                      <span className="text-[#fca5a5] font-semibold">Inimigo</span>
+                    </div>
+                  </>
+                )}
               </div>
             )}
 
@@ -3529,6 +3954,91 @@ export function GameHUD({
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* IN-MATCH MULTIPLAYER CHAT DRAWER */}
+      {showMatchChat && hud.phase === 'playing' && onSendMatchChat && (
+        <div className="fixed bottom-[198px] sm:bottom-[224px] left-2 z-30 w-[min(340px,92vw)] rounded-lg border border-[#d4af37]/55 bg-[#0d121d]/96 p-2.5 shadow-2xl">
+          <div className="flex items-center justify-between gap-2 border-b border-white/10 pb-1.5">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-[#f3d27a]">
+              <MessageSquare className="h-3.5 w-3.5" />
+              <span>Chat da Partida</span>
+            </div>
+            <div className="flex items-center gap-1">
+              {(['all', 'team'] as const).map((ch) => (
+                <button
+                  key={ch}
+                  type="button"
+                  onClick={() => setChatChannel(ch)}
+                  className={`rounded px-1.5 py-0.5 text-[10px] font-semibold cursor-pointer ${
+                    chatChannel === ch
+                      ? 'bg-[#d4af37] text-[#0b0e14]'
+                      : 'bg-[#171e2d] text-[#cbd5e1] hover:text-white'
+                  }`}
+                >
+                  {ch === 'all' ? 'Todos' : 'Equipe'}
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={() => setShowMatchChat(false)}
+                aria-label="Fechar chat"
+                className="ml-1 rounded p-0.5 text-[#94a3b8] hover:bg-white/10 hover:text-white cursor-pointer"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          </div>
+
+          <div className="mt-2 h-36 overflow-y-auto rounded border border-white/10 bg-[#080c14] p-2 space-y-1 text-[11px]">
+            {inMatchMessages.length === 0 ? (
+              <div className="py-6 text-center text-[10px] text-[#64748b]">
+                Envie mensagens para Todos ou apenas sua Equipe.
+              </div>
+            ) : (
+              inMatchMessages.map((m) => {
+                const col = getMpColorById(m.colorId);
+                return (
+                  <div key={m.id} className="leading-snug">
+                    <span className="mr-1 rounded bg-[#141c2c] px-1 py-0.5 text-[9px] font-semibold text-[#94a3b8]">
+                      {m.channel === 'team' ? 'EQUIPE' : 'TODOS'}
+                    </span>
+                    <span className="font-bold mr-1" style={{ color: col.css }}>
+                      {m.senderName}:
+                    </span>
+                    <span className="text-[#e2e8f0] break-words">{m.text}</span>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              const text = chatInput.trim();
+              if (!text) return;
+              onSendMatchChat(chatChannel, text);
+              setChatInput('');
+            }}
+            className="mt-2 flex gap-1.5"
+          >
+            <input
+              type="text"
+              value={chatInput}
+              onChange={(e) => setChatInput(e.target.value)}
+              maxLength={240}
+              placeholder={chatChannel === 'team' ? 'Mensagem para aliados...' : 'Mensagem para todos...'}
+              className="flex-1 rounded border border-white/15 bg-[#0a0f1a] px-2 py-1 text-xs text-white focus:border-[#f3d27a] focus:outline-none"
+            />
+            <button
+              type="submit"
+              className="flex items-center gap-1 rounded border border-[#d4af37]/60 bg-[#1b2438] px-2.5 py-1 text-xs font-semibold text-[#f3d27a] hover:bg-[#25314d] cursor-pointer"
+            >
+              <Send className="h-3 w-3" />
+            </button>
+          </form>
         </div>
       )}
     </>

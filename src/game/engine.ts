@@ -50,12 +50,16 @@ import {
   AGE_COSTS,
   AGE_NAMES,
   AgeLevel,
+  AiPersonality,
   AoMGlobalScaleConfig,
   AoMScaleProfile,
   AOM_SCALE_PROFILES,
   BuildingKind,
+  CampaignMissionSnapshot,
+  CombatStance,
   DEFAULT_AOM_SCALE_CONFIG,
   DifficultyId,
+  FactionScoreEntry,
   FAUNA_STATS,
   FaunaKind,
   FormationId,
@@ -80,9 +84,16 @@ import {
   UnitKind,
   UnitVoiceAction,
   UnitVoiceLineInfo,
+  VillagerPriorityPreset,
   VisibilityMode,
   WorldSizeId,
 } from './types';
+import type { MatchGameCommand } from './multiplayerTypes';
+import {
+  CampaignMissionScript,
+  getCampaignMissionScript,
+  unlockNextCampaignScenario,
+} from './campaignMissions';
 
 interface UnitEntity {
   id: string;
@@ -125,6 +136,12 @@ interface UnitEntity {
   poisonTeam?: TeamId;
   garrisonedInId?: string | null;
   empowerAura?: boolean;
+  stance?: CombatStance;
+  autoScout?: boolean;
+  cargoIds?: string[];
+  transportedInId?: string | null;
+  factionSlot?: number;
+  leashOrigin?: THREE.Vector3 | null;
 }
 
 interface BuildingEntity {
@@ -147,6 +164,24 @@ interface BuildingEntity {
   empoweredBy?: 'pharaoh' | 'priest';
   garrisonedUnitIds?: string[];
   maxGarrisonCapacity?: number;
+  factionSlot?: number;
+}
+
+interface FactionRuntimeState {
+  slotIndex: number;
+  label: string;
+  teamIndex: 1 | 2;
+  team: TeamId;
+  pantheon: PantheonId;
+  majorGod: string;
+  colorHex: string;
+  crestId: string;
+  age: AgeLevel;
+  isHuman: boolean;
+  isSelf: boolean;
+  aiPersonality: AiPersonality;
+  defeated: boolean;
+  resources: Record<ResourceType, number>;
 }
 
 interface ResourceNodeEntity {
@@ -554,6 +589,23 @@ export class AoMEngine {
   private playerColorHex: number | undefined = undefined;
   private playerCrestId: string | undefined = undefined;
   private multiplayerRoster: MatchStartOptions['multiplayerRoster'] = undefined;
+  private seededRng: () => number = Math.random;
+  private matchSeed = 0;
+  private aiPersonality: AiPersonality = 'balanced';
+  private villagerPriority: VillagerPriorityPreset = 'manual';
+  private villagerPriorityTimer = 0;
+  private controlGroups = new Map<number, string[]>();
+  private lastControlGroupKey = -1;
+  private lastControlGroupTime = 0;
+  private campaignScenarioId: string | undefined = undefined;
+  private campaignScript: CampaignMissionScript | null = null;
+  private campaignStageIndex = 0;
+  private campaignSpawnedWaveIds = new Set<string>();
+  private campaignDialogueTimer = 0;
+  private campaignDialogue: { speaker: string; text: string } | null = null;
+  private factions: FactionRuntimeState[] = [];
+  private localSlotIndex = 0;
+  private onMultiplayerCommand: ((cmd: MatchGameCommand) => void) | null = null;
   public hopliteRenderMode: '3d' | 'sprite' | 'brg' | 'uv2d' = '3d';
   public hopliteArmorTier: 1 | 2 | 3 | 4 = 3;
   public globalScaleConfig: AoMGlobalScaleConfig = { ...DEFAULT_AOM_SCALE_CONFIG };
@@ -1113,6 +1165,30 @@ export class AoMEngine {
     this.playerColorHex = isTitlePreview ? undefined : extras?.playerColorHex;
     this.playerCrestId = isTitlePreview ? undefined : extras?.playerCrestId;
     this.multiplayerRoster = isTitlePreview ? undefined : extras?.multiplayerRoster;
+    this.aiPersonality = extras?.aiPersonality ?? 'balanced';
+    this.villagerPriority = 'manual';
+    this.villagerPriorityTimer = 0;
+    this.controlGroups.clear();
+    this.matchSeed = extras?.matchSeed ?? 0;
+    if (this.matchSeed > 0) {
+      let seedState = this.matchSeed >>> 0;
+      this.seededRng = () => {
+        seedState = (seedState + 0x6d2b79f5) | 0;
+        let t = Math.imul(seedState ^ (seedState >>> 15), 1 | seedState);
+        t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    } else {
+      this.seededRng = Math.random;
+    }
+
+    this.campaignScenarioId = isTitlePreview ? undefined : extras?.campaignScenarioId;
+    this.campaignScript = this.campaignScenarioId ? getCampaignMissionScript(this.campaignScenarioId) : null;
+    this.campaignStageIndex = 0;
+    this.campaignSpawnedWaveIds.clear();
+    this.campaignDialogue = null;
+    this.campaignDialogueTimer = 0;
+
     if (extras?.gameSpeed) {
       this.gameSpeed = Math.max(0.5, Math.min(2.0, extras.gameSpeed));
     } else if (this.gameType === 'lightning') {
@@ -1254,6 +1330,19 @@ export class AoMEngine {
         this.spawnUnit('murmillo', 'player', -27, 29);
         this.spawnUnit('murmillo', 'player', -25, 31);
       }
+    } else if (this.pantheon === 'chinese') {
+      this.spawnUnit('chinese_peasant', 'player', -30, 38);
+      this.spawnUnit('chinese_peasant', 'player', -28, 34);
+      this.spawnUnit('chinese_peasant', 'player', -34, 40);
+      this.spawnUnit('kuafu', 'player', -32, 36);
+      if (isNomad) {
+        this.spawnUnit('chinese_peasant', 'player', -22, 36);
+        this.spawnUnit('chinese_peasant', 'player', -36, 24);
+      }
+      if (!isNomad) {
+        this.spawnUnit('halberdier', 'player', -27, 29);
+        this.spawnUnit('halberdier', 'player', -25, 31);
+      }
     } else {
       this.spawnUnit('villager', 'player', -30, 38);
       this.spawnUnit('villager', 'player', -28, 34);
@@ -1291,6 +1380,8 @@ export class AoMEngine {
           ? 'hersir'
           : this.pantheon === 'atlantean'
           ? 'oracle'
+          : this.pantheon === 'chinese'
+          ? 'nezha'
           : 'hero';
       const regent = this.spawnUnit(regentKind, 'player', -32, 30);
       if (this.pantheon === 'atlantean') {
@@ -1333,6 +1424,18 @@ export class AoMEngine {
         this.spawnUnit('murmillo', 'enemy', 25, -26);
         this.spawnUnit('murmillo', 'enemy', 27, -24);
       }
+    } else if (this.enemyPantheon === 'chinese') {
+      this.spawnUnit('chinese_peasant', 'enemy', 31, -38);
+      this.spawnUnit('chinese_peasant', 'enemy', 38, -31);
+      this.spawnUnit('kuafu', 'enemy', 33, -36);
+      if (isNomad) {
+        this.spawnUnit('chinese_peasant', 'enemy', 23, -35);
+        this.spawnUnit('chinese_peasant', 'enemy', 36, -24);
+      }
+      if (!isNomad) {
+        this.spawnUnit('halberdier', 'enemy', 25, -26);
+        this.spawnUnit('halberdier', 'enemy', 27, -24);
+      }
     } else {
       this.spawnUnit('villager', 'enemy', 31, -38);
       this.spawnUnit('villager', 'enemy', 38, -31);
@@ -1356,6 +1459,164 @@ export class AoMEngine {
       } else if (!isNomad) {
         this.spawnUnit('hoplite', 'enemy', 25, -26);
         this.spawnUnit('hoplite', 'enemy', 27, -24);
+      }
+    }
+
+    // Build 6v6 Faction Roster & spawn allied/enemy flank forces for multi-faction lobbies
+    this.factions = [];
+    this.localSlotIndex = 0;
+    const rosterFactions = this.multiplayerRoster?.factions ?? [];
+    if (rosterFactions.length > 0) {
+      const selfIdx = rosterFactions.findIndex((f) => f.isSelf);
+      this.localSlotIndex = selfIdx >= 0 ? selfIdx : 0;
+      const selfTeam = rosterFactions[this.localSlotIndex]?.teamIndex ?? 1;
+      let allySubIdx = 0;
+      let enemySubIdx = 0;
+
+      for (let i = 0; i < rosterFactions.length; i++) {
+        const mf = rosterFactions[i];
+        const fTeam: TeamId = mf.teamIndex === selfTeam ? 'player' : 'enemy';
+        this.factions.push({
+          slotIndex: mf.slotIndex,
+          label: mf.label,
+          teamIndex: mf.teamIndex,
+          team: fTeam,
+          pantheon: mf.pantheon,
+          majorGod: mf.majorGod,
+          colorHex: mf.colorHex,
+          crestId: mf.crestId,
+          age: startAge,
+          isHuman: mf.isHuman,
+          isSelf: mf.isSelf,
+          aiPersonality: mf.aiPersonality ?? 'balanced',
+          defeated: false,
+          resources: {
+            food: this.resources.food,
+            wood: this.resources.wood,
+            gold: this.resources.gold,
+            favor: this.resources.favor,
+          },
+        });
+
+        // Spawn auxiliary bases/outposts for teammates & extra enemy slots beyond the primary 1v1 capitals
+        if (!isTitlePreview && !mf.isSelf && !isNomad) {
+          if (fTeam === 'player') {
+            allySubIdx++;
+            const ang = -Math.PI * 0.72 + allySubIdx * 0.24;
+            const ax = THREE.MathUtils.clamp(Math.cos(ang) * 44, -PLAYABLE_HALF_SIZE + 8, PLAYABLE_HALF_SIZE - 8);
+            const az = THREE.MathUtils.clamp(Math.sin(ang) * 44, -PLAYABLE_HALF_SIZE + 8, PLAYABLE_HALF_SIZE - 8);
+            if (this.isWalkableTerrainPoint(ax, az)) {
+              const b = this.spawnBuilding('village_center', 'player', ax, az, true);
+              b.factionSlot = mf.slotIndex;
+              const guardKind: UnitKind =
+                mf.pantheon === 'egyptian'
+                  ? 'egypt_spearman'
+                  : mf.pantheon === 'norse'
+                  ? 'ulfsark'
+                  : mf.pantheon === 'atlantean'
+                  ? 'murmillo'
+                  : mf.pantheon === 'chinese'
+                  ? 'halberdier'
+                  : 'hoplite';
+              const g1 = this.spawnUnit(guardKind, 'player', ax + 3, az - 2);
+              const g2 = this.spawnUnit(guardKind, 'player', ax - 3, az + 2);
+              g1.factionSlot = mf.slotIndex;
+              g2.factionSlot = mf.slotIndex;
+            }
+          } else {
+            enemySubIdx++;
+            if (enemySubIdx > 1) {
+              const ang = Math.PI * 0.28 + (enemySubIdx - 1) * 0.24;
+              const ex = THREE.MathUtils.clamp(Math.cos(ang) * 44, -PLAYABLE_HALF_SIZE + 8, PLAYABLE_HALF_SIZE - 8);
+              const ez = THREE.MathUtils.clamp(Math.sin(ang) * 44, -PLAYABLE_HALF_SIZE + 8, PLAYABLE_HALF_SIZE - 8);
+              if (this.isWalkableTerrainPoint(ex, ez)) {
+                const b = this.spawnBuilding('village_center', 'enemy', ex, ez, true);
+                b.factionSlot = mf.slotIndex;
+                const guardKind: UnitKind =
+                  mf.pantheon === 'egyptian'
+                    ? 'egypt_spearman'
+                    : mf.pantheon === 'norse'
+                    ? 'ulfsark'
+                    : mf.pantheon === 'atlantean'
+                    ? 'murmillo'
+                    : mf.pantheon === 'chinese'
+                    ? 'halberdier'
+                    : 'hoplite';
+                const e1 = this.spawnUnit(guardKind, 'enemy', ex - 3, ez + 2);
+                const e2 = this.spawnUnit(guardKind, 'enemy', ex + 3, ez - 2);
+                e1.factionSlot = mf.slotIndex;
+                e2.factionSlot = mf.slotIndex;
+              }
+            }
+          }
+        }
+      }
+    } else {
+      this.factions = [
+        {
+          slotIndex: 0,
+          label: 'Você',
+          teamIndex: 1,
+          team: 'player',
+          pantheon: this.pantheon,
+          majorGod: this.majorGodName,
+          colorHex: `#${(this.playerColorHex ?? PANTHEONS[this.pantheon].bannerHex).toString(16).padStart(6, '0')}`,
+          crestId: this.playerCrestId ?? this.pantheon,
+          age: startAge,
+          isHuman: true,
+          isSelf: true,
+          aiPersonality: 'balanced',
+          defeated: false,
+          resources: this.resources,
+        },
+        {
+          slotIndex: 1,
+          label: `IA (${PANTHEONS[this.enemyPantheon].name})`,
+          teamIndex: 2,
+          team: 'enemy',
+          pantheon: this.enemyPantheon,
+          majorGod: PANTHEONS[this.enemyPantheon].deity,
+          colorHex: '#ef4444',
+          crestId: this.enemyPantheon,
+          age: startAge,
+          isHuman: false,
+          isSelf: false,
+          aiPersonality: this.aiPersonality,
+          defeated: false,
+          resources: this.enemyResources,
+        },
+      ];
+    }
+
+    // Apply Campaign Script starting bonuses, initial stage dialogue & extra forces
+    if (this.campaignScript && !isTitlePreview) {
+      const sb = this.campaignScript.startingBonuses;
+      if (sb) {
+        if (sb.food) this.resources.food += sb.food;
+        if (sb.wood) this.resources.wood += sb.wood;
+        if (sb.gold) this.resources.gold += sb.gold;
+        if (sb.favor) this.resources.favor += sb.favor;
+        if (sb.heroKind && this.isWalkableTerrainPoint(-28, 22)) {
+          this.spawnUnit(sb.heroKind, 'player', -28, 22);
+        }
+        if (sb.extraUnits) {
+          let uIdx = 0;
+          for (const entry of sb.extraUnits) {
+            for (let k = 0; k < entry.count; k++) {
+              const sx = -26 + (uIdx % 4) * 1.8;
+              const sz = 24 + Math.floor(uIdx / 4) * 1.8;
+              if (this.isWalkableTerrainPoint(sx, sz)) {
+                this.spawnUnit(entry.kind, 'player', sx, sz);
+              }
+              uIdx++;
+            }
+          }
+        }
+      }
+      const firstStage = this.campaignScript.stages[0];
+      if (firstStage?.dialogue) {
+        this.campaignDialogue = { ...firstStage.dialogue };
+        this.campaignDialogueTimer = 14;
       }
     }
 
@@ -1438,7 +1699,46 @@ export class AoMEngine {
       }
     }
 
+    // Spawn navigable aquatic fish schools (`fish_spot`) on water / river maps
     this.syncNavObstacles();
+    const effMap = resolveEffectiveMapId(mapId);
+    const aquaticMaps: MapId[] = [
+      'islands',
+      'archipelago',
+      'mediterranean',
+      'midgard',
+      'vinlandsaga',
+      'highland',
+      'nile',
+      'marsh',
+      'sea_of_worms',
+      'watering_hole',
+      'anatolia',
+      'team_migration',
+      'yellow_river',
+    ];
+    if (aquaticMaps.includes(effMap) || aquaticMaps.includes(mapId)) {
+      let spawnedFish = 0;
+      const targetFishCount = effMap === 'islands' || effMap === 'archipelago' || effMap === 'midgard' ? 10 : 6;
+      for (let attempt = 0; attempt < 95 && spawnedFish < targetFishCount; attempt++) {
+        const fx = (this.seededRng() - 0.5) * (PLAYABLE_HALF_SIZE * 1.78);
+        const fz = (this.seededRng() - 0.5) * (PLAYABLE_HALF_SIZE * 1.78);
+        if (this.navGrid.isWaterTerrain(fx, fz)) {
+          let tooClose = false;
+          for (const existing of this.nodes.values()) {
+            if (Math.hypot(existing.mesh.position.x - fx, existing.mesh.position.z - fz) < 9.5) {
+              tooClose = true;
+              break;
+            }
+          }
+          if (!tooClose) {
+            this.spawnNode('fish_spot', fx, fz);
+            spawnedFish++;
+          }
+        }
+      }
+    }
+
     this.resolveUnitCollisions();
     this.initFogOfWar();
 
@@ -1827,7 +2127,7 @@ export class AoMEngine {
   }
 
   private isWorkerKind(k: UnitKind): boolean {
-    return k === 'villager' || k === 'norse_dwarf' || k === 'citizen';
+    return k === 'villager' || k === 'norse_dwarf' || k === 'citizen' || k === 'chinese_peasant' || k === 'kuafu';
   }
 
   private isBuilderKind(k: UnitKind): boolean {
@@ -1846,6 +2146,7 @@ export class AoMEngine {
       u.kind === 'ox_cart' ||
       u.kind === 'llama_caravan' ||
       u.kind === 'fishing_ship' ||
+      u.kind === 'transport_ship' ||
       u.kind === 'caladria' ||
       (u.kind === 'oracle' && !u.isPromotedHero)
     );
@@ -1996,7 +2297,11 @@ export class AoMEngine {
       kind === 'arcus' ||
       kind === 'contarius' ||
       kind === 'destroyer' ||
-      kind === 'fanatic'
+      kind === 'fanatic' ||
+      kind === 'halberdier' ||
+      kind === 'chu_ko_nu' ||
+      kind === 'tiger_cavalry' ||
+      kind === 'fire_lance'
     ) {
       if (has('medium_soldiers')) {
         hpMult += 0.15;
@@ -2092,6 +2397,10 @@ export class AoMEngine {
         gatherWoodMult += 0.35;
         gatherGoldMult += 0.35;
         gatherFoodMult += 0.35;
+      } else if (kind === 'kuafu') {
+        gatherWoodMult += 0.4;
+        gatherGoldMult += 0.4;
+        gatherFoodMult += 0.25;
       }
       if (has('hand_axe')) gatherWoodMult += 0.2;
       if (has('pickaxe')) gatherGoldMult += 0.2;
@@ -2292,7 +2601,24 @@ export class AoMEngine {
     const scaledMaxHp = Math.round(stats.maxHp * mods.hpMult);
     const majorGod = team === 'player' ? this.majorGodName : (pantheon === 'greek' ? 'Poseidon' : undefined);
     const mesh = createUnitMesh(kind, team, this.palette, !this.isSoftwareGl, pantheon, majorGod);
-    mesh.position.set(x, groundHeightAt(x, z, this.mapId), z);
+
+    let spawnX = x;
+    let spawnZ = z;
+    let spawnY = groundHeightAt(spawnX, spawnZ, this.mapId);
+    if (stats.isNaval) {
+      if (!this.navGrid.isWaterTerrain(spawnX, spawnZ)) {
+        const curCell = this.navGrid.worldToCell(spawnX, spawnZ);
+        const wCell = this.navGrid.nearestWaterCell(curCell.gx, curCell.gz, curCell.gx, curCell.gz, 18);
+        if (wCell) {
+          const wPos = this.navGrid.cellToWorld(wCell.gx, wCell.gz);
+          spawnX = wPos.x;
+          spawnZ = wPos.z;
+        }
+      }
+      spawnY = -0.22;
+    }
+
+    mesh.position.set(spawnX, spawnY, spawnZ);
     mesh.userData.entityType = 'unit';
     mesh.userData.entityId = id;
     mesh.userData.setArmorTier?.(this.hopliteArmorTier);
@@ -2337,6 +2663,11 @@ export class AoMEngine {
       poisonTickTimer: 0,
       garrisonedInId: null,
       empowerAura: false,
+      stance: 'aggressive',
+      autoScout: false,
+      cargoIds: kind === 'transport_ship' ? [] : undefined,
+      transportedInId: null,
+      leashOrigin: new THREE.Vector3(spawnX, spawnY, spawnZ),
     };
     this.units.set(id, entity);
     return entity;
@@ -2485,8 +2816,9 @@ export class AoMEngine {
     mesh.scale.copy(nScale);
     this.scene.add(mesh);
 
-    const maxAmount = kind === 'gold_mine' ? 950 : kind === 'berry' ? 400 : 280;
-    const resourceType: ResourceType = kind === 'berry' ? 'food' : kind === 'tree' ? 'wood' : 'gold';
+    const maxAmount = kind === 'gold_mine' ? 950 : kind === 'fish_spot' ? 600 : kind === 'berry' ? 400 : 280;
+    const resourceType: ResourceType =
+      kind === 'berry' || kind === 'fish_spot' ? 'food' : kind === 'tree' ? 'wood' : 'gold';
     const node: ResourceNodeEntity = {
       id,
       kind,
@@ -2496,6 +2828,9 @@ export class AoMEngine {
       maxAmount,
       selected: false,
     };
+    if (kind === 'fish_spot') {
+      mesh.position.y = -0.32;
+    }
     this.nodes.set(id, node);
     return node;
   }
@@ -3105,7 +3440,13 @@ export class AoMEngine {
       ((kind === 'katapeltes' || kind === 'turma' || kind === 'cheiroballista') &&
         (bKind === 'counter_barracks' || bKind === 'archery_range' || bKind === 'stable' || bKind === 'fortress')) ||
       (kind === 'contarius' && (bKind === 'barracks' || bKind === 'stable' || bKind === 'fortress')) ||
-      ((kind === 'fishing_ship' || kind === 'war_trireme') && bKind === 'dock') ||
+      ((kind === 'fishing_ship' || kind === 'war_trireme' || kind === 'transport_ship') && bKind === 'dock') ||
+      (kind === 'halberdier' && (bKind === 'barracks' || bKind === 'fortress')) ||
+      (kind === 'chu_ko_nu' && (bKind === 'archery_range' || bKind === 'counter_barracks' || bKind === 'fortress')) ||
+      (kind === 'tiger_cavalry' && (bKind === 'stable' || bKind === 'fortress')) ||
+      (kind === 'fire_lance' && (bKind === 'siege_works' || bKind === 'fortress')) ||
+      ((kind === 'nezha' || kind === 'jiang_ziya') && (bKind === 'town_center' || bKind === 'temple' || bKind === 'fortress')) ||
+      ((kind === 'chinese_peasant' || kind === 'kuafu') && (bKind === 'town_center' || bKind === 'village_center')) ||
       ((kind === 'ram' ||
         kind === 'siege' ||
         kind === 'siege_tower' ||
@@ -3142,6 +3483,7 @@ export class AoMEngine {
 
     this.deductCost(this.resources, stats.cost);
     targetBuilding.trainingQueue.push({ kind, progress: 0, total: stats.trainTime });
+    this.emitMpCommand({ kind: 'train', unitKind: kind });
     if (stats.isMajorGod) {
       this.spawnPillarVfx(targetBuilding.mesh.position, 0xfacc15, 1.3);
       soundEngine.playFanfare(false);
@@ -3269,6 +3611,8 @@ export class AoMEngine {
     this.advancingToAge = nextAge;
     this.ageAdvanceProgress = 0;
     this.ageAdvanceTotal = AGE_ADVANCE_TIMES[nextAge] || 14;
+    this.emitMpCommand({ kind: 'advance_age', age: nextAge });
+    this.emitMpCommand({ kind: 'minor_god', minorGodId: minorSpec.id });
     soundEngine.playAgeTransitionStart(nextAge, this.pantheon);
     this.notifyStatus(`Adorando ${minorSpec.name}! Avançando para a ${AGE_NAMES[nextAge]}...`);
     this.emitHudSnapshot();
@@ -3337,6 +3681,7 @@ export class AoMEngine {
 
     this.deductCost(this.resources, effectiveCost);
     this.activeTechResearch = { id: techId, progress: 0, total: effectiveTime };
+    this.emitMpCommand({ kind: 'research_tech', techId });
     if (techId === 'secrets_of_titans') {
       soundEngine.playAgeTransitionStart(5, this.pantheon);
     } else {
@@ -3799,7 +4144,461 @@ export class AoMEngine {
     }
 
     this.spawnGodPowerParticles(id, worldPos, spec.radius);
+    this.emitMpCommand({ kind: 'god_power', powerId: id, x: worldPos.x, z: worldPos.z });
     this.emitHudSnapshot();
+  }
+
+  // --- MULTIPLAYER COMMAND SYNC, MACRO QoL, NAVAL TRANSPORT & COUNTER TAGS ---
+  public setOnMultiplayerCommand(cb: ((cmd: MatchGameCommand) => void) | null) {
+    this.onMultiplayerCommand = cb;
+  }
+
+  private emitMpCommand(cmd: Omit<MatchGameCommand, 'senderSlot' | 'seq'>) {
+    if (!this.onMultiplayerCommand || !this.multiplayerRoster) return;
+    this.onMultiplayerCommand({
+      ...cmd,
+      senderSlot: this.localSlotIndex,
+    } as MatchGameCommand);
+  }
+
+  public applyRemoteCommand(cmd: MatchGameCommand) {
+    if (this.phase !== 'playing' && this.phase !== 'paused') return;
+    if (cmd.senderSlot === this.localSlotIndex) return;
+    const f = this.factions.find((fac) => fac.slotIndex === cmd.senderSlot);
+    const senderTeam: TeamId = f?.team ?? 'enemy';
+    const senderLabel = f?.label ?? `Jogador ${cmd.senderSlot + 1}`;
+
+    if (cmd.kind === 'tribute' && cmd.resource && cmd.amount) {
+      const targetFaction =
+        cmd.targetSlot !== undefined ? this.factions.find((fac) => fac.slotIndex === cmd.targetSlot) : undefined;
+      if (targetFaction?.isSelf || cmd.targetSlot === this.localSlotIndex) {
+        this.resources[cmd.resource] += cmd.amount;
+        soundEngine.playFanfare(false);
+        this.notifyStatus(`🤝 ${senderLabel} enviou +${cmd.amount} de ${cmd.resource === 'food' ? 'Alimento' : cmd.resource === 'wood' ? 'Madeira' : 'Ouro'} para você!`);
+        this.emitHudSnapshot();
+      } else if (targetFaction) {
+        targetFaction.resources[cmd.resource] += cmd.amount;
+      }
+      return;
+    }
+
+    if (cmd.kind === 'advance_age' && cmd.age) {
+      if (f) f.age = cmd.age as AgeLevel;
+      if (senderTeam === 'enemy') {
+        this.enemyAge = Math.max(this.enemyAge, cmd.age) as AgeLevel;
+        this.upgradeTeamTownCenters('enemy', this.enemyAge);
+      }
+      this.notifyStatus(`🏛️ ${senderLabel} avançou para a ${AGE_NAMES[cmd.age as AgeLevel]}!`);
+      this.emitHudSnapshot();
+      return;
+    }
+
+    if (cmd.kind === 'train' && cmd.unitKind) {
+      const producer = [...this.buildings.values()].find(
+        (b) => b.team === senderTeam && b.isConstructed && (b.factionSlot === cmd.senderSlot || senderTeam === 'enemy')
+      );
+      if (producer && producer.trainingQueue.length < 5) {
+        const uSpec = this.unitStats(cmd.unitKind, senderTeam);
+        producer.trainingQueue.push({ kind: cmd.unitKind, progress: 0, total: uSpec.trainTime });
+      }
+      return;
+    }
+
+    if (cmd.kind === 'build' && cmd.buildingKind && cmd.x !== undefined && cmd.z !== undefined) {
+      if (this.canPlaceBuildingAt(cmd.buildingKind, cmd.x, cmd.z, senderTeam)) {
+        const b = this.spawnBuilding(cmd.buildingKind, senderTeam, cmd.x, cmd.z, true);
+        b.factionSlot = cmd.senderSlot;
+        this.syncNavObstacles();
+      }
+      return;
+    }
+
+    if (cmd.kind === 'god_power' && cmd.powerId && cmd.x !== undefined && cmd.z !== undefined) {
+      const targetPos = new THREE.Vector3(cmd.x, groundHeightAt(cmd.x, cmd.z, this.mapId), cmd.z);
+      const spec = GOD_POWERS[cmd.powerId];
+      if (spec) {
+        this.spawnPillarVfx(targetPos, senderTeam === 'player' ? 0x38bdf8 : 0xef4444, 1.8);
+        this.spawnRingVfx(targetPos, spec.radius, senderTeam === 'player' ? 0xfacc15 : 0xf97316, 1.5);
+        if (spec.category === 'Ofensivo') {
+          this.applyAreaDamage(senderTeam, targetPos, spec.radius, 220, 0.5, 2.5);
+        }
+        this.notifyStatus(`⚡ ${senderLabel} lançou ${spec.name}!`);
+      }
+      return;
+    }
+
+    if (cmd.kind === 'move' && cmd.x !== undefined && cmd.z !== undefined) {
+      const slotUnits = [...this.units.values()].filter(
+        (u) => u.team === senderTeam && (cmd.unitIds?.includes(u.id) || u.factionSlot === cmd.senderSlot)
+      );
+      if (slotUnits.length > 0) {
+        this.issueFormationMove(slotUnits.slice(0, 12), cmd.x, cmd.z, [], this.formation);
+      }
+    }
+  }
+
+  public sendAllyTribute(targetSlot: number, resource: 'food' | 'wood' | 'gold', amount: number) {
+    if (this.phase !== 'playing' || amount <= 0) return;
+    if (this.resources[resource] < amount) {
+      this.notifyStatus('Recursos insuficientes para enviar tributo.');
+      return;
+    }
+    const target = this.factions.find((f) => f.slotIndex === targetSlot);
+    if (!target || target.team !== 'player' || target.isSelf) {
+      this.notifyStatus('Selecione um aliado válido da sua equipe.');
+      return;
+    }
+    const hasMarket = [...this.buildings.values()].some(
+      (b) => b.team === 'player' && b.isConstructed && b.kind === 'market'
+    );
+    const netAmount = hasMarket ? amount : Math.round(amount * 0.85);
+    this.resources[resource] -= amount;
+    target.resources[resource] += netAmount;
+    this.emitMpCommand({ kind: 'tribute', targetSlot, resource, amount: netAmount });
+    soundEngine.playSelect();
+    this.notifyStatus(
+      `🤝 Tributo enviado para ${target.label}: +${netAmount} ${resource === 'food' ? 'Alimento' : resource === 'wood' ? 'Madeira' : 'Ouro'}${hasMarket ? '' : ' (taxa 15% sem Mercado)'}.`
+    );
+    this.emitHudSnapshot();
+  }
+
+  public setVillagerPriority(preset: VillagerPriorityPreset) {
+    this.villagerPriority = preset;
+    this.villagerPriorityTimer = 0;
+    const labels: Record<VillagerPriorityPreset, string> = {
+      manual: 'Manual',
+      balanced: 'Equilibrado',
+      food: 'Foco em Alimento',
+      wood: 'Foco em Madeira',
+      gold: 'Foco em Ouro',
+      wonder: 'Construtores & Maravilha',
+    };
+    if (preset !== 'manual') {
+      this.applyVillagerPriority(true);
+    }
+    soundEngine.playSelect();
+    this.notifyStatus(`Prioridade de Aldeões: ${labels[preset]}`);
+    this.emitHudSnapshot();
+  }
+
+  private applyVillagerPriority(includeJustIdle = true) {
+    if (this.villagerPriority === 'manual' || this.phase !== 'playing') return;
+    const workers = [...this.units.values()].filter(
+      (u) => u.team === 'player' && u.hp > 0 && this.isWorkerKind(u.kind) && (includeJustIdle ? u.state === 'idle' : u.state === 'idle')
+    );
+    if (workers.length === 0) return;
+
+    const counts = { food: 0, wood: 0, gold: 0 };
+    for (const u of this.units.values()) {
+      if (u.team === 'player' && this.isWorkerKind(u.kind) && u.state !== 'idle') {
+        if (u.gatherResourceType === 'food' || u.state === 'hunt') counts.food++;
+        else if (u.gatherResourceType === 'wood') counts.wood++;
+        else if (u.gatherResourceType === 'gold') counts.gold++;
+      }
+    }
+
+    for (const w of workers) {
+      if (this.villagerPriority === 'wonder') {
+        const unbuilt = this.findNextUnbuiltBuilding('player', w.mesh.position, 85);
+        if (unbuilt) {
+          w.state = 'build';
+          w.targetEntityId = unbuilt.id;
+          w.targetNodeId = null;
+          w.targetFaunaId = null;
+          w.waypoints = [];
+          continue;
+        }
+      }
+
+      let targetRes: 'food' | 'wood' | 'gold' = 'food';
+      if (this.villagerPriority === 'food' || this.villagerPriority === 'wood' || this.villagerPriority === 'gold') {
+        targetRes = this.villagerPriority;
+      } else {
+        // Balanced: assign to the resource with fewest active gatherers
+        if (counts.food <= counts.wood && counts.food <= counts.gold) targetRes = 'food';
+        else if (counts.wood <= counts.gold) targetRes = 'wood';
+        else targetRes = 'gold';
+        counts[targetRes]++;
+      }
+
+      if (targetRes === 'food') {
+        const farm = [...this.buildings.values()].find(
+          (b) => b.team === 'player' && b.isConstructed && b.kind === 'farm'
+        );
+        const fauna = this.findNextHuntableFauna(w.mesh.position, 42);
+        const berry = this.findNextNodeOfType('food', w.mesh.position, 65);
+        if (fauna && (!berry || fauna.mesh.position.distanceTo(w.mesh.position) < berry.mesh.position.distanceTo(w.mesh.position))) {
+          w.state = 'hunt';
+          w.targetFaunaId = fauna.id;
+          w.targetNodeId = null;
+          w.targetEntityId = null;
+          w.gatherResourceType = 'food';
+          w.lastGatherPos = fauna.mesh.position.clone();
+          continue;
+        } else if (berry) {
+          w.state = 'gather';
+          w.targetNodeId = berry.id;
+          w.targetFaunaId = null;
+          w.targetEntityId = null;
+          w.gatherResourceType = 'food';
+          w.lastGatherPos = berry.mesh.position.clone();
+          continue;
+        } else if (farm) {
+          w.state = 'gather';
+          w.targetEntityId = farm.id;
+          w.targetNodeId = null;
+          w.targetFaunaId = null;
+          w.gatherResourceType = 'food';
+          w.lastGatherPos = farm.mesh.position.clone();
+          continue;
+        }
+      }
+
+      const node = this.findNextNodeOfType(targetRes, w.mesh.position, 80);
+      if (node) {
+        w.state = 'gather';
+        w.targetNodeId = node.id;
+        w.targetEntityId = null;
+        w.targetFaunaId = null;
+        w.gatherResourceType = node.resourceType;
+        w.lastGatherPos = node.mesh.position.clone();
+      }
+    }
+  }
+
+  public toggleAutoScout() {
+    if (this.phase !== 'playing') return;
+    let targets = [...this.units.values()].filter(
+      (u) => u.team === 'player' && u.selected && u.hp > 0 && !this.unitStats(u.kind, 'player').isNaval
+    );
+    if (targets.length === 0) {
+      const fallbackScout = [...this.units.values()].find(
+        (u) =>
+          u.team === 'player' &&
+          u.hp > 0 &&
+          (u.kind === 'oracle' || u.kind === 'pegasus' || u.kind === 'cavalry' || u.kind === 'raiding_cavalry' || u.kind === 'tiger_cavalry' || u.kind === 'turma' || !this.isWorkerKind(u.kind))
+      );
+      if (fallbackScout) {
+        fallbackScout.selected = true;
+        targets = [fallbackScout];
+      }
+    }
+    if (targets.length === 0) {
+      this.notifyStatus('Selecione uma unidade para ativar Auto-Explorar (Z).');
+      return;
+    }
+    const enable = !targets.every((u) => Boolean(u.autoScout));
+    for (const u of targets) {
+      u.autoScout = enable;
+      if (enable) {
+        u.state = 'idle';
+        u.waypoints = [];
+      }
+    }
+    soundEngine.playSelect();
+    this.notifyStatus(enable ? `🧭 Auto-Explorar ativado em ${targets.length} unidade(s)!` : 'Auto-Explorar desativado.');
+    this.emitHudSnapshot();
+  }
+
+  public setSelectedStance(stance: CombatStance) {
+    if (this.phase !== 'playing') return;
+    const selected = [...this.units.values()].filter((u) => u.team === 'player' && u.selected && u.hp > 0);
+    if (selected.length === 0) return;
+    for (const u of selected) {
+      u.stance = stance;
+      u.leashOrigin = u.mesh.position.clone();
+      if (stance === 'stand_ground' && u.state === 'move') {
+        u.state = 'idle';
+        u.targetPos = null;
+        u.waypoints = [];
+      }
+    }
+    const labels: Record<CombatStance, string> = {
+      aggressive: 'Agressivo',
+      defensive: 'Defensivo',
+      stand_ground: 'Manter Posição',
+    };
+    soundEngine.playSelect();
+    this.notifyStatus(`Postura de combate: ${labels[stance]}`);
+    this.emitHudSnapshot();
+  }
+
+  public assignControlGroup(group: number) {
+    if (group < 1 || group > 9 || this.phase !== 'playing') return;
+    const selectedIds = [...this.units.values()]
+      .filter((u) => u.team === 'player' && u.selected && u.hp > 0)
+      .map((u) => u.id);
+    if (selectedIds.length === 0) {
+      this.controlGroups.delete(group);
+      this.emitHudSnapshot();
+      return;
+    }
+    this.controlGroups.set(group, selectedIds);
+    soundEngine.playSelect();
+    this.notifyStatus(`Grupo ${group} definido (${selectedIds.length} unidade(s)).`);
+    this.emitHudSnapshot();
+  }
+
+  public selectControlGroup(group: number, forceFocus = false) {
+    if (group < 1 || group > 9 || this.phase !== 'playing') return;
+    const rawIds = this.controlGroups.get(group) ?? [];
+    const aliveUnits = rawIds
+      .map((id) => this.units.get(id))
+      .filter((u): u is UnitEntity => Boolean(u && u.team === 'player' && u.hp > 0 && u.state !== 'garrisoned'));
+    this.controlGroups.set(
+      group,
+      aliveUnits.map((u) => u.id)
+    );
+    if (aliveUnits.length === 0) {
+      this.notifyStatus(`Grupo ${group} está vazio.`);
+      this.emitHudSnapshot();
+      return;
+    }
+    for (const u of this.units.values()) u.selected = false;
+    for (const b of this.buildings.values()) b.selected = false;
+    for (const n of this.nodes.values()) n.selected = false;
+    for (const s of this.settlements.values()) s.selected = false;
+    for (const r of this.relics.values()) r.selected = false;
+    for (const f of this.fauna.values()) f.selected = false;
+
+    let sumX = 0;
+    let sumZ = 0;
+    for (const u of aliveUnits) {
+      u.selected = true;
+      sumX += u.mesh.position.x;
+      sumZ += u.mesh.position.z;
+    }
+    const now = performance.now();
+    const isDoubleTap = this.lastControlGroupKey === group && now - this.lastControlGroupTime < 380;
+    this.lastControlGroupKey = group;
+    this.lastControlGroupTime = now;
+    if (forceFocus || isDoubleTap) {
+      this.jumpCameraTo(sumX / aliveUnits.length, sumZ / aliveUnits.length);
+    }
+    this.triggerUnitVoice(aliveUnits, 'select');
+    this.emitHudSnapshot();
+  }
+
+  public embarkSelectedIntoTransport(transportId?: string) {
+    if (this.phase !== 'playing') return;
+    let ship = transportId ? this.units.get(transportId) : undefined;
+    if (!ship || ship.kind !== 'transport_ship' || ship.team !== 'player') {
+      ship = [...this.units.values()].find((u) => u.team === 'player' && u.kind === 'transport_ship' && u.hp > 0);
+    }
+    if (!ship) {
+      this.notifyStatus('Construa um Navio de Transporte no Porto primeiro.');
+      return;
+    }
+    ship.cargoIds = ship.cargoIds ?? [];
+    const maxCap = 8;
+    const candidates = [...this.units.values()].filter(
+      (u) =>
+        u.team === 'player' &&
+        u.selected &&
+        u.hp > 0 &&
+        u.id !== ship!.id &&
+        u.state !== 'garrisoned' &&
+        !this.unitStats(u.kind, 'player').isNaval &&
+        !this.unitStats(u.kind, 'player').isGod &&
+        u.kind !== 'titan'
+    );
+    if (candidates.length === 0) {
+      this.notifyStatus('Selecione tropas terrestres para embarcar no Navio de Transporte.');
+      return;
+    }
+
+    let boarded = 0;
+    let approaching = 0;
+    for (const u of candidates) {
+      if (ship.cargoIds.length >= maxCap) break;
+      const dist = Math.hypot(u.mesh.position.x - ship.mesh.position.x, u.mesh.position.z - ship.mesh.position.z);
+      if (dist <= 6.2) {
+        u.state = 'garrisoned';
+        u.transportedInId = ship.id;
+        u.garrisonedInId = null;
+        u.selected = false;
+        u.mesh.visible = false;
+        u.waypoints = [];
+        u.targetPos = null;
+        ship.cargoIds.push(u.id);
+        boarded++;
+      } else {
+        // Walk to nearest shore cell next to the transport ship
+        const shipCell = this.navGrid.worldToCell(ship.mesh.position.x, ship.mesh.position.z);
+        const shore = this.navGrid.nearestWalkableCell(shipCell.gx, shipCell.gz, shipCell.gx, shipCell.gz, 10);
+        const shorePos = shore ? this.navGrid.cellToWorld(shore.gx, shore.gz) : ship.mesh.position;
+        u.state = 'move';
+        u.targetEntityId = ship.id;
+        u.waypoints = this.navGrid.findPath(u.mesh.position.x, u.mesh.position.z, shorePos.x, shorePos.z);
+        u.targetPos = u.waypoints.shift() ?? new THREE.Vector3(shorePos.x, 0, shorePos.z);
+        approaching++;
+      }
+    }
+    soundEngine.playSelect();
+    if (boarded > 0) {
+      this.spawnRingVfx(ship.mesh.position, 2.2, 0x38bdf8, 0.55);
+      this.notifyStatus(`⛵ ${boarded} unidade(s) embarcaram no Navio de Transporte (${ship.cargoIds.length}/8).`);
+    } else if (approaching > 0) {
+      this.notifyStatus(`⛵ ${approaching} unidade(s) marchando para embarcar na margem.`);
+    }
+    this.emitHudSnapshot();
+  }
+
+  public disembarkTransport(transportId: string, worldX?: number, worldZ?: number) {
+    if (this.phase !== 'playing') return;
+    const ship = this.units.get(transportId);
+    if (!ship || ship.kind !== 'transport_ship' || ship.team !== 'player' || !ship.cargoIds?.length) {
+      return;
+    }
+    const targetX = worldX ?? ship.mesh.position.x;
+    const targetZ = worldZ ?? ship.mesh.position.z;
+    const cell = this.navGrid.worldToCell(targetX, targetZ);
+    const shore = this.navGrid.nearestWalkableCell(cell.gx, cell.gz, cell.gx, cell.gz, 14);
+    const basePos = shore
+      ? this.navGrid.cellToWorld(shore.gx, shore.gz)
+      : { x: ship.mesh.position.x, z: ship.mesh.position.z };
+
+    let unloaded = 0;
+    const cargoList = [...ship.cargoIds];
+    ship.cargoIds = [];
+    for (let i = 0; i < cargoList.length; i++) {
+      const passenger = this.units.get(cargoList[i]);
+      if (!passenger || passenger.hp <= 0) continue;
+      const ang = (i / Math.max(1, cargoList.length)) * Math.PI * 2;
+      const slot = this.snapToWalkableSlot(
+        basePos.x + Math.cos(ang) * 1.4,
+        basePos.z + Math.sin(ang) * 1.4,
+        basePos.x,
+        basePos.z
+      );
+      passenger.state = 'idle';
+      passenger.transportedInId = null;
+      passenger.targetEntityId = null;
+      passenger.mesh.visible = true;
+      passenger.mesh.position.set(slot.x, groundHeightAt(slot.x, slot.z, this.mapId), slot.z);
+      passenger.selected = true;
+      unloaded++;
+    }
+    if (unloaded > 0) {
+      ship.selected = false;
+      this.spawnRingVfx(new THREE.Vector3(basePos.x, groundHeightAt(basePos.x, basePos.z, this.mapId), basePos.z), 2.5, 0xfacc15, 0.65);
+      soundEngine.playSelect();
+      this.notifyStatus(`⚓ ${unloaded} unidade(s) desembarcadas em terra firme!`);
+      this.emitHudSnapshot();
+    }
+  }
+
+  private getCounterTagsForUnit(kind: UnitKind, team: TeamId = 'player'): string[] {
+    const spec = this.unitStats(kind, team);
+    const tags: string[] = [];
+    if (spec.isHero) tags.push('Forte vs Míticos');
+    if (spec.bonusVsCavalry && spec.bonusVsCavalry >= 1.3) tags.push('Forte vs Cavalaria');
+    if (spec.bonusVsInfantry && spec.bonusVsInfantry >= 1.3) tags.push('Forte vs Infantaria');
+    if (spec.bonusVsArcher && spec.bonusVsArcher >= 1.3) tags.push('Forte vs Arqueiros');
+    if (spec.bonusVsMyth && spec.bonusVsMyth >= 1.5 && !spec.isHero) tags.push('Forte vs Míticos');
+    if ((spec.bonusVsBuilding && spec.bonusVsBuilding >= 1.8) || spec.isSiege) tags.push('Forte vs Edifícios');
+    if (spec.damageType === 'pierce' && spec.range >= 6 && tags.length === 0) tags.push('Ataque à Distância');
+    return tags.slice(0, 3);
   }
 
   private applyAreaDamage(
@@ -4022,6 +4821,11 @@ export class AoMEngine {
       case 'katapeltes':
       case 'destroyer':
       case 'fanatic':
+      case 'halberdier':
+      case 'nezha':
+      case 'kuafu':
+      case 'taotie':
+      case 'yazi':
       case 'promethean':
       case 'promethean_offspring':
       case 'behemoth':
@@ -4045,6 +4849,9 @@ export class AoMEngine {
       case 'caladria':
       case 'stymphalian_bird':
       case 'llama_caravan':
+      case 'tiger_cavalry':
+      case 'qilin':
+      case 'azure_dragon':
         return 1;
       case 'hermes':
       case 'apolo':
@@ -4084,6 +4891,9 @@ export class AoMEngine {
       case 'onager':
       case 'argus':
       case 'lampades':
+      case 'chu_ko_nu':
+      case 'fire_lance':
+      case 'jiang_ziya':
         return 2;
       case 'war_trireme':
         return 2;
@@ -4091,7 +4901,9 @@ export class AoMEngine {
       case 'norse_dwarf':
       case 'ox_cart':
       case 'citizen':
+      case 'chinese_peasant':
       case 'fishing_ship':
+      case 'transport_ship':
         return 3;
       default:
         return 1;
@@ -4291,9 +5103,16 @@ export class AoMEngine {
       u.formationSpeed = groupSpeed;
 
       if (units.length === 1) {
-        const path = this.navGrid.findPath(u.mesh.position.x, u.mesh.position.z, slot.targetX, slot.targetZ);
-        u.waypoints = path;
-        u.targetPos = u.waypoints.shift() ?? finalPos;
+        const u0 = units[0];
+        const isShip0 = Boolean(this.unitStats(u0.kind, u0.team).isNaval);
+        const path = isShip0
+          ? this.navGrid.findWaterPath(u0.mesh.position.x, u0.mesh.position.z, clampedX, clampedZ)
+          : this.navGrid.findPath(u0.mesh.position.x, u0.mesh.position.z, slot.targetX, slot.targetZ);
+        u0.waypoints = path;
+        u0.targetPos = u0.waypoints.shift() ?? (isShip0 ? new THREE.Vector3(clampedX, -0.22, clampedZ) : finalPos);
+        if (u0.team === 'player') {
+          this.emitMpCommand({ kind: 'move', x: clampedX, z: clampedZ, unitIds: [u0.id] });
+        }
         continue;
       }
 
@@ -5373,7 +6192,7 @@ export class AoMEngine {
     });
 
     this.spawnRingVfx(b.mesh.position, b.radius + 2.0, 0x38bdf8, 0.7);
-    soundEngine.playBuildingPlaced();
+    soundEngine.playBuild();
     this.notifyStatus(`🛡️ ${ejectedCount} unidade(s) desembarcada(s) da guarnição!`);
     this.emitHudSnapshot();
   }
@@ -6150,6 +6969,10 @@ export class AoMEngine {
 
     if (picked.type === 'unit' && picked.id) {
       const target = this.units.get(picked.id);
+      if (target && target.team === 'player' && target.kind === 'transport_ship') {
+        this.embarkSelectedIntoTransport(target.id);
+        return;
+      }
       if (target && this.getDiplomacy('player', target.team) === 'enemy') {
         if (this.treatyRemaining > 0) {
           this.notifyStatus(`Trégua ativa (${Math.ceil(this.treatyRemaining)}s) — ataques bloqueados!`);
@@ -6384,6 +7207,30 @@ export class AoMEngine {
     if (picked.type === 'node' && picked.id) {
       const node = this.nodes.get(picked.id);
       if (node) {
+        if (node.kind === 'fish_spot') {
+          const fishers = selectedPlayerUnits.filter((u) => u.kind === 'fishing_ship');
+          if (fishers.length > 0) {
+            for (const fShip of fishers) {
+              fShip.state = 'gather';
+              fShip.targetNodeId = node.id;
+              fShip.targetEntityId = null;
+              fShip.targetFaunaId = null;
+              fShip.gatherResourceType = 'food';
+              fShip.lastGatherPos = node.mesh.position.clone();
+              fShip.waypoints = this.navGrid.findWaterPath(
+                fShip.mesh.position.x,
+                fShip.mesh.position.z,
+                node.mesh.position.x,
+                node.mesh.position.z
+              );
+              fShip.targetPos = fShip.waypoints.shift() ?? node.mesh.position.clone();
+            }
+            this.spawnRingVfx(node.mesh.position, 1.8, 0x38bdf8, 0.55);
+            this.notifyStatus(`⛵ ${fishers.length} Barco(s) Pesqueiro(s) enviados ao cardume!`);
+            this.emitHudSnapshot();
+            return;
+          }
+        }
         let ordered = false;
         const gatherers = selectedPlayerUnits.some(
           (u) => this.isWorkerKind(u.kind) || u.kind === 'ox_cart'
@@ -6424,6 +7271,29 @@ export class AoMEngine {
     const clampedX = THREE.MathUtils.clamp(pt.x, -PLAYABLE_HALF_SIZE, PLAYABLE_HALF_SIZE);
     const clampedZ = THREE.MathUtils.clamp(pt.z, -PLAYABLE_HALF_SIZE, PLAYABLE_HALF_SIZE);
 
+    // If a loaded Transport Ship is commanded onto walkable dry land, sail to nearest shore water & disembark!
+    const loadedTransports = selectedPlayerUnits.filter(
+      (u) => u.kind === 'transport_ship' && (u.cargoIds?.length ?? 0) > 0
+    );
+    if (loadedTransports.length > 0 && this.isWalkableTerrainPoint(clampedX, clampedZ)) {
+      const landCell = this.navGrid.worldToCell(clampedX, clampedZ);
+      const refCell = this.navGrid.worldToCell(loadedTransports[0].mesh.position.x, loadedTransports[0].mesh.position.z);
+      const waterSpot = this.navGrid.nearestWaterCell(landCell.gx, landCell.gz, refCell.gx, refCell.gz, 14);
+      if (waterSpot) {
+        const wPos = this.navGrid.cellToWorld(waterSpot.gx, waterSpot.gz);
+        for (const tShip of loadedTransports) {
+          tShip.state = 'move';
+          tShip.waypoints = this.navGrid.findWaterPath(tShip.mesh.position.x, tShip.mesh.position.z, wPos.x, wPos.z);
+          tShip.targetPos = tShip.waypoints.shift() ?? new THREE.Vector3(wPos.x, -0.22, wPos.z);
+          tShip.tradeTargetBuildingId = `disembark:${clampedX.toFixed(1)},${clampedZ.toFixed(1)}`;
+        }
+        this.spawnRingVfx(new THREE.Vector3(clampedX, groundHeightAt(clampedX, clampedZ, this.mapId), clampedZ), 1.8, 0x38bdf8, 0.6);
+        this.notifyStatus('⛵ Navio de Transporte navegando para desembarcar tropas na margem!');
+        this.emitHudSnapshot();
+        return;
+      }
+    }
+
     this.issueFormationMove(selectedPlayerUnits, clampedX, clampedZ, customWaypoints, this.formation);
 
     this.spawnRingVfx(new THREE.Vector3(clampedX, groundHeightAt(clampedX, clampedZ, this.mapId), clampedZ), 1.4, 0xfacc15, 0.45);
@@ -6457,6 +7327,16 @@ export class AoMEngine {
   };
 
   private onKeyDown = (e: KeyboardEvent) => {
+    const activeEl = document.activeElement as HTMLElement | null;
+    if (
+      activeEl &&
+      (activeEl.tagName === 'INPUT' ||
+        activeEl.tagName === 'TEXTAREA' ||
+        activeEl.tagName === 'SELECT' ||
+        activeEl.isContentEditable)
+    ) {
+      return;
+    }
     this.keysDown.add(e.code);
     if (e.code === 'Escape') {
       if (this.activeBuildMode || this.activeGodPowerMode) {
@@ -6472,9 +7352,19 @@ export class AoMEngine {
       } else if (e.code === 'Home') {
         this.centerCameraOnBase();
       } else if (e.code === 'KeyF') {
-        const order: FormationId[] = ['box', 'line', 'staggered'];
+        const order: FormationId[] = ['box', 'line', 'staggered', 'phalanx', 'wedge'];
         const next = order[(order.indexOf(this.formation) + 1) % order.length];
         this.setFormation(next);
+      } else if (e.code === 'KeyZ') {
+        this.toggleAutoScout();
+      } else if (/^Digit[1-9]$/.test(e.code)) {
+        const groupNum = Number(e.code.replace('Digit', ''));
+        if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          this.assignControlGroup(groupNum);
+        } else {
+          this.selectControlGroup(groupNum);
+        }
       } else if (e.code === 'Period') {
         this.selectIdleVillager();
       } else if (e.code === 'Comma') {
@@ -7902,6 +8792,26 @@ export class AoMEngine {
       } else if (target.team === 'player') {
         this.enemyDestroyedValue += deadVal * 0.2;
       }
+      if (target.kind === 'transport_ship' && target.cargoIds && target.cargoIds.length > 0) {
+        const shipCell = this.navGrid.worldToCell(target.mesh.position.x, target.mesh.position.z);
+        const shore = this.navGrid.nearestWalkableCell(shipCell.gx, shipCell.gz, shipCell.gx, shipCell.gz, 8);
+        for (const cid of target.cargoIds) {
+          const passenger = this.units.get(cid);
+          if (!passenger) continue;
+          if (shore) {
+            const sWorld = this.navGrid.cellToWorld(shore.gx, shore.gz);
+            passenger.state = 'idle';
+            passenger.transportedInId = null;
+            passenger.mesh.visible = true;
+            passenger.hp = Math.max(1, Math.round(passenger.hp * 0.55));
+            passenger.mesh.position.set(sWorld.x, groundHeightAt(sWorld.x, sWorld.z, this.mapId), sWorld.z);
+          } else {
+            this.scene.remove(passenger.mesh);
+            this.units.delete(passenger.id);
+          }
+        }
+        target.cargoIds = [];
+      }
       this.scene.remove(target.mesh);
       this.units.delete(target.id);
       soundEngine.playUnitDeath();
@@ -8050,6 +8960,9 @@ export class AoMEngine {
       soundEngine.playFanfare(true);
       soundEngine.setMusicScene('victory');
       this.grantMythicVerdictReward();
+      if (this.campaignScenarioId) {
+        unlockNextCampaignScenario(this.campaignScenarioId);
+      }
       this.emitHudSnapshot();
     }
   }
@@ -8162,6 +9075,22 @@ export class AoMEngine {
 
     if (!bestPos) return null;
     return { pos: bestPos, radius: bestRadius, dist: bestDist, oxCart: bestOxCart, townCenter: bestTc };
+  }
+
+  private findNearestDock(team: TeamId, pos: THREE.Vector3): BuildingEntity | null {
+    let bestDock: BuildingEntity | null = null;
+    let bestDist = Infinity;
+    for (const b of this.buildings.values()) {
+      if (b.team === team && b.isConstructed && b.kind === 'dock') {
+        const d = Math.hypot(b.mesh.position.x - pos.x, b.mesh.position.z - pos.z);
+        if (d < bestDist) {
+          bestDist = d;
+          bestDock = b;
+        }
+      }
+    }
+    if (bestDock) return bestDock;
+    return this.findNearestTownCenter(team, pos);
   }
 
   /**
@@ -8380,6 +9309,31 @@ export class AoMEngine {
         return 1.05;
       case 'war_trireme':
         return 1.25;
+      case 'transport_ship':
+        return 1.42;
+      case 'chinese_peasant':
+        return 0.44;
+      case 'kuafu':
+        return 0.78;
+      case 'halberdier':
+        return 0.48;
+      case 'chu_ko_nu':
+        return 0.44;
+      case 'tiger_cavalry':
+        return 0.72;
+      case 'fire_lance':
+        return 0.96;
+      case 'nezha':
+      case 'jiang_ziya':
+        return 0.56;
+      case 'qilin':
+        return 0.75;
+      case 'yazi':
+        return 0.68;
+      case 'taotie':
+        return 0.98;
+      case 'azure_dragon':
+        return 1.05;
       case 'atena':
       case 'ares':
       case 'hermes':
@@ -8407,6 +9361,8 @@ export class AoMEngine {
         return 0.95;
       case 'gold_mine':
         return 1.9;
+      case 'fish_spot':
+        return 1.35;
     }
   }
 
@@ -8436,12 +9392,17 @@ export class AoMEngine {
     let nx = THREE.MathUtils.clamp(oldX + _vec3A.x * step, -PLAYABLE_HALF_SIZE, PLAYABLE_HALF_SIZE);
     let nz = THREE.MathUtils.clamp(oldZ + _vec3A.z * step, -PLAYABLE_HALF_SIZE, PLAYABLE_HALF_SIZE);
 
+    const isShip = Boolean(this.unitStats(u.kind, u.team).isNaval);
     const uRad = this.getUnitRadius(u.kind);
     const canStepTo = (x: number, z: number) => {
+      if (isShip) {
+        return this.navGrid.isWaterTerrain(x, z);
+      }
       if (groundHeightAt(x, z, this.mapId) < WATER_WALK_LIMIT || !this.navGrid.isTerrainWalkable(x, z)) {
         return false;
       }
       for (const b of this.buildings.values()) {
+        if (b.kind === 'gate' && this.getDiplomacy(u.team, b.team) !== 'enemy') continue;
         if (b.kind === 'gate' && this.getDiplomacy(u.team, b.team) === 'enemy') {
           const minGateR = b.radius + uRad + 0.25;
           if (Math.hypot(x - b.mesh.position.x, z - b.mesh.position.z) < minGateR) {
@@ -8463,10 +9424,10 @@ export class AoMEngine {
       }
     }
 
-    u.mesh.position.set(nx, groundHeightAt(nx, nz, this.mapId), nz);
+    u.mesh.position.set(nx, isShip ? -0.22 : groundHeightAt(nx, nz, this.mapId), nz);
     if (Math.hypot(nx - oldX, nz - oldZ) > 0.001) {
       u.mesh.rotation.y = Math.atan2(nx - oldX, nz - oldZ);
-      if (Math.random() < 0.09) {
+      if (!isShip && Math.random() < 0.09) {
         this.spawnDustParticleVfx(u.mesh.position);
       }
     } else {
@@ -8489,8 +9450,13 @@ export class AoMEngine {
   }
 
   private steerUnitAroundObstacles(u: UnitEntity, targetPos: THREE.Vector3, speed: number, dt: number) {
+    const isShip = Boolean(this.unitStats(u.kind, u.team).isNaval);
     const dist = Math.hypot(targetPos.x - u.mesh.position.x, targetPos.z - u.mesh.position.z);
-    if (dist <= 8.5 || this.navGrid.hasLineOfSight(u.mesh.position.x, u.mesh.position.z, targetPos.x, targetPos.z)) {
+    const hasLos = isShip
+      ? this.navGrid.hasWaterLineOfSight(u.mesh.position.x, u.mesh.position.z, targetPos.x, targetPos.z)
+      : this.navGrid.hasLineOfSight(u.mesh.position.x, u.mesh.position.z, targetPos.x, targetPos.z);
+
+    if (dist <= 8.5 || hasLos) {
       if (u.waypoints.length > 0) u.waypoints = [];
       this.moveUnitToward(u, targetPos, speed, dt);
       return;
@@ -8498,7 +9464,9 @@ export class AoMEngine {
 
     if (u.repathTimer <= 0 || u.waypoints.length === 0) {
       u.repathTimer = 0.45;
-      u.waypoints = this.navGrid.findPath(u.mesh.position.x, u.mesh.position.z, targetPos.x, targetPos.z);
+      u.waypoints = isShip
+        ? this.navGrid.findWaterPath(u.mesh.position.x, u.mesh.position.z, targetPos.x, targetPos.z)
+        : this.navGrid.findPath(u.mesh.position.x, u.mesh.position.z, targetPos.x, targetPos.z);
     }
     const nextWp = u.waypoints[0] ?? targetPos;
     const reached = this.moveUnitToward(u, nextWp, speed, dt);
@@ -8508,7 +9476,7 @@ export class AoMEngine {
   }
 
   private resolveUnitCollisions() {
-    const unitList = [...this.units.values()];
+    const unitList = [...this.units.values()].filter((u) => u.state !== 'garrisoned');
     if (unitList.length === 0) return;
 
     const buildingList = [...this.buildings.values()];
@@ -8553,6 +9521,7 @@ export class AoMEngine {
       // 2. Unit-vs-Building, Unit-vs-ResourceNode, and Terrain bounds
       for (let i = 0; i < unitList.length; i++) {
         const u = unitList[i];
+        const isShip = Boolean(this.unitStats(u.kind, u.team).isNaval);
         const rU = this.getUnitRadius(u.kind);
         let ux = u.mesh.position.x;
         let uz = u.mesh.position.z;
@@ -8582,6 +9551,7 @@ export class AoMEngine {
 
         for (let ni = 0; ni < nodeList.length; ni++) {
           const n = nodeList[ni];
+          if (n.kind === 'fish_spot' && !isShip) continue;
           const minDist = this.getNodeRadius(n.kind) + rU + 0.1;
           let dx = ux - n.mesh.position.x;
           let dz = uz - n.mesh.position.z;
@@ -8604,26 +9574,44 @@ export class AoMEngine {
         ux = THREE.MathUtils.clamp(ux, -PLAYABLE_HALF_SIZE, PLAYABLE_HALF_SIZE);
         uz = THREE.MathUtils.clamp(uz, -PLAYABLE_HALF_SIZE, PLAYABLE_HALF_SIZE);
 
-        if (groundHeightAt(ux, uz, this.mapId) < WATER_WALK_LIMIT || !this.navGrid.isTerrainWalkable(ux, uz)) {
-          const curCell = this.navGrid.worldToCell(ux, uz);
-          const safeCell = this.navGrid.nearestWalkableCell(curCell.gx, curCell.gz, curCell.gx, curCell.gz, 4);
-          if (safeCell) {
-            const safeWorld = this.navGrid.cellToWorld(safeCell.gx, safeCell.gz);
-            ux = THREE.MathUtils.lerp(ux, safeWorld.x, 0.35);
-            uz = THREE.MathUtils.lerp(uz, safeWorld.z, 0.35);
+        if (isShip) {
+          if (!this.navGrid.isWaterTerrain(ux, uz)) {
+            const curCell = this.navGrid.worldToCell(ux, uz);
+            const wCell = this.navGrid.nearestWaterCell(curCell.gx, curCell.gz, curCell.gx, curCell.gz, 8);
+            if (wCell) {
+              const wPos = this.navGrid.cellToWorld(wCell.gx, wCell.gz);
+              ux = THREE.MathUtils.lerp(ux, wPos.x, 0.45);
+              uz = THREE.MathUtils.lerp(uz, wPos.z, 0.45);
+            }
           }
+          u.mesh.position.set(ux, -0.22, uz);
+        } else {
+          if (groundHeightAt(ux, uz, this.mapId) < WATER_WALK_LIMIT || !this.navGrid.isTerrainWalkable(ux, uz)) {
+            const curCell = this.navGrid.worldToCell(ux, uz);
+            const safeCell = this.navGrid.nearestWalkableCell(curCell.gx, curCell.gz, curCell.gx, curCell.gz, 4);
+            if (safeCell) {
+              const safeWorld = this.navGrid.cellToWorld(safeCell.gx, safeCell.gz);
+              ux = THREE.MathUtils.lerp(ux, safeWorld.x, 0.35);
+              uz = THREE.MathUtils.lerp(uz, safeWorld.z, 0.35);
+            }
+          }
+          u.mesh.position.set(ux, groundHeightAt(ux, uz, this.mapId), uz);
         }
-
-        u.mesh.position.set(ux, groundHeightAt(ux, uz, this.mapId), uz);
       }
     }
   }
 
-  private findNextNodeOfType(resType: ResourceType, origin: THREE.Vector3, maxDist = 75): ResourceNodeEntity | null {
+  private findNextNodeOfType(
+    resType: ResourceType,
+    origin: THREE.Vector3,
+    maxDist = 75,
+    includeFish = false
+  ): ResourceNodeEntity | null {
     let nextNode: ResourceNodeEntity | null = null;
     let bestD = maxDist;
     for (const cand of this.nodes.values()) {
       if (cand.amount <= 0 || cand.resourceType !== resType) continue;
+      if (!includeFish && cand.kind === 'fish_spot') continue;
       const d = Math.hypot(cand.mesh.position.x - origin.x, cand.mesh.position.z - origin.z);
       if (d < bestD) {
         bestD = d;
@@ -8631,6 +9619,20 @@ export class AoMEngine {
       }
     }
     return nextNode;
+  }
+
+  private findNearestFishSpot(origin: THREE.Vector3, maxDist = 95): ResourceNodeEntity | null {
+    let best: ResourceNodeEntity | null = null;
+    let bestD = maxDist;
+    for (const cand of this.nodes.values()) {
+      if (cand.amount <= 0 || cand.kind !== 'fish_spot') continue;
+      const d = Math.hypot(cand.mesh.position.x - origin.x, cand.mesh.position.z - origin.z);
+      if (d < bestD) {
+        bestD = d;
+        best = cand;
+      }
+    }
+    return best;
   }
 
   private findNextHuntableFauna(origin: THREE.Vector3, maxDist = 45): FaunaEntity | null {
@@ -8675,19 +9677,39 @@ export class AoMEngine {
 
     for (const u of [...this.units.values()]) {
       if (u.state === 'garrisoned') {
-        const host = u.garrisonedInId ? this.buildings.get(u.garrisonedInId) : null;
-        if (!host || host.hp <= 0) {
-          u.state = 'idle';
-          u.garrisonedInId = null;
-          u.mesh.visible = true;
-          u.hp = Math.max(1, Math.round(u.hp * 0.75));
-        } else {
-          u.mesh.visible = false;
-          u.mesh.position.copy(host.mesh.position);
-          if (u.hp < u.maxHp) {
-            u.hp = Math.min(u.maxHp, u.hp + 4.5 * dt);
+        if (u.transportedInId) {
+          const ship = this.units.get(u.transportedInId);
+          if (!ship || ship.hp <= 0) {
+            const cell = this.navGrid.worldToCell(u.mesh.position.x, u.mesh.position.z);
+            const shore = this.navGrid.nearestWalkableCell(cell.gx, cell.gz, cell.gx, cell.gz, 18);
+            const safePos = shore
+              ? this.navGrid.cellToWorld(shore.gx, shore.gz)
+              : { x: u.mesh.position.x, z: u.mesh.position.z };
+            u.state = 'idle';
+            u.transportedInId = null;
+            u.mesh.visible = true;
+            u.mesh.position.set(safePos.x, groundHeightAt(safePos.x, safePos.z, this.mapId), safePos.z);
+            u.hp = Math.max(1, Math.round(u.hp * 0.65));
+          } else {
+            u.mesh.visible = false;
+            u.mesh.position.copy(ship.mesh.position);
+            continue;
           }
-          continue;
+        } else {
+          const host = u.garrisonedInId ? this.buildings.get(u.garrisonedInId) : null;
+          if (!host || host.hp <= 0) {
+            u.state = 'idle';
+            u.garrisonedInId = null;
+            u.mesh.visible = true;
+            u.hp = Math.max(1, Math.round(u.hp * 0.75));
+          } else {
+            u.mesh.visible = false;
+            u.mesh.position.copy(host.mesh.position);
+            if (u.hp < u.maxHp) {
+              u.hp = Math.min(u.maxHp, u.hp + 4.5 * dt);
+            }
+            continue;
+          }
         }
       }
       const stats = this.unitStats(u.kind, u.team);
@@ -8970,15 +9992,48 @@ export class AoMEngine {
             u.formationYaw = null;
             u.formationSpeed = null;
 
+            if (u.kind === 'transport_ship' && u.tradeTargetBuildingId?.startsWith('disembark:')) {
+              const [dx, dz] = u.tradeTargetBuildingId
+                .slice('disembark:'.length)
+                .split(',')
+                .map((v) => Number(v));
+              u.tradeTargetBuildingId = null;
+              this.disembarkTransport(
+                u.id,
+                Number.isFinite(dx) ? dx : u.mesh.position.x,
+                Number.isFinite(dz) ? dz : u.mesh.position.z
+              );
+              continue;
+            }
+
             if (u.targetEntityId) {
-              const targetB = this.buildings.get(u.targetEntityId);
-              if (targetB && targetB.team === u.team && targetB.isConstructed) {
-                if (this.canGarrisonIn(targetB)) {
-                  this.garrisonUnit(u, targetB);
-                  continue;
-                } else if (targetB.kind === 'sky_passage') {
-                  this.teleportSkyPassage(targetB.id);
+              const targetShip = this.units.get(u.targetEntityId);
+              if (targetShip && targetShip.kind === 'transport_ship' && targetShip.team === u.team && targetShip.hp > 0) {
+                targetShip.cargoIds = targetShip.cargoIds ?? [];
+                if (targetShip.cargoIds.length < 8) {
+                  u.state = 'garrisoned';
+                  u.transportedInId = targetShip.id;
+                  u.garrisonedInId = null;
                   u.targetEntityId = null;
+                  u.selected = false;
+                  u.mesh.visible = false;
+                  targetShip.cargoIds.push(u.id);
+                  if (u.team === 'player') {
+                    this.spawnRingVfx(targetShip.mesh.position, 2.0, 0x38bdf8, 0.45);
+                  }
+                  continue;
+                }
+                u.targetEntityId = null;
+              } else {
+                const targetB = this.buildings.get(u.targetEntityId);
+                if (targetB && targetB.team === u.team && targetB.isConstructed) {
+                  if (this.canGarrisonIn(targetB)) {
+                    this.garrisonUnit(u, targetB);
+                    continue;
+                  } else if (targetB.kind === 'sky_passage') {
+                    this.teleportSkyPassage(targetB.id);
+                    u.targetEntityId = null;
+                  }
                 }
               }
             }
@@ -9034,7 +10089,10 @@ export class AoMEngine {
           if (!node || node.amount <= 0) {
             const desiredType = node?.resourceType ?? u.gatherResourceType ?? u.carryType ?? 'wood';
             const searchOrigin = u.lastGatherPos ?? u.mesh.position;
-            const nextNode = this.findNextNodeOfType(desiredType, searchOrigin, 75);
+            const nextNode =
+              u.kind === 'fishing_ship'
+                ? this.findNearestFishSpot(searchOrigin, 95)
+                : this.findNextNodeOfType(desiredType, searchOrigin, 75);
             if (nextNode) {
               u.targetNodeId = nextNode.id;
               u.gatherResourceType = nextNode.resourceType;
@@ -9064,7 +10122,7 @@ export class AoMEngine {
             node.mesh.position.x - u.mesh.position.x,
             node.mesh.position.z - u.mesh.position.z
           );
-          const gatherStop = this.getNodeRadius(node.kind) + uRadius + 1.95;
+          const gatherStop = this.getNodeRadius(node.kind) + uRadius + (u.kind === 'fishing_ship' ? 2.45 : 1.95);
           if (dist > gatherStop) {
             this.steerUnitAroundObstacles(u, node.mesh.position, effectiveSpeed, dt);
           } else {
@@ -9115,8 +10173,9 @@ export class AoMEngine {
                   u.carryAmount = 0;
                 }
                 const isDwarfGold = u.kind === 'norse_dwarf' && node.resourceType === 'gold';
-                const swingTake = isDwarfGold ? 6 : 5;
-                const maxCarry = isDwarfGold ? 20 : 15;
+                const isFishing = u.kind === 'fishing_ship';
+                const swingTake = isFishing ? 6 : isDwarfGold ? 6 : 5;
+                const maxCarry = isFishing ? 20 : isDwarfGold ? 20 : 15;
                 const take = Math.min(swingTake, node.amount);
                 node.amount -= take;
                 u.carryType = node.resourceType;
@@ -9126,14 +10185,17 @@ export class AoMEngine {
                   const depletedPos = node.mesh.position.clone();
                   this.scene.remove(node.mesh);
                   this.nodes.delete(node.id);
-                  const replacement = this.findNextNodeOfType(depletedType, depletedPos, 75);
+                  const replacement = isFishing
+                    ? this.findNearestFishSpot(depletedPos, 95)
+                    : this.findNextNodeOfType(depletedType, depletedPos, 75);
                   u.targetNodeId = replacement ? replacement.id : null;
                   if (replacement) {
                     u.lastGatherPos = replacement.mesh.position.clone();
-                    this.repositionOxCartsNearResource(u.team, depletedPos, replacement.mesh.position);
+                    if (!isFishing) {
+                      this.repositionOxCartsNearResource(u.team, depletedPos, replacement.mesh.position);
+                    }
                   }
                 }
-                // Keep harvesting if carry bag isn't full and replacement node is right here, or return when full / no replacement
                 if (u.carryAmount >= maxCarry || !u.targetNodeId) {
                   u.state = 'return';
                   u.waypoints = [];
@@ -9320,6 +10382,50 @@ export class AoMEngine {
           }
         }
       } else if (u.state === 'return') {
+        if (u.kind === 'fishing_ship') {
+          const dock = this.findNearestDock(u.team, u.mesh.position);
+          if (!dock) {
+            if (u.carryAmount > 0) {
+              const pool = u.team === 'player' ? this.resources : this.enemyResources;
+              pool.food += u.carryAmount;
+              u.carryAmount = 0;
+            }
+            u.state = 'idle';
+            continue;
+          }
+          const dockDist = Math.hypot(
+            dock.mesh.position.x - u.mesh.position.x,
+            dock.mesh.position.z - u.mesh.position.z
+          );
+          if (dockDist > dock.radius + uRadius + 3.8) {
+            this.steerUnitAroundObstacles(u, dock.mesh.position, effectiveSpeed, dt);
+          } else {
+            if (u.carryAmount > 0) {
+              const pool = u.team === 'player' ? this.resources : this.enemyResources;
+              pool.food += u.carryAmount;
+              if (u.team === 'player') {
+                this.spawnRingVfx(dock.mesh.position, 2.1, 0x38bdf8, 0.4);
+              }
+              u.carryAmount = 0;
+            }
+            u.waypoints = [];
+            u.repathTimer = 0;
+            const existingFish = u.targetNodeId ? this.nodes.get(u.targetNodeId) : undefined;
+            if (existingFish && existingFish.amount > 0) {
+              u.state = 'gather';
+            } else {
+              const nextFish = this.findNearestFishSpot(u.lastGatherPos ?? dock.mesh.position, 95);
+              if (nextFish) {
+                u.targetNodeId = nextFish.id;
+                u.lastGatherPos = nextFish.mesh.position.clone();
+                u.state = 'gather';
+              } else {
+                u.state = 'idle';
+              }
+            }
+          }
+          continue;
+        }
         const dropType = u.carryType ?? u.gatherResourceType ?? undefined;
         const dropOff = this.findNearestDropOff(u.team, u.mesh.position, dropType);
         if (!dropOff) {
@@ -9530,10 +10636,18 @@ export class AoMEngine {
           u.targetEntityId = null;
           continue;
         }
+        if (u.stance === 'defensive' && u.leashOrigin && u.mesh.position.distanceTo(u.leashOrigin) > 13.5) {
+          u.state = 'move';
+          u.targetEntityId = null;
+          u.targetPos = u.leashOrigin.clone();
+          u.waypoints = this.navGrid.findPath(u.mesh.position.x, u.mesh.position.z, u.leashOrigin.x, u.leashOrigin.z);
+          continue;
+        }
         const targetU = u.targetEntityId ? this.units.get(u.targetEntityId) : undefined;
         const targetB = !targetU && u.targetEntityId ? this.buildings.get(u.targetEntityId) : undefined;
         if (!targetU && !targetB) {
-          const next = this.findNearestEnemy(u.team, u.mesh.position, 14);
+          const searchR = u.stance === 'stand_ground' ? stats.range + mods.rangeBonus + 0.45 : u.stance === 'defensive' ? 9.5 : 14;
+          const next = this.findNearestEnemy(u.team, u.mesh.position, searchR);
           if (next) {
             u.targetEntityId = next.id;
             u.waypoints = [];
@@ -9553,6 +10667,12 @@ export class AoMEngine {
 
         const effectiveRange = stats.range + mods.rangeBonus;
         if (dist > effectiveRange) {
+          if (u.stance === 'stand_ground') {
+            u.state = 'idle';
+            u.targetEntityId = null;
+            u.waypoints = [];
+            continue;
+          }
           this.steerUnitAroundObstacles(u, targetPos, effectiveSpeed, dt);
         } else {
           u.mesh.rotation.y = Math.atan2(
@@ -9854,22 +10974,97 @@ export class AoMEngine {
           }
         }
       } else if (u.state === 'idle' && u.kind === 'fishing_ship') {
-        u.gatherTimer += dt;
-        if (u.gatherTimer >= 2.0) {
-          u.gatherTimer = 0;
-          const pool = u.team === 'player' ? this.resources : this.enemyResources;
-          pool.food += 5;
-          if (u.team === 'player' && Math.random() < 0.35) {
-            this.spawnRingVfx(u.mesh.position, 1.4, 0x38bdf8, 0.35);
+        const fish = this.findNearestFishSpot(u.mesh.position, 90);
+        if (fish) {
+          u.state = 'gather';
+          u.targetNodeId = fish.id;
+          u.gatherResourceType = 'food';
+          u.lastGatherPos = fish.mesh.position.clone();
+          u.waypoints = this.navGrid.findWaterPath(
+            u.mesh.position.x,
+            u.mesh.position.z,
+            fish.mesh.position.x,
+            fish.mesh.position.z
+          );
+          u.targetPos = u.waypoints.shift() ?? fish.mesh.position.clone();
+        } else {
+          u.gatherTimer += dt;
+          if (u.gatherTimer >= 2.2) {
+            u.gatherTimer = 0;
+            const pool = u.team === 'player' ? this.resources : this.enemyResources;
+            pool.food += 5;
+            if (u.team === 'player' && Math.random() < 0.35) {
+              this.spawnRingVfx(u.mesh.position, 1.4, 0x38bdf8, 0.35);
+            }
           }
+        }
+      } else if (u.state === 'idle' && u.autoScout && u.hp > 0) {
+        if (u.hp / u.maxHp < 0.35) {
+          u.autoScout = false;
+          const homeTc = this.findNearestTownCenter(u.team, u.mesh.position);
+          if (homeTc) {
+            u.state = 'move';
+            u.waypoints = this.navGrid.findPath(u.mesh.position.x, u.mesh.position.z, homeTc.mesh.position.x, homeTc.mesh.position.z);
+            u.targetPos = u.waypoints.shift() ?? homeTc.mesh.position.clone();
+          }
+          if (u.team === 'player') {
+            this.notifyStatus('🧭 Batedor com pouca vida recuou para o Centro da Cidade!');
+          }
+          continue;
+        }
+        // Scan Fog Grid for nearest unexplored walkable cell
+        let bestWx: number | null = null;
+        let bestWz: number | null = null;
+        let bestDist = Infinity;
+        for (let gy = 2; gy < FOG_GRID_SIZE - 2; gy += 3) {
+          for (let gx = 2; gx < FOG_GRID_SIZE - 2; gx += 3) {
+            if (this.fogState[gy * FOG_GRID_SIZE + gx] !== 0) continue;
+            const wx = ((gx + 0.5) / FOG_GRID_SIZE - 0.5) * (PLAYABLE_HALF_SIZE * 2);
+            const wz = ((gy + 0.5) / FOG_GRID_SIZE - 0.5) * (PLAYABLE_HALF_SIZE * 2);
+            const validCell = stats.isNaval ? this.navGrid.isWaterTerrain(wx, wz) : this.isWalkableTerrainPoint(wx, wz);
+            if (!validCell) continue;
+            const d = Math.hypot(wx - u.mesh.position.x, wz - u.mesh.position.z);
+            if (d < bestDist && d > 7) {
+              bestDist = d;
+              bestWx = wx;
+              bestWz = wz;
+            }
+          }
+        }
+        if (bestWx === null || bestWz === null) {
+          const ang = this.seededRng() * Math.PI * 2;
+          const r = 18 + this.seededRng() * 28;
+          const cx = THREE.MathUtils.clamp(Math.cos(ang) * r, -PLAYABLE_HALF_SIZE + 6, PLAYABLE_HALF_SIZE - 6);
+          const cz = THREE.MathUtils.clamp(Math.sin(ang) * r, -PLAYABLE_HALF_SIZE + 6, PLAYABLE_HALF_SIZE - 6);
+          if (stats.isNaval ? this.navGrid.isWaterTerrain(cx, cz) : this.isWalkableTerrainPoint(cx, cz)) {
+            bestWx = cx;
+            bestWz = cz;
+          }
+        }
+        if (bestWx !== null && bestWz !== null) {
+          u.state = 'move';
+          u.waypoints = stats.isNaval
+            ? this.navGrid.findWaterPath(u.mesh.position.x, u.mesh.position.z, bestWx, bestWz)
+            : this.navGrid.findPath(u.mesh.position.x, u.mesh.position.z, bestWx, bestWz);
+          u.targetPos = u.waypoints.shift() ?? new THREE.Vector3(bestWx, 0, bestWz);
         }
       } else if (
         u.state === 'idle' &&
         (!this.isNonCombatEconUnit(u) || Boolean(u.isPromotedHero)) &&
         this.treatyRemaining <= 0
       ) {
-        const nearest = this.findNearestEnemy(u.team, u.mesh.position, 13.5);
+        const stance = u.stance ?? 'aggressive';
+        const aggroRange =
+          stance === 'stand_ground'
+            ? stats.range + mods.rangeBonus + 0.45
+            : stance === 'defensive'
+            ? 9.0
+            : 15.0;
+        const nearest = this.findNearestEnemy(u.team, u.mesh.position, aggroRange);
         if (nearest) {
+          if (stance === 'defensive' && !u.leashOrigin) {
+            u.leashOrigin = u.mesh.position.clone();
+          }
           u.state = 'attack';
           u.targetEntityId = nearest.id;
           u.rallyFlagPos = null;
@@ -10015,6 +11210,7 @@ export class AoMEngine {
         job.progress += dt;
         if (job.progress >= job.total) {
           b.trainingQueue.shift();
+          const spawnedStats = this.unitStats(job.kind, b.team);
           const dist = b.radius + 1.85;
           let ang = Math.random() * Math.PI * 2;
           if (b.rallyPoint) {
@@ -10025,14 +11221,26 @@ export class AoMEngine {
           let sx = THREE.MathUtils.clamp(b.mesh.position.x + Math.cos(ang) * dist, -PLAYABLE_HALF_SIZE, PLAYABLE_HALF_SIZE);
           let sz = THREE.MathUtils.clamp(b.mesh.position.z + Math.sin(ang) * dist, -PLAYABLE_HALF_SIZE, PLAYABLE_HALF_SIZE);
 
-          // If the building has a Spawn/Rally Arrow set close to the building on walkable ground, spawn right at the arrow
+          if (spawnedStats.isNaval) {
+            const dCell = this.navGrid.worldToCell(sx, sz);
+            const wCell = this.navGrid.nearestWaterCell(dCell.gx, dCell.gz, dCell.gx, dCell.gz, 28);
+            if (wCell) {
+              const wWorld = this.navGrid.cellToWorld(wCell.gx, wCell.gz);
+              sx = wWorld.x;
+              sz = wWorld.z;
+            }
+          }
+
+          // If the building has a Spawn/Rally Arrow set close to the building on valid terrain/water, spawn right at the arrow
           const rallyDist = b.rallyPoint
             ? Math.hypot(b.rallyPoint.x - b.mesh.position.x, b.rallyPoint.z - b.mesh.position.z)
             : 0;
-          const spawnedDirectlyAtRally =
-            b.rallyPoint !== null &&
-            rallyDist <= b.radius + 7.5 &&
-            this.navGrid.isTerrainWalkable(b.rallyPoint.x, b.rallyPoint.z);
+          const rallyValid = b.rallyPoint
+            ? spawnedStats.isNaval
+              ? this.navGrid.isWaterTerrain(b.rallyPoint.x, b.rallyPoint.z)
+              : this.navGrid.isTerrainWalkable(b.rallyPoint.x, b.rallyPoint.z)
+            : false;
+          const spawnedDirectlyAtRally = b.rallyPoint !== null && rallyDist <= b.radius + 7.5 && rallyValid;
 
           if (spawnedDirectlyAtRally && b.rallyPoint) {
             const jitterAng = Math.random() * Math.PI * 2;
@@ -10045,7 +11253,6 @@ export class AoMEngine {
           if (b.kind === 'great_hall') {
             spawned.trainedAtGreatHall = true;
           }
-          const spawnedStats = this.unitStats(job.kind, b.team);
           if (spawnedStats.isGod) {
             this.spawnPillarVfx(spawned.mesh.position, spawnedStats.isMajorGod ? 0xfacc15 : 0xc084fc, spawnedStats.isMajorGod ? 2.4 : 1.7);
             this.spawnRingVfx(spawned.mesh.position, spawnedStats.isMajorGod ? 9.5 : 6.5, spawnedStats.isMajorGod ? 0xfacc15 : 0xc084fc, 1.2);
@@ -10087,13 +11294,31 @@ export class AoMEngine {
           if (b.team === 'player') {
             this.stats.unitsTrained++;
             const isSpawnedWorker = this.isWorkerKind(spawned.kind);
-            if (b.rallyPoint) {
+            if (spawned.kind === 'fishing_ship') {
+              const targetFish = b.rallyPoint
+                ? this.findNearestFishSpot(b.rallyPoint, 25) ?? this.findNearestFishSpot(spawned.mesh.position, 90)
+                : this.findNearestFishSpot(spawned.mesh.position, 90);
+              if (targetFish) {
+                spawned.state = 'gather';
+                spawned.targetNodeId = targetFish.id;
+                spawned.gatherResourceType = 'food';
+                spawned.lastGatherPos = targetFish.mesh.position.clone();
+                spawned.waypoints = this.navGrid.findWaterPath(
+                  spawned.mesh.position.x,
+                  spawned.mesh.position.z,
+                  targetFish.mesh.position.x,
+                  targetFish.mesh.position.z
+                );
+                spawned.targetPos = spawned.waypoints.shift() ?? targetFish.mesh.position.clone();
+              }
+            } else if (b.rallyPoint) {
               // Check if rally point is on a resource node or huntable animal for Villagers / Norse Dwarves / Ox Carts
               let assignedGather = false;
               if (isSpawnedWorker || spawned.kind === 'ox_cart') {
                 let nearNode: ResourceNodeEntity | null = null;
                 let nearNodeD = 4.2;
                 for (const n of this.nodes.values()) {
+                  if (n.kind === 'fish_spot') continue;
                   const d = Math.hypot(n.mesh.position.x - b.rallyPoint.x, n.mesh.position.z - b.rallyPoint.z);
                   if (d < nearNodeD) {
                     nearNodeD = d;
@@ -10134,12 +11359,19 @@ export class AoMEngine {
                 spawned.rallyFlagPos = b.rallyPoint.clone();
                 if (!spawnedDirectlyAtRally) {
                   spawned.state = 'move';
-                  const path = this.navGrid.findPath(
-                    spawned.mesh.position.x,
-                    spawned.mesh.position.z,
-                    b.rallyPoint.x,
-                    b.rallyPoint.z
-                  );
+                  const path = spawnedStats.isNaval
+                    ? this.navGrid.findWaterPath(
+                        spawned.mesh.position.x,
+                        spawned.mesh.position.z,
+                        b.rallyPoint.x,
+                        b.rallyPoint.z
+                      )
+                    : this.navGrid.findPath(
+                        spawned.mesh.position.x,
+                        spawned.mesh.position.z,
+                        b.rallyPoint.x,
+                        b.rallyPoint.z
+                      );
                   spawned.waypoints = path;
                   spawned.targetPos = spawned.waypoints.shift() ?? b.rallyPoint.clone();
                 }
@@ -10414,6 +11646,138 @@ export class AoMEngine {
     }
   }
 
+  private evaluateCampaignObjective(check: CampaignMissionScript['stages'][number]['objectives'][number]['check']): {
+    done: boolean;
+    progressText?: string;
+  } {
+    switch (check.type) {
+      case 'build': {
+        let count = 0;
+        for (const b of this.buildings.values()) {
+          if (b.team === 'player' && b.isConstructed && b.kind === check.kind) count++;
+        }
+        return { done: count >= check.count, progressText: `${Math.min(count, check.count)}/${check.count}` };
+      }
+      case 'train': {
+        let count = 0;
+        for (const u of this.units.values()) {
+          if (u.team !== 'player' || u.hp <= 0) continue;
+          if (check.kind && u.kind === check.kind) count++;
+          else if (check.minCombatUnits && (!this.isNonCombatEconUnit(u) || Boolean(u.isPromotedHero))) count++;
+          else if (!check.kind && !check.minCombatUnits) count++;
+        }
+        return { done: count >= check.count, progressText: `${Math.min(count, check.count)}/${check.count}` };
+      }
+      case 'age': {
+        return { done: this.age >= check.minAge, progressText: `Era ${this.age}/${check.minAge}` };
+      }
+      case 'relics': {
+        return { done: this.relicsHeld >= check.count, progressText: `${Math.min(this.relicsHeld, check.count)}/${check.count}` };
+      }
+      case 'kill_enemies': {
+        return {
+          done: this.stats.enemiesDefeated >= check.count,
+          progressText: `${Math.min(this.stats.enemiesDefeated, check.count)}/${check.count}`,
+        };
+      }
+      case 'survive': {
+        return {
+          done: this.elapsedSeconds >= check.seconds,
+          progressText: `${Math.min(Math.floor(this.elapsedSeconds), check.seconds)}s/${check.seconds}s`,
+        };
+      }
+      case 'destroy_tc': {
+        let enemyTcCount = 0;
+        for (const b of this.buildings.values()) {
+          if (b.team === 'enemy' && b.kind === 'town_center') enemyTcCount++;
+        }
+        const done = enemyTcCount === 0;
+        return { done, progressText: done ? 'Concluído' : `${enemyTcCount} ativo(s)` };
+      }
+    }
+  }
+
+  private updateCampaignMission(dt: number) {
+    if (!this.campaignScript || this.phase !== 'playing') return;
+    if (this.campaignDialogueTimer > 0) {
+      this.campaignDialogueTimer = Math.max(0, this.campaignDialogueTimer - dt);
+      if (this.campaignDialogueTimer <= 0) {
+        this.campaignDialogue = null;
+      }
+    }
+    const stage = this.campaignScript.stages[this.campaignStageIndex];
+    if (!stage) return;
+
+    // Trigger scripted enemy waves
+    if (stage.waves) {
+      for (let wIdx = 0; wIdx < stage.waves.length; wIdx++) {
+        const wave = stage.waves[wIdx];
+        const waveKey = `${this.campaignStageIndex}:${wIdx}:${wave.atSeconds}`;
+        if (this.campaignSpawnedWaveIds.has(waveKey)) continue;
+        if (this.elapsedSeconds >= wave.atSeconds) {
+          this.campaignSpawnedWaveIds.add(waveKey);
+          const enemyTc = this.findNearestTownCenter('enemy', new THREE.Vector3(34, 0, -34));
+          const ox = enemyTc ? enemyTc.mesh.position.x - 4 : 30;
+          const oz = enemyTc ? enemyTc.mesh.position.z + 4 : -30;
+          const waveUnits: UnitEntity[] = [];
+          for (const entry of wave.units) {
+            for (let i = 0; i < entry.count; i++) {
+              const slot = this.snapToWalkableSlot(ox + (i % 4) * 1.7, oz + Math.floor(i / 4) * 1.7, ox, oz);
+              waveUnits.push(this.spawnUnit(entry.kind, 'enemy', slot.x, slot.z));
+            }
+          }
+          const playerTc = this.findNearestTownCenter('player', new THREE.Vector3(-34, 0, 34));
+          if (waveUnits.length > 0 && playerTc) {
+            this.issueFormationMove(waveUnits, playerTc.mesh.position.x, playerTc.mesh.position.z, [], 'line');
+          }
+          if (wave.announcement) {
+            this.campaignDialogue = { ...wave.announcement };
+            this.campaignDialogueTimer = 11;
+            this.notifyStatus(`📜 ${wave.announcement.speaker}: "${wave.announcement.text}"`);
+          }
+        }
+      }
+    }
+
+    // Check stage completion
+    const allDone = stage.objectives.every((obj) => this.evaluateCampaignObjective(obj.check).done);
+    if (!allDone) return;
+
+    // Grant reinforcements upon stage completion
+    if (stage.reinforcements && stage.reinforcements.length > 0) {
+      const playerTc = this.findNearestTownCenter('player', new THREE.Vector3(-34, 0, 34));
+      const rx = playerTc ? playerTc.mesh.position.x + 4 : -30;
+      const rz = playerTc ? playerTc.mesh.position.z - 4 : 30;
+      for (const reinf of stage.reinforcements) {
+        for (let i = 0; i < reinf.count; i++) {
+          const slot = this.snapToWalkableSlot(rx + (i % 4) * 1.6, rz - Math.floor(i / 4) * 1.6, rx, rz);
+          const u = this.spawnUnit(reinf.kind, 'player', slot.x, slot.z);
+          this.spawnPillarVfx(u.mesh.position, 0xfacc15, 1.1);
+        }
+      }
+    }
+
+    this.campaignStageIndex += 1;
+    if (this.campaignStageIndex >= this.campaignScript.stages.length) {
+      this.phase = 'victory';
+      soundEngine.playFanfare(true);
+      soundEngine.setMusicScene('victory');
+      this.grantMythicVerdictReward();
+      unlockNextCampaignScenario(this.campaignScript.scenarioId);
+      this.notifyStatus(`🏆 Vitória na Campanha: ${this.campaignScript.title}! Próximo capítulo desbloqueado!`);
+      this.emitHudSnapshot();
+    } else {
+      const nextStage = this.campaignScript.stages[this.campaignStageIndex];
+      soundEngine.playFanfare(false);
+      if (nextStage.dialogue) {
+        this.campaignDialogue = { ...nextStage.dialogue };
+        this.campaignDialogueTimer = 14;
+      }
+      this.notifyStatus(`📜 Etapa ${this.campaignStageIndex + 1}/${this.campaignScript.stages.length}: ${nextStage.dialogue?.speaker ?? 'Novo Objetivo'}!`);
+      this.emitHudSnapshot();
+    }
+  }
+
   private updateSettlements(dt: number) {
     for (const s of this.settlements.values()) {
       if (s.mesh.userData.beaconCrystal) {
@@ -10429,11 +11793,23 @@ export class AoMEngine {
   private updateResourceNodes() {
     for (const n of this.nodes.values()) {
       if (!n.mesh.visible) continue;
+      if (n.kind === 'fish_spot') {
+        const fishGrp = n.mesh.userData.fishSchoolGroup as THREE.Object3D | undefined;
+        if (fishGrp) {
+          fishGrp.rotation.y = this.elapsedSeconds * 1.15;
+        }
+      }
       if (n.mesh.userData.selectionRing) {
         n.mesh.userData.selectionRing.visible = n.selected;
       }
       const barColor =
-        n.kind === 'gold_mine' ? 0xfacc15 : n.kind === 'tree' ? 0x4ade80 : 0xfb7185;
+        n.kind === 'gold_mine'
+          ? 0xfacc15
+          : n.kind === 'tree'
+          ? 0x4ade80
+          : n.kind === 'fish_spot'
+          ? 0x38bdf8
+          : 0xfb7185;
       this.updateHealthBarVisual(n.mesh, n.amount, n.maxAmount, n.selected, barColor);
     }
   }
@@ -10713,19 +12089,32 @@ export class AoMEngine {
   }
 
   private updateEnemyAI(dt: number) {
-    const rateMult = this.difficulty === 'titan' ? 1.55 : this.difficulty === 'hard' ? 1.25 : 0.92;
+    const pers = this.aiPersonality;
+    const rateMult =
+      (this.difficulty === 'titan' ? 1.55 : this.difficulty === 'hard' ? 1.25 : 0.92) *
+      (pers === 'economic' ? 1.15 : pers === 'aggressive' ? 1.08 : 1.0);
     this.enemyAiTimer += dt * rateMult;
-    this.enemyWaveTimer -= dt * rateMult;
+    this.enemyWaveTimer -= dt * rateMult * (pers === 'aggressive' ? 1.3 : pers === 'defensive' ? 0.78 : 1.0);
+
+    // Sync live Faction ages & defeat state for scoreboard
+    for (const f of this.factions) {
+      if (f.isSelf) {
+        f.age = this.age;
+      } else if (f.team === 'enemy') {
+        f.age = this.enemyAge;
+      }
+    }
 
     if (this.enemyAiTimer >= 3.2) {
       this.enemyAiTimer = 0;
 
-      // Send idle enemy villagers, Norse Dwarves & Atlantean Citizens to gather
+      // Send idle enemy villagers, Norse Dwarves, Chinese Peasants & Atlantean Citizens to gather
       for (const u of this.units.values()) {
         if (u.team === 'enemy' && this.isWorkerKind(u.kind) && u.state === 'idle') {
           let best: ResourceNodeEntity | null = null;
           let bestScore = 38;
           for (const n of this.nodes.values()) {
+            if (n.kind === 'fish_spot') continue;
             const d = n.mesh.position.distanceTo(u.mesh.position);
             const score =
               u.kind === 'norse_dwarf'
@@ -10753,26 +12142,27 @@ export class AoMEngine {
       this.enemyResources.wood += 15 * rateMult;
       this.enemyResources.gold += 14 * rateMult;
 
-      // Advance enemy Age over time
-      if (this.enemyAge === 1 && this.elapsedSeconds > 75 && this.canAfford(this.enemyResources, AGE_COSTS[2])) {
+      // Advance enemy Age over time (Economic advances earlier)
+      const ecoAdvanceOffset = pers === 'economic' ? -15 : 0;
+      if (this.enemyAge === 1 && this.elapsedSeconds > 75 + ecoAdvanceOffset && this.canAfford(this.enemyResources, AGE_COSTS[2])) {
         this.deductCost(this.enemyResources, AGE_COSTS[2]);
         this.enemyAge = 2;
         this.upgradeTeamTownCenters('enemy', 2);
         soundEngine.playAgeTransitionComplete(2, this.enemyPantheon, true);
         this.notifyStatus(`⚠️ O inimigo avançou para a ${AGE_NAMES[2]}!`);
-      } else if (this.enemyAge === 2 && this.elapsedSeconds > 165 && this.canAfford(this.enemyResources, AGE_COSTS[3])) {
+      } else if (this.enemyAge === 2 && this.elapsedSeconds > 165 + ecoAdvanceOffset && this.canAfford(this.enemyResources, AGE_COSTS[3])) {
         this.deductCost(this.enemyResources, AGE_COSTS[3]);
         this.enemyAge = 3;
         this.upgradeTeamTownCenters('enemy', 3);
         soundEngine.playAgeTransitionComplete(3, this.enemyPantheon, true);
         this.notifyStatus(`⚠️ O inimigo avançou para a ${AGE_NAMES[3]}!`);
-      } else if (this.enemyAge === 3 && this.elapsedSeconds > 260 && this.canAfford(this.enemyResources, AGE_COSTS[4])) {
+      } else if (this.enemyAge === 3 && this.elapsedSeconds > 260 + ecoAdvanceOffset && this.canAfford(this.enemyResources, AGE_COSTS[4])) {
         this.deductCost(this.enemyResources, AGE_COSTS[4]);
         this.enemyAge = 4;
         this.upgradeTeamTownCenters('enemy', 4);
         soundEngine.playAgeTransitionComplete(4, this.enemyPantheon, true);
         this.notifyStatus(`⚠️ O inimigo alcançou a ${AGE_NAMES[4]}!`);
-      } else if (this.enemyAge === 4 && this.elapsedSeconds > 380 && this.canAfford(this.enemyResources, AGE_COSTS[5])) {
+      } else if (this.enemyAge === 4 && this.elapsedSeconds > 380 + ecoAdvanceOffset && this.canAfford(this.enemyResources, AGE_COSTS[5])) {
         this.deductCost(this.enemyResources, AGE_COSTS[5]);
         this.enemyAge = 5;
         this.upgradeTeamTownCenters('enemy', 5);
@@ -10780,7 +12170,21 @@ export class AoMEngine {
         this.notifyStatus(`⚡ ALERTA: O inimigo ascendeu à ${AGE_NAMES[5]}!`);
       }
 
-      // Build temple / house / farm / archery_range / stable / siege_works / fortress if needed
+      // Inspect player army classes to adapt AI counter-composition
+      let pInfantry = 0;
+      let pCavalry = 0;
+      let pArchers = 0;
+      let pMyth = 0;
+      for (const pu of this.units.values()) {
+        if (pu.team !== 'player' || pu.hp <= 0 || this.isNonCombatEconUnit(pu)) continue;
+        const pSpec = this.unitStats(pu.kind, 'player');
+        if (pSpec.isMythic || pSpec.isGod) pMyth++;
+        else if (pSpec.range >= 5) pArchers++;
+        else if (pSpec.speed >= 5.2) pCavalry++;
+        else pInfantry++;
+      }
+
+      // Build temple / house / farm / archery_range / stable / siege_works / fortress / towers if needed
       const enemyPop = this.getPopulation('enemy');
       let hasTemple = false;
       let barracks: BuildingEntity | null = null;
@@ -10790,8 +12194,10 @@ export class AoMEngine {
       let temple: BuildingEntity | null = null;
       let fortress: BuildingEntity | null = null;
       let market: BuildingEntity | null = null;
+      let dock: BuildingEntity | null = null;
       let tc: BuildingEntity | null = null;
       let farmCount = 0;
+      let towerCount = 0;
       for (const b of this.buildings.values()) {
         if (b.team === 'enemy' && b.isConstructed) {
           if (b.kind === 'temple') {
@@ -10803,8 +12209,37 @@ export class AoMEngine {
           else if (b.kind === 'siege_works') siegeWorks = b;
           else if (b.kind === 'fortress') fortress = b;
           else if (b.kind === 'market') market = b;
+          else if (b.kind === 'dock') dock = b;
           else if (b.kind === 'farm') farmCount++;
+          else if (b.kind === 'tower') towerCount++;
           else if (b.kind === 'town_center') tc = b;
+        }
+      }
+
+      // Idle enemy heroes seek unclaimed Relics when AI owns a Temple
+      if (hasTemple) {
+        const unclaimedRelic = [...this.relics.values()].find((r) => r.claimedByTeam === null);
+        if (unclaimedRelic) {
+          const enemyHero = [...this.units.values()].find(
+            (u) => u.team === 'enemy' && u.state === 'idle' && this.unitStats(u.kind, 'enemy').isHero
+          );
+          if (enemyHero) {
+            const dRelic = enemyHero.mesh.position.distanceTo(unclaimedRelic.mesh.position);
+            if (dRelic <= 2.4) {
+              unclaimedRelic.claimedByTeam = 'enemy';
+              unclaimedRelic.mesh.visible = false;
+              this.enemyResources.favor = Math.min(200, this.enemyResources.favor + 25);
+            } else {
+              enemyHero.state = 'move';
+              enemyHero.waypoints = this.navGrid.findPath(
+                enemyHero.mesh.position.x,
+                enemyHero.mesh.position.z,
+                unclaimedRelic.mesh.position.x,
+                unclaimedRelic.mesh.position.z
+              );
+              enemyHero.targetPos = enemyHero.waypoints.shift() ?? unclaimedRelic.mesh.position.clone();
+            }
+          }
         }
       }
 
@@ -10850,13 +12285,26 @@ export class AoMEngine {
           this.syncNavObstacles();
         }
       }
+      const maxAiFarms = pers === 'economic' ? 5 : 3;
       const enemyFarmStats = this.buildingStats('farm', 'enemy');
-      if (farmCount < 3 && this.enemyAge >= 2 && this.canAfford(this.enemyResources, enemyFarmStats.cost)) {
+      if (farmCount < maxAiFarms && this.enemyAge >= 2 && this.canAfford(this.enemyResources, enemyFarmStats.cost)) {
         const fx = 28 + Math.random() * 12;
         const fz = -30 - Math.random() * 12;
         if (this.canPlaceBuildingAt('farm', fx, fz, 'enemy')) {
           this.deductCost(this.enemyResources, enemyFarmStats.cost);
           this.spawnBuilding('farm', 'enemy', fx, fz, true);
+          this.syncNavObstacles();
+        }
+      }
+      // Defensive AI builds perimeter Watch Towers
+      const maxAiTowers = pers === 'defensive' ? 4 : 1;
+      if (towerCount < maxAiTowers && this.enemyAge >= 2) {
+        const enemyTowerStats = this.buildingStats('tower', 'enemy');
+        const tx = 20 + Math.random() * 12;
+        const tz = -18 - Math.random() * 10;
+        if (this.canAfford(this.enemyResources, enemyTowerStats.cost) && this.canPlaceBuildingAt('tower', tx, tz, 'enemy')) {
+          this.deductCost(this.enemyResources, enemyTowerStats.cost);
+          this.spawnBuilding('tower', 'enemy', tx, tz, true);
           this.syncNavObstacles();
         }
       }
@@ -10877,7 +12325,18 @@ export class AoMEngine {
         }
       }
 
-      // Enemy expands up to 3 Town Centers onto nearby neutral Settlements (immediately in Nomad if enemy has 0 TCs)
+      // Naval production if enemy has a Dock
+      if (dock && dock.trainingQueue.length === 0 && enemyPop.current + 2 <= enemyPop.cap) {
+        const enemyShips = [...this.units.values()].filter((u) => u.team === 'enemy' && this.unitStats(u.kind, 'enemy').isNaval);
+        const shipPick: UnitKind = enemyShips.length < 2 ? 'fishing_ship' : 'war_trireme';
+        const shipSpec = this.unitStats(shipPick, 'enemy');
+        if (this.canAfford(this.enemyResources, shipSpec.cost)) {
+          this.deductCost(this.enemyResources, shipSpec.cost);
+          dock.trainingQueue.push({ kind: shipPick, progress: 0, total: shipSpec.trainTime });
+        }
+      }
+
+      // Enemy expands up to 3 Town Centers onto nearby neutral Settlements
       const enemyTcCount = this.getTownCenterCount('enemy');
       if ((this.enemyAge >= 2 || enemyTcCount === 0) && enemyTcCount < MAX_TOWN_CENTERS) {
         const enemyTcCost = this.buildingStats('town_center', 'enemy').cost;
@@ -10889,7 +12348,6 @@ export class AoMEngine {
               .slice(0, 2);
             if (enemyBuilders.length > 0) {
               if (enemyTcCount === 0) {
-                // Ensure Nomad AI has enough to found its capital cleanly
                 this.enemyResources.wood = Math.max(this.enemyResources.wood, enemyTcCost.wood ?? 0);
                 this.enemyResources.gold = Math.max(this.enemyResources.gold, enemyTcCost.gold ?? 0);
               }
@@ -10899,7 +12357,7 @@ export class AoMEngine {
         }
       }
 
-      // Train enemy workers (Norse Dwarves + Ox Carts, Atlantean Citizens + Oracles + Llamas)
+      // Train enemy workers (supports Chinese Peasants/Kuafu, Norse Dwarves/Ox Carts, Atlantean Citizens/Oracles)
       if (tc && tc.trainingQueue.length === 0) {
         const enemyVillagers = [...this.units.values()].filter(
           (u) => u.team === 'enemy' && this.isWorkerKind(u.kind)
@@ -10912,6 +12370,8 @@ export class AoMEngine {
         ).length;
         const isEnemyNorse = this.enemyPantheon === 'norse' || this.enemyPantheon === 'jotunn';
         const isEnemyAtlantean = this.enemyPantheon === 'atlantean';
+        const isEnemyChinese = this.enemyPantheon === 'chinese';
+        const targetWorkers = (isEnemyAtlantean ? 4 : 5) + (pers === 'economic' ? 2 : 0);
         if (isEnemyNorse && enemyOxCarts < 2 && enemyPop.current < enemyPop.cap) {
           const oxStats = this.unitStats('ox_cart', 'enemy');
           if (this.canAfford(this.enemyResources, oxStats.cost)) {
@@ -10924,9 +12384,13 @@ export class AoMEngine {
             this.deductCost(this.enemyResources, oraStats.cost);
             tc.trainingQueue.push({ kind: 'oracle', progress: 0, total: oraStats.trainTime });
           }
-        } else if (enemyVillagers < (isEnemyAtlantean ? 4 : 5) && enemyPop.current < enemyPop.cap) {
+        } else if (enemyVillagers < targetWorkers && enemyPop.current < enemyPop.cap) {
           const workerKind: UnitKind = isEnemyAtlantean
             ? 'citizen'
+            : isEnemyChinese
+            ? Math.random() < 0.3
+              ? 'kuafu'
+              : 'chinese_peasant'
             : isEnemyNorse && Math.random() < 0.45
             ? 'norse_dwarf'
             : 'villager';
@@ -10953,18 +12417,22 @@ export class AoMEngine {
         const choices: UnitKind[] =
           this.enemyPantheon === 'egyptian'
             ? this.enemyAge >= 2
-              ? ['egypt_spearman', 'slinger', 'axeman']
+              ? pCavalry > pInfantry ? ['egypt_spearman', 'egypt_spearman', 'slinger', 'axeman'] : ['egypt_spearman', 'slinger', 'axeman']
               : ['egypt_spearman']
             : this.enemyPantheon === 'norse' || this.enemyPantheon === 'jotunn'
             ? this.enemyAge >= 2
-              ? ['ulfsark', 'throwing_axeman', 'hersir', 'godi']
+              ? pMyth > 1 ? ['hersir', 'ulfsark', 'throwing_axeman', 'godi'] : ['ulfsark', 'throwing_axeman', 'hersir', 'godi']
               : ['ulfsark', 'hersir']
             : this.enemyPantheon === 'atlantean'
             ? this.enemyAge >= 3
               ? ['murmillo', 'arcus', 'contarius']
               : ['murmillo']
+            : this.enemyPantheon === 'chinese'
+            ? this.enemyAge >= 2
+              ? pCavalry > pInfantry ? ['halberdier', 'halberdier', 'chu_ko_nu', 'fire_lance'] : ['halberdier', 'chu_ko_nu', 'fire_lance']
+              : ['halberdier']
             : this.enemyAge >= 2
-            ? ['hoplite', 'hipaspist']
+            ? pInfantry > pCavalry ? ['hipaspist', 'hoplite'] : ['hoplite', 'hipaspist']
             : ['hoplite'];
         const pick = choices[Math.floor(Math.random() * choices.length)];
         const pickStats = this.unitStats(pick, 'enemy');
@@ -10984,8 +12452,10 @@ export class AoMEngine {
             ? ['throwing_axeman', 'godi']
             : this.enemyPantheon === 'atlantean'
             ? ['katapeltes', 'turma', 'cheiroballista']
+            : this.enemyPantheon === 'chinese'
+            ? this.enemyAge >= 3 ? ['chu_ko_nu', 'fire_lance'] : ['chu_ko_nu']
             : this.enemyAge >= 3
-            ? ['peltast', 'archer', 'gastraphetes']
+            ? pArchers > pInfantry ? ['peltast', 'peltast', 'archer', 'gastraphetes'] : ['peltast', 'archer', 'gastraphetes']
             : ['peltast', 'archer'];
         const archPick = archChoices[Math.floor(Math.random() * archChoices.length)];
         const archStats = this.unitStats(archPick, 'enemy');
@@ -11007,6 +12477,8 @@ export class AoMEngine {
             ? this.enemyAge >= 3
               ? ['turma', 'contarius']
               : ['turma']
+            : this.enemyPantheon === 'chinese'
+            ? ['tiger_cavalry']
             : ['cavalry', 'prodromos'];
         const cavPick = cavChoices[Math.floor(Math.random() * cavChoices.length)];
         const cavStats = this.unitStats(cavPick, 'enemy');
@@ -11032,6 +12504,10 @@ export class AoMEngine {
                 ? 'fire_siphon'
                 : 'onager'
               : 'cheiroballista'
+            : this.enemyPantheon === 'chinese'
+            ? Math.random() < 0.65
+              ? 'fire_lance'
+              : 'siege'
             : Math.random() < 0.5
             ? 'ram'
             : 'siege';
@@ -11054,6 +12530,8 @@ export class AoMEngine {
             ? this.enemyAge >= 4
               ? ['destroyer', 'fanatic', 'fire_siphon', 'onager']
               : ['destroyer']
+            : this.enemyPantheon === 'chinese'
+            ? ['nezha', 'jiang_ziya', 'tiger_cavalry', 'fire_lance']
             : ['hero', 'siege'];
         const fortPick = fortChoices[Math.floor(Math.random() * fortChoices.length)];
         const fortPickStats = this.unitStats(fortPick, 'enemy');
@@ -11086,6 +12564,12 @@ export class AoMEngine {
               : this.enemyAge >= 3
               ? ['behemoth', 'satyr', 'stymphalian_bird', 'dryad', 'promethean']
               : ['promethean', 'automaton', 'caladria', 'carnivora']
+            : this.enemyPantheon === 'chinese'
+            ? this.enemyAge >= 4
+              ? ['azure_dragon', 'taotie', 'yazi', 'qilin']
+              : this.enemyAge >= 3
+              ? ['taotie', 'yazi', 'qilin']
+              : ['qilin', 'yazi']
             : this.enemyAge >= 5 && enemyGodsAlive < 1 && Math.random() < 0.35
             ? ['atena', 'ares', 'apolo', 'poseidon']
             : this.enemyAge >= 4
@@ -11140,14 +12624,17 @@ export class AoMEngine {
 
     // Launch coordinated raid wave toward player TC (blocked during Treaty)
     if (this.treatyRemaining <= 0 && this.enemyWaveTimer <= 0) {
-      this.enemyWaveTimer = this.difficulty === 'titan' ? 32 : this.difficulty === 'hard' ? 40 : 48;
+      const baseTimer = this.difficulty === 'titan' ? 32 : this.difficulty === 'hard' ? 40 : 48;
+      this.enemyWaveTimer = pers === 'aggressive' ? baseTimer * 0.72 : pers === 'defensive' ? baseTimer * 1.25 : baseTimer;
+      const minRaidCount = pers === 'defensive' ? 6 : pers === 'aggressive' ? 2 : 3;
       const combatUnits = [...this.units.values()].filter(
         (u) =>
           u.team === 'enemy' &&
           (!this.isNonCombatEconUnit(u) || Boolean(u.isPromotedHero)) &&
+          !this.unitStats(u.kind, 'enemy').isNaval &&
           u.state === 'idle'
       );
-      if (combatUnits.length >= 3) {
+      if (combatUnits.length >= minRaidCount) {
         const playerTc = this.findNearestTownCenter('player', new THREE.Vector3(0, 0, 0));
         const dest = playerTc ? playerTc.mesh.position : new THREE.Vector3(-34, 0, 34);
         const enemyForm: FormationId = this.enemyAge >= 3 ? 'line' : 'box';
@@ -11197,11 +12684,21 @@ export class AoMEngine {
         pray: 'Orando por Favor Divino',
         empower: 'Energizando Monumento',
         attack: 'Em combate',
+        garrisoned: 'Embarcado',
       };
       let unitTaskLabel = taskMap[primary.state];
       let oracleVisionPct: number | undefined;
       let oracleFavorPerSec: number | undefined;
-      if (primary.kind === 'ox_cart') {
+      if (primary.kind === 'transport_ship') {
+        unitTaskLabel = `Navio de Transporte (${primary.cargoIds?.length ?? 0}/8 tropas a bordo)`;
+      } else if (primary.kind === 'fishing_ship') {
+        unitTaskLabel =
+          primary.state === 'gather'
+            ? `Pescando em cardume (${primary.carryAmount}/20 Alimento)`
+            : primary.state === 'return'
+            ? `Retornando ao Porto (${primary.carryAmount} Alimento)`
+            : 'Barco Pesqueiro pronto para pesca marítima';
+      } else if (primary.kind === 'ox_cart') {
         let nearbyGatherers = 0;
         for (const other of this.units.values()) {
           if (
@@ -11317,6 +12814,14 @@ export class AoMEngine {
         heroPromoteCost: heroPromoteCount > 0 ? heroPromoteCost : undefined,
         selectedCounts: Array.from(countsMap.values()),
         voiceLine: this.voiceLineTimer > 0 && this.lastVoiceLine ? this.lastVoiceLine : undefined,
+        stance: primary.stance ?? 'aggressive',
+        autoScout: Boolean(primary.autoScout),
+        isNaval: Boolean(stats.isNaval),
+        isTransport: primary.kind === 'transport_ship',
+        cargoCount: primary.kind === 'transport_ship' ? (primary.cargoIds?.length ?? 0) : undefined,
+        cargoMax: primary.kind === 'transport_ship' ? 8 : undefined,
+        counterTags: this.getCounterTagsForUnit(primary.kind, primary.team),
+        damageType: stats.damageType,
       };
     }
 
@@ -11475,6 +12980,7 @@ export class AoMEngine {
         berry: 'Fonte Frutífera',
         tree: `Floresta (${mapCfg.floraLabel.split(' e ')[0]})`,
         gold_mine: 'Veio de Ouro',
+        fish_spot: 'Cardume de Peixes',
       };
       const resLabel: Record<ResourceType, string> = {
         food: 'Alimento',
@@ -11638,10 +13144,24 @@ export class AoMEngine {
         z: n.mesh.position.z,
         category: 'node',
         team: 'neutral',
-        color: n.kind === 'gold_mine' ? '#facc15' : n.kind === 'berry' ? '#fb7185' : '#2e7d32',
+        color:
+          n.kind === 'gold_mine'
+            ? '#facc15'
+            : n.kind === 'berry'
+            ? '#fb7185'
+            : n.kind === 'fish_spot'
+            ? '#38bdf8'
+            : '#2e7d32',
         size: 2.2,
         subKind: n.kind,
-        label: n.kind === 'gold_mine' ? 'Mina de Ouro' : n.kind === 'berry' ? 'Arbusto de Frutas' : 'Bosque',
+        label:
+          n.kind === 'gold_mine'
+            ? 'Mina de Ouro'
+            : n.kind === 'berry'
+            ? 'Arbusto de Frutas'
+            : n.kind === 'fish_spot'
+            ? 'Cardume de Peixes'
+            : 'Bosque',
       });
     }
     for (const s of this.settlements.values()) {
@@ -11846,6 +13366,67 @@ export class AoMEngine {
           : this.mapId === 'valley_of_the_kings'
           ? 'Vale dos Reis'
           : undefined,
+      villagerPriority: this.villagerPriority,
+      aiPersonality: this.aiPersonality,
+      campaignScenarioId: this.campaignScenarioId,
+      controlGroups: Array.from(this.controlGroups.entries())
+        .filter(([, ids]) => ids.some((id) => {
+          const u = this.units.get(id);
+          return Boolean(u && u.hp > 0);
+        }))
+        .map(([group, ids]) => ({
+          group,
+          count: ids.filter((id) => {
+            const u = this.units.get(id);
+            return Boolean(u && u.hp > 0);
+          }).length,
+        }))
+        .sort((a, b) => a.group - b.group),
+      campaignMissionState: this.campaignScript
+        ? (() => {
+            const st =
+              this.campaignScript!.stages[
+                Math.min(this.campaignStageIndex, Math.max(0, this.campaignScript!.stages.length - 1))
+              ];
+            return {
+              scenarioId: this.campaignScript!.scenarioId,
+              title: this.campaignScript!.title,
+              stageIndex: this.campaignStageIndex,
+              totalStages: this.campaignScript!.stages.length,
+              objectives: st
+                ? st.objectives.map((o) => {
+                    const res = this.evaluateCampaignObjective(o.check);
+                    return { id: o.id, label: o.label, done: res.done, progressText: res.progressText };
+                  })
+                : [],
+              dialogue: this.campaignDialogue ? { ...this.campaignDialogue } : null,
+            } satisfies CampaignMissionSnapshot;
+          })()
+        : null,
+      factionScores: this.factions.map((f, idx): FactionScoreEntry => {
+        const teamScore = f.team === 'player' ? playerScoreBreakdown.total : enemyScoreBreakdown.total;
+        const teamCount = Math.max(1, this.factions.filter((x) => x.team === f.team).length);
+        const slotUnits = [...this.units.values()].filter((u) => u.factionSlot === f.slotIndex && u.hp > 0).length;
+        const slotScore = f.isSelf
+          ? teamScore
+          : Math.round(teamScore / teamCount + slotUnits * 35 + (teamCount > 1 ? (idx % 3) * 18 : 0));
+        return {
+          slotIndex: f.slotIndex,
+          label: f.label,
+          teamIndex: f.teamIndex,
+          team: f.team,
+          pantheon: f.pantheon,
+          majorGod: f.majorGod,
+          colorHex: f.colorHex,
+          crestId: f.crestId,
+          age: f.age,
+          score: slotScore,
+          isHuman: f.isHuman,
+          isSelf: f.isSelf,
+          defeated: f.defeated,
+          aiPersonality: f.aiPersonality,
+        };
+      }),
     });
   }
 
@@ -12198,6 +13779,11 @@ export class AoMEngine {
       }
 
       this.updateUnits(simDt);
+      this.villagerPriorityTimer += simDt;
+      if (this.villagerPriorityTimer >= 2.2) {
+        this.villagerPriorityTimer = 0;
+        this.applyVillagerPriority(true);
+      }
       this.updateWeather(simDt);
       this.updateBuildings(simDt);
       this.updateSettlements(simDt);
@@ -12207,6 +13793,7 @@ export class AoMEngine {
       this.updateProjectiles(simDt);
       this.updateEnemyAI(simDt);
       this.updateKingOfTheHill(simDt);
+      this.updateCampaignMission(simDt);
       this.updateFogOfWar(simDt);
     }
 

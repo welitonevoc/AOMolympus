@@ -20,9 +20,11 @@ import {
   getMinorGodSpec,
 } from '../game/divineData';
 import { getMajorGodPortrait, getMapLandscapeImage } from '../game/mediaAssets';
+import { AI_PERSONALITY_LABELS } from '../game/multiplayerTypes';
 import {
   AGE_NAMES,
   AgeLevel,
+  AiPersonality,
   COMING_SOON_PANTHEON_IDS,
   DifficultyId,
   GameOptionsConfig,
@@ -355,8 +357,14 @@ export function SkirmishSetupFlow({
                 {(
                   [
                     { id: 'all', label: 'Todos' },
-                    { id: 'available', label: 'Disponíveis (14)' },
-                    { id: 'coming_soon', label: 'Em breve (9 Civs)' },
+                    {
+                      id: 'available',
+                      label: `Disponíveis (${MAJOR_GODS.filter((g) => !g.comingSoon).length})`,
+                    },
+                    {
+                      id: 'coming_soon',
+                      label: `Em breve (${COMING_SOON_PANTHEON_IDS.length} Civs)`,
+                    },
                   ] as const
                 ).map((tab) => (
                   <button
@@ -604,7 +612,7 @@ export function SkirmishSetupFlow({
                 ) : (
                   <div className="mt-2.5 border-t border-white/8 pt-2 text-[11px] text-[#94a3b8]">
                     Esta civilização será liberada em uma próxima atualização. Selecione um Deus
-                    Grego, Egípcio, Nórdico ou Atlante para iniciar uma partida agora.
+                    Grego, Egípcio, Nórdico, Atlante ou Chinês para iniciar uma partida agora.
                   </div>
                 )}
               </div>
@@ -856,6 +864,36 @@ export function SkirmishSetupFlow({
                       ))}
                     </div>
                   </div>
+
+                  <div className="mt-2">
+                    <div className="mb-1 text-[11px] font-semibold text-[#cbd5e1]">
+                      Personalidade da IA
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-1 rounded border border-white/10 bg-[#0e131c] p-0.5">
+                      {(['balanced', 'aggressive', 'defensive', 'economic'] as AiPersonality[]).map((pers) => {
+                        const info = AI_PERSONALITY_LABELS[pers];
+                        const activePers = (skirmish.aiPersonality ?? 'balanced') === pers;
+                        return (
+                          <button
+                            key={pers}
+                            type="button"
+                            onClick={() => {
+                              clickSound();
+                              onUpdateSkirmish({ ...skirmish, aiPersonality: pers });
+                            }}
+                            title={info.hint}
+                            className={`rounded px-2 py-1.5 text-[10px] font-semibold transition-colors cursor-pointer truncate ${
+                              activePers
+                                ? 'bg-[#d4af37] text-[#0b0e14]'
+                                : 'text-[#cbd5e1] hover:text-white'
+                            }`}
+                          >
+                            {info.label.split(' ')[0]}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </div>
 
                 {/* Game Type */}
@@ -1103,6 +1141,7 @@ export function SkirmishSetupFlow({
                         enemyPantheon: safeEnemyPantheon,
                         minorGod: activePlayableGod.name,
                         majorGodName: activePlayableGod.name,
+                        aiPersonality: skirmish.aiPersonality ?? 'balanced',
                         gameType: skirmish.gameType,
                         visibilityMode: skirmish.revealedMap ? 'revealed' : skirmish.visibilityMode,
                         worldSize: skirmish.worldSize,

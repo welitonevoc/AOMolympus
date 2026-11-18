@@ -865,6 +865,14 @@ export const MINOR_GODS: Record<string, MinorGodSpec> = {
   Hekate: { id: 'Hekate', name: 'Hécate', age: 4, pantheon: 'atlantean', godPower: 'black_hole', mythUnit: 'lampades', mythUnitTitle: 'Lâmpade & Cria do Tártaro', passiveBonusLabel: '+22% Recarga & Poder Mítico', hpBonusPct: 20 },
   Atlas: { id: 'Atlas', name: 'Atlas', age: 4, pantheon: 'atlantean', godPower: 'tremor', mythUnit: 'argus', mythUnitTitle: 'Argos', passiveBonusLabel: '+25% Vida Mítica', hpBonusPct: 25 },
 
+  // Chinese (Immortal Pillars)
+  Chiyou: { id: 'Chiyou', name: 'Chiyou', age: 2, pantheon: 'chinese', godPower: 'flaming_weapons', mythUnit: 'qilin', mythUnitTitle: 'Qilin Sagrado / Taotie', passiveBonusLabel: '+16% Ataque de Infantaria e Cavalaria', attackBonusPct: 16 },
+  Xuannu: { id: 'Xuannu', name: 'Xuannü', age: 2, pantheon: 'chinese', godPower: 'restoration', mythUnit: 'yazi', mythUnitTitle: 'Yazi / Qilin', passiveBonusLabel: '+16% Velocidade & Visão Tática', speedBonusPct: 14, hpBonusPct: 10 },
+  Houtu: { id: 'Houtu', name: 'Houtu', age: 3, pantheon: 'chinese', godPower: 'walking_woods', mythUnit: 'taotie', mythUnitTitle: 'Taotie Devorador', passiveBonusLabel: '+20% Coleta & Armadura de Edifícios', gatherBonusPct: 20, hpBonusPct: 12 },
+  Gonggong: { id: 'Gonggong', name: 'Gonggong', age: 3, pantheon: 'chinese', godPower: 'maelstrom', mythUnit: 'yazi', mythUnitTitle: 'Yazi / Poder das Águas', passiveBonusLabel: '+18% Dano Naval & Velocidade', attackBonusPct: 15, speedBonusPct: 10 },
+  Huangdi: { id: 'Huangdi', name: 'Huangdi', age: 4, pantheon: 'chinese', godPower: 'solar_beam', mythUnit: 'azure_dragon', mythUnitTitle: 'Dragão Azul (Qinglong)', passiveBonusLabel: '+22% Dano Heroico & Chu-Ko-Nu', attackBonusPct: 22 },
+  Zhurong: { id: 'Zhurong', name: 'Zhurong', age: 4, pantheon: 'chinese', godPower: 'meteor', mythUnit: 'azure_dragon', mythUnitTitle: 'Dragão Azul & Lança-Fogo', passiveBonusLabel: '+24% Ataque de Cerco & Míticos', attackBonusPct: 24, hpBonusPct: 14 },
+
   // Shared Divine Edition Minor Gods for Expanded Civs
   Divine_War2: { id: 'Divine_War2', name: 'Senhor da Guerra', age: 2, pantheon: 'roman', godPower: 'flaming_weapons', mythUnit: 'minotaur', mythUnitTitle: 'Guardião Mítico', passiveBonusLabel: '+15% Ataque Militar', attackBonusPct: 15 },
   Divine_Eco2: { id: 'Divine_Eco2', name: 'Divindade da Colheita', age: 2, pantheon: 'chinese', godPower: 'rain', mythUnit: 'minotaur', mythUnitTitle: 'Espírito Protetor', passiveBonusLabel: '+18% Velocidade de Coleta', gatherBonusPct: 18 },
@@ -1037,45 +1045,42 @@ export const MAJOR_GODS: MajorGodSpec[] = [
     minorChoices: { 2: ['Okeanus', 'Leto'], 3: ['Theia', 'Rheia'], 4: ['Atlas', 'Hekate'] },
   },
 
-  // ── EM BREVE: CHINÊS (Immortal Pillars / Tale of the Dragon) ──
+  // ── DISPONÍVEIS: CHINÊS (Immortal Pillars) ──
   {
     id: 'Fu Xi',
     name: 'Fu Xi',
     title: 'O Imperador Divino / Civilização',
     pantheon: 'chinese',
-    comingSoon: true,
-    expansionLabel: 'Immortal Pillars / Tale of the Dragon',
-    focus: 'Construção célere e bênçãos imperiais',
+    expansionLabel: 'Immortal Pillars',
+    focus: 'Construção célere, Kuafus e bênçãos imperiais',
     favoredPower: 'solar_beam',
-    powerDescription: 'Poderes celestiais inspirados nos pilares imortais, acelerando construções e invocações dracônicas.',
-    lore: 'Soberano fundador da ordem e dos trigramas sagrados. (Nota: Xiwangmu também aparece em contextos e conceitos da expansão chinesa).',
-    minorChoices: { 2: ['Divine_Eco2', 'Divine_War2'], 3: ['Divine_Storm3', 'Divine_Shadow3'], 4: ['Divine_Apocalypse4', 'Divine_Abyss4'] },
+    powerDescription: 'Raio Solar celestial que purifica batalhões inimigos enquanto impulsiona construções e heróis imperiais.',
+    lore: 'Soberano fundador da ordem, dos trigramas Bagua e dos Pilares Imortais da China antiga.',
+    minorChoices: { 2: ['Chiyou', 'Xuannu'], 3: ['Houtu', 'Gonggong'], 4: ['Huangdi', 'Zhurong'] },
   },
   {
     id: 'Nü Wa',
     name: 'Nü Wa',
     title: 'Deusa Criadora da Humanidade',
     pantheon: 'chinese',
-    comingSoon: true,
-    expansionLabel: 'Immortal Pillars / Tale of the Dragon',
-    focus: 'Crescimento populacional e regeneração',
+    expansionLabel: 'Immortal Pillars',
+    focus: 'Crescimento populacional, muralhas e restauração',
     favoredPower: 'restoration',
     powerDescription: 'Bênção criadora que restaura exércitos e acelera a expansão urbana do império chinês.',
-    lore: 'Deusa ancestral que moldou a humanidade e reparou os pilares do céu. (Nota: Xiwangmu também integra conceitos da expansão).',
-    minorChoices: { 2: ['Divine_Eco2', 'Divine_War2'], 3: ['Divine_Storm3', 'Divine_Shadow3'], 4: ['Divine_Apocalypse4', 'Divine_Abyss4'] },
+    lore: 'Deusa ancestral que moldou a humanidade em barro sagrado e reparou os pilares do céu.',
+    minorChoices: { 2: ['Xuannu', 'Chiyou'], 3: ['Houtu', 'Gonggong'], 4: ['Huangdi', 'Zhurong'] },
   },
   {
     id: 'Shennong',
     name: 'Shennong',
     title: 'Deus da Agricultura e da Medicina',
     pantheon: 'chinese',
-    comingSoon: true,
-    expansionLabel: 'Immortal Pillars / Tale of the Dragon',
-    focus: 'Agricultura fértil e cura contínua',
+    expansionLabel: 'Immortal Pillars',
+    focus: 'Agricultura fértil, Qilins e cura contínua',
     favoredPower: 'rain',
-    powerDescription: 'Chuva medicinal que nutre lavouras e fortalece a vitalidade das tropas imperiais.',
+    powerDescription: 'Chuva medicinal que nutre lavouras e fortalece a vitalidade das tropas e feras míticas imperiais.',
     lore: 'Sábio divino das colheitas e ervas sagradas que garante sustentabilidade incomparável ao longo da partida.',
-    minorChoices: { 2: ['Divine_Eco2', 'Divine_War2'], 3: ['Divine_Storm3', 'Divine_Shadow3'], 4: ['Divine_Apocalypse4', 'Divine_Abyss4'] },
+    minorChoices: { 2: ['Chiyou', 'Xuannu'], 3: ['Gonggong', 'Houtu'], 4: ['Zhurong', 'Huangdi'] },
   },
 
   // ── EM BREVE: JAPONÊS (Heavenly Spear) ──
@@ -1906,16 +1911,31 @@ const CIV_UNIT_NAMES: Partial<Record<PantheonId, Partial<Record<UnitKind, { name
     war_trireme: { name: 'Birreme Atlante' },
   },
   chinese: {
+    chinese_peasant: { name: 'Camponês Chinês' },
+    kuafu: { name: 'Kuafu Gigante' },
+    halberdier: { name: 'Alabardeiro Imperial' },
+    chu_ko_nu: { name: 'Bestadeiro Chu-Ko-Nu' },
+    tiger_cavalry: { name: 'Cavalaria Tigre' },
+    fire_lance: { name: 'Lança-Fogo Imperial' },
+    nezha: { name: 'Nezha — Príncipe do Lótus' },
+    jiang_ziya: { name: 'Jiang Ziya — Sábio Imortal' },
+    qilin: { name: 'Qilin Sagrado' },
+    taotie: { name: 'Taotie Devorador' },
+    yazi: { name: 'Yazi — Filho do Dragão' },
+    azure_dragon: { name: 'Dragão Azul (Qinglong)' },
     villager: { name: 'Camponês Chinês' },
-    hoplite: { name: 'Alabardeiro' },
-    archer: { name: 'Chukonu' },
-    cavalry: { name: 'Lanceiro Montado' },
-    hero: { name: 'Imortal' },
-    siege: { name: 'Canhão de Cerco' },
-    minotaur: { name: 'Qilin' },
-    centaur: { name: 'Pássaro Vermelho' },
-    cyclops: { name: 'Leão de Guerra' },
-    titan: { name: 'Dragão Titã' },
+    hoplite: { name: 'Alabardeiro Imperial' },
+    archer: { name: 'Bestadeiro Chu-Ko-Nu' },
+    cavalry: { name: 'Cavalaria Tigre' },
+    hero: { name: 'Jiang Ziya' },
+    siege: { name: 'Lança-Fogo Imperial' },
+    minotaur: { name: 'Qilin Sagrado' },
+    centaur: { name: 'Yazi' },
+    cyclops: { name: 'Taotie Devorador' },
+    titan: { name: 'Dragão Titã Imperial' },
+    fishing_ship: { name: 'Junco Pesqueiro Chinês' },
+    war_trireme: { name: 'Junco de Guerra Imperial' },
+    transport_ship: { name: 'Junco de Transporte' },
   },
   aztec: {
     villager: { name: 'Macehualtin' },
@@ -2019,7 +2039,9 @@ export function getCivUnitSpec(pantheon: PantheonId, kind: UnitKind): UnitStats 
   const base =
     pantheon === 'atlantean'
       ? (CIVILIZATION_UNITS.atlantes[kind] ?? UNIT_STATS[kind])
-      : UNIT_STATS[kind];
+      : pantheon === 'chinese'
+        ? (CIVILIZATION_UNITS.chineses[kind] ?? UNIT_STATS[kind])
+        : UNIT_STATS[kind];
   const ov = CIV_UNIT_NAMES[pantheon]?.[kind];
   if (!ov) return base;
   return { ...base, ...ov };
@@ -2046,6 +2068,9 @@ const WONDER_BY_GOD: Record<string, WonderSpec> = {
   cronos: { name: 'Torre do Tempo de Cronos', subtitle: 'Zigurates concêntricos de oricalco com anel temporal suspenso', bonusLabel: '+3.5 Favor/s · Recarga Divina -20% · +20% Míticos' },
   urano: { name: 'Observatório Celestial de Urano', subtitle: 'Cúpula estelar flutuante com prismas de energia cósmica', bonusLabel: '+3.5 Favor/s · Recarga Divina -20% · +20% Míticos' },
   gaia: { name: 'Árvore-Mãe de Atlântida (Gaia)', subtitle: 'Palácio cristalino entrelaçado com raízes vivas sagradas', bonusLabel: '+3.5 Favor/s · Recarga Divina -20% · +20% Míticos' },
+  'fu xi': { name: 'Grande Pagode Imperial (Fu Xi)', subtitle: 'Torre sagrada de nove níveis em jade, laca escarlate e ouro imperial', bonusLabel: '+3.5 Favor/s · Recarga Divina -20% · +20% Míticos' },
+  'nü wa': { name: 'Pilar Celestial de Nü Wa', subtitle: 'Pagode monumental de jade vivo que sustenta o firmamento', bonusLabel: '+3.5 Favor/s · Recarga Divina -20% · +20% Míticos' },
+  shennong: { name: 'Pavilhão da Colheita Eterna (Shennong)', subtitle: 'Santuário imperial dourado cercado por jardins medicinais', bonusLabel: '+3.5 Favor/s · Recarga Divina -20% · +20% Míticos' },
 };
 
 export function getWonderSpec(pantheon: PantheonId, majorGodName?: string): WonderSpec {
@@ -2360,6 +2385,22 @@ export function getCivBuildingSpec(
     }
   }
 
+  // Chineses (Immortal Pillars)
+  if (pantheon === 'chinese') {
+    if (kind === 'town_center') return { ...base, name: `Pagode Imperial (${p.name})`, role: 'Centro imperial chinês — treina Camponeses, Kuafus Gigantes e herói Nezha.' };
+    if (kind === 'village_center') return { ...base, name: 'Pavilhão da Vila Imperial' };
+    if (kind === 'house') return { ...base, name: 'Casa de Pagode', popBonus: 7 };
+    if (kind === 'granary') return { ...base, name: 'Celeiro Imperial' };
+    if (kind === 'storehouse') return { ...base, name: 'Armazém de Jade' };
+    if (kind === 'barracks') return { ...base, name: 'Campo Militar Imperial', role: 'Treina Alabardeiros Imperiais anti-cavalaria.' };
+    if (kind === 'archery_range') return { ...base, name: 'Campo de Bestas Chu-Ko-Nu', role: 'Treina Bestadeiros Chu-Ko-Nu de repetição rápida.' };
+    if (kind === 'stable') return { ...base, name: 'Estábulo Imperial', role: 'Treina Cavalaria Tigre pesada.' };
+    if (kind === 'siege_works') return { ...base, name: 'Oficina de Pólvora', role: 'Produz Lança-Fogos Imperiais de área.' };
+    if (kind === 'fortress') return { ...base, name: 'Bastião da Grande Muralha', role: 'Fortaleza imperial — treina o Sábio Jiang Ziya e armas de pólvora.' };
+    if (kind === 'temple') return { ...base, name: `Pagode Sagrado de ${p.deity}`, role: 'Gera Favor e invoca Qilin, Taotie, Yazi e Dragão Azul.' };
+    if (kind === 'dock') return { ...base, name: 'Estaleiro Imperial', role: 'Constrói Juncos Pesqueiros, Trirremes e Navios de Transporte.' };
+  }
+
   // Gregos & Padrão
   if (pantheon === 'greek') {
     if (kind === 'town_center') return { ...base, name: `Ágora / Centro Helênico (${p.name})` };
@@ -2476,6 +2517,27 @@ export function getAvailableBuildingKinds(
       ...(chosenMinorGods.includes('Helios') ? (['mirror_tower'] as BuildingKind[]) : []),
       'wonder'
     );
+  } else if (pantheon === 'chinese') {
+    list.push(
+      'house',
+      'granary',
+      'storehouse',
+      'farm',
+      'village_center',
+      'barracks',
+      'archery_range',
+      'stable',
+      'armory',
+      'market',
+      'temple',
+      'dock',
+      'tower',
+      'wall',
+      'gate',
+      'fortress',
+      'siege_works',
+      'wonder'
+    );
   } else {
     list.push(
       'house',
@@ -2553,7 +2615,7 @@ export function getRivalPantheon(playerPantheon: PantheonId, mapId: MapId = 'med
     return playerPantheon === 'atlantean' ? 'greek' : 'atlantean';
   }
   if (mapId === 'yucatan') return playerPantheon === 'aztec' ? 'roman' : 'aztec';
-  if (mapId === 'yellow_river') return playerPantheon === 'chinese' ? 'japanese' : 'chinese';
+  if (mapId === 'yellow_river') return playerPantheon === 'chinese' ? 'egyptian' : 'chinese';
   if (mapId === 'erebus') return playerPantheon === 'eldritch' ? 'greek' : 'eldritch';
   if (mapId === 'savannah' || mapId === 'watering_hole' || mapId === 'anatolia') {
     return playerPantheon === 'egyptian' ? 'babylonian' : 'egyptian';
@@ -2562,8 +2624,8 @@ export function getRivalPantheon(playerPantheon: PantheonId, mapId: MapId = 'med
     greek: 'egyptian',
     egyptian: 'norse',
     norse: 'atlantean',
-    atlantean: 'greek',
-    chinese: 'japanese',
+    atlantean: 'chinese',
+    chinese: 'greek',
     aztec: 'roman',
     roman: 'celtic',
     japanese: 'chinese',

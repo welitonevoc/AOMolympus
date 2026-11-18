@@ -72,6 +72,15 @@ function resolveCultureMats(pantheon: PantheonId, pal: MaterialPalette, teamMat:
       accent: pal.crystalGlow,
     };
   }
+  if (pantheon === 'chinese') {
+    return {
+      wall: pal.crimson,
+      trim: pal.gold,
+      roof: pal.jade,
+      base: pal.ivory,
+      accent: pal.goldOre,
+    };
+  }
   // Greek & default
   return {
     wall: pal.marble,
@@ -399,6 +408,15 @@ export function createExpandedBuildingMesh(
       addPart(new THREE.SphereGeometry(1.7, 16, 12, 0, Math.PI * 2, 0, Math.PI / 2), pal.turquoise, 0, 4.45, 0);
       vortexRing = addPart(new THREE.TorusGeometry(2.45, 0.14, 10, 28), pal.crystalGlow, 0, 5.2, 0, Math.PI / 2, 0, 0);
       beaconCrystal = addPart(new THREE.OctahedronGeometry(0.7, 0), pal.crystalGlow, 0, 6.75, 0);
+    } else if (pantheon === 'chinese') {
+      // Colossal Chinese Imperial Pagoda of the Immortal Pillars
+      for (let tier = 0; tier < 5; tier++) {
+        const s = 1 - tier * 0.15;
+        const baseY = 1.2 + tier * 1.15;
+        addPart(new THREE.CylinderGeometry(2.2 * s, 2.35 * s, 0.85, 8), pal.crimson, 0, baseY + 0.35, 0);
+        addPart(new THREE.ConeGeometry(2.95 * s, 0.65, 8), tier % 2 === 0 ? pal.jade : pal.gold, 0, baseY + 0.95, 0);
+      }
+      beaconCrystal = addPart(new THREE.OctahedronGeometry(0.68, 0), pal.goldOre, 0, 7.65, 0);
     } else {
       // Greek Colossal Pantheon / Zeus Gold-Ivory Rotunda
       for (let i = 0; i < 10; i++) {

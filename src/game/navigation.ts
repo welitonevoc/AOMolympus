@@ -21,26 +21,35 @@ export class NavigationGrid {
   public readonly cellSize = 2.0;
   public readonly width: number;
   public readonly height: number;
+  private mapId: MapId = 'mediterranean';
   private terrainBlocked: Uint8Array;
+  private waterGrid: Uint8Array;
   private dynamicBlocked: Uint8Array;
 
   constructor() {
     this.width = Math.round((PLAYABLE_HALF_SIZE * 2) / this.cellSize);
     this.height = this.width;
     this.terrainBlocked = new Uint8Array(this.width * this.height);
+    this.waterGrid = new Uint8Array(this.width * this.height);
     this.dynamicBlocked = new Uint8Array(this.width * this.height);
   }
 
   public rebuildTerrain(mapId: MapId) {
+    this.mapId = mapId;
     this.terrainBlocked.fill(0);
+    this.waterGrid.fill(0);
     const step = this.cellSize * 0.5;
     for (let gz = 0; gz < this.height; gz++) {
       for (let gx = 0; gx < this.width; gx++) {
         const wx = -PLAYABLE_HALF_SIZE + (gx + 0.5) * this.cellSize;
         const wz = -PLAYABLE_HALF_SIZE + (gz + 0.5) * this.cellSize;
         const h = groundHeightAt(wx, wz, mapId);
+        const idx = gz * this.width + gx;
+        if (h < WATER_WALK_LIMIT - 0.04) {
+          this.waterGrid[idx] = 1;
+        }
         if (h < WATER_WALK_LIMIT) {
-          this.terrainBlocked[gz * this.width + gx] = 1;
+          this.terrainBlocked[idx] = 1;
           continue;
         }
         const hx1 = groundHeightAt(wx + step, wz, mapId);
@@ -51,7 +60,7 @@ export class NavigationGrid {
         const dhz = (hz1 - hz0) / this.cellSize;
         const slope = Math.atan(Math.hypot(dhx, dhz));
         if (slope > MAX_WALKABLE_SLOPE_RAD) {
-          this.terrainBlocked[gz * this.width + gx] = 1;
+          this.terrainBlocked[idx] = 1;
         }
       }
     }
@@ -88,9 +97,22 @@ export class NavigationGrid {
     return this.terrainBlocked[idx] === 0 && this.dynamicBlocked[idx] === 0;
   }
 
+  public isWaterCell(gx: number, gz: number): boolean {
+    if (!this.inBounds(gx, gz)) return false;
+    const idx = gz * this.width + gx;
+    return this.waterGrid[idx] === 1 && this.dynamicBlocked[idx] === 0;
+  }
+
   public isTerrainWalkable(wx: number, wz: number): boolean {
     const c = this.worldToCell(wx, wz);
     return this.terrainBlocked[c.gz * this.width + c.gx] === 0;
+  }
+
+  public isWaterTerrain(wx: number, wz: number): boolean {
+    const h = groundHeightAt(wx, wz, this.mapId);
+    if (h < WATER_WALK_LIMIT - 0.04) return true;
+    const c = this.worldToCell(wx, wz);
+    return this.waterGrid[c.gz * this.width + c.gx] === 1;
   }
 
   public worldToCell(wx: number, wz: number): { gx: number; gz: number } {
@@ -136,6 +158,35 @@ export class NavigationGrid {
     return null;
   }
 
+  public nearestWaterCell(
+    gx: number,
+    gz: number,
+    refGx: number,
+    refGz: number,
+    maxRing = 14
+  ): { gx: number; gz: number } | null {
+    if (this.isWaterCell(gx, gz)) return { gx, gz };
+    for (let r = 1; r <= maxRing; r++) {
+      let best: { gx: number; gz: number } | null = null;
+      let bestDist = Infinity;
+      for (let dz = -r; dz <= r; dz++) {
+        for (let dx = -r; dx <= r; dx++) {
+          if (Math.max(Math.abs(dx), Math.abs(dz)) !== r) continue;
+          const nx = gx + dx;
+          const nz = gz + dz;
+          if (!this.isWaterCell(nx, nz)) continue;
+          const d = Math.hypot(nx - refGx, nz - refGz);
+          if (d < bestDist) {
+            bestDist = d;
+            best = { gx: nx, gz: nz };
+          }
+        }
+      }
+      if (best) return best;
+    }
+    return null;
+  }
+
   public hasLineOfSight(x0: number, z0: number, x1: number, z1: number): boolean {
     const dist = Math.hypot(x1 - x0, z1 - z0);
     const steps = Math.max(2, Math.ceil(dist / (this.cellSize * 0.45)));
@@ -145,6 +196,19 @@ export class NavigationGrid {
       const wz = z0 + (z1 - z0) * t;
       const c = this.worldToCell(wx, wz);
       if (!this.isWalkableCell(c.gx, c.gz)) return false;
+    }
+    return true;
+  }
+
+  public hasWaterLineOfSight(x0: number, z0: number, x1: number, z1: number): boolean {
+    const dist = Math.hypot(x1 - x0, z1 - z0);
+    const steps = Math.max(2, Math.ceil(dist / (this.cellSize * 0.45)));
+    for (let i = 1; i < steps; i++) {
+      const t = i / steps;
+      const wx = x0 + (x1 - x0) * t;
+      const wz = z0 + (z1 - z0) * t;
+      const c = this.worldToCell(wx, wz);
+      if (!this.isWaterCell(c.gx, c.gz)) return false;
     }
     return true;
   }
@@ -201,7 +265,6 @@ export class NavigationGrid {
     const maxIterations = 2600;
 
     while (open.length > 0 && iterations++ < maxIterations) {
-      // Pop lowest fScore
       let bestPos = 0;
       let bestF = fScore[open[0]];
       for (let i = 1; i < open.length; i++) {
@@ -229,7 +292,6 @@ export class NavigationGrid {
         const nx = cx + dx;
         const nz = cz + dz;
         if (!this.isWalkableCell(nx, nz)) continue;
-        // Prevent diagonal corner clipping across obstacle edges
         if (dx !== 0 && dz !== 0) {
           if (!this.isWalkableCell(cx + dx, cz) || !this.isWalkableCell(cx, cz + dz)) {
             continue;
@@ -266,15 +328,12 @@ export class NavigationGrid {
       return [new THREE.Vector3(toX, 0, toZ)];
     }
 
-    // Replace final point with exact world destination if that cell itself was walkable,
-    // otherwise append exact destination so units step up to the building/node perimeter.
     if (this.isWalkableCell(goalRaw.gx, goalRaw.gz)) {
       rawCells[rawCells.length - 1].set(toX, 0, toZ);
     } else {
       rawCells.push(new THREE.Vector3(toX, 0, toZ));
     }
 
-    // String-pull smoothing so units follow clean diagonals instead of grid steps
     const smoothed: THREE.Vector3[] = [];
     let anchorX = fromX;
     let anchorZ = fromZ;
@@ -283,6 +342,145 @@ export class NavigationGrid {
       let furthest = i;
       for (let j = rawCells.length - 1; j > i; j--) {
         if (this.hasLineOfSight(anchorX, anchorZ, rawCells[j].x, rawCells[j].z)) {
+          furthest = j;
+          break;
+        }
+      }
+      smoothed.push(rawCells[furthest]);
+      anchorX = rawCells[furthest].x;
+      anchorZ = rawCells[furthest].z;
+      i = furthest + 1;
+    }
+
+    return smoothed;
+  }
+
+  /**
+   * Computes a collision-free aquatic path strictly over deep/navigable water cells.
+   */
+  public findWaterPath(fromX: number, fromZ: number, toX: number, toZ: number): THREE.Vector3[] {
+    if (this.hasWaterLineOfSight(fromX, fromZ, toX, toZ)) {
+      const endCell = this.worldToCell(toX, toZ);
+      if (this.isWaterCell(endCell.gx, endCell.gz)) {
+        return [new THREE.Vector3(toX, 0, toZ)];
+      }
+    }
+
+    const startRaw = this.worldToCell(fromX, fromZ);
+    const goalRaw = this.worldToCell(toX, toZ);
+    const start = this.nearestWaterCell(startRaw.gx, startRaw.gz, goalRaw.gx, goalRaw.gz, 10);
+    const goal = this.nearestWaterCell(goalRaw.gx, goalRaw.gz, startRaw.gx, startRaw.gz, 14);
+    if (!start || !goal) {
+      return [new THREE.Vector3(toX, 0, toZ)];
+    }
+
+    if (start.gx === goal.gx && start.gz === goal.gz) {
+      return [this.cellToWorld(goal.gx, goal.gz)];
+    }
+
+    const total = this.width * this.height;
+    const gScore = new Float32Array(total).fill(Infinity);
+    const fScore = new Float32Array(total).fill(Infinity);
+    const parent = new Int32Array(total).fill(-1);
+    const closed = new Uint8Array(total);
+
+    const startIdx = start.gz * this.width + start.gx;
+    const goalIdx = goal.gz * this.width + goal.gx;
+    gScore[startIdx] = 0;
+    fScore[startIdx] = Math.hypot(goal.gx - start.gx, goal.gz - start.gz);
+
+    const open: number[] = [startIdx];
+    const dirs: [number, number, number][] = [
+      [1, 0, 1],
+      [-1, 0, 1],
+      [0, 1, 1],
+      [0, -1, 1],
+      [1, 1, Math.SQRT2],
+      [1, -1, Math.SQRT2],
+      [-1, 1, Math.SQRT2],
+      [-1, -1, Math.SQRT2],
+    ];
+
+    let found = false;
+    let iterations = 0;
+    const maxIterations = 2600;
+
+    while (open.length > 0 && iterations++ < maxIterations) {
+      let bestPos = 0;
+      let bestF = fScore[open[0]];
+      for (let i = 1; i < open.length; i++) {
+        const f = fScore[open[i]];
+        if (f < bestF) {
+          bestF = f;
+          bestPos = i;
+        }
+      }
+      const cur = open[bestPos];
+      open[bestPos] = open[open.length - 1];
+      open.pop();
+
+      if (cur === goalIdx) {
+        found = true;
+        break;
+      }
+      if (closed[cur] === 1) continue;
+      closed[cur] = 1;
+
+      const cx = cur % this.width;
+      const cz = Math.floor(cur / this.width);
+
+      for (const [dx, dz, stepCost] of dirs) {
+        const nx = cx + dx;
+        const nz = cz + dz;
+        if (!this.isWaterCell(nx, nz)) continue;
+        if (dx !== 0 && dz !== 0) {
+          if (!this.isWaterCell(cx + dx, cz) || !this.isWaterCell(cx, cz + dz)) {
+            continue;
+          }
+        }
+        const nIdx = nz * this.width + nx;
+        if (closed[nIdx] === 1) continue;
+
+        const tentativeG = gScore[cur] + stepCost;
+        if (tentativeG < gScore[nIdx]) {
+          parent[nIdx] = cur;
+          gScore[nIdx] = tentativeG;
+          fScore[nIdx] = tentativeG + Math.hypot(goal.gx - nx, goal.gz - nz);
+          open.push(nIdx);
+        }
+      }
+    }
+
+    if (!found) {
+      return [this.cellToWorld(goal.gx, goal.gz)];
+    }
+
+    const rawCells: THREE.Vector3[] = [];
+    let cur = goalIdx;
+    while (cur !== -1 && cur !== startIdx) {
+      const gx = cur % this.width;
+      const gz = Math.floor(cur / this.width);
+      rawCells.push(this.cellToWorld(gx, gz));
+      cur = parent[cur];
+    }
+    rawCells.reverse();
+
+    if (rawCells.length === 0) {
+      return [this.cellToWorld(goal.gx, goal.gz)];
+    }
+
+    if (this.isWaterCell(goalRaw.gx, goalRaw.gz)) {
+      rawCells[rawCells.length - 1].set(toX, 0, toZ);
+    }
+
+    const smoothed: THREE.Vector3[] = [];
+    let anchorX = fromX;
+    let anchorZ = fromZ;
+    let i = 0;
+    while (i < rawCells.length) {
+      let furthest = i;
+      for (let j = rawCells.length - 1; j > i; j--) {
+        if (this.hasWaterLineOfSight(anchorX, anchorZ, rawCells[j].x, rawCells[j].z)) {
           furthest = j;
           break;
         }

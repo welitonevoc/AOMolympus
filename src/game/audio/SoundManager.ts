@@ -210,9 +210,24 @@ const UNIT_AUDIO_PROFILES: Record<UnitKind, UnitAudioProfile> = {
   carnivora: { unitType: 'carnivora', defaultPantheon: 'atlantean', voiceRole: 'myth', pitchScale: 0.72, rateScale: 0.94, isDarkTone: true },
   tartarian_spawn: { unitType: 'tartarian_spawn', defaultPantheon: 'atlantean', voiceRole: 'myth', pitchScale: 0.7, rateScale: 0.94, isDarkTone: true },
 
+  // Chineses (Immortal Pillars)
+  chinese_peasant: { unitType: 'chinese_peasant', defaultPantheon: 'chinese', voiceRole: 'citizen', pitchScale: 1.02, rateScale: 1.04 },
+  kuafu: { unitType: 'kuafu', defaultPantheon: 'chinese', voiceRole: 'citizen', pitchScale: 0.74, rateScale: 0.94, isDarkTone: true },
+  halberdier: { unitType: 'halberdier', defaultPantheon: 'chinese', voiceRole: 'infantry', pitchScale: 0.94, rateScale: 1.05 },
+  chu_ko_nu: { unitType: 'chu_ko_nu', defaultPantheon: 'chinese', voiceRole: 'archer', pitchScale: 1.04, rateScale: 1.06 },
+  tiger_cavalry: { unitType: 'tiger_cavalry', defaultPantheon: 'chinese', voiceRole: 'cavalry', pitchScale: 0.96, rateScale: 1.06 },
+  fire_lance: { unitType: 'fire_lance', defaultPantheon: 'chinese', voiceRole: 'siege', pitchScale: 0.78, rateScale: 0.98 },
+  nezha: { unitType: 'nezha', defaultPantheon: 'chinese', voiceRole: 'hero', pitchScale: 1.06, rateScale: 1.08, heroTitle: 'NEZHA' },
+  jiang_ziya: { unitType: 'jiang_ziya', defaultPantheon: 'chinese', voiceRole: 'hero', pitchScale: 0.88, rateScale: 0.98, heroTitle: 'JIANG ZIYA' },
+  qilin: { unitType: 'qilin', defaultPantheon: 'chinese', voiceRole: 'myth', pitchScale: 1.08, rateScale: 1.04 },
+  taotie: { unitType: 'taotie', defaultPantheon: 'chinese', voiceRole: 'myth', pitchScale: 0.64, rateScale: 0.92, isDarkTone: true },
+  yazi: { unitType: 'yazi', defaultPantheon: 'chinese', voiceRole: 'myth', pitchScale: 0.82, rateScale: 1.04, isDarkTone: true },
+  azure_dragon: { unitType: 'azure_dragon', defaultPantheon: 'chinese', voiceRole: 'myth', pitchScale: 0.6, rateScale: 0.92, isDarkTone: true },
+
   // Navais
   fishing_ship: { unitType: 'fishing_ship', defaultPantheon: 'greek', voiceRole: 'citizen', pitchScale: 0.98, rateScale: 1.0 },
   war_trireme: { unitType: 'war_trireme', defaultPantheon: 'greek', voiceRole: 'siege', pitchScale: 0.85, rateScale: 0.98 },
+  transport_ship: { unitType: 'transport_ship', defaultPantheon: 'greek', voiceRole: 'cavalry', pitchScale: 0.9, rateScale: 1.0 },
 };
 
 /**

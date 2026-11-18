@@ -1,4 +1,8 @@
-import type { MultiplayerMatchRoster } from './multiplayerTypes';
+import type { AiPersonality, MultiplayerMatchRoster } from './multiplayerTypes';
+export type { AiPersonality };
+
+export type CombatStance = 'aggressive' | 'defensive' | 'stand_ground';
+export type VillagerPriorityPreset = 'manual' | 'balanced' | 'food' | 'wood' | 'gold' | 'wonder';
 
 export type PantheonId =
   | 'greek'
@@ -15,7 +19,7 @@ export type PantheonId =
   | 'lakota'
   | 'jotunn';
 
-export type ArchStyleId = 'greek' | 'egyptian' | 'norse' | 'atlantean';
+export type ArchStyleId = 'greek' | 'egyptian' | 'norse' | 'atlantean' | 'chinese';
 
 export type DifficultyId = 'easy' | 'normal' | 'hard' | 'titan';
 
@@ -177,7 +181,20 @@ export type UnitKind =
   | 'carnivora'
   | 'tartarian_spawn'
   | 'fishing_ship'
-  | 'war_trireme';
+  | 'war_trireme'
+  | 'transport_ship'
+  | 'chinese_peasant'
+  | 'kuafu'
+  | 'halberdier'
+  | 'chu_ko_nu'
+  | 'tiger_cavalry'
+  | 'fire_lance'
+  | 'nezha'
+  | 'jiang_ziya'
+  | 'qilin'
+  | 'taotie'
+  | 'yazi'
+  | 'azure_dragon';
 
 export type BuildingKind =
   | 'town_center'
@@ -212,7 +229,7 @@ export type BuildingKind =
   | 'titan_gate'
   | 'wonder';
 
-export type ResourceNodeKind = 'berry' | 'tree' | 'gold_mine';
+export type ResourceNodeKind = 'berry' | 'tree' | 'gold_mine' | 'fish_spot';
 
 export type GodPowerId =
   | 'prosperity'
@@ -996,6 +1013,10 @@ export interface UnitStats {
   isSiege?: boolean;
   isGod?: boolean;
   isMajorGod?: boolean;
+  isNaval?: boolean;
+  isTransport?: boolean;
+  carryCapacity?: number;
+  counterTags?: string[];
   canPromoteHero?: boolean;
   producedAt:
     | 'town_center'
@@ -1128,10 +1149,10 @@ export const PANTHEONS: Record<PantheonId, PantheonConfig> = {
     id: 'chinese',
     name: 'Chineses',
     deity: 'Fu Xi',
-    minorGods: 'Huangdi · Sun Wukong · Chang’e · He Bo · Zhong Kui · Ao Kuang',
-    archStyle: 'atlantean',
-    architectureLabel: 'Pagodes imperiais de jade e telhados curvos dourados',
-    bonusLabel: 'Início com +80 Madeira, +80 Ouro e construções rápidas',
+    minorGods: 'Chiyou · Xuannü · Houtu · Gonggong · Huangdi · Zhurong',
+    archStyle: 'chinese',
+    architectureLabel: 'Pagodes imperiais de jade, pilares vermelhos e telhados curvos dourados',
+    bonusLabel: 'Início com +80 Madeira, +80 Ouro, Kuafu construtor e Dragão Azul',
     primaryColor: '#dc2626',
     bannerHex: 0xdc2626,
     accentHex: 0xfacc15,
@@ -1252,10 +1273,9 @@ export const PANTHEONS: Record<PantheonId, PantheonConfig> = {
   },
 };
 
-export const PLAYABLE_PANTHEON_IDS: PantheonId[] = ['greek', 'egyptian', 'norse', 'atlantean'];
+export const PLAYABLE_PANTHEON_IDS: PantheonId[] = ['greek', 'egyptian', 'norse', 'atlantean', 'chinese'];
 
 export const COMING_SOON_PANTHEON_IDS: PantheonId[] = [
-  'chinese',
   'japanese',
   'aztec',
   'roman',
@@ -1266,12 +1286,13 @@ export const COMING_SOON_PANTHEON_IDS: PantheonId[] = [
   'jotunn',
 ];
 
-export type CivilizationId = 'gregos' | 'egipcios' | 'nordicos' | 'atlantes';
+export type CivilizationId = 'gregos' | 'egipcios' | 'nordicos' | 'atlantes' | 'chineses';
 
 export type GreekUnitKind = UnitKind;
 export type EgyptianUnitKind = UnitKind;
 export type NorseUnitKind = UnitKind;
 export type AtlanteanUnitKind = UnitKind;
+export type ChineseUnitKind = UnitKind;
 
 export type CultureUnitCost = ResourceCost;
 
@@ -1296,11 +1317,16 @@ export interface AtlanteanUnitStats extends CultureUnitStats {
   culture?: 'atlantes';
 }
 
+export interface ChineseUnitStats extends CultureUnitStats {
+  culture?: 'chineses';
+}
+
 export interface CivilizationUnitMap {
   gregos: Record<GreekUnitKind, GreekUnitStats>;
   egipcios: Record<EgyptianUnitKind, EgyptianUnitStats>;
   nordicos: Record<NorseUnitKind, NorseUnitStats>;
   atlantes: Record<AtlanteanUnitKind, AtlanteanUnitStats>;
+  chineses: Record<ChineseUnitKind, ChineseUnitStats>;
 }
 
 export const EGYPTIAN_ROSTER_STATS = {
@@ -2949,11 +2975,302 @@ export const ATLANTEAN_ROSTER_STATS = {
   },
 };
 
+export const CHINESE_ROSTER_STATS = {
+  chinese_peasant: {
+    kind: 'chinese_peasant' as const,
+    name: 'Camponês Chinês',
+    role: 'Unidade civil chinesa — coleta recursos, cultiva fazendas e constrói com eficiência imperial',
+    minAge: 1 as AgeLevel,
+    cost: { food: 48 },
+    popCost: 1,
+    trainTime: 5.2,
+    maxHp: 78,
+    attack: 6,
+    damageType: 'hack' as DamageType,
+    hackArmor: 0.12,
+    pierceArmor: 0.15,
+    crushArmor: 0.1,
+    range: 1.6,
+    attackCooldown: 1.3,
+    speed: 4.9,
+    los: 14,
+    isMythic: false,
+    producedAt: 'town_center' as const,
+  },
+  kuafu: {
+    kind: 'kuafu' as const,
+    name: 'Kuafu Gigante',
+    role: 'Coletor e construtor gigante dos Pilares Imortais — carrega muito mais e ergue estruturas rapidamente',
+    minAge: 1 as AgeLevel,
+    cost: { food: 75, gold: 40 },
+    popCost: 2,
+    trainTime: 7.5,
+    maxHp: 215,
+    attack: 16,
+    damageType: 'crush' as DamageType,
+    hackArmor: 0.28,
+    pierceArmor: 0.3,
+    crushArmor: 0.2,
+    bonusVsBuilding: 1.4,
+    counterTags: ['Construtor Veloz', 'Coleta Pesada'],
+    range: 2.0,
+    attackCooldown: 1.25,
+    speed: 4.7,
+    los: 16,
+    isMythic: false,
+    producedAt: 'town_center' as const,
+  },
+  halberdier: {
+    kind: 'halberdier' as const,
+    name: 'Alabardeiro Imperial',
+    role: 'Infantaria de alabarda longa — devasta Cavalaria e defende a linha de frente',
+    minAge: 1 as AgeLevel,
+    cost: { food: 55, gold: 38 },
+    popCost: 2,
+    trainTime: 6.2,
+    maxHp: 165,
+    attack: 16,
+    damageType: 'hack' as DamageType,
+    hackArmor: 0.36,
+    pierceArmor: 0.24,
+    crushArmor: 0.16,
+    bonusVsCavalry: 1.85,
+    counterTags: ['Forte vs Cavalaria'],
+    range: 2.1,
+    attackCooldown: 1.05,
+    speed: 4.6,
+    los: 16,
+    isMythic: false,
+    producedAt: 'barracks' as const,
+  },
+  chu_ko_nu: {
+    kind: 'chu_ko_nu' as const,
+    name: 'Bestadeiro Chu-Ko-Nu',
+    role: 'Besta de repetição rápida — dispara rajadas contínuas letais contra Infantaria',
+    minAge: 2 as AgeLevel,
+    cost: { wood: 52, gold: 36 },
+    popCost: 2,
+    trainTime: 6.0,
+    maxHp: 102,
+    attack: 13,
+    damageType: 'pierce' as DamageType,
+    hackArmor: 0.12,
+    pierceArmor: 0.28,
+    crushArmor: 0.1,
+    bonusVsInfantry: 1.55,
+    counterTags: ['Forte vs Infantaria', 'Cadência Rápida'],
+    range: 12.0,
+    attackCooldown: 0.85,
+    speed: 5.0,
+    los: 18,
+    isMythic: false,
+    producedAt: 'archery_range' as const,
+  },
+  tiger_cavalry: {
+    kind: 'tiger_cavalry' as const,
+    name: 'Cavalaria Tigre',
+    role: 'Cavalaria imperial pesada — esmaga Arqueiros e máquinas de cerco em investidas velozes',
+    minAge: 2 as AgeLevel,
+    cost: { food: 82, gold: 52 },
+    popCost: 3,
+    trainTime: 7.2,
+    maxHp: 230,
+    attack: 22,
+    damageType: 'hack' as DamageType,
+    hackArmor: 0.28,
+    pierceArmor: 0.36,
+    crushArmor: 0.18,
+    bonusVsArcher: 1.65,
+    bonusVsSiege: 1.6,
+    counterTags: ['Forte vs Arqueiros', 'Forte vs Cerco'],
+    range: 2.2,
+    attackCooldown: 1.05,
+    speed: 7.7,
+    los: 19,
+    isMythic: false,
+    producedAt: 'stable' as const,
+  },
+  fire_lance: {
+    kind: 'fire_lance' as const,
+    name: 'Lança-Fogo Imperial',
+    role: 'Artilharia chinesa de pólvora — explode portões, muralhas e aglomerados em área',
+    minAge: 3 as AgeLevel,
+    cost: { wood: 145, gold: 115 },
+    popCost: 3,
+    trainTime: 9.0,
+    maxHp: 310,
+    attack: 48,
+    damageType: 'crush' as DamageType,
+    hackArmor: 0.15,
+    pierceArmor: 0.72,
+    crushArmor: 0.22,
+    bonusVsBuilding: 3.0,
+    splashRadius: 2.8,
+    counterTags: ['Forte vs Edifícios', 'Dano em Área'],
+    range: 13.5,
+    attackCooldown: 2.1,
+    speed: 3.5,
+    los: 19,
+    isMythic: false,
+    isSiege: true,
+    producedAt: 'siege_works' as const,
+  },
+  nezha: {
+    kind: 'nezha' as const,
+    name: 'Nezha — Príncipe do Lótus',
+    role: 'Herói ágil com Rodas de Fogo e Vento — 3.5x contra Unidades Míticas e coleta Relíquias',
+    minAge: 1 as AgeLevel,
+    cost: { food: 105, gold: 88, favor: 5 },
+    popCost: 2,
+    trainTime: 7.0,
+    maxHp: 390,
+    attack: 30,
+    damageType: 'hack' as DamageType,
+    hackArmor: 0.42,
+    pierceArmor: 0.45,
+    crushArmor: 0.32,
+    bonusVsMyth: 3.5,
+    counterTags: ['Forte vs Míticas', 'Coleta Relíquias'],
+    range: 2.4,
+    attackCooldown: 0.9,
+    speed: 6.4,
+    los: 21,
+    isMythic: false,
+    isHero: true,
+    producedAt: 'town_center' as const,
+  },
+  jiang_ziya: {
+    kind: 'jiang_ziya' as const,
+    name: 'Jiang Ziya — Sábio Imortal',
+    role: 'Herói estrategista à distância — conjura raios sagrados e cura aliados próximos (3.6x vs Míticas)',
+    minAge: 2 as AgeLevel,
+    cost: { wood: 100, gold: 105, favor: 7 },
+    popCost: 3,
+    trainTime: 8.0,
+    maxHp: 360,
+    attack: 28,
+    damageType: 'pierce' as DamageType,
+    hackArmor: 0.32,
+    pierceArmor: 0.44,
+    crushArmor: 0.25,
+    bonusVsMyth: 3.6,
+    counterTags: ['Forte vs Míticas', 'Suporte & Longo Alcance'],
+    range: 13.5,
+    attackCooldown: 1.05,
+    speed: 5.4,
+    los: 23,
+    isMythic: false,
+    isHero: true,
+    producedAt: 'fortress' as const,
+  },
+  qilin: {
+    kind: 'qilin' as const,
+    name: 'Qilin Sagrado',
+    role: 'Fera celestial de Houtu/Chiyou — regenera tropas próximas e investe com chifres de jade',
+    minAge: 2 as AgeLevel,
+    cost: { food: 135, favor: 16 },
+    popCost: 3,
+    trainTime: 8.8,
+    maxHp: 440,
+    attack: 34,
+    damageType: 'hack' as DamageType,
+    hackArmor: 0.4,
+    pierceArmor: 0.38,
+    crushArmor: 0.26,
+    requiresMinorGod: ['Chiyou', 'Xuannu', 'Houtu'],
+    requiresMinorGodLabel: 'Chiyou / Xuannü / Houtu',
+    counterTags: ['Cura Aliados', 'Forte vs Humanos'],
+    range: 2.3,
+    attackCooldown: 1.15,
+    speed: 6.6,
+    los: 21,
+    isMythic: true,
+    producedAt: 'temple' as const,
+  },
+  taotie: {
+    kind: 'taotie' as const,
+    name: 'Taotie Devorador',
+    role: 'Monstro blindado ancestral (Chiyou/Houtu) — devora infantaria com impacto em área',
+    minAge: 3 as AgeLevel,
+    cost: { food: 185, favor: 22 },
+    popCost: 4,
+    trainTime: 10.5,
+    maxHp: 740,
+    attack: 56,
+    damageType: 'crush' as DamageType,
+    hackArmor: 0.5,
+    pierceArmor: 0.46,
+    crushArmor: 0.35,
+    bonusVsBuilding: 2.0,
+    splashRadius: 2.6,
+    requiresMinorGod: ['Chiyou', 'Houtu'],
+    requiresMinorGodLabel: 'Chiyou / Houtu',
+    counterTags: ['Tanque Mítico', 'Dano em Área'],
+    range: 2.5,
+    attackCooldown: 1.35,
+    speed: 5.1,
+    los: 20,
+    isMythic: true,
+    producedAt: 'temple' as const,
+  },
+  yazi: {
+    kind: 'yazi' as const,
+    name: 'Yazi — Filho do Dragão',
+    role: 'Assassino mítico de Xuannü/Gonggong — golpeia rápido com lâmina dracônica',
+    minAge: 3 as AgeLevel,
+    cost: { wood: 140, gold: 90, favor: 20 },
+    popCost: 3,
+    trainTime: 9.0,
+    maxHp: 490,
+    attack: 44,
+    damageType: 'hack' as DamageType,
+    hackArmor: 0.36,
+    pierceArmor: 0.45,
+    crushArmor: 0.25,
+    bonusVsArcher: 1.5,
+    requiresMinorGod: ['Xuannu', 'Gonggong'],
+    requiresMinorGodLabel: 'Xuannü / Gonggong',
+    counterTags: ['Caçador Veloz', 'Forte vs Arqueiros'],
+    range: 2.6,
+    attackCooldown: 0.95,
+    speed: 7.4,
+    los: 22,
+    isMythic: true,
+    producedAt: 'temple' as const,
+  },
+  azure_dragon: {
+    kind: 'azure_dragon' as const,
+    name: 'Dragão Azul (Qinglong)',
+    role: 'Guardião supremo de Huangdi/Zhurong — dispara rajadas celestes de fogo e trovão em área',
+    minAge: 4 as AgeLevel,
+    cost: { gold: 220, favor: 32 },
+    popCost: 5,
+    trainTime: 12.5,
+    maxHp: 960,
+    attack: 68,
+    damageType: 'crush' as DamageType,
+    hackArmor: 0.48,
+    pierceArmor: 0.56,
+    crushArmor: 0.38,
+    bonusVsBuilding: 2.2,
+    splashRadius: 3.4,
+    requiresMinorGod: ['Huangdi', 'Zhurong'],
+    requiresMinorGodLabel: 'Huangdi / Zhurong',
+    counterTags: ['Longo Alcance', 'Destruidor em Área'],
+    range: 13.0,
+    attackCooldown: 1.4,
+    speed: 6.4,
+    los: 25,
+    isMythic: true,
+    producedAt: 'temple' as const,
+  },
+};
+
 export const NAVAL_ROSTER_STATS = {
   fishing_ship: {
     kind: 'fishing_ship' as const,
     name: 'Barco Pesqueiro',
-    role: 'Embarcação econômica da Doca — colhe cardumes e gera Alimento continuamente para a civilização',
+    role: 'Embarcação econômica da Doca — colhe cardumes no mar e retorna Alimento à Doca',
     minAge: 1 as AgeLevel,
     cost: { wood: 75 },
     popCost: 1,
@@ -2964,7 +3281,9 @@ export const NAVAL_ROSTER_STATS = {
     hackArmor: 0.15,
     pierceArmor: 0.45,
     crushArmor: 0.12,
-    range: 1.5,
+    isNaval: true,
+    counterTags: ['Pesca Cardumes'],
+    range: 2.2,
     attackCooldown: 1.5,
     speed: 6.2,
     los: 18,
@@ -2974,7 +3293,7 @@ export const NAVAL_ROSTER_STATS = {
   war_trireme: {
     kind: 'war_trireme' as const,
     name: 'Trirreme de Guerra',
-    role: 'Navio de guerra arqueiro da Doca (Era Clássica) — dispara rajadas de flechas contra inimigos costeiros',
+    role: 'Navio de guerra arqueiro da Doca (Era Clássica) — domina mares e bombardeia a costa',
     minAge: 2 as AgeLevel,
     cost: { wood: 110, gold: 65 },
     popCost: 2,
@@ -2987,10 +3306,37 @@ export const NAVAL_ROSTER_STATS = {
     crushArmor: 0.2,
     bonusVsMyth: 1.3,
     bonusVsBuilding: 1.4,
+    isNaval: true,
+    counterTags: ['Combate Naval', 'Bombardeio Costeiro'],
     range: 15.0,
     attackCooldown: 1.25,
     speed: 6.8,
     los: 22,
+    isMythic: false,
+    producedAt: 'dock' as const,
+  },
+  transport_ship: {
+    kind: 'transport_ship' as const,
+    name: 'Navio de Transporte',
+    role: 'Embarca tropas terrestres (até 8 unidades) para invasões anfíbias através de oceanos e rios',
+    minAge: 1 as AgeLevel,
+    cost: { wood: 95, gold: 25 },
+    popCost: 1,
+    trainTime: 6.5,
+    maxHp: 320,
+    attack: 0,
+    damageType: 'pierce' as DamageType,
+    hackArmor: 0.22,
+    pierceArmor: 0.56,
+    crushArmor: 0.2,
+    isNaval: true,
+    isTransport: true,
+    carryCapacity: 8,
+    counterTags: ['Transporte (8 Tropas)', 'Desembarque Anfíbio'],
+    range: 2.0,
+    attackCooldown: 1.5,
+    speed: 6.5,
+    los: 20,
     isMythic: false,
     producedAt: 'dock' as const,
   },
@@ -3001,6 +3347,7 @@ export const CIVILIZATION_UNITS: CivilizationUnitMap = {
     ...EGYPTIAN_ROSTER_STATS,
     ...NORSE_ROSTER_STATS,
     ...ATLANTEAN_ROSTER_STATS,
+    ...CHINESE_ROSTER_STATS,
     ...NAVAL_ROSTER_STATS,
     villager: {
       kind: 'villager',
@@ -4046,6 +4393,7 @@ export const CIVILIZATION_UNITS: CivilizationUnitMap = {
     ...EGYPTIAN_ROSTER_STATS,
     ...NORSE_ROSTER_STATS,
     ...ATLANTEAN_ROSTER_STATS,
+    ...CHINESE_ROSTER_STATS,
     ...NAVAL_ROSTER_STATS,
     villager: { kind: 'villager', name: 'Trabalhador', role: 'Coleta recursos (comida, madeira e ouro) e constrói todos os edifícios', minAge: 1, cost: { food: 50 }, popCost: 1, trainTime: 5.5, maxHp: 75, attack: 6, damageType: 'hack', hackArmor: 0.1, pierceArmor: 0.15, crushArmor: 0.1, range: 1.6, attackCooldown: 1.3, speed: 4.8, los: 14, isMythic: false, producedAt: 'town_center' },
     hoplite: { kind: 'hoplite', name: 'Lanceiro Egípcio', role: 'Infantaria anti-cavalaria', minAge: 1, cost: { food: 55, gold: 40 }, popCost: 2, trainTime: 6.5, maxHp: 150, attack: 14, damageType: 'pierce', hackArmor: 0.3, pierceArmor: 0.3, crushArmor: 0.1, bonusVsCavalry: 1.5, range: 2.0, attackCooldown: 1.1, speed: 4.5, los: 16, isMythic: false, producedAt: 'barracks' },
@@ -4097,6 +4445,7 @@ export const CIVILIZATION_UNITS: CivilizationUnitMap = {
     ...EGYPTIAN_ROSTER_STATS,
     ...NORSE_ROSTER_STATS,
     ...ATLANTEAN_ROSTER_STATS,
+    ...CHINESE_ROSTER_STATS,
     ...NAVAL_ROSTER_STATS,
     villager: { kind: 'villager', name: 'Anão / Coletor Nórdico', role: 'Coleta minérios e madeira', minAge: 1, cost: { food: 50 }, popCost: 1, trainTime: 5.5, maxHp: 80, attack: 6, damageType: 'hack', hackArmor: 0.15, pierceArmor: 0.15, crushArmor: 0.1, range: 1.6, attackCooldown: 1.3, speed: 4.8, los: 14, isMythic: false, producedAt: 'town_center' },
     hoplite: { kind: 'hoplite', name: 'Ulfsark', role: 'Guerreiro berserker', minAge: 1, cost: { food: 50, gold: 35 }, popCost: 2, trainTime: 6.0, maxHp: 160, attack: 16, damageType: 'hack', hackArmor: 0.25, pierceArmor: 0.2, crushArmor: 0.15, bonusVsBuilding: 1.3, range: 1.8, attackCooldown: 1.0, speed: 4.8, los: 16, isMythic: false, producedAt: 'barracks' },
@@ -4148,6 +4497,7 @@ export const CIVILIZATION_UNITS: CivilizationUnitMap = {
     ...EGYPTIAN_ROSTER_STATS,
     ...NORSE_ROSTER_STATS,
     ...ATLANTEAN_ROSTER_STATS,
+    ...CHINESE_ROSTER_STATS,
     ...NAVAL_ROSTER_STATS,
     villager: { ...ATLANTEAN_ROSTER_STATS.citizen, kind: 'villager', name: 'Cidadão Atlante', producedAt: 'town_center' },
     hoplite: { ...ATLANTEAN_ROSTER_STATS.murmillo, kind: 'hoplite', name: 'Murmillo' },
@@ -4238,6 +4588,57 @@ export const CIVILIZATION_UNITS: CivilizationUnitMap = {
     afrodite: { kind: 'afrodite', name: 'Réia — Mãe dos Deuses', role: 'Deus Menor (Era V)', minAge: 5, cost: { food: 630, gold: 710, favor: 64 }, popCost: 14, trainTime: 16, maxHp: 4950, attack: 200, damageType: 'pierce', hackArmor: 0.70, pierceArmor: 0.80, crushArmor: 0.56, bonusVsBuilding: 2.6, splashRadius: 5.0, range: 12.5, attackCooldown: 1.45, speed: 4.8, los: 29, isMythic: true, isGod: true, producedAt: 'temple' },
     hefesto: { kind: 'hefesto', name: 'Hipérion — Titã da Vigília', role: 'Deus Menor (Era V)', minAge: 5, cost: { food: 660, gold: 740, favor: 66 }, popCost: 14, trainTime: 16.5, maxHp: 5500, attack: 225, damageType: 'crush', hackArmor: 0.76, pierceArmor: 0.82, crushArmor: 0.62, bonusVsBuilding: 3.4, splashRadius: 5.2, range: 10.0, attackCooldown: 1.65, speed: 4.3, los: 27, isMythic: true, isGod: true, producedAt: 'temple' },
     artemis: { kind: 'artemis', name: 'Hécate — Senhora das Sombras', role: 'Deus Menor (Era V)', minAge: 5, cost: { food: 640, gold: 700, favor: 64 }, popCost: 14, trainTime: 16, maxHp: 4900, attack: 215, damageType: 'pierce', hackArmor: 0.70, pierceArmor: 0.82, crushArmor: 0.55, bonusVsBuilding: 2.8, splashRadius: 4.8, range: 14.5, attackCooldown: 1.4, speed: 5.0, los: 30, isMythic: true, isGod: true, producedAt: 'temple' },
+  },
+  chineses: {
+    ...EGYPTIAN_ROSTER_STATS,
+    ...NORSE_ROSTER_STATS,
+    ...ATLANTEAN_ROSTER_STATS,
+    ...CHINESE_ROSTER_STATS,
+    ...NAVAL_ROSTER_STATS,
+    villager: { ...CHINESE_ROSTER_STATS.chinese_peasant, kind: 'villager', name: 'Camponês Chinês', producedAt: 'town_center' },
+    hoplite: { ...CHINESE_ROSTER_STATS.halberdier, kind: 'hoplite', name: 'Alabardeiro Imperial' },
+    hipaspist: { ...CHINESE_ROSTER_STATS.halberdier, kind: 'hipaspist', name: 'Guarda Dao Imperial', bonusVsInfantry: 1.45, bonusVsCavalry: undefined, counterTags: ['Forte vs Infantaria'] },
+    myrmidon: { ...CHINESE_ROSTER_STATS.halberdier, kind: 'myrmidon', name: 'Guarda Dragão', minAge: 4, maxHp: 210, attack: 23, producedAt: 'fortress' },
+    peltast: { ...CHINESE_ROSTER_STATS.chu_ko_nu, kind: 'peltast', name: 'Escaramuçador Imperial' },
+    archer: { ...CHINESE_ROSTER_STATS.chu_ko_nu, kind: 'archer', name: 'Bestadeiro Chu-Ko-Nu' },
+    gastraphetes: { ...CHINESE_ROSTER_STATS.chu_ko_nu, kind: 'gastraphetes', name: 'Atirador Celestial', minAge: 3, range: 14.0, attack: 20 },
+    cavalry: { ...CHINESE_ROSTER_STATS.tiger_cavalry, kind: 'cavalry', name: 'Cavalaria Tigre' },
+    prodromos: { ...CHINESE_ROSTER_STATS.tiger_cavalry, kind: 'prodromos', name: 'Lanceiro Montado', bonusVsCavalry: 1.9, bonusVsArcher: undefined, counterTags: ['Forte vs Cavalaria'] },
+    ajax: { ...CHINESE_ROSTER_STATS.nezha, kind: 'ajax', name: 'Nezha' },
+    jason: { ...CHINESE_ROSTER_STATS.nezha, kind: 'jason', name: 'Nezha' },
+    odysseus: { ...CHINESE_ROSTER_STATS.jiang_ziya, kind: 'odysseus', name: 'Jiang Ziya' },
+    perseus: { ...CHINESE_ROSTER_STATS.nezha, kind: 'perseus', name: 'Nezha Campeão', minAge: 3, maxHp: 450, attack: 34 },
+    bellerophon: { ...CHINESE_ROSTER_STATS.nezha, kind: 'bellerophon', name: 'Nezha Celestial', minAge: 4, maxHp: 480, attack: 37, speed: 8.2 },
+    hippolyta: { ...CHINESE_ROSTER_STATS.jiang_ziya, kind: 'hippolyta', name: 'Xuannü Arqueira', minAge: 2 },
+    theseus: { ...CHINESE_ROSTER_STATS.nezha, kind: 'theseus', name: 'General Li Jing', minAge: 2 },
+    hero: { ...CHINESE_ROSTER_STATS.jiang_ziya, kind: 'hero', name: 'Imortal Sábio' },
+    ram: { ...CHINESE_ROSTER_STATS.fire_lance, kind: 'ram', name: 'Lança-Fogo Imperial', range: 3.0 },
+    siege: { ...CHINESE_ROSTER_STATS.fire_lance, kind: 'siege', name: 'Canhão de Pólvora' },
+    minotaur: { ...CHINESE_ROSTER_STATS.qilin, kind: 'minotaur', name: 'Qilin Sagrado' },
+    centaur: { ...CHINESE_ROSTER_STATS.yazi, kind: 'centaur', name: 'Yazi' },
+    cyclops: { ...CHINESE_ROSTER_STATS.taotie, kind: 'cyclops', name: 'Taotie Devorador' },
+    manticore: { ...CHINESE_ROSTER_STATS.azure_dragon, kind: 'manticore', name: 'Dragão Azul' },
+    medusa: { ...CHINESE_ROSTER_STATS.yazi, kind: 'medusa', name: 'Espírito Yazi' },
+    hydra: { ...CHINESE_ROSTER_STATS.taotie, kind: 'hydra', name: 'Taotie Ancião' },
+    colossus: { ...CHINESE_ROSTER_STATS.taotie, kind: 'colossus', name: 'Guardião de Terracota', maxHp: 1120, attack: 72 },
+    nymph: { ...CHINESE_ROSTER_STATS.qilin, kind: 'nymph', name: 'Espírito da Primavera' },
+    pegasus: { ...CHINESE_ROSTER_STATS.yazi, kind: 'pegasus', name: 'Garça Celestial', speed: 8.8, los: 26 },
+    satyr: { ...CHINESE_ROSTER_STATS.yazi, kind: 'satyr', name: 'Atirador Imperial' },
+    automaton: { ...CHINESE_ROSTER_STATS.taotie, kind: 'automaton', name: 'Autômato de Terracota' },
+    iron_dwarf: { ...CHINESE_ROSTER_STATS.taotie, kind: 'iron_dwarf', name: 'Guardião de Jade' },
+    phoenix: { ...CHINESE_ROSTER_STATS.azure_dragon, kind: 'phoenix', name: 'Pássaro Vermelho (Zhuque)' },
+    titan: { kind: 'titan', name: 'Dragão Titã Imperial', role: 'Dragão colossal dos Pilares Imortais invocado pelo Portão do Titã (Era V)', minAge: 5, cost: {}, popCost: 12, trainTime: 1, maxHp: 3900, attack: 170, damageType: 'crush', hackArmor: 0.66, pierceArmor: 0.75, crushArmor: 0.52, bonusVsBuilding: 2.7, splashRadius: 5.0, range: 4.0, attackCooldown: 1.75, speed: 4.2, los: 25, isMythic: true, producedAt: 'titan_gate' },
+    zeus: { kind: 'zeus', name: 'Fu Xi — Imperador Divino', role: 'Deus Maior Chinês (Era V)', minAge: 5, cost: { food: 950, gold: 1050, favor: 95 }, popCost: 16, trainTime: 20, maxHp: 7200, attack: 275, damageType: 'crush', hackArmor: 0.78, pierceArmor: 0.85, crushArmor: 0.65, bonusVsBuilding: 3.2, splashRadius: 6.5, range: 14.0, attackCooldown: 1.55, speed: 4.6, los: 32, isMythic: true, isGod: true, isMajorGod: true, producedAt: 'temple' },
+    poseidon: { kind: 'poseidon', name: 'Nü Wa — Criadora Sagrada', role: 'Deusa Maior Chinesa (Era V)', minAge: 5, cost: { food: 950, gold: 1050, favor: 95 }, popCost: 16, trainTime: 20, maxHp: 7000, attack: 265, damageType: 'crush', hackArmor: 0.78, pierceArmor: 0.84, crushArmor: 0.64, bonusVsBuilding: 3.4, splashRadius: 6.2, range: 12.5, attackCooldown: 1.6, speed: 4.7, los: 31, isMythic: true, isGod: true, isMajorGod: true, producedAt: 'temple' },
+    hades: { kind: 'hades', name: 'Shennong — Sábio Celestial', role: 'Deus Maior Chinês (Era V)', minAge: 5, cost: { food: 950, gold: 1050, favor: 95 }, popCost: 16, trainTime: 20, maxHp: 6900, attack: 260, damageType: 'pierce', hackArmor: 0.76, pierceArmor: 0.86, crushArmor: 0.62, bonusVsBuilding: 3.0, splashRadius: 6.0, range: 13.5, attackCooldown: 1.5, speed: 4.5, los: 31, isMythic: true, isGod: true, isMajorGod: true, producedAt: 'temple' },
+    atena: { kind: 'atena', name: 'Xuannü — Estrategista Celeste', role: 'Deusa Menor (Era V)', minAge: 5, cost: { food: 650, gold: 700, favor: 65 }, popCost: 14, trainTime: 16, maxHp: 5200, attack: 215, damageType: 'hack', hackArmor: 0.74, pierceArmor: 0.82, crushArmor: 0.58, bonusVsBuilding: 2.8, splashRadius: 5.0, range: 10.5, attackCooldown: 1.55, speed: 4.5, los: 28, isMythic: true, isGod: true, producedAt: 'temple' },
+    ares: { kind: 'ares', name: 'Chiyou — Deus da Guerra', role: 'Deus Menor (Era V)', minAge: 5, cost: { food: 680, gold: 680, favor: 65 }, popCost: 14, trainTime: 16, maxHp: 5400, attack: 230, damageType: 'crush', hackArmor: 0.75, pierceArmor: 0.78, crushArmor: 0.60, bonusVsBuilding: 3.1, splashRadius: 5.2, range: 9.5, attackCooldown: 1.55, speed: 4.6, los: 27, isMythic: true, isGod: true, producedAt: 'temple' },
+    hermes: { kind: 'hermes', name: 'Gonggong — Senhor das Águas', role: 'Deus Menor (Era V)', minAge: 5, cost: { food: 620, gold: 680, favor: 62 }, popCost: 14, trainTime: 15, maxHp: 4800, attack: 205, damageType: 'pierce', hackArmor: 0.70, pierceArmor: 0.80, crushArmor: 0.55, bonusVsBuilding: 2.6, splashRadius: 4.6, range: 12.5, attackCooldown: 1.35, speed: 5.6, los: 30, isMythic: true, isGod: true, producedAt: 'temple' },
+    apolo: { kind: 'apolo', name: 'Huangdi — Imperador Amarelo', role: 'Deus Menor (Era V)', minAge: 5, cost: { food: 640, gold: 720, favor: 65 }, popCost: 14, trainTime: 16, maxHp: 4900, attack: 210, damageType: 'pierce', hackArmor: 0.68, pierceArmor: 0.82, crushArmor: 0.55, bonusVsBuilding: 2.8, splashRadius: 4.8, range: 14.5, attackCooldown: 1.45, speed: 4.7, los: 30, isMythic: true, isGod: true, producedAt: 'temple' },
+    dionisio: { kind: 'dionisio', name: 'Houtu — Guardiã da Terra', role: 'Deus Menor (Era V)', minAge: 5, cost: { food: 650, gold: 690, favor: 64 }, popCost: 14, trainTime: 16, maxHp: 5050, attack: 205, damageType: 'crush', hackArmor: 0.72, pierceArmor: 0.78, crushArmor: 0.56, bonusVsBuilding: 2.7, splashRadius: 5.0, range: 11.0, attackCooldown: 1.5, speed: 4.6, los: 28, isMythic: true, isGod: true, producedAt: 'temple' },
+    afrodite: { kind: 'afrodite', name: 'Chang’e — Deusa Lunar', role: 'Deus Menor (Era V)', minAge: 5, cost: { food: 630, gold: 710, favor: 64 }, popCost: 14, trainTime: 16, maxHp: 4950, attack: 200, damageType: 'pierce', hackArmor: 0.70, pierceArmor: 0.80, crushArmor: 0.56, bonusVsBuilding: 2.6, splashRadius: 5.0, range: 12.5, attackCooldown: 1.45, speed: 4.8, los: 29, isMythic: true, isGod: true, producedAt: 'temple' },
+    hefesto: { kind: 'hefesto', name: 'Zhurong — Deus do Fogo', role: 'Deus Menor (Era V)', minAge: 5, cost: { food: 660, gold: 740, favor: 66 }, popCost: 14, trainTime: 16.5, maxHp: 5500, attack: 225, damageType: 'crush', hackArmor: 0.76, pierceArmor: 0.82, crushArmor: 0.62, bonusVsBuilding: 3.4, splashRadius: 5.2, range: 10.0, attackCooldown: 1.65, speed: 4.3, los: 27, isMythic: true, isGod: true, producedAt: 'temple' },
+    artemis: { kind: 'artemis', name: 'Ao Kuang — Dragão dos Mares', role: 'Deus Menor (Era V)', minAge: 5, cost: { food: 640, gold: 700, favor: 64 }, popCost: 14, trainTime: 16, maxHp: 4900, attack: 215, damageType: 'pierce', hackArmor: 0.70, pierceArmor: 0.82, crushArmor: 0.55, bonusVsBuilding: 2.8, splashRadius: 4.8, range: 14.5, attackCooldown: 1.4, speed: 5.0, los: 30, isMythic: true, isGod: true, producedAt: 'temple' },
   },
 };
 
@@ -4961,6 +5362,52 @@ export interface SelectionSummary {
   heroPromoteCost?: ResourceCost;
   selectedCounts?: { kind: UnitKind; name: string; count: number }[];
   voiceLine?: UnitVoiceLineInfo;
+  stance?: CombatStance;
+  autoScout?: boolean;
+  isNaval?: boolean;
+  isTransport?: boolean;
+  cargoCount?: number;
+  cargoMax?: number;
+  counterTags?: string[];
+  damageType?: DamageType;
+}
+
+export interface CampaignObjectiveHud {
+  id: string;
+  label: string;
+  done: boolean;
+  progressText?: string;
+}
+
+export interface CampaignDialogueHud {
+  speaker: string;
+  text: string;
+}
+
+export interface CampaignMissionSnapshot {
+  scenarioId: string;
+  title: string;
+  stageIndex: number;
+  totalStages: number;
+  objectives: CampaignObjectiveHud[];
+  dialogue: CampaignDialogueHud | null;
+}
+
+export interface FactionScoreEntry {
+  slotIndex: number;
+  label: string;
+  teamIndex: 1 | 2;
+  team: TeamId;
+  pantheon: PantheonId;
+  majorGod: string;
+  colorHex: string;
+  crestId: string;
+  age: AgeLevel;
+  score: number;
+  isHuman: boolean;
+  isSelf: boolean;
+  defeated: boolean;
+  aiPersonality?: AiPersonality;
 }
 
 export interface TeamScoreBreakdown {
@@ -5065,6 +5512,12 @@ export interface GameHudSnapshot {
   playerColorHex?: number;
   playerCrestId?: string;
   multiplayerRoster?: MultiplayerMatchRoster;
+  villagerPriority?: VillagerPriorityPreset;
+  controlGroups?: { group: number; count: number }[];
+  campaignMissionState?: CampaignMissionSnapshot | null;
+  factionScores?: FactionScoreEntry[];
+  aiPersonality?: AiPersonality;
+  campaignScenarioId?: string;
 }
 
 export interface MatchStartOptions {
@@ -5074,6 +5527,9 @@ export interface MatchStartOptions {
   minorGod?: string;
   majorGodName?: string;
   scenarioTitle?: string;
+  campaignScenarioId?: string;
+  aiPersonality?: AiPersonality;
+  matchSeed?: number;
   gameSpeed?: number;
   gameType?: GameTypeId;
   visibilityMode?: VisibilityMode;

@@ -3,6 +3,8 @@ import { GameHUD } from './components/GameHUD';
 import { TitleScreen } from './components/TitleScreen';
 import { soundEngine } from './game/audio';
 import { AoMEngine } from './game/engine';
+import { multiplayerClient } from './game/multiplayerClient';
+import { ChatMessage } from './game/multiplayerTypes';
 import {
   DEFAULT_GAME_OPTIONS,
   DifficultyId,
@@ -16,9 +18,11 @@ import {
 export default function App() {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const engineRef = useRef<AoMEngine | null>(null);
+  const mpCleanupRef = useRef<(() => void) | null>(null);
 
   const [phase, setPhase] = useState<'title' | 'playing' | 'paused' | 'victory' | 'defeat'>('title');
   const [hudSnapshot, setHudSnapshot] = useState<GameHudSnapshot | null>(null);
+  const [inMatchMessages, setInMatchMessages] = useState<ChatMessage[]>([]);
   const [muted, setMuted] = useState(false);
   const [fps, setFps] = useState(60);
   const [options, setOptions] = useState<GameOptionsConfig>(() => {
@@ -77,6 +81,19 @@ export default function App() {
     } catch {}
   }, [options]);
 
+  useEffect(() => {
+    const unsub = multiplayerClient.subscribe((st) => {
+      setInMatchMessages(st.inMatchMessages);
+    });
+    return () => {
+      unsub();
+      if (mpCleanupRef.current) {
+        mpCleanupRef.current();
+        mpCleanupRef.current = null;
+      }
+    };
+  }, []);
+
   const handleStartMatch = (
     pantheon: PantheonId,
     difficulty: DifficultyId,
@@ -85,6 +102,10 @@ export default function App() {
     extras?: MatchStartOptions
   ) => {
     if (!containerRef.current) return;
+    if (mpCleanupRef.current) {
+      mpCleanupRef.current();
+      mpCleanupRef.current = null;
+    }
     if (engineRef.current) {
       engineRef.current.dispose();
       engineRef.current = null;
@@ -101,6 +122,15 @@ export default function App() {
     );
 
     engineRef.current = engine;
+    if (extras?.multiplayerRoster) {
+      engine.setOnMultiplayerCommand((cmd) => multiplayerClient.sendMatchCommand(cmd));
+      mpCleanupRef.current = multiplayerClient.onRemoteCommand((packet) => {
+        engine.applyRemoteCommand(packet.command);
+      });
+    } else {
+      engine.setOnMultiplayerCommand(null);
+    }
+
     setLastPantheon(pantheon);
     try {
       localStorage.setItem('aom_last_pantheon', pantheon);
@@ -157,7 +187,12 @@ export default function App() {
   };
 
   const handleResign = () => {
+    if (mpCleanupRef.current) {
+      mpCleanupRef.current();
+      mpCleanupRef.current = null;
+    }
     if (engineRef.current) {
+      engineRef.current.setOnMultiplayerCommand(null);
       engineRef.current.resignMatch();
       engineRef.current.dispose();
       engineRef.current = null;
@@ -242,9 +277,31 @@ export default function App() {
           onOrderPrayTemple={(templeId) => engineRef.current?.orderVillagersToPrayAtTemple(templeId)}
           onOrderEmpowerMonument={(buildingId) => engineRef.current?.orderEmpowerMonument(buildingId)}
           onSpreadOracles={() => engineRef.current?.orderOraclesToSpread()}
+          inMatchMessages={inMatchMessages}
+          onSendMatchChat={(channel, text) => multiplayerClient.sendMatchChat(text, channel)}
+          onSendTribute={(slotIdx, res, amt) => engineRef.current?.sendAllyTribute(slotIdx, res, amt)}
+          onSetVillagerPriority={(preset) => engineRef.current?.setVillagerPriority(preset)}
+          onToggleAutoScout={() => engineRef.current?.toggleAutoScout()}
+          onSetUnitStance={(stance) => engineRef.current?.setSelectedStance(stance)}
+          onSelectControlGroup={(group, forceFocus) => engineRef.current?.selectControlGroup(group, forceFocus)}
+          onAssignControlGroup={(group) => engineRef.current?.assignControlGroup(group)}
+          onEmbarkTransport={(shipId) => engineRef.current?.embarkSelectedIntoTransport(shipId)}
+          onDisembarkTransport={(shipId) => engineRef.current?.disembarkTransport(shipId)}
           onRestart={() => {
             if (hudSnapshot) {
-              handleStartMatch(hudSnapshot.pantheon, hudSnapshot.difficulty, hudSnapshot.mapId, hudSnapshot.revealedMap);
+              handleStartMatch(hudSnapshot.pantheon, hudSnapshot.difficulty, hudSnapshot.mapId, hudSnapshot.revealedMap, {
+                aiPersonality: hudSnapshot.aiPersonality,
+                campaignScenarioId: hudSnapshot.campaignScenarioId,
+                scenarioTitle: hudSnapshot.scenarioTitle,
+                enemyPantheon: hudSnapshot.enemyPantheon,
+                majorGodName: hudSnapshot.majorGodName,
+                gameType: hudSnapshot.gameType,
+                visibilityMode: hudSnapshot.visibilityMode,
+                worldSize: hudSnapshot.worldSize,
+                dayNightCycle: hudSnapshot.dayNightCycle,
+                titansEnabled: hudSnapshot.titansEnabled,
+                gameSpeed: options.gameSpeed,
+              });
             }
           }}
           onReturnTitle={handleResign}

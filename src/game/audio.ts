@@ -84,13 +84,13 @@ export const MUSIC_TRACKS: Record<string, MusicTrackSpec> = {
     bass: [0, -1, -1, 0, 4, -1, -1, 4, 2, -1, -1, 2, 4, -1, 0, -1],
   },
 
-  // Temas Exclusivos por Civilização
+  // Temas Exclusivos por Civilização (3 músicas por panteão jogável)
   greek_to_me: {
     id: 'greek_to_me',
     title: 'Greek to Me',
     category: 'civilization',
     pantheon: 'greek',
-    subtitle: 'Tema Grego — Orquestral Épico Mediterrâneo',
+    subtitle: 'Tema Grego I — Orquestral Épico Mediterrâneo',
     bpm: 112,
     rootHz: 220.0,
     scale: [0, 2, 3, 5, 7, 9, 10, 12, 14, 15, 17, 19],
@@ -101,12 +101,44 @@ export const MUSIC_TRACKS: Record<string, MusicTrackSpec> = {
     arp: [0, 2, 4, 7, 4, 2, 0, 4, 0, 3, 5, 7, 5, 3, 2, 0],
     bass: [0, -1, 0, 4, 2, -1, 2, 4, 3, -1, 4, -1, 0, -1, 4, -1],
   },
+  olympus_dawn: {
+    id: 'olympus_dawn',
+    title: 'Alvorada do Olimpo',
+    category: 'civilization',
+    pantheon: 'greek',
+    subtitle: 'Tema Grego II — Lira Dourada do Monte Olimpo',
+    bpm: 98,
+    rootHz: 246.94,
+    scale: [0, 2, 4, 5, 7, 9, 11, 12, 14, 16, 19],
+    leadWave: 'sine',
+    bassWave: 'triangle',
+    percussionStyle: 'orchestral',
+    melody: [0, 2, 4, 7, 5, 4, 2, -1, 4, 5, 7, 9, 7, 5, 4, 2],
+    arp: [0, 4, 7, 9, 7, 4, 0, 4, 2, 5, 7, 9, 7, 5, 2, 0],
+    bass: [0, -1, -1, 4, 2, -1, 3, -1, 4, -1, 2, -1, 0, -1, 4, -1],
+  },
+  aegean_trireme: {
+    id: 'aegean_trireme',
+    title: 'Trirremes do Egeu',
+    category: 'civilization',
+    pantheon: 'greek',
+    subtitle: 'Tema Grego III — Marcha Marítima de Poseidon',
+    bpm: 118,
+    rootHz: 196.0,
+    scale: [0, 2, 3, 5, 7, 8, 10, 12, 14, 15, 19],
+    leadWave: 'sawtooth',
+    bassWave: 'triangle',
+    percussionStyle: 'orchestral',
+    melody: [0, 3, 4, 5, 4, 3, 2, 0, 4, 5, 7, 5, 4, 2, 0, -1],
+    arp: [0, 2, 4, 5, 4, 2, 0, 3, 2, 4, 7, 4, 2, 3, 0, -1],
+    bass: [0, 0, -1, 4, 2, -1, 3, -1, 0, -1, 4, -1, 5, 4, 2, 0],
+  },
   nd_nile: {
     id: 'nd_nile',
-    title: 'N. D. Nile',
+    title: 'Templos de Heliópolis',
     category: 'civilization',
     pantheon: 'egyptian',
-    subtitle: 'Tema Egípcio — Cordas e Percussão do Nilo',
+    subtitle: 'Tema Egípcio · Cordas e Percussão de Heliópolis',
     bpm: 108,
     rootHz: 207.65,
     scale: [0, 1, 4, 5, 7, 8, 10, 12, 13, 16, 17, 19],
@@ -134,22 +166,6 @@ export const MUSIC_TRACKS: Record<string, MusicTrackSpec> = {
     bass: [0, -1, 1, -1, 4, -1, 1, -1, 0, -1, 4, -1, 1, -1, 0, -1],
     audioUrl: '/assets/aistudio/Serenidade_do_Nilo_8e8ce22d.mp3',
   },
-  vales_de_memfis: {
-    id: 'vales_de_memfis',
-    title: 'Vales de Mênfis',
-    category: 'civilization',
-    pantheon: 'egyptian',
-    subtitle: 'Tema Egípcio · Vales e Pirâmides de Mênfis',
-    bpm: 104,
-    rootHz: 207.65,
-    scale: [0, 1, 4, 5, 7, 8, 10, 12, 13, 16, 17, 19],
-    leadWave: 'sawtooth',
-    bassWave: 'triangle',
-    percussionStyle: 'nile',
-    melody: [4, 5, 7, 8, 7, 5, 4, 1, 0, 1, 4, 5, 4, 1, 0, -1],
-    arp: [0, 1, 4, 7, 8, 7, 4, 1, 0, 4, 5, 7, 5, 4, 1, 0],
-    bass: [0, 0, -1, 4, 1, -1, 0, -1, 4, -1, 1, -1, 0, -1, 1, -1],
-  },
   the_niles_quiet_breath: {
     id: 'the_niles_quiet_breath',
     title: "The Nile's Quiet Breath",
@@ -172,7 +188,7 @@ export const MUSIC_TRACKS: Record<string, MusicTrackSpec> = {
     title: 'Of Norse Not!',
     category: 'civilization',
     pantheon: 'norse',
-    subtitle: 'Tema Nórdico — Metais Pesados e Tambores de Midgard',
+    subtitle: 'Tema Nórdico I — Metais Pesados e Tambores de Midgard',
     bpm: 104,
     rootHz: 164.81,
     scale: [0, 2, 3, 5, 7, 8, 10, 12, 14, 15, 19],
@@ -183,12 +199,44 @@ export const MUSIC_TRACKS: Record<string, MusicTrackSpec> = {
     arp: [0, 4, 7, 4, 0, 3, 7, 3, 0, 5, 7, 5, 2, 4, 0, -1],
     bass: [0, 0, -1, 0, 3, -1, 2, -1, 0, 0, -1, 0, 4, -1, 2, -1],
   },
+  valhalla_horns: {
+    id: 'valhalla_horns',
+    title: 'Trompas de Valhalla',
+    category: 'civilization',
+    pantheon: 'norse',
+    subtitle: 'Tema Nórdico II — Brado dos Heróis de Asgard',
+    bpm: 112,
+    rootHz: 174.61,
+    scale: [0, 2, 3, 5, 7, 8, 10, 12, 14, 15, 19],
+    leadWave: 'sawtooth',
+    bassWave: 'triangle',
+    percussionStyle: 'nordic',
+    melody: [0, 4, 5, 7, 5, 4, 2, 0, 3, 4, 5, 7, 4, 2, 0, -1],
+    arp: [0, 3, 7, 3, 0, 4, 7, 4, 2, 5, 7, 5, 0, 3, 7, 3],
+    bass: [0, -1, 0, 4, 2, -1, 3, -1, 0, -1, 4, -1, 2, -1, 0, -1],
+  },
+  fjord_march: {
+    id: 'fjord_march',
+    title: 'Neve nos Fiordes',
+    category: 'civilization',
+    pantheon: 'norse',
+    subtitle: 'Tema Nórdico III — Ecos da Tempestade Invernal',
+    bpm: 94,
+    rootHz: 146.83,
+    scale: [0, 2, 3, 5, 7, 8, 10, 12, 14, 15],
+    leadWave: 'triangle',
+    bassWave: 'sine',
+    percussionStyle: 'nordic',
+    melody: [4, -1, 3, 2, 0, -1, 2, 4, 5, 4, 3, 2, 0, -1, -1, -1],
+    arp: [0, 3, 5, 7, 5, 3, 0, 4, 1, 3, 5, 7, 5, 3, 2, 0],
+    bass: [0, -1, -1, 0, 3, -1, -1, 2, 4, -1, -1, 2, 0, -1, -1, 0],
+  },
   hotlantis: {
     id: 'hotlantis',
     title: 'Hotlantis',
     category: 'civilization',
     pantheon: 'atlantean',
-    subtitle: 'Tema Atlante (The Titans) — Atmosfera Mística de Oricalco',
+    subtitle: 'Tema Atlante I — Atmosfera Mística de Oricalco',
     bpm: 110,
     rootHz: 246.94,
     scale: [0, 2, 4, 6, 7, 9, 11, 12, 14, 16, 18, 19],
@@ -199,12 +247,44 @@ export const MUSIC_TRACKS: Record<string, MusicTrackSpec> = {
     arp: [0, 4, 6, 7, 9, 7, 6, 4, 2, 4, 7, 9, 11, 9, 7, 4],
     bass: [0, -1, -1, 4, 3, -1, 2, -1, 0, -1, 4, -1, 5, -1, 4, -1],
   },
+  orichalcum_tides: {
+    id: 'orichalcum_tides',
+    title: 'Marés de Oricalco',
+    category: 'civilization',
+    pantheon: 'atlantean',
+    subtitle: 'Tema Atlante II — Cristais da Nova Atlântida',
+    bpm: 102,
+    rootHz: 261.63,
+    scale: [0, 2, 4, 6, 7, 9, 11, 12, 14, 16, 18],
+    leadWave: 'sine',
+    bassWave: 'triangle',
+    percussionStyle: 'mystic',
+    melody: [0, 4, 6, 7, 6, 4, 2, 0, 2, 4, 6, 9, 7, 6, 4, -1],
+    arp: [0, 2, 4, 6, 7, 9, 7, 6, 4, 2, 4, 7, 9, 7, 4, 2],
+    bass: [0, -1, 2, -1, 4, -1, 3, -1, 0, -1, 4, -1, 2, -1, 0, -1],
+  },
+  kronos_echo: {
+    id: 'kronos_echo',
+    title: 'Ecos de Cronos',
+    category: 'civilization',
+    pantheon: 'atlantean',
+    subtitle: 'Tema Atlante III — Vórtice Temporal dos Titãs',
+    bpm: 116,
+    rootHz: 220.0,
+    scale: [0, 2, 4, 6, 7, 9, 11, 12, 14, 16],
+    leadWave: 'sawtooth',
+    bassWave: 'triangle',
+    percussionStyle: 'mystic',
+    melody: [4, 6, 7, 9, 7, 6, 4, 2, 0, 4, 6, 7, 6, 4, 2, 0],
+    arp: [0, 4, 6, 9, 7, 4, 2, 6, 0, 3, 6, 9, 7, 4, 2, 0],
+    bass: [0, 0, -1, 4, 3, -1, 2, -1, 0, -1, 4, -1, 5, 4, 2, 0],
+  },
   kuafu_panda: {
     id: 'kuafu_panda',
-    title: 'Kuafu Panda',
+    title: 'Pilares Imortais',
     category: 'civilization',
     pantheon: 'chinese',
-    subtitle: 'Tema Chinês — Pentatônica Imperial e Guzheng',
+    subtitle: 'Tema Chinês I — Pentatônica Imperial e Guzheng',
     bpm: 106,
     rootHz: 261.63,
     scale: [0, 2, 4, 7, 9, 12, 14, 16, 19, 21],
@@ -214,6 +294,38 @@ export const MUSIC_TRACKS: Record<string, MusicTrackSpec> = {
     melody: [0, 2, 4, -1, 7, 5, 4, 2, 3, 4, 5, -1, 4, 2, 0, -1],
     arp: [0, 3, 4, 7, 5, 4, 3, 0, 2, 4, 5, 7, 5, 4, 2, 0],
     bass: [0, -1, 3, -1, 4, -1, 0, -1, 2, -1, 4, -1, 0, -1, 3, -1],
+  },
+  immortal_pillars: {
+    id: 'immortal_pillars',
+    title: 'Jardins de Nü Wa',
+    category: 'civilization',
+    pantheon: 'chinese',
+    subtitle: 'Tema Chinês II — Flauta de Jade e Sinos Celestes',
+    bpm: 94,
+    rootHz: 293.66,
+    scale: [0, 2, 4, 7, 9, 12, 14, 16, 19, 21],
+    leadWave: 'sine',
+    bassWave: 'sine',
+    percussionStyle: 'eastern',
+    melody: [4, -1, 3, 2, 0, 2, 4, -1, 5, 4, 3, 2, 0, -1, 2, 0],
+    arp: [0, 2, 4, 7, 9, 7, 4, 2, 0, 2, 4, 5, 4, 2, 0, -1],
+    bass: [0, -1, -1, 4, 2, -1, 0, -1, 3, -1, 4, -1, 0, -1, -1, 0],
+  },
+  dragon_river: {
+    id: 'dragon_river',
+    title: 'Fúria do Rio Amarelo',
+    category: 'civilization',
+    pantheon: 'chinese',
+    subtitle: 'Tema Chinês III — Tambores de Guerra de Fu Xi',
+    bpm: 118,
+    rootHz: 220.0,
+    scale: [0, 2, 4, 7, 9, 12, 14, 16, 19],
+    leadWave: 'sawtooth',
+    bassWave: 'triangle',
+    percussionStyle: 'eastern',
+    melody: [0, 4, 5, 7, 5, 4, 2, 0, 2, 4, 7, 5, 4, 2, 0, -1],
+    arp: [0, 4, 7, 4, 0, 2, 4, 7, 2, 4, 5, 7, 4, 2, 0, -1],
+    bass: [0, 0, -1, 4, 2, -1, 3, -1, 0, -1, 4, -1, 5, 4, 2, 0],
   },
   nori_grets: {
     id: 'nori_grets',
@@ -528,7 +640,7 @@ export const MATCH_MUSIC_PLAYLIST = [
 
 export const PANTHEON_THEME_TRACK: Record<PantheonId, string> = {
   greek: 'greek_to_me',
-  egyptian: 'nd_nile',
+  egyptian: 'serenidade_do_nilo',
   norse: 'of_norse_not',
   atlantean: 'hotlantis',
   chinese: 'kuafu_panda',
@@ -540,6 +652,22 @@ export const PANTHEON_THEME_TRACK: Record<PantheonId, string> = {
   babylonian: 'babylon_ziggurat',
   lakota: 'lakota_wind',
   jotunn: 'jotunn_frost',
+};
+
+export const PANTHEON_TRACK_POOLS: Record<PantheonId, string[]> = {
+  greek: ['greek_to_me', 'olympus_dawn', 'aegean_trireme'],
+  egyptian: ['serenidade_do_nilo', 'the_niles_quiet_breath', 'nd_nile'],
+  norse: ['of_norse_not', 'valhalla_horns', 'fjord_march'],
+  atlantean: ['hotlantis', 'orichalcum_tides', 'kronos_echo'],
+  chinese: ['kuafu_panda', 'immortal_pillars', 'dragon_river'],
+  japanese: ['nori_grets'],
+  aztec: ['aztec_sun'],
+  roman: ['roman_legion'],
+  eldritch: ['eldritch_abyss'],
+  celtic: ['celtic_mist'],
+  babylonian: ['babylon_ziggurat'],
+  lakota: ['lakota_wind'],
+  jotunn: ['jotunn_frost'],
 };
 
 export interface CulturalVoiceEntry {
@@ -2377,14 +2505,16 @@ class SoundEngine {
     }
   }
 
+  private pickPantheonTrack(pantheon: PantheonId, avoidCurrent = false): string {
+    const pool = PANTHEON_TRACK_POOLS[pantheon] ?? [PANTHEON_THEME_TRACK[pantheon] ?? 'greek_to_me'];
+    const filtered = avoidCurrent && pool.length > 1 ? pool.filter((id) => id !== this.currentTrackId) : pool;
+    return filtered[Math.floor(Math.random() * filtered.length)] ?? pool[0];
+  }
+
   public previewPantheonTheme(pantheon: PantheonId) {
     this.musicPantheon = pantheon;
     if (this.musicScene === 'title') {
-      let civTrackId = PANTHEON_THEME_TRACK[pantheon] ?? 'greek_to_me';
-      if (pantheon === 'egyptian') {
-        const egyptianTracks = ['serenidade_do_nilo', 'the_niles_quiet_breath', 'nd_nile', 'vales_de_memfis'];
-        civTrackId = egyptianTracks[Math.floor(Math.random() * egyptianTracks.length)];
-      }
+      const civTrackId = this.pickPantheonTrack(pantheon, true);
       this.switchMusicTrack(civTrackId);
     }
   }
@@ -2397,22 +2527,19 @@ class SoundEngine {
     this.campaignPinnedTrackId = null;
     this.matchPlaylistIdx = Math.floor(Math.random() * MATCH_MUSIC_PLAYLIST.length);
 
-    let initialTrackId = PANTHEON_THEME_TRACK[pantheon] ?? 'greek_to_me';
-    if (pantheon === 'egyptian') {
-      const egyptianTracks = ['serenidade_do_nilo', 'the_niles_quiet_breath', 'nd_nile', 'vales_de_memfis'];
-      initialTrackId = egyptianTracks[Math.floor(Math.random() * egyptianTracks.length)];
-    }
+    let initialTrackId = this.pickPantheonTrack(pantheon, false);
     if (scenarioTitle) {
       const lower = scenarioTitle.toLowerCase();
       if (lower.includes('titã') || lower.includes('atlânt')) {
-        initialTrackId = 'hotlantis';
+        initialTrackId = this.pickPantheonTrack('atlantean', false);
       } else if (lower.includes('egito') || lower.includes('nilo')) {
-        const egyptianTracks = ['serenidade_do_nilo', 'the_niles_quiet_breath', 'nd_nile', 'vales_de_memfis'];
-        initialTrackId = egyptianTracks[Math.floor(Math.random() * egyptianTracks.length)];
+        initialTrackId = this.pickPantheonTrack('egyptian', false);
       } else if (lower.includes('nórdic') || lower.includes('midgard') || lower.includes('gigante')) {
-        initialTrackId = 'of_norse_not';
+        initialTrackId = this.pickPantheonTrack('norse', false);
+      } else if (lower.includes('chin') || lower.includes('pilar')) {
+        initialTrackId = this.pickPantheonTrack('chinese', false);
       } else if (lower.includes('prólogo') || lower.includes('olimp')) {
-        initialTrackId = 'greek_to_me';
+        initialTrackId = this.pickPantheonTrack('greek', false);
       }
       this.campaignPinnedTrackId = initialTrackId;
     }
@@ -2444,27 +2571,32 @@ class SoundEngine {
   }
 
   public skipToNextMusicTrack() {
+    const pool = PANTHEON_TRACK_POOLS[this.musicPantheon] ?? [PANTHEON_THEME_TRACK[this.musicPantheon] ?? 'greek_to_me'];
     if (this.musicScene === 'match') {
       this.campaignPinnedTrackId = null;
-      if (this.musicPantheon === 'egyptian' && Math.random() < 0.65) {
-        const egyptianTracks = ['serenidade_do_nilo', 'the_niles_quiet_breath', 'nd_nile', 'vales_de_memfis'];
-        const randomTrack = egyptianTracks[Math.floor(Math.random() * egyptianTracks.length)];
-        this.switchMusicTrack(randomTrack);
-      } else {
-        const nextId = MATCH_MUSIC_PLAYLIST[this.matchPlaylistIdx % MATCH_MUSIC_PLAYLIST.length];
-        this.matchPlaylistIdx = (this.matchPlaylistIdx + 1) % MATCH_MUSIC_PLAYLIST.length;
-        this.switchMusicTrack(nextId);
+      const curIdx = pool.indexOf(this.currentTrackId);
+      if (curIdx >= 0 && pool.length > 1) {
+        const nextIdx = (curIdx + 1) % pool.length;
+        // Cycle through all 3 deity tracks first, then mix with shared match tracks occasionally
+        if (nextIdx !== 0 || Math.random() < 0.55) {
+          this.switchMusicTrack(pool[nextIdx]);
+          return;
+        }
+      } else if (Math.random() < 0.7) {
+        this.switchMusicTrack(this.pickPantheonTrack(this.musicPantheon, true));
+        return;
       }
+      const nextId = MATCH_MUSIC_PLAYLIST[this.matchPlaylistIdx % MATCH_MUSIC_PLAYLIST.length];
+      this.matchPlaylistIdx = (this.matchPlaylistIdx + 1) % MATCH_MUSIC_PLAYLIST.length;
+      this.switchMusicTrack(nextId);
     } else if (this.musicScene === 'title') {
-      if (this.musicPantheon === 'egyptian') {
-        const egyptianTracks = ['serenidade_do_nilo', 'the_niles_quiet_breath', 'nd_nile', 'vales_de_memfis'];
-        const curIdx = egyptianTracks.indexOf(this.currentTrackId);
-        const nextIdx = curIdx >= 0 ? (curIdx + 1) % egyptianTracks.length : 0;
-        this.switchMusicTrack(egyptianTracks[nextIdx]);
+      const curIdx = pool.indexOf(this.currentTrackId);
+      if (pool.length > 1) {
+        const nextIdx = curIdx >= 0 ? (curIdx + 1) % pool.length : 0;
+        this.switchMusicTrack(pool[nextIdx]);
       } else {
         this.titleCycleIndex = (this.titleCycleIndex + 1) % 2;
-        const civTrack = PANTHEON_THEME_TRACK[this.musicPantheon] ?? 'greek_to_me';
-        this.switchMusicTrack(this.titleCycleIndex === 0 ? 'cat_mittens' : civTrack);
+        this.switchMusicTrack(this.titleCycleIndex === 0 ? 'cat_mittens' : pool[0]);
       }
     }
   }
@@ -2642,6 +2774,11 @@ class SoundEngine {
       this.skipToNextMusicTrack();
     } else if (this.musicScene === 'title' && elapsedTrackSec >= 36) {
       this.skipToNextMusicTrack();
+    }
+
+    if (this.bgAudioElement) {
+      // Skip procedural synthesizer notes while an external MP3 soundtrack is playing
+      return;
     }
 
     const track = MUSIC_TRACKS[this.currentTrackId] ?? MUSIC_TRACKS.cat_mittens;

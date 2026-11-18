@@ -27,6 +27,8 @@ import {
 } from 'lucide-react';
 import { soundEngine } from '../game/audio';
 import {
+  AI_PERSONALITY_LABELS,
+  AiPersonality,
   MP_COLORS,
   MP_CRESTS,
   MP_FORMATS,
@@ -175,6 +177,23 @@ export function MultiplayerOnlineHub({
     soundEngine.unlock();
     soundEngine.playSelect();
 
+    const factions =
+      payload.roster.factions ??
+      payload.slots
+        .filter((s) => s.kind === 'human' || s.kind === 'ai')
+        .map((s) => ({
+          slotIndex: s.slotIndex,
+          label: s.playerName,
+          teamIndex: s.team,
+          pantheon: s.pantheon,
+          majorGod: s.majorGodName,
+          colorHex: getMpColorById(s.colorId).css,
+          crestId: s.crestId,
+          isHuman: s.kind === 'human',
+          isSelf: s.slotIndex === payload.roster.playerSlotIndex,
+          aiPersonality: s.aiPersonality ?? 'balanced',
+        }));
+
     onStartMatch(
       mySlot.pantheon,
       rivalSlot?.aiDifficulty ?? options.defaultDifficulty ?? 'normal',
@@ -185,6 +204,8 @@ export function MultiplayerOnlineHub({
         startingResources: payload.settings.startingResources,
         enemyPantheon,
         majorGodName: mySlot.majorGodName,
+        aiPersonality: rivalSlot?.aiPersonality ?? 'balanced',
+        matchSeed: payload.matchSeed,
         gameType: payload.settings.gameType,
         visibilityMode: payload.settings.visibilityMode,
         worldSize: payload.settings.worldSize,
@@ -195,7 +216,11 @@ export function MultiplayerOnlineHub({
         gameSpeed: options.gameSpeed,
         playerColorHex: chosenColor.hex,
         playerCrestId: mySlot.crestId,
-        multiplayerRoster: payload.roster,
+        multiplayerRoster: {
+          ...payload.roster,
+          matchSeed: payload.matchSeed,
+          factions,
+        },
       }
     );
   };
@@ -699,22 +724,41 @@ export function MultiplayerOnlineHub({
                 </button>
 
                 {slot.kind === 'ai' && isHost && (
-                  <select
-                    aria-label="Dificuldade IA"
-                    value={slot.aiDifficulty}
-                    onChange={(e) =>
-                      mp.hostSetSlot(slot.slotIndex, 'config_ai', {
-                        aiDifficulty: e.target.value as DifficultyId,
-                      })
-                    }
-                    className="rounded border border-sky-400/30 bg-[#0b101b] px-2 py-1 text-[11px] text-sky-200 focus:border-[#f3d27a] focus:outline-none"
-                  >
-                    {AI_DIFFS.map((d) => (
-                      <option key={d.id} value={d.id}>
-                        IA: {d.label}
-                      </option>
-                    ))}
-                  </select>
+                  <>
+                    <select
+                      aria-label="Dificuldade IA"
+                      value={slot.aiDifficulty}
+                      onChange={(e) =>
+                        mp.hostSetSlot(slot.slotIndex, 'config_ai', {
+                          aiDifficulty: e.target.value as DifficultyId,
+                        })
+                      }
+                      className="rounded border border-sky-400/30 bg-[#0b101b] px-2 py-1 text-[11px] text-sky-200 focus:border-[#f3d27a] focus:outline-none"
+                    >
+                      {AI_DIFFS.map((d) => (
+                        <option key={d.id} value={d.id}>
+                          IA: {d.label}
+                        </option>
+                      ))}
+                    </select>
+
+                    <select
+                      aria-label="Personalidade IA"
+                      value={slot.aiPersonality ?? 'balanced'}
+                      onChange={(e) =>
+                        mp.hostSetSlot(slot.slotIndex, 'config_ai', {
+                          aiPersonality: e.target.value as AiPersonality,
+                        })
+                      }
+                      className="rounded border border-amber-400/30 bg-[#0b101b] px-2 py-1 text-[11px] text-[#fde68a] focus:border-[#f3d27a] focus:outline-none"
+                    >
+                      {(['balanced', 'aggressive', 'defensive', 'economic'] as AiPersonality[]).map((p) => (
+                        <option key={p} value={p}>
+                          {AI_PERSONALITY_LABELS[p].label}
+                        </option>
+                      ))}
+                    </select>
+                  </>
                 )}
               </>
             ) : (
@@ -728,7 +772,8 @@ export function MultiplayerOnlineHub({
                 </span>
                 {slot.kind === 'ai' && (
                   <span className="text-sky-300">
-                    ({AI_DIFFS.find((d) => d.id === slot.aiDifficulty)?.label ?? 'Normal'})
+                    ({AI_DIFFS.find((d) => d.id === slot.aiDifficulty)?.label ?? 'Normal'} ·{' '}
+                    {AI_PERSONALITY_LABELS[slot.aiPersonality ?? 'balanced'].label.split(' ')[0]})
                   </span>
                 )}
               </div>

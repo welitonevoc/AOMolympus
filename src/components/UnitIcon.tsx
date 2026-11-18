@@ -35,13 +35,15 @@ function getUnitCategory(kind: UnitKind): 'god' | 'titan' | 'myth' | 'hero' | 'n
     return 'god';
   }
   if (kind === 'titan') return 'titan';
-  if (kind === 'fishing_ship' || kind === 'war_trireme') return 'naval';
+  if (kind === 'fishing_ship' || kind === 'war_trireme' || kind === 'transport_ship') return 'naval';
   if (
     kind === 'villager' ||
     kind === 'norse_dwarf' ||
     kind === 'ox_cart' ||
     kind === 'citizen' ||
-    kind === 'llama_caravan'
+    kind === 'llama_caravan' ||
+    kind === 'chinese_peasant' ||
+    kind === 'kuafu'
   ) {
     return 'econ';
   }
@@ -59,7 +61,9 @@ function getUnitCategory(kind: UnitKind): 'god' | 'titan' | 'myth' | 'hero' | 'n
     kind === 'son_of_osiris' ||
     kind === 'hersir' ||
     kind === 'godi' ||
-    kind === 'oracle'
+    kind === 'oracle' ||
+    kind === 'nezha' ||
+    kind === 'jiang_ziya'
   ) {
     return 'hero';
   }
@@ -72,7 +76,8 @@ function getUnitCategory(kind: UnitKind): 'god' | 'titan' | 'myth' | 'hero' | 'n
     kind === 'norse_ballista' ||
     kind === 'cheiroballista' ||
     kind === 'fire_siphon' ||
-    kind === 'onager'
+    kind === 'onager' ||
+    kind === 'fire_lance'
   ) {
     return 'siege';
   }
@@ -120,7 +125,11 @@ function getUnitCategory(kind: UnitKind): 'god' | 'titan' | 'myth' | 'hero' | 'n
     kind === 'argus' ||
     kind === 'lampades' ||
     kind === 'carnivora' ||
-    kind === 'tartarian_spawn'
+    kind === 'tartarian_spawn' ||
+    kind === 'qilin' ||
+    kind === 'taotie' ||
+    kind === 'yazi' ||
+    kind === 'azure_dragon'
   ) {
     return 'myth';
   }
@@ -132,7 +141,8 @@ function getUnitCategory(kind: UnitKind): 'god' | 'titan' | 'myth' | 'hero' | 'n
     kind === 'chariot_archer' ||
     kind === 'throwing_axeman' ||
     kind === 'arcus' ||
-    kind === 'turma'
+    kind === 'turma' ||
+    kind === 'chu_ko_nu'
   ) {
     return 'ranged';
   }
@@ -143,7 +153,8 @@ function getUnitCategory(kind: UnitKind): 'god' | 'titan' | 'myth' | 'hero' | 'n
     kind === 'war_elephant' ||
     kind === 'raiding_cavalry' ||
     kind === 'jarl' ||
-    kind === 'contarius'
+    kind === 'contarius' ||
+    kind === 'tiger_cavalry'
   ) {
     return 'cavalry';
   }

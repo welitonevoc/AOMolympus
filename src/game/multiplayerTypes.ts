@@ -1,14 +1,21 @@
 import type {
   AgeLevel,
+  BuildingKind,
   DifficultyId,
+  FormationId,
   GameTypeId,
+  GodPowerId,
   MapId,
   PantheonId,
+  ResourceType,
+  TechId,
+  UnitKind,
   VisibilityMode,
   WorldSizeId,
 } from './types';
 
 export type MpFormatSize = 2 | 4 | 6 | 8 | 10 | 12;
+export type AiPersonality = 'balanced' | 'aggressive' | 'defensive' | 'economic';
 
 export interface MpColorOption {
   id: string;
@@ -58,6 +65,8 @@ export const MP_CRESTS: MpCrestOption[] = [
   { id: 'loki_serpent', name: 'Serpente de Midgard', pantheonHint: 'norse', subtitle: 'Astúcia Nórdica' },
   { id: 'kronos_hourglass', name: 'Ampulheta de Cronos', pantheonHint: 'atlantean', subtitle: 'Titã do Tempo' },
   { id: 'gaia_tree', name: 'Árvore de Gaia', pantheonHint: 'atlantean', subtitle: 'Coração Atlante' },
+  { id: 'fuxi_dragon', name: 'Dragão Imperial', pantheonHint: 'chinese', subtitle: 'Pilares Imortais' },
+  { id: 'nuwa_jade', name: 'Selo de Jade', pantheonHint: 'chinese', subtitle: 'Trigramas Sagrados' },
 ];
 
 export const MP_FORMATS: { maxPlayers: MpFormatSize; label: string; teamSize: number }[] = [
@@ -74,7 +83,15 @@ export const MP_PLAYABLE_PANTHEONS: MpPantheonGods[] = [
   { pantheon: 'egyptian', label: 'Egípcios', gods: ['Rá', 'Ísis', 'Set'] },
   { pantheon: 'norse', label: 'Nórdicos', gods: ['Odin', 'Thor', 'Loki', 'Freyr'] },
   { pantheon: 'atlantean', label: 'Atlantes', gods: ['Cronos', 'Urano', 'Gaia'] },
+  { pantheon: 'chinese', label: 'Chineses', gods: ['Fu Xi', 'Nü Wa', 'Shennong'] },
 ];
+
+export const AI_PERSONALITY_LABELS: Record<AiPersonality, { label: string; hint: string }> = {
+  balanced: { label: 'Equilibrada', hint: 'Adapta economia, exército e avanços de era ao ritmo do jogo.' },
+  aggressive: { label: 'Agressiva (Rush)', hint: 'Treina tropas cedo, assedia coletores e ataca sem trégua.' },
+  defensive: { label: 'Defensiva (Muralha)', hint: 'Ergue Torres, Muralhas e Portões protegendo a cidade até a Era Mítica.' },
+  economic: { label: 'Econômica (Boom)', hint: 'Expande Centros da Cidade, multiplica aldeões e domina Relíquias.' },
+};
 
 export function getMpColorById(colorId: string): MpColorOption {
   return MP_COLORS.find((c) => c.id === colorId) ?? MP_COLORS[0];
@@ -106,6 +123,7 @@ export interface LobbySlot {
   pantheon: PantheonId;
   majorGodName: string;
   aiDifficulty: DifficultyId;
+  aiPersonality?: AiPersonality;
   ready: boolean;
   isHost: boolean;
 }
@@ -132,6 +150,7 @@ export interface ChatMessage {
   text: string;
   timestamp: number;
   isSystem?: boolean;
+  channel?: 'all' | 'team';
 }
 
 export interface LobbyRoomState {
@@ -177,6 +196,19 @@ export interface OnlinePlayerPresence {
   roomName: string | null;
 }
 
+export interface MultiplayerMatchFaction {
+  slotIndex: number;
+  label: string;
+  teamIndex: 1 | 2;
+  pantheon: PantheonId;
+  majorGod: string;
+  colorHex: string;
+  crestId: string;
+  isHuman: boolean;
+  isSelf: boolean;
+  aiPersonality?: AiPersonality;
+}
+
 export interface MultiplayerMatchRoster {
   roomName: string;
   roomCode: string;
@@ -187,15 +219,64 @@ export interface MultiplayerMatchRoster {
   aiCount: number;
   playerTeam: 1 | 2;
   playerSlotIndex: number;
+  matchSeed?: number;
+  factions?: MultiplayerMatchFaction[];
 }
 
 export interface MultiplayerMatchPayload {
   roomId: string;
   roomCode: string;
   roomName: string;
+  matchSeed: number;
   settings: LobbyRoomSettings;
   slots: LobbySlot[];
   roster: MultiplayerMatchRoster;
+}
+
+export interface MatchGameCommand {
+  kind:
+    | 'move'
+    | 'attack_unit'
+    | 'attack_building'
+    | 'gather'
+    | 'hunt'
+    | 'farm'
+    | 'build'
+    | 'train'
+    | 'cancel_train'
+    | 'research_tech'
+    | 'advance_age'
+    | 'minor_god'
+    | 'god_power'
+    | 'stance'
+    | 'stop'
+    | 'tribute'
+    | 'embark'
+    | 'disembark'
+    | 'resign';
+  senderSlot: number;
+  seq?: number;
+  unitIds?: string[];
+  targetUnitId?: string;
+  targetBuildingId?: string;
+  nodeId?: string;
+  faunaId?: string;
+  buildingId?: string;
+  buildingKind?: BuildingKind;
+  unitKind?: UnitKind;
+  techId?: TechId;
+  age?: AgeLevel;
+  minorGodId?: string;
+  powerId?: GodPowerId;
+  x?: number;
+  z?: number;
+  formation?: FormationId;
+  index?: number;
+  stance?: 'aggressive' | 'defensive' | 'stand_ground';
+  targetSlot?: number;
+  resource?: ResourceType;
+  amount?: number;
+  shipId?: string;
 }
 
 export type ClientToServerMessage =
@@ -257,6 +338,7 @@ export type ClientToServerMessage =
       colorId?: string;
       crestId?: string;
       aiDifficulty?: DifficultyId;
+      aiPersonality?: AiPersonality;
     }
   | {
       type: 'room:update_settings';
@@ -268,6 +350,15 @@ export type ClientToServerMessage =
     }
   | {
       type: 'room:start_match';
+    }
+  | {
+      type: 'match:command';
+      command: MatchGameCommand;
+    }
+  | {
+      type: 'match:chat';
+      text: string;
+      channel?: 'all' | 'team';
     };
 
 export type ServerToClientMessage =
@@ -305,6 +396,20 @@ export type ServerToClientMessage =
       payload: MultiplayerMatchPayload;
     }
   | {
+      type: 'match:command_broadcast';
+      roomId: string;
+      senderClientId: string;
+      serverSeq: number;
+      serverTime: number;
+      command: MatchGameCommand;
+    }
+  | {
+      type: 'match:chat_message';
+      roomId: string;
+      channel: 'all' | 'team';
+      message: ChatMessage;
+    }
+  | {
       type: 'pong';
       t: number;
       serverTime: number;
@@ -313,3 +418,4 @@ export type ServerToClientMessage =
       type: 'server:error';
       message: string;
     };
+

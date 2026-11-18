@@ -13,6 +13,7 @@ import {
   getMpCrestById,
 } from './src/game/multiplayerTypes.ts';
 import type {
+  AiPersonality,
   ChatMessage,
   ClientToServerMessage,
   LobbyRoomSettings,
@@ -46,9 +47,10 @@ interface ConnectedClient {
   roomId: string | null;
 }
 
-const VALID_PANTHEONS: Set<PantheonId> = new Set(['greek', 'egyptian', 'norse', 'atlantean']);
+const VALID_PANTHEONS: Set<PantheonId> = new Set(['greek', 'egyptian', 'norse', 'atlantean', 'chinese']);
 const VALID_FORMATS: Set<MpFormatSize> = new Set([2, 4, 6, 8, 10, 12]);
 const VALID_DIFFICULTIES: Set<DifficultyId> = new Set(['easy', 'normal', 'hard', 'titan']);
+const VALID_PERSONALITIES: Set<AiPersonality> = new Set(['balanced', 'aggressive', 'defensive', 'economic']);
 const VALID_GAME_TYPES: Set<GameTypeId> = new Set(['supremacy', 'conquest', 'lightning', 'deathmatch', 'regicide']);
 const VALID_VISIBILITY: Set<VisibilityMode> = new Set(['normal', 'explored', 'revealed']);
 const VALID_WORLD_SIZES: Set<WorldSizeId> = new Set(['normal', 'large', 'giant']);
@@ -57,6 +59,7 @@ const VALID_AGES: Set<AgeLevel> = new Set([1, 2, 3, 4, 5]);
 
 const clients = new Map<string, ConnectedClient>();
 const rooms = new Map<string, LobbyRoomState>();
+const roomCommandSeq = new Map<string, number>();
 const globalMessages: ChatMessage[] = [];
 
 function sanitizeText(raw: unknown, maxLen: number, fallback = ''): string {
@@ -146,6 +149,7 @@ function createInitialSlots(maxPlayers: MpFormatSize): LobbySlot[] {
       pantheon: defaultPantheon,
       majorGodName: getDefaultGodForPantheon(defaultPantheon),
       aiDifficulty: 'normal',
+      aiPersonality: 'balanced',
       ready: false,
       isHost: false,
     });
@@ -768,12 +772,17 @@ async function startServer() {
                 msg.aiDifficulty && VALID_DIFFICULTIES.has(msg.aiDifficulty)
                   ? msg.aiDifficulty
                   : slot.aiDifficulty;
+              const nextPersonality =
+                msg.aiPersonality && VALID_PERSONALITIES.has(msg.aiPersonality)
+                  ? msg.aiPersonality
+                  : slot.aiPersonality ?? 'balanced';
               slot.kind = 'ai';
               slot.clientId = undefined;
               slot.playerName = `IA ${nextGod}`;
               slot.pantheon = nextPantheon;
               slot.majorGodName = nextGod;
               slot.aiDifficulty = nextDiff;
+              slot.aiPersonality = nextPersonality;
               slot.crestId = msg.crestId ? sanitizeCrestId(msg.crestId) : slot.crestId;
               slot.colorId = pickAvailableColor(room, msg.colorId ?? slot.colorId, slot.slotIndex);
               slot.ready = true;
@@ -882,6 +891,8 @@ async function startServer() {
           }
 
           room.status = 'started';
+          const matchSeed = crypto.randomInt(1, 2147483647);
+          roomCommandSeq.set(room.id, 0);
           const team1Slots = room.slots.filter((s) => s.team === 1 && (s.kind === 'human' || s.kind === 'ai'));
           const team2Slots = room.slots.filter((s) => s.team === 2 && (s.kind === 'human' || s.kind === 'ai'));
           const humanCount = room.slots.filter((s) => s.kind === 'human').length;
@@ -890,6 +901,7 @@ async function startServer() {
 
           appendRoomSystemMessage(room, 'Partida iniciada! Invocando os deuses para o campo de batalha...');
 
+          const activeMatchSlots = room.slots.filter((s) => s.kind === 'human' || s.kind === 'ai');
           for (const slot of humanSlots) {
             if (!slot.clientId) continue;
             const target = clients.get(slot.clientId);
@@ -898,6 +910,7 @@ async function startServer() {
               roomId: room.id,
               roomCode: room.code,
               roomName: room.name,
+              matchSeed,
               settings: { ...room.settings },
               slots: room.slots.map((s) => ({ ...s })),
               roster: {
@@ -910,6 +923,19 @@ async function startServer() {
                 aiCount,
                 playerTeam: slot.team,
                 playerSlotIndex: slot.slotIndex,
+                matchSeed,
+                factions: activeMatchSlots.map((s) => ({
+                  slotIndex: s.slotIndex,
+                  label: s.playerName,
+                  teamIndex: s.team,
+                  pantheon: s.pantheon,
+                  majorGod: s.majorGodName,
+                  colorHex: getMpColorById(s.colorId).css,
+                  crestId: s.crestId,
+                  isHuman: s.kind === 'human',
+                  isSelf: s.slotIndex === slot.slotIndex,
+                  aiPersonality: s.aiPersonality ?? 'balanced',
+                })),
               },
             };
             sendJson(target.ws, { type: 'room:match_started', payload });
@@ -917,6 +943,72 @@ async function startServer() {
 
           broadcastRoomState(room);
           broadcastPlazaSync();
+          break;
+        }
+
+        case 'match:command': {
+          if (!client.roomId) return;
+          const room = rooms.get(client.roomId);
+          if (!room || !msg.command || typeof msg.command.kind !== 'string') return;
+          const senderSlot = room.slots.find((s) => s.kind === 'human' && s.clientId === client.clientId);
+          if (!senderSlot) return;
+
+          const seq = (roomCommandSeq.get(room.id) ?? 0) + 1;
+          roomCommandSeq.set(room.id, seq);
+
+          const packet: ServerToClientMessage = {
+            type: 'match:command_broadcast',
+            roomId: room.id,
+            senderClientId: client.clientId,
+            serverSeq: seq,
+            serverTime: Date.now(),
+            command: msg.command,
+          };
+
+          for (const slot of room.slots) {
+            if (slot.kind === 'human' && slot.clientId) {
+              const target = clients.get(slot.clientId);
+              if (target) sendJson(target.ws, packet);
+            }
+          }
+          break;
+        }
+
+        case 'match:chat': {
+          if (!client.roomId) return;
+          const room = rooms.get(client.roomId);
+          if (!room) return;
+          const senderSlot = room.slots.find((s) => s.kind === 'human' && s.clientId === client.clientId);
+          if (!senderSlot) return;
+          const text = sanitizeText(msg.text, 240, '');
+          if (!text) return;
+          const channel: 'all' | 'team' = msg.channel === 'team' ? 'team' : 'all';
+
+          const chatMsg: ChatMessage = {
+            id: crypto.randomUUID(),
+            senderId: client.clientId,
+            senderName: client.playerName,
+            crestId: client.crestId,
+            colorId: client.colorId,
+            text,
+            timestamp: Date.now(),
+            channel,
+          };
+
+          const packet: ServerToClientMessage = {
+            type: 'match:chat_message',
+            roomId: room.id,
+            channel,
+            message: chatMsg,
+          };
+
+          for (const slot of room.slots) {
+            if (slot.kind === 'human' && slot.clientId) {
+              if (channel === 'team' && slot.team !== senderSlot.team) continue;
+              const target = clients.get(slot.clientId);
+              if (target) sendJson(target.ws, packet);
+            }
+          }
           break;
         }
       }
