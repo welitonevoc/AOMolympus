@@ -1,6 +1,10 @@
 import * as THREE from 'three';
 import { BuildingKind, PantheonId, TeamId } from '../../game/types';
 import { buildProceduralEgyptianTemple } from './egyptianTempleModel';
+import {
+  buildEgyptianArchBuilding,
+  resolveEgyptianArchGod,
+} from './egyptianArchitectureSuite';
 
 // ─── Procedural Egyptian Sandstone, Hieroglyph, Lapis & Gold Textures ───────
 
@@ -778,12 +782,22 @@ export function createEgyptianBuildingMesh(
     case 'barracks':
     case 'archery_range':
     case 'stable':
-      buildEgyptianBarracks(group, mats);
-      group.scale.setScalar(1.68);
-      markerRadius = 2.65;
-      barHeight = 4.3;
-      barWidth = 2.55;
+    case 'house':
+    case 'armory':
+    case 'market': {
+      const effGod = resolveEgyptianArchGod(majorGod || String(pantheon || 'ra'));
+      const built = buildEgyptianArchBuilding(kind, effGod, age, enableShadows, mats.teamBanner);
+      group.add(built.root);
+      group.scale.setScalar(built.meta.gameplayScale);
+      if (built.flames.length > 0) {
+        group.userData.egyptArchFlames = built.flames;
+      }
+      const tierScaleBonus = (built.effectiveTier - built.meta.minTier) * 0.1;
+      markerRadius = built.meta.markerRadius * (1 + tierScaleBonus * 0.55);
+      barHeight = built.meta.barHeight * (1 + tierScaleBonus * 0.45);
+      barWidth = built.meta.barWidth * (1 + tierScaleBonus * 0.25);
       break;
+    }
     case 'temple': {
       const rawGod = (majorGod || String(pantheon || 'ra')).toLowerCase();
       const effGod = rawGod.includes('isis') ? 'isis' : rawGod.includes('set') ? 'set' : 'ra';
@@ -802,33 +816,12 @@ export function createEgyptianBuildingMesh(
       barHeight = 5.2;
       barWidth = 3.3;
       break;
-    case 'house':
-      buildEgyptianHouse(group, mats);
-      group.scale.setScalar(1.48);
-      markerRadius = 1.2;
-      barHeight = 2.1;
-      barWidth = 1.35;
-      break;
-    case 'armory':
-      buildEgyptianArmory(group, mats);
-      group.scale.setScalar(1.72);
-      markerRadius = 2.55;
-      barHeight = 4.3;
-      barWidth = 2.5;
-      break;
     case 'siege_works':
       buildEgyptianSiegeWorks(group, mats);
       group.scale.setScalar(1.72);
       markerRadius = 2.75;
       barHeight = 4.2;
       barWidth = 2.6;
-      break;
-    case 'market':
-      buildEgyptianMarket(group, mats);
-      group.scale.setScalar(1.72);
-      markerRadius = 2.65;
-      barHeight = 4.0;
-      barWidth = 2.5;
       break;
     case 'tower':
       buildEgyptianTower(group, mats);

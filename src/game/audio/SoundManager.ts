@@ -3,6 +3,7 @@ import {
   CulturalVoiceEntry,
   soundEngine,
 } from '../audio';
+import type { ClientStudioVoiceRole } from './StudioVoicePlayer';
 import { PantheonId, UnitKind, UnitVoiceAction, UnitVoiceLineInfo } from '../types';
 
 export type UnitActionType = UnitVoiceAction | 'order';
@@ -39,52 +40,52 @@ export interface SpeakOptions {
  */
 export const GREEK_VOICE_BANK: Record<'select' | 'move' | 'attack' | 'work', CulturalVoiceEntry[]> = {
   select: [
-    { phrase: 'Próstagma?', pt: 'Ordens? / Qual o comando?', spoken: 'Prós-tag-ma?', syllables: [1.04, 1.16, 0.96] },
-    { phrase: 'Lege.', pt: 'Fale!', spoken: 'Lê-gue.', syllables: [0.98, 1.15] },
-    { phrase: 'Étimos.', pt: 'Pronto.', spoken: 'É-ti-moss.', syllables: [1.12, 1.0, 0.95] },
-    { phrase: 'Né.', pt: 'Sim.', spoken: 'Né?', syllables: [1.14] },
+    { phrase: 'Próstagma?', pt: 'Ordens? Qual é o comando?', spoken: 'Próstagma! Qual é o comando?', syllables: [1.04, 1.16, 0.96] },
+    { phrase: 'Lege.', pt: 'Fale, comandante.', spoken: 'Fale, comandante. Estou ouvindo.', syllables: [0.98, 1.15] },
+    { phrase: 'Étimos.', pt: 'Pronto para servir.', spoken: 'Pronto para servir, senhor!', syllables: [1.12, 1.0, 0.95] },
+    { phrase: 'Né.', pt: 'Sim, às suas ordens.', spoken: 'Sim! Às suas ordens.', syllables: [1.14] },
   ],
   move: [
-    { phrase: 'Vúlome.', pt: 'Eu quero / Vou fazê-lo.', spoken: 'Vú-lo-me.', syllables: [1.08, 0.98, 1.05] },
-    { phrase: 'Málista.', pt: 'Sim, senhor / Certamente.', spoken: 'Má-lis-ta.', syllables: [1.12, 1.02, 0.94] },
-    { phrase: 'Orthós.', pt: 'Correto / Certo.', spoken: 'Or-tóss.', syllables: [0.98, 1.14] },
-    { phrase: 'Kalós.', pt: 'Bem / De acordo.', spoken: 'Ka-lóss.', syllables: [1.0, 1.1] },
-    { phrase: 'Páme!', pt: 'Vamos!', spoken: 'Pá-me!', syllables: [1.16, 1.02] },
+    { phrase: 'Vúlome.', pt: 'Sim, senhor! Em marcha.', spoken: 'Sim, senhor! Em marcha.', syllables: [1.08, 0.98, 1.05] },
+    { phrase: 'Málista.', pt: 'Certamente, avançando.', spoken: 'Certamente! Avançando agora.', syllables: [1.12, 1.02, 0.94] },
+    { phrase: 'Orthós.', pt: 'Entendido, a caminho.', spoken: 'Entendido! Seguindo posição.', syllables: [0.98, 1.14] },
+    { phrase: 'Kalós.', pt: 'De acordo, partindo.', spoken: 'De acordo! Partindo já.', syllables: [1.0, 1.1] },
+    { phrase: 'Páme!', pt: 'Em frente, sem demora!', spoken: 'Em frente! Sem demora.', syllables: [1.16, 1.02] },
   ],
   attack: [
-    { phrase: 'Eis máchin!', pt: 'Para a batalha!', spoken: 'Êiss má-rrin!', syllables: [1.06, 1.26, 1.18] },
-    { phrase: 'Eisvolí!', pt: 'Invasão!', spoken: 'Êiss-vo-lí!', syllables: [1.05, 1.18, 1.34] },
-    { phrase: 'Páme!', pt: 'Vamos!', spoken: 'Pá-me!', syllables: [1.22, 1.08] },
-    { phrase: 'Próseche!', pt: 'Cuidado!', spoken: 'Pró-se-rre!', syllables: [1.16, 1.04, 1.14] },
+    { phrase: 'Eis máchin!', pt: 'Para a batalha!', spoken: 'Para a batalha! Avançar!', syllables: [1.06, 1.26, 1.18] },
+    { phrase: 'Eisvolí!', pt: 'Pela glória do Olimpo!', spoken: 'Pela glória do Olimpo, ataquem!', syllables: [1.05, 1.18, 1.34] },
+    { phrase: 'Páme!', pt: 'Vamos! Derrubem os inimigos!', spoken: 'Vamos! Derrubem os inimigos!', syllables: [1.22, 1.08] },
+    { phrase: 'Próseche!', pt: 'Formação de combate!', spoken: 'Formação de combate! Sem recuar!', syllables: [1.16, 1.04, 1.14] },
   ],
   work: [
-    { phrase: 'Vúlome.', pt: 'Vou fazê-lo.', spoken: 'Vú-lo-me.', syllables: [1.04, 0.98, 1.0] },
-    { phrase: 'Málista.', pt: 'Certamente.', spoken: 'Má-lis-ta.', syllables: [1.08, 1.0, 0.94] },
-    { phrase: 'Kalós.', pt: 'Bem / De acordo.', spoken: 'Ka-lóss.', syllables: [0.98, 1.08] },
-    { phrase: 'Orthós.', pt: 'Correto.', spoken: 'Or-tóss.', syllables: [0.96, 1.08] },
+    { phrase: 'Vúlome.', pt: 'Ao trabalho imediatamente.', spoken: 'Ao trabalho imediatamente!', syllables: [1.04, 0.98, 1.0] },
+    { phrase: 'Málista.', pt: 'Certamente, colhendo recursos.', spoken: 'Certamente! Colhendo recursos.', syllables: [1.08, 1.0, 0.94] },
+    { phrase: 'Kalós.', pt: 'Construindo pela cidade.', spoken: 'Construindo pela nossa cidade.', syllables: [0.98, 1.08] },
+    { phrase: 'Orthós.', pt: 'Tarefa iniciada.', spoken: 'Tarefa iniciada, senhor.', syllables: [0.96, 1.08] },
   ],
 };
 
 /**
- * Banco de vozes dos Atlantes (expansão The Titans — idioma atlante de Castor,
- * Cidadãos, Oráculos, Soldados Humanos, Heróis promovidos e Unidades Míticas).
+ * Banco de vozes dos Atlantes (expansão The Titans — Castor, Cidadãos,
+ * Oráculos, Soldados Humanos, Heróis promovidos e Unidades Míticas).
  */
 export const ATLANTEAN_VOICE_BANK: Record<'select' | 'move' | 'attack' | 'work', CulturalVoiceEntry[]> = {
   select: [
-    { phrase: 'Yuji?', pt: 'Ordens?', spoken: 'Iú-dji?', syllables: [1.04, 1.16] },
-    { phrase: 'Volat?', pt: 'Qual o comando?', spoken: 'Vô-lat?', syllables: [1.02, 1.14] },
+    { phrase: 'Yuji?', pt: 'Ordens, comandante?', spoken: 'Quais são as ordens, comandante?', syllables: [1.04, 1.16] },
+    { phrase: 'Volat?', pt: 'Pronto por Atlântida.', spoken: 'Pronto por Atlântida!', syllables: [1.02, 1.14] },
   ],
   move: [
-    { phrase: 'Scopos.', pt: 'Confirmado — avançando.', spoken: 'Ess-kó-poss.', syllables: [1.0, 1.1, 1.02] },
-    { phrase: 'Echlost.', pt: 'Ordem reconhecida.', spoken: 'Ék-lost.', syllables: [1.08, 0.98] },
+    { phrase: 'Scopos.', pt: 'Confirmado — avançando.', spoken: 'Confirmado! Avançando para o alvo.', syllables: [1.0, 1.1, 1.02] },
+    { phrase: 'Echlost.', pt: 'Ordem reconhecida.', spoken: 'Ordem reconhecida. Em deslocamento.', syllables: [1.08, 0.98] },
   ],
   attack: [
-    { phrase: 'Mache!', pt: 'Para a batalha!', spoken: 'Má-rre!', syllables: [1.22, 1.14] },
-    { phrase: 'Scopos!', pt: 'Alvo confirmado — atacar!', spoken: 'Ess-kó-poss!', syllables: [1.06, 1.2, 1.12] },
+    { phrase: 'Mache!', pt: 'Por Atlântida, para a batalha!', spoken: 'Por Atlântida, para a batalha!', syllables: [1.22, 1.14] },
+    { phrase: 'Scopos!', pt: 'Alvo confirmado — atacar!', spoken: 'Alvo confirmado! Atacar agora!', syllables: [1.06, 1.2, 1.12] },
   ],
   work: [
-    { phrase: 'Echlost.', pt: 'Ordem reconhecida.', spoken: 'Ék-lost.', syllables: [1.04, 0.96] },
-    { phrase: 'Scopos.', pt: 'Confirmado.', spoken: 'Ess-kó-poss.', syllables: [0.98, 1.08, 1.0] },
+    { phrase: 'Echlost.', pt: 'Ordem reconhecida.', spoken: 'Ordem reconhecida. Iniciando trabalho.', syllables: [1.04, 0.96] },
+    { phrase: 'Scopos.', pt: 'Confirmado, construindo.', spoken: 'Confirmado! Erguendo por Atlântida.', syllables: [0.98, 1.08, 1.0] },
   ],
 };
 
@@ -258,56 +259,56 @@ const GOD_SOLO_LINES: Partial<Record<UnitKind, { select: CulturalVoiceEntry; att
     translationAttack: 'Chamas necróticas do Submundo!',
   },
   atena: {
-    select: { phrase: 'ATENA: "Étimi! A estratégia precede a vitória."', pt: 'Atena protege suas fileiras.', spoken: 'É-ti-mi! A estratégia precede a vitória.', syllables: [1.1, 1.04, 1.08] },
-    attack: { phrase: 'ATENA: "Eis máchin! Pela Égide e Sabedoria!"', pt: 'Golpe sagrado da Égide de Atena!', spoken: 'Êiss má-rrin! Pela Égide e sabedoria!', syllables: [1.08, 1.24, 1.18] },
+    select: { phrase: 'ATENA: "Étimi! A estratégia precede a vitória."', pt: 'Atena protege suas fileiras.', spoken: 'A estratégia sempre precede a vitória.', syllables: [1.1, 1.04, 1.08] },
+    attack: { phrase: 'ATENA: "Eis máchin! Pela Égide e Sabedoria!"', pt: 'Golpe sagrado da Égide de Atena!', spoken: 'Pela Égide e pela sabedoria, avancem!', syllables: [1.08, 1.24, 1.18] },
     translationSelect: 'Atena protege suas fileiras.',
     translationAttack: 'Golpe sagrado da Égide de Atena!',
   },
   ares: {
-    select: { phrase: 'ARES: "Próstagma? Onde está o combate?!"', pt: 'Ares anseia pela batalha.', spoken: 'Prós-tag-ma? Onde está o combate?', syllables: [1.06, 1.18, 1.02] },
-    attack: { phrase: 'ARES: "Eisvolí! Sangue e Guerra!"', pt: 'Fúria sísmica do Deus da Guerra!', spoken: 'Êiss-vo-lí! Sangue e guerra!', syllables: [1.1, 1.24, 1.34] },
+    select: { phrase: 'ARES: "Próstagma? Onde está o combate?!"', pt: 'Ares anseia pela batalha.', spoken: 'Onde está o combate? Tragam-me a batalha!', syllables: [1.06, 1.18, 1.02] },
+    attack: { phrase: 'ARES: "Eisvolí! Sangue e Guerra!"', pt: 'Fúria sísmica do Deus da Guerra!', spoken: 'Sangue e guerra! Esmaguem todos!', syllables: [1.1, 1.24, 1.34] },
     translationSelect: 'Ares anseia pela batalha.',
     translationAttack: 'Fúria sísmica do Deus da Guerra!',
   },
   hermes: {
-    select: { phrase: 'HERMES: "Asas do Olimpo ao seu dispor."', pt: 'Mensageiro divino pronto.', spoken: 'Asas do Olimpo ao seu dispor.', syllables: [1.04, 1.12, 1.08] },
-    attack: { phrase: 'HERMES: "Páme! Mais rápido que o relâmpago!"', pt: 'Rajada celeste de Hermes!', spoken: 'Pá-me! Mais rápido que o relâmpago!', syllables: [1.18, 1.22, 1.14] },
+    select: { phrase: 'HERMES: "Asas do Olimpo ao seu dispor."', pt: 'Mensageiro divino pronto.', spoken: 'As asas do Olimpo estão ao seu dispor.', syllables: [1.04, 1.12, 1.08] },
+    attack: { phrase: 'HERMES: "Páme! Mais rápido que o relâmpago!"', pt: 'Rajada celeste de Hermes!', spoken: 'Mais rápido que o relâmpago! Avançar!', syllables: [1.18, 1.22, 1.14] },
     translationSelect: 'Mensageiro divino pronto.',
     translationAttack: 'Rajada celeste de Hermes!',
   },
   apolo: {
-    select: { phrase: 'APOLO: "A luz do Sol ilumina o campo."', pt: 'Apolo mira o horizonte.', spoken: 'A luz do Sol ilumina o campo.', syllables: [1.02, 1.08, 1.0] },
-    attack: { phrase: 'APOLO: "Que o fogo solar reduza-os a cinzas!"', pt: 'Flechas solares de Apolo!', spoken: 'Que o fogo solar reduza-os a cinzas!', syllables: [1.06, 1.18, 1.26] },
+    select: { phrase: 'APOLO: "A luz do Sol ilumina o campo."', pt: 'Apolo mira o horizonte.', spoken: 'A luz do Sol ilumina o campo de batalha.', syllables: [1.02, 1.08, 1.0] },
+    attack: { phrase: 'APOLO: "Que o fogo solar reduza-os a cinzas!"', pt: 'Flechas solares de Apolo!', spoken: 'Que o fogo solar reduza nossos inimigos a cinzas!', syllables: [1.06, 1.18, 1.26] },
     translationSelect: 'Apolo mira o horizonte.',
     translationAttack: 'Flechas solares de Apolo!',
   },
   dionisio: {
-    select: { phrase: 'DIONÍSIO: "Kalós! Celebremos a vitória antecipada!"', pt: 'Dionísio abençoa a marcha.', spoken: 'Ka-lóss! Celebremos a vitória!', syllables: [1.0, 1.1, 1.04] },
+    select: { phrase: 'DIONÍSIO: "Kalós! Celebremos a vitória antecipada!"', pt: 'Dionísio abençoa a marcha.', spoken: 'Celebremos a vitória antecipada!', syllables: [1.0, 1.1, 1.04] },
     attack: { phrase: 'DIONÍSIO: "O frenesi dionisíaco os consumirá!"', pt: 'Onda arcana das vinhas sagradas!', spoken: 'O frenesi dionisíaco os consumirá!', syllables: [1.06, 1.18, 1.26] },
     translationSelect: 'Dionísio abençoa a marcha.',
     translationAttack: 'Onda arcana das vinhas sagradas!',
   },
   afrodite: {
-    select: { phrase: 'AFRODITE: "Étimi — nascida da espuma e das estrelas."', pt: 'Afrodite flutua em graça.', spoken: 'É-ti-mi, nascida das estrelas.', syllables: [1.12, 1.04, 1.08] },
-    attack: { phrase: 'AFRODITE: "Contemplem a fúria celestial da Beleza!"', pt: 'Explosão encantadora de Afrodite!', spoken: 'Contemplem a fúria celestial!', syllables: [1.08, 1.18, 1.24] },
+    select: { phrase: 'AFRODITE: "Étimi — nascida da espuma e das estrelas."', pt: 'Afrodite flutua em graça.', spoken: 'Pronta, nascida da espuma e das estrelas.', syllables: [1.12, 1.04, 1.08] },
+    attack: { phrase: 'AFRODITE: "Contemplem a fúria celestial da Beleza!"', pt: 'Explosão encantadora de Afrodite!', spoken: 'Contemplem a fúria celestial da beleza!', syllables: [1.08, 1.18, 1.24] },
     translationSelect: 'Afrodite flutua em graça.',
     translationAttack: 'Explosão encantadora de Afrodite!',
   },
   hefesto: {
     select: { phrase: 'HEFESTO: "Fogo e bronze moldam o destino."', pt: 'Hefesto prepara o martelo.', spoken: 'Fogo e bronze moldam o destino.', syllables: [0.96, 1.06, 0.98] },
-    attack: { phrase: 'HEFESTO: "Sinta o martelo da Forja Olímpica!"', pt: 'Impacto vulcânico de Hefesto!', spoken: 'Sinta o martelo da forja olímpica!', syllables: [1.06, 1.18, 1.28] },
+    attack: { phrase: 'HEFESTO: "Sinta o martelo da Forja Olímpica!"', pt: 'Impacto vulcânico de Hefesto!', spoken: 'Sinta o martelo da Forja Olímpica!', syllables: [1.06, 1.18, 1.28] },
     translationSelect: 'Hefesto prepara o martelo.',
     translationAttack: 'Impacto vulcânico de Hefesto!',
   },
   artemis: {
-    select: { phrase: 'ÁRTEMIS: "Étimi! Sob o luar, somos implacáveis."', pt: 'Ártemis vigia a floresta.', spoken: 'É-ti-mi! Sob o luar, somos implacáveis.', syllables: [1.12, 1.06, 1.02] },
+    select: { phrase: 'ÁRTEMIS: "Étimi! Sob o luar, somos implacáveis."', pt: 'Ártemis vigia a floresta.', spoken: 'Sob o luar, somos implacáveis.', syllables: [1.12, 1.06, 1.02] },
     attack: { phrase: 'ÁRTEMIS: "A caçada lunar nunca erra o alvo!"', pt: 'Chuva de flechas lunares de Ártemis!', spoken: 'A caçada lunar nunca erra o alvo!', syllables: [1.08, 1.2, 1.28] },
     translationSelect: 'Ártemis vigia a floresta.',
     translationAttack: 'Chuva de flechas lunares de Ártemis!',
   },
   ra: {
-    select: { phrase: 'RÁ: "O Disco Solar ilumina o Nilo."', pt: 'Rá vigia o reino.', spoken: 'O disco solar ilumina o Nilo.', syllables: [0.98, 1.08, 1.0] },
-    attack: { phrase: 'RÁ: "Khepresh! Que o Sol devore nossos inimigos!"', pt: 'Fogo solar de Rá!', spoken: 'Ké-presh! Que o Sol devore nossos inimigos!', syllables: [1.12, 1.24, 1.3] },
+    select: { phrase: 'RÁ: "O Disco Solar ilumina o Nilo."', pt: 'Rá vigia o reino.', spoken: 'O disco solar ilumina todo o Nilo.', syllables: [0.98, 1.08, 1.0] },
+    attack: { phrase: 'RÁ: "Khepresh! Que o Sol devore nossos inimigos!"', pt: 'Fogo solar de Rá!', spoken: 'Que o fogo do Sol devore nossos inimigos!', syllables: [1.12, 1.24, 1.3] },
     translationSelect: 'Rá vigia o reino.',
     translationAttack: 'Fogo solar de Rá!',
   },
@@ -318,7 +319,7 @@ const GOD_SOLO_LINES: Partial<Record<UnitKind, { select: CulturalVoiceEntry; att
     translationAttack: 'Encantamento destrutivo de Ísis!',
   },
   set: {
-    select: { phrase: 'SET: "As feras do deserto respondem ao meu chamado."', pt: 'Set comanda as sombras.', spoken: 'As feras do deserto respondem!', syllables: [0.96, 1.04, 0.94] },
+    select: { phrase: 'SET: "As feras do deserto respondem ao meu chamado."', pt: 'Set comanda as sombras.', spoken: 'As feras do deserto respondem ao meu chamado.', syllables: [0.96, 1.04, 0.94] },
     attack: { phrase: 'SET: "Tempestade de areia e caos!"', pt: 'Fúria do deserto de Set!', spoken: 'Tempestade de areia e caos!', syllables: [1.08, 1.2, 1.32] },
     translationSelect: 'Set comanda as sombras.',
     translationAttack: 'Fúria do deserto de Set!',
@@ -508,8 +509,11 @@ export class SoundManager {
     if (resolvedPantheon === 'greek' && isFemaleUnit && phrase === 'Étimos.') {
       phrase = 'Étimi.';
       translation = 'Pronta.';
-      spoken = 'É-ti-mi.';
+      spoken = 'Pronta para servir!';
     }
+
+    let speakerName: string | undefined = unitProfile.heroTitle;
+    let dramatic = unitProfile.voiceRole === 'god' || unitProfile.voiceRole === 'titan' || unitProfile.voiceRole === 'hero';
 
     const godLine = GOD_SOLO_LINES[unitType];
     if (godLine) {
@@ -518,7 +522,10 @@ export class SoundManager {
       translation = effectiveAction === 'attack' ? godLine.translationAttack : godLine.translationSelect;
       spoken = entry.spoken;
       syllables = entry.syllables;
+      dramatic = true;
     } else if (unitType === 'titan') {
+      speakerName = 'Titã';
+      dramatic = true;
       phrase =
         resolvedPantheon === 'atlantean'
           ? effectiveAction === 'attack'
@@ -528,21 +535,30 @@ export class SoundManager {
           ? `TITÃ: "${chosen.phrase}"`
           : `Titã Ancestral — "${chosen.phrase}"`;
       translation = effectiveAction === 'attack' ? 'Rugido Titânico de Destruição!' : 'O Titã aguarda seu comando.';
-      spoken = resolvedPantheon === 'atlantean' && effectiveAction === 'attack' ? 'Má-rre!' : chosen.spoken;
+      spoken =
+        effectiveAction === 'attack'
+          ? 'A terra tremerá diante da fúria dos Titãs!'
+          : 'O Titã desperta e aguarda seu comando.';
     } else if (resolvedPantheon === 'atlantean') {
       const isCastorOrHero =
         unitType === 'hero' || unitType === 'ajax' || unitType === 'jason' || unitType === 'odysseus' || unitType === 'hippolyta';
       if (isCastorOrHero) {
         const speaker = unitType === 'ajax' ? 'HERÓI ATLANTE' : unitType === 'hero' ? 'CASTOR' : 'CAMPEÃO DE ORICALCO';
+        speakerName = speaker;
+        dramatic = true;
         phrase = `${speaker}: "${chosen.phrase}"`;
         translation =
           effectiveAction === 'attack' ? `${chosen.pt} (Por Atlântida!)` : `${chosen.pt} — Castor comanda.`;
       } else if (unitType === 'behemoth') {
-        phrase = effectiveAction === 'attack' ? 'BEEMOTE: "Mache! ROOOAAAR!"' : `Beemote — "${chosen.phrase}"`;
+        speakerName = 'Beemote';
+        phrase = effectiveAction === 'attack' ? 'BEEMOTE: "Mache!"' : `Beemote — "${chosen.phrase}"`;
         translation = effectiveAction === 'attack' ? 'Investida colossal demolidora!' : chosen.pt;
+        spoken = effectiveAction === 'attack' ? 'Nenhuma muralha resistirá à nossa investida!' : chosen.spoken;
       } else if (unitType === 'hekagigantes') {
+        speakerName = 'Hecatônquiro';
         phrase = effectiveAction === 'attack' ? 'HECATÔNQUIRO: "Mache!"' : `Centimano — "${chosen.phrase}"`;
         translation = effectiveAction === 'attack' ? 'Golpe sísmico dos cem braços!' : chosen.pt;
+        spoken = effectiveAction === 'attack' ? 'Cem braços esmagarão nossos inimigos!' : chosen.spoken;
       } else {
         const heroBadge = options.isPromotedHero ? '★ Herói · ' : '';
         phrase = `${heroBadge}${chosen.phrase}`;
@@ -550,6 +566,7 @@ export class SoundManager {
       }
     } else if (unitProfile.heroTitle) {
       if (unitType === 'hero' && resolvedPantheon === 'greek') {
+        speakerName = 'Arkantos';
         phrase = `ARKANTOS: "${chosen.phrase}"`;
         translation = `${chosen.pt} (Arkantos)`;
       } else {
@@ -557,13 +574,36 @@ export class SoundManager {
         translation = `${chosen.pt} (${unitProfile.heroTitle})`;
       }
     } else if (unitType === 'cyclops') {
-      phrase = effectiveAction === 'attack' ? 'CICLOPE: "Eis máchin! GRAAAH!"' : `Ciclope: "${chosen.phrase}"`;
+      speakerName = 'Ciclope';
+      phrase = effectiveAction === 'attack' ? 'CICLOPE: "Eis máchin!"' : `Ciclope: "${chosen.phrase}"`;
       translation = effectiveAction === 'attack' ? 'O Ciclope agarra e arremessa os inimigos!' : chosen.pt;
-      spoken = effectiveAction === 'attack' ? 'Êiss má-rrin! Esmagar!' : chosen.spoken;
+      spoken = effectiveAction === 'attack' ? 'Vou esmagar todos eles!' : chosen.spoken;
     }
 
+    const resolveStudioRole = (): ClientStudioVoiceRole => {
+      if (unitType === 'set') return 'villain_dark';
+      if (unitProfile.voiceRole === 'god') {
+        return isFemaleUnit ? 'major_god_female' : 'major_god_male';
+      }
+      if (unitProfile.voiceRole === 'titan') return 'titan';
+      if (unitType === 'oracle' || unitType === 'priest' || unitType === 'jiang_ziya') {
+        return 'mystic_priest';
+      }
+      if (unitProfile.voiceRole === 'hero' || options.isPromotedHero) {
+        return isFemaleUnit ? 'hero_female' : 'hero_commander';
+      }
+      if (unitProfile.voiceRole === 'citizen') {
+        return isFemaleUnit ? 'villager_female' : 'villager_male';
+      }
+      if (unitProfile.voiceRole === 'myth') {
+        if (isFemaleUnit) return 'hero_female';
+        return unitProfile.isDarkTone ? 'myth_beast' : 'warrior_male';
+      }
+      return isFemaleUnit ? 'warrior_female' : 'warrior_male';
+    };
+
     const speechRate =
-      (effectiveAction === 'attack' ? 1.14 : unitProfile.rateScale) * (options.isPromotedHero ? 0.98 : 1.0);
+      (effectiveAction === 'attack' ? 1.06 : unitProfile.rateScale) * (options.isPromotedHero ? 0.98 : 1.0);
     const kindPitchMult = unitProfile.pitchScale * (options.isPromotedHero ? 0.94 : 1.0);
 
     return soundEngine.performVoiceClip({
@@ -584,6 +624,10 @@ export class SoundManager {
       groupSize: options.groupSize ?? 1,
       audioUrl: chosen.audioUrl,
       respectCooldown: options.respectCooldown,
+      studioRole: resolveStudioRole(),
+      pantheon: resolvedPantheon,
+      speaker: speakerName,
+      dramatic,
     });
   }
 }

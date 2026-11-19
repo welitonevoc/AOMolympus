@@ -1,4 +1,9 @@
 import { AgeLevel, GodPowerId, PantheonId, UnitKind, UnitVoiceAction, UnitVoiceLineInfo } from './types';
+import {
+  ClientStudioVoiceRole,
+  StudioVoicePlayer,
+  inferVoiceRoleFromSpeaker,
+} from './audio/StudioVoicePlayer';
 
 export type MusicMood = 'standard' | 'mellow';
 export type MusicScene = 'title' | 'match' | 'victory' | 'defeat' | 'credits';
@@ -698,29 +703,29 @@ export const CULTURE_VOICE_BANK: Record<PantheonId, CultureVoiceProfile> = {
     formantF2: 1480,
     hornPitch: 293.66,
     select: [
-      { phrase: 'Próstagma?', pt: 'Ordens? / Qual o comando?', spoken: 'Prós-tag-ma?', syllables: [1.04, 1.16, 0.96] },
-      { phrase: 'Lege.', pt: 'Fale!', spoken: 'Lê-gue.', syllables: [0.98, 1.15] },
-      { phrase: 'Étimos.', pt: 'Pronto.', spoken: 'É-ti-moss.', syllables: [1.12, 1.0, 0.95] },
-      { phrase: 'Né.', pt: 'Sim.', spoken: 'Né?', syllables: [1.14] },
+      { phrase: 'Próstagma?', pt: 'Ordens? Qual é o comando?', spoken: 'Próstagma! Qual é o comando?', syllables: [1.04, 1.16, 0.96] },
+      { phrase: 'Lege.', pt: 'Fale, comandante.', spoken: 'Fale, comandante. Estou ouvindo.', syllables: [0.98, 1.15] },
+      { phrase: 'Étimos.', pt: 'Pronto para servir.', spoken: 'Pronto para servir, senhor!', syllables: [1.12, 1.0, 0.95] },
+      { phrase: 'Né.', pt: 'Sim, às suas ordens.', spoken: 'Sim! Às suas ordens.', syllables: [1.14] },
     ],
     attack: [
-      { phrase: 'Eis máchin!', pt: 'Para a batalha!', spoken: 'Êiss má-rrin!', syllables: [1.06, 1.26, 1.18] },
-      { phrase: 'Eisvolí!', pt: 'Invasão!', spoken: 'Êiss-vo-lí!', syllables: [1.05, 1.18, 1.34] },
-      { phrase: 'Páme!', pt: 'Vamos!', spoken: 'Pá-me!', syllables: [1.22, 1.08] },
-      { phrase: 'Próseche!', pt: 'Cuidado!', spoken: 'Pró-se-rre!', syllables: [1.16, 1.04, 1.14] },
+      { phrase: 'Eis máchin!', pt: 'Para a batalha!', spoken: 'Para a batalha! Avançar!', syllables: [1.06, 1.26, 1.18] },
+      { phrase: 'Eisvolí!', pt: 'Invasão! Pela glória do Olimpo!', spoken: 'Pela glória do Olimpo, ataquem!', syllables: [1.05, 1.18, 1.34] },
+      { phrase: 'Páme!', pt: 'Vamos! Derrubem os inimigos!', spoken: 'Vamos! Derrubem os inimigos!', syllables: [1.22, 1.08] },
+      { phrase: 'Próseche!', pt: 'Formação de combate!', spoken: 'Formação de combate! Sem recuar!', syllables: [1.16, 1.04, 1.14] },
     ],
     move: [
-      { phrase: 'Vúlome.', pt: 'Eu quero / Vou fazê-lo.', spoken: 'Vú-lo-me.', syllables: [1.08, 0.98, 1.05] },
-      { phrase: 'Málista.', pt: 'Sim, senhor / Certamente.', spoken: 'Má-lis-ta.', syllables: [1.12, 1.02, 0.94] },
-      { phrase: 'Orthós.', pt: 'Correto / Certo.', spoken: 'Or-tóss.', syllables: [0.98, 1.14] },
-      { phrase: 'Kalós.', pt: 'Bem / De acordo.', spoken: 'Ka-lóss.', syllables: [1.0, 1.1] },
-      { phrase: 'Páme!', pt: 'Vamos!', spoken: 'Pá-me!', syllables: [1.16, 1.02] },
+      { phrase: 'Vúlome.', pt: 'Vou fazê-lo agora.', spoken: 'Sim, senhor! Em marcha.', syllables: [1.08, 0.98, 1.05] },
+      { phrase: 'Málista.', pt: 'Certamente, avançando.', spoken: 'Certamente! Avançando agora.', syllables: [1.12, 1.02, 0.94] },
+      { phrase: 'Orthós.', pt: 'Entendido, a caminho.', spoken: 'Entendido! Seguindo posição.', syllables: [0.98, 1.14] },
+      { phrase: 'Kalós.', pt: 'De acordo, partindo.', spoken: 'De acordo! Partindo já.', syllables: [1.0, 1.1] },
+      { phrase: 'Páme!', pt: 'Vamos! Em frente!', spoken: 'Em frente! Sem demora.', syllables: [1.16, 1.02] },
     ],
     work: [
-      { phrase: 'Vúlome.', pt: 'Vou fazê-lo.', spoken: 'Vú-lo-me.', syllables: [1.04, 0.98, 1.0] },
-      { phrase: 'Málista.', pt: 'Certamente.', spoken: 'Má-lis-ta.', syllables: [1.08, 1.0, 0.94] },
-      { phrase: 'Kalós.', pt: 'Bem / De acordo.', spoken: 'Ka-lóss.', syllables: [0.98, 1.08] },
-      { phrase: 'Orthós.', pt: 'Correto.', spoken: 'Or-tóss.', syllables: [0.96, 1.08] },
+      { phrase: 'Vúlome.', pt: 'Ao trabalho imediatamente.', spoken: 'Ao trabalho imediatamente!', syllables: [1.04, 0.98, 1.0] },
+      { phrase: 'Málista.', pt: 'Certamente, colhendo recursos.', spoken: 'Certamente! Colhendo recursos.', syllables: [1.08, 1.0, 0.94] },
+      { phrase: 'Kalós.', pt: 'Construindo pela cidade.', spoken: 'Construindo pela nossa cidade.', syllables: [0.98, 1.08] },
+      { phrase: 'Orthós.', pt: 'Tarefa iniciada.', spoken: 'Tarefa iniciada, senhor.', syllables: [0.96, 1.08] },
     ],
   },
   egyptian: {
@@ -730,22 +735,22 @@ export const CULTURE_VOICE_BANK: Record<PantheonId, CultureVoiceProfile> = {
     formantF2: 1350,
     hornPitch: 277.18,
     select: [
-      { phrase: 'Iu-airu?', pt: 'O que ordenas?', spoken: 'Iú-ai-rú?', syllables: [0.96, 1.08, 1.14] },
-      { phrase: 'Ha-nefer!', pt: 'Pronto para servir o Faraó!', spoken: 'Rá-ne-fér!', syllables: [1.04, 0.98, 1.06] },
-      { phrase: 'Em-shere?', pt: 'Suas ordens?', spoken: 'Em-shê-re?', syllables: [0.95, 1.1, 1.02] },
+      { phrase: 'Iu-airu?', pt: 'O que ordenas, Faraó?', spoken: 'O que ordenas, Faraó?', syllables: [0.96, 1.08, 1.14] },
+      { phrase: 'Ha-nefer!', pt: 'Pronto para servir Kemet!', spoken: 'Pronto para servir o Egito!', syllables: [1.04, 0.98, 1.06] },
+      { phrase: 'Em-shere?', pt: 'Suas ordens, senhor?', spoken: 'Quais são suas ordens?', syllables: [0.95, 1.1, 1.02] },
     ],
     attack: [
-      { phrase: 'Khepresh!', pt: 'Por Rá, ataquem!', spoken: 'Ké-presh!', syllables: [1.12, 1.26] },
-      { phrase: 'Sema-tawy!', pt: 'Esmaguem os invasores!', spoken: 'Sê-ma-tá-ui!', syllables: [1.04, 1.15, 1.28] },
-      { phrase: 'Ankh-ef-en-Sekhmet!', pt: 'Pela fúria de Sekhmet!', spoken: 'Ank-éf-en-Sék-met!', syllables: [1.08, 1.2, 1.34] },
+      { phrase: 'Khepresh!', pt: 'Por Rá, ataquem!', spoken: 'Por Rá, ataquem agora!', syllables: [1.12, 1.26] },
+      { phrase: 'Sema-tawy!', pt: 'Esmaguem os invasores!', spoken: 'Esmaguem os invasores do Nilo!', syllables: [1.04, 1.15, 1.28] },
+      { phrase: 'Ankh-ef-en-Sekhmet!', pt: 'Pela fúria de Sekhmet!', spoken: 'Pela fúria de Sekhmet, avançar!', syllables: [1.08, 1.2, 1.34] },
     ],
     move: [
-      { phrase: 'Sechem!', pt: 'Marchando com poder!', spoken: 'Sé-krem!', syllables: [1.02, 1.08] },
-      { phrase: 'Djew!', pt: 'Avançando pelo deserto!', spoken: 'Djéu!', syllables: [1.06, 0.96] },
+      { phrase: 'Sechem!', pt: 'Marchando com poder!', spoken: 'Marchando sob o sol!', syllables: [1.02, 1.08] },
+      { phrase: 'Djew!', pt: 'Avançando pelo deserto!', spoken: 'Avançando pelo deserto!', syllables: [1.06, 0.96] },
     ],
     work: [
-      { phrase: 'Baku!', pt: 'Colhendo para o Nilo!', spoken: 'Bá-ku!', syllables: [0.98, 1.04] },
-      { phrase: 'Kheper!', pt: 'Construindo para a eternidade!', spoken: 'Ké-per!', syllables: [1.0, 1.08] },
+      { phrase: 'Baku!', pt: 'Colhendo para o Nilo!', spoken: 'Colhendo riquezas para o Nilo!', syllables: [0.98, 1.04] },
+      { phrase: 'Kheper!', pt: 'Construindo para a eternidade!', spoken: 'Construindo para a eternidade!', syllables: [1.0, 1.08] },
     ],
   },
   norse: {
@@ -755,22 +760,22 @@ export const CULTURE_VOICE_BANK: Record<PantheonId, CultureVoiceProfile> = {
     formantF2: 1180,
     hornPitch: 220.0,
     select: [
-      { phrase: 'Hvað?', pt: 'O que queres, Jarl?', spoken: 'Vádh?', syllables: [1.08] },
-      { phrase: 'Já?', pt: 'Sim, senhor?', spoken: 'Iá?', syllables: [0.96, 1.12] },
-      { phrase: 'Tilbúinn!', pt: 'Pronto para a luta!', spoken: 'Til-bú-in!', syllables: [1.04, 0.96, 1.08] },
+      { phrase: 'Hvað?', pt: 'O que queres, Jarl?', spoken: 'O que ordena, Jarl?', syllables: [1.08] },
+      { phrase: 'Já?', pt: 'Sim, comandante?', spoken: 'Sim! Diga sua ordem.', syllables: [0.96, 1.12] },
+      { phrase: 'Tilbúinn!', pt: 'Pronto para a luta!', spoken: 'Pronto para a batalha!', syllables: [1.04, 0.96, 1.08] },
     ],
     attack: [
-      { phrase: 'Til bardaga!', pt: 'Para a batalha!', spoken: 'Til bar-dá-ga!', syllables: [1.05, 1.18, 1.3, 1.24] },
-      { phrase: 'Drepum þá!', pt: 'Por Odin, abatam todos!', spoken: 'Drê-pum tá!', syllables: [1.12, 1.26, 1.36] },
-      { phrase: 'Valhalla!', pt: 'Por Valhalla!', spoken: 'Val-rá-la!', syllables: [1.06, 1.22, 1.34] },
+      { phrase: 'Til bardaga!', pt: 'Para a batalha!', spoken: 'Para a batalha! Sem piedade!', syllables: [1.05, 1.18, 1.3, 1.24] },
+      { phrase: 'Drepum þá!', pt: 'Por Odin, abatam todos!', spoken: 'Por Odin, abatam todos eles!', syllables: [1.12, 1.26, 1.36] },
+      { phrase: 'Valhalla!', pt: 'Por Valhalla!', spoken: 'Por Valhalla! Ataquem!', syllables: [1.06, 1.22, 1.34] },
     ],
     move: [
-      { phrase: 'Sammála!', pt: 'De acordo, em marcha!', spoken: 'Sam-má-la!', syllables: [1.02, 1.08, 0.98] },
-      { phrase: 'Fram!', pt: 'Avante!', spoken: 'Fram!', syllables: [1.12] },
+      { phrase: 'Sammála!', pt: 'De acordo, em marcha!', spoken: 'De acordo! Em marcha!', syllables: [1.02, 1.08, 0.98] },
+      { phrase: 'Fram!', pt: 'Avante guerreiros!', spoken: 'Avante, sem hesitar!', syllables: [1.12] },
     ],
     work: [
-      { phrase: 'Skipan!', pt: 'Ao trabalho!', spoken: 'Skí-pan!', syllables: [0.98, 1.06] },
-      { phrase: 'Smiður!', pt: 'Forjando e colhendo!', spoken: 'Smí-dur!', syllables: [1.02, 0.94] },
+      { phrase: 'Skipan!', pt: 'Ao trabalho!', spoken: 'Ao trabalho pelo clã!', syllables: [0.98, 1.06] },
+      { phrase: 'Smiður!', pt: 'Forjando e colhendo!', spoken: 'Forjando e colhendo recursos!', syllables: [1.02, 0.94] },
     ],
   },
   atlantean: {
@@ -780,20 +785,20 @@ export const CULTURE_VOICE_BANK: Record<PantheonId, CultureVoiceProfile> = {
     formantF2: 1560,
     hornPitch: 329.63,
     select: [
-      { phrase: 'Yuji?', pt: 'Ordens?', spoken: 'Iú-dji?', syllables: [1.04, 1.16] },
-      { phrase: 'Volat?', pt: 'Qual o comando?', spoken: 'Vô-lat?', syllables: [1.02, 1.14] },
+      { phrase: 'Yuji?', pt: 'Ordens, comandante?', spoken: 'Quais são as ordens, comandante?', syllables: [1.04, 1.16] },
+      { phrase: 'Volat?', pt: 'Pronto por Atlântida.', spoken: 'Pronto por Atlântida!', syllables: [1.02, 1.14] },
     ],
     attack: [
-      { phrase: 'Mache!', pt: 'Para a batalha!', spoken: 'Má-rre!', syllables: [1.22, 1.14] },
-      { phrase: 'Scopos!', pt: 'Alvo confirmado — atacar!', spoken: 'Ess-kó-poss!', syllables: [1.06, 1.2, 1.12] },
+      { phrase: 'Mache!', pt: 'Para a batalha por Atlântida!', spoken: 'Por Atlântida, para a batalha!', syllables: [1.22, 1.14] },
+      { phrase: 'Scopos!', pt: 'Alvo confirmado — atacar!', spoken: 'Alvo confirmado! Atacar agora!', syllables: [1.06, 1.2, 1.12] },
     ],
     move: [
-      { phrase: 'Scopos.', pt: 'Confirmado — avançando.', spoken: 'Ess-kó-poss.', syllables: [1.0, 1.1, 1.02] },
-      { phrase: 'Echlost.', pt: 'Ordem reconhecida.', spoken: 'Ék-lost.', syllables: [1.08, 0.98] },
+      { phrase: 'Scopos.', pt: 'Confirmado — avançando.', spoken: 'Confirmado! Avançando para o alvo.', syllables: [1.0, 1.1, 1.02] },
+      { phrase: 'Echlost.', pt: 'Ordem reconhecida.', spoken: 'Ordem reconhecida. Em deslocamento.', syllables: [1.08, 0.98] },
     ],
     work: [
-      { phrase: 'Echlost.', pt: 'Ordem reconhecida.', spoken: 'Ék-lost.', syllables: [1.04, 0.96] },
-      { phrase: 'Scopos.', pt: 'Confirmado.', spoken: 'Ess-kó-poss.', syllables: [0.98, 1.08, 1.0] },
+      { phrase: 'Echlost.', pt: 'Ordem reconhecida — colhendo.', spoken: 'Ordem reconhecida. Iniciando trabalho.', syllables: [1.04, 0.96] },
+      { phrase: 'Scopos.', pt: 'Confirmado — construindo.', spoken: 'Confirmado! Erguendo por Atlântida.', syllables: [0.98, 1.08, 1.0] },
     ],
   },
   chinese: {
@@ -803,20 +808,20 @@ export const CULTURE_VOICE_BANK: Record<PantheonId, CultureVoiceProfile> = {
     formantF2: 1620,
     hornPitch: 349.23,
     select: [
-      { phrase: 'Zài!', pt: 'Presente e pronto!', spoken: 'Tzái!', syllables: [1.14, 0.96] },
-      { phrase: 'Qǐng fēnfù?', pt: 'Qual é o seu comando?', spoken: 'Tching fên-fú?', syllables: [0.98, 1.1, 1.04] },
+      { phrase: 'Zài!', pt: 'Presente e pronto!', spoken: 'Presente e pronto para servir!', syllables: [1.14, 0.96] },
+      { phrase: 'Qǐng fēnfù?', pt: 'Qual é o seu comando?', spoken: 'Qual é o seu comando, mestre?', syllables: [0.98, 1.1, 1.04] },
     ],
     attack: [
-      { phrase: 'Chōngfēng!', pt: 'Carreguem contra o inimigo!', spoken: 'Tchông-fêng!', syllables: [1.1, 1.28] },
-      { phrase: 'Shā!', pt: 'Ataquem sem trégua!', spoken: 'Shá!', syllables: [1.34] },
+      { phrase: 'Chōngfēng!', pt: 'Carreguem contra o inimigo!', spoken: 'Carreguem contra o inimigo!', syllables: [1.1, 1.28] },
+      { phrase: 'Shā!', pt: 'Ataquem sem trégua!', spoken: 'Pela dinastia, ataquem sem trégua!', syllables: [1.34] },
     ],
     move: [
-      { phrase: 'Zūn mìng!', pt: 'Obedecendo à ordem!', spoken: 'Tzun ming!', syllables: [1.06, 1.12] },
-      { phrase: 'Chūfā!', pt: 'Partindo agora!', spoken: 'Tchú-fá!', syllables: [1.02, 1.1] },
+      { phrase: 'Zūn mìng!', pt: 'Obedecendo à ordem!', spoken: 'Obedecendo à sua ordem!', syllables: [1.06, 1.12] },
+      { phrase: 'Chūfā!', pt: 'Partindo agora!', spoken: 'Partindo imediatamente!', syllables: [1.02, 1.1] },
     ],
     work: [
-      { phrase: 'Láodòng!', pt: 'Trabalhando pela dinastia!', spoken: 'Láo-dong!', syllables: [0.98, 1.06] },
-      { phrase: 'Jiànzào!', pt: 'Erguendo e colhendo!', spoken: 'Djiên-tzáo!', syllables: [1.04, 0.98] },
+      { phrase: 'Láodòng!', pt: 'Trabalhando pela dinastia!', spoken: 'Trabalhando pela dinastia!', syllables: [0.98, 1.06] },
+      { phrase: 'Jiànzào!', pt: 'Erguendo e colhendo!', spoken: 'Erguendo e colhendo recursos!', syllables: [1.04, 0.98] },
     ],
   },
   aztec: {
@@ -826,20 +831,20 @@ export const CULTURE_VOICE_BANK: Record<PantheonId, CultureVoiceProfile> = {
     formantF2: 1440,
     hornPitch: 311.13,
     select: [
-      { phrase: 'Tlahtoani?', pt: 'Ordens, Grande Orador?', spoken: 'Tla-to-á-ni?', syllables: [1.0, 1.08, 1.16] },
-      { phrase: 'Nican!', pt: 'Estou pronto!', spoken: 'Ní-kan!', syllables: [1.06, 1.0] },
+      { phrase: 'Tlahtoani?', pt: 'Ordens, Grande Orador?', spoken: 'Quais são suas ordens, Grande Orador?', syllables: [1.0, 1.08, 1.16] },
+      { phrase: 'Nican!', pt: 'Estou pronto!', spoken: 'Estou pronto para a guerra!', syllables: [1.06, 1.0] },
     ],
     attack: [
-      { phrase: 'Yaoyotl!', pt: 'Guerra sagrada pelo Sol!', spoken: 'Iáo-iótl!', syllables: [1.08, 1.2, 1.32] },
-      { phrase: 'Huitzilopochtli!', pt: 'Sangue para o Deus Sol!', spoken: 'Ui-tzi-lo-pótch-tli!', syllables: [1.04, 1.14, 1.24, 1.35] },
+      { phrase: 'Yaoyotl!', pt: 'Guerra sagrada pelo Sol!', spoken: 'Guerra sagrada pelo Deus Sol!', syllables: [1.08, 1.2, 1.32] },
+      { phrase: 'Huitzilopochtli!', pt: 'Glória ao Deus Sol!', spoken: 'Pela glória do Deus Sol, ataquem!', syllables: [1.04, 1.14, 1.24, 1.35] },
     ],
     move: [
-      { phrase: 'Ohtli!', pt: 'Seguindo o caminho!', spoken: 'Ó-tli!', syllables: [1.04, 1.08] },
-      { phrase: 'Nemi!', pt: 'Avançando!', spoken: 'Nê-mi!', syllables: [1.02, 0.98] },
+      { phrase: 'Ohtli!', pt: 'Seguindo o caminho!', spoken: 'Seguindo o caminho agora!', syllables: [1.04, 1.08] },
+      { phrase: 'Nemi!', pt: 'Avançando!', spoken: 'Avançando sem demora!', syllables: [1.02, 0.98] },
     ],
     work: [
-      { phrase: 'Tequitl!', pt: 'Trabalhando no tributo!', spoken: 'Te-quí-tl!', syllables: [0.98, 1.06] },
-      { phrase: 'Calli!', pt: 'Construindo para Tenochtitlán!', spoken: 'Cá-li!', syllables: [1.02, 1.0] },
+      { phrase: 'Tequitl!', pt: 'Trabalhando no tributo!', spoken: 'Trabalhando pelo império!', syllables: [0.98, 1.06] },
+      { phrase: 'Calli!', pt: 'Construindo para Tenochtitlán!', spoken: 'Construindo para Tenochtitlán!', syllables: [1.02, 1.0] },
     ],
   },
   roman: {
@@ -849,20 +854,20 @@ export const CULTURE_VOICE_BANK: Record<PantheonId, CultureVoiceProfile> = {
     formantF2: 1410,
     hornPitch: 293.66,
     select: [
-      { phrase: 'Imperium?', pt: 'Qual é o comando, Legatus?', spoken: 'Im-pé-ri-um?', syllables: [1.0, 1.08, 1.14] },
-      { phrase: 'Paratus!', pt: 'Pronto pela Legião!', spoken: 'Pa-rá-tuss!', syllables: [1.04, 1.1, 0.98] },
+      { phrase: 'Imperium?', pt: 'Qual é o comando, Legatus?', spoken: 'Qual é o comando, Legatus?', syllables: [1.0, 1.08, 1.14] },
+      { phrase: 'Paratus!', pt: 'Pronto pela Legião!', spoken: 'Pronto pela Legião Romana!', syllables: [1.04, 1.1, 0.98] },
     ],
     attack: [
-      { phrase: 'Ad arma!', pt: 'Às armas, legionários!', spoken: 'Ad ár-ma!', syllables: [1.06, 1.22, 1.32] },
-      { phrase: 'Pro Roma!', pt: 'Pela glória de Roma, ataquem!', spoken: 'Prô Rô-ma!', syllables: [1.08, 1.24, 1.3] },
+      { phrase: 'Ad arma!', pt: 'Às armas, legionários!', spoken: 'Às armas, legionários! Avançar!', syllables: [1.06, 1.22, 1.32] },
+      { phrase: 'Pro Roma!', pt: 'Pela glória de Roma, ataquem!', spoken: 'Pela glória de Roma, ataquem!', syllables: [1.08, 1.24, 1.3] },
     ],
     move: [
-      { phrase: 'Procedite!', pt: 'Marchem em formação!', spoken: 'Pro-cê-di-te!', syllables: [1.02, 1.08, 1.0] },
-      { phrase: 'Celeriter!', pt: 'Com rapidez!', spoken: 'Ce-lé-ri-ter!', syllables: [1.06, 1.02, 1.1] },
+      { phrase: 'Procedite!', pt: 'Marchem em formação!', spoken: 'Marchando em formação!', syllables: [1.02, 1.08, 1.0] },
+      { phrase: 'Celeriter!', pt: 'Com rapidez!', spoken: 'Avançando com rapidez!', syllables: [1.06, 1.02, 1.1] },
     ],
     work: [
-      { phrase: 'Laboramus!', pt: 'Trabalhando pelo Império!', spoken: 'La-bo-rá-muss!', syllables: [0.98, 1.04, 1.0] },
-      { phrase: 'Aedifica!', pt: 'Construindo obra romana!', spoken: 'E-dí-fi-ca!', syllables: [1.02, 1.08, 0.96] },
+      { phrase: 'Laboramus!', pt: 'Trabalhando pelo Império!', spoken: 'Trabalhando pelo Império!', syllables: [0.98, 1.04, 1.0] },
+      { phrase: 'Aedifica!', pt: 'Construindo obra romana!', spoken: 'Construindo pela glória de Roma!', syllables: [1.02, 1.08, 0.96] },
     ],
   },
   japanese: {
@@ -872,20 +877,20 @@ export const CULTURE_VOICE_BANK: Record<PantheonId, CultureVoiceProfile> = {
     formantF2: 1500,
     hornPitch: 329.63,
     select: [
-      { phrase: 'Gomeirei wo?', pt: 'Qual é a sua ordem, Xogum?', spoken: 'Go-mei-rei ô?', syllables: [0.98, 1.06, 1.14] },
-      { phrase: 'Kakugo!', pt: 'Pronto com honra!', spoken: 'Ka-kú-go!', syllables: [1.08, 1.02, 0.96] },
+      { phrase: 'Gomeirei wo?', pt: 'Qual é a sua ordem, Xogum?', spoken: 'Qual é a sua ordem, Xogum?', syllables: [0.98, 1.06, 1.14] },
+      { phrase: 'Kakugo!', pt: 'Pronto com honra!', spoken: 'Pronto com honra e disciplina!', syllables: [1.08, 1.02, 0.96] },
     ],
     attack: [
-      { phrase: 'Totsugeki!', pt: 'Ataquem com honra!', spoken: 'To-tsu-guê-ki!', syllables: [1.06, 1.18, 1.32] },
-      { phrase: 'Kirifuse!', pt: 'Derrubem os inimigos!', spoken: 'Ki-ri-fú-sse!', syllables: [1.1, 1.22, 1.34] },
+      { phrase: 'Totsugeki!', pt: 'Ataquem com honra!', spoken: 'Ataquem com honra! Em frente!', syllables: [1.06, 1.18, 1.32] },
+      { phrase: 'Kirifuse!', pt: 'Derrubem os inimigos!', spoken: 'Derrubem os inimigos sem hesitar!', syllables: [1.1, 1.22, 1.34] },
     ],
     move: [
-      { phrase: 'Shōchi!', pt: 'Compreendido, em marcha!', spoken: 'Shô-tchi!', syllables: [1.04, 1.1] },
-      { phrase: 'Susume!', pt: 'Avancem!', spoken: 'Su-sú-me!', syllables: [1.02, 1.08, 1.12] },
+      { phrase: 'Shōchi!', pt: 'Compreendido, em marcha!', spoken: 'Compreendido! Em marcha.', syllables: [1.04, 1.1] },
+      { phrase: 'Susume!', pt: 'Avancem!', spoken: 'Avancem em formação!', syllables: [1.02, 1.08, 1.12] },
     ],
     work: [
-      { phrase: 'Fushin!', pt: 'Construindo e colhendo!', spoken: 'Fu-shin!', syllables: [0.98, 1.04] },
-      { phrase: 'Tsutome!', pt: 'Cumprindo o dever!', spoken: 'Tsu-tô-me!', syllables: [1.02, 0.98] },
+      { phrase: 'Fushin!', pt: 'Construindo e colhendo!', spoken: 'Construindo e colhendo recursos!', syllables: [0.98, 1.04] },
+      { phrase: 'Tsutome!', pt: 'Cumprindo o dever!', spoken: 'Cumprindo o nosso dever!', syllables: [1.02, 0.98] },
     ],
   },
   eldritch: {
@@ -895,18 +900,18 @@ export const CULTURE_VOICE_BANK: Record<PantheonId, CultureVoiceProfile> = {
     formantF2: 980,
     hornPitch: 164.81,
     select: [
-      { phrase: "Iä! Ph'nglui?", pt: 'O vazio escuta seu chamado?', spoken: 'Iá! Fen-glúi?', syllables: [0.92, 1.06, 0.88] },
-      { phrase: "R'lyeh!", pt: 'Despertos nas profundezas!', spoken: 'Rê-li-é!', syllables: [1.04, 0.9] },
+      { phrase: "Iä! Ph'nglui?", pt: 'O vazio escuta seu chamado.', spoken: 'O vazio escuta o seu chamado.', syllables: [0.92, 1.06, 0.88] },
+      { phrase: "R'lyeh!", pt: 'Despertos nas profundezas!', spoken: 'Despertamos das profundezas abissais!', syllables: [1.04, 0.9] },
     ],
     attack: [
-      { phrase: 'Fhtagn! Obliterar!', pt: 'Devorar as mentes mortais!', spoken: 'Fé-tag-n! Obliterar!', syllables: [1.08, 1.22, 0.94] },
-      { phrase: 'Yogg-Sothoth!', pt: 'Pelo caos abissal, destruam!', spoken: 'Ióg-So-tót!', syllables: [1.02, 1.18, 1.28] },
+      { phrase: 'Fhtagn! Obliterar!', pt: 'Devorar as mentes mortais!', spoken: 'Obliterar e devorar os mortais!', syllables: [1.08, 1.22, 0.94] },
+      { phrase: 'Yogg-Sothoth!', pt: 'Pelo caos abissal, destruam!', spoken: 'Pelo caos abissal, destruam tudo!', syllables: [1.02, 1.18, 1.28] },
     ],
     move: [
-      { phrase: 'Nyarlath!', pt: 'Deslizando pelas sombras!', spoken: 'Ni-ar-lát!', syllables: [0.96, 1.04] },
+      { phrase: 'Nyarlath!', pt: 'Deslizando pelas sombras!', spoken: 'Deslizando pelas sombras antigas.', syllables: [0.96, 1.04] },
     ],
     work: [
-      { phrase: 'Shoggoth!', pt: 'Canalizando matéria astral!', spoken: 'Shô-got!', syllables: [0.94, 1.02] },
+      { phrase: 'Shoggoth!', pt: 'Canalizando matéria astral!', spoken: 'Canalizando energia astral.', syllables: [0.94, 1.02] },
     ],
   },
   celtic: {
@@ -916,18 +921,18 @@ export const CULTURE_VOICE_BANK: Record<PantheonId, CultureVoiceProfile> = {
     formantF2: 1460,
     hornPitch: 261.63,
     select: [
-      { phrase: 'Cén t-ordú?', pt: 'Qual é o comando dos Druidas?', spoken: 'Kên tor-dú?', syllables: [1.0, 1.12, 1.04] },
-      { phrase: 'Réidh!', pt: 'Pronto pelo clã!', spoken: 'Rêid!', syllables: [1.1] },
+      { phrase: 'Cén t-ordú?', pt: 'Qual é o comando dos Druidas?', spoken: 'Qual é o comando dos Druidas?', syllables: [1.0, 1.12, 1.04] },
+      { phrase: 'Réidh!', pt: 'Pronto pelo clã!', spoken: 'Pronto para defender o clã!', syllables: [1.1] },
     ],
     attack: [
-      { phrase: 'Abú! Chun catha!', pt: 'Vitória! Para a batalha!', spoken: 'A-bú! Run cá-rra!', syllables: [1.06, 1.2, 1.32] },
-      { phrase: 'Morrígan!', pt: 'Pela fúria de Morrígan!', spoken: 'Mo-rí-gan!', syllables: [1.1, 1.24, 1.18] },
+      { phrase: 'Abú! Chun catha!', pt: 'Vitória! Para a batalha!', spoken: 'Vitória! Para a batalha!', syllables: [1.06, 1.2, 1.32] },
+      { phrase: 'Morrígan!', pt: 'Pela fúria de Morrígan!', spoken: 'Pela fúria de Morrígan, ataquem!', syllables: [1.1, 1.24, 1.18] },
     ],
     move: [
-      { phrase: 'Ar aghaidh!', pt: 'Avante pelas colinas!', spoken: 'Ar a-gái!', syllables: [1.02, 1.1] },
+      { phrase: 'Ar aghaidh!', pt: 'Avante pelas colinas!', spoken: 'Avante pelas colinas!', syllables: [1.02, 1.1] },
     ],
     work: [
-      { phrase: 'Obair!', pt: 'Colhendo nas terras sagradas!', spoken: 'Ó-bair!', syllables: [0.98, 1.04] },
+      { phrase: 'Obair!', pt: 'Colhendo nas terras sagradas!', spoken: 'Colhendo nas terras sagradas!', syllables: [0.98, 1.04] },
     ],
   },
   babylonian: {
@@ -937,18 +942,18 @@ export const CULTURE_VOICE_BANK: Record<PantheonId, CultureVoiceProfile> = {
     formantF2: 1320,
     hornPitch: 246.94,
     select: [
-      { phrase: 'Amātu?', pt: 'Qual é a palavra real?', spoken: 'A-má-tu?', syllables: [0.98, 1.08, 1.12] },
-      { phrase: 'Annû!', pt: 'Pronto na Babilônia!', spoken: 'A-nú!', syllables: [1.04, 1.0] },
+      { phrase: 'Amātu?', pt: 'Qual é a palavra real?', spoken: 'Qual é a palavra real?', syllables: [0.98, 1.08, 1.12] },
+      { phrase: 'Annû!', pt: 'Pronto na Babilônia!', spoken: 'Pronto pela glória da Babilônia!', syllables: [1.04, 1.0] },
     ],
     attack: [
-      { phrase: 'Ina Marduk!', pt: 'Por Marduk, esmaguem-nos!', spoken: 'I-na Mar-duk!', syllables: [1.06, 1.18, 1.3] },
-      { phrase: 'Qablu!', pt: 'Ao combate!', spoken: 'Ka-blú!', syllables: [1.12, 1.26] },
+      { phrase: 'Ina Marduk!', pt: 'Por Marduk, esmaguem-nos!', spoken: 'Por Marduk, esmaguem os inimigos!', syllables: [1.06, 1.18, 1.3] },
+      { phrase: 'Qablu!', pt: 'Ao combate!', spoken: 'Ao combate pela Babilônia!', syllables: [1.12, 1.26] },
     ],
     move: [
-      { phrase: 'Alāku!', pt: 'Marchando pelo Eufrates!', spoken: 'A-lá-ku!', syllables: [1.02, 1.08, 1.0] },
+      { phrase: 'Alāku!', pt: 'Marchando pelo Eufrates!', spoken: 'Marchando pelas margens do Eufrates!', syllables: [1.02, 1.08, 1.0] },
     ],
     work: [
-      { phrase: 'Epēšu!', pt: 'Erguendo o zigurate!', spoken: 'E-pê-shu!', syllables: [0.98, 1.06, 1.0] },
+      { phrase: 'Epēšu!', pt: 'Erguendo o zigurate!', spoken: 'Erguendo o grande zigurate!', syllables: [0.98, 1.06, 1.0] },
     ],
   },
   lakota: {
@@ -958,18 +963,18 @@ export const CULTURE_VOICE_BANK: Record<PantheonId, CultureVoiceProfile> = {
     formantF2: 1420,
     hornPitch: 293.66,
     select: [
-      { phrase: 'Háu, Itancan?', pt: 'Qual é o caminho, Chefe?', spoken: 'Ráu, I-tan-kan?', syllables: [1.02, 1.1, 1.06] },
-      { phrase: 'Wiyeya!', pt: 'Pronto nas planícies!', spoken: 'Ui-ê-ia!', syllables: [1.06, 1.0, 1.08] },
+      { phrase: 'Háu, Itancan?', pt: 'Qual é o caminho, Chefe?', spoken: 'Qual é o caminho, Grande Chefe?', syllables: [1.02, 1.1, 1.06] },
+      { phrase: 'Wiyeya!', pt: 'Pronto nas planícies!', spoken: 'Pronto nas grandes planícies!', syllables: [1.06, 1.0, 1.08] },
     ],
     attack: [
-      { phrase: 'Hokahey!', pt: 'É um bom dia para lutar!', spoken: 'Rô-ka-rêi!', syllables: [1.08, 1.2, 1.34] },
-      { phrase: 'Wakinyan!', pt: 'Como o Pássaro-Trovão, ataquem!', spoken: 'Ua-kín-ian!', syllables: [1.06, 1.18, 1.28] },
+      { phrase: 'Hokahey!', pt: 'É um bom dia para lutar!', spoken: 'Hoje é um grande dia para lutar!', syllables: [1.08, 1.2, 1.34] },
+      { phrase: 'Wakinyan!', pt: 'Como o Pássaro-Trovão, ataquem!', spoken: 'Como o Pássaro Trovão, ataquem!', syllables: [1.06, 1.18, 1.28] },
     ],
     move: [
-      { phrase: 'Iyaya!', pt: 'Cavalgando como o vento!', spoken: 'I-á-ia!', syllables: [1.04, 1.1, 1.02] },
+      { phrase: 'Iyaya!', pt: 'Cavalgando como o vento!', spoken: 'Cavalgando rápido como o vento!', syllables: [1.04, 1.1, 1.02] },
     ],
     work: [
-      { phrase: 'Wóškate!', pt: 'Sustentando a tribo!', spoken: 'Uôsh-ka-te!', syllables: [0.98, 1.04, 1.0] },
+      { phrase: 'Wóškate!', pt: 'Sustentando a tribo!', spoken: 'Sustentando nossa tribo!', syllables: [0.98, 1.04, 1.0] },
     ],
   },
   jotunn: {
@@ -979,18 +984,18 @@ export const CULTURE_VOICE_BANK: Record<PantheonId, CultureVoiceProfile> = {
     formantF2: 920,
     hornPitch: 146.83,
     select: [
-      { phrase: 'Kaldur rymr?', pt: 'A geada aguarda sua ordem?', spoken: 'Kál-dur rí-mer?', syllables: [0.92, 1.02, 0.96] },
-      { phrase: 'Jötunn!', pt: 'Os gigantes despertam!', spoken: 'Iô-tun!', syllables: [1.04, 0.94] },
+      { phrase: 'Kaldur rymr?', pt: 'A geada aguarda sua ordem.', spoken: 'A geada eterna aguarda sua ordem.', syllables: [0.92, 1.02, 0.96] },
+      { phrase: 'Jötunn!', pt: 'Os gigantes despertam!', spoken: 'Os gigantes de gelo despertam!', syllables: [1.04, 0.94] },
     ],
     attack: [
-      { phrase: 'Fimbulvetr!', pt: 'Inverno eterno sobre eles!', spoken: 'Fím-bul-ve-ter!', syllables: [1.04, 1.16, 1.24] },
-      { phrase: 'Brjóta!', pt: 'Estilhacem no gelo!', spoken: 'Briô-ta!', syllables: [1.12, 1.26] },
+      { phrase: 'Fimbulvetr!', pt: 'Inverno eterno sobre eles!', spoken: 'Inverno eterno sobre nossos inimigos!', syllables: [1.04, 1.16, 1.24] },
+      { phrase: 'Brjóta!', pt: 'Estilhacem no gelo!', spoken: 'Estilhacem tudo no gelo!', syllables: [1.12, 1.26] },
     ],
     move: [
-      { phrase: 'Ganga!', pt: 'Passos que tremem a terra!', spoken: 'Gán-ga!', syllables: [0.98, 0.92] },
+      { phrase: 'Ganga!', pt: 'Passos que tremem a terra!', spoken: 'Marchando com passos que tremem a terra.', syllables: [0.98, 0.92] },
     ],
     work: [
-      { phrase: 'Hrímpurs!', pt: 'Moldando o gelo primordial!', spoken: 'Rrím-purs!', syllables: [0.94, 1.0] },
+      { phrase: 'Hrímpurs!', pt: 'Moldando o gelo primordial!', spoken: 'Moldando o gelo primordial.', syllables: [0.94, 1.0] },
     ],
   },
 };
@@ -1007,7 +1012,7 @@ class SoundEngine {
   private lastPhraseByKey: Record<string, string> = {};
   private audioBufferCache = new Map<string, AudioBuffer>();
   private loadingAudioUrls = new Set<string>();
-  private speechQueueToken = 0;
+  private studioVoice = new StudioVoicePlayer();
   private bgAudioElement: HTMLAudioElement | null = null;
 
   // Dynamic Hybrid Soundtrack State
@@ -1024,6 +1029,8 @@ class SoundEngine {
   private musicTrackStartedAt = 0;
   private musicPausedDuck = false;
   private musicCueDuckUntil = 0;
+  private musicVoiceDuckUntil = 0;
+  private voiceDuckRestoreTimer: number | null = null;
   private campaignPinnedTrackId: string | null = null;
   private titleCycleIndex = 0;
 
@@ -1077,9 +1084,11 @@ class SoundEngine {
   }
 
   private updateMusicBusGain() {
+    const nowCtx = this.ctx?.currentTime ?? 0;
+    const isVoiceDucking = nowCtx < this.musicVoiceDuckUntil;
     if (this.bgAudioElement) {
       const scale = this.effectiveMusicScale;
-      const duckFactor = this.musicPausedDuck ? 0.3 : 1.0;
+      const duckFactor = this.musicPausedDuck ? 0.3 : isVoiceDucking ? 0.38 : 1.0;
       this.bgAudioElement.volume = Math.max(0, Math.min(1, scale * duckFactor * 0.9));
       if (scale <= 0 || !this.musicEnabled) {
         this.bgAudioElement.pause();
@@ -1091,12 +1100,34 @@ class SoundEngine {
     const now = this.ctx.currentTime;
     const scale = this.effectiveMusicScale;
     const moodFactor = this.musicScene === 'match' && this.musicMood === 'mellow' ? 0.72 : 1.0;
-    const duckFactor = this.musicPausedDuck ? 0.3 : now < this.musicCueDuckUntil ? 0.42 : 1.0;
+    const duckFactor = this.musicPausedDuck
+      ? 0.3
+      : isVoiceDucking
+      ? 0.36
+      : now < this.musicCueDuckUntil
+      ? 0.42
+      : 1.0;
     const targetGain = scale > 0 ? Math.max(0.001, 0.24 * scale * moodFactor * duckFactor) : 0.0001;
     this.musicMasterGain.gain.setTargetAtTime(targetGain, now, 0.14);
 
     const targetCutoff = this.musicScene === 'match' && this.musicMood === 'mellow' ? 1150 : 3400;
     this.musicLowpass.frequency.setTargetAtTime(targetCutoff, now, 0.25);
+  }
+
+  private duckMusicForVoice(durationSec: number) {
+    const ctx = this.ctx;
+    if (!ctx) return;
+    this.musicVoiceDuckUntil = Math.max(this.musicVoiceDuckUntil, ctx.currentTime + Math.max(0.4, durationSec));
+    this.updateMusicBusGain();
+    if (typeof window !== 'undefined') {
+      if (this.voiceDuckRestoreTimer !== null) {
+        window.clearTimeout(this.voiceDuckRestoreTimer);
+      }
+      this.voiceDuckRestoreTimer = window.setTimeout(() => {
+        this.voiceDuckRestoreTimer = null;
+        this.updateMusicBusGain();
+      }, Math.ceil(durationSec * 1000) + 120);
+    }
   }
 
   private canPlay(key: string, minIntervalMs: number): boolean {
@@ -1109,10 +1140,65 @@ class SoundEngine {
 
   public unlock() {
     this.getOrCreateRawContext();
-    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-      window.speechSynthesis.getVoices();
-    }
     this.startMusicScheduler();
+  }
+
+  public stopVoice() {
+    this.studioVoice.stopActiveVoice(this.ctx);
+    this.musicVoiceDuckUntil = 0;
+    this.updateMusicBusGain();
+  }
+
+  /**
+   * Speaks a Campaign, Wave, or Scenario Cinematic character dialogue with
+   * flagship Gemini 3.8 Neural Studio Voice acting and automatic music ducking.
+   */
+  public speakDialogue(
+    speaker: string,
+    text: string,
+    opts?: {
+      pantheon?: PantheonId;
+      role?: ClientStudioVoiceRole;
+      priority?: 'normal' | 'high';
+    }
+  ) {
+    const ctx = this.ensureContext();
+    const scale = this.effectiveSfxScale;
+    if (!ctx || scale <= 0 || !text.trim()) return;
+
+    const resolvedRole = opts?.role ?? inferVoiceRoleFromSpeaker(speaker);
+    this.studioVoice.speak(
+      ctx,
+      {
+        text,
+        role: resolvedRole,
+        action: 'dialogue',
+        pantheon: opts?.pantheon ?? this.musicPantheon,
+        speaker,
+        dramatic: true,
+        priority: opts?.priority ?? 'high',
+        volumeScale: 1.05,
+      },
+      scale,
+      (dur) => this.duckMusicForVoice(dur)
+    );
+  }
+
+  /**
+   * Silently prewarms the active pantheon's core select/move/attack voices at match start
+   * so the first player commands play immediately with studio clarity.
+   */
+  public prewarmPantheonVoices(pantheon: PantheonId) {
+    const ctx = this.getOrCreateRawContext();
+    if (!ctx || this.effectiveSfxScale <= 0) return;
+    const bank = CULTURE_VOICE_BANK[pantheon] ?? CULTURE_VOICE_BANK.greek;
+    const lines = [
+      { text: bank.select[0]?.spoken ?? 'Pronto para servir!', role: 'warrior_male' as ClientStudioVoiceRole, action: 'select' as const, pantheon },
+      { text: bank.move[0]?.spoken ?? 'Em marcha!', role: 'warrior_male' as ClientStudioVoiceRole, action: 'move' as const, pantheon },
+      { text: bank.attack[0]?.spoken ?? 'Para a batalha!', role: 'warrior_male' as ClientStudioVoiceRole, action: 'attack' as const, pantheon },
+      { text: bank.work[0]?.spoken ?? 'Ao trabalho!', role: 'villager_male' as ClientStudioVoiceRole, action: 'work' as const, pantheon },
+    ];
+    this.studioVoice.prewarmLines(ctx, lines);
   }
 
   public applySettings(opts: {
@@ -1128,151 +1214,14 @@ class SoundEngine {
     this.musicEnabled = opts.musicEnabled;
     this.sfxEnabled = opts.sfxEnabled;
     this.muted = !opts.sfxEnabled && !opts.musicEnabled;
-    if ((this.muted || !this.sfxEnabled) && typeof window !== 'undefined' && 'speechSynthesis' in window) {
-      this.speechQueueToken++;
-      window.speechSynthesis.cancel();
+    if (this.muted || !this.sfxEnabled) {
+      this.stopVoice();
     }
     this.updateMusicBusGain();
     if (this.effectiveMusicScale > 0) {
       this.startMusicScheduler();
     } else {
       this.stopMusicScheduler();
-    }
-  }
-
-  private speakSpokenText(
-    spokenText: string,
-    opts: { pitch: number; rate: number; isFemale?: boolean; volumeScale?: number }
-  ): boolean {
-    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return false;
-    const scale = this.effectiveSfxScale;
-    if (scale <= 0) return false;
-
-    const synth = window.speechSynthesis;
-    const voices = synth.getVoices();
-    if (!voices || voices.length === 0) return false;
-
-    const ptVoices = voices.filter((v) => v.lang.toLowerCase().startsWith('pt'));
-    const latinVoices =
-      ptVoices.length > 0
-        ? ptVoices
-        : voices.filter((v) => /^(el|es|it|la)/i.test(v.lang));
-    const pool = latinVoices.length > 0 ? latinVoices : voices;
-
-    const femaleHint = /(female|maria|helena|luciana|francisca|camila|vitoria|vitória|sofia|ana|paula|zira|samantha|victoria)/i;
-    const maleHint = /(male|daniel|antonio|antônio|ricardo|felipe|tiago|duarte|joao|joão|david|alex|george)/i;
-    const chosenVoice = opts.isFemale
-      ? pool.find((v) => femaleHint.test(v.name)) ?? pool[0]
-      : pool.find((v) => maleHint.test(v.name)) ?? pool[0];
-
-    const utterance = new SpeechSynthesisUtterance(spokenText);
-    if (chosenVoice) {
-      utterance.voice = chosenVoice;
-      utterance.lang = chosenVoice.lang;
-    } else {
-      utterance.lang = 'pt-BR';
-    }
-    utterance.pitch = Math.max(0.4, Math.min(1.65, opts.pitch));
-    utterance.rate = Math.max(0.75, Math.min(1.35, opts.rate));
-    utterance.volume = Math.max(0.05, Math.min(1, 0.92 * scale * (opts.volumeScale ?? 1)));
-
-    const token = ++this.speechQueueToken;
-    if (synth.speaking || synth.pending) {
-      synth.cancel();
-      window.setTimeout(() => {
-        if (this.speechQueueToken !== token || this.effectiveSfxScale <= 0) return;
-        synth.speak(utterance);
-      }, 18);
-    } else {
-      synth.speak(utterance);
-    }
-    return true;
-  }
-
-  private playVowelFormantCadence(
-    ctx: AudioContext,
-    scale: number,
-    spokenText: string,
-    baseFreq: number,
-    formantF1: number,
-    formantF2: number,
-    syllables: number[],
-    action: UnitVoiceAction,
-    groupSize: number,
-    isDarkTone: boolean
-  ) {
-    const now = ctx.currentTime;
-    const cleanVowels = spokenText
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .match(/[aeiou]+/g) ?? ['a'];
-
-    const vowelFormants: Record<string, [number, number]> = {
-      a: [730, 1180],
-      e: [500, 1850],
-      i: [310, 2250],
-      o: [480, 920],
-      u: [330, 840],
-    };
-
-    const voiceLayers = groupSize > 1 ? 2 : 1;
-    const sylCount = Math.max(syllables.length, Math.min(4, cleanVowels.length));
-
-    for (let v = 0; v < voiceLayers; v++) {
-      const layerDelay = v * 0.036;
-      const layerDetune = v === 0 ? 1.0 : 1.042;
-      const layerGainScale = v === 0 ? 1.0 : 0.6;
-
-      let cursor = now + layerDelay;
-      for (let i = 0; i < sylCount; i++) {
-        const pitchMult = syllables[i % syllables.length] ?? 1.0;
-        const sylPitch = baseFreq * pitchMult * layerDetune;
-        const dur = action === 'attack' ? 0.11 : 0.095;
-        const vChar = cleanVowels[i % cleanVowels.length][0] ?? 'a';
-        const [vf1, vf2] = vowelFormants[vChar] ?? [formantF1, formantF2];
-
-        const osc = ctx.createOscillator();
-        const subOsc = ctx.createOscillator();
-        const f1Filter = ctx.createBiquadFilter();
-        const f2Filter = ctx.createBiquadFilter();
-        const gain = ctx.createGain();
-
-        osc.type = isDarkTone ? 'sawtooth' : 'triangle';
-        subOsc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(sylPitch, cursor);
-        subOsc.frequency.setValueAtTime(sylPitch * 0.5, cursor);
-
-        const endMult = action === 'select' && i === sylCount - 1 ? 1.15 : 0.93;
-        osc.frequency.exponentialRampToValueAtTime(sylPitch * endMult, cursor + dur);
-        subOsc.frequency.exponentialRampToValueAtTime(sylPitch * 0.5 * endMult, cursor + dur);
-
-        f1Filter.type = 'bandpass';
-        f1Filter.frequency.setValueAtTime((vf1 + formantF1) * 0.5, cursor);
-        f1Filter.Q.setValueAtTime(4.2, cursor);
-
-        f2Filter.type = 'peaking';
-        f2Filter.frequency.setValueAtTime((vf2 + formantF2) * 0.5, cursor);
-        f2Filter.gain.setValueAtTime(7.5, cursor);
-
-        const amp = (action === 'attack' ? 0.13 : 0.1) * scale * layerGainScale;
-        gain.gain.setValueAtTime(0.001, cursor);
-        gain.gain.linearRampToValueAtTime(amp, cursor + 0.016);
-        gain.gain.exponentialRampToValueAtTime(0.001, cursor + dur);
-
-        osc.connect(f1Filter);
-        subOsc.connect(f1Filter);
-        f1Filter.connect(f2Filter);
-        f2Filter.connect(gain);
-        gain.connect(ctx.destination);
-
-        osc.start(cursor);
-        subOsc.start(cursor);
-        osc.stop(cursor + dur + 0.01);
-        subOsc.stop(cursor + dur + 0.01);
-
-        cursor += dur + 0.022;
-      }
     }
   }
 
@@ -1360,6 +1309,10 @@ class SoundEngine {
     groupSize: number;
     audioUrl?: string;
     respectCooldown?: boolean;
+    studioRole?: ClientStudioVoiceRole;
+    pantheon?: PantheonId;
+    speaker?: string;
+    dramatic?: boolean;
   }): UnitVoiceLineInfo {
     const result: UnitVoiceLineInfo = {
       phrase: opts.phrase,
@@ -1368,26 +1321,26 @@ class SoundEngine {
       action: opts.action,
     };
 
-    if (opts.respectCooldown !== false && !this.canPlay('unit_voice', 220)) {
+    if (opts.respectCooldown !== false && !this.canPlay('unit_voice', 280)) {
       return result;
     }
 
     const scale = this.effectiveSfxScale;
-    if (scale <= 0) {
+    const ctx = this.ensureContext();
+    if (!ctx || scale <= 0) {
       return result;
     }
 
-    // 0. Play registered real audio clip URL if decoded and cached
+    // 0. Play registered custom audio clip URL if decoded and cached
     let playedRegisteredClip = false;
     if (opts.audioUrl) {
-      const ctx = this.ensureContext();
       const cached = this.audioBufferCache.get(opts.audioUrl);
-      if (ctx && cached) {
+      if (cached) {
         const src = ctx.createBufferSource();
         const gain = ctx.createGain();
         src.buffer = cached;
-        src.playbackRate.value = Math.max(0.75, Math.min(1.25, opts.speechRate));
-        gain.gain.value = Math.min(1.0, 0.85 * scale);
+        src.playbackRate.value = Math.max(0.85, Math.min(1.15, opts.speechRate));
+        gain.gain.value = Math.min(1.0, 0.9 * scale);
         src.connect(gain);
         gain.connect(ctx.destination);
         src.start(ctx.currentTime);
@@ -1397,55 +1350,46 @@ class SoundEngine {
       }
     }
 
-    // 1. Try real browser SpeechSynthesis with phonetic pronunciation
-    const speechPitch = Math.max(0.45, Math.min(1.5, opts.kindPitchMult));
-    const spokeLive = playedRegisteredClip
-      ? true
-      : this.speakSpokenText(opts.spoken, {
-          pitch: speechPitch,
-          rate: opts.speechRate,
-          isFemale: opts.isFemale,
-        });
+    // 1. Studio Neural Voice Acting (Gemini 3.8 TTS + WebAudio broadcast mastering)
+    if (!playedRegisteredClip) {
+      const inferredRole: ClientStudioVoiceRole =
+        opts.studioRole ??
+        (opts.kindPitchMult <= 0.54
+          ? 'titan'
+          : opts.kindPitchMult <= 0.65 && opts.isDarkTone
+          ? 'major_god_male'
+          : opts.isFemale
+          ? 'warrior_female'
+          : opts.isDarkTone
+          ? 'myth_beast'
+          : 'warrior_male');
 
-    const ctx = this.ensureContext();
-    if (!ctx) {
-      return result;
-    }
+      const isHighPriority =
+        inferredRole === 'major_god_male' ||
+        inferredRole === 'major_god_female' ||
+        inferredRole === 'titan';
 
-    const now = ctx.currentTime;
-    // 2. If neither audio clip nor SpeechSynthesis is active, synthesize expressive 3-formant vocal syllables
-    if (!spokeLive) {
-      this.playVowelFormantCadence(
+      this.studioVoice.speak(
         ctx,
+        {
+          text: opts.spoken,
+          role: inferredRole,
+          action: opts.action,
+          pantheon: opts.pantheon ?? this.musicPantheon,
+          speaker: opts.speaker,
+          dramatic: Boolean(opts.dramatic || isHighPriority),
+          priority: isHighPriority ? 'high' : 'normal',
+          volumeScale: isHighPriority ? 1.08 : 0.96,
+        },
         scale,
-        opts.spoken,
-        opts.basePitch * opts.kindPitchMult,
-        opts.formantF1,
-        opts.formantF2,
-        opts.syllables,
-        opts.action,
-        opts.groupSize,
-        opts.isDarkTone
+        (dur) => this.duckMusicForVoice(dur)
       );
     }
 
-    if (opts.action === 'attack') {
-      const hornOsc = ctx.createOscillator();
-      const hornGain = ctx.createGain();
-      hornOsc.type = opts.groupSize > 1 ? 'sawtooth' : 'triangle';
-      const hornFreq = opts.hornPitch * (opts.groupSize > 2 ? 1.0 : 0.85);
-      hornOsc.frequency.setValueAtTime(hornFreq, now);
-      hornOsc.frequency.exponentialRampToValueAtTime(hornFreq * 1.25, now + 0.22);
-      hornGain.gain.setValueAtTime(0.001, now);
-      hornGain.gain.linearRampToValueAtTime((spokeLive ? 0.045 : 0.08) * scale, now + 0.03);
-      hornGain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
-      hornOsc.connect(hornGain);
-      hornGain.connect(ctx.destination);
-      hornOsc.start(now);
-      hornOsc.stop(now + 0.26);
-    } else if (opts.action === 'select') {
+    // Subtle crisp UI acknowledgement click (clean, never masking the studio voice)
+    if (opts.action === 'select') {
       this.playSelect();
-    } else {
+    } else if (opts.action !== 'attack') {
       this.playCommand();
     }
 
@@ -1453,8 +1397,8 @@ class SoundEngine {
   }
 
   /**
-   * Plays a culturally localized unit voice line (Web Speech API phonetic pronunciation
-   * with multi-formant vocal cadence fallback) when units or main characters are selected or ordered.
+   * Plays a studio-grade localized unit voice line when units or main characters
+   * are selected or ordered.
    */
   public playUnitVoiceLine(
     pantheon: PantheonId,
@@ -1470,6 +1414,9 @@ class SoundEngine {
     let phrase = chosen.phrase;
     let translation = chosen.pt;
     let spoken = chosen.spoken;
+    let studioRole: ClientStudioVoiceRole = 'warrior_male';
+    let speaker: string | undefined;
+    let dramatic = false;
 
     const isFemaleGreek =
       kind === 'hippolyta' ||
@@ -1478,26 +1425,35 @@ class SoundEngine {
       kind === 'artemis' ||
       kind === 'nymph' ||
       kind === 'medusa';
-    const isFemaleAtlantean =
-      kind === 'caladria' || kind === 'dryad' || kind === 'lampades';
+    const isFemaleAtlantean = kind === 'caladria' || kind === 'dryad' || kind === 'lampades';
     const isFemaleNorse = kind === 'valkyrie';
     const isFemaleUnit = isFemaleGreek || isFemaleAtlantean || isFemaleNorse;
+
+    if (isFemaleUnit) {
+      studioRole = 'warrior_female';
+    }
 
     if (pantheon === 'greek' && isFemaleGreek && phrase === 'Étimos.') {
       phrase = 'Étimi.';
       translation = 'Pronta.';
-      spoken = 'É-ti-mi.';
+      spoken = 'Pronta para servir!';
     }
 
     // Major Gods & Titans
     if (kind === 'zeus') {
+      speaker = 'Zeus';
+      studioRole = 'major_god_male';
+      dramatic = true;
       phrase =
         action === 'attack'
           ? 'ZEUS: "Fulminarei todos os mortais com o Trovão Supremo!"'
           : 'ZEUS: "O Rei do Olimpo atende ao chamado da Era V!"';
       translation = action === 'attack' ? 'Trovão Supremo do Pai dos Deuses!' : 'Zeus aguarda seu decreto divino.';
-      spoken = action === 'attack' ? 'Fulminarei todos os mortais com o trovão supremo!' : 'O Rei do Olimpo atende ao chamado!';
+      spoken = action === 'attack' ? 'Fulminarei todos os mortais com o trovão supremo!' : 'O Rei do Olimpo atende ao seu chamado!';
     } else if (kind === 'poseidon') {
+      speaker = 'Poseidon';
+      studioRole = 'major_god_male';
+      dramatic = true;
       phrase =
         action === 'attack'
           ? 'POSEIDON: "Que os mares engulam suas muralhas!"'
@@ -1505,6 +1461,9 @@ class SoundEngine {
       translation = action === 'attack' ? 'Tsunami sísmico de Poseidon!' : 'Poseidon domina as águas.';
       spoken = action === 'attack' ? 'Que os mares engulam suas muralhas!' : 'O Senhor dos Mares ergue seu tridente!';
     } else if (kind === 'hades') {
+      speaker = 'Hades';
+      studioRole = 'major_god_male';
+      dramatic = true;
       phrase =
         action === 'attack'
           ? 'HADES: "Para as profundezas do Tártaro!"'
@@ -1512,69 +1471,99 @@ class SoundEngine {
       translation = action === 'attack' ? 'Chamas necróticas do Submundo!' : 'Hades reina sobre o campo.';
       spoken = action === 'attack' ? 'Para as profundezas do Tártaro!' : 'As sombras do Submundo obedecem.';
     } else if (kind === 'atena') {
+      speaker = 'Atena';
+      studioRole = 'major_god_female';
+      dramatic = true;
       phrase =
         action === 'attack'
           ? 'ATENA: "Eis máchin! Pela Égide e Sabedoria!"'
           : 'ATENA: "Étimi! A estratégia precede a vitória."';
       translation = action === 'attack' ? 'Golpe sagrado da Égide de Atena!' : 'Atena protege suas fileiras.';
-      spoken = action === 'attack' ? 'Êiss má-rrin! Pela Égide e sabedoria!' : 'É-ti-mi! A estratégia precede a vitória.';
+      spoken = action === 'attack' ? 'Pela Égide e pela sabedoria, avancem!' : 'A estratégia sempre precede a vitória.';
     } else if (kind === 'ares') {
+      speaker = 'Ares';
+      studioRole = 'major_god_male';
+      dramatic = true;
       phrase =
         action === 'attack'
           ? 'ARES: "Eisvolí! Sangue e Guerra!"'
           : 'ARES: "Próstagma? Onde está o combate?!"';
       translation = action === 'attack' ? 'Fúria sísmica do Deus da Guerra!' : 'Ares anseia pela batalha.';
-      spoken = action === 'attack' ? 'Êiss-vo-lí! Sangue e guerra!' : 'Prós-tag-ma? Onde está o combate?';
+      spoken = action === 'attack' ? 'Sangue e guerra! Esmaguem todos!' : 'Onde está o combate? Tragam-me a batalha!';
     } else if (kind === 'hermes') {
+      speaker = 'Hermes';
+      studioRole = 'hero_commander';
+      dramatic = true;
       phrase =
         action === 'attack'
           ? 'HERMES: "Páme! Mais rápido que o relâmpago!"'
           : 'HERMES: "Asas do Olimpo ao seu dispor."';
       translation = action === 'attack' ? 'Rajada celeste de Hermes!' : 'Mensageiro divino pronto.';
-      spoken = action === 'attack' ? 'Pá-me! Mais rápido que o relâmpago!' : 'Asas do Olimpo ao seu dispor.';
+      spoken = action === 'attack' ? 'Mais rápido que o relâmpago! Avançar!' : 'As asas do Olimpo estão ao seu dispor.';
     } else if (kind === 'apolo') {
+      speaker = 'Apolo';
+      studioRole = 'major_god_male';
+      dramatic = true;
       phrase =
         action === 'attack'
           ? 'APOLO: "Que o fogo solar reduza-os a cinzas!"'
           : 'APOLO: "A luz do Sol ilumina o campo."';
       translation = action === 'attack' ? 'Flechas solares de Apolo!' : 'Apolo mira o horizonte.';
-      spoken = action === 'attack' ? 'Que o fogo solar reduza-os a cinzas!' : 'A luz do Sol ilumina o campo.';
+      spoken = action === 'attack' ? 'Que o fogo solar reduza nossos inimigos a cinzas!' : 'A luz do Sol ilumina o campo de batalha.';
     } else if (kind === 'dionisio') {
+      speaker = 'Dionísio';
+      studioRole = 'major_god_male';
+      dramatic = true;
       phrase =
         action === 'attack'
           ? 'DIONÍSIO: "O frenesi dionisíaco os consumirá!"'
           : 'DIONÍSIO: "Kalós! Celebremos a vitória antecipada!"';
       translation = action === 'attack' ? 'Onda arcana das vinhas sagradas!' : 'Dionísio abençoa a marcha.';
-      spoken = action === 'attack' ? 'O frenesi dionisíaco os consumirá!' : 'Ka-lóss! Celebremos a vitória!';
+      spoken = action === 'attack' ? 'O frenesi dionisíaco os consumirá!' : 'Celebremos a vitória antecipada!';
     } else if (kind === 'afrodite') {
+      speaker = 'Afrodite';
+      studioRole = 'major_god_female';
+      dramatic = true;
       phrase =
         action === 'attack'
           ? 'AFRODITE: "Contemplem a fúria celestial da Beleza!"'
           : 'AFRODITE: "Étimi — nascida da espuma e das estrelas."';
       translation = action === 'attack' ? 'Explosão encantadora de Afrodite!' : 'Afrodite flutua em graça.';
-      spoken = action === 'attack' ? 'Contemplem a fúria celestial!' : 'É-ti-mi, nascida das estrelas.';
+      spoken = action === 'attack' ? 'Contemplem a fúria celestial da beleza!' : 'Pronta, nascida da espuma e das estrelas.';
     } else if (kind === 'hefesto') {
+      speaker = 'Hefesto';
+      studioRole = 'major_god_male';
+      dramatic = true;
       phrase =
         action === 'attack'
           ? 'HEFESTO: "Sinta o martelo da Forja Olímpica!"'
           : 'HEFESTO: "Fogo e bronze moldam o destino."';
       translation = action === 'attack' ? 'Impacto vulcânico de Hefesto!' : 'Hefesto prepara o martelo.';
-      spoken = action === 'attack' ? 'Sinta o martelo da forja olímpica!' : 'Fogo e bronze moldam o destino.';
+      spoken = action === 'attack' ? 'Sinta o martelo da Forja Olímpica!' : 'Fogo e bronze moldam o destino.';
     } else if (kind === 'artemis') {
+      speaker = 'Ártemis';
+      studioRole = 'major_god_female';
+      dramatic = true;
       phrase =
         action === 'attack'
           ? 'ÁRTEMIS: "A caçada lunar nunca erra o alvo!"'
           : 'ÁRTEMIS: "Étimi! Sob o luar, somos implacáveis."';
       translation = action === 'attack' ? 'Chuva de flechas lunares de Ártemis!' : 'Ártemis vigia a floresta.';
-      spoken = action === 'attack' ? 'A caçada lunar nunca erra o alvo!' : 'É-ti-mi! Sob o luar, somos implacáveis.';
+      spoken = action === 'attack' ? 'A caçada lunar nunca erra o alvo!' : 'Sob o luar, somos implacáveis.';
     } else if (kind === 'ra') {
+      speaker = 'Rá';
+      studioRole = 'major_god_male';
+      dramatic = true;
       phrase =
         action === 'attack'
           ? 'RÁ: "Khepresh! Que o Sol devore nossos inimigos!"'
           : 'RÁ: "O Disco Solar ilumina o Nilo."';
       translation = action === 'attack' ? 'Fogo solar de Rá!' : 'Rá vigia o reino.';
-      spoken = action === 'attack' ? 'Ké-presh! Que o Sol devore nossos inimigos!' : 'O disco solar ilumina o Nilo.';
+      spoken = action === 'attack' ? 'Que o fogo do Sol devore nossos inimigos!' : 'O disco solar ilumina todo o Nilo.';
     } else if (kind === 'isis') {
+      speaker = 'Ísis';
+      studioRole = 'major_god_female';
+      dramatic = true;
       phrase =
         action === 'attack'
           ? 'ÍSIS: "Pela magia eterna de Kemet!"'
@@ -1582,218 +1571,74 @@ class SoundEngine {
       translation = action === 'attack' ? 'Encantamento destrutivo de Ísis!' : 'Ísis protege seu povo.';
       spoken = action === 'attack' ? 'Pela magia eterna de Kemet!' : 'Nossos monumentos resistirão a tudo.';
     } else if (kind === 'set') {
+      speaker = 'Set';
+      studioRole = 'villain_dark';
+      dramatic = true;
       phrase =
         action === 'attack'
           ? 'SET: "Tempestade de areia e caos!"'
           : 'SET: "As feras do deserto respondem ao meu chamado."';
       translation = action === 'attack' ? 'Fúria do deserto de Set!' : 'Set comanda as sombras.';
-      spoken = action === 'attack' ? 'Tempestade de areia e caos!' : 'As feras do deserto respondem!';
+      spoken = action === 'attack' ? 'Tempestade de areia e caos!' : 'As feras do deserto respondem ao meu chamado.';
     } else if (kind === 'titan') {
+      speaker = 'Titã';
+      studioRole = 'titan';
+      dramatic = true;
       phrase =
-        pantheon === 'atlantean'
-          ? action === 'attack'
-            ? `TITÃ: "Mache! — ${chosen.phrase}"`
-            : `Titã Atlante — "${chosen.phrase}"`
-          : action === 'attack'
-          ? `TITÃ: "${chosen.phrase}"`
-          : `Titã Ancestral — "${chosen.phrase}"`;
+        action === 'attack' ? `TITÃ: "${chosen.phrase}"` : `Titã Ancestral — "${chosen.phrase}"`;
       translation = action === 'attack' ? 'Rugido Titânico de Destruição!' : 'O Titã aguarda seu comando.';
-      spoken = pantheon === 'atlantean' && action === 'attack' ? 'Má-rre!' : chosen.spoken;
-    } else if (pantheon === 'atlantean') {
-      // Todos os Atlantes (Castor, Heróis Atlantes, Cidadão, Oráculo, Militares e Promovidos a Herói)
-      // usam exclusivamente o idioma atlante fictício pedido (Yuji?, Volat?, Scopos., Echlost., Mache!)
-      const isCastorHero = kind === 'hero' || kind === 'ajax' || kind === 'jason' || kind === 'odysseus' || kind === 'hippolyta';
-      if (isCastorHero) {
-        const speaker = kind === 'ajax' ? 'HERÓI ATLANTE' : kind === 'hero' ? 'CASTOR' : 'CAMPEÃO DE ORICALCO';
-        phrase = `${speaker}: "${chosen.phrase}"`;
-        translation =
-          action === 'attack'
-            ? `${chosen.pt} (Por Atlântida!)`
-            : `${chosen.pt} — Castor comanda.`;
-      } else if (kind === 'behemoth') {
-        phrase = action === 'attack' ? 'BEEMOTE: "Mache! ROOOAAAR!"' : `Beemote — "${chosen.phrase}"`;
-        translation = action === 'attack' ? 'Investida colossal demolidora!' : chosen.pt;
-      } else if (kind === 'hekagigantes') {
-        phrase = action === 'attack' ? 'HECATÔNQUIRO: "Mache!"' : `Centimano — "${chosen.phrase}"`;
-        translation = action === 'attack' ? 'Golpe sísmico dos cem braços!' : chosen.pt;
-      } else {
-        const heroBadge = isPromotedHero ? '★ Herói · ' : '';
-        phrase = `${heroBadge}${chosen.phrase}`;
-        translation = chosen.pt;
-      }
-    } else if (kind === 'hero' && pantheon === 'greek') {
-      // Arkantos & Greek Hero Champions share the iconic Ancient Greek voice bank
-      phrase = `ARKANTOS: "${chosen.phrase}"`;
-      translation = `${chosen.pt} (Arkantos)`;
-    } else if (kind === 'ajax') {
-      phrase = `ÁJAX: "${chosen.phrase}"`;
-      translation =
-        action === 'attack'
-          ? `${chosen.pt} (Escudo de Salamina!)`
-          : `${chosen.pt} — Ájax`;
-    } else if (kind === 'jason') {
-      phrase = `JASÃO: "${chosen.phrase}"`;
-      translation =
-        action === 'attack'
-          ? `${chosen.pt} (Pelos Argonautas!)`
-          : `${chosen.pt} — Jasão`;
-    } else if (kind === 'odysseus') {
-      phrase = `ODISSEU: "${chosen.phrase}"`;
-      translation =
-        action === 'attack'
-          ? `${chosen.pt} (Arco de Ítaca!)`
-          : `${chosen.pt} — Rei de Ítaca`;
-    } else if (kind === 'perseus') {
-      phrase = `PERSEU: "${chosen.phrase}"`;
-      translation = `${chosen.pt} — Matador da Górgona`;
-    } else if (kind === 'bellerophon') {
-      phrase = `BELEROFONTE: "${chosen.phrase}"`;
-      translation = `${chosen.pt} — Cavaleiro de Pégaso`;
-    } else if (kind === 'hippolyta') {
-      phrase = `HIPÓLITA: "${chosen.phrase}"`;
-      translation =
-        action === 'attack'
-          ? `${chosen.pt} (Pelas Amazonas!)`
-          : `${chosen.pt} — Rainha Amazona`;
-    } else if (kind === 'theseus') {
-      phrase = `TESEU: "${chosen.phrase}"`;
-      translation = `${chosen.pt} — Tático de Atenas`;
-    } else if (kind === 'pharaoh' || kind === 'son_of_osiris') {
-      const title = kind === 'son_of_osiris' ? 'FILHO DE OSÍRIS' : 'FARAÓ';
-      phrase = `${title}: "${chosen.phrase}"`;
-      translation = `${chosen.pt} — Poder do Nilo`;
-    } else if (kind === 'hersir' || kind === 'valkyrie') {
-      const title = kind === 'valkyrie' ? 'VALQUÍRIA' : 'HERSIR';
-      phrase = `${title}: "${chosen.phrase}"`;
-      translation = `${chosen.pt} — Por Asgard`;
-    } else if (kind === 'cyclops') {
-      phrase = action === 'attack' ? 'CICLOPE: "Eis máchin! GRAAAH!"' : `Ciclope: "${chosen.phrase}"`;
-      translation = action === 'attack' ? 'O Ciclope agarra e arremessa os inimigos!' : chosen.pt;
-      spoken = action === 'attack' ? 'Êiss má-rrin! Esmagar!' : chosen.spoken;
+      spoken = action === 'attack' ? 'A terra tremerá diante da fúria dos Titãs!' : 'O Titã desperta e aguarda seu comando.';
+    } else if (kind === 'villager' || kind === 'citizen' || kind === 'norse_dwarf' || kind === 'chinese_peasant') {
+      studioRole = 'villager_male';
+    } else if (kind === 'oracle' || kind === 'priest' || kind === 'jiang_ziya') {
+      studioRole = 'mystic_priest';
+    } else if (
+      kind === 'hero' ||
+      kind === 'ajax' ||
+      kind === 'jason' ||
+      kind === 'odysseus' ||
+      kind === 'perseus' ||
+      kind === 'bellerophon' ||
+      kind === 'theseus' ||
+      kind === 'pharaoh' ||
+      kind === 'son_of_osiris' ||
+      kind === 'hersir' ||
+      isPromotedHero
+    ) {
+      studioRole = isFemaleUnit ? 'hero_female' : 'hero_commander';
+      dramatic = true;
+    } else if (
+      kind === 'cyclops' ||
+      kind === 'minotaur' ||
+      kind === 'hydra' ||
+      kind === 'colossus' ||
+      kind === 'behemoth' ||
+      kind === 'hekagigantes'
+    ) {
+      studioRole = 'myth_beast';
     }
 
-    const result: UnitVoiceLineInfo = {
+    return this.performVoiceClip({
       phrase,
       translation,
+      spoken,
       cultureLabel: profile.cultureLabel,
       action,
-    };
-
-    if (!this.canPlay('unit_voice', 220)) {
-      return result;
-    }
-
-    const scale = this.effectiveSfxScale;
-    if (scale <= 0) {
-      return result;
-    }
-
-    const kindPitchMult =
-      kind === 'zeus' || kind === 'poseidon' || kind === 'hades' || kind === 'ra' || kind === 'set'
-        ? 0.56
-        : kind === 'ares' || kind === 'hefesto' || kind === 'dionisio'
-        ? 0.64
-        : kind === 'hermes' || kind === 'apolo'
-        ? 0.78
-        : kind === 'atena' || kind === 'afrodite' || kind === 'artemis' || kind === 'isis'
-        ? 1.18
-        : kind === 'titan'
-        ? 0.52
-        : kind === 'colossus' || kind === 'hydra' || kind === 'cyclops' || kind === 'hekagigantes' || kind === 'behemoth'
-        ? 0.62
-        : kind === 'minotaur' || kind === 'manticore' || kind === 'automaton' || kind === 'iron_dwarf' || kind === 'promethean' || kind === 'argus' || kind === 'tartarian_spawn' || kind === 'carnivora'
-        ? 0.72
-        : kind === 'siege' || kind === 'ram' || kind === 'fire_siphon' || kind === 'onager' || kind === 'cheiroballista'
-        ? 0.75
-        : kind === 'ajax' || kind === 'perseus' || kind === 'destroyer'
-        ? 0.84
-        : kind === 'jason' || kind === 'theseus' || kind === 'odysseus' || kind === 'bellerophon' || kind === 'hero' || kind === 'hoplite' || kind === 'myrmidon' || kind === 'murmillo' || kind === 'katapeltes' || kind === 'fanatic'
-        ? 0.92
-        : kind === 'cavalry' || kind === 'prodromos' || kind === 'pegasus' || kind === 'turma' || kind === 'contarius' || kind === 'llama_caravan'
-        ? 0.96
-        : isFemaleUnit || kind === 'phoenix' || kind === 'stymphalian_bird'
-        ? 1.2
-        : kind === 'archer' || kind === 'peltast' || kind === 'gastraphetes' || kind === 'satyr' || kind === 'arcus' || kind === 'oracle'
-        ? 1.04
-        : 1.0;
-
-    // 1. Try real browser SpeechSynthesis with phonetic pronunciation
-    const speechPitch = Math.max(0.45, Math.min(1.5, kindPitchMult * (isPromotedHero ? 0.94 : 1.0)));
-    const speechRate =
-      action === 'attack'
-        ? 1.14
-        : kind === 'titan' || kind === 'zeus' || kind === 'poseidon' || kind === 'hades'
-        ? 0.92
-        : 1.04;
-    const spokeLive = this.speakSpokenText(spoken, {
-      pitch: speechPitch,
-      rate: speechRate,
+      syllables: chosen.syllables,
+      basePitch: profile.basePitch,
+      formantF1: profile.formantF1,
+      formantF2: profile.formantF2,
+      hornPitch: profile.hornPitch,
+      kindPitchMult: studioRole === 'titan' ? 0.52 : studioRole === 'major_god_male' ? 0.58 : 1.0,
+      speechRate: 1.0,
       isFemale: isFemaleUnit,
+      isDarkTone: studioRole === 'myth_beast' || studioRole === 'villain_dark' || studioRole === 'titan',
+      groupSize,
+      studioRole,
+      pantheon,
+      speaker,
+      dramatic,
     });
-
-    const ctx = this.ensureContext();
-    if (!ctx) {
-      return result;
-    }
-
-    const now = ctx.currentTime;
-    // 2. If SpeechSynthesis has no voices loaded, synthesize expressive 3-formant vocal syllables
-    if (!spokeLive) {
-      const isDarkTone =
-        kind === 'titan' ||
-        kind === 'zeus' ||
-        kind === 'poseidon' ||
-        kind === 'hades' ||
-        kind === 'ares' ||
-        kind === 'hefesto' ||
-        kind === 'minotaur' ||
-        kind === 'cyclops' ||
-        kind === 'colossus' ||
-        kind === 'hydra' ||
-        kind === 'manticore' ||
-        kind === 'automaton' ||
-        kind === 'behemoth' ||
-        kind === 'hekagigantes' ||
-        kind === 'promethean' ||
-        kind === 'argus' ||
-        kind === 'tartarian_spawn' ||
-        kind === 'carnivora';
-
-      this.playVowelFormantCadence(
-        ctx,
-        scale,
-        spoken,
-        profile.basePitch * kindPitchMult,
-        profile.formantF1,
-        profile.formantF2,
-        chosen.syllables,
-        action,
-        groupSize,
-        isDarkTone
-      );
-    }
-
-    if (action === 'attack') {
-      const hornOsc = ctx.createOscillator();
-      const hornGain = ctx.createGain();
-      hornOsc.type = groupSize > 1 ? 'sawtooth' : 'triangle';
-      const hornFreq = profile.hornPitch * (groupSize > 2 ? 1.0 : 0.85);
-      hornOsc.frequency.setValueAtTime(hornFreq, now);
-      hornOsc.frequency.exponentialRampToValueAtTime(hornFreq * 1.25, now + 0.22);
-      hornGain.gain.setValueAtTime(0.001, now);
-      hornGain.gain.linearRampToValueAtTime((spokeLive ? 0.045 : 0.08) * scale, now + 0.03);
-      hornGain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
-      hornOsc.connect(hornGain);
-      hornGain.connect(ctx.destination);
-      hornOsc.start(now);
-      hornOsc.stop(now + 0.26);
-    } else if (action === 'select') {
-      this.playSelect();
-    } else {
-      this.playCommand();
-    }
-
-    return result;
   }
 
   public playBuild() {
@@ -2428,13 +2273,28 @@ class SoundEngine {
   }
 
   public playTaunt(tone = 520, spokenText?: string) {
-    if (!this.canPlay('taunt', 120)) return;
-    if (spokenText) {
-      this.speakSpokenText(spokenText, { pitch: Math.max(0.75, Math.min(1.25, tone / 520)), rate: 1.04 });
-    }
+    if (!this.canPlay('taunt', 260)) return;
     const ctx = this.ensureContext();
     const scale = this.effectiveSfxScale;
     if (!ctx || scale <= 0) return;
+
+    if (spokenText) {
+      this.studioVoice.speak(
+        ctx,
+        {
+          text: spokenText,
+          role: 'hero_commander',
+          action: 'taunt',
+          pantheon: this.musicPantheon,
+          dramatic: false,
+          volumeScale: 1.0,
+        },
+        scale,
+        (dur) => this.duckMusicForVoice(dur)
+      );
+      return;
+    }
+
     const now = ctx.currentTime;
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();

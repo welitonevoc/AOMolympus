@@ -1,8 +1,10 @@
+import 'dotenv/config';
 import express from 'express';
 import http from 'node:http';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { WebSocketServer, WebSocket } from 'ws';
+import { registerVoiceStudioRoutes } from './src/server/voiceStudio.ts';
 import {
   MP_COLORS,
   MP_CRESTS,
@@ -404,6 +406,8 @@ async function startServer() {
       onlineUsers: buildOnlineUsersList(),
     });
   });
+
+  registerVoiceStudioRoutes(app);
 
   const server = http.createServer(app);
   const wss = new WebSocketServer({

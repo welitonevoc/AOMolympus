@@ -516,6 +516,24 @@ export function getBuildingsForCivAndGod(civ: PantheonId, majorGod: string): { i
       { id: 'titan_gate', name: `Portão de Ymir (${god})`, role: 'Escavação rúnica colossal da Era Mítica para invocar o Titã' },
     ];
   }
+  if (civ === 'egyptian') {
+    const g = majorGod || 'Rá';
+    return [
+      { id: 'town_center', name: `Centro da Cidade (${g})`, role: `Sede faraônica consagrada a ${g} — evolui da Era Arcaica até a Metrópole Divina (T5)` },
+      { id: 'barracks', name: `Quartel de ${g}`, role: `Quartel egípcio com frisos de hieróglifos, pilones, estátuas guardiãs e obeliscos (T2–T5)` },
+      { id: 'stable', name: `Estábulos de ${g}`, role: `Colunata egípcia com friso hieroglífico, telhado de lajes e pilones laterais (T2–T5)` },
+      { id: 'archery_range', name: `Centro de Arquearia (${g})`, role: `Pórtico egípcio de arquearia com alvos dourados e hieróglifos sagrados (T2–T5)` },
+      { id: 'house', name: `Casa da População (${g})`, role: `Habitação egípcia com evolução completa T1–T5, colunas, pilones e piramídio dourado` },
+      { id: 'market', name: `Mercado de ${g}`, role: `Stoa mercantil egípcia com friso hieroglífico, bancas e ânforas do Nilo (T2–T5)` },
+      { id: 'armory', name: `Ferreiro de ${g}`, role: `Forja egípcia com fornalha incandescente, bigorna dourada e frisos de ${g} (T2–T5)` },
+      { id: 'temple', name: `Templo Sagrado de ${g}`, role: `Gera Favor divino e evolui do Altar Primitivo até a Grande Pirâmide (T1–T5)` },
+      { id: 'fortress', name: `Fortaleza Migdol (${g})`, role: `Bastião defensivo monumental do deserto e treinamento de elite sob ${g}` },
+      { id: 'siege_works', name: `Oficina de Cerco (${g})`, role: 'Constrói torres de cerco e catapultas faraônicas' },
+      { id: 'tower', name: `Torre de Vigia (${g})`, role: 'Torre de arenito e lápis-lazúli que vigia as fronteiras do Nilo' },
+      { id: 'farm', name: `Fazenda do Nilo (${g})`, role: 'Lavoura irrigada pelas cheias férteis para alimento contínuo' },
+      { id: 'titan_gate', name: `Portão Titã (${g})`, role: 'Escavação colossal da Era Mítica para despertar o Titã de Osíris' },
+    ];
+  }
   return [
     { id: 'town_center', name: `Centro da Cidade (${god})`, role: `Sede principal consagrada a ${god} — evolui da Era Arcaica até a Metrópole Divina (T5)` },
     { id: 'barracks', name: `Quartel de ${god}`, role: `Treina infantaria sob a bênção de ${god}` },

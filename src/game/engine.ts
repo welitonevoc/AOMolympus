@@ -1463,6 +1463,10 @@ export class AoMEngine {
     this.campaignSpawnedWaveIds.clear();
     this.campaignDialogue = null;
     this.campaignDialogueTimer = 0;
+    soundEngine.stopVoice();
+    if (!isTitlePreview) {
+      soundEngine.prewarmPantheonVoices(pantheon);
+    }
 
     if (extras?.gameSpeed) {
       this.gameSpeed = Math.max(0.5, Math.min(2.0, extras.gameSpeed));
@@ -1989,6 +1993,11 @@ export class AoMEngine {
       if (firstStage?.dialogue) {
         this.campaignDialogue = { ...firstStage.dialogue };
         this.campaignDialogueTimer = 14;
+        if (!isTitlePreview) {
+          soundEngine.speakDialogue(firstStage.dialogue.speaker, firstStage.dialogue.text, {
+            pantheon: this.pantheon,
+          });
+        }
       }
     }
 
@@ -5109,6 +5118,7 @@ export class AoMEngine {
   public skipActiveCinematic() {
     if (this.scenarioTriggerRuntime) {
       this.scenarioTriggerRuntime.skipCinematic();
+      soundEngine.stopVoice();
       this.emitHudSnapshot();
     }
   }
@@ -13575,6 +13585,9 @@ export class AoMEngine {
             this.campaignDialogue = { ...wave.announcement };
             this.campaignDialogueTimer = 11;
             this.notifyStatus(`📜 ${wave.announcement.speaker}: "${wave.announcement.text}"`);
+            soundEngine.speakDialogue(wave.announcement.speaker, wave.announcement.text, {
+              pantheon: this.pantheon,
+            });
           }
         }
       }
@@ -13613,6 +13626,9 @@ export class AoMEngine {
       if (nextStage.dialogue) {
         this.campaignDialogue = { ...nextStage.dialogue };
         this.campaignDialogueTimer = 14;
+        soundEngine.speakDialogue(nextStage.dialogue.speaker, nextStage.dialogue.text, {
+          pantheon: this.pantheon,
+        });
       }
       this.notifyStatus(`📜 Etapa ${this.campaignStageIndex + 1}/${this.campaignScript.stages.length}: ${nextStage.dialogue?.speaker ?? 'Novo Objetivo'}!`);
       this.emitHudSnapshot();
@@ -16188,6 +16204,8 @@ export class AoMEngine {
             this.minimapFogCache.fill(2);
           },
           notifyStatus: (msg) => this.notifyStatus(msg),
+          speakNarration: (speaker, text) =>
+            soundEngine.speakDialogue(speaker, text, { pantheon: this.pantheon }),
           setCameraTarget: (cx, cz, zoom) => {
             this.camDesiredTarget.set(cx, 0, cz);
             if (zoom !== undefined) this.camDesiredDistance = zoom;

@@ -146,6 +146,15 @@ import {
   EgyptianTempleAction,
 } from '../civilizacao/egipcios/egyptianTempleModel';
 import {
+  buildEgyptianArchBuilding,
+  EGYPT_ARCH_BUILDING_META,
+  EGYPT_ARCH_ERA_NAMES,
+  EGYPT_ARCH_THEMES,
+  getEgyptianArchGroundTexture,
+  isEgyptianArchBuilding,
+  resolveEgyptianArchGod,
+} from '../civilizacao/egipcios/egyptianArchitectureSuite';
+import {
   buildMedusa as buildStudioMedusa,
   animateMedusaModel as animateStudioMedusa,
   MedusaBuildResult,
@@ -887,6 +896,25 @@ export function HopliteUvBuilderModal({
     }
     if (galleryCategory === 'building') {
       const isTemple = selectedBuilding === 'temple';
+      const isEgyptArch = selectedCiv === 'egyptian' && isEgyptianArchBuilding(selectedBuilding);
+      if (isEgyptArch) {
+        const meta = EGYPT_ARCH_BUILDING_META[selectedBuilding];
+        if (focusHead) {
+          const dist = meta.focusDist;
+          return {
+            target: [0, meta.focusTargetY, 0.85],
+            offset: [dist * 0.24, dist * 0.22, dist * 0.94],
+            baseDist: dist,
+          };
+        }
+        const effTier = Math.max(meta.minTier, Math.min(5, buildingAge));
+        const dist = meta.overviewDist + (effTier - meta.minTier) * 0.55;
+        return {
+          target: [0, 1.35, 0],
+          offset: [dist * 0.54, dist * 0.42, dist * 0.72],
+          baseDist: dist,
+        };
+      }
       if (isTemple && focusHead) {
         const dist = 5.2;
         const ty = buildingAge === 5 ? 2.25 : 1.45;
@@ -1102,8 +1130,12 @@ export function HopliteUvBuilderModal({
   useEffect(() => {
     if (!isOpen) return;
     const isTemple = galleryCategory === 'building' && selectedBuilding === 'temple';
+    const isEgyptArch =
+      galleryCategory === 'building' &&
+      selectedCiv === 'egyptian' &&
+      isEgyptianArchBuilding(selectedBuilding);
     const isGod = galleryCategory === 'unit' && isGreekOrEgyptianGod(selectedUnit, selectedCiv);
-    if (!isTemple && !isGod) return;
+    if (!isTemple && !isEgyptArch && !isGod) return;
     const framing = getFramingForSubject(focusDivine);
     const ctrl = controlsRef.current;
     const cam = cameraRef.current;
@@ -2411,6 +2443,61 @@ export function HopliteUvBuilderModal({
               fAttr.setY(i, fy);
             }
             fAttr.needsUpdate = true;
+          };
+        } else if (selectedCiv === 'egyptian' && isEgyptianArchBuilding(selectedBuilding)) {
+          const godKey = resolveEgyptianArchGod(selectedMajorGod);
+          const theme = EGYPT_ARCH_THEMES[godKey];
+
+          scene.background = new THREE.Color(theme.bg);
+          scene.fog = new THREE.FogExp2(theme.bg, 0.016);
+
+          // Terreno circular egípcio + anel divino da divindade selecionada
+          const groundDisc = new THREE.Mesh(
+            new THREE.CylinderGeometry(8.6, 8.9, 0.3, 64),
+            new THREE.MeshStandardMaterial({
+              map: getEgyptianArchGroundTexture(godKey),
+              roughness: 0.78,
+            })
+          );
+          groundDisc.position.y = -0.15;
+          groundDisc.receiveShadow = !isSoftwareGl;
+          environmentGroup.add(groundDisc);
+
+          const deityRing = new THREE.Mesh(
+            new THREE.RingGeometry(4.2, 4.38, 64),
+            new THREE.MeshBasicMaterial({
+              color: theme.glow,
+              transparent: true,
+              opacity: 0.68,
+              side: THREE.DoubleSide,
+              depthWrite: false,
+            })
+          );
+          deityRing.rotation.x = -Math.PI / 2;
+          deityRing.position.y = 0.015;
+          environmentGroup.add(deityRing);
+
+          const built = buildEgyptianArchBuilding(
+            selectedBuilding,
+            godKey,
+            buildingAge,
+            !isSoftwareGl
+          );
+          group = built.root;
+
+          let elapsed = 0;
+          group.userData.animatePose = (dt: number) => {
+            elapsed += dt;
+            built.flames.forEach((fl, idx) => {
+              fl.scale.set(
+                1 + Math.sin(elapsed * 12 + idx * 1.7) * 0.14,
+                1 + Math.cos(elapsed * 15 + idx * 1.3) * 0.22,
+                1 + Math.sin(elapsed * 11 + idx * 1.1) * 0.14
+              );
+            });
+            if (selectedBuilding === 'armory') {
+              built.furnaceMat.emissiveIntensity = 1.45 + Math.sin(elapsed * 4.5) * 0.35;
+            }
           };
         } else {
           scene.background = defaultBg.clone();
@@ -6500,6 +6587,24 @@ export function HopliteUvBuilderModal({
                         </>
                       );
                     })()
+                  ) : selectedCiv === 'egyptian' && isEgyptianArchBuilding(selectedBuilding) ? (
+                    (() => {
+                      const godKey = resolveEgyptianArchGod(selectedMajorGod);
+                      const theme = EGYPT_ARCH_THEMES[godKey];
+                      const meta = EGYPT_ARCH_BUILDING_META[selectedBuilding];
+                      const effTier = Math.max(meta.minTier, Math.min(5, buildingAge));
+                      const eraLabel = EGYPT_ARCH_ERA_NAMES[effTier] || `Era ${effTier}`;
+                      return (
+                        <>
+                          <div className="font-bold text-amber-300">
+                            {`${meta.label} ${theme.title} • Tier ${effTier} (${eraLabel})`}
+                          </div>
+                          <div className="mt-0.5 text-[#fde68a]/90">
+                            {theme.subtitle}
+                          </div>
+                        </>
+                      );
+                    })()
                   ) : (
                     <>
                       <div className="font-bold text-amber-300">
@@ -8227,6 +8332,108 @@ export function HopliteUvBuilderModal({
               </button>
 
               <div className="h-4 w-px bg-white/20 mx-1" />
+              <button
+                type="button"
+                onClick={() => setShowHumanScale((v) => !v)}
+                className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                  showHumanScale
+                    ? 'bg-sky-500/20 text-sky-200 border border-sky-400/50'
+                    : 'border border-white/12 text-[#9ca3af] hover:text-white'
+                }`}
+              >
+                <Users className="h-3.5 w-3.5" />
+                <span>Escala Aldeão</span>
+              </button>
+            </>
+          ) : galleryCategory === 'building' && selectedCiv === 'egyptian' && isEgyptianArchBuilding(selectedBuilding) ? (
+            <>
+              {/* Deuses Patronos da Arquitetura Egípcia (Rá / Ísis / Set) */}
+              {(
+                [
+                  { id: 'Ra', label: '☀️ Rá', active: 'bg-gradient-to-r from-amber-300 to-amber-600 text-slate-950 font-black shadow-lg shadow-amber-500/30 ring-1 ring-amber-300' },
+                  { id: 'Isis', label: '🪷 Ísis', active: 'bg-gradient-to-r from-teal-300 to-sky-600 text-slate-950 font-black shadow-lg shadow-teal-500/30 ring-1 ring-teal-300' },
+                  { id: 'Set', label: '🐺 Set', active: 'bg-gradient-to-r from-orange-600 to-purple-800 text-white font-black shadow-lg shadow-orange-500/30 ring-1 ring-orange-400' },
+                ] as const
+              ).map((g) => {
+                const isSel = resolveEgyptianArchGod(selectedMajorGod) === g.id.toLowerCase();
+                return (
+                  <button
+                    key={g.id}
+                    type="button"
+                    onClick={() => setSelectedMajorGod(g.id)}
+                    className={`rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      isSel ? g.active : 'border border-white/10 text-[#cbd5e1] hover:bg-white/10'
+                    }`}
+                  >
+                    <span>{g.label}</span>
+                  </button>
+                );
+              })}
+
+              <div className="h-4 w-px bg-white/20 mx-1" />
+
+              {/* Tiers de Evolução (T1 apenas para Casa; T2–T5 para todas) */}
+              {(
+                selectedBuilding === 'house'
+                  ? [
+                      { tier: 1 as AgeLevel, label: 'T1 • Arcaico' },
+                      { tier: 2 as AgeLevel, label: 'T2 • Clássico' },
+                      { tier: 3 as AgeLevel, label: 'T3 • Heroico' },
+                      { tier: 4 as AgeLevel, label: 'T4 • Mítico' },
+                      { tier: 5 as AgeLevel, label: 'T5 • Olímpico' },
+                    ]
+                  : [
+                      { tier: 2 as AgeLevel, label: 'T2 • Clássico' },
+                      { tier: 3 as AgeLevel, label: 'T3 • Heroico' },
+                      { tier: 4 as AgeLevel, label: 'T4 • Mítico' },
+                      { tier: 5 as AgeLevel, label: 'T5 • Olímpico' },
+                    ]
+              ).map((t) => {
+                const effTier = Math.max(
+                  EGYPT_ARCH_BUILDING_META[selectedBuilding].minTier,
+                  Math.min(5, buildingAge)
+                );
+                const isSel = effTier === t.tier;
+                return (
+                  <button
+                    key={t.tier}
+                    type="button"
+                    onClick={() => {
+                      setBuildingAge(t.tier);
+                      if (t.tier <= 4) {
+                        onSelectTier(t.tier as 1 | 2 | 3 | 4);
+                      }
+                    }}
+                    className={`rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                      isSel
+                        ? t.tier === 5
+                          ? 'bg-gradient-to-r from-yellow-200 via-amber-400 to-amber-600 text-slate-950 shadow-lg font-black ring-1 ring-amber-200'
+                          : 'bg-gradient-to-r from-amber-300 to-amber-500 text-slate-950 shadow-md font-black'
+                        : 'border border-white/10 text-[#cbd5e1] hover:bg-white/10'
+                    }`}
+                  >
+                    <span>{t.label}</span>
+                  </button>
+                );
+              })}
+
+              <div className="h-4 w-px bg-white/20 mx-1" />
+
+              <button
+                type="button"
+                onClick={() => setFocusDivine((v) => !v)}
+                className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                  focusDivine
+                    ? 'bg-teal-500 text-slate-950 shadow font-black'
+                    : 'border border-teal-400/40 text-teal-200 hover:bg-teal-500/20'
+                }`}
+              >
+                <Eye className="h-3.5 w-3.5" />
+                <span>{focusDivine ? 'Visão Geral' : 'Focar Detalhe'}</span>
+              </button>
+
+              <div className="h-4 w-px bg-white/20 mx-1" />
+
               <button
                 type="button"
                 onClick={() => setShowHumanScale((v) => !v)}

@@ -12,6 +12,7 @@ export interface ScenarioTriggerRuntimeContext {
   grantResources: (res: { food?: number; wood?: number; gold?: number; favor?: number }) => void;
   revealFullMap: () => void;
   notifyStatus: (msg: string) => void;
+  speakNarration?: (speaker: string, text: string) => void;
   setCameraTarget: (x: number, z: number, zoom?: number) => void;
   triggerVictory: (reason: string) => void;
   triggerDefeat: (reason: string) => void;
@@ -40,6 +41,7 @@ export class ScenarioTriggerRuntime {
   private cinematicTotalDuration = 0;
   private cinematicTitle = '';
   private currentSubtitle = '';
+  private lastSpokenCaption = '';
 
   constructor(doc: ScenarioDocument, playAsSlot: number) {
     this.doc = doc;
@@ -101,6 +103,10 @@ export class ScenarioTriggerRuntime {
             const camZoom = cur.zoom + (next.zoom - cur.zoom) * smooth;
             ctx.setCameraTarget(camX, camZ, camZoom);
             this.currentSubtitle = cur.caption;
+            if (cur.caption && cur.caption !== this.lastSpokenCaption) {
+              this.lastSpokenCaption = cur.caption;
+              ctx.speakNarration?.('Narrador', cur.caption);
+            }
             break;
           }
           acc += dur;
@@ -150,6 +156,7 @@ export class ScenarioTriggerRuntime {
       case 'announcement':
         if (trig.effectMessage) {
           ctx.notifyStatus(`📜 ${trig.effectMessage}`);
+          ctx.speakNarration?.('Narrador', trig.effectMessage);
         }
         break;
       case 'grant_resources': {

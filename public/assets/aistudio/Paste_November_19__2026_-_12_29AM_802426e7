@@ -1,0 +1,545 @@
+Aqui está o **arquivo completo e pronto para baixar**.  
+
+Ele já contém:
+
+- As **6 construções** com evolução de Tier
+- Identidade visual distinta de **Rá / Ísis / Set**
+- **Frisos de hieróglifos** procedurais aplicados nas paredes e pilones
+- Câmera 360°, UI completa e materiais PBR
+
+Salve o código abaixo como:
+
+**`egito_arquitetura_6_construcoes_hieroglifos.html`**
+
+```html
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Arquitetura Egípcia • 6 Construções + Hieróglifos • Rá Ísis Set</title>
+  <style>
+    :root{color-scheme:dark;--gold:#facc15;--glass:rgba(16,10,4,.92);--border:rgba(250,204,21,.5)}
+    *{box-sizing:border-box;user-select:none;-webkit-user-select:none}
+    html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#0c0804;font-family:system-ui,sans-serif}
+    canvas{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+    canvas:active{cursor:grabbing}
+    #ui{position:fixed;top:10px;left:10px;right:10px;display:flex;flex-direction:column;gap:6px;z-index:20;pointer-events:none}
+    .row{display:flex;gap:5px;flex-wrap:wrap;align-items:center;pointer-events:auto}
+    button{padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--glass);backdrop-filter:blur(10px);color:#fefce8;font-weight:600;font-size:11.5px;cursor:pointer;transition:all .15s}
+    button:hover{transform:translateY(-1px);background:rgba(40,28,10,.95)}
+    button.on[data-god="ra"]{background:linear-gradient(135deg,#fde047,#d97706);color:#140c02;border-color:#fef9c3;box-shadow:0 0 14px rgba(250,204,21,.55)}
+    button.on[data-god="isis"]{background:linear-gradient(135deg,#2dd4bf,#1d4ed8);color:#fff;border-color:#ccfbf1;box-shadow:0 0 14px rgba(45,212,191,.5)}
+    button.on[data-god="set"]{background:linear-gradient(135deg,#ea580c,#7e22ce);color:#fff;border-color:#fed7aa;box-shadow:0 0 14px rgba(234,88,12,.5)}
+    button.on[data-building],button.on[data-tier]{background:linear-gradient(135deg,#f59e0b,#b45309);color:#fff;border-color:#fef08a}
+    button.cam-btn.active{background:linear-gradient(135deg,#0d9488,#115e59);color:#fff;border-color:#99f6e4}
+    #info-card{position:fixed;bottom:40px;left:50%;transform:translateX(-50%);background:var(--glass);backdrop-filter:blur(10px);border:1px solid var(--border);padding:7px 15px;border-radius:10px;text-align:center;pointer-events:none;z-index:15;min-width:300px;max-width:92vw}
+    #card-title{color:#fde047;font-weight:700;font-size:13px}
+    #card-sub{color:#e7e5e4;font-size:11px;margin-top:2px}
+    #badge{position:fixed;top:10px;right:12px;background:var(--glass);border:1px solid var(--border);padding:5px 11px;border-radius:8px;color:#fde047;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;pointer-events:none;z-index:15}
+    @media(max-width:860px){#badge{display:none}}
+    #hint{position:fixed;bottom:8px;left:50%;transform:translateX(-50%);background:rgba(12,8,4,.85);border:1px solid rgba(250,204,21,.25);padding:3px 12px;border-radius:999px;color:#fef9c3;font-size:10.5px;pointer-events:none;z-index:15;white-space:nowrap}
+  </style>
+</head>
+<body>
+<div id="ui">
+  <div class="row">
+    <button data-god="ra" class="god-btn on">☀️ Rá</button>
+    <button data-god="isis" class="god-btn">🪽 Ísis</button>
+    <button data-god="set" class="god-btn">🐺 Set</button>
+    <span style="width:6px"></span>
+    <button id="btn-focus" class="cam-btn">Focar Detalhe</button>
+  </div>
+  <div class="row">
+    <button data-building="barracks" class="on">Quartel</button>
+    <button data-building="stables">Estábulos</button>
+    <button data-building="archery">Arquearia</button>
+    <button data-building="house">Casa</button>
+    <button data-building="market">Mercado</button>
+    <button data-building="forge">Ferreiro</button>
+  </div>
+  <div class="row">
+    <button data-tier="1" class="tier-btn" style="display:none">T1</button>
+    <button data-tier="2" class="tier-btn on">T2</button>
+    <button data-tier="3" class="tier-btn">T3</button>
+    <button data-tier="4" class="tier-btn">T4</button>
+    <button data-tier="5" class="tier-btn">T5</button>
+  </div>
+</div>
+<div id="badge">Egito • Hieróglifos</div>
+<div id="info-card">
+  <div id="card-title">Quartel de Rá • Tier 2</div>
+  <div id="card-sub">Arquitetura solar com frisos hieroglíficos</div>
+</div>
+<div id="hint">Arraste • Scroll / Pinça</div>
+
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+const T = THREE;
+
+/* ===================== TEMAS ===================== */
+const GODS = {
+  ra:   {id:'ra',name:'Rá',title:'de Rá',bg:0x1a1207,hemiSky:0xfef9c3,hemiGround:0x854d0e,rim:0xfacc15,stone:0xe8d4a8,bright:0xf6e8c8,trim:0x1e40af,sec:0xb45309,gold:0xfacc15,statue:0xd4b87a,glow:0xfacc15,grass:'#6b8a3a',dirt:'#c9a66b',style:'solar'},
+  isis: {id:'isis',name:'Ísis',title:'de Ísis',bg:0x061820,hemiSky:0xccfbf1,hemiGround:0x0f766e,rim:0x2dd4bf,stone:0xe8eef5,bright:0xf8fafc,trim:0x0d9488,sec:0x1e3a8a,gold:0xfacc15,statue:0xc5d0dc,glow:0x2dd4bf,grass:'#4a7c45',dirt:'#cbb892',style:'lotus'},
+  set:  {id:'set',name:'Set',title:'de Set',bg:0x140805,hemiSky:0xffedd5,hemiGround:0x7c2d12,rim:0xea580c,stone:0xc48a5e,bright:0xd6a67a,trim:0xb91c1c,sec:0x3f1a0a,gold:0xf59e0b,statue:0x6b635a,glow:0xea580c,grass:'#4a5a2e',dirt:'#a87a4e',style:'desert'}
+};
+
+/* ===================== TEXTURAS ===================== */
+function texSandstone(bright=false){
+  const c=document.createElement('canvas');c.width=c.height=512;const x=c.getContext('2d');
+  x.fillStyle=bright?'#f3e6c4':'#dfc89a';x.fillRect(0,0,512,512);
+  const rows=13,rh=512/rows;
+  for(let r=0;r<rows;r++){const y=r*rh,cols=5,cw=512/cols,off=r%2?cw*.5:0;
+    for(let col=-1;col<=cols;col++){const px=col*cw+off,sh=218+((Math.random()-.5)*24|0);
+      x.fillStyle=`rgba(${sh},${sh-16},${sh-45},.4)`;x.fillRect(px+2,y+2,cw-4,rh-4);
+      x.strokeStyle='rgba(90,65,35,.28)';x.lineWidth=1.8;x.strokeRect(px+1,y+1,cw-2,rh-2);}}
+  for(let i=0;i<1800;i++){x.fillStyle=i%2?'rgba(255,250,235,.08)':'rgba(75,50,22,.07)';x.fillRect(Math.random()*512,Math.random()*512,3.5,3.5);}
+  const t=new T.CanvasTexture(c);t.wrapS=t.wrapT=T.RepeatWrapping;t.repeat.set(2,2);t.colorSpace=T.SRGBColorSpace;return t;
+}
+function texRoof(){
+  const c=document.createElement('canvas');c.width=c.height=512;const x=c.getContext('2d');
+  x.fillStyle='#d4c09a';x.fillRect(0,0,512,512);const g=8,cell=512/g;
+  for(let i=0;i<g;i++)for(let j=0;j<g;j++){const sh=200+((Math.random()-.5)*28|0);
+    x.fillStyle=`rgb(${sh},${sh-12},${sh-32})`;x.fillRect(i*cell+2,j*cell+2,cell-4,cell-4);
+    x.strokeStyle='rgba(70,55,32,.38)';x.lineWidth=2;x.strokeRect(i*cell+1,j*cell+1,cell-2,cell-2);}
+  const t=new T.CanvasTexture(c);t.colorSpace=T.SRGBColorSpace;return t;
+}
+function texGround(th){
+  const c=document.createElement('canvas');c.width=c.height=1024;const x=c.getContext('2d');
+  x.fillStyle=th.grass;x.fillRect(0,0,1024,1024);
+  for(let i=0;i<5500;i++){x.fillStyle=i%2?'rgba(255,255,255,.06)':'rgba(18,30,8,.11)';x.fillRect(Math.random()*1024,Math.random()*1024,8,8);}
+  const g=x.createRadialGradient(512,512,160,512,512,390);
+  g.addColorStop(0,th.dirt);g.addColorStop(.72,th.dirt);g.addColorStop(1,'rgba(200,165,110,0)');
+  x.fillStyle=g;x.fillRect(0,0,1024,1024);
+  const t=new T.CanvasTexture(c);t.colorSpace=T.SRGBColorSpace;return t;
+}
+
+/* ===================== HIERÓGLIFOS ===================== */
+function createHieroglyphTexture(god){
+  const canvas=document.createElement('canvas');
+  canvas.width=1024;canvas.height=128;
+  const ctx=canvas.getContext('2d');
+  const themes={
+    ra:{bg:'#e8d4a8',border:'#facc15',ink:'#5c3a1a',accent:'#d97706'},
+    isis:{bg:'#e8eef5',border:'#0d9488',ink:'#1e3a5f',accent:'#2dd4bf'},
+    set:{bg:'#c48a5e',border:'#b91c1c',ink:'#3f1a0a',accent:'#ea580c'}
+  };
+  const t=themes[god];
+  ctx.fillStyle=t.bg;ctx.fillRect(0,0,1024,128);
+  ctx.fillStyle=t.border;ctx.fillRect(0,0,1024,9);ctx.fillRect(0,119,1024,9);
+  ctx.strokeStyle=t.accent;ctx.lineWidth=1.8;
+  ctx.beginPath();ctx.moveTo(0,16);ctx.lineTo(1024,16);ctx.moveTo(0,112);ctx.lineTo(1024,112);ctx.stroke();
+
+  const symbols=god==='ra'?['sun','scarab','eye','falcon','ankh','was','shen','cartouche']:
+               god==='isis'?['ankh','tjet','wings','throne','lotus','cobra','ankh','tjet']:
+               ['setAnimal','was','shield','arrow','power','setAnimal','was','shield'];
+
+  let x=28;
+  while(x<990){
+    const sym=symbols[Math.floor(Math.random()*symbols.length)];
+    drawHieroglyph(ctx,sym,x,64,t.ink,t.accent);
+    x+=30+Math.random()*20;
+  }
+  const tex=new T.CanvasTexture(canvas);
+  tex.wrapS=T.RepeatWrapping;tex.wrapT=T.ClampToEdgeWrapping;
+  tex.repeat.set(2.5,1);tex.colorSpace=T.SRGBColorSpace;
+  return tex;
+}
+
+function drawHieroglyph(ctx,type,x,y,ink,accent){
+  ctx.save();ctx.translate(x,y);ctx.fillStyle=ink;ctx.strokeStyle=ink;ctx.lineWidth=2.1;ctx.lineCap='round';
+  switch(type){
+    case'sun':
+      ctx.beginPath();ctx.arc(0,0,10,0,Math.PI*2);ctx.fill();
+      for(let i=0;i<8;i++){const a=i/8*Math.PI*2;ctx.beginPath();ctx.moveTo(Math.cos(a)*12,Math.sin(a)*12);ctx.lineTo(Math.cos(a)*17,Math.sin(a)*17);ctx.stroke();}
+      break;
+    case'scarab':
+      ctx.beginPath();ctx.ellipse(0,0,8,11,0,0,Math.PI*2);ctx.fill();
+      ctx.beginPath();ctx.ellipse(-9,-2,6,4.5,-.4,0,Math.PI*2);ctx.ellipse(9,-2,6,4.5,.4,0,Math.PI*2);ctx.fill();
+      break;
+    case'eye':
+      ctx.beginPath();ctx.moveTo(-13,0);ctx.quadraticCurveTo(0,-11,13,0);ctx.quadraticCurveTo(0,11,-13,0);ctx.fill();
+      ctx.fillStyle=accent;ctx.beginPath();ctx.arc(2,0,3.5,0,Math.PI*2);ctx.fill();
+      ctx.strokeStyle=ink;ctx.beginPath();ctx.moveTo(-11,-7);ctx.quadraticCurveTo(0,-13,11,-5);ctx.stroke();
+      break;
+    case'falcon':
+      ctx.beginPath();ctx.moveTo(-7,7);ctx.lineTo(0,-11);ctx.lineTo(7,7);ctx.closePath();ctx.fill();
+      ctx.beginPath();ctx.ellipse(5,0,9,4.5,.55,0,Math.PI*2);ctx.fill();
+      break;
+    case'shen':
+      ctx.beginPath();ctx.arc(0,0,10,0,Math.PI*2);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(10,0);ctx.lineTo(15,0);ctx.stroke();
+      break;
+    case'cartouche':
+      ctx.beginPath();ctx.roundRect(-15,-8,30,16,8);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(-15,8);ctx.lineTo(15,8);ctx.stroke();
+      break;
+    case'ankh':
+      ctx.beginPath();ctx.arc(0,-7,5.5,0,Math.PI*2);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(0,-1.5);ctx.lineTo(0,13);ctx.moveTo(-8,3.5);ctx.lineTo(8,3.5);ctx.stroke();
+      break;
+    case'tjet':
+      ctx.beginPath();ctx.moveTo(0,-11);ctx.lineTo(0,11);ctx.moveTo(-6,-3);ctx.lineTo(6,-3);ctx.moveTo(-4.5,3);ctx.lineTo(4.5,3);ctx.stroke();
+      ctx.beginPath();ctx.arc(-4.5,-7,3.5,0,Math.PI*2);ctx.arc(4.5,-7,3.5,0,Math.PI*2);ctx.stroke();
+      break;
+    case'wings':
+      ctx.beginPath();ctx.moveTo(0,0);ctx.quadraticCurveTo(-16,-9,-20,2);ctx.quadraticCurveTo(-9,5,0,0);ctx.fill();
+      ctx.beginPath();ctx.moveTo(0,0);ctx.quadraticCurveTo(16,-9,20,2);ctx.quadraticCurveTo(9,5,0,0);ctx.fill();
+      break;
+    case'throne':
+      ctx.fillRect(-7,-3,14,11);ctx.fillRect(-9,8,18,3.5);
+      break;
+    case'lotus':
+      ctx.beginPath();ctx.moveTo(0,9);ctx.quadraticCurveTo(-9,-1,0,-11);ctx.quadraticCurveTo(9,-1,0,9);ctx.fill();
+      ctx.beginPath();ctx.ellipse(-6,0,4.5,7,-.5,0,Math.PI*2);ctx.ellipse(6,0,4.5,7,.5,0,Math.PI*2);ctx.fill();
+      break;
+    case'cobra':
+      ctx.beginPath();ctx.moveTo(0,11);ctx.quadraticCurveTo(-5,0,0,-9);ctx.quadraticCurveTo(5,0,0,11);ctx.fill();
+      ctx.beginPath();ctx.arc(0,-11,3.5,0,Math.PI*2);ctx.fill();
+      break;
+    case'setAnimal':
+      ctx.beginPath();ctx.moveTo(-5,7);ctx.lineTo(-3.5,-5);ctx.lineTo(0,-13);ctx.lineTo(3.5,-5);ctx.lineTo(5,7);ctx.closePath();ctx.fill();
+      ctx.beginPath();ctx.moveTo(-3.5,-5);ctx.lineTo(-8,-15);ctx.lineTo(-1.5,-7);ctx.fill();
+      ctx.beginPath();ctx.moveTo(3.5,-5);ctx.lineTo(8,-15);ctx.lineTo(1.5,-7);ctx.fill();
+      break;
+    case'was':
+      ctx.beginPath();ctx.moveTo(0,-13);ctx.lineTo(0,11);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(-4.5,-13);ctx.lineTo(0,-19);ctx.lineTo(4.5,-13);ctx.fill();
+      ctx.beginPath();ctx.moveTo(-3.5,11);ctx.lineTo(0,7);ctx.lineTo(3.5,11);ctx.stroke();
+      break;
+    case'shield':
+      ctx.beginPath();ctx.moveTo(0,-11);ctx.lineTo(9,-3);ctx.lineTo(7,9);ctx.lineTo(-7,9);ctx.lineTo(-9,-3);ctx.closePath();ctx.fill();
+      break;
+    case'arrow':
+      ctx.beginPath();ctx.moveTo(0,-13);ctx.lineTo(0,11);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(-4.5,-7);ctx.lineTo(0,-13);ctx.lineTo(4.5,-7);ctx.fill();
+      break;
+    case'power':
+      ctx.beginPath();ctx.moveTo(-7,7);ctx.lineTo(0,-11);ctx.lineTo(7,7);ctx.closePath();ctx.fill();
+      ctx.fillRect(-2.5,7,5,5);
+      break;
+  }
+  ctx.restore();
+}
+
+/* ===================== HELPERS ===================== */
+function G(p,x=0,y=0,z=0){const g=new T.Group();g.position.set(x,y,z);if(p)p.add(g);return g;}
+function B(p,w,h,d,m,pos=[0,0,0],rot=[0,0,0]){
+  const mesh=new T.Mesh(new T.BoxGeometry(w,h,d),m);
+  mesh.position.set(...pos);mesh.rotation.set(...rot);mesh.castShadow=mesh.receiveShadow=true;
+  if(p)p.add(mesh);return mesh;
+}
+function C(p,rt,rb,h,seg,m,pos=[0,0,0],rot=[0,0,0]){
+  const mesh=new T.Mesh(new T.CylinderGeometry(rt,rb,h,seg),m);
+  mesh.position.set(...pos);mesh.rotation.set(...rot);mesh.castShadow=mesh.receiveShadow=true;
+  if(p)p.add(mesh);return mesh;
+}
+function pylon(parent,w,d,h,stone,trim,gold,pos,god,vents=true){
+  const p=G(parent,...pos);
+  const wT=w*(god==='set'?0.84:0.88),dT=d*(god==='set'?0.84:0.88);
+  const rxB=w*.5,rzB=d*.5,rxT=wT*.5,rzT=dT*.5;
+  const geo=new T.BufferGeometry();
+  const v=new Float32Array([
+    -rxB,0,rzB,rxB,0,rzB,rxT,h,rzT,-rxB,0,rzB,rxT,h,rzT,-rxT,h,rzT,
+    rxB,0,-rzB,-rxB,0,-rzB,-rxT,h,-rzT,rxB,0,-rzB,-rxT,h,-rzT,rxT,h,-rzT,
+    -rxB,0,-rzB,-rxB,0,rzB,-rxT,h,rzT,-rxB,0,-rzB,-rxT,h,rzT,-rxT,h,-rzT,
+    rxB,0,rzB,rxB,0,-rzB,rxT,h,-rzT,rxB,0,rzB,rxT,h,-rzT,rxT,h,rzT,
+    -rxT,h,rzT,rxT,h,rzT,rxT,h,-rzT,-rxT,h,rzT,rxT,h,-rzT,-rxT,h,-rzT
+  ]);
+  const uv=new Float32Array(60);for(let i=0;i<30;i++){uv[i*2]=(v[i*3]+rxB)/w;uv[i*2+1]=v[i*3+1]/h;}
+  geo.setAttribute('position',new T.BufferAttribute(v,3));geo.setAttribute('uv',new T.BufferAttribute(uv,2));geo.computeVertexNormals();
+  const body=new T.Mesh(geo,stone);body.castShadow=body.receiveShadow=true;p.add(body);
+  B(p,wT+.2,.13,dT+.2,stone,[0,h+.04,0]);
+  B(p,wT+.24,.07,dT+.24,trim,[0,h+.12,0]);
+  B(p,wT+.08,.045,dT+.08,gold,[0,h+.17,0]);
+  if(vents){const dark=new T.MeshStandardMaterial({color:0x1a1410,roughness:.9});
+    const n=Math.max(2,Math.floor(wT/.5));
+    for(let i=0;i<n;i++){const vx=-wT*.32+(n===1?0:(i/(n-1))*wT*.64);
+      B(p,.14,.17,.05,dark,[vx,h-.32,rzT+.01]);B(p,.14,.17,.05,dark,[vx,h-.32,-rzT-.01]);}}
+  return p;
+}
+function wingedSun(parent,gold,trim,pos,scale=1,god='ra'){
+  const g=G(parent,...pos);g.scale.setScalar(scale*(god==='ra'?1.15:1));
+  const disk=new T.Mesh(new T.SphereGeometry(.14,16,16),gold);disk.scale.set(1,1,.4);g.add(disk);
+  for(const s of[-1,1]){B(g,.48,.11,.04,gold,[s*.32,.02,0],[0,0,s*.09]);B(g,.40,.05,.045,trim,[s*.30,-.03,.01],[0,0,s*.09]);B(g,.22,.035,.03,gold,[s*.42,.01,0],[0,0,s*.15]);}
+  if(god==='ra')B(g,.04,.12,.04,gold,[0,.18,0]);
+  return g;
+}
+function lotusColumn(parent,h,stone,trim,gold,pos){
+  const g=G(parent,...pos);
+  C(g,.09,.11,h*.7,12,stone,[0,h*.35,0]);
+  C(g,.16,.09,.18,12,trim,[0,h*.78,0]);
+  C(g,.18,.14,.08,12,gold,[0,h*.88,0]);
+  C(g,.13,.11,.1,12,gold,[0,.05,0]);
+  return g;
+}
+function guardian(parent,statue,trim,gold,pos,scale,god){
+  const st=G(parent,...pos);st.scale.setScalar(scale);
+  B(st,.7,.34,.7,statue,[0,.17,0]);B(st,.76,.07,.76,trim,[0,.36,0]);B(st,.72,.05,.72,gold,[0,.42,0]);
+  const fig=G(st,0,.44,0);
+  C(fig,.075,.06,.55,10,statue,[-.1,.28,.05],[-.08,0,0]);C(fig,.075,.06,.55,10,statue,[.1,.28,-.04],[.06,0,0]);
+  C(fig,.16,.2,.34,12,trim,[0,.58,0]);B(fig,.34,.06,.24,gold,[0,.74,0]);B(fig,.38,.42,.22,statue,[0,.96,0]);
+  C(fig,.18,.2,.08,12,gold,[0,1.14,0]);
+  const head=new T.Mesh(new T.SphereGeometry(.125,14,14),statue);head.position.set(0,1.3,.02);fig.add(head);
+  B(fig,.32,.28,.22,gold,[0,1.24,-.02]);
+  if(god==='ra'){const sun=new T.Mesh(new T.SphereGeometry(.15,14,14),gold);sun.scale.set(1,1,.32);sun.position.set(0,1.54,.02);fig.add(sun);}
+  else if(god==='isis'){B(fig,.03,.26,.03,gold,[-.14,1.5,.02],[0,0,-.28]);B(fig,.03,.26,.03,gold,[.14,1.5,.02],[0,0,.28]);const disk=new T.Mesh(new T.SphereGeometry(.08,12,12),gold);disk.position.set(0,1.62,.02);fig.add(disk);}
+  else{B(fig,.055,.055,.26,statue,[0,1.28,.16]);B(fig,.035,.28,.05,gold,[-.08,1.48,-.02]);B(fig,.035,.28,.05,gold,[.08,1.48,-.02]);}
+  C(fig,.02,.02,1.7,8,gold,[.26,.9,.12],[.12,0,0]);
+  return st;
+}
+function brazier(parent,gold,flameMat,pos,scale=1){
+  const g=G(parent,...pos);g.scale.setScalar(scale);
+  C(g,.15,.2,.1,12,gold,[0,.05,0]);C(g,.05,.07,.45,10,gold,[0,.32,0]);C(g,.26,.14,.15,14,gold,[0,.6,0]);
+  const flame=new T.Mesh(new T.ConeGeometry(.18,.42,10),flameMat);flame.position.set(0,.88,0);g.add(flame);
+  return {g,flame};
+}
+
+/* ===================== MATERIAIS ===================== */
+let curGod='ra',curBuild='barracks',curTier=2;
+const M={};
+function initMats(god){
+  const th=GODS[god];
+  M.stone=new T.MeshStandardMaterial({map:texSandstone(false),color:th.stone,roughness:.65,metalness:.05});
+  M.bright=new T.MeshStandardMaterial({map:texSandstone(true),color:th.bright,roughness:.5,metalness:.08});
+  M.trim=new T.MeshStandardMaterial({color:th.trim,roughness:.36,metalness:.3});
+  M.sec=new T.MeshStandardMaterial({color:th.sec,roughness:.46,metalness:.2});
+  M.gold=new T.MeshStandardMaterial({color:th.gold,emissive:0x3b2200,emissiveIntensity:.2,metalness:.9,roughness:.17});
+  M.statue=new T.MeshStandardMaterial({color:th.statue,roughness:.42,metalness:.18});
+  M.wood=new T.MeshStandardMaterial({color:0x5a2c14,roughness:.68});
+  M.dark=new T.MeshStandardMaterial({color:0x1a140e,roughness:.9});
+  M.foliage=new T.MeshStandardMaterial({color:0x166534,roughness:.75,side:T.DoubleSide});
+  M.roof=new T.MeshStandardMaterial({map:texRoof(),roughness:.6,metalness:.07});
+  M.flame=new T.MeshBasicMaterial({color:th.glow,transparent:true,opacity:.9,blending:T.AdditiveBlending});
+  M.hieroglyph=new T.MeshStandardMaterial({map:createHieroglyphTexture(god),roughness:.55,metalness:.08});
+}
+function applyMats(god){
+  const th=GODS[god];
+  M.stone.color.setHex(th.stone);M.bright.color.setHex(th.bright);
+  M.trim.color.setHex(th.trim);M.sec.color.setHex(th.sec);
+  M.gold.color.setHex(th.gold);M.statue.color.setHex(th.statue);
+  M.flame.color.setHex(th.glow);
+  if(M.hieroglyph.map)M.hieroglyph.map.dispose();
+  M.hieroglyph.map=createHieroglyphTexture(god);M.hieroglyph.needsUpdate=true;
+}
+
+/* ===================== CONSTRUÇÕES ===================== */
+function addHieroglyphBand(parent,w,h,d,y,z=0){
+  B(parent,w,h,d,M.hieroglyph,[0,y,z]);
+}
+
+function buildBarracks(tier,god){
+  const root=new T.Group();const s=1+(tier-2)*.11;const isRa=god==='ra',isIsis=god==='isis',isSet=god==='set';
+  B(root,4.6*s,.24,4.0*s,M.sec,[0,.12,0]);B(root,4.4*s,.14,3.8*s,M.stone,[0,.28,0]);
+  for(let i=0;i<3;i++)B(root,(2.2-i*.15)*s,.08,.4*s,M.bright,[0,.08+i*.08,2.05*s-i*.12]);
+  const bodyH=1.9+(tier-2)*.32;
+  B(root,3.6*s,bodyH,2.8*s,M.bright,[0,.35+bodyH/2,0]);
+  // Hieróglifos no topo
+  addHieroglyphBand(root,3.7*s,.18,2.9*s,.35+bodyH+.08);
+  B(root,3.55*s,.05,2.75*s,M.gold,[0,.35+bodyH+.18,0]);
+  if(tier>=3){const ph=2.2+(tier-3)*.35;const pw=isSet?1.25:1.15;
+    pylon(root,pw*s,.95*s,ph,M.bright,M.trim,M.gold,[-1.7*s,.35,1.55*s],god);
+    pylon(root,pw*s,.95*s,ph,M.bright,M.trim,M.gold,[1.7*s,.35,1.55*s],god);}
+  B(root,1.35*s,1.7*s,.32*s,M.stone,[0,1.0*s,1.5*s]);
+  B(root,1.0*s,1.4*s,.36*s,M.wood,[0,.85*s,1.52*s]);B(root,.07*s,1.4*s,.38*s,M.gold,[0,.85*s,1.54*s]);
+  B(root,.12*s,1.7*s,.15*s,M.gold,[-.6*s,1.0*s,1.55*s]);B(root,.12*s,1.7*s,.15*s,M.gold,[.6*s,1.0*s,1.55*s]);
+  if(tier>=3)wingedSun(root,M.gold,M.trim,[0,1.95*s,1.65*s],.95+(tier-3)*.08,god);
+  if(tier>=3){if(isIsis){lotusColumn(root,1.9*s,M.bright,M.trim,M.gold,[-1.1*s,.35,1.1*s]);lotusColumn(root,1.9*s,M.bright,M.trim,M.gold,[1.1*s,.35,1.1*s]);}
+    else{C(root,.1*s,.12*s,1.9*s,12,M.bright,[-1.1*s,1.2*s,1.1*s]);C(root,.1*s,.12*s,1.9*s,12,M.bright,[1.1*s,1.2*s,1.1*s]);
+      C(root,.14*s,.14*s,.12,12,M.gold,[-1.1*s,2.15*s,1.1*s]);C(root,.14*s,.14*s,.12,12,M.gold,[1.1*s,2.15*s,1.1*s]);}}
+  for(const sx of[-1.15,1.15]){B(root,.4*s,.5*s,.07*s,M.gold,[sx*s,1.25*s,1.45*s]);if(isRa)B(root,.18*s,.18*s,.08*s,M.trim,[sx*s,1.25*s,1.48*s]);}
+  if(tier>=4){guardian(root,M.statue,M.trim,M.gold,[2.25*s,.35,.9*s],1.0,god);if(tier>=5)guardian(root,M.statue,M.trim,M.gold,[-2.25*s,.35,.9*s],1.0,god);}
+  if(isSet&&tier>=3){brazier(root,M.gold,M.flame,[-2.0*s,.35,1.8*s],.9);brazier(root,M.gold,M.flame,[2.0*s,.35,1.8*s],.9);}
+  if(isIsis&&tier>=3){for(const[px,pz]of[[-1.8,1.9],[1.8,1.9],[-2.1,.4],[2.1,.4]]){const leaf=new T.Mesh(new T.ConeGeometry(.2,.5,5),M.foliage);leaf.position.set(px*s,.55,pz*s);leaf.rotation.x=.3;root.add(leaf);}}
+  if(tier>=5){for(const sx of[-1.9,1.9]){C(root,.06*s,.09*s,1.1*s,6,M.bright,[sx*s,2.6*s,-.3*s]);const tip=new T.Mesh(new T.ConeGeometry(.12*s,.28*s,4),M.gold);tip.position.set(sx*s,3.3*s,-.3*s);root.add(tip);}}
+  return root;
+}
+
+function buildStables(tier,god){
+  const root=new T.Group();const s=1+(tier-2)*.1;const isIsis=god==='isis',isSet=god==='set';
+  B(root,5.4*s,.2,3.9*s,M.sec,[0,.1,0]);B(root,5.2*s,.12,3.7*s,M.stone,[0,.24,0]);
+  B(root,4.8*s,1.55+(tier-2)*.22,2.5*s,M.bright,[0,1.05+(tier-2)*.1,-.25*s]);
+  for(let i=-2;i<=2;i++){if(isIsis)lotusColumn(root,1.75+(tier-2)*.18,M.bright,M.trim,M.gold,[i*.95*s,.24,1.35*s]);
+    else C(root,.09*s,.11*s,1.75+(tier-2)*.18,11,M.bright,[i*.95*s,1.05,1.35*s]);}
+  B(root,5.0*s,.13,2.9*s,M.roof,[0,2.0+(tier-2)*.18,.15*s]);
+  addHieroglyphBand(root,5.1*s,.14,3.0*s,2.15+(tier-2)*.18,.15*s);
+  B(root,1.5*s,1.25*s,.09*s,M.wood,[0,.8,1.55*s]);B(root,.06*s,1.25*s,.11*s,M.gold,[0,.8,1.57*s]);
+  if(tier>=3)wingedSun(root,M.gold,M.trim,[0,2.25+(tier-2)*.15,1.5*s],.85,god);
+  if(tier>=4){pylon(root,.95*s,.8*s,1.9,M.bright,M.trim,M.gold,[-2.4*s,.24,1.5*s],god,false);pylon(root,.95*s,.8*s,1.9,M.bright,M.trim,M.gold,[2.4*s,.24,1.5*s],god,false);}
+  if(isSet&&tier>=3){brazier(root,M.gold,M.flame,[-2.5*s,.24,1.9*s],.85);brazier(root,M.gold,M.flame,[2.5*s,.24,1.9*s],.85);}
+  return root;
+}
+
+function buildArchery(tier,god){
+  const root=new T.Group();const s=1+(tier-2)*.1;const isIsis=god==='isis';
+  B(root,4.9*s,.18,4.5*s,M.sec,[0,.09,0]);B(root,4.7*s,.12,4.3*s,M.stone,[0,.22,0]);
+  B(root,3.4*s,1.55+(tier-2)*.28,1.9*s,M.bright,[0,1.05+(tier-2)*.12,-.7*s]);
+  for(const sx of[-1.35,-.45,.45,1.35]){if(isIsis)lotusColumn(root,1.7+(tier-2)*.2,M.bright,M.trim,M.gold,[sx*s,.22,.75*s]);
+    else C(root,.085*s,.1*s,1.7+(tier-2)*.2,11,M.bright,[sx*s,1.0,.75*s]);}
+  addHieroglyphBand(root,3.0*s,.14,.55*s,1.95+(tier-2)*.2,.75*s);
+  const tMat=new T.MeshStandardMaterial({color:0xd97706,roughness:.35});
+  const count=tier>=4?4:2;
+  for(let i=0;i<count;i++){const tx=(i%2?-1.4:1.4)*s,tz=(i<2?1.7:2.35)*s;
+    C(root,.38*s,.38*s,.07,16,tMat,[tx,.85,tz],[Math.PI/2,0,0]);C(root,.13*s,.13*s,.08,12,M.gold,[tx,.85,tz],[Math.PI/2,0,0]);}
+  if(tier>=3)wingedSun(root,M.gold,M.trim,[0,2.2+(tier-2)*.15,.95*s],.9,god);
+  if(tier>=4){pylon(root,1.0*s,.85*s,2.1,M.bright,M.trim,M.gold,[-2.0*s,.22,1.5*s],god);pylon(root,1.0*s,.85*s,2.1,M.bright,M.trim,M.gold,[2.0*s,.22,1.5*s],god);}
+  return root;
+}
+
+function buildHouse(tier,god){
+  const root=new T.Group();const s=.82+tier*.09;const isIsis=god==='isis',isSet=god==='set';
+  B(root,2.8*s,.18,2.6*s,M.sec,[0,.09,0]);B(root,2.65*s,.1,2.45*s,M.stone,[0,.22,0]);
+  const bodyH=1.15+(tier-1)*.3;
+  B(root,2.25*s,bodyH,2.05*s,M.bright,[0,.28+bodyH/2,0]);
+  B(root,.6*s,.95*s,.08*s,M.wood,[0,.72,1.08*s]);if(tier>=2)B(root,.05*s,.95*s,.1*s,M.gold,[0,.72,1.1*s]);
+  if(tier>=2)for(const sx of[-.75,.75])B(root,.3*s,.34*s,.06*s,M.dark,[sx*s,1.15,1.05*s]);
+  addHieroglyphBand(root,2.4*s,.12,2.2*s,.28+bodyH+.06);
+  if(tier>=3)B(root,2.3*s,.05,2.1*s,M.gold,[0,.28+bodyH+.14,0]);
+  if(tier>=3){if(isIsis){lotusColumn(root,bodyH*.95,M.bright,M.trim,M.gold,[-1.2*s,.28,1.0*s]);lotusColumn(root,bodyH*.95,M.bright,M.trim,M.gold,[1.2*s,.28,1.0*s]);}
+    else{C(root,.08*s,.1*s,bodyH*.95,10,M.bright,[-1.2*s,.28+bodyH*.45,1.0*s]);C(root,.08*s,.1*s,bodyH*.95,10,M.bright,[1.2*s,.28+bodyH*.45,1.0*s]);}}
+  if(tier>=4){pylon(root,.75*s,.65*s,1.55,M.bright,M.trim,M.gold,[-1.5*s,.22,.4*s],god,false);pylon(root,.75*s,.65*s,1.55,M.bright,M.trim,M.gold,[1.5*s,.22,.4*s],god,false);}
+  if(tier>=5){const cone=new T.Mesh(new T.ConeGeometry(.38*s,.6*s,4),M.gold);cone.rotation.y=Math.PI/4;cone.position.set(0,.28+bodyH+.4,0);root.add(cone);
+    wingedSun(root,M.gold,M.trim,[0,.28+bodyH+.12,1.15*s],.75,god);}
+  if(isSet&&tier>=3)brazier(root,M.gold,M.flame,[0,.28,1.4*s],.7);
+  if(isIsis&&tier>=3){for(const sx of[-1.3,1.3]){const leaf=new T.Mesh(new T.ConeGeometry(.18,.4,5),M.foliage);leaf.position.set(sx*s,.5,1.3*s);root.add(leaf);}}
+  return root;
+}
+
+function buildMarket(tier,god){
+  const root=new T.Group();const s=1+(tier-2)*.1;const isIsis=god==='isis';
+  B(root,5.5*s,.18,4.0*s,M.sec,[0,.09,0]);B(root,5.3*s,.12,3.8*s,M.stone,[0,.22,0]);
+  for(let i=-2;i<=2;i++){if(isIsis)lotusColumn(root,1.8+(tier-2)*.22,M.bright,M.trim,M.gold,[i*.95*s,.22,1.3*s]);
+    else C(root,.09*s,.11*s,1.8+(tier-2)*.22,12,M.bright,[i*.95*s,1.05,1.3*s]);}
+  addHieroglyphBand(root,4.9*s,.14,.65*s,2.05+(tier-2)*.22,1.3*s);
+  B(root,4.5*s,1.55+(tier-2)*.28,2.1*s,M.bright,[0,1.05+(tier-2)*.12,-.55*s]);
+  for(let i=-1;i<=1;i++){B(root,.75*s,.38*s,.55*s,M.wood,[i*1.4*s,.48,.7*s]);C(root,.13*s,.16*s,.42*s,10,M.sec,[i*1.4*s+.38*s,.55,.35*s]);}
+  if(tier>=3)wingedSun(root,M.gold,M.trim,[0,2.25+(tier-2)*.2,1.4*s],.95,god);
+  if(tier>=4){pylon(root,.9*s,.75*s,2.0,M.bright,M.trim,M.gold,[-2.5*s,.22,.9*s],god,false);pylon(root,.9*s,.75*s,2.0,M.bright,M.trim,M.gold,[2.5*s,.22,.9*s],god,false);}
+  return root;
+}
+
+function buildForge(tier,god){
+  const root=new T.Group();const s=1+(tier-2)*.1;const isSet=god==='set';
+  B(root,4.3*s,.2,3.7*s,M.sec,[0,.1,0]);B(root,4.1*s,.12,3.5*s,M.stone,[0,.24,0]);
+  B(root,3.5*s,1.75+(tier-2)*.28,2.55*s,M.bright,[0,1.15+(tier-2)*.12,0]);
+  addHieroglyphBand(root,3.6*s,.16,2.65*s,2.1+(tier-2)*.14);
+  const furn=new T.MeshStandardMaterial({color:0x3a1a08,emissive:GODS[god].glow,emissiveIntensity:1.6,roughness:.4});
+  B(root,1.2*s,.95*s,1.0*s,furn,[0,.85,1.35*s]);B(root,1.0*s,.65*s,.8*s,M.dark,[0,.75,1.4*s]);
+  C(root,.24*s,.3*s,1.9+(tier-2)*.28,11,M.stone,[0,2.3+(tier-2)*.12,1.15*s]);
+  C(root,.32*s,.32*s,.14,11,M.trim,[0,3.25+(tier-2)*.12,1.15*s]);
+  B(root,.55*s,.28*s,.32*s,M.gold,[1.2*s,.48,1.05*s]);B(root,.16*s,.38*s,.16*s,M.sec,[1.2*s,.3,1.05*s]);
+  B(root,1.1*s,1.45*s,.22*s,M.wood,[0,.95,1.55*s]);if(tier>=3)B(root,.06*s,1.45*s,.24*s,M.gold,[0,.95,1.57*s]);
+  if(tier>=3)wingedSun(root,M.gold,M.trim,[0,2.15+(tier-2)*.15,1.65*s],.85,god);
+  if(tier>=4){pylon(root,.95*s,.8*s,2.1,M.bright,M.trim,M.gold,[-1.9*s,.24,1.45*s],god,false);pylon(root,.95*s,.8*s,2.1,M.bright,M.trim,M.gold,[1.9*s,.24,1.45*s],god,false);}
+  if(isSet){brazier(root,M.gold,M.flame,[-1.6*s,.24,1.8*s],.9);brazier(root,M.gold,M.flame,[1.6*s,.24,1.8*s],.9);}
+  return root;
+}
+
+/* ===================== CENA ===================== */
+const renderer=new T.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
+renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));renderer.setSize(innerWidth,innerHeight);
+renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap;
+renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.14;
+document.body.appendChild(renderer.domElement);
+
+const scene=new T.Scene();scene.background=new T.Color(GODS.ra.bg);scene.fog=new T.FogExp2(GODS.ra.bg,.017);
+const camera=new T.PerspectiveCamera(36,innerWidth/innerHeight,.1,110);
+const hemi=new T.HemisphereLight(0xfef9c3,0x854d0e,1.12);scene.add(hemi);
+const sun=new T.DirectionalLight(0xfffbeb,2.25);sun.position.set(5.2,9.5,6.2);sun.castShadow=true;
+sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-8,right:8,top:8,bottom:-8,near:1,far:28});
+sun.shadow.bias=-.0004;scene.add(sun);
+const rim=new T.DirectionalLight(0xfacc15,1.35);rim.position.set(-5,4.2,-5.2);scene.add(rim);
+
+const groundMat=new T.MeshStandardMaterial({map:texGround(GODS.ra),roughness:.76});
+const terrain=new T.Mesh(new T.CylinderGeometry(9.2,9.5,.32,64),groundMat);terrain.position.y=-.16;terrain.receiveShadow=true;scene.add(terrain);
+const ring=new T.Mesh(new T.RingGeometry(4.3,4.45,64),new T.MeshBasicMaterial({color:0xfacc15,transparent:true,opacity:.65,side:T.DoubleSide}));
+ring.rotation.x=-Math.PI/2;ring.position.y=.015;scene.add(ring);
+
+const buildingRoot=new T.Group();scene.add(buildingRoot);
+
+function clear(){while(buildingRoot.children.length){const c=buildingRoot.children[0];buildingRoot.remove(c);
+  c.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material){if(Array.isArray(o.material))o.material.forEach(m=>m.dispose());else o.material.dispose();}});}}
+function spawn(){
+  clear();
+  let m;
+  switch(curBuild){
+    case'barracks':m=buildBarracks(curTier,curGod);break;
+    case'stables':m=buildStables(curTier,curGod);break;
+    case'archery':m=buildArchery(curTier,curGod);break;
+    case'house':m=buildHouse(curTier,curGod);break;
+    case'market':m=buildMarket(curTier,curGod);break;
+    case'forge':m=buildForge(curTier,curGod);break;
+  }
+  buildingRoot.add(m);
+  const names={barracks:'Quartel',stables:'Estábulos',archery:'Centro de Arquearia',house:'Casa da População',market:'Mercado',forge:'Ferreiro'};
+  const eras={1:'Arcaico',2:'Clássico',3:'Heroico',4:'Mítico',5:'Olímpico'};
+  document.getElementById('card-title').textContent=`${names[curBuild]} ${GODS[curGod].title} • Tier ${curTier} (${eras[curTier]})`;
+  document.getElementById('card-sub').textContent=GODS[curGod].style==='solar'?'Arquitetura solar com frisos hieroglíficos':GODS[curGod].style==='lotus'?'Arquitetura elegante com colunas de lótus e hieróglifos mágicos':'Arquitetura do deserto com hieróglifos de força';
+}
+
+initMats('ra');
+
+document.querySelectorAll('[data-god]').forEach(btn=>{
+  btn.onclick=()=>{curGod=btn.dataset.god;
+    document.querySelectorAll('[data-god]').forEach(b=>b.classList.toggle('on',b===btn));
+    const th=GODS[curGod];scene.background.setHex(th.bg);scene.fog.color.setHex(th.bg);
+    hemi.color.setHex(th.hemiSky);hemi.groundColor.setHex(th.hemiGround);rim.color.setHex(th.rim);
+    ring.material.color.setHex(th.glow);applyMats(curGod);
+    if(groundMat.map)groundMat.map.dispose();groundMat.map=texGround(th);groundMat.needsUpdate=true;spawn();};
+});
+document.querySelectorAll('[data-building]').forEach(btn=>{
+  btn.onclick=()=>{curBuild=btn.dataset.building;
+    document.querySelectorAll('[data-building]').forEach(b=>b.classList.toggle('on',b===btn));
+    document.querySelector('[data-tier="1"]').style.display=curBuild==='house'?'':'none';
+    if(curBuild!=='house'&&curTier===1){curTier=2;document.querySelectorAll('[data-tier]').forEach(b=>b.classList.toggle('on',b.dataset.tier==='2'));}
+    spawn();};
+});
+document.querySelectorAll('[data-tier]').forEach(btn=>{
+  btn.onclick=()=>{curTier=+btn.dataset.tier;document.querySelectorAll('[data-tier]').forEach(b=>b.classList.toggle('on',b===btn));spawn();};
+});
+
+let focus=false;
+document.getElementById('btn-focus').onclick=()=>{focus=!focus;
+  document.getElementById('btn-focus').classList.toggle('active',focus);
+  document.getElementById('btn-focus').textContent=focus?'Visão Geral':'Focar Detalhe';
+  targetDist=focus?5.0:9.8;};
+
+let ang=.52,pitch=.36,dist=9.8,targetDist=9.8,look=new T.Vector3(0,1.35,0);
+let drag=false,lx=0,ly=0,pinch=0;
+renderer.domElement.onpointerdown=e=>{drag=true;lx=e.clientX;ly=e.clientY;};
+addEventListener('pointerup',()=>drag=false);
+addEventListener('pointermove',e=>{if(!drag)return;ang-=(e.clientX-lx)*.009;pitch=T.MathUtils.clamp(pitch+(e.clientY-ly)*.006,.08,1.05);lx=e.clientX;ly=e.clientY;});
+renderer.domElement.addEventListener('wheel',e=>{e.preventDefault();targetDist=T.MathUtils.clamp(targetDist+e.deltaY*.006,3.8,17);},{passive:false});
+renderer.domElement.addEventListener('touchstart',e=>{if(e.touches.length===2){const dx=e.touches[0].clientX-e.touches[1].clientX,dy=e.touches[0].clientY-e.touches[1].clientY;pinch=Math.hypot(dx,dy);}},{passive:true});
+renderer.domElement.addEventListener('touchmove',e=>{if(e.touches.length===2){const dx=e.touches[0].clientX-e.touches[1].clientX,dy=e.touches[0].clientY-e.touches[1].clientY;const d=Math.hypot(dx,dy);targetDist=T.MathUtils.clamp(targetDist+(pinch-d)*.018,3.8,17);pinch=d;}},{passive:true});
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
+
+const clock=new T.Clock();
+function animate(){
+  const dt=Math.min(clock.getDelta(),.05);
+  dist=T.MathUtils.damp(dist,targetDist,6,dt);
+  if(!drag&&!focus)ang+=dt*.038;
+  const des=focus?new T.Vector3(0,1.55,.9):new T.Vector3(0,1.3,0);
+  look.lerp(des,.12);
+  const h=Math.cos(pitch)*dist,v=Math.sin(pitch)*dist;
+  camera.position.set(look.x+Math.sin(ang)*h,look.y+v,look.z+Math.cos(ang)*h);
+  camera.lookAt(look);
+  renderer.render(scene,camera);
+  requestAnimationFrame(animate);
+}
+spawn();animate();
+</script>
+</body>
+</html>
+```
+
+### Como baixar
+
+1. Copie todo o código acima  
+2. Cole em um editor de texto (VS Code, Notepad++, etc.)  
+3. Salve como **`egito_arquitetura_6_construcoes_hieroglifos.html`**  
+4. Abra o arquivo no navegador (Chrome / Edge / Firefox)
+
+Agora as 6 construções já possuem **frisos de hieróglifos** diferentes conforme o deus selecionado.
+
+Quer que eu melhore ainda mais algum detalhe específico (mais hieróglifos nas laterais, animações de chama, etc.)?
