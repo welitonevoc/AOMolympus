@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { BuildingKind, PantheonId, TeamId } from '../../game/types';
 import type { MaterialPalette } from '../../game/models';
 import { buildAtlanteanFortress as buildProceduralAtlanteanFortress } from './atlanteanFortressModel';
+import { buildProceduralAtlanteanTownCenter } from './atlanteanTownCenterModel';
 
 // ─── Procedural Atlantean Obsidian & Orichalcum Textures ─────────────────────
 
@@ -592,13 +593,29 @@ export function createAtlanteanBuildingMesh(
 
   switch (kind) {
     case 'town_center': {
-      const res = buildAtlanteanTownCenter(group, mats, age, pantheon);
+      const rawGod = (majorGod || String(pantheon || 'kronos')).toLowerCase();
+      const effGod =
+        rawGod.includes('oranos') || rawGod.includes('urano')
+          ? 'oranos'
+          : rawGod.includes('gaia')
+          ? 'gaia'
+          : 'kronos';
+      const res = buildProceduralAtlanteanTownCenter(group, age, effGod, enableShadows);
       metropolisHalo = res.metropolisHalo;
       metropolisCrystal = res.metropolisCrystal;
+      if (res.flames && res.flames.length > 0) {
+        group.userData.atlanteanFlames = res.flames;
+      }
+      if (res.relics && res.relics.length > 0) {
+        group.userData.atlanteanRelics = res.relics;
+      }
+      if (res.relicRings && res.relicRings.length > 0) {
+        group.userData.atlanteanRelicRings = res.relicRings;
+      }
       group.scale.setScalar(1.0 + (age - 1) * 0.055);
-      markerRadius = 3.55 + (age - 1) * 0.22;
-      barHeight = 3.7 + (age - 1) * 0.55;
-      barWidth = 3.0 + (age - 1) * 0.15;
+      markerRadius = 3.6 + (age - 1) * 0.22;
+      barHeight = 3.8 + (age - 1) * 0.55;
+      barWidth = 3.2 + (age - 1) * 0.15;
       break;
     }
     case 'barracks':

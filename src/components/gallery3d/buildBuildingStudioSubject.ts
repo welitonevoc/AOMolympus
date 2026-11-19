@@ -10,6 +10,10 @@ import {
   AtlanteanFortressAction,
 } from '../../civilizacao/atlantes/atlanteanFortressModel';
 import {
+  buildAtlanteanTownCenterStudio,
+  ATLANTEAN_TOWN_CENTER_THEMES,
+} from '../../civilizacao/atlantes/atlanteanTownCenterModel';
+import {
   buildNorseHillFort as buildNorseFortressStudio,
   NORSE_FORTRESS_THEMES,
   NorseFortressAction,
@@ -889,6 +893,76 @@ export function buildBuildingStudioSubject(ctx: BuildingStudioBuildContext): THR
           1 + Math.cos(elapsed * 16 + idx) * 0.22,
           1 + Math.sin(elapsed * 12 + idx) * 0.14
         );
+      });
+    };
+  } else if (selectedCiv === 'atlantean' && selectedBuilding === 'town_center') {
+    const rawGod = selectedMajorGod.toLowerCase();
+    const godKey =
+      rawGod.includes('oranos') || rawGod.includes('urano')
+        ? 'oranos'
+        : rawGod.includes('gaia')
+        ? 'gaia'
+        : 'kronos';
+    const theme = ATLANTEAN_TOWN_CENTER_THEMES[godKey] || ATLANTEAN_TOWN_CENTER_THEMES.kronos;
+
+    scene.background = new THREE.Color(theme.bgHex);
+    scene.fog = new THREE.FogExp2(theme.bgHex, 0.015);
+    addPedestal(4.2, 4.6, theme.goldHex);
+
+    const effTier = Math.max(1, Math.min(5, buildingAge));
+    const tcStudio = buildAtlanteanTownCenterStudio(godKey, effTier, !isSoftwareGl);
+    group = tcStudio.root;
+
+    let lastTierApplied = effTier;
+    let lastGodApplied = godKey;
+    let elapsed = 0;
+
+    group.userData.animatePose = (dt: number) => {
+      elapsed += dt;
+      const currentT = Math.max(1, Math.min(5, buildingAge));
+      if (currentT !== lastTierApplied) {
+        lastTierApplied = currentT;
+        tcStudio.setTier(currentT);
+      }
+
+      const nextRaw = selectedMajorGod.toLowerCase();
+      const currentGod =
+        nextRaw.includes('oranos') || nextRaw.includes('urano')
+          ? 'oranos'
+          : nextRaw.includes('gaia')
+          ? 'gaia'
+          : 'kronos';
+
+      if (currentGod !== lastGodApplied) {
+        lastGodApplied = currentGod;
+        tcStudio.applyGod(currentGod);
+        const newTheme = ATLANTEAN_TOWN_CENTER_THEMES[currentGod] || ATLANTEAN_TOWN_CENTER_THEMES.kronos;
+        scene.background.setHex(newTheme.bgHex);
+        if (scene.fog) (scene.fog as THREE.FogExp2).color.setHex(newTheme.bgHex);
+      }
+
+      if (tcStudio.auraRing) {
+        tcStudio.auraRing.rotation.z += dt * 0.28;
+        tcStudio.auraRing.scale.setScalar(
+          (1 + (currentT - 1) * 0.11) * (1 + Math.sin(elapsed * 2.2) * 0.02)
+        );
+      }
+
+      tcStudio.M.flames.forEach((fl, idx) => {
+        fl.scale.set(
+          0.85 + Math.sin(elapsed * 10 + idx) * 0.12,
+          1.55 + Math.cos(elapsed * 12 + idx) * 0.18,
+          0.85 + Math.sin(elapsed * 10 + idx) * 0.12
+        );
+      });
+
+      tcStudio.M.relics.forEach((rel, idx) => {
+        rel.rotation.y += dt * 1.3;
+        rel.position.y += Math.sin(elapsed * 3.0 + idx) * 0.0012;
+      });
+
+      tcStudio.M.relicRings.forEach((ring, idx) => {
+        ring.rotation.z += dt * (idx % 2 === 0 ? 1.1 : -1.1);
       });
     };
   } else {
