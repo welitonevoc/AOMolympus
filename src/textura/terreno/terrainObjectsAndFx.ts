@@ -262,6 +262,67 @@ export function createEmitterPreviewMesh(kind: AtmosphericEmitterKind): THREE.Gr
   return g;
 }
 
+let cachedMistTexture: THREE.CanvasTexture | null = null;
+let cachedSunbeamTexture: THREE.CanvasTexture | null = null;
+
+function getSoftMistTexture(): THREE.CanvasTexture | null {
+  if (cachedMistTexture) return cachedMistTexture;
+  if (typeof document === 'undefined') return null;
+  const size = 128;
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return null;
+  const half = size / 2;
+  const grad = ctx.createRadialGradient(half, half, 2, half, half, half);
+  grad.addColorStop(0.0, 'rgba(255, 255, 255, 0.85)');
+  grad.addColorStop(0.32, 'rgba(255, 255, 255, 0.45)');
+  grad.addColorStop(0.68, 'rgba(255, 255, 255, 0.12)');
+  grad.addColorStop(1.0, 'rgba(255, 255, 255, 0.0)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, size, size);
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.needsUpdate = true;
+  cachedMistTexture = tex;
+  return tex;
+}
+
+function getSoftSunbeamTexture(): THREE.CanvasTexture | null {
+  if (cachedSunbeamTexture) return cachedSunbeamTexture;
+  if (typeof document === 'undefined') return null;
+  const w = 64;
+  const h = 128;
+  const canvas = document.createElement('canvas');
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return null;
+
+  // Vertical fade to 0 at both top and bottom so cylinders never show hard edges
+  const vGrad = ctx.createLinearGradient(0, 0, 0, h);
+  vGrad.addColorStop(0.0, 'rgba(255, 250, 224, 0.0)');
+  vGrad.addColorStop(0.28, 'rgba(255, 250, 224, 0.65)');
+  vGrad.addColorStop(0.65, 'rgba(255, 245, 200, 0.45)');
+  vGrad.addColorStop(1.0, 'rgba(255, 245, 200, 0.0)');
+  ctx.fillStyle = vGrad;
+  ctx.fillRect(0, 0, w, h);
+
+  // Soft horizontal feathering across wrap seam
+  ctx.globalCompositeOperation = 'destination-in';
+  const hGrad = ctx.createLinearGradient(0, 0, w, 0);
+  hGrad.addColorStop(0.0, 'rgba(255, 255, 255, 0.15)');
+  hGrad.addColorStop(0.5, 'rgba(255, 255, 255, 1.0)');
+  hGrad.addColorStop(1.0, 'rgba(255, 255, 255, 0.15)');
+  ctx.fillStyle = hGrad;
+  ctx.fillRect(0, 0, w, h);
+
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.needsUpdate = true;
+  cachedSunbeamTexture = tex;
+  return tex;
+}
+
 /**
  * Runtime manager for animated Layer 2B Atmospheric FX Emitters in Three.js scenes.
  */
@@ -281,58 +342,96 @@ export class AtmosphericFxSystem {
     group.scale.setScalar(scale);
 
     const particles: ActiveEmitterInstance['particles'] = [];
+    const mistTex = getSoftMistTexture();
 
     if (kind === 'sunbeams') {
-      const beamMat = new THREE.MeshBasicMaterial({
-        color: 0xfff3b0,
-        transparent: true,
-        opacity: 0.08,
-        side: THREE.DoubleSide,
-        depthWrite: false,
-        blending: THREE.AdditiveBlending,
-      });
-      for (let i = 0; i < 3; i++) {
-        const mesh = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 2.2, 16, 10, 1, true), beamMat);
-        mesh.position.set((i - 1) * 1.6, 7.6, (i % 2) * 0.9);
-        mesh.rotation.z = -0.24;
+      const beamTex = getSoftSunbeamTexture();
+      for (let i = 0; i < 2; i++) {
+        const beamMat = new THREE.MeshBasicMaterial({
+          color: 0xfff0c2,
+          map: beamTex ?? undefined,
+          transparent: true,
+          opacity: 0.04,
+          side: THREE.DoubleSide,
+          depthWrite: false,
+          fog: false,
+          blending: THREE.AdditiveBlending,
+        });
+        const mesh = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 2.0, 14, 12, 1, true), beamMat);
+        mesh.position.set((i - 0.5) * 2.2, 6.8, (i % 2) * 0.9);
+        mesh.rotation.z = -0.22;
         group.add(mesh);
-        particles.push({ mesh, phase: i * 1.4, speed: 0.65, radius: 0, baseY: 7.6, maxRise: 0, driftX: 0, driftZ: 0 });
+        particles.push({ mesh, phase: i * 1.9, speed: 0.45, radius: 0, baseY: 6.8, maxRise: 0, driftX: 0, driftZ: 0 });
       }
-    } else {
-      const isSpark = kind === 'magma_sparks';
+    } else if (kind === 'low_mist' || kind === 'wind_dust' || kind === 'volcanic_smoke') {
       const isMist = kind === 'low_mist';
       const isSmoke = kind === 'volcanic_smoke';
-      const count = isSpark ? 12 : isMist ? 6 : 8;
+      const count = isMist ? 5 : isSmoke ? 7 : 6;
       const color = ATMOSPHERIC_EMITTER_SPECS[kind].markerColorHex;
-      const geo = isSpark
-        ? new THREE.OctahedronGeometry(0.14, 0)
-        : new THREE.DodecahedronGeometry(isMist ? 1.55 : isSmoke ? 0.65 : 0.42, 0);
+      const planeSize = isMist ? 6.4 : isSmoke ? 2.4 : 2.1;
+      const geo = new THREE.PlaneGeometry(planeSize, planeSize);
+      if (isMist) {
+        geo.rotateX(-Math.PI / 2);
+      }
+
+      for (let i = 0; i < count; i++) {
+        const mat = new THREE.MeshBasicMaterial({
+          color,
+          map: mistTex ?? undefined,
+          transparent: true,
+          opacity: isMist ? 0.085 : isSmoke ? 0.24 : 0.11,
+          side: THREE.DoubleSide,
+          depthWrite: false,
+          fog: !isMist,
+          blending: THREE.NormalBlending,
+        });
+        const mesh = new THREE.Mesh(geo, mat);
+        if (!isMist) {
+          mesh.rotation.x = -0.35;
+          mesh.rotation.y = (i / count) * Math.PI;
+        }
+        group.add(mesh);
+        particles.push({
+          mesh,
+          phase: (i / count) * Math.PI * 2,
+          speed: isSmoke ? 0.48 + (i % 3) * 0.1 : isMist ? 0.18 : 0.72,
+          radius: isMist ? 3.8 : 2.2,
+          baseY: isMist ? 0.26 + (i % 2) * 0.14 : 0.3,
+          maxRise: isSmoke ? 5.6 : isMist ? 0.3 : 1.5,
+          driftX: kind === 'wind_dust' ? 4.4 : isMist ? 1.8 : 0.55,
+          driftZ: kind === 'wind_dust' ? 1.8 : 0.55,
+        });
+      }
+    } else {
+      // Magma sparks
+      const count = 10;
+      const color = ATMOSPHERIC_EMITTER_SPECS[kind].markerColorHex;
+      const geo = new THREE.OctahedronGeometry(0.12, 0);
 
       for (let i = 0; i < count; i++) {
         const mat = new THREE.MeshBasicMaterial({
           color,
           transparent: true,
-          opacity: isSpark ? 0.68 : isMist ? 0.2 : isSmoke ? 0.36 : 0.28,
+          opacity: 0.65,
           depthWrite: false,
-          blending: isSpark ? THREE.AdditiveBlending : THREE.NormalBlending,
+          blending: THREE.AdditiveBlending,
         });
         const mesh = new THREE.Mesh(geo, mat);
-        if (isMist) mesh.scale.set(1.75, 0.28, 1.75);
         group.add(mesh);
         particles.push({
           mesh,
           phase: (i / count) * Math.PI * 2,
-          speed: isSpark ? 1.6 + (i % 3) * 0.35 : isSmoke ? 0.55 + (i % 3) * 0.12 : isMist ? 0.24 : 0.9,
-          radius: isMist ? 3.2 : isSpark ? 1.5 : 2.4,
-          baseY: isMist ? 0.35 : 0.2,
-          maxRise: isSpark ? 4.8 : isSmoke ? 6.2 : isMist ? 0.65 : 1.9,
-          driftX: kind === 'wind_dust' ? 4.2 : isMist ? 1.4 : 0.6,
-          driftZ: kind === 'wind_dust' ? 1.8 : 0.5,
+          speed: 1.5 + (i % 3) * 0.35,
+          radius: 1.5,
+          baseY: 0.2,
+          maxRise: 4.5,
+          driftX: 0.55,
+          driftZ: 0.5,
         });
       }
     }
 
-    if (kind === 'low_mist') {
+    if (kind === 'low_mist' || kind === 'wind_dust') {
       group.visible = this.mistVisible;
     }
 
@@ -358,28 +457,32 @@ export class AtmosphericFxSystem {
       if (em.kind === 'sunbeams') {
         for (const p of em.particles) {
           const mat = p.mesh.material as THREE.MeshBasicMaterial;
-          mat.opacity = 0.11 + Math.sin(this.elapsed * p.speed + p.phase) * 0.06;
+          mat.opacity = 0.038 + Math.sin(this.elapsed * p.speed + p.phase) * 0.018;
         }
         continue;
       }
 
       for (const p of em.particles) {
         const cycle = ((this.elapsed * p.speed + p.phase) % 1 + 1) % 1;
-        const ang = p.phase + this.elapsed * 0.35;
+        const ang = p.phase + this.elapsed * 0.22;
         if (em.kind === 'low_mist') {
           p.mesh.position.set(
-            Math.cos(ang) * p.radius + Math.sin(this.elapsed * 0.4 + p.phase) * p.driftX,
-            p.baseY + Math.sin(this.elapsed * 0.6 + p.phase) * 0.22,
+            Math.cos(ang) * p.radius + Math.sin(this.elapsed * 0.28 + p.phase) * p.driftX,
+            p.baseY + Math.sin(this.elapsed * 0.45 + p.phase) * 0.08,
             Math.sin(ang) * p.radius
           );
+          p.mesh.rotation.z = this.elapsed * 0.06 + p.phase;
+          const sc = 0.9 + Math.sin(this.elapsed * 0.35 + p.phase) * 0.18;
+          p.mesh.scale.setScalar(sc);
         } else if (em.kind === 'wind_dust') {
           p.mesh.position.set(
             (cycle - 0.5) * p.driftX * 2.2,
             p.baseY + Math.sin(cycle * Math.PI) * p.maxRise,
             Math.sin(ang) * p.radius + (cycle - 0.5) * p.driftZ
           );
-          const sc = 0.6 + Math.sin(cycle * Math.PI) * 0.9;
-          p.mesh.scale.setScalar(sc);
+          const fade = Math.sin(cycle * Math.PI);
+          p.mesh.scale.setScalar(0.65 + fade * 0.85);
+          (p.mesh.material as THREE.MeshBasicMaterial).opacity = 0.11 * fade;
         } else {
           // Rising volcanic smoke or magma sparks
           p.mesh.position.set(
@@ -387,20 +490,27 @@ export class AtmosphericFxSystem {
             p.baseY + cycle * p.maxRise,
             Math.sin(ang) * p.radius * (0.4 + cycle * 0.8)
           );
-          const sc = em.kind === 'magma_sparks' ? Math.max(0.15, 1 - cycle * 0.85) : 0.6 + cycle * 1.4;
+          const sc = em.kind === 'magma_sparks' ? Math.max(0.15, 1 - cycle * 0.85) : 0.65 + cycle * 1.25;
           p.mesh.scale.setScalar(sc);
+          if (em.kind === 'volcanic_smoke') {
+            (p.mesh.material as THREE.MeshBasicMaterial).opacity = 0.24 * Math.sin(cycle * Math.PI);
+          }
         }
       }
     }
   }
 
   public clear(): void {
+    const disposedGeos = new Set<THREE.BufferGeometry>();
     for (const em of this.emitters) {
       this.scene.remove(em.group);
       em.group.traverse((obj) => {
         if ((obj as THREE.Mesh).isMesh) {
           const m = obj as THREE.Mesh;
-          m.geometry?.dispose();
+          if (m.geometry && !disposedGeos.has(m.geometry)) {
+            m.geometry.dispose();
+            disposedGeos.add(m.geometry);
+          }
           if (Array.isArray(m.material)) m.material.forEach((mt) => mt.dispose());
           else (m.material as THREE.Material | undefined)?.dispose();
         }

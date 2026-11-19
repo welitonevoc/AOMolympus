@@ -219,21 +219,25 @@ export function setWeather(ctx: FogAndWeatherContext, weather: WeatherKind): voi
   geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
 
   let color = 0x93c5fd;
-  let size = 0.35;
+  let size = 0.28;
+  let opacity = 0.42;
   if (weather === 'snow') {
-    color = 0xffffff;
-    size = 0.55;
+    color = 0xe2e8f0;
+    size = 0.42;
+    opacity = 0.55;
   } else if (weather === 'sandstorm') {
-    color = 0xd97706;
-    size = 0.65;
+    color = 0xc27832;
+    size = 0.52;
+    opacity = 0.38;
   }
 
   const mat = new THREE.PointsMaterial({
     color,
     size,
     transparent: true,
-    opacity: 0.75,
-    blending: THREE.AdditiveBlending,
+    opacity,
+    depthWrite: false,
+    blending: THREE.NormalBlending,
   });
 
   const particles = new THREE.Points(geo, mat);

@@ -170,6 +170,8 @@ export class VisualEffectsManager {
   private debrisStoneMat: THREE.MeshStandardMaterial;
   private debrisTimberMat: THREE.MeshStandardMaterial;
   private damageSmokeTimer = 0;
+  private composerTarget: THREE.WebGLRenderTarget | null = null;
+  private softMoteTex: THREE.CanvasTexture | null = null;
 
   constructor(
     scene: THREE.Scene,
@@ -180,12 +182,21 @@ export class VisualEffectsManager {
     this.scene = scene;
     this.isSoftwareGl = isSoftwareGl;
 
-    // 1. Setup selective-threshold Bloom + ACES OutputPass on hardware GPUs
+    // 1. Setup selective-threshold HDR Bloom + ACES OutputPass on hardware GPUs
     if (!isSoftwareGl) {
       const w = renderer.domElement.clientWidth || window.innerWidth;
       const h = Math.max(1, renderer.domElement.clientHeight || window.innerHeight);
-      this.composer = new EffectComposer(renderer);
-      this.composer.setPixelRatio(renderer.getPixelRatio());
+      const pr = renderer.getPixelRatio();
+      this.composerTarget = new THREE.WebGLRenderTarget(
+        Math.max(1, Math.floor(w * pr)),
+        Math.max(1, Math.floor(h * pr)),
+        {
+          type: THREE.HalfFloatType,
+          samples: renderer.capabilities.isWebGL2 ? 4 : 0,
+        }
+      );
+      this.composer = new EffectComposer(renderer, this.composerTarget);
+      this.composer.setPixelRatio(pr);
       this.composer.setSize(w, h);
 
       this.renderPass = new RenderPass(scene, camera);
@@ -193,9 +204,9 @@ export class VisualEffectsManager {
 
       this.bloomPass = new UnrealBloomPass(
         new THREE.Vector2(Math.max(1, w), Math.max(1, h)),
-        0.22, // controlled cinematic glow without white clipping
-        0.34, // crisp selective bloom radius
-        1.32  // HDR linear threshold so only true emissives bloom, never sunlit marble/snow/terrain
+        0.13, // subtle selective glow only on divine/magic/lava highlights
+        0.26, // tight bloom halo without screen haze
+        1.48  // true HDR threshold (HalfFloatType RT) so sunlit terrain/marble/snow never bloom
       );
       this.composer.addPass(this.bloomPass);
       this.composer.addPass(new OutputPass());
@@ -330,13 +341,31 @@ export class VisualEffectsManager {
         ? 0xfde68a
         : 0xfef08a;
 
+    if (!this.softMoteTex && typeof document !== 'undefined') {
+      const c = document.createElement('canvas');
+      c.width = 32;
+      c.height = 32;
+      const ctx = c.getContext('2d');
+      if (ctx) {
+        const g = ctx.createRadialGradient(16, 16, 1, 16, 16, 15);
+        g.addColorStop(0, 'rgba(255,255,255,1)');
+        g.addColorStop(0.5, 'rgba(255,255,255,0.45)');
+        g.addColorStop(1, 'rgba(255,255,255,0)');
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, 32, 32);
+        this.softMoteTex = new THREE.CanvasTexture(c);
+      }
+    }
+
+    const isEmberBiome = effId === 'erebus';
     this.biomeMotesMat = new THREE.PointsMaterial({
       color: colorHex,
-      size: effId === 'erebus' ? 0.34 : 0.26,
+      map: this.softMoteTex ?? undefined,
+      size: isEmberBiome ? 0.34 : 0.24,
       transparent: true,
-      opacity: 0.34,
+      opacity: isEmberBiome ? 0.34 : 0.2,
       depthWrite: false,
-      blending: THREE.AdditiveBlending,
+      blending: isEmberBiome ? THREE.AdditiveBlending : THREE.NormalBlending,
     });
     this.biomeMotes = new THREE.Points(geo, this.biomeMotesMat);
     this.biomeMotes.frustumCulled = false;
@@ -1040,6 +1069,10 @@ export class VisualEffectsManager {
     for (const pl of this.nightLights) {
       this.scene.remove(pl);
     }
+    this.softMoteTex?.dispose();
+    this.softMoteTex = null;
     this.composer?.dispose();
+    this.composerTarget?.dispose();
+    this.composerTarget = null;
   }
 }

@@ -268,6 +268,7 @@ const _targetSunColor = new THREE.Color();
 const _targetSkyColor = new THREE.Color();
 const _targetGndColor = new THREE.Color();
 const _targetRimColor = new THREE.Color();
+const _targetFogColor = new THREE.Color();
 const _mapSkyColor = new THREE.Color();
 const _targetSunPos = new THREE.Vector3();
 
@@ -809,7 +810,7 @@ export class AoMEngine {
     });
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 0.94;
+    this.renderer.toneMappingExposure = 0.88;
     this.renderer.setPixelRatio(this.isSoftwareGl ? 1 : Math.min(window.devicePixelRatio, 2));
     this.renderer.setSize(container.clientWidth || window.innerWidth, container.clientHeight || window.innerHeight);
     this.renderer.shadowMap.enabled = !this.isSoftwareGl;
@@ -817,9 +818,9 @@ export class AoMEngine {
     container.appendChild(this.renderer.domElement);
 
     this.scene = new THREE.Scene();
-    const skyColor = 0xbcd0e2;
+    const skyColor = 0xaec4da;
     this.scene.background = new THREE.Color(skyColor);
-    this.scene.fog = new THREE.FogExp2(skyColor, 0.0044);
+    this.scene.fog = this.createAtmosphericFog(skyColor);
 
     const aspect = (container.clientWidth || window.innerWidth) / Math.max(1, container.clientHeight || window.innerHeight);
     this.perspCamera = new THREE.PerspectiveCamera(46, aspect, 0.5, 320);
@@ -834,9 +835,10 @@ export class AoMEngine {
     );
     this.camera = this.projectionMode === '2.5d' ? this.orthoCamera : this.perspCamera;
 
-    // Studio IBL environment for bronze/gold/steel highlights
+    // Controlled studio IBL environment so metals catch highlights without washing out the scene
     const pmremGenerator = new THREE.PMREMGenerator(this.renderer);
     this.scene.environment = pmremGenerator.fromScene(new RoomEnvironment(), 0.04).texture;
+    this.scene.environmentIntensity = 0.26;
     pmremGenerator.dispose();
 
     const maxAniso = this.renderer.capabilities.getMaxAnisotropy();
@@ -887,12 +889,40 @@ export class AoMEngine {
     this.scheduleNextTick();
   }
 
+  private createAtmosphericFog(colorHex: number): THREE.Fog {
+    const fog = new THREE.Fog(colorHex, 105, 265);
+    this.applyAtmosphericFogRange(fog);
+    return fog;
+  }
+
+  private applyAtmosphericFogRange(fog: THREE.Fog): void {
+    const effId = resolveEffectiveMapId(this.mapId);
+    const isErebus = effId === 'erebus';
+    const scaleBoost = Math.sqrt(Math.max(1, this.worldScale));
+    if (this.projectionMode === '2.5d') {
+      // Ortho camera sits at isoDist = 80; keep the entire active viewport crisp and fade only far map edges
+      fog.near = isErebus ? 115 : 138;
+      fog.far = (isErebus ? 215 : 275) * scaleBoost;
+    } else {
+      // Perspective mode: begin horizon haze cleanly beyond the active skirmish frustum
+      const baseNear = Math.max(70, this.camDistance + (isErebus ? 42 : 58));
+      fog.near = baseNear;
+      fog.far = baseNear + (isErebus ? 115 : 165) * scaleBoost;
+    }
+  }
+
+  private syncAtmosphericFogRange(): void {
+    if (this.scene.fog instanceof THREE.Fog) {
+      this.applyAtmosphericFogRange(this.scene.fog);
+    }
+  }
+
   private setupLighting() {
-    const hemi = new THREE.HemisphereLight(0xdbeafe, 0x5c4d3c, 0.72);
+    const hemi = new THREE.HemisphereLight(0xd4e6f7, 0x524536, 0.5);
     this.scene.add(hemi);
     this.hemiLight = hemi;
 
-    const sun = new THREE.DirectionalLight(0xfff1d6, 1.85);
+    const sun = new THREE.DirectionalLight(0xffeccf, 1.45);
     sun.position.set(55, 82, 42);
     sun.target.position.set(0, 0, 0);
     this.scene.add(sun.target);
@@ -913,7 +943,7 @@ export class AoMEngine {
     this.scene.add(sun);
     this.sunLight = sun;
 
-    const rim = new THREE.DirectionalLight(0x93c5fd, 0.45);
+    const rim = new THREE.DirectionalLight(0x93c5fd, 0.26);
     rim.position.set(-50, 35, -55);
     this.scene.add(rim);
     this.rimLight = rim;
@@ -945,10 +975,9 @@ export class AoMEngine {
     const bio = getMapBiomeVisuals(mapId);
     const effId = resolveEffectiveMapId(mapId);
 
-    // Sync sky, fog and biome foliage palette
+    // Sync sky, distance-aware horizon fog and biome foliage palette
     this.scene.background = new THREE.Color(mapCfg.skyColorHex);
-    const baseFogDensity = effId === 'erebus' ? 0.0062 : 0.0044;
-    this.scene.fog = new THREE.FogExp2(mapCfg.skyColorHex, baseFogDensity / Math.sqrt(Math.max(1, this.worldScale)));
+    this.scene.fog = this.createAtmosphericFog(mapCfg.skyColorHex);
     this.palette.foliagePine.color.setHex(mapCfg.foliageHex);
     this.palette.foliageDark.color.setHex(mapCfg.foliageDarkHex);
 
@@ -1073,8 +1102,9 @@ export class AoMEngine {
       normalScale: new THREE.Vector2(0.75, 0.75),
       roughnessMap: this.terrainRoughTex,
       vertexColors: true,
-      roughness: 0.92,
-      metalness: 0.02,
+      roughness: 0.94,
+      metalness: 0.01,
+      envMapIntensity: 0.35,
     });
     this.terrainUniforms = upgradeTerrainMaterial(terrainMat, mapId, -0.68).uniforms;
 
@@ -1111,11 +1141,12 @@ export class AoMEngine {
         effId === 'tundra' ||
         (effId === 'total_war' && getActiveTotalWarEnv() === 'frozen') ||
         activeRms?.biome === 'frozen'
-          ? 0.08
-          : 0.16,
-      metalness: 0.42,
+          ? 0.16
+          : 0.26,
+      metalness: 0.18,
+      envMapIntensity: 0.45,
       transparent: true,
-      opacity: 0.9,
+      opacity: 0.92,
     });
     this.waterUniforms = upgradeWaterMaterial(waterMat, mapId).uniforms;
     this.waterMesh = new THREE.Mesh(waterGeo, waterMat);
@@ -1123,7 +1154,7 @@ export class AoMEngine {
     this.scene.add(this.waterMesh);
     this.vfxManager?.rebuildBiomeMotes(mapId);
 
-    // Terrain-conforming Fog of War overlay mesh
+    // Terrain-conforming Fog of War overlay mesh (exempt from scene.fog & toneMapping so shroud stays clean dark shadow)
     if (this.fogMesh) {
       this.scene.remove(this.fogMesh);
       this.fogMesh.geometry.dispose();
@@ -1145,12 +1176,17 @@ export class AoMEngine {
       const fx = fogPos.getX(i);
       const fz = fogPos.getZ(i);
       const gy = Math.max(-0.35, groundHeightAt(fx, fz, mapId, this.worldSize));
-      fogPos.setY(i, gy + 0.55);
+      fogPos.setY(i, gy + 0.34);
     }
     const fogMat = new THREE.MeshBasicMaterial({
       map: this.fogTex,
       transparent: true,
       depthWrite: false,
+      fog: false,
+      toneMapped: false,
+      polygonOffset: true,
+      polygonOffsetFactor: -2,
+      polygonOffsetUnits: -2,
     });
     this.fogMesh = new THREE.Mesh(fogGeo, fogMat);
     this.fogMesh.renderOrder = 6;
@@ -3994,9 +4030,10 @@ export class AoMEngine {
       if (this.hemiLight) {
         this.hemiLight.color.setHex(cycle.hemiSky);
         this.hemiLight.groundColor.setHex(cycle.hemiGround);
-        this.hemiLight.intensity = cycle.hemiIntensity;
+        this.hemiLight.intensity = cycle.hemiIntensity * 0.78;
       }
-      this.scene.fog = new THREE.FogExp2(cycle.fogHex, 0.0042);
+      this.scene.environmentIntensity = THREE.MathUtils.clamp(0.08 + cycle.sunIntensity * 0.12, 0.09, 0.26);
+      this.scene.fog = this.createAtmosphericFog(cycle.fogHex);
       soundEngine.playSelect();
       this.notifyStatus(`🌙 IN DARKEST NIGHT: Iluminação alterada para ${cycle.label}!`);
       this.emitHudSnapshot();
@@ -7938,6 +7975,7 @@ export class AoMEngine {
   // --- SIMULATION TICK ---
   private updateCameraTransform(dt: number) {
     updateCameraTransformImpl(this.createCameraAndInputContext(), dt);
+    this.syncAtmosphericFogRange();
   }
 
   private damageUnit(target: UnitEntity, amount: number, attackerTeam: TeamId) {
@@ -9432,7 +9470,8 @@ export class AoMEngine {
           this.hemiLight.intensity = THREE.MathUtils.lerp(this.hemiLight.intensity, 0.35, eclipseDamp);
 
           this.rimLight.color.lerp(_targetRimColor, eclipseDamp);
-          this.rimLight.intensity = THREE.MathUtils.lerp(this.rimLight.intensity, 0.40, eclipseDamp);
+          this.rimLight.intensity = THREE.MathUtils.lerp(this.rimLight.intensity, 0.34, eclipseDamp);
+          this.scene.environmentIntensity = THREE.MathUtils.lerp(this.scene.environmentIntensity, 0.1, eclipseDamp);
 
           if (this.scene.background instanceof THREE.Color) {
             this.scene.background.lerp(_targetSkyColor, eclipseDamp);
@@ -9498,12 +9537,16 @@ export class AoMEngine {
           const targetRimIntensity = THREE.MathUtils.lerp(k0.rimIntensity, k1.rimIntensity, s);
 
           // Blend with map-specific sky tone during daytime
+          const isDaytime = cycle < 0.62;
           if (mapCfg) {
             _mapSkyColor.setHex(mapCfg.skyColorHex);
-            const isDaytime = cycle < 0.62;
-            const mapBlend = isDaytime ? 0.28 : 0.08;
+            const mapBlend = isDaytime ? 0.3 : 0.08;
             _targetSkyColor.lerp(_mapSkyColor, mapBlend);
           }
+
+          // Slightly ground-muted horizon fog color so bright skies never create chalky white smog
+          _targetFogColor.copy(_targetSkyColor).lerp(_targetGndColor, isDaytime ? 0.14 : 0.06);
+          const targetEnvIntensity = THREE.MathUtils.clamp(0.08 + targetSunIntensity * 0.13, 0.09, 0.27);
 
           // Apply smoothly
           const stepDamp = Math.min(1, simDt * 8.0);
@@ -9517,38 +9560,45 @@ export class AoMEngine {
 
           this.rimLight.color.lerp(_targetRimColor, stepDamp);
           this.rimLight.intensity = THREE.MathUtils.lerp(this.rimLight.intensity, targetRimIntensity, stepDamp);
+          this.scene.environmentIntensity = THREE.MathUtils.lerp(
+            this.scene.environmentIntensity,
+            targetEnvIntensity,
+            stepDamp
+          );
 
           if (this.scene.background instanceof THREE.Color) {
             this.scene.background.lerp(_targetSkyColor, stepDamp);
           }
           if (this.scene.fog) {
-            this.scene.fog.color.lerp(_targetSkyColor, stepDamp);
+            this.scene.fog.color.lerp(_targetFogColor, stepDamp);
           }
         } else {
           this.dayTimeLabel = 'Dia';
           _targetSunPos.set(55, 82, 42);
-          _targetSunColor.setHex(0xfff1d6);
-          _targetSkyColor.setHex(mapCfg?.skyColorHex ?? 0xdbeafe);
-          _targetGndColor.setHex(0x5c4d3c);
+          _targetSunColor.setHex(0xffeccf);
+          _targetSkyColor.setHex(mapCfg?.skyColorHex ?? 0xaec4da);
+          _targetGndColor.setHex(0x524536);
           _targetRimColor.setHex(0x93c5fd);
+          _targetFogColor.copy(_targetSkyColor).lerp(_targetGndColor, 0.14);
 
           const staticDamp = Math.min(1, simDt * 4.0);
           this.sunLight.position.lerp(_targetSunPos, staticDamp);
           this.sunLight.color.lerp(_targetSunColor, staticDamp);
-          this.sunLight.intensity = THREE.MathUtils.lerp(this.sunLight.intensity, 1.85, staticDamp);
+          this.sunLight.intensity = THREE.MathUtils.lerp(this.sunLight.intensity, 1.45, staticDamp);
 
           this.hemiLight.color.lerp(_targetSkyColor, staticDamp);
           this.hemiLight.groundColor.lerp(_targetGndColor, staticDamp);
-          this.hemiLight.intensity = THREE.MathUtils.lerp(this.hemiLight.intensity, 0.72, staticDamp);
+          this.hemiLight.intensity = THREE.MathUtils.lerp(this.hemiLight.intensity, 0.5, staticDamp);
 
           this.rimLight.color.lerp(_targetRimColor, staticDamp);
-          this.rimLight.intensity = THREE.MathUtils.lerp(this.rimLight.intensity, 0.45, staticDamp);
+          this.rimLight.intensity = THREE.MathUtils.lerp(this.rimLight.intensity, 0.26, staticDamp);
+          this.scene.environmentIntensity = THREE.MathUtils.lerp(this.scene.environmentIntensity, 0.26, staticDamp);
 
           if (this.scene.background instanceof THREE.Color) {
             this.scene.background.lerp(_targetSkyColor, staticDamp);
           }
           if (this.scene.fog) {
-            this.scene.fog.color.lerp(_targetSkyColor, staticDamp);
+            this.scene.fog.color.lerp(_targetFogColor, staticDamp);
           }
         }
         this.currentSunOffset.copy(_targetSunPos);

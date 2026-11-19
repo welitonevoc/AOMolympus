@@ -227,7 +227,7 @@ export function upgradeWaterMaterial(
           // RED TIDE cheat blood-red water override
           diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.46, 0.03, 0.04), uRedTide * 0.88);
           waterTint = mix(waterTint, vec3(0.88, 0.12, 0.12), uRedTide);
-          diffuseColor.rgb = mix(diffuseColor.rgb, waterTint, shimmer * 0.28);
+          diffuseColor.rgb = mix(diffuseColor.rgb, waterTint, shimmer * 0.18);
           // Flowing magma glowing crust when uIsLava > 0.5
           if (uIsLava > 0.5) {
             float flow = sin(vWaterWorldPos.x * 0.48 + uTime * 0.9 + sin(vWaterWorldPos.z * 0.35 - uTime * 0.6));
@@ -241,14 +241,14 @@ export function upgradeWaterMaterial(
           `
           #include <emissivemap_fragment>
           vec3 viewDirW = normalize(cameraPosition - vWaterWorldPos);
-          float fresnelW = pow(1.0 - max(dot(viewDirW, vec3(0.0, 1.0, 0.0)), 0.0), 3.0);
-          vec3 fresnelCol = mix(vec3(0.45, 0.74, 0.90), vec3(0.95, 0.46, 0.14), uIsLava);
+          float fresnelW = pow(1.0 - max(dot(viewDirW, vec3(0.0, 1.0, 0.0)), 0.0), 3.2);
+          vec3 fresnelCol = mix(vec3(0.36, 0.62, 0.80), vec3(0.92, 0.44, 0.12), uIsLava);
           fresnelCol = mix(fresnelCol, vec3(0.85, 0.14, 0.14), uRedTide);
-          totalEmissiveRadiance += fresnelCol * fresnelW * mix(0.14, 0.22, uIsIce);
+          totalEmissiveRadiance += fresnelCol * fresnelW * mix(0.06, 0.11, uIsIce);
           `
         );
   };
-  mat.customProgramCacheKey = () => `aom-water-v2-${effId}`;
+  mat.customProgramCacheKey = () => `aom-water-v3-${effId}`;
   mat.needsUpdate = true;
   return { uniforms };
 }
