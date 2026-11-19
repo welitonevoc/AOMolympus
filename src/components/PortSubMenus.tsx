@@ -74,6 +74,7 @@ import {
 import { EraIcon, getEraSubtitle } from './EraIcon';
 import { MultiplayerOnlineHub } from './MultiplayerOnlineHub';
 import { RmsMapLab } from './RmsMapLab';
+import { ScenarioEditor } from './ScenarioEditor';
 import { SkirmishSetupFlow } from './SkirmishSetupFlow';
 import { TechIcon } from './TechIcon';
 
@@ -1241,66 +1242,11 @@ export function PortSubMenus({
   // ── 11. UI_EDITOR ──
   if (menuState === 'UI_EDITOR') {
     return (
-      <div className="flex flex-col gap-4">
-        {renderPanelHeader(
-          'EDITOR DE CENÁRIOS',
-          'Modo Sandbox com Mapa Revelado e recursos abundantes para testar exércitos e construções',
-          'SUB_MORE'
-        )}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 rounded border border-[#d4af37]/25 bg-[#131822] p-4">
-          <div>
-            <div className="mb-1.5 text-xs font-bold text-[#f3d27a]">Terreno Base</div>
-            {renderMapPicker(editorMap, setEditorMap, true)}
-          </div>
-          <div>
-            <div className="mb-1.5 text-xs font-bold text-[#f3d27a]">Civilização de Teste</div>
-            <div className="grid grid-cols-2 gap-2">
-              {Object.values(PANTHEONS).map((p) => (
-                <button
-                  key={p.id}
-                  type="button"
-                  onClick={() => {
-                    clickSound();
-                    setEditorPantheon(p.id);
-                  }}
-                  className={`rounded border px-3 py-2 text-xs font-semibold cursor-pointer ${
-                    editorPantheon === p.id ? 'border-[#f3d27a] bg-[#262f40] text-white' : 'border-white/10 bg-[#171c26] text-[#cbd5e1]'
-                  }`}
-                >
-                  {p.name}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className="sm:col-span-2 flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-white/10">
-            <button
-              type="button"
-              onClick={() => {
-                clickSound();
-                setMenuState('UI_RMS_LAB');
-              }}
-              className="flex items-center gap-2 rounded border border-[#d4af37]/45 bg-[#1b2436] px-4 py-2 text-xs font-semibold text-[#f3d27a] hover:bg-[#232f46] cursor-pointer"
-            >
-              <span>Abrir Laboratório de Mapas (.xs / RMS)</span>
-            </button>
-            <button
-              type="button"
-              onClick={() =>
-                onStartMatch(editorPantheon, 'normal', editorMap, true, {
-                  startingAge: 4,
-                  startingResources: 'abundant',
-                  scenarioTitle: 'Editor Sandbox',
-                  gameSpeed: options.gameSpeed,
-                })
-              }
-              className="flex items-center gap-2 rounded border border-[#f5d77f] bg-[#d4af37] px-5 py-2 text-xs font-bold text-[#0d1017] cursor-pointer"
-            >
-              <Wrench className="h-4 w-4" />
-              <span>Abrir Mapa no Modo Sandbox</span>
-            </button>
-          </div>
-        </div>
-      </div>
+      <ScenarioEditor
+        onClose={() => setMenuState('SUB_MORE')}
+        onStartMatch={onStartMatch}
+        gameSpeed={options.gameSpeed}
+      />
     );
   }
 

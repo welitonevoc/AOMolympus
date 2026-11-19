@@ -22,20 +22,24 @@ import {
 } from './models';
 import {
   buildMapResourceProfile,
+  buildPlacedScenarioObjectMesh,
   clearActiveRmsMap,
   compileRmsScript,
   computeTotalWarCircularSpawns,
   getActiveRmsMap,
+  getActiveScenarioPlaytest,
   getActiveTotalWarEnv,
   getActiveTotalWarState,
   getActiveUnknownState,
   getEffectiveMapConfig,
+  getLightingPresetById,
   getMapBiomeVisuals,
   resolveEffectiveMapId,
   RMS_SCRIPT_LIBRARY,
   rollTotalWarVariant,
   rollUnknownMapVariant,
   setActiveRmsMap,
+  setActiveScenarioPlaytest,
   TOTAL_WAR_XS_SPEC,
 } from '../maps';
 import { preloadForestPackGlb } from '../textura';
@@ -609,6 +613,7 @@ export class AoMEngine {
   private hemiLight: THREE.HemisphereLight | null = null;
   private sunLight: THREE.DirectionalLight | null = null;
   private rimLight: THREE.DirectionalLight | null = null;
+  private scenarioPropMeshes: THREE.Object3D[] = [];
 
   // Game state
   private phase: GameHudSnapshot['phase'] = 'title';
@@ -1265,6 +1270,10 @@ export class AoMEngine {
       this.scene.remove(this.kothVaultMesh);
       this.kothVaultMesh = null;
     }
+    for (const sp of this.scenarioPropMeshes) {
+      this.scene.remove(sp);
+    }
+    this.scenarioPropMeshes = [];
     if (this.godPowerRing) this.godPowerRing.visible = false;
     this.vfxManager?.clearMatchVisuals();
     this.hideAllOrderVisuals();
@@ -1555,8 +1564,22 @@ export class AoMEngine {
       };
     }
 
+    if (mapId !== 'rms_custom') {
+      setActiveScenarioPlaytest(null);
+    }
     const activeRms = mapId === 'rms_custom' ? getActiveRmsMap() : null;
-    if (activeRms?.triggersSummary.grantResources && !isTitlePreview) {
+    const scenarioPlaytest = mapId === 'rms_custom' && !isTitlePreview ? getActiveScenarioPlaytest() : null;
+    if (scenarioPlaytest) {
+      const pSlot = scenarioPlaytest.playAsSlot;
+      const playPlayer = scenarioPlaytest.doc.players.find((p) => p.slot === pSlot) ?? scenarioPlaytest.doc.players[0];
+      if (playPlayer) {
+        this.resources = { ...playPlayer.resources };
+      }
+      const enemyPlayer = scenarioPlaytest.doc.players.find((p) => p.slot !== pSlot && p.control !== 'none');
+      if (enemyPlayer) {
+        this.enemyResources = { ...enemyPlayer.resources };
+      }
+    } else if (activeRms?.triggersSummary.grantResources && !isTitlePreview) {
       const gr = activeRms.triggersSummary.grantResources;
       this.resources = {
         food: Math.max(this.resources.food, gr.food),
@@ -1583,8 +1606,26 @@ export class AoMEngine {
     const eBaseX = rmsP2 ? rmsP2.x : bo;
     const eBaseZ = rmsP2 ? rmsP2.z : -bo;
 
-    // Player base (-bo, bo) — skipped in Nomad so players choose their own Town Center site
-    if (!isNomad) {
+    const scenarioHasCustomPlayerBase =
+      !!scenarioPlaytest &&
+      scenarioPlaytest.doc.objects.some(
+        (o) =>
+          o.kindType === 'building' &&
+          (o.playerSlot === scenarioPlaytest.playAsSlot ||
+            scenarioPlaytest.doc.diplomacy[`${scenarioPlaytest.playAsSlot}_${o.playerSlot}`] === 'ally')
+      );
+    const scenarioHasCustomEnemyBase =
+      !!scenarioPlaytest &&
+      scenarioPlaytest.doc.objects.some(
+        (o) =>
+          o.kindType === 'building' &&
+          o.playerSlot > 0 &&
+          o.playerSlot !== scenarioPlaytest.playAsSlot &&
+          scenarioPlaytest.doc.diplomacy[`${scenarioPlaytest.playAsSlot}_${o.playerSlot}`] !== 'ally'
+      );
+
+    // Player base (-bo, bo) — skipped in Nomad or when Custom Scenario placed its own base
+    if (!isNomad && !scenarioHasCustomPlayerBase) {
       const playerTc = this.spawnBuilding('town_center', 'player', pBaseX, pBaseZ, true);
       if (isSuddenDeath) {
         playerTc.maxHp = Math.round(playerTc.maxHp * 1.5);
@@ -1683,8 +1724,8 @@ export class AoMEngine {
       this.regentUnitId = regent.id;
     }
 
-    // Enemy base (bo, -bo) — skipped in Nomad
-    if (!isNomad) {
+    // Enemy base (bo, -bo) — skipped in Nomad or when Custom Scenario placed its own enemy base
+    if (!isNomad && !scenarioHasCustomEnemyBase) {
       const enemyTc = this.spawnBuilding('town_center', 'enemy', eBaseX, eBaseZ, true);
       if (isSuddenDeath) {
         enemyTc.maxHp = Math.round(enemyTc.maxHp * 1.5);
@@ -2089,7 +2130,60 @@ export class AoMEngine {
         }
       }
 
-      if (!isTitlePreview) {
+      // Spawn Scenario Editor custom placed units, buildings, campaign props & lighting
+      if (scenarioPlaytest) {
+        const scDoc = scenarioPlaytest.doc;
+        const playSlot = scenarioPlaytest.playAsSlot;
+        const playerPantheons: Record<number, PantheonId> = {};
+        for (const sp of scDoc.players) playerPantheons[sp.slot] = sp.pantheon;
+
+        for (const obj of scDoc.objects) {
+          const isPlayerSide =
+            obj.playerSlot === playSlot ||
+            (obj.playerSlot > 0 && scDoc.diplomacy[`${playSlot}_${obj.playerSlot}`] === 'ally');
+          const team: TeamId = isPlayerSide ? 'player' : 'enemy';
+
+          if (obj.kindType === 'building' && obj.buildingKind) {
+            const b = this.spawnBuilding(obj.buildingKind, team, obj.x, obj.z, true);
+            b.mesh.rotation.y = obj.rotationY || 0;
+            if (obj.scale && obj.scale !== 1) b.mesh.scale.setScalar(obj.scale);
+          } else if (obj.kindType === 'unit' && obj.unitKind) {
+            const u = this.spawnUnit(obj.unitKind, team, obj.x, obj.z);
+            u.mesh.rotation.y = obj.rotationY || 0;
+            if (obj.scale && obj.scale !== 1) u.mesh.scale.setScalar(obj.scale);
+          } else if (obj.kindType === 'prop') {
+            const propMesh = buildPlacedScenarioObjectMesh(obj, this.palette, playerPantheons, !this.isSoftwareGl);
+            propMesh.position.set(obj.x, groundHeightAt(obj.x, obj.z, mapId, this.worldSize), obj.z);
+            this.scene.add(propMesh);
+            this.scenarioPropMeshes.push(propMesh);
+          }
+        }
+
+        // Apply Scenario Lighting preset & sun angle
+        const preset = getLightingPresetById(scDoc.lightingId);
+        if (this.sunLight) {
+          this.sunLight.color.setHex(preset.sunColorHex);
+          this.sunLight.intensity = preset.sunIntensity * 0.85;
+          const az = (scDoc.sunAzimuthDeg * Math.PI) / 180;
+          const el = (Math.max(8, Math.min(82, scDoc.sunElevationDeg)) * Math.PI) / 180;
+          this.currentSunOffset.set(
+            Math.cos(el) * Math.cos(az) * 95,
+            Math.sin(el) * 95,
+            Math.cos(el) * Math.sin(az) * 95
+          );
+        }
+        if (this.hemiLight) {
+          this.hemiLight.color.setHex(preset.hemiSkyHex);
+          this.hemiLight.groundColor.setHex(preset.hemiGroundHex);
+          this.hemiLight.intensity = preset.hemiIntensity;
+        }
+        const primaryObj = scDoc.objectives.find((o) => o.type === 'primary') ?? scDoc.objectives[0];
+        this.notifyStatus(
+          primaryObj
+            ? `📜 Cenário "${scDoc.title}": ${primaryObj.title} — ${primaryObj.description}`
+            : `📜 Testando Cenário: ${scDoc.title} (Jogador ${playSlot})`
+        );
+      } else if (!isTitlePreview) {
         const msg =
           activeRms.triggersSummary.introMessage ||
           `${activeRms.title} — Semente ${activeRms.seed} (${activeRms.areas.length} áreas, ${activeRms.objects.length} objetos)`;
