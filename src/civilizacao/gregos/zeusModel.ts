@@ -97,9 +97,9 @@ function sculpt(
   parent: THREE.Object3D | null,
   geo: THREE.BufferGeometry,
   mat: THREE.Material,
-  pos: [number, number, number] = [0, 0, 0],
-  rot: [number, number, number] = [0, 0, 0],
-  scale: [number, number, number] = [1, 1, 1]
+  pos: readonly [number, number, number] = [0, 0, 0],
+  rot: readonly [number, number, number] = [0, 0, 0],
+  scale: readonly [number, number, number] = [1, 1, 1]
 ): THREE.Mesh {
   const m = new THREE.Mesh(geo, mat);
   m.position.set(pos[0], pos[1], pos[2]);
@@ -218,8 +218,7 @@ export function buildZeus(textures: ZeusProceduralTextures): ZeusMeshHierarchy {
   const pelvis = group(body, 0, 0.88, 0);
   sculpt(pelvis, new THREE.SphereGeometry(0.25, 22, 20), M.skin, [0, 0, 0], [0, 0, 0], [1.12, 0.74, 0.82]);
 
-  const legs: any = {};
-  for (const side of ['L', 'R'] as const) {
+  const buildLeg = (side: 'L' | 'R') => {
     const s = side === 'R' ? 1 : -1;
     const hip = group(pelvis, s * 0.165, -0.04, 0);
 
@@ -243,8 +242,13 @@ export function buildZeus(textures: ZeusProceduralTextures): ZeusMeshHierarchy {
     for (let k = 0; k < 3; k++) {
       sculpt(ankle, strapGeo, M.gold, [0, 0.025 + k * 0.048, -0.02], [0.12, 0, 0], [0.95, 1, 1.06]);
     }
-    legs[side] = { hip, knee, ankle };
-  }
+    return { hip, knee, ankle };
+  };
+
+  const legs: ZeusMeshHierarchy['legs'] = {
+    L: buildLeg('L'),
+    R: buildLeg('R'),
+  };
 
   legs.R.hip.rotation.set(0.18, 0.04, 0.05);
   legs.R.knee.rotation.set(0.22, 0, 0);
@@ -362,7 +366,7 @@ export function buildZeus(textures: ZeusProceduralTextures): ZeusMeshHierarchy {
     { pos: [0.044, -0.30, 0.125], rot: [-0.22, 0.15, 0.1], scale: [0.75, 1.25, 0.7], mat: M.silver }
   ] as const;
   beardSpecs.forEach((sp, i) => {
-    const m = sculpt(head, lockGeo, sp.mat, sp.pos as any, sp.rot as any, sp.scale as any);
+    const m = sculpt(head, lockGeo, sp.mat, sp.pos, sp.rot, sp.scale);
     beardLocks.push({ mesh: m, rx: sp.rot[0], rz: sp.rot[2], phase: i * 0.65 });
   });
 

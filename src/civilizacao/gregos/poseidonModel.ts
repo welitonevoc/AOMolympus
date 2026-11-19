@@ -349,8 +349,7 @@ export function buildPoseidon(textures: PoseidonProceduralTextures): PoseidonMes
   const pelvis = group(body, 0, 0.92, 0);
   sculpt(pelvis, new THREE.SphereGeometry(0.26, 22, 20), M.skin, [0, 0, 0], [0, 0, 0], [1.15, 0.75, 0.85]);
 
-  const legs: any = {};
-  for (const side of ['L', 'R'] as const) {
+  const buildLeg = (side: 'L' | 'R') => {
     const s = side === 'R' ? 1 : -1;
     const hip = group(pelvis, s * 0.18, -0.04, 0);
 
@@ -370,8 +369,13 @@ export function buildPoseidon(textures: PoseidonProceduralTextures): PoseidonMes
     const ankle = group(knee, 0, -0.44, 0.02);
     sculpt(ankle, new THREE.BoxGeometry(0.098, 0.05, 0.22), M.skin, [0, -0.02, 0.04], [0.08, 0, 0]);
     sculpt(ankle, new THREE.BoxGeometry(0.108, 0.018, 0.238), M.darkGold, [0, -0.046, 0.04], [0.08, 0, 0]);
-    legs[side] = { hip, knee, ankle };
-  }
+    return { hip, knee, ankle };
+  };
+
+  const legs: PoseidonMeshHierarchy['legs'] = {
+    L: buildLeg('L'),
+    R: buildLeg('R'),
+  };
 
   legs.L.hip.rotation.set(-0.28, -0.15, -0.12);
   legs.L.knee.rotation.set(0.36, 0, 0);

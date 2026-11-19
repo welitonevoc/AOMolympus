@@ -220,8 +220,7 @@ function buildWingPair(
   matTip: THREE.Material,
   scale = 1.0
 ): { left: THREE.Group; right: THREE.Group } {
-  const pair: { left: THREE.Group; right: THREE.Group } = { left: null as any, right: null as any };
-  for (const side of [-1, 1] as const) {
+  const buildSide = (side: -1 | 1): THREE.Group => {
     const pivot = group(parent, side * 0.02, 0, 0);
     for (let f = 0; f < 5; f++) {
       const t = f / 4;
@@ -236,10 +235,9 @@ function buildWingPair(
       );
       feather.castShadow = true;
     }
-    if (side === -1) pair.left = pivot;
-    else pair.right = pivot;
-  }
-  return pair;
+    return pivot;
+  };
+  return { left: buildSide(-1), right: buildSide(1) };
 }
 
 export interface HermesParts {
@@ -278,13 +276,9 @@ export function buildHermes(textures: HermesTextures): HermesParts {
   const pelvis = group(body, 0, 0.90, 0);
   sculpt(pelvis, new THREE.SphereGeometry(0.225, 22, 20), M.skin, [0, 0, 0], [0, 0, 0], [1.06, 0.76, 0.80]);
 
-  const legs: HermesParts['legs'] = {
-    L: {} as any,
-    R: {} as any,
-  };
   const talariaWings: HermesParts['talariaWings'] = [];
 
-  for (const side of ['L', 'R'] as const) {
+  const buildLeg = (side: 'L' | 'R') => {
     const s = side === 'R' ? 1 : -1;
     const hip = group(pelvis, s * 0.145, -0.04, 0);
 
@@ -314,8 +308,13 @@ export function buildHermes(textures: HermesTextures): HermesParts {
     const wPair = buildWingPair(ankleWingsMount, M.wingIvory, M.wingGoldTip, 0.85);
     talariaWings.push(wPair);
 
-    legs[side] = { hip, knee, ankle };
-  }
+    return { hip, knee, ankle };
+  };
+
+  const legs: HermesParts['legs'] = {
+    L: buildLeg('L'),
+    R: buildLeg('R'),
+  };
 
   legs.L.hip.rotation.set(-0.42, -0.06, -0.04);
   legs.L.knee.rotation.set(0.62, 0, 0);

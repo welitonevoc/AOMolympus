@@ -257,12 +257,7 @@ export function buildAres(textures: AresTextures): AresParts {
   const pelvis = group(body, 0, 0.90, 0);
   sculpt(pelvis, new THREE.SphereGeometry(0.28, 22, 20), M.leatherDark, [0, 0, 0], [0, 0, 0], [1.16, 0.78, 0.88]);
 
-  const legs: AresParts['legs'] = {
-    L: {} as any,
-    R: {} as any,
-  };
-
-  for (const side of ['L', 'R'] as const) {
+  const buildLeg = (side: 'L' | 'R') => {
     const s = side === 'R' ? 1 : -1;
     const hip = group(pelvis, s * 0.185, -0.04, 0);
 
@@ -290,8 +285,13 @@ export function buildAres(textures: AresTextures): AresParts {
     sculpt(ankle, new THREE.BoxGeometry(0.124, 0.022, 0.255), M.darkBronze, [0, -0.052, 0.04], [0.05, 0, 0]);
     sculpt(ankle, new THREE.BoxGeometry(0.118, 0.045, 0.06), M.bloodGold, [0, -0.015, 0.14], [0.2, 0, 0]);
 
-    legs[side] = { hip, knee, ankle };
-  }
+    return { hip, knee, ankle };
+  };
+
+  const legs: AresParts['legs'] = {
+    L: buildLeg('L'),
+    R: buildLeg('R'),
+  };
 
   legs.L.hip.rotation.set(-0.24, -0.18, -0.14);
   legs.L.knee.rotation.set(0.32, 0, 0);

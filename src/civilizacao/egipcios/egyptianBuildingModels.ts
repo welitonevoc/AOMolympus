@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { BuildingKind, PantheonId, TeamId } from '../../game/types';
+import type { MaterialPalette } from '../../game/models';
 import { buildProceduralEgyptianTemple } from './egyptianTempleModel';
 import {
   buildEgyptianArchBuilding,
@@ -95,7 +96,7 @@ interface EgyptianMaterials {
   relicGold: THREE.MeshStandardMaterial;
 }
 
-function createEgyptianMaterials(team: TeamId, pal: any): EgyptianMaterials {
+function createEgyptianMaterials(team: TeamId, pal: MaterialPalette): EgyptianMaterials {
   const isPlayer = team === 'player';
   const primaryTeamHex = isPlayer ? 0x2563eb : 0xdc2626;
 
@@ -149,8 +150,8 @@ function createEgyptianMaterials(team: TeamId, pal: any): EgyptianMaterials {
       metalness: 0.96,
     }),
     emberGlow: new THREE.MeshStandardMaterial({
-      color: pal?.ember ?? 0xff7b24,
-      emissive: pal?.ember ?? 0xea580c,
+      color: pal.ember.color.clone(),
+      emissive: pal.ember.emissive.clone(),
       emissiveIntensity: 0.95,
       roughness: 0.3,
     }),
@@ -751,7 +752,7 @@ export interface EgyptianBuildingBuildResult {
 export function createEgyptianBuildingMesh(
   kind: BuildingKind,
   team: TeamId,
-  pal: any,
+  pal: MaterialPalette,
   enableShadows = true,
   age = 1,
   pantheon: PantheonId = 'egyptian',

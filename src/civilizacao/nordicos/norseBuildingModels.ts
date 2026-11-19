@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { BuildingKind, PantheonId, TeamId } from '../../game/types';
+import type { MaterialPalette } from '../../game/models';
 import { buildNorseHillFort as buildProceduralNorseHillFort } from './norseFortressModel';
 
 // ─── Procedural Wood-and-Stone Nordic Building Textures ─────────────────────
@@ -178,7 +179,7 @@ interface NorseMaterials {
   runeGlow: THREE.MeshStandardMaterial;
 }
 
-function createNorseMaterials(team: TeamId, pal: any): NorseMaterials {
+function createNorseMaterials(team: TeamId, pal: MaterialPalette): NorseMaterials {
   const isPlayer = team === 'player';
   const primaryTeamHex = isPlayer ? 0x2563eb : 0xdc2626;
   const altShieldHex = isPlayer ? 0xf59e0b : 0x7c2d12;
@@ -236,8 +237,8 @@ function createNorseMaterials(team: TeamId, pal: any): NorseMaterials {
       roughness: 0.68,
     }),
     emberGlow: new THREE.MeshStandardMaterial({
-      color: pal?.ember ?? 0xff7b24,
-      emissive: pal?.ember ?? 0xea580c,
+      color: pal.ember.color.clone(),
+      emissive: pal.ember.emissive.clone(),
       emissiveIntensity: 0.85,
       roughness: 0.3,
     }),
@@ -1517,7 +1518,7 @@ export interface NorseBuildingBuildResult {
 export function createNorseBuildingMesh(
   kind: BuildingKind,
   team: TeamId,
-  pal: any,
+  pal: MaterialPalette,
   enableShadows = true,
   age = 1,
   pantheon: PantheonId = 'norse',

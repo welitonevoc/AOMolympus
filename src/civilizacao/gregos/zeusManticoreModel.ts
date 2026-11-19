@@ -297,8 +297,7 @@ export function buildZeusManticore(options: ManticoreBuildOptions = {}): Mantico
   }
 
   // 3. ASAS DE MORCEGO MEMBRANOSAS ARTICULADAS
-  const wings: { L: ManticoreWingNode; R: ManticoreWingNode } = {} as any;
-  for (const side of ['L', 'R'] as const) {
+  const buildWing = (side: 'L' | 'R'): ManticoreWingNode => {
     const s = side === 'R' ? 1 : -1;
     const wingPivot = group(torso, s * 0.28, 0.34, 0.24);
 
@@ -324,8 +323,13 @@ export function buildZeusManticore(options: ManticoreBuildOptions = {}): Mantico
     memMesh.castShadow = true;
     wingPivot.add(memMesh);
 
-    wings[side] = { pivot: wingPivot, outer: outerWing, baseRz: s * 0.22 };
-  }
+    return { pivot: wingPivot, outer: outerWing, baseRz: s * 0.22 };
+  };
+
+  const wings: { L: ManticoreWingNode; R: ManticoreWingNode } = {
+    L: buildWing('L'),
+    R: buildWing('R'),
+  };
 
   // 4. QUATRO PATAS LEONINAS MUSCULOSAS COM GARRAS
   const legs: ManticoreLegNode[] = [];

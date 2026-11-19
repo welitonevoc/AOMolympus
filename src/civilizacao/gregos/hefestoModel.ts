@@ -196,10 +196,8 @@ export function buildHephaestus(textures: HephaestusTextures): HephaestusModel {
   const pelvis = group(body, 0, 0.88, 0);
   sculpt(pelvis, new THREE.SphereGeometry(0.28, 22, 20), M.apronLeather, [0, 0, 0], [0, 0, 0], [1.18, 0.78, 0.88]);
 
-  const legs: Record<'L' | 'R', HephaestusLegJoints> = {} as any;
-
   // PERNA DIREITA (Humana, maciça e musculosa)
-  {
+  const rightLeg: HephaestusLegJoints = (() => {
     const hipR = group(pelvis, 0.185, -0.04, 0);
     sculpt(hipR, new THREE.CylinderGeometry(0.165, 0.12, 0.48, 20), M.skin, [0, -0.23, 0], [0, 0, 0], [1.06, 1, 1.12]);
     sculpt(hipR, new THREE.SphereGeometry(0.13, 16, 16), M.skin, [0.025, -0.20, 0.056], [0, 0, 0], [0.98, 1.82, 0.88]);
@@ -214,11 +212,11 @@ export function buildHephaestus(textures: HephaestusTextures): HephaestusModel {
     sculpt(ankleR, new THREE.BoxGeometry(0.115, 0.065, 0.24), M.apronLeather, [0, -0.02, 0.04]);
     sculpt(ankleR, new THREE.BoxGeometry(0.124, 0.022, 0.255), M.forgedBronze, [0, -0.052, 0.04]);
 
-    legs.R = { hip: hipR, knee: kneeR, ankle: ankleR };
-  }
+    return { hip: hipR, knee: kneeR, ankle: ankleR };
+  })();
 
   // PERNA ESQUERDA (PRÓTESE MECÂNICA DE BRONZE E OURO FORJADA POR HEFESTO)
-  {
+  const leftLeg: HephaestusLegJoints = (() => {
     const hipL = group(pelvis, -0.185, -0.04, 0);
 
     sculpt(hipL, new THREE.CylinderGeometry(0.155, 0.11, 0.34, 20), M.skin, [0, -0.16, 0], [0, 0, 0], [1.05, 1, 1.1]);
@@ -239,8 +237,13 @@ export function buildHephaestus(textures: HephaestusTextures): HephaestusModel {
     sculpt(ankleL, new THREE.BoxGeometry(0.12, 0.022, 0.255), M.divineGold, [0, -0.05, 0.04]);
     sculpt(ankleL, new THREE.CylinderGeometry(0.04, 0.04, 0.13, 12), M.divineGold, [0, 0.01, -0.02], [0, 0, Math.PI / 2]);
 
-    legs.L = { hip: hipL, knee: kneeL, ankle: ankleL, kneeGear };
-  }
+    return { hip: hipL, knee: kneeL, ankle: ankleL, kneeGear };
+  })();
+
+  const legs: Record<'L' | 'R', HephaestusLegJoints> = {
+    L: leftLeg,
+    R: rightLeg,
+  };
 
   legs.L.hip.rotation.set(-0.22, -0.14, -0.12);
   legs.L.knee.rotation.set(0.28, 0, 0);

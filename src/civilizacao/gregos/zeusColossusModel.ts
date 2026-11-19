@@ -386,8 +386,7 @@ export function buildColossus(
   sculpt(frontApron, new THREE.BoxGeometry(0.13, 0.44, 0.038), M.skirtCloth, [0, 0, 0.002]);
   sculpt(frontApron, new THREE.OctahedronGeometry(0.036, 0), M.accentMetal, [0, -0.16, 0.022]);
 
-  const legs: Record<'L' | 'R', ColossusLegHandle> = {} as any;
-  for (const side of ['L', 'R'] as const) {
+  const buildLeg = (side: 'L' | 'R'): ColossusLegHandle => {
     const s = side === 'R' ? 1 : -1;
     const hip = group(pelvis, s * 0.19, -0.05, 0);
 
@@ -403,8 +402,13 @@ export function buildColossus(
     sculpt(ankle, new THREE.BoxGeometry(0.145, 0.085, 0.28), M.bodyMetal, [0, -0.03, 0.045]);
     sculpt(ankle, new THREE.BoxGeometry(0.155, 0.026, 0.295), M.accentMetal, [0, -0.068, 0.045]);
 
-    legs[side] = { hip, knee, ankle };
-  }
+    return { hip, knee, ankle };
+  };
+
+  const legs: Record<'L' | 'R', ColossusLegHandle> = {
+    L: buildLeg('L'),
+    R: buildLeg('R'),
+  };
 
   legs.L.hip.rotation.set(-0.18, -0.12, -0.08);
   legs.L.knee.rotation.set(0.24, 0, 0);

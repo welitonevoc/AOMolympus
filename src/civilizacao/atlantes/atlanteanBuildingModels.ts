@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { BuildingKind, PantheonId, TeamId } from '../../game/types';
+import type { MaterialPalette } from '../../game/models';
 import { buildAtlanteanFortress as buildProceduralAtlanteanFortress } from './atlanteanFortressModel';
 
 // ─── Procedural Atlantean Obsidian & Orichalcum Textures ─────────────────────
@@ -59,7 +60,7 @@ interface AtlanteanMaterials {
   plasmaEmber: THREE.MeshStandardMaterial;
 }
 
-function createAtlanteanMaterials(team: TeamId, pal: any): AtlanteanMaterials {
+function createAtlanteanMaterials(team: TeamId, _pal: MaterialPalette): AtlanteanMaterials {
   const isPlayer = team === 'player';
   const primaryTeamHex = isPlayer ? 0x2563eb : 0xdc2626;
 
@@ -572,7 +573,7 @@ export interface AtlanteanBuildingBuildResult {
 export function createAtlanteanBuildingMesh(
   kind: BuildingKind,
   team: TeamId,
-  pal: any,
+  pal: MaterialPalette,
   enableShadows = true,
   age = 1,
   pantheon: PantheonId = 'atlantean',

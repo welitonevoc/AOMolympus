@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { BuildingKind, PantheonId, TeamId } from '../../game/types';
+import type { MaterialPalette } from '../../game/models';
 import { buildGreekFortress as buildProceduralGreekFortress } from './greekFortressModel';
 import { buildProceduralGreekTemple } from './greekTempleModel';
 
@@ -89,7 +90,7 @@ interface GreekMaterials {
   emberGlow: THREE.MeshStandardMaterial;
 }
 
-function createGreekMaterials(team: TeamId, pal: any): GreekMaterials {
+function createGreekMaterials(team: TeamId, _pal: MaterialPalette): GreekMaterials {
   const isPlayer = team === 'player';
   const primaryTeamHex = isPlayer ? 0x2563eb : 0xdc2626;
 
@@ -701,7 +702,7 @@ export interface GreekBuildingBuildResult {
 export function createGreekBuildingMesh(
   kind: BuildingKind,
   team: TeamId,
-  pal: any,
+  pal: MaterialPalette,
   enableShadows = true,
   age = 1,
   pantheon: PantheonId = 'greek',

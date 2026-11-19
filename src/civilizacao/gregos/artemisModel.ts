@@ -244,8 +244,7 @@ export function buildArtemis(textures: ArtemisTextures): ArtemisModel {
   const pelvis = group(body, 0, 0.90, 0);
   sculpt(pelvis, new THREE.SphereGeometry(0.22, 22, 20), M.skin, [0, 0, 0], [0, 0, 0], [1.08, 0.78, 0.82]);
 
-  const legs: Record<'L' | 'R', ArtemisLegJoints> = {} as any;
-  for (const side of ['L', 'R'] as const) {
+  const buildLeg = (side: 'L' | 'R'): ArtemisLegJoints => {
     const s = side === 'R' ? 1 : -1;
     const hip = group(pelvis, s * 0.135, -0.04, 0);
 
@@ -266,8 +265,13 @@ export function buildArtemis(textures: ArtemisTextures): ArtemisModel {
     sculpt(ankle, new THREE.BoxGeometry(0.082, 0.048, 0.20), M.leatherForest, [0, -0.02, 0.035], [0.18, 0, 0]);
     sculpt(ankle, new THREE.BoxGeometry(0.088, 0.015, 0.21), M.silverPolished, [0, -0.044, 0.035], [0.18, 0, 0]);
 
-    legs[side] = { hip, knee, ankle };
-  }
+    return { hip, knee, ankle };
+  };
+
+  const legs: Record<'L' | 'R', ArtemisLegJoints> = {
+    L: buildLeg('L'),
+    R: buildLeg('R'),
+  };
 
   legs.L.hip.rotation.set(-0.34, -0.08, -0.05);
   legs.L.knee.rotation.set(0.50, 0, 0);

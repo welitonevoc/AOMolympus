@@ -267,8 +267,7 @@ export function buildDionysus(textures: DionysusTextures): DionysusModel {
   const pelvis = group(body, 0, 0.88, 0);
   sculpt(pelvis, new THREE.SphereGeometry(0.24, 22, 20), M.skin, [0, 0, 0], [0, 0, 0], [1.10, 0.78, 0.84]);
 
-  const legs: Record<'L' | 'R', DionysusLegJoints> = {} as any;
-  for (const side of ['L', 'R'] as const) {
+  const buildLeg = (side: 'L' | 'R'): DionysusLegJoints => {
     const s = side === 'R' ? 1 : -1;
     const hip = group(pelvis, s * 0.15, -0.04, 0);
 
@@ -288,8 +287,13 @@ export function buildDionysus(textures: DionysusTextures): DionysusModel {
     const ankle = group(knee, 0, -0.46, 0.02);
     sculpt(ankle, new THREE.BoxGeometry(0.09, 0.048, 0.21), M.skin, [0, -0.02, 0.038], [0.22, 0, 0]);
     sculpt(ankle, new THREE.BoxGeometry(0.098, 0.015, 0.225), M.goldPolished, [0, -0.044, 0.038], [0.22, 0, 0]);
-    legs[side] = { hip, knee, ankle };
-  }
+    return { hip, knee, ankle };
+  };
+
+  const legs: Record<'L' | 'R', DionysusLegJoints> = {
+    L: buildLeg('L'),
+    R: buildLeg('R'),
+  };
 
   legs.L.hip.rotation.set(-0.36, -0.10, -0.06);
   legs.L.knee.rotation.set(0.55, 0, 0);

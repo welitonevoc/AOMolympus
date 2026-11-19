@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import type { MaterialPalette } from '../../game/models';
 
 export const WORLD_G_OAK_SPRITE_URL = '/assets/aistudio/world_g_oak_sprite_map_e4a96f19.png';
-export const TEXTURA_FLORA_OAK_URL = '/textura/flora/world_g_oak_sprite_map.png';
+export const TEXTURA_FLORA_OAK_URL = WORLD_G_OAK_SPRITE_URL;
 
 export interface OakTreeVariantSpec {
   id: string;

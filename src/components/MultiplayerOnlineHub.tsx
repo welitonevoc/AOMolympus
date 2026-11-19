@@ -238,7 +238,9 @@ export function MultiplayerOnlineHub({
     try {
       localStorage.setItem('aom_mp_crest', crestId);
       localStorage.setItem('aom_mp_color', colorId);
-    } catch {}
+    } catch (err) {
+      console.warn('[MultiplayerOnlineHub] Unable to persist crest/color preferences:', err);
+    }
   }, [crestId, colorId]);
 
   useEffect(() => {

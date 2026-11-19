@@ -75,7 +75,9 @@ export default function App() {
   useEffect(() => {
     try {
       localStorage.setItem('aom_options', JSON.stringify(options));
-    } catch {}
+    } catch (err) {
+      console.warn('[App] Unable to persist options to localStorage:', err);
+    }
   }, [options]);
 
   useEffect(() => {
@@ -131,7 +133,9 @@ export default function App() {
     setLastPantheon(pantheon);
     try {
       localStorage.setItem('aom_last_pantheon', pantheon);
-    } catch {}
+    } catch (err) {
+      console.warn('[App] Unable to persist last pantheon to localStorage:', err);
+    }
     engine.startNewMatch(pantheon, difficulty, mapId, revealedMap, extras);
     engine.applyOptions(options);
     setPhase('playing');

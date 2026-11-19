@@ -312,12 +312,7 @@ export function buildAthena(textures: AtenaTextures): AtenaParts {
   const pelvis = group(body, 0, 0.90, 0);
   sculpt(pelvis, new THREE.SphereGeometry(0.225, 22, 20), M.skin, [0, 0, 0], [0, 0, 0], [1.08, 0.78, 0.82]);
 
-  const legs: AtenaParts['legs'] = {
-    L: {} as any,
-    R: {} as any,
-  };
-
-  for (const side of ['L', 'R'] as const) {
+  const buildLeg = (side: 'L' | 'R') => {
     const s = side === 'R' ? 1 : -1;
     const hip = group(pelvis, s * 0.135, -0.04, 0);
 
@@ -342,8 +337,13 @@ export function buildAthena(textures: AtenaTextures): AtenaParts {
     sculpt(ankle, strap, M.goldPolished, [0, 0.02, -0.02], [0.1, 0, 0]);
     sculpt(ankle, strap, M.goldPolished, [0, 0.06, -0.02], [0.1, 0, 0]);
 
-    legs[side] = { hip, knee, ankle };
-  }
+    return { hip, knee, ankle };
+  };
+
+  const legs: AtenaParts['legs'] = {
+    L: buildLeg('L'),
+    R: buildLeg('R'),
+  };
 
   legs.L.hip.rotation.set(-0.22, -0.08, -0.04);
   legs.L.knee.rotation.set(0.28, 0, 0);

@@ -115,7 +115,9 @@ export function TitleScreen({
       if (stored && PANTHEONS[stored]) {
         savedPantheon = stored;
       }
-    } catch {}
+    } catch (err) {
+      console.warn('[TitleScreen] localStorage unavailable for pantheon lookup:', err);
+    }
     soundEngine.setMusicScene('title', savedPantheon);
   }, [menuState]);
 

@@ -8,7 +8,7 @@ export default defineConfig(() => {
     plugins: [react(), tailwindcss()],
     resolve: {
       alias: {
-        '@': path.resolve(__dirname, '.'),
+        '@': path.resolve(import.meta.dirname, '.'),
       },
     },
     build: {
@@ -20,9 +20,7 @@ export default defineConfig(() => {
             if (id.includes('node_modules/react') || id.includes('node_modules/lucide-react')) return 'vendor-react';
             if (
               id.includes('HopliteUvBuilderModal') ||
-              id.includes('gallery3dCatalog') ||
-              id.includes('gallery3dArtifacts') ||
-              id.includes('gallery3dTerrain')
+              id.includes('gallery3d')
             ) {
               return 'studio-gallery';
             }
