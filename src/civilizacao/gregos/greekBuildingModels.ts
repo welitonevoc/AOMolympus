@@ -4,6 +4,7 @@ import type { MaterialPalette } from '../../game/models';
 import { buildGreekFortress as buildProceduralGreekFortress } from './greekFortressModel';
 import { buildProceduralGreekTemple } from './greekTempleModel';
 import { buildProceduralGreekHouse } from './greekHouseModel';
+import { buildProceduralGreekTownCenter } from './greekTownCenterModel';
 
 // ─── Procedural Greek Marble, Terracotta & Bronze Textures ─────────────────
 
@@ -722,13 +723,25 @@ export function createGreekBuildingMesh(
 
   switch (kind) {
     case 'town_center': {
-      const res = buildGreekTownCenter(group, mats, age, pantheon);
-      metropolisHalo = res.metropolisHalo;
-      metropolisCrystal = res.metropolisCrystal;
-      group.scale.setScalar(1.0 + (age - 1) * 0.055);
-      markerRadius = 3.55 + (age - 1) * 0.22;
-      barHeight = 3.65 + (age - 1) * 0.55;
-      barWidth = 3.0 + (age - 1) * 0.15;
+      if (pantheon === 'greek') {
+        const rawGod = (majorGod || String(pantheon || 'zeus')).toLowerCase();
+        const effGod = rawGod.includes('poseidon') ? 'poseidon' : rawGod.includes('hades') ? 'hades' : 'zeus';
+        const res = buildProceduralGreekTownCenter(group, age, effGod, enableShadows);
+        metropolisHalo = res.metropolisHalo;
+        metropolisCrystal = res.metropolisCrystal;
+        group.scale.setScalar(1.05 + (age - 1) * 0.05);
+        markerRadius = 3.6 + (age - 1) * 0.22;
+        barHeight = 3.8 + (age - 1) * 0.50;
+        barWidth = 3.2 + (age - 1) * 0.15;
+      } else {
+        const res = buildGreekTownCenter(group, mats, age, pantheon);
+        metropolisHalo = res.metropolisHalo;
+        metropolisCrystal = res.metropolisCrystal;
+        group.scale.setScalar(1.0 + (age - 1) * 0.055);
+        markerRadius = 3.55 + (age - 1) * 0.22;
+        barHeight = 3.65 + (age - 1) * 0.55;
+        barWidth = 3.0 + (age - 1) * 0.15;
+      }
       break;
     }
     case 'barracks':

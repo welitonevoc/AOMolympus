@@ -24,6 +24,10 @@ import {
   GREEK_BUILDINGS_THEMES,
 } from '../../civilizacao/gregos/greekHouseModel';
 import {
+  buildGreekTownCenterStudio,
+  GREEK_TOWN_CENTER_THEMES,
+} from '../../civilizacao/gregos/greekTownCenterModel';
+import {
   buildEgyptianTempleStudio,
   EGYPT_TEMPLE_THEMES,
   EgyptianTempleGodKey,
@@ -695,6 +699,65 @@ export function buildBuildingStudioSubject(ctx: BuildingStudioBuildContext): THR
           1 + Math.sin(elapsed * 12 + idx * 1.5) * 0.12,
           1 + Math.cos(elapsed * 14 + idx * 1.2) * 0.18,
           1 + Math.sin(elapsed * 10 + idx * 1.7) * 0.12
+        );
+      });
+    };
+  } else if (selectedCiv === 'greek' && selectedBuilding === 'town_center') {
+    const rawGod = selectedMajorGod.toLowerCase();
+    const godKey = rawGod.includes('poseidon')
+      ? 'poseidon'
+      : rawGod.includes('hades')
+      ? 'hades'
+      : 'zeus';
+    const theme = GREEK_TOWN_CENTER_THEMES[godKey] || GREEK_TOWN_CENTER_THEMES.zeus;
+
+    scene.background = new THREE.Color(theme.bgHex);
+    scene.fog = new THREE.FogExp2(theme.bgHex, 0.014);
+    addPedestal(4.2, 4.6, theme.goldHex);
+
+    const effTier = Math.max(1, Math.min(5, buildingAge));
+    const tcStudio = buildGreekTownCenterStudio(godKey, effTier, !isSoftwareGl);
+    group = tcStudio.root;
+
+    let lastTierApplied = effTier;
+    let lastGodApplied = godKey;
+    let elapsed = 0;
+
+    group.userData.animatePose = (dt: number) => {
+      elapsed += dt;
+      const currentT = Math.max(1, Math.min(5, buildingAge));
+      if (currentT !== lastTierApplied) {
+        lastTierApplied = currentT;
+        tcStudio.setTier(currentT);
+      }
+
+      const nextRaw = selectedMajorGod.toLowerCase();
+      const currentGod = nextRaw.includes('poseidon')
+        ? 'poseidon'
+        : nextRaw.includes('hades')
+        ? 'hades'
+        : 'zeus';
+
+      if (currentGod !== lastGodApplied) {
+        lastGodApplied = currentGod;
+        tcStudio.applyGod(currentGod);
+        const newTheme = GREEK_TOWN_CENTER_THEMES[currentGod] || GREEK_TOWN_CENTER_THEMES.zeus;
+        scene.background.setHex(newTheme.bgHex);
+        if (scene.fog) (scene.fog as THREE.FogExp2).color.setHex(newTheme.bgHex);
+      }
+
+      if (tcStudio.auraRing) {
+        tcStudio.auraRing.rotation.z += dt * 0.28;
+        tcStudio.auraRing.scale.setScalar(
+          (1 + (currentT - 1) * 0.11) * (1 + Math.sin(elapsed * 2.2) * 0.02)
+        );
+      }
+
+      tcStudio.M.flames.forEach((fl, idx) => {
+        fl.scale.set(
+          1 + Math.sin(elapsed * 13 + idx) * 0.14,
+          1 + Math.cos(elapsed * 16 + idx) * 0.22,
+          1 + Math.sin(elapsed * 12 + idx) * 0.14
         );
       });
     };
