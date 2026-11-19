@@ -33,6 +33,7 @@ import {
   RmsTerrainCode,
   WORLD_SIZE_SPECS,
 } from '../maps';
+import { generateMythRMConstantsTxt } from '../textura/terreno';
 
 interface RmsMapLabProps {
   defaultPantheon?: PantheonId;
@@ -1028,6 +1029,25 @@ export function RmsMapLab({
                   >
                     <Download className="h-3.5 w-3.5" />
                     <span>Baixar .xs</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const txt = generateMythRMConstantsTxt();
+                      const blob = new Blob([txt], { type: 'text/plain;charset=utf-8' });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = 'MythRMConstants.txt';
+                      a.click();
+                      URL.revokeObjectURL(url);
+                    }}
+                    title="Gera o arquivo MythRMConstants.txt (equivalente a GenerateRMConstants + GenerateTRConstants no user.cfg)"
+                    className="flex items-center gap-1.5 rounded-md border border-[#d4af37]/35 bg-[#192234] px-2.5 py-1.5 text-xs font-medium text-[#f3d27a] hover:bg-[#222e46] cursor-pointer"
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                    <span>MythRMConstants.txt</span>
                   </button>
                 </div>
 

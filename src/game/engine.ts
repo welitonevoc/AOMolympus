@@ -43,6 +43,14 @@ import {
   TOTAL_WAR_XS_SPEC,
 } from '../maps';
 import { preloadForestPackGlb } from '../textura';
+import {
+  AtmosphericFxSystem,
+  createTerrainRockMesh,
+  DARKEST_NIGHT_CYCLES,
+  matchEnvironmentalCheat,
+  TERRAIN_ROCK_SPECS,
+  WaterShaderUniforms,
+} from '../textura/terreno';
 import { NavigationGrid, ObstacleCircle, WATER_WALK_LIMIT } from './navigation';
 import {
   createContactShadowTexture,
@@ -561,7 +569,7 @@ export class AoMEngine {
   private maxAniso = 1;
   private palette: MaterialPalette;
   private waterMesh: THREE.Mesh | null = null;
-  private waterUniforms: { uTime: { value: number }; uIsLava: { value: number }; uIsIce: { value: number } } | null = null;
+  private waterUniforms: WaterShaderUniforms | null = null;
   private terrainUniforms: {
     uTime: { value: number };
     uWaterY: { value: number };
@@ -614,6 +622,11 @@ export class AoMEngine {
   private sunLight: THREE.DirectionalLight | null = null;
   private rimLight: THREE.DirectionalLight | null = null;
   private scenarioPropMeshes: THREE.Object3D[] = [];
+  private blockingRockObstacles: ObstacleCircle[] = [];
+  private atmosphericFx: AtmosphericFxSystem | null = null;
+  private darkestNightStep = 0;
+  private wrathOfTheGodsCheat = false;
+  private redTideActive = false;
 
   // Game state
   private phase: GameHudSnapshot['phase'] = 'title';
@@ -929,6 +942,7 @@ export class AoMEngine {
       this.camera,
       this.isSoftwareGl
     );
+    this.atmosphericFx = new AtmosphericFxSystem(this.scene);
 
     this.setupLighting();
     preloadForestPackGlb();
@@ -1274,6 +1288,14 @@ export class AoMEngine {
       this.scene.remove(sp);
     }
     this.scenarioPropMeshes = [];
+    this.blockingRockObstacles = [];
+    this.atmosphericFx?.clear();
+    this.darkestNightStep = 0;
+    this.wrathOfTheGodsCheat = false;
+    this.redTideActive = false;
+    if (this.waterUniforms) {
+      this.waterUniforms.uRedTide.value = 0.0;
+    }
     if (this.godPowerRing) this.godPowerRing.visible = false;
     this.vfxManager?.clearMatchVisuals();
     this.hideAllOrderVisuals();
@@ -2127,10 +2149,26 @@ export class AoMEngine {
           vaultMesh.position.set(obj.x, groundHeightAt(obj.x, obj.z, mapId, this.worldSize), obj.z);
           this.scene.add(vaultMesh);
           this.kothVaultMesh = vaultMesh;
+        } else if (obj.category === 'rock' && obj.rockKind) {
+          const rMesh = createTerrainRockMesh(obj.rockKind, !this.isSoftwareGl, Math.abs(Math.round(obj.x * 7 + obj.z * 13)));
+          rMesh.position.set(obj.x, groundHeightAt(obj.x, obj.z, mapId, this.worldSize), obj.z);
+          this.scene.add(rMesh);
+          this.scenarioPropMeshes.push(rMesh);
+          const rockSpec = TERRAIN_ROCK_SPECS[obj.rockKind];
+          if (rockSpec?.blocksPathing) {
+            this.blockingRockObstacles.push({ x: obj.x, z: obj.z, radius: rockSpec.collisionRadius });
+          }
+        } else if (obj.category === 'fx_emitter' && obj.emitterKind) {
+          this.atmosphericFx?.addEmitter(
+            obj.emitterKind,
+            obj.x,
+            groundHeightAt(obj.x, obj.z, mapId, this.worldSize),
+            obj.z
+          );
         }
       }
 
-      // Spawn Scenario Editor custom placed units, buildings, campaign props & lighting
+      // Spawn Scenario Editor custom placed units, buildings, campaign props, 3D rocks, FX emitters & lighting
       if (scenarioPlaytest) {
         const scDoc = scenarioPlaytest.doc;
         const playSlot = scenarioPlaytest.playAsSlot;
@@ -2151,6 +2189,14 @@ export class AoMEngine {
             const u = this.spawnUnit(obj.unitKind, team, obj.x, obj.z);
             u.mesh.rotation.y = obj.rotationY || 0;
             if (obj.scale && obj.scale !== 1) u.mesh.scale.setScalar(obj.scale);
+          } else if (obj.emitterKind) {
+            this.atmosphericFx?.addEmitter(
+              obj.emitterKind,
+              obj.x,
+              groundHeightAt(obj.x, obj.z, mapId, this.worldSize),
+              obj.z,
+              obj.scale || 1
+            );
           } else if (obj.kindType === 'prop') {
             const propMesh = buildPlacedScenarioObjectMesh(obj, this.palette, playerPantheons, !this.isSoftwareGl);
             propMesh.position.set(obj.x, groundHeightAt(obj.x, obj.z, mapId, this.worldSize), obj.z);
@@ -2188,6 +2234,48 @@ export class AoMEngine {
           activeRms.triggersSummary.introMessage ||
           `${activeRms.title} — Semente ${activeRms.seed} (${activeRms.areas.length} áreas, ${activeRms.objects.length} objetos)`;
         this.notifyStatus(`🗺️ RMS: ${msg}`);
+      }
+    }
+
+    // Biome-authentic ambient atmospheric FX emitters (wind dust, volcanic smoke/sparks, low mist, sunbeams)
+    if (this.atmosphericFx) {
+      const effId = resolveEffectiveMapId(mapId);
+      const ambientHalf = Math.min(36, this.mapHalfSize * 0.58);
+      if (
+        effId === 'erebus' ||
+        effId === 'savannah' ||
+        effId === 'oasis' ||
+        effId === 'nile' ||
+        effId === 'ghost_lake' ||
+        effId === 'marsh' ||
+        effId === 'jotunheim' ||
+        effId === 'midgard' ||
+        effId === 'tundra' ||
+        effId === 'acropolis' ||
+        effId === 'king_of_the_hill'
+      ) {
+        const isVolcanic = effId === 'erebus';
+        const isDesert = effId === 'savannah' || effId === 'oasis' || effId === 'nile';
+        const isMist = effId === 'ghost_lake' || effId === 'marsh' || effId === 'jotunheim' || effId === 'midgard' || effId === 'tundra';
+        const emitterPts: [number, number][] = [
+          [-ambientHalf * 0.6, -ambientHalf * 0.4],
+          [ambientHalf * 0.55, ambientHalf * 0.45],
+          [0, 0],
+          [-ambientHalf * 0.3, ambientHalf * 0.6],
+        ];
+        for (const [ex, ez] of emitterPts) {
+          const ey = groundHeightAt(ex, ez, mapId, this.worldSize);
+          if (isVolcanic) {
+            this.atmosphericFx.addEmitter('magma_sparks', ex, ey, ez, 1.0);
+            this.atmosphericFx.addEmitter('volcanic_smoke', ex + 2.5, ey, ez - 2.0, 1.05);
+          } else if (isDesert) {
+            this.atmosphericFx.addEmitter('wind_dust', ex, ey, ez, 1.0);
+          } else if (isMist) {
+            this.atmosphericFx.addEmitter('low_mist', ex, ey, ez, 1.15);
+          } else {
+            this.atmosphericFx.addEmitter('sunbeams', ex, ey, ez, 1.0);
+          }
+        }
       }
     }
 
@@ -4288,6 +4376,93 @@ export class AoMEngine {
     soundEngine.playSelect();
   }
 
+  /**
+   * Layer 4 — Executes AoM: Retold environmental cheat codes typed in match chat:
+   * IN DARKEST NIGHT, RED TIDE, CLEAR SKIES / LAY OF THE LAND, WRATH OF THE GODS.
+   */
+  public executeCheatCode(rawText: string): boolean {
+    if (this.phase !== 'playing' || this.replayMode) return false;
+    const cheat = matchEnvironmentalCheat(rawText);
+    if (!cheat) return false;
+
+    if (cheat === 'IN_DARKEST_NIGHT') {
+      const cycle = DARKEST_NIGHT_CYCLES[this.darkestNightStep % DARKEST_NIGHT_CYCLES.length];
+      this.darkestNightStep++;
+      this.dayNightCycle = false;
+      if (this.sunLight) {
+        this.sunLight.color.setHex(cycle.sunColor);
+        this.sunLight.intensity = cycle.sunIntensity;
+        this.currentSunOffset.set(cycle.sunPos[0], cycle.sunPos[1], cycle.sunPos[2]);
+      }
+      if (this.hemiLight) {
+        this.hemiLight.color.setHex(cycle.hemiSky);
+        this.hemiLight.groundColor.setHex(cycle.hemiGround);
+        this.hemiLight.intensity = cycle.hemiIntensity;
+      }
+      this.scene.fog = new THREE.FogExp2(cycle.fogHex, 0.0042);
+      soundEngine.playSelect();
+      this.notifyStatus(`🌙 IN DARKEST NIGHT: Iluminação alterada para ${cycle.label}!`);
+      this.emitHudSnapshot();
+      return true;
+    }
+
+    if (cheat === 'RED_TIDE') {
+      this.redTideActive = true;
+      if (this.waterUniforms) {
+        this.waterUniforms.uRedTide.value = 1.0;
+      }
+      if (this.waterMesh) {
+        const wMat = this.waterMesh.material as THREE.MeshStandardMaterial;
+        wMat.color.setHex(0x7a0b0f);
+        wMat.emissive.setHex(0x3a0406);
+        wMat.emissiveIntensity = 0.25;
+      }
+      // Eliminate all fish spots on the map
+      let removedFish = 0;
+      for (const [id, node] of Array.from(this.nodes.entries())) {
+        if (node.kind === 'fish_spot') {
+          this.scene.remove(node.mesh);
+          this.nodes.delete(id);
+          removedFish++;
+        }
+      }
+      soundEngine.playSelect();
+      this.notifyStatus(`🩸 RED TIDE: As águas ficaram vermelho-sangue e ${removedFish} cardumes de peixes foram eliminados!`);
+      this.emitHudSnapshot();
+      return true;
+    }
+
+    if (cheat === 'CLEAR_SKIES') {
+      this.revealedMap = true;
+      this.visibilityMode = 'revealed';
+      this.scene.fog = null;
+      this.atmosphericFx?.setMistVisible(false);
+      soundEngine.playFanfare(false);
+      this.notifyStatus('☀️ CLEAR SKIES / LAY OF THE LAND: Neblina removida e toda a geografia revelada!');
+      this.emitHudSnapshot();
+      return true;
+    }
+
+    if (cheat === 'WRATH_OF_THE_GODS') {
+      this.wrathOfTheGodsCheat = true;
+      const bonusPowers: GodPowerId[] = ['volcanic_eruption', 'tremor', 'meteor', 'lightning_storm'];
+      for (const gp of bonusPowers) {
+        if (!this.unlockedPowers.includes(gp)) {
+          this.unlockedPowers.push(gp);
+        }
+      }
+      for (const k of Object.keys(this.godPowerCooldowns) as GodPowerId[]) {
+        this.godPowerCooldowns[k] = 0;
+      }
+      soundEngine.playFanfare(true);
+      this.notifyStatus('⚡ WRATH OF THE GODS: Poderes divinos ilimitados liberados (Vulcão, Tremor/Terremoto, Meteoro, Tempestade — 0 recarga e 0 Favor)!');
+      this.emitHudSnapshot();
+      return true;
+    }
+
+    return false;
+  }
+
   public activateGodPower(id: GodPowerId) {
     if (this.phase !== 'playing' || this.replayMode) return;
     const spec = getCivGodPowerSpec(this.pantheon, id);
@@ -4295,16 +4470,16 @@ export class AoMEngine {
       this.notifyStatus(`${spec.name} ainda não foi desbloqueado pelo panteão.`);
       return;
     }
-    if (this.age < spec.minAge) {
+    if (!this.wrathOfTheGodsCheat && this.age < spec.minAge) {
       this.notifyStatus(`Poder Divino requer ${AGE_NAMES[spec.minAge]}.`);
       return;
     }
-    if (this.godPowerCooldowns[id] > 0) {
+    if (!this.wrathOfTheGodsCheat && this.godPowerCooldowns[id] > 0) {
       this.notifyStatus(`${spec.name} em recarga (${Math.ceil(this.godPowerCooldowns[id])}s).`);
       return;
     }
     const uses = this.godPowerUses[id] ?? 0;
-    const recastCost = getRetoldRecastFavorCost(id, uses, this.hasTeamWonder('player'));
+    const recastCost = this.wrathOfTheGodsCheat ? 0 : getRetoldRecastFavorCost(id, uses, this.hasTeamWonder('player'));
     if (this.resources.favor < recastCost) {
       this.notifyStatus(`Favor Divino insuficiente (${recastCost} Favor necessário para relançar).`);
       return;
@@ -4324,7 +4499,7 @@ export class AoMEngine {
     }
     soundEngine.playSelect();
     this.notifyStatus(
-      `Clique no mapa para lançar ${spec.name} (${recastCost === 0 ? '1º uso Grátis' : `${recastCost} Favor`}).`
+      `Clique no mapa para lançar ${spec.name} (${recastCost === 0 ? 'Grátis' : `${recastCost} Favor`}).`
     );
     this.emitHudSnapshot();
   }
@@ -4526,15 +4701,38 @@ export class AoMEngine {
     }
     const uses = this.godPowerUses[id] ?? 0;
     const wonderActive = this.hasTeamWonder('player');
-    const recastCost = getRetoldRecastFavorCost(id, uses, wonderActive);
+    const recastCost = this.wrathOfTheGodsCheat ? 0 : getRetoldRecastFavorCost(id, uses, wonderActive);
     this.resources.favor = Math.max(0, this.resources.favor - recastCost);
     this.godPowerUses[id] = uses + 1;
     const cdMult = PANTHEONS[this.pantheon].favoredGodPower === id ? 0.78 : 1;
-    this.godPowerCooldowns[id] = getRetoldCooldown(spec.cooldown * cdMult, uses, wonderActive);
+    this.godPowerCooldowns[id] = this.wrathOfTheGodsCheat ? 0 : getRetoldCooldown(spec.cooldown * cdMult, uses, wonderActive);
     this.stats.powersCast++;
     this.activeGodPowerMode = null;
     if (this.godPowerRing) this.godPowerRing.visible = false;
     soundEngine.playGodPowerCue(id, this.pantheon);
+
+    // Volcanic Eruption / Tremor scatter magma rocks & volcanic FX emitters across impact site
+    if (id === 'volcanic_eruption' || id === 'tremor') {
+      const rockKind = id === 'volcanic_eruption' ? 'underworld_stalagmite' : 'basalt_pillar';
+      for (let r = 0; r < 3; r++) {
+        const ang = (r / 3) * Math.PI * 2 + Math.random();
+        const rx = worldPos.x + Math.cos(ang) * (2.5 + r * 1.4);
+        const rz = worldPos.z + Math.sin(ang) * (2.5 + r * 1.4);
+        const rock = createTerrainRockMesh(rockKind, !this.isSoftwareGl, r + 1);
+        rock.position.set(rx, groundHeightAt(rx, rz, this.mapId, this.worldSize), rz);
+        this.scene.add(rock);
+        this.scenarioPropMeshes.push(rock);
+        const rockSpec = TERRAIN_ROCK_SPECS[rockKind];
+        if (rockSpec?.blocksPathing) {
+          this.blockingRockObstacles.push({ x: rx, z: rz, radius: rockSpec.collisionRadius });
+        }
+      }
+      this.syncNavObstacles();
+      if (id === 'volcanic_eruption') {
+        this.atmosphericFx?.addEmitter('magma_sparks', worldPos.x, worldPos.y, worldPos.z, 1.2);
+        this.atmosphericFx?.addEmitter('volcanic_smoke', worldPos.x, worldPos.y, worldPos.z, 1.15);
+      }
+    }
 
     if (id === 'prosperity') {
       this.resources.food += 200;
@@ -10748,6 +10946,9 @@ export class AoMEngine {
         radius: b.radius + 0.25,
       });
     }
+    for (const ro of this.blockingRockObstacles) {
+      obstacles.push(ro);
+    }
     this.navGrid.rebuildObstacles(obstacles);
   }
 
@@ -15823,6 +16024,7 @@ export class AoMEngine {
     for (const wu of this.windUniforms) {
       wu.uTime.value = now * 0.001;
     }
+    this.atmosphericFx?.update(dt);
 
     this.fpsFrames += 1;
     this.fpsAccum += dt;

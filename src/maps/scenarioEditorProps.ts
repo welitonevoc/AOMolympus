@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import { createBiomeTreeMesh } from '../textura';
+import { createBiomeTreeMesh } from '../textura/flora/biomeTrees';
+import { createEmitterPreviewMesh, createTerrainRockMesh } from '../textura/terreno/terrainObjectsAndFx';
 import {
   createBuildingMesh,
   createFaunaMesh,
@@ -272,6 +273,10 @@ export function buildPlacedScenarioObjectMesh(
     } else {
       mesh = createResourceMesh(obj.resourceKind === 'berry' ? 'berry' : 'gold_mine', pal, enableShadows, 'mediterranean', 1);
     }
+  } else if (obj.rockKind) {
+    mesh = createTerrainRockMesh(obj.rockKind, enableShadows, Math.abs(Math.round(obj.x * 11 + obj.z * 5)));
+  } else if (obj.emitterKind) {
+    mesh = createEmitterPreviewMesh(obj.emitterKind);
   } else {
     mesh = createEditorPropMesh(obj.propKind ?? 'boulder', accentHex);
   }

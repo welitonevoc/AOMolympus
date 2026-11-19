@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Anchor,
   ArrowRightLeft,
@@ -357,6 +357,21 @@ export function GameHUD({
   const [showTimelineOverlay, setShowTimelineOverlay] = useState(false);
   const [chatChannel, setChatChannel] = useState<'all' | 'team'>('all');
   const [chatInput, setChatInput] = useState('');
+  const chatInputRef = useRef<HTMLInputElement | null>(null);
+
+  // AoM: Retold Enter shortcut opens match chat / environmental cheat console
+  useEffect(() => {
+    const onEnterKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Enter' || hud.phase !== 'playing') return;
+      const target = e.target as HTMLElement | null;
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT')) return;
+      e.preventDefault();
+      setShowMatchChat(true);
+      setTimeout(() => chatInputRef.current?.focus(), 20);
+    };
+    window.addEventListener('keydown', onEnterKey);
+    return () => window.removeEventListener('keydown', onEnterKey);
+  }, [hud.phase]);
   const [activeDialog, setActiveDialog] = useState<InGameDialog>('none');
   const [pausePrompt, setPausePrompt] = useState<PausePrompt>('menu');
   const [postGameTab, setPostGameTab] = useState<PostGameTab>('summary');
@@ -1412,11 +1427,14 @@ export function GameHUD({
           >
             <ArrowRightLeft className="h-3.5 w-3.5" />
           </button>
-          {hud.multiplayerRoster && onSendMatchChat && (
+          {onSendMatchChat && (
             <button
               type="button"
-              onClick={() => setShowMatchChat((v) => !v)}
-              title="Chat da Partida (Todos / Equipe)"
+              onClick={() => {
+                setShowMatchChat((v) => !v);
+                setTimeout(() => chatInputRef.current?.focus(), 20);
+              }}
+              title="Chat da Partida & Códigos Ambientais (Enter)"
               aria-label="Chat da Partida"
               className={`relative flex h-7 w-7 items-center justify-center rounded cursor-pointer transition-colors ${
                 showMatchChat
@@ -4491,11 +4509,12 @@ export function GameHUD({
             className="mt-2 flex gap-1.5"
           >
             <input
+              ref={chatInputRef}
               type="text"
               value={chatInput}
               onChange={(e) => setChatInput(e.target.value)}
               maxLength={240}
-              placeholder={chatChannel === 'team' ? 'Mensagem para aliados...' : 'Mensagem para todos...'}
+              placeholder="Mensagem ou cheat (RED TIDE, IN DARKEST NIGHT, CLEAR SKIES, WRATH OF THE GODS)..."
               className="flex-1 rounded border border-white/15 bg-[#0a0f1a] px-2 py-1 text-xs text-white focus:border-[#f3d27a] focus:outline-none"
             />
             <button

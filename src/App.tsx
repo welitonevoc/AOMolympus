@@ -309,7 +309,10 @@ export default function App() {
           onSummonSetAnimal={(kind) => engineRef.current?.summonSetAnimal(kind)}
           onConvertFauna={() => engineRef.current?.convertTargetOrNearestFauna()}
           inMatchMessages={inMatchMessages}
-          onSendMatchChat={(channel, text) => multiplayerClient.sendMatchChat(text, channel)}
+          onSendMatchChat={(channel, text) => {
+            if (engineRef.current?.executeCheatCode(text)) return;
+            multiplayerClient.sendMatchChat(text, channel);
+          }}
           onSendTribute={(slotIdx, res, amt) => engineRef.current?.sendAllyTribute(slotIdx, res, amt)}
           onSetVillagerPriority={(preset) => engineRef.current?.setVillagerPriority(preset)}
           onToggleAutoScout={() => engineRef.current?.toggleAutoScout()}

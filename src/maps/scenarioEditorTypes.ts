@@ -16,6 +16,7 @@ import {
 import { getWorldSizeSpec, MapBiomeKind } from './mapCatalog';
 import { BiomeTreeStyle, groundHeightAt } from './mapGeography';
 import { RmsGeneratedMap, RmsPlacedObject, RmsTerrainCode } from './rmsEngine';
+import { AtmosphericEmitterKind, TerrainRockKind } from '../textura/terreno/terrainObjectsAndFx';
 
 export type EditorToolId =
   | 'select_move'
@@ -41,10 +42,17 @@ export type EditorTerrainPaintId =
   | 'dirt'
   | 'road'
   | 'sand'
+  | 'desert_dust'
   | 'cliff_rock'
+  | 'egyptian_rock'
+  | 'olympus_marble'
   | 'fertile'
+  | 'marsh'
   | 'snow'
+  | 'ice'
   | 'forest_floor'
+  | 'hades_ash'
+  | 'charred_dirt'
   | 'shallow_water'
   | 'deep_water'
   | 'lava';
@@ -106,6 +114,8 @@ export interface EditorObjectCatalogItem {
     | 'trojan_horse'
     | 'testing_dummy'
     | 'dwarven_forge';
+  rockKind?: TerrainRockKind;
+  emitterKind?: AtmosphericEmitterKind;
   defaultScale?: number;
   specialBadge?: string;
 }
@@ -121,6 +131,8 @@ export interface PlacedScenarioObject {
   faunaKind?: FaunaKind;
   resourceKind?: EditorObjectCatalogItem['resourceKind'];
   propKind?: EditorObjectCatalogItem['propKind'];
+  rockKind?: TerrainRockKind;
+  emitterKind?: AtmosphericEmitterKind;
   playerSlot: number; // 0 = Gaia/Mother Nature, 1..12 = Players
   x: number;
   z: number;
@@ -242,17 +254,24 @@ export const TERRAIN_PAINT_PALETTE: {
   landHeightDelta: number;
   desc: string;
 }[] = [
-  { id: 'grass', label: 'Grama Grega', code: 1, colorHex: 0x587a43, swatch: '#587a43', landHeightDelta: 0.35, desc: 'Planície temperada padrão' },
+  { id: 'grass', label: 'Grama Grega (GreekGrass1)', code: 1, colorHex: 0x587a43, swatch: '#587a43', landHeightDelta: 0.35, desc: 'Planície temperada padrão' },
   { id: 'fertile', label: 'Vale Fértil', code: 5, colorHex: 0x3f7b3e, swatch: '#3f7b3e', landHeightDelta: 0.25, desc: 'Solo verdejante de rio ou oásis' },
-  { id: 'road', label: 'Estrada Imperial', code: 2, colorHex: 0x9b896a, swatch: '#9b896a', landHeightDelta: 0.3, desc: 'Calçamento de pedra e terra batida' },
-  { id: 'dirt', label: 'Terra Batida', code: 2, colorHex: 0x7d6546, swatch: '#7d6546', landHeightDelta: 0.35, desc: 'Solo seco de acampamento' },
-  { id: 'sand', label: 'Areia / Deserto', code: 3, colorHex: 0xc9ae74, swatch: '#c9ae74', landHeightDelta: 0.25, desc: 'Dunas e praias costeiras' },
-  { id: 'cliff_rock', label: 'Rocha / Colina', code: 4, colorHex: 0x756f68, swatch: '#756f68', landHeightDelta: 1.4, desc: 'Encosta rochosa elevada' },
-  { id: 'snow', label: 'Neve / Tundra', code: 6, colorHex: 0xdbe5ef, swatch: '#dbe5ef', landHeightDelta: 0.45, desc: 'Solo nevado nórdico' },
+  { id: 'marsh', label: 'Lama / Pântano (Marsh)', code: 5, colorHex: 0x4a5738, swatch: '#4a5738', landHeightDelta: 0.14, desc: 'Solo alagadiço de pântanos e brejos' },
+  { id: 'road', label: 'Estrada Grega (GreekRoad)', code: 2, colorHex: 0x9b896a, swatch: '#9b896a', landHeightDelta: 0.32, desc: 'Calçamento de pedra e terra batida' },
+  { id: 'olympus_marble', label: 'Mármore do Olimpo (OlympusMarble)', code: 11, colorHex: 0xe6dfd0, swatch: '#e6dfd0', landHeightDelta: 0.65, desc: 'Ladrilhos sagrados de mármore branco' },
+  { id: 'dirt', label: 'Terra Seca (EgyptianDirtA)', code: 2, colorHex: 0x8e704c, swatch: '#8e704c', landHeightDelta: 0.35, desc: 'Solo seco de acampamento / planície' },
+  { id: 'sand', label: 'Areia Egípcia (EgyptianSand)', code: 3, colorHex: 0xd4b678, swatch: '#d4b678', landHeightDelta: 0.28, desc: 'Dunas douradas e praias costeiras' },
+  { id: 'desert_dust', label: 'Poeira / Savana (DesertDust)', code: 3, colorHex: 0xc29e69, swatch: '#c29e69', landHeightDelta: 0.3, desc: 'Terra seca rachada e poeira árida' },
+  { id: 'cliff_rock', label: 'Rocha / Penhasco (NorseCliff)', code: 4, colorHex: 0x6b6f75, swatch: '#6b6f75', landHeightDelta: 1.5, desc: 'Encosta rochosa elevada' },
+  { id: 'egyptian_rock', label: 'Rocha Egípcia (EgyptianRock)', code: 4, colorHex: 0xa68256, swatch: '#a68256', landHeightDelta: 1.4, desc: 'Laje de arenito de cânion' },
+  { id: 'hades_ash', label: 'Cinzas Vulcânicas (HadesAsh)', code: 10, colorHex: 0x544f52, swatch: '#544f52', landHeightDelta: 0.38, desc: 'Cinzas vulcânicas do Tártaro e Submundo' },
+  { id: 'charred_dirt', label: 'Terra Carbonizada (CharredDirt)', code: 10, colorHex: 0x332b29, swatch: '#332b29', landHeightDelta: 0.32, desc: 'Solo queimado por vulcões e meteoros' },
+  { id: 'snow', label: 'Neve Nórdica (NorseSnow)', code: 6, colorHex: 0xdbe5ef, swatch: '#dbe5ef', landHeightDelta: 0.45, desc: 'Solo nevado nórdico' },
+  { id: 'ice', label: 'Gelo Glacial (Ice)', code: 6, colorHex: 0xaad4eb, swatch: '#aad4eb', landHeightDelta: 0.1, desc: 'Superfície de gelo e lagos congelados' },
   { id: 'forest_floor', label: 'Solo de Bosque', code: 7, colorHex: 0x3b522c, swatch: '#3b522c', landHeightDelta: 0.4, desc: 'Sub-bosque com folhas e musgo' },
   { id: 'shallow_water', label: 'Água Rasa (Retold)', code: 8, colorHex: 0x3898a8, swatch: '#3898a8', landHeightDelta: -0.45, desc: 'Transitável por tropas/navios e construtível' },
   { id: 'deep_water', label: 'Água Profunda', code: 0, colorHex: 0x165e82, swatch: '#165e82', landHeightDelta: -1.8, desc: 'Lagos, rios e oceanos navegáveis' },
-  { id: 'lava', label: 'Lava / Submundo', code: 9, colorHex: 0xd94814, swatch: '#d94814', landHeightDelta: -1.5, desc: 'Magma vulcânico de Érebo e Hades' },
+  { id: 'lava', label: 'Magma / HadesLava (Intransponível)', code: 9, colorHex: 0xd94814, swatch: '#d94814', landHeightDelta: -1.2, desc: 'Fluxo luminoso de lava (não navegável)' },
 ];
 
 export const CLIFF_STYLE_OPTIONS: { id: EditorCliffStyle; label: string; height: number; colorHex: number }[] = [
@@ -474,6 +493,19 @@ function buildScenarioObjectCatalog(): EditorObjectCatalogItem[] {
     { id: 'emb_market_stall', name: 'Barraca de Mercado', category: 'embellishment', pantheon: 'gaia', kindType: 'prop', propKind: 'market_stall' },
     { id: 'emb_sign', name: 'Placa de Sinalização', category: 'embellishment', pantheon: 'gaia', kindType: 'prop', propKind: 'sign' },
     { id: 'emb_dig_pile', name: 'Escavação / Pilha de Terra', category: 'embellishment', pantheon: 'egyptian', kindType: 'prop', propKind: 'dig_pile' },
+    // Layer 2A — 3D Rocks & Geological Formations (Decorative vs Blocking)
+    { id: 'rock_granite_small', name: 'Pedras de Granito (Rock Granite Small)', category: 'nature', pantheon: 'gaia', kindType: 'prop', rockKind: 'rock_granite_small', specialBadge: 'Decor' },
+    { id: 'rock_granite_large', name: 'Rochedo de Granito (Bloqueia)', category: 'nature', pantheon: 'gaia', kindType: 'prop', rockKind: 'rock_granite_large', specialBadge: 'Colisão' },
+    { id: 'rock_basalt_pillar', name: 'Pilar de Basalto Vulcânico', category: 'nature', pantheon: 'special', kindType: 'prop', rockKind: 'basalt_pillar', specialBadge: 'Colisão' },
+    { id: 'rock_stalagmite', name: 'Estalagmite do Submundo', category: 'nature', pantheon: 'special', kindType: 'prop', rockKind: 'underworld_stalagmite', specialBadge: 'Colisão' },
+    { id: 'rock_sandstone_mesa', name: 'Formação de Arenito Egípcia', category: 'nature', pantheon: 'egyptian', kindType: 'prop', rockKind: 'sandstone_mesa', specialBadge: 'Colisão' },
+    { id: 'rock_olympus_marble', name: 'Afloramento de Mármore do Olimpo', category: 'embellishment', pantheon: 'greek', kindType: 'prop', rockKind: 'olympus_marble_rock', specialBadge: 'Decor' },
+    // Layer 2B — Atmospheric FX & Particle Emitters
+    { id: 'fx_wind_dust', name: 'Emissor FX: Poeira ao Vento', category: 'embellishment', pantheon: 'special', kindType: 'prop', emitterKind: 'wind_dust', specialBadge: 'FX' },
+    { id: 'fx_volcanic_smoke', name: 'Emissor FX: Fumaça Vulcânica', category: 'embellishment', pantheon: 'special', kindType: 'prop', emitterKind: 'volcanic_smoke', specialBadge: 'FX' },
+    { id: 'fx_magma_sparks', name: 'Emissor FX: Faíscas de Magma', category: 'embellishment', pantheon: 'special', kindType: 'prop', emitterKind: 'magma_sparks', specialBadge: 'FX' },
+    { id: 'fx_low_mist', name: 'Emissor FX: Névoa Baixa', category: 'embellishment', pantheon: 'special', kindType: 'prop', emitterKind: 'low_mist', specialBadge: 'FX' },
+    { id: 'fx_sunbeams', name: 'Emissor FX: Raios de Luz (Sunbeams)', category: 'embellishment', pantheon: 'special', kindType: 'prop', emitterKind: 'sunbeams', specialBadge: 'FX' },
   ];
   items.push(...props);
 

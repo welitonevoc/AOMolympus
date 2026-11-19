@@ -1,5 +1,6 @@
 import totalWarXsRaw from './Total War I.xs?raw';
 import totalWarXmlRaw from './Total War I.xml?raw';
+import { RETOLD_TERRAIN_CATALOG } from '../textura/terreno/terrainCatalog';
 import { WorldSizeId } from './mapCatalog';
 import { RmsBuilderContext, RmsGeneratedMap } from './rmsEngine';
 
@@ -621,8 +622,25 @@ class XsEvaluator {
   private maxSteps = 50000;
 
   constructor(ctx: RmsBuilderContext) {
-    // Standard AoM / AoMR RMS Global Constants
+    // Standard AoM / AoMR RMS Global Constants + MythRMConstants (cTerrain*, cCliff*, cUnitRock*, cFx*)
     const globals = this.scopes[0];
+    for (const t of RETOLD_TERRAIN_CATALOG) {
+      globals.set(t.rmConstant, t.xsName);
+    }
+    globals.set('cCliffGreekMarble', 'GreekCliff');
+    globals.set('cCliffNorseGranite', 'NorseCliff');
+    globals.set('cCliffEgyptianSandstone', 'EgyptianCliff');
+    globals.set('cCliffIceGlacier', 'IceCliff');
+    globals.set('cCliffHadesObsidian', 'HadesCliff');
+    globals.set('cUnitRockGraniteSmall', 'Rock Granite Small');
+    globals.set('cUnitRockGraniteLarge', 'Rock Granite Large');
+    globals.set('cUnitBasaltPillar', 'Basalt Pillar');
+    globals.set('cUnitStalagmite', 'Stalagmite');
+    globals.set('cFxWindDust', 'FX Wind Dust');
+    globals.set('cFxVolcanicSmoke', 'FX Volcanic Smoke');
+    globals.set('cFxMagmaSparks', 'FX Magma Sparks');
+    globals.set('cFxLowMist', 'FX Low Mist');
+    globals.set('cFxSunbeams', 'FX Sunbeams');
     globals.set('cNumberNonGaiaPlayers', ctx.playerCount);
     globals.set('cNumberPlayers', ctx.playerCount + 1);
     globals.set('cMapSize', ctx.worldSize === 'normal' ? 0 : 1);
@@ -720,6 +738,10 @@ class XsEvaluator {
       rmAreaCreate: (name, parentId) => ctx.rmCreateArea(str(name), parentId !== undefined ? num(parentId) : undefined),
       rmSetAreaTerrainType: (id, t) => {
         ctx.rmSetAreaTerrainType(num(id), str(t));
+        return 0;
+      },
+      rmSetAreaCliffType: (id, cliffType) => {
+        ctx.rmSetAreaCliffType(num(id), str(cliffType));
         return 0;
       },
       rmSetAreaBaseHeight: (id, h) => {
@@ -1680,6 +1702,74 @@ export const RMS_SCRIPT_LIBRARY: RmsScriptTemplate[] = [
     recommendedPlayers: 8,
     xsCode: ARCHIPELAGO_6V6_RMS_XS,
     xmlCode: makeXml('Ilhas individuais conectadas por pontes costeiras a um continente central rico.', 'Arquipélago 6x6 RMS'),
+  },
+  {
+    id: 'magma_cliffs_rocks_rms',
+    name: 'Fissura de Magma & Penhascos (.xs)',
+    subtitle: 'Demonstra as 4 camadas: EgyptianDirtA, rio de HadesLava intransponível, NorseCliff, Rock Granite Small e emissores FX',
+    sourceLabel: 'Camadas AoMR',
+    recommendedPlayers: 2,
+    xsCode: `// Fissura de Magma, Penhascos e Rochas — AoM: Retold 4-Layer Terrain Script (.xs)
+void main(void) {
+    // Define o tamanho do mapa (em tiles)
+    rmSetMapSize(300, 300);
+
+    // 1. Preenche o mapa base com poeira/terra seca
+    rmTerrainInitialize("EgyptianDirtA", 1.5);
+
+    // Posiciona jogadores em anel seguro ao redor da fissura
+    rmPlacePlayersCircular(0.36, 0.36, 0.0);
+
+    // 2. Cria uma área central de magma/lava intransponível
+    int lavaID = rmCreateArea("rio_de_magma");
+    rmSetAreaSize(lavaID, 0.15, 0.20);
+    rmSetAreaLocation(lavaID, 0.5, 0.5);
+    rmSetAreaTerrainType(lavaID, "HadesLava");
+    rmSetAreaBaseHeight(lavaID, -1.2);
+    rmBuildArea(lavaID);
+
+    // 3. Cria penhascos rochosos elevados (NorseCliff + HadesCliff)
+    int cliffID = rmCreateArea("montanha_rochosa");
+    rmSetAreaSize(cliffID, 0.10, 0.12);
+    rmSetAreaLocation(cliffID, 0.25, 0.75);
+    rmSetAreaCliffType(cliffID, "NorseCliff");
+    rmSetAreaBaseHeight(cliffID, 4.0);
+    rmBuildArea(cliffID);
+
+    int cliff2ID = rmCreateArea("escarpa_hades");
+    rmSetAreaSize(cliff2ID, 0.08, 0.11);
+    rmSetAreaLocation(cliff2ID, 0.75, 0.25);
+    rmSetAreaCliffType(cliff2ID, "HadesCliff");
+    rmSetAreaBaseHeight(cliff2ID, 4.2);
+    rmBuildArea(cliff2ID);
+
+    // 4. Espalha rochas decorativas (sem colisão), pilares bloqueadores e emissores FX
+    int rockObjID = rmCreateObjectDef("rochas_decorativas");
+    rmAddObjectDefItem(rockObjID, "Rock Granite Small", 5, 4.0);
+    rmPlaceObjectDefAtLoc(rockObjID, 0, 0.3, 0.3, 10);
+
+    int basaltID = rmCreateObjectDef("pilares_basalto");
+    rmAddObjectDefItem(basaltID, "Basalt Pillar", 2, 3.0);
+    rmAddObjectDefItem(basaltID, "Stalagmite", 2, 3.5);
+    rmPlaceObjectDefAtLoc(basaltID, 0, 0.5, 0.5, 6);
+
+    int fxID = rmCreateObjectDef("emissores_vulcanicos");
+    rmAddObjectDefItem(fxID, "FX Magma Sparks", 2, 4.0);
+    rmAddObjectDefItem(fxID, "FX Volcanic Smoke", 2, 4.5);
+    rmPlaceObjectDefAtLoc(fxID, 0, 0.5, 0.5, 4);
+
+    // Recursos estratégicos próximos aos jogadores
+    int goldID = rmCreateObjectDef("ouro_inicial");
+    rmAddObjectDefItem(goldID, "Gold Mine Large", 1, 2.0);
+    rmSetObjectDefMinDistance(goldID, 12.0);
+    rmSetObjectDefMaxDistance(goldID, 20.0);
+    rmPlaceObjectDefPerPlayer(goldID, false, 2);
+
+    rmCreateTrigger("IntroMagma");
+    rmAddTriggerEffect("Send Chat");
+    rmSetTriggerEffectParam("Message", "Fissura de Magma & Penhascos — Domine as encostas rochosas e evite o rio de HadesLava!");
+}`,
+    xmlCode: makeXml('Terreno árido cortado por rio de HadesLava, penhascos NorseCliff, rochas 3D e partículas vulcânicas.', 'Fissura de Magma RMS'),
   },
 ];
 

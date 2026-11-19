@@ -1,50 +1,9 @@
 import * as THREE from 'three';
+export { createTerrainTexture } from '../textura/terreno';
 
 function hash2d(x: number, y: number): number {
   const n = Math.sin(x * 127.1 + y * 311.7) * 43758.5453123;
   return n - Math.floor(n);
-}
-
-export function createTerrainTexture(
-  maxAnisotropy: number,
-  baseColor = '#4e6b3b',
-  patchA = 'rgba(98, 128, 62, 0.22)',
-  patchB = 'rgba(56, 82, 42, 0.22)'
-): THREE.CanvasTexture {
-  const size = 512;
-  const canvas = document.createElement('canvas');
-  canvas.width = size;
-  canvas.height = size;
-  const ctx = canvas.getContext('2d')!;
-
-  ctx.fillStyle = baseColor;
-  ctx.fillRect(0, 0, size, size);
-
-  // Organic biome mottling and subtle stone flecks
-  for (let i = 0; i < 6500; i++) {
-    const x = hash2d(i, 1) * size;
-    const y = hash2d(i, 2) * size;
-    const r = 2 + hash2d(i, 3) * 10;
-    const pick = hash2d(i, 4);
-    if (pick < 0.45) {
-      ctx.fillStyle = patchA;
-    } else if (pick < 0.8) {
-      ctx.fillStyle = patchB;
-    } else {
-      ctx.fillStyle = 'rgba(138, 125, 88, 0.14)';
-    }
-    ctx.beginPath();
-    ctx.arc(x, y, r, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  const tex = new THREE.CanvasTexture(canvas);
-  tex.wrapS = THREE.RepeatWrapping;
-  tex.wrapT = THREE.RepeatWrapping;
-  tex.repeat.set(14, 14);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  tex.anisotropy = maxAnisotropy;
-  return tex;
 }
 
 export function createMarbleTexture(maxAnisotropy: number): THREE.CanvasTexture {

@@ -113,7 +113,9 @@ const TERRAIN_CODE_COLORS: Record<number, THREE.Color> = {
   6: new THREE.Color(0xdbe5ef), // Snow
   7: new THREE.Color(0x3b522c), // Forest Floor
   8: new THREE.Color(0x3ea4b3), // Shallow Water (Retold)
-  9: new THREE.Color(0xd94814), // Lava
+  9: new THREE.Color(0xd94814), // Lava / HadesLava
+  10: new THREE.Color(0x4a4447), // HadesAsh / CharredDirt
+  11: new THREE.Color(0xe6dfd0), // OlympusMarble
 };
 
 function makeSkyGradientTexture(topHex: string, horizonHex: string): THREE.CanvasTexture {
@@ -1130,6 +1132,8 @@ export const ScenarioEditor: React.FC<ScenarioEditorProps> = ({ onClose, onStart
       faunaKind: item.faunaKind,
       resourceKind: item.resourceKind,
       propKind: item.propKind,
+      rockKind: item.rockKind,
+      emitterKind: item.emitterKind,
       playerSlot: slot,
       x: snapX,
       z: snapZ,

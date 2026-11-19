@@ -1,4 +1,6 @@
 import { FaunaKind } from '../game/types';
+import { AtmosphericEmitterKind, TerrainRockKind } from '../textura/terreno/terrainObjectsAndFx';
+import { resolveRetoldTerrain } from '../textura/terreno/terrainCatalog';
 import { getWorldSizeSpec, MapBiomeKind, WorldSizeId } from './mapCatalog';
 
 export type RmsTerrainCode =
@@ -89,11 +91,15 @@ export interface RmsPlacedObject {
     | 'fish'
     | 'marine_decor'
     | 'vault'
+    | 'rock'
+    | 'fx_emitter'
     | 'decor';
   x: number;
   z: number;
   playerSlot: number; // 0 = gaia/neutral, 1..12 = player
   faunaKind?: FaunaKind;
+  rockKind?: TerrainRockKind;
+  emitterKind?: AtmosphericEmitterKind;
   subLabel?: string;
   amount?: number;
 }
@@ -192,6 +198,17 @@ function createMulberry32(seed: number): () => number {
 }
 
 function classifyTerrainName(name: string): { code: RmsTerrainCode; biomeHint?: MapBiomeKind } {
+  const retold = resolveRetoldTerrain(name);
+  if (retold) {
+    const clampedCode = (retold.terrainCode === 8
+      ? 3
+      : retold.terrainCode === 9 || retold.terrainCode === 10
+      ? 4
+      : retold.terrainCode === 11
+      ? 2
+      : Math.max(0, Math.min(7, retold.terrainCode))) as RmsTerrainCode;
+    return { code: clampedCode, biomeHint: retold.biomeHint };
+  }
   const n = name.toLowerCase();
   if (n.includes('water') || n.includes('sea') || n.includes('ocean') || n.includes('river')) {
     return { code: 0 };
@@ -205,7 +222,7 @@ function classifyTerrainName(name: string): { code: RmsTerrainCode; biomeHint?: 
   if (n.includes('sand') || n.includes('dune') || n.includes('egypt') || n.includes('desert') || n.includes('savannah')) {
     return { code: 3, biomeHint: n.includes('savannah') ? 'savannah' : 'desert' };
   }
-  if (n.includes('hades') || n.includes('lava') || n.includes('erebus') || n.includes('ash')) {
+  if (n.includes('hades') || n.includes('lava') || n.includes('erebus') || n.includes('ash') || n.includes('charred')) {
     return { code: 4, biomeHint: 'volcanic' };
   }
   if (n.includes('jungle') || n.includes('marsh') || n.includes('swamp')) {
@@ -226,6 +243,8 @@ function classifyTerrainName(name: string): { code: RmsTerrainCode; biomeHint?: 
 function mapProtoToEntity(proto: string): {
   category: RmsPlacedObject['category'];
   faunaKind?: FaunaKind;
+  rockKind?: TerrainRockKind;
+  emitterKind?: AtmosphericEmitterKind;
   subLabel?: string;
   amount?: number;
 } {
@@ -270,6 +289,19 @@ function mapProtoToEntity(proto: string): {
   if (p.includes('tree') || p.includes('pine') || p.includes('oak') || p.includes('palm') || p.includes('forest') || p.includes('acacia')) {
     return { category: 'tree' };
   }
+  if (p.includes('fx ') || p.includes('emitter')) {
+    if (p.includes('magma') || p.includes('spark')) return { category: 'fx_emitter', emitterKind: 'magma_sparks' };
+    if (p.includes('smoke') || p.includes('volcan')) return { category: 'fx_emitter', emitterKind: 'volcanic_smoke' };
+    if (p.includes('mist') || p.includes('fog')) return { category: 'fx_emitter', emitterKind: 'low_mist' };
+    if (p.includes('sun') || p.includes('beam') || p.includes('ray')) return { category: 'fx_emitter', emitterKind: 'sunbeams' };
+    return { category: 'fx_emitter', emitterKind: 'wind_dust' };
+  }
+  if (p.includes('stalagmite')) return { category: 'rock', rockKind: 'underworld_stalagmite' };
+  if (p.includes('basalt')) return { category: 'rock', rockKind: 'basalt_pillar' };
+  if (p.includes('marble') && (p.includes('rock') || p.includes('outcrop'))) return { category: 'rock', rockKind: 'olympus_marble_rock' };
+  if (p.includes('egyptian rock') || p.includes('sandstone')) return { category: 'rock', rockKind: 'sandstone_mesa' };
+  if (p.includes('rock') && p.includes('small')) return { category: 'rock', rockKind: 'rock_granite_small' };
+  if (p.includes('rock') || p.includes('boulder')) return { category: 'rock', rockKind: 'rock_granite_large' };
   if (p.includes('hawk') || p.includes('vulture') || p.includes('raven') || p.includes('gull') || p.includes('bird')) {
     return { category: 'decor' };
   }
@@ -649,6 +681,19 @@ export class RmsBuilderContext {
     a.terrainName = terrainName;
     const info = classifyTerrainName(terrainName);
     a.terrainCode = info.code;
+    if (!this.biomeLockedBySea && info.biomeHint && a.minSizeFrac >= 0.12) {
+      this.biome = info.biomeHint;
+    }
+  }
+
+  public rmSetAreaCliffType(areaId: number, cliffType: string) {
+    const a = this.areas.get(areaId);
+    if (!a) return;
+    a.terrainName = cliffType;
+    a.terrainCode = 4;
+    a.coherence = Math.max(a.coherence, 0.82);
+    a.baseHeight = Math.max(a.baseHeight, 3.2);
+    const info = classifyTerrainName(cliffType);
     if (!this.biomeLockedBySea && info.biomeHint && a.minSizeFrac >= 0.12) {
       this.biome = info.biomeHint;
     }
@@ -1096,6 +1141,8 @@ export class RmsBuilderContext {
           z: wz,
           playerSlot,
           faunaKind: mapped.faunaKind,
+          rockKind: mapped.rockKind,
+          emitterKind: mapped.emitterKind,
           subLabel: mapped.subLabel,
           amount: mapped.amount,
         });
