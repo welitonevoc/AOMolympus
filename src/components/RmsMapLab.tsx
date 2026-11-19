@@ -7,10 +7,13 @@ import {
   Download,
   FileCode2,
   Layers,
+  Paintbrush,
   Play,
   RotateCcw,
   ShieldCheck,
   Shuffle,
+  Trash2,
+  Undo2,
   Upload,
   Wrench,
 } from 'lucide-react';
@@ -29,7 +32,7 @@ import {
   RmsGeneratedMap,
   RmsTerrainCode,
   WORLD_SIZE_SPECS,
-} from '../textura/maps';
+} from '../maps';
 
 interface RmsMapLabProps {
   defaultPantheon?: PantheonId;
@@ -46,6 +49,25 @@ interface RmsMapLabProps {
 }
 
 type WorkbenchTab = 'xs' | 'xml' | 'audit';
+type BrushToolId = 'raise' | 'water' | 'road' | 'gold' | 'forest' | 'settlement' | 'fauna' | 'relic';
+
+interface VisualBrushStroke {
+  tool: BrushToolId;
+  u: number;
+  v: number;
+  radiusFrac: number;
+}
+
+const BRUSH_TOOLS: { id: BrushToolId; label: string; color: string; isObject: boolean }[] = [
+  { id: 'raise', label: 'Elevar', color: '#a8a29e', isObject: false },
+  { id: 'water', label: 'Água', color: '#38bdf8', isObject: false },
+  { id: 'road', label: 'Estrada', color: '#d4af37', isObject: false },
+  { id: 'forest', label: 'Bosque', color: '#22c55e', isObject: false },
+  { id: 'gold', label: 'Ouro', color: '#facc15', isObject: true },
+  { id: 'settlement', label: 'Assent.', color: '#e2e8f0', isObject: true },
+  { id: 'fauna', label: 'Fauna', color: '#fb923c', isObject: true },
+  { id: 'relic', label: 'Relíquia', color: '#c084fc', isObject: true },
+];
 
 const PREVIEW_RES = 512;
 
@@ -183,6 +205,11 @@ export function RmsMapLab({
   const [showAreas, setShowAreas] = useState<boolean>(true);
   const [showObjects, setShowObjects] = useState<boolean>(true);
   const [showGrid, setShowGrid] = useState<boolean>(false);
+  const [brushMode, setBrushMode] = useState<boolean>(false);
+  const [brushTool, setBrushTool] = useState<BrushToolId>('raise');
+  const [brushRadius, setBrushRadius] = useState<number>(0.075);
+  const [brushStrokes, setBrushStrokes] = useState<VisualBrushStroke[]>([]);
+  const [isPainting, setIsPainting] = useState<boolean>(false);
   const [hoverText, setHoverText] = useState<string>('Passe o cursor no mapa para inspecionar altitude, terreno e objetos.');
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -429,7 +456,27 @@ export function RmsMapLab({
       ctx.textBaseline = 'middle';
       ctx.fillText(`P${pl.slot}`, p.x, p.y + 0.5);
     }
-  }, [map, showAreas, showObjects, showGrid]);
+
+    // Visual Brush preview strokes overlay
+    if (brushStrokes.length > 0) {
+      ctx.save();
+      for (const st of brushStrokes) {
+        const meta = BRUSH_TOOLS.find((t) => t.id === st.tool);
+        if (!meta) continue;
+        const cx = st.u * PREVIEW_RES;
+        const cy = st.v * PREVIEW_RES;
+        const rad = meta.isObject ? 7 : Math.max(8, st.radiusFrac * PREVIEW_RES * 0.65);
+        ctx.beginPath();
+        ctx.arc(cx, cy, rad, 0, Math.PI * 2);
+        ctx.fillStyle = `${meta.color}55`;
+        ctx.fill();
+        ctx.strokeStyle = meta.color;
+        ctx.lineWidth = 1.8;
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+  }, [map, showAreas, showObjects, showGrid, brushStrokes]);
 
   const handleSelectTemplate = (tplId: string) => {
     const tpl = RMS_SCRIPT_LIBRARY.find((t) => t.id === tplId);
@@ -499,7 +546,80 @@ export function RmsMapLab({
     URL.revokeObjectURL(url);
   };
 
+  const recordBrushAtEvent = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const u = Math.max(0.05, Math.min(0.95, (e.clientX - rect.left) / rect.width));
+    const v = Math.max(0.05, Math.min(0.95, (e.clientY - rect.top) / rect.height));
+    setBrushStrokes((prev) => {
+      const last = prev[prev.length - 1];
+      if (last && last.tool === brushTool && Math.hypot(last.u - u, last.v - v) < 0.045) {
+        return prev;
+      }
+      return [...prev.slice(-47), { tool: brushTool, u, v, radiusFrac: brushRadius }];
+    });
+  };
+
+  const handleApplyBrushToXs = () => {
+    if (brushStrokes.length === 0) return;
+    soundEngine.playSelect();
+    const lines: string[] = [
+      '  // === PINTURA VISUAL RMS ===',
+    ];
+    brushStrokes.forEach((st, idx) => {
+      const fx = st.u.toFixed(3);
+      const fz = st.v.toFixed(3);
+      const size = Math.max(0.008, st.radiusFrac * st.radiusFrac * 2.2).toFixed(4);
+      if (st.tool === 'raise' || st.tool === 'water' || st.tool === 'road' || st.tool === 'forest') {
+        const terrain =
+          st.tool === 'water'
+            ? 'GreekWater'
+            : st.tool === 'road'
+            ? 'GreekRoadA'
+            : st.tool === 'forest'
+            ? 'ForestFloorPine'
+            : 'GreekCliffA';
+        const elev = st.tool === 'water' ? '-2.2' : st.tool === 'raise' ? '3.4' : '1.2';
+        lines.push(`  int brushArea${idx} = rmCreateArea("brush_${st.tool}_${idx}");`);
+        lines.push(`  rmSetAreaLocation(brushArea${idx}, ${fx}, ${fz});`);
+        lines.push(`  rmSetAreaSize(brushArea${idx}, ${size}, ${size});`);
+        lines.push(`  rmSetAreaTerrainType(brushArea${idx}, "${terrain}");`);
+        lines.push(`  rmSetAreaBaseHeight(brushArea${idx}, ${elev});`);
+        lines.push(`  rmBuildArea(brushArea${idx});`);
+      } else {
+        const proto =
+          st.tool === 'gold'
+            ? 'Gold Mine'
+            : st.tool === 'settlement'
+            ? 'Settlement'
+            : st.tool === 'relic'
+            ? 'Relic'
+            : 'Deer';
+        const count = st.tool === 'fauna' ? 4 : 1;
+        lines.push(`  int brushObj${idx} = rmCreateObjectDef("brush_obj_${idx}");`);
+        lines.push(`  rmAddObjectDefItem(brushObj${idx}, "${proto}", ${count}, 2.0);`);
+        lines.push(`  rmPlaceObjectDefAtLoc(brushObj${idx}, 0, ${fx}, ${fz}, 1);`);
+      }
+    });
+    lines.push('  // === FIM PINTURA VISUAL ===');
+    const block = `\n${lines.join('\n')}\n`;
+
+    const stripRegex = /\n?\s*\/\/ === PINTURA VISUAL RMS ===[\s\S]*?\/\/ === FIM PINTURA VISUAL ===\n?/g;
+    const cleaned = xsDraft.replace(stripRegex, '\n');
+    const lastBrace = cleaned.lastIndexOf('}');
+    const nextXs =
+      lastBrace >= 0
+        ? `${cleaned.slice(0, lastBrace)}${block}${cleaned.slice(lastBrace)}`
+        : `${cleaned}${block}`;
+
+    setXsDraft(nextXs);
+    setCommittedXs(nextXs);
+    setBrushStrokes([]);
+  };
+
   const handleCanvasMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (brushMode && isPainting) {
+      recordBrushAtEvent(e);
+    }
     const rect = e.currentTarget.getBoundingClientRect();
     const u = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
     const v = Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height));
@@ -687,19 +807,112 @@ export function RmsMapLab({
               >
                 Grade
               </button>
+              <button
+                type="button"
+                onClick={() => {
+                  soundEngine.playSelect();
+                  setBrushMode((v) => !v);
+                }}
+                className={`flex items-center gap-1 rounded border px-2 py-0.5 font-semibold transition-colors cursor-pointer ${
+                  brushMode
+                    ? 'border-[#facc15] bg-[#d4af37] text-[#0b0e14]'
+                    : 'border-[#d4af37]/40 bg-[#171f30] text-[#f3d27a] hover:bg-[#222d44]'
+                }`}
+              >
+                <Paintbrush className="h-3 w-3" />
+                <span>Pincel</span>
+              </button>
             </div>
           </div>
+
+          {brushMode && (
+            <div className="flex flex-col gap-1.5 rounded-md border border-[#d4af37]/35 bg-[#111827] p-2">
+              <div className="flex flex-wrap items-center gap-1">
+                {BRUSH_TOOLS.map((t) => (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => setBrushTool(t.id)}
+                    className={`flex items-center gap-1 rounded border px-2 py-0.5 text-[10px] font-semibold cursor-pointer ${
+                      brushTool === t.id
+                        ? 'border-[#facc15] bg-[#2a3346] text-white'
+                        : 'border-white/10 bg-[#0d1320] text-[#cbd5e1] hover:border-white/25'
+                    }`}
+                  >
+                    <span className="h-2 w-2 rounded-full" style={{ backgroundColor: t.color }} />
+                    <span>{t.label}</span>
+                  </button>
+                ))}
+              </div>
+              <div className="flex flex-wrap items-center justify-between gap-2 text-[10px]">
+                <div className="flex items-center gap-1 text-[#94a3b8]">
+                  <span>Raio:</span>
+                  {[
+                    { label: 'P', val: 0.045 },
+                    { label: 'M', val: 0.075 },
+                    { label: 'G', val: 0.115 },
+                  ].map((r) => (
+                    <button
+                      key={r.label}
+                      type="button"
+                      onClick={() => setBrushRadius(r.val)}
+                      className={`rounded px-1.5 py-0.5 font-bold cursor-pointer ${
+                        brushRadius === r.val ? 'bg-[#d4af37] text-[#0b0e14]' : 'bg-white/10 text-[#cbd5e1]'
+                      }`}
+                    >
+                      {r.label}
+                    </button>
+                  ))}
+                </div>
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    disabled={brushStrokes.length === 0}
+                    onClick={() => setBrushStrokes((s) => s.slice(0, -1))}
+                    className="flex items-center gap-1 rounded border border-white/15 bg-white/5 px-1.5 py-0.5 text-[#cbd5e1] disabled:opacity-40 cursor-pointer"
+                    title="Desfazer último traço"
+                  >
+                    <Undo2 className="h-3 w-3" />
+                  </button>
+                  <button
+                    type="button"
+                    disabled={brushStrokes.length === 0}
+                    onClick={() => setBrushStrokes([])}
+                    className="flex items-center gap-1 rounded border border-white/15 bg-white/5 px-1.5 py-0.5 text-[#cbd5e1] disabled:opacity-40 cursor-pointer"
+                    title="Limpar traços"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </button>
+                  <button
+                    type="button"
+                    disabled={brushStrokes.length === 0}
+                    onClick={handleApplyBrushToXs}
+                    className="rounded border border-[#f5d77f] bg-[#d4af37] px-2 py-0.5 font-bold text-[#0b0e14] disabled:opacity-40 cursor-pointer"
+                  >
+                    Gerar Código .xs ({brushStrokes.length})
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="relative mx-auto w-full max-w-[440px] aspect-square overflow-hidden rounded-md border border-[#d4af37]/30 bg-[#070b13]">
             <canvas
               ref={canvasRef}
               width={PREVIEW_RES}
               height={PREVIEW_RES}
+              onMouseDown={(e) => {
+                if (!brushMode) return;
+                setIsPainting(true);
+                recordBrushAtEvent(e);
+              }}
+              onMouseUp={() => setIsPainting(false)}
               onMouseMove={handleCanvasMove}
-              onMouseLeave={() =>
-                setHoverText('Passe o cursor no mapa para inspecionar altitude, terreno e objetos.')
-              }
-              className="h-full w-full block cursor-crosshair"
+              onMouseLeave={() => {
+                setIsPainting(false);
+                setHoverText('Passe o cursor no mapa para inspecionar altitude, terreno e objetos.');
+              }}
+              className={`h-full w-full block ${brushMode ? 'cursor-cell' : 'cursor-crosshair'}`}
             />
           </div>
 

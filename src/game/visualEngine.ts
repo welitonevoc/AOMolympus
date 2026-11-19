@@ -3,8 +3,8 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
-import { MapId } from './types';
-import { resolveEffectiveMapId } from '../textura/maps';
+import { MapId, WorldSizeId } from './types';
+import { getWorldSizeSpec, resolveEffectiveMapId } from '../maps';
 
 const _v3A = new THREE.Vector3();
 const _v3B = new THREE.Vector3();
@@ -58,6 +58,19 @@ export interface FloatingPopupEntry {
   age: number;
   lifetime: number;
   vy: number;
+}
+
+export interface BuildingDebrisEntry {
+  mesh: THREE.Mesh;
+  vx: number;
+  vy: number;
+  vz: number;
+  rx: number;
+  ry: number;
+  rz: number;
+  groundY: number;
+  age: number;
+  lifetime: number;
 }
 
 export function createTerrainNormalTexture(maxAniso: number): THREE.CanvasTexture {
@@ -268,6 +281,170 @@ export function attachWindSwayShader(
   return { uTime };
 }
 
+/**
+ * Upgrades the terrain MeshStandardMaterial with multi-texture procedural PBR
+ * detail splatting (micro grass/sand grain, cliff strata on steep slopes, wet
+ * shoreline darkening, and animated lapping coastal foam near waterY).
+ */
+export function upgradeTerrainMaterial(
+  mat: THREE.MeshStandardMaterial,
+  mapId: MapId,
+  waterY = -0.68
+): { uniforms: { uTime: { value: number }; uWaterY: { value: number }; uIsLava: { value: number } } } {
+  const effId = resolveEffectiveMapId(mapId);
+  const uniforms = {
+    uTime: { value: 0 },
+    uWaterY: { value: waterY },
+    uIsLava: { value: effId === 'erebus' ? 1.0 : 0.0 },
+  };
+
+  mat.onBeforeCompile = (shader) => {
+    shader.uniforms.uTime = uniforms.uTime;
+    shader.uniforms.uWaterY = uniforms.uWaterY;
+    shader.uniforms.uIsLava = uniforms.uIsLava;
+
+    shader.vertexShader =
+      `
+      varying vec3 vTerrainWorldPos;
+      varying vec3 vTerrainWorldNorm;
+      ` +
+      shader.vertexShader.replace(
+        '#include <begin_vertex>',
+        `
+        #include <begin_vertex>
+        vTerrainWorldPos = (modelMatrix * vec4(transformed, 1.0)).xyz;
+        vTerrainWorldNorm = normalize(mat3(modelMatrix) * objectNormal);
+        `
+      );
+
+    shader.fragmentShader =
+      `
+      uniform float uTime;
+      uniform float uWaterY;
+      uniform float uIsLava;
+      varying vec3 vTerrainWorldPos;
+      varying vec3 vTerrainWorldNorm;
+      ` +
+      shader.fragmentShader.replace(
+        '#include <color_fragment>',
+        `
+        #include <color_fragment>
+        // 1. Multi-scale procedural micro-detail splatting (breaks tiling on large worlds)
+        float microA = sin(vTerrainWorldPos.x * 2.4 + cos(vTerrainWorldPos.z * 2.1)) * 0.5 + 0.5;
+        float microB = cos(vTerrainWorldPos.x * 5.7 - vTerrainWorldPos.z * 5.3) * 0.5 + 0.5;
+        float macroVar = sin(vTerrainWorldPos.x * 0.19) * cos(vTerrainWorldPos.z * 0.21);
+        diffuseColor.rgb *= (0.93 + microA * 0.08 + microB * 0.05 + macroVar * 0.04);
+
+        // 2. Rock strata banding on steep cliffs
+        float cliffFactor = smoothstep(0.10, 0.34, 1.0 - clamp(vTerrainWorldNorm.y, 0.0, 1.0));
+        float strata = sin(vTerrainWorldPos.y * 9.0 + vTerrainWorldPos.x * 0.45) * 0.5 + 0.5;
+        vec3 rockTint = mix(vec3(0.32, 0.30, 0.28), vec3(0.56, 0.53, 0.48), strata);
+        diffuseColor.rgb = mix(diffuseColor.rgb, rockTint, cliffFactor * 0.55);
+
+        // 3. Wet darkened beach band & animated shoreline coastal foam
+        float heightAboveWater = vTerrainWorldPos.y - uWaterY;
+        float wetBand = 1.0 - smoothstep(-0.08, 0.42, heightAboveWater);
+        diffuseColor.rgb *= mix(1.0, 0.72, wetBand * (1.0 - uIsLava * 0.6));
+
+        float wavePush = sin(uTime * 2.1 + vTerrainWorldPos.x * 0.42 + vTerrainWorldPos.z * 0.37) * 0.07;
+        float foamDist = abs(heightAboveWater - (0.04 + wavePush));
+        float foamMask = (1.0 - smoothstep(0.0, 0.13, foamDist)) * smoothstep(-0.22, -0.02, heightAboveWater);
+        float foamBreakup = smoothstep(0.25, 0.78, sin(vTerrainWorldPos.x * 1.9 + uTime * 1.1) * cos(vTerrainWorldPos.z * 1.8 - uTime * 0.9) * 0.5 + 0.5);
+        vec3 shoreAccent = mix(vec3(0.88, 0.95, 0.98), vec3(1.0, 0.42, 0.12), uIsLava);
+        diffuseColor.rgb = mix(diffuseColor.rgb, shoreAccent, foamMask * (0.45 + 0.45 * foamBreakup));
+        `
+      );
+  };
+  mat.customProgramCacheKey = () => `aom-terrain-splat-v1-${effId}`;
+  mat.needsUpdate = true;
+  return { uniforms };
+}
+
+/**
+ * Builds a single GPU-instanced biome ground foliage / shrub / stone tuft layer
+ * so Normal, Large and Giant (264x264) maps stay lush at 60 FPS with 1 draw call.
+ */
+export function buildInstancedGroundDecor(
+  mapId: MapId,
+  worldSize: WorldSizeId,
+  groundHeightFn: (x: number, z: number) => number,
+  isSoftwareGl: boolean
+): THREE.InstancedMesh {
+  const spec = getWorldSizeSpec(worldSize);
+  const effId = resolveEffectiveMapId(mapId);
+  const isSnow = effId === 'tundra' || effId === 'ghost_lake' || effId === 'jotunheim';
+  const isDesert = effId === 'nile' || effId === 'oasis' || effId === 'valley_of_the_kings' || effId === 'savannah';
+  const isLava = effId === 'erebus';
+
+  const geo = isSnow || isLava
+    ? new THREE.DodecahedronGeometry(0.26, 0)
+    : new THREE.ConeGeometry(0.22, 0.55, 5);
+  geo.translate(0, 0.22, 0);
+
+  const mat = new THREE.MeshStandardMaterial({
+    color: 0xffffff,
+    roughness: 0.92,
+    metalness: 0.02,
+  });
+
+  const targetCount = isSoftwareGl
+    ? 140
+    : worldSize === 'giant'
+    ? 680
+    : worldSize === 'large'
+    ? 480
+    : 320;
+
+  const mesh = new THREE.InstancedMesh(geo, mat, targetCount);
+  mesh.receiveShadow = false;
+  mesh.castShadow = false;
+  mesh.frustumCulled = false;
+
+  const baseHex = isLava
+    ? 0x44312d
+    : isSnow
+    ? 0xcbd5e1
+    : isDesert
+    ? 0x8d8d3b
+    : 0x3f7036;
+  const altHex = isLava
+    ? 0x6b3a24
+    : isSnow
+    ? 0x94a3b8
+    : isDesert
+    ? 0xb0904c
+    : 0x568844;
+
+  let seed = 1337 + effId.length * 97;
+  const nextRand = () => {
+    seed = (seed * 1664525 + 1013904223) >>> 0;
+    return seed / 4294967296;
+  };
+
+  let placed = 0;
+  const limit = spec.playableHalfSize * 0.94;
+  for (let attempt = 0; attempt < targetCount * 3 && placed < targetCount; attempt++) {
+    const x = (nextRand() * 2 - 1) * limit;
+    const z = (nextRand() * 2 - 1) * limit;
+    const y = groundHeightFn(x, z);
+    if (y < 0.14 || y > 2.2) continue;
+    const sc = 0.65 + nextRand() * 0.95;
+    _v3A.set(x, y - 0.04, z);
+    _euler.set((nextRand() - 0.5) * 0.25, nextRand() * Math.PI * 2, (nextRand() - 0.5) * 0.25);
+    _quat.setFromEuler(_euler);
+    _scale.set(sc, sc * (0.75 + nextRand() * 0.6), sc);
+    _mat4.compose(_v3A, _quat, _scale);
+    mesh.setMatrixAt(placed, _mat4);
+    mesh.setColorAt(placed, _color.setHex(nextRand() > 0.5 ? baseHex : altHex));
+    placed++;
+  }
+
+  mesh.count = placed;
+  mesh.instanceMatrix.needsUpdate = true;
+  if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+  return mesh;
+}
+
 export class VisualEffectsManager {
   private scene: THREE.Scene;
   private isSoftwareGl: boolean;
@@ -317,6 +494,13 @@ export class VisualEffectsManager {
   private scaffoldWoodMat: THREE.MeshStandardMaterial;
   private scaffoldPoleGeo: THREE.CylinderGeometry;
   private scaffoldBeamGeo: THREE.BoxGeometry;
+
+  // Physical collapsing building debris chunks
+  private debrisChunks: BuildingDebrisEntry[] = [];
+  private debrisGeo: THREE.BoxGeometry;
+  private debrisStoneMat: THREE.MeshStandardMaterial;
+  private debrisTimberMat: THREE.MeshStandardMaterial;
+  private damageSmokeTimer = 0;
 
   constructor(
     scene: THREE.Scene,
@@ -437,6 +621,11 @@ export class VisualEffectsManager {
     });
     this.scaffoldPoleGeo = new THREE.CylinderGeometry(0.08, 0.1, 1, 6);
     this.scaffoldBeamGeo = new THREE.BoxGeometry(1, 0.09, 0.09);
+
+    // 7. Demolition debris shared geometry & materials
+    this.debrisGeo = new THREE.BoxGeometry(0.45, 0.34, 0.42);
+    this.debrisStoneMat = new THREE.MeshStandardMaterial({ color: 0x8f887a, roughness: 0.92, metalness: 0.05 });
+    this.debrisTimberMat = new THREE.MeshStandardMaterial({ color: 0x6b4423, roughness: 0.9, metalness: 0.02 });
 
     this.rebuildBiomeMotes('mediterranean');
   }
@@ -858,6 +1047,113 @@ export class VisualEffectsManager {
     }
   }
 
+  /**
+   * Emits progressive dark smoke (< 65% HP) and flickering fire embers (< 40% HP)
+   * on damaged constructed buildings.
+   */
+  public syncBuildingDamageEffects(
+    buildings: Iterable<{ mesh: THREE.Group; hp: number; maxHp: number; isConstructed: boolean; radius: number; kind: string }>,
+    dt: number
+  ) {
+    this.damageSmokeTimer += dt;
+    if (this.damageSmokeTimer < 0.22) return;
+    this.damageSmokeTimer = 0;
+
+    for (const b of buildings) {
+      if (!b.isConstructed || b.kind === 'farm') continue;
+      const ratio = b.hp / Math.max(1, b.maxHp);
+      if (ratio >= 0.65) continue;
+
+      const px = b.mesh.position.x + (Math.random() - 0.5) * b.radius * 0.9;
+      const py = b.mesh.position.y + 1.4 + Math.random() * 1.1;
+      const pz = b.mesh.position.z + (Math.random() - 0.5) * b.radius * 0.9;
+
+      // Dark billowing smoke
+      this.spawnParticles(px, py, pz, ratio < 0.35 ? 2 : 1, {
+        colorHex: ratio < 0.35 ? 0x1f242d : 0x475569,
+        speed: 0.55,
+        upSpeed: 2.2,
+        lifetime: 1.35,
+        startScale: 0.45,
+        endScale: 1.35,
+        gravity: -0.45,
+        spread: 0.65,
+      });
+
+      // Active flames & glowing sparks when critically damaged (< 40% HP)
+      if (ratio < 0.4) {
+        this.spawnParticles(px, py - 0.3, pz, 2, {
+          colorHex: Math.random() > 0.4 ? 0xf97316 : 0xfacc15,
+          speed: 0.9,
+          upSpeed: 2.8,
+          lifetime: 0.55,
+          startScale: 0.52,
+          endScale: 0.06,
+          gravity: -0.8,
+          spread: 0.75,
+        });
+      }
+    }
+  }
+
+  /**
+   * Triggers a physical demolition collapse with tumbling 3D masonry/timber
+   * rubble chunks and an expanding dust shockwave.
+   */
+  public spawnBuildingCollapse(x: number, y: number, z: number, radius: number) {
+    const chunkCount = this.isSoftwareGl ? 6 : 12;
+    for (let i = 0; i < chunkCount; i++) {
+      const mat = i % 3 === 0 ? this.debrisTimberMat : this.debrisStoneMat;
+      const chunk = new THREE.Mesh(this.debrisGeo, mat);
+      const ang = (i / chunkCount) * Math.PI * 2 + Math.random() * 0.5;
+      const rad = Math.random() * Math.max(0.8, radius * 0.55);
+      const sx = 0.6 + Math.random() * 1.25;
+      const sy = 0.5 + Math.random() * 1.0;
+      const sz = 0.6 + Math.random() * 1.25;
+      chunk.scale.set(sx, sy, sz);
+      chunk.position.set(x + Math.cos(ang) * rad, y + 0.8 + Math.random() * 1.8, z + Math.sin(ang) * rad);
+      chunk.rotation.set(Math.random() * 3, Math.random() * 3, Math.random() * 3);
+      chunk.castShadow = !this.isSoftwareGl;
+      this.scene.add(chunk);
+
+      const spd = 2.4 + Math.random() * 4.2;
+      this.debrisChunks.push({
+        mesh: chunk,
+        vx: Math.cos(ang) * spd,
+        vy: 3.6 + Math.random() * 4.4,
+        vz: Math.sin(ang) * spd,
+        rx: (Math.random() - 0.5) * 8,
+        ry: (Math.random() - 0.5) * 8,
+        rz: (Math.random() - 0.5) * 8,
+        groundY: y + 0.14,
+        age: 0,
+        lifetime: 2.8 + Math.random() * 1.0,
+      });
+    }
+
+    // Expanding dust cloud & flame flash
+    this.spawnParticles(x, y + 0.6, z, 22, {
+      colorHex: 0x9ca3af,
+      speed: 4.4,
+      upSpeed: 3.1,
+      lifetime: 1.4,
+      startScale: 0.9,
+      endScale: 2.1,
+      gravity: 1.2,
+      spread: Math.max(1.2, radius * 0.7),
+    });
+    this.spawnParticles(x, y + 0.9, z, 14, {
+      colorHex: 0xf97316,
+      speed: 3.4,
+      upSpeed: 4.5,
+      lifetime: 0.7,
+      startScale: 0.85,
+      endScale: 0.1,
+      gravity: 3.2,
+      spread: Math.max(0.8, radius * 0.45),
+    });
+  }
+
   public update(dt: number, elapsed: number) {
     // 1. Update pooled instanced particles
     let activeCount = 0;
@@ -985,6 +1281,37 @@ export class VisualEffectsManager {
       p.sprite.position.y += p.vy * dt;
       p.mat.opacity = t < 0.2 ? t / 0.2 : 1 - (t - 0.2) / 0.8;
     }
+
+    // 7. Update tumbling 3D building demolition debris chunks
+    for (let i = this.debrisChunks.length - 1; i >= 0; i--) {
+      const d = this.debrisChunks[i];
+      d.age += dt;
+      if (d.age >= d.lifetime) {
+        this.scene.remove(d.mesh);
+        this.debrisChunks.splice(i, 1);
+        continue;
+      }
+      d.vy -= 14.5 * dt;
+      d.mesh.position.x += d.vx * dt;
+      d.mesh.position.y += d.vy * dt;
+      d.mesh.position.z += d.vz * dt;
+      if (d.mesh.position.y <= d.groundY) {
+        d.mesh.position.y = d.groundY;
+        d.vy = Math.abs(d.vy) * 0.28;
+        d.vx *= 0.62;
+        d.vz *= 0.62;
+        d.rx *= 0.5;
+        d.ry *= 0.5;
+        d.rz *= 0.5;
+      }
+      d.mesh.rotation.x += d.rx * dt;
+      d.mesh.rotation.y += d.ry * dt;
+      d.mesh.rotation.z += d.rz * dt;
+      const fadeT = d.age / d.lifetime;
+      if (fadeT > 0.72) {
+        d.mesh.position.y -= (fadeT - 0.72) * 1.4 * dt;
+      }
+    }
   }
 
   public clearMatchVisuals() {
@@ -995,6 +1322,11 @@ export class VisualEffectsManager {
       this.scene.remove(c.mesh);
     }
     this.corpses = [];
+
+    for (const d of this.debrisChunks) {
+      this.scene.remove(d.mesh);
+    }
+    this.debrisChunks = [];
 
     for (const s of this.slashArcs) {
       this.scene.remove(s.mesh);
@@ -1036,6 +1368,9 @@ export class VisualEffectsManager {
     this.scaffoldWoodMat.dispose();
     this.scaffoldPoleGeo.dispose();
     this.scaffoldBeamGeo.dispose();
+    this.debrisGeo.dispose();
+    this.debrisStoneMat.dispose();
+    this.debrisTimberMat.dispose();
     for (const pl of this.nightLights) {
       this.scene.remove(pl);
     }

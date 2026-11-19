@@ -1,4 +1,4 @@
-import { FaunaKind } from '../../game/types';
+import { FaunaKind } from '../game/types';
 import { getWorldSizeSpec, MapBiomeKind, WorldSizeId } from './mapCatalog';
 
 export type RmsTerrainCode =

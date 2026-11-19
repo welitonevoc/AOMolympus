@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import type { BiomeTreeStyle } from '../maps';
+import type { BiomeTreeStyle } from '../../maps';
 
 export const FOREST_PACK_GLB_URL = '/textura/flora/low_poly_forest_tree_pack.glb';
 

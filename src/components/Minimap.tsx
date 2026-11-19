@@ -8,7 +8,7 @@ import {
   getEffectiveMapConfig,
   getMapBiomeVisuals,
   resolveEffectiveMapId,
-} from '../textura/maps';
+} from '../maps';
 import { MapId, MinimapBlip, PANTHEONS, PantheonId, WorldSizeId } from '../game/types';
 
 export type MinimapFilterMode = 'all' | 'combat' | 'economy';

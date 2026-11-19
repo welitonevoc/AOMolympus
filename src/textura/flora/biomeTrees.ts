@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import type { MaterialPalette } from '../../game/models';
-import { BiomeTreeStyle } from '../maps';
+import { BiomeTreeStyle } from '../../maps';
 import { createAoMOakTreeMesh } from './oakTrees';
 import {
   cloneGlbForestTree,

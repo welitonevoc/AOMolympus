@@ -41,7 +41,7 @@ import {
   getFaunaAccentMaterial,
   getFaunaCoatMaterial,
 } from '../textura';
-import { getMapBiomeVisuals, getWorldSizeSpec, groundHeightAt as computeGeoGroundHeightAt, WORLD_SIZE_SPECS } from '../textura/maps';
+import { getMapBiomeVisuals, getWorldSizeSpec, groundHeightAt as computeGeoGroundHeightAt, WORLD_SIZE_SPECS } from '../maps';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 export const MAP_HALF_SIZE = 74;

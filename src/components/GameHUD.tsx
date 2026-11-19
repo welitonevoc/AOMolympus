@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import {
   Anchor,
   ArrowRightLeft,
+  BarChart3,
+  Bell,
   BookOpen,
   BoxSelect,
   Castle,
@@ -13,7 +15,9 @@ import {
   Compass,
   Crosshair,
   Crown,
+  DoorOpen,
   Eye,
+  EyeOff,
   Flame,
   Flag,
   Gem,
@@ -71,6 +75,7 @@ import {
 } from '../game/divineData';
 import { getMinorGodPortrait } from '../game/mediaAssets';
 import { AI_PERSONALITY_LABELS, ChatMessage, getMpColorById } from '../game/multiplayerTypes';
+import { MatchTimelineModal } from './MatchTimelineModal';
 import {
   AGE_COSTS,
   AGE_NAMES,
@@ -167,13 +172,23 @@ interface GameHUDProps {
   onDisembarkTransport?: (shipId: string) => void;
   onSummonSetAnimal?: (kind: 'baboon' | 'hyena' | 'crocodile' | 'hippo') => void;
   onConvertFauna?: () => void;
+  onToggleTownBell?: () => void;
+  onGarrisonSelected?: (buildingId: string) => void;
+  onConvertWallToGate?: () => void;
+  onTriggerMythSpecial?: () => void;
+  onToggleMythAutoCast?: () => void;
+  onReplayTogglePlay?: (playing: boolean) => void;
+  onReplaySetSpeed?: (speed: 1 | 2 | 4) => void;
+  onReplaySeek?: (timeSec: number) => void;
+  onReplayToggleFog?: () => void;
+  onReplaySetPerspective?: (p: 'all' | 'player' | 'enemy') => void;
   onRestart: () => void;
   onReturnTitle: () => void;
 }
 
 type InGameDialog = 'none' | 'techtree' | 'objectives' | 'diplomacy' | 'tribute' | 'player_options';
 type PausePrompt = 'menu' | 'confirm_restart' | 'confirm_resign';
-type PostGameTab = 'summary' | 'military' | 'economy' | 'divine';
+type PostGameTab = 'summary' | 'military' | 'economy' | 'divine' | 'timeline';
 
 function getGodPowerIcon(id: GodPowerId) {
   switch (id) {
@@ -320,6 +335,16 @@ export function GameHUD({
   onDisembarkTransport,
   onSummonSetAnimal,
   onConvertFauna,
+  onToggleTownBell,
+  onGarrisonSelected,
+  onConvertWallToGate,
+  onTriggerMythSpecial,
+  onToggleMythAutoCast,
+  onReplayTogglePlay,
+  onReplaySetSpeed,
+  onReplaySeek,
+  onReplayToggleFog,
+  onReplaySetPerspective,
   onRestart,
   onReturnTitle,
 }: GameHUDProps) {
@@ -329,6 +354,7 @@ export function GameHUD({
   const [showDuelScore, setShowDuelScore] = useState(true);
   const [showCameraBar, setShowCameraBar] = useState(false);
   const [showMatchChat, setShowMatchChat] = useState(false);
+  const [showTimelineOverlay, setShowTimelineOverlay] = useState(false);
   const [chatChannel, setChatChannel] = useState<'all' | 'team'>('all');
   const [chatInput, setChatInput] = useState('');
   const [activeDialog, setActiveDialog] = useState<InGameDialog>('none');
@@ -941,7 +967,7 @@ export function GameHUD({
               </div>
             </div>
 
-            {/* Tier 2: Centered God Power Slots + Integrated Clock Plinth */}
+            {/* Tier 2: Centered God Power Slots (Retold Reusable Recast) + Wonder Age + Clock Plinth */}
             <div className="mt-1.5 flex w-full items-center justify-between gap-3">
               <div className="flex items-center gap-1">
                 {powerList.map((p) => {
@@ -950,7 +976,9 @@ export function GameHUD({
                   const maxCd = Math.max(1, p.cooldown);
                   const cdRatio = cd > 0 ? Math.min(1, (hud.godPowerCooldowns[p.id] ?? 0) / maxCd) : 0;
                   const active = hud.activeGodPowerMode === p.id;
-                  const cantAfford = hud.resources.favor < p.favorCost;
+                  const uses = hud.godPowerUses?.[p.id] ?? 0;
+                  const recastCost = hud.godPowerRecastCosts?.[p.id] ?? (uses === 0 ? 0 : p.favorCost);
+                  const cantAfford = hud.resources.favor < recastCost;
                   const Icon = getGodPowerIcon(p.id);
 
                   return (
@@ -959,8 +987,10 @@ export function GameHUD({
                       type="button"
                       disabled={locked || cd > 0}
                       onClick={() => onActivateGodPower(p.id)}
-                      title={`${p.name} — ${p.description} · Custo: ${p.favorCost} Favor`}
-                      className={`relative flex h-8 w-10 flex-col items-center justify-center overflow-hidden rounded-sm border transition-colors cursor-pointer shrink-0 ${
+                      title={`${p.name} — ${p.description} · ${
+                        recastCost === 0 ? '1º uso Grátis (Retold)' : `Relançar: ${recastCost} Favor`
+                      }${hud.wonderAgeActive ? ' (-75% Era das Maravilhas)' : ''}`}
+                      className={`relative flex h-8 w-11 flex-col items-center justify-center overflow-hidden rounded-sm border transition-colors cursor-pointer shrink-0 ${
                         active
                           ? 'border-[#facc15] bg-[#30260f] text-white'
                           : locked || cd > 0
@@ -978,25 +1008,37 @@ export function GameHUD({
                       )}
                       <Icon
                         className={`relative z-10 h-3 w-3 shrink-0 ${
-                          locked || cd > 0 ? 'text-[#64748b]' : 'text-[#d4af37]'
+                          locked || cd > 0 ? 'text-[#64748b]' : recastCost === 0 ? 'text-[#fde047]' : 'text-[#d4af37]'
                         }`}
                       />
-                      <span className="relative z-10 font-mono-num text-[9px] font-semibold leading-none mt-0.5">
-                        {locked ? `E${p.minAge}` : cd > 0 ? `${cd}s` : `${p.favorCost}F`}
+                      <span className="relative z-10 font-mono-num text-[8.5px] font-semibold leading-none mt-0.5">
+                        {locked ? `E${p.minAge}` : cd > 0 ? `${cd}s` : recastCost === 0 ? 'Grátis' : `${recastCost}F`}
                       </span>
                     </button>
                   );
                 })}
               </div>
 
-              {/* Compact Clock & Day-Time Plinth */}
-              <div className="flex items-center gap-1.5 rounded border border-[#c8a962]/30 bg-[#0d111a]/85 px-2.5 py-1 text-[10px] text-[#cbd5e1] shrink-0">
-                <Clock className="h-3 w-3 text-[#d4af37] shrink-0" />
-                <span className="font-mono-num font-bold text-[#f3efe6]" title="Tempo da partida">
-                  {formatClock(hud.elapsedSeconds)}
-                </span>
-                <span aria-hidden="true" className="text-[#64748b]">·</span>
-                <span className="text-[#94a3b8] whitespace-nowrap">{hud.dayTimeLabel}</span>
+              <div className="flex items-center gap-1.5 shrink-0">
+                {hud.wonderAgeActive && (
+                  <div
+                    title="Era das Maravilhas ativa: +6 Favor/s, +25% HP e +20% Ataque em Míticas, -75% custo divino e -50% recarga"
+                    className="flex items-center gap-1 rounded border border-[#facc15]/70 bg-[#2d2208]/95 px-2 py-1 text-[10px] font-bold text-[#fde047]"
+                  >
+                    <Crown className="h-3 w-3 text-[#facc15]" />
+                    <span className="hidden sm:inline">Era das Maravilhas</span>
+                  </div>
+                )}
+
+                {/* Compact Clock & Day-Time Plinth */}
+                <div className="flex items-center gap-1.5 rounded border border-[#c8a962]/30 bg-[#0d111a]/85 px-2.5 py-1 text-[10px] text-[#cbd5e1] shrink-0">
+                  <Clock className="h-3 w-3 text-[#d4af37] shrink-0" />
+                  <span className="font-mono-num font-bold text-[#f3efe6]" title="Tempo da partida">
+                    {formatClock(hud.elapsedSeconds)}
+                  </span>
+                  <span aria-hidden="true" className="text-[#64748b]">·</span>
+                  <span className="text-[#94a3b8] whitespace-nowrap">{hud.dayTimeLabel}</span>
+                </div>
               </div>
             </div>
 
@@ -1180,9 +1222,13 @@ export function GameHUD({
 
         {/* Transient Notices (Weather / Sky / Build / God Power) Centered Below the Clock */}
         {(hud.statusMessage || hud.activeBuildMode || hud.activeGodPowerMode) && (
-          <div className="pointer-events-auto mt-1.5 flex items-center gap-2 rounded border border-[#c8a962]/50 bg-[#0d111a]/92 px-3 py-1 text-[11px] font-medium text-[#f8f4ea] shadow-[0_6px_18px_rgba(0,0,0,0.75)] max-w-[min(460px,84vw)]">
+          <div className="pointer-events-auto mt-1.5 flex items-center gap-2 rounded border border-[#c8a962]/50 bg-[#0d111a]/92 px-3 py-1 text-[11px] font-medium text-[#f8f4ea] shadow-[0_6px_18px_rgba(0,0,0,0.75)] max-w-[min(520px,88vw)]">
             <span className="truncate">
-              {hud.activeBuildMode
+              {hud.activeBuildMode === 'wall'
+                ? `Muralha por Arraste — Segure e arraste no mapa${
+                    (hud.dragWallPreviewCount ?? 0) > 0 ? ` (${hud.dragWallPreviewCount} segmentos)` : ''
+                  }`
+                : hud.activeBuildMode
                 ? `Construindo ${getCivBuildingSpec(hud.pantheon, hud.activeBuildMode, hud.majorGodName, hud.age).name} — Clique no mapa`
                 : hud.activeGodPowerMode
                 ? `Alvejando ${getCivGodPowerSpec(hud.pantheon, hud.activeGodPowerMode).name} — Clique no mapa`
@@ -1199,11 +1245,121 @@ export function GameHUD({
             )}
           </div>
         )}
+
+        {/* 3D REPLAY PLAYBACK CONTROLS BAR */}
+        {hud.replayState?.active && (
+          <div className="pointer-events-auto mt-2 flex flex-wrap items-center gap-2 rounded-md border border-[#d4af37]/60 bg-[#0c111b]/95 px-3 py-1.5 text-[11px] text-[#f3efe6] shadow-2xl">
+            <span className="font-bold uppercase tracking-wider text-[#f3d27a]">Replay 3D</span>
+            <button
+              type="button"
+              onClick={() => onReplayTogglePlay?.(!hud.replayState!.playing)}
+              className="flex h-6 w-6 items-center justify-center rounded border border-[#c8a962]/50 bg-[#1c2436] text-[#f3d27a] hover:bg-[#27324a] cursor-pointer"
+              title={hud.replayState.playing ? 'Pausar replay' : 'Continuar replay'}
+            >
+              {hud.replayState.playing ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
+            </button>
+            <div className="flex items-center gap-0.5">
+              {([1, 2, 4] as const).map((spd) => (
+                <button
+                  key={spd}
+                  type="button"
+                  onClick={() => onReplaySetSpeed?.(spd)}
+                  className={`rounded px-1.5 py-0.5 font-mono-num text-[10px] font-bold cursor-pointer ${
+                    hud.replayState?.speed === spd
+                      ? 'bg-[#d4af37] text-[#0b0e14]'
+                      : 'bg-white/10 text-[#cbd5e1] hover:bg-white/20'
+                  }`}
+                >
+                  {spd}x
+                </button>
+              ))}
+            </div>
+            <input
+              type="range"
+              min={0}
+              max={Math.max(1, hud.replayState.duration)}
+              value={Math.min(hud.replayState.duration, hud.replayState.currentTime)}
+              onChange={(e) => onReplaySeek?.(Number(e.target.value))}
+              className="w-28 sm:w-40 accent-[#d4af37] cursor-pointer"
+            />
+            <span className="font-mono-num text-[10px] text-[#cbd5e1]">
+              {formatClock(hud.replayState.currentTime)} / {formatClock(hud.replayState.duration)}
+            </span>
+            <button
+              type="button"
+              onClick={() => onReplayToggleFog?.()}
+              className={`flex items-center gap-1 rounded border px-1.5 py-0.5 text-[10px] font-semibold cursor-pointer ${
+                hud.replayState.fogDisabled
+                  ? 'border-[#38bdf8]/60 bg-[#0d2838] text-[#7dd3fc]'
+                  : 'border-white/15 bg-white/5 text-[#cbd5e1]'
+              }`}
+              title="Alternar Névoa de Guerra no Replay"
+            >
+              {hud.replayState.fogDisabled ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
+              <span>Névoa</span>
+            </button>
+            <select
+              value={hud.replayState.perspective}
+              onChange={(e) => onReplaySetPerspective?.(e.target.value as 'all' | 'player' | 'enemy')}
+              className="rounded border border-white/15 bg-[#151c29] px-1.5 py-0.5 text-[10px] text-white"
+            >
+              <option value="all">Visão: Todos</option>
+              <option value="player">Jogador</option>
+              <option value="enemy">Inimigo</option>
+            </select>
+            <button
+              type="button"
+              onClick={() => setShowTimelineOverlay(true)}
+              className="rounded border border-[#c8a962]/45 bg-[#1b2230] px-2 py-0.5 text-[10px] font-semibold text-[#f3d27a] hover:bg-[#263044] cursor-pointer"
+            >
+              Gráficos
+            </button>
+            <button
+              type="button"
+              onClick={onReturnTitle}
+              className="rounded border border-rose-500/50 bg-rose-950/60 px-2 py-0.5 text-[10px] font-semibold text-rose-200 hover:bg-rose-900/70 cursor-pointer"
+            >
+              Sair
+            </button>
+          </div>
+        )}
       </header>
 
       {/* TOP-RIGHT: Minimal Classical Utility Strip */}
       <div className="fixed top-[68px] sm:top-[72px] lg:top-0 right-1.5 sm:right-2.5 z-20 flex flex-col items-end gap-1">
         <div className="flex items-center gap-0.5 rounded-md lg:rounded-t-none lg:rounded-b-md border lg:border-t-0 border-[#c8a962]/50 bg-[#141821]/94 px-1 sm:px-1.5 py-0.5 sm:py-1 shadow-lg">
+          {onToggleTownBell && !hud.replayState?.active && (
+            <button
+              type="button"
+              onClick={onToggleTownBell}
+              title={
+                hud.townBellActive
+                  ? 'Sino da Cidade ATIVO (B) — Clique para liberar aldeões ao trabalho'
+                  : 'Tocar Sino da Cidade (B) — Abrigar aldeões em Centros da Cidade, Torres e Fortalezas'
+              }
+              aria-label="Sino da Cidade"
+              className={`flex h-7 w-7 items-center justify-center rounded cursor-pointer transition-colors ${
+                hud.townBellActive
+                  ? 'bg-[#f59e0b] text-[#0b0e14]'
+                  : 'text-[#fbbf24] hover:bg-white/10 hover:text-[#fde047]'
+              }`}
+            >
+              <Bell className="h-3.5 w-3.5" />
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => setShowTimelineOverlay((v) => !v)}
+            title="Gráficos da Linha do Tempo (Economia, Exército, População, Favor)"
+            aria-label="Gráficos da Partida"
+            className={`flex h-7 w-7 items-center justify-center rounded cursor-pointer transition-colors ${
+              showTimelineOverlay
+                ? 'bg-[#d4af37] text-[#0b0e14]'
+                : 'text-[#cbd5e1] hover:bg-white/10 hover:text-white'
+            }`}
+          >
+            <BarChart3 className="h-3.5 w-3.5" />
+          </button>
           <button
             type="button"
             onClick={() => setActiveDialog((d) => (d === 'techtree' ? 'none' : 'techtree'))}
@@ -2311,19 +2467,50 @@ export function GameHUD({
                               </span>
                               <span className="font-mono-num text-[10px] font-bold text-[#fde047]">
                                 {hud.selection.garrisonedCount ?? 0} / {hud.selection.garrisonMaxCapacity ?? 10}
+                                {(hud.selectedBuildingGarrison?.bonusArrows ?? 0) > 0 && (
+                                  <span className="ml-1 text-[#7dd3fc]">
+                                    (+{hud.selectedBuildingGarrison!.bonusArrows} flechas)
+                                  </span>
+                                )}
                               </span>
                             </div>
-                            {hud.selection.canUngarrison && onUngarrisonBuilding && (
-                              <button
-                                type="button"
-                                onClick={() => onUngarrisonBuilding(hud.selection.buildingId!)}
-                                className="flex items-center justify-center gap-1.5 rounded border border-[#f59e0b]/70 bg-[#2d1b06] px-2 py-1 text-[10px] font-bold text-[#fef3c7] hover:bg-[#452709] cursor-pointer"
-                              >
-                                <LogOut className="h-3.5 w-3.5 text-[#fbbf24]" />
-                                <span>Desembarcar ({hud.selection.garrisonedCount})</span>
-                              </button>
-                            )}
+                            <div className="flex items-center gap-1.5">
+                              {onGarrisonSelected && (
+                                <button
+                                  type="button"
+                                  onClick={() => onGarrisonSelected(hud.selection.buildingId!)}
+                                  className="flex flex-1 items-center justify-center gap-1 rounded border border-[#60a5fa]/60 bg-[#132948] px-2 py-1 text-[10px] font-bold text-[#dbeafe] hover:bg-[#1a3760] cursor-pointer"
+                                >
+                                  <Shield className="h-3 w-3 text-[#60a5fa]" />
+                                  <span>Guarnecer</span>
+                                </button>
+                              )}
+                              {hud.selection.canUngarrison && onUngarrisonBuilding && (
+                                <button
+                                  type="button"
+                                  onClick={() => onUngarrisonBuilding(hud.selection.buildingId!)}
+                                  className="flex flex-1 items-center justify-center gap-1 rounded border border-[#f59e0b]/70 bg-[#2d1b06] px-2 py-1 text-[10px] font-bold text-[#fef3c7] hover:bg-[#452709] cursor-pointer"
+                                >
+                                  <LogOut className="h-3 w-3 text-[#fbbf24]" />
+                                  <span>Liberar ({hud.selection.garrisonedCount})</span>
+                                </button>
+                              )}
+                            </div>
                           </div>
+                        )}
+
+                        {hud.selection.buildingKind === 'wall' && hud.selection.isConstructed && onConvertWallToGate && (
+                          <button
+                            type="button"
+                            onClick={onConvertWallToGate}
+                            className="flex items-center justify-between gap-2 rounded border border-[#d4af37]/60 bg-[#241e0d] px-2.5 py-1.5 text-[10px] font-bold text-[#fde68a] hover:bg-[#352b12] cursor-pointer"
+                          >
+                            <span className="flex items-center gap-1.5">
+                              <DoorOpen className="h-3.5 w-3.5 text-[#facc15]" />
+                              <span>Converter em Portão</span>
+                            </span>
+                            <span className="font-mono-num text-[9px] text-[#cbd5e1]">15M · 10O</span>
+                          </button>
                         )}
 
                         {showMarket && (
@@ -2531,8 +2718,62 @@ export function GameHUD({
                   })()
                 )
               ) : hud.selection.primaryType === 'unit' && hud.selection.team === 'player' ? (
-                /* CASE C: Player Military / Hero / Mythic / Naval / God Unit Selected -> Stances, Naval Transport, Formations & Stop */
+                /* CASE C: Player Military / Hero / Mythic / Naval / God Unit Selected -> Myth Special, Stances, Naval Transport, Formations & Stop */
                 <div className="flex flex-1 flex-col justify-between gap-1.5">
+                  {hud.selectedMythAbility && (
+                    <div className="flex items-center justify-between gap-2 rounded border border-[#d4af37]/55 bg-[#1e180a] px-2 py-1.5">
+                      <button
+                        type="button"
+                        disabled={hud.selectedMythAbility.cooldownRemaining > 0}
+                        onClick={() => onTriggerMythSpecial?.()}
+                        title={`${hud.selectedMythAbility.name} (Tecla Q) — ${hud.selectedMythAbility.description}`}
+                        className="relative flex flex-1 items-center gap-2 text-left cursor-pointer disabled:opacity-65"
+                      >
+                        <Sparkles className="h-4 w-4 shrink-0 text-[#facc15]" />
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between text-[10px] font-bold text-[#fde68a]">
+                            <span className="truncate">{hud.selectedMythAbility.name} [Q]</span>
+                            <span className="font-mono-num text-[9px] text-[#cbd5e1]">
+                              {hud.selectedMythAbility.cooldownRemaining > 0
+                                ? `${hud.selectedMythAbility.cooldownRemaining}s`
+                                : 'Pronta'}
+                            </span>
+                          </div>
+                          <div className="mt-0.5 h-1 w-full overflow-hidden rounded-full bg-black/50">
+                            <div
+                              className="h-full bg-[#facc15] transition-all duration-150"
+                              style={{
+                                width: `${Math.max(
+                                  0,
+                                  Math.min(
+                                    100,
+                                    (1 -
+                                      hud.selectedMythAbility.cooldownRemaining /
+                                        Math.max(1, hud.selectedMythAbility.cooldownTotal)) *
+                                      100
+                                  )
+                                )}%`,
+                              }}
+                            />
+                          </div>
+                        </div>
+                      </button>
+                      {onToggleMythAutoCast && (
+                        <button
+                          type="button"
+                          onClick={onToggleMythAutoCast}
+                          title="Alternar Disparo Automático em Combate"
+                          className={`rounded border px-1.5 py-0.5 text-[9px] font-bold cursor-pointer ${
+                            hud.selectedMythAbility.autoCast
+                              ? 'border-[#facc15] bg-[#d4af37] text-[#0b0e14]'
+                              : 'border-white/15 bg-white/5 text-[#94a3b8]'
+                          }`}
+                        >
+                          AUTO
+                        </button>
+                      )}
+                    </div>
+                  )}
                   {onSetUnitStance && (
                     <div className="flex items-center gap-1" role="group" aria-label="Postura de Combate">
                       {(
@@ -4017,10 +4258,27 @@ export function GameHUD({
         </div>
       )}
 
-      {/* POST-GAME SCREEN (uipostgamescreen.xmb with Tabs) */}
+      {/* LIVE / REPLAY TIMELINE OVERLAY MODAL */}
+      {showTimelineOverlay && (
+        <MatchTimelineModal
+          timeline={hud.timelineHistory ?? []}
+          playerName={hud.majorGodName}
+          enemyName={hud.enemyMajorGodName}
+          playerScore={hud.playerScore}
+          enemyScore={hud.enemyScore}
+          elapsedSeconds={hud.elapsedSeconds}
+          onClose={() => setShowTimelineOverlay(false)}
+        />
+      )}
+
+      {/* POST-GAME SCREEN (uipostgamescreen.xmb with Tabs + Timeline Charts) */}
       {(hud.phase === 'victory' || hud.phase === 'defeat') && (
         <div className="fixed inset-0 z-30 flex items-center justify-center bg-[#0b0e13]/82 p-2.5 sm:p-4">
-          <div className="w-full max-w-lg max-h-[calc(100dvh-1.25rem)] overflow-y-auto rounded-xl border border-[#d4af37]/50 bg-[#12161f] p-4 sm:p-6 text-center shadow-2xl">
+          <div
+            className={`w-full ${
+              postGameTab === 'timeline' ? 'max-w-2xl' : 'max-w-lg'
+            } max-h-[calc(100dvh-1.25rem)] overflow-y-auto rounded-xl border border-[#d4af37]/50 bg-[#12161f] p-4 sm:p-6 text-center shadow-2xl transition-all`}
+          >
             <div className="mx-auto mb-2 flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full border border-[#d4af37]/40 bg-[#1b212e]">
               {hud.phase === 'victory' ? (
                 <Crown className="h-5 w-5 sm:h-6 sm:w-6 text-[#facc15]" />
@@ -4042,6 +4300,7 @@ export function GameHUD({
               {(
                 [
                   { id: 'summary', label: 'Resumo' },
+                  { id: 'timeline', label: 'Gráficos' },
                   { id: 'military', label: 'Militar' },
                   { id: 'economy', label: 'Economia' },
                   { id: 'divine', label: 'Divino' },
@@ -4061,6 +4320,20 @@ export function GameHUD({
                 </button>
               ))}
             </div>
+
+            {postGameTab === 'timeline' && (
+              <div className="mt-4 text-left">
+                <MatchTimelineModal
+                  inline
+                  timeline={hud.timelineHistory ?? []}
+                  playerName={hud.majorGodName}
+                  enemyName={hud.enemyMajorGodName}
+                  playerScore={hud.playerScore}
+                  enemyScore={hud.enemyScore}
+                  elapsedSeconds={hud.elapsedSeconds}
+                />
+              </div>
+            )}
 
             {postGameTab === 'summary' && (
               <div className="mt-4 grid grid-cols-2 gap-2.5 text-left">

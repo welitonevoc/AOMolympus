@@ -1,5 +1,7 @@
-import { FaunaKind } from '../../game/types';
-import { MapId, MAPS, MapWeatherKind, WorldSizeId } from './mapCatalog';
+import { FaunaKind } from '../game/types';
+import { getWorldSizeSpec, MapBiomeKind, MapConfig, MapId, MAPS, MapWeatherKind, WorldSizeId } from './mapCatalog';
+import { getActiveRmsMap } from './rmsRuntime';
+import { TotalWarEnvironment, TOTAL_WAR_XS_SPEC } from './totalWarXsImporter';
 
 export type BiomeTreeStyle =
   | 'oak'
@@ -132,6 +134,36 @@ let activeTheUnknown: UnknownRollState = {
  * Rolls a fresh deterministic terrain & biome seed for Terra Desconhecida / O Desconhecido
  * at the start of a match so groundHeightAt, Minimap, NavGrid, Flora & Fauna stay 100% synced.
  */
+export interface TotalWarRollState {
+  seed: number;
+  environment: TotalWarEnvironment;
+}
+
+let activeTotalWar: TotalWarRollState = {
+  seed: 404,
+  environment: 'tropical',
+};
+
+/**
+ * Rolls frozen (North Atlantic) vs tropical (Mediterranean) environment for Guerra Total I,
+ * mirroring the 50/50 rmRandFloat(0,1) climate branch in Total War I.xs.
+ */
+export function rollTotalWarVariant(mapId: MapId, explicitSeed?: number): TotalWarRollState | null {
+  if (mapId !== 'total_war') return null;
+  const seed = explicitSeed ?? Math.floor(Math.random() * 100000) + 31;
+  const environment: TotalWarEnvironment = seededUnit(seed, 19) < 0.5 ? 'frozen' : 'tropical';
+  activeTotalWar = { seed, environment };
+  return activeTotalWar;
+}
+
+export function getActiveTotalWarState(): TotalWarRollState {
+  return activeTotalWar;
+}
+
+export function getActiveTotalWarEnv(): TotalWarEnvironment {
+  return activeTotalWar.environment;
+}
+
 export function rollUnknownMapVariant(mapId: MapId, explicitSeed?: number): UnknownRollState | null {
   if (mapId !== 'land_unknown' && mapId !== 'the_unknown') return null;
   const seed = explicitSeed ?? Math.floor(Math.random() * 100000) + 17;
@@ -417,14 +449,75 @@ const BIOME_VISUALS: Record<Exclude<MapId, 'land_unknown' | 'the_unknown'>, MapB
     berryStyle: 'temperate',
     weatherPool: ['clear', 'rain'],
   },
+  total_war: {
+    terrainPalette: [0x517240, 0x9b8b66, 0xd8c38d, 0x768657],
+    fertileHex: 0x4b7f39,
+    treeStyle: 'oak',
+    secondaryTreeStyle: 'palm',
+    rockStyle: 'stone',
+    berryStyle: 'temperate',
+    weatherPool: ['clear', 'rain'],
+  },
+  rms_custom: {
+    terrainPalette: [0x557540, 0x9d8a64, 0xcab688, 0x6b7c4f],
+    fertileHex: 0x58823a,
+    treeStyle: 'oak',
+    secondaryTreeStyle: 'birch',
+    rockStyle: 'stone',
+    berryStyle: 'temperate',
+    weatherPool: ['clear', 'rain'],
+  },
+};
+
+const RMS_BIOME_TO_MAP: Record<MapBiomeKind, Exclude<MapId, 'land_unknown' | 'the_unknown' | 'rms_custom'>> = {
+  temperate: 'mediterranean',
+  frozen: 'tundra',
+  desert: 'valley_of_the_kings',
+  savannah: 'savannah',
+  tropical: 'yucatan',
+  volcanic: 'erebus',
+};
+
+const TOTAL_WAR_FROZEN_VISUALS: MapBiomeVisuals = {
+  terrainPalette: [0x9fb4c7, 0x6f7d8f, 0xcad7e4, 0xe8f1f8],
+  fertileHex: 0x6f8b9c,
+  treeStyle: 'snow_pine',
+  secondaryTreeStyle: 'nordic_pine',
+  rockStyle: 'ice',
+  berryStyle: 'frost_berry',
+  weatherPool: ['snow', 'clear', 'snow'],
 };
 
 export function getMapBiomeVisuals(mapId: MapId): MapBiomeVisuals {
   const eff = resolveEffectiveMapId(mapId);
+  if (eff === 'rms_custom') {
+    const rms = getActiveRmsMap();
+    if (rms) {
+      const proxy = RMS_BIOME_TO_MAP[rms.biome] ?? 'mediterranean';
+      return BIOME_VISUALS[proxy];
+    }
+  }
+  if (eff === 'total_war') {
+    return activeTotalWar.environment === 'frozen' ? TOTAL_WAR_FROZEN_VISUALS : BIOME_VISUALS.total_war;
+  }
   return BIOME_VISUALS[eff] ?? BIOME_VISUALS.mediterranean;
 }
 
-export function getEffectiveMapConfig(mapId: MapId) {
+export function getEffectiveMapConfig(mapId: MapId): MapConfig {
+  if (mapId === 'rms_custom') {
+    const rms = getActiveRmsMap();
+    if (rms) {
+      const proxy = MAPS[RMS_BIOME_TO_MAP[rms.biome] ?? 'mediterranean'];
+      return {
+        ...proxy,
+        id: 'rms_custom',
+        name: rms.title || MAPS.rms_custom.name,
+        subtitle: `Script RMS · Semente ${rms.seed} · ${rms.playerCount} jogadores · ${rms.seaType}`,
+        specialRule: 'rms_custom',
+      };
+    }
+    return MAPS.rms_custom;
+  }
   if (mapId === 'land_unknown' || mapId === 'the_unknown') {
     const eff = resolveEffectiveMapId(mapId);
     const base = MAPS[eff];
@@ -437,26 +530,59 @@ export function getEffectiveMapConfig(mapId: MapId) {
       specialRule: outer.specialRule,
     };
   }
+  if (mapId === 'total_war') {
+    const base = MAPS.total_war;
+    const isFrozen = activeTotalWar.environment === 'frozen';
+    return {
+      ...base,
+      biomeLabel: isFrozen ? 'Atlântico Norte Congelado' : 'Mar Mediterrâneo Tropical',
+      floraLabel: isFrozen ? 'Pinheiro Nevado e Nórdico' : 'Carvalho Grego e Palmeiras',
+      faunaLabel: isFrozen ? 'Ursos, Lobos, Alces, Baleias e Salmão' : 'Javalis, Cervos, Leões, Tubarões e Mahi-Mahi',
+      waterColorHex: isFrozen ? 0x163854 : 0x126b8c,
+      skyColorHex: isFrozen ? 0x9db7cc : 0x9cd2eb,
+      foliageHex: isFrozen ? 0x2a5743 : 0x3b7d31,
+      foliageDarkHex: isFrozen ? 0x1e4033 : 0x265922,
+      terrainTint: isFrozen ? '#b8cad9' : '#5d8242',
+      terrainPatchA: isFrozen ? 'rgba(229, 239, 247, 0.24)' : 'rgba(137, 154, 92, 0.24)',
+      terrainPatchB: isFrozen ? 'rgba(112, 130, 148, 0.22)' : 'rgba(210, 189, 132, 0.22)',
+      cliffHex: isFrozen ? 0x64748b : 0x7a6b54,
+      weatherPool: isFrozen ? (['snow', 'clear'] as MapWeatherKind[]) : (['clear', 'rain'] as MapWeatherKind[]),
+    };
+  }
   return MAPS[mapId];
 }
 
 /**
- * Computes terrain elevation at world (x, z) for any of the 29 maps.
- * Guarantees player base (-34, 34) and enemy base (34, -34) rest on solid ground
- * and ensures all water-divided maps provide navigable shallow reefs/fords >= -0.26
- * (above NavigationGrid's WATER_WALK_LIMIT = -0.34).
+ * Computes terrain elevation at world (x, z) for all maps scaled proportionally
+ * by WorldSizeSpec (normal 148x148, large 204x204, giant 264x264).
+ * Guarantees player/enemy capitals rest on solid ground and all water-divided
+ * maps provide navigable shallow reefs/fords >= -0.26 (above WATER_WALK_LIMIT = -0.34).
  */
-export function groundHeightAt(x: number, z: number, mapId: MapId = 'mediterranean'): number {
+export function groundHeightAt(
+  worldX: number,
+  worldZ: number,
+  mapId: MapId = 'mediterranean',
+  worldSize: WorldSizeId = 'normal'
+): number {
+  if (mapId === 'rms_custom') {
+    const rms = getActiveRmsMap();
+    if (rms) return rms.sampleHeight(worldX, worldZ);
+  }
+  const spec = getWorldSizeSpec(worldSize);
+  const invScale = 1 / spec.worldScale;
+  const x = worldX * invScale;
+  const z = worldZ * invScale;
+
   const distPlayer = Math.hypot(x + 34, z - 34);
   const distEnemy = Math.hypot(x - 34, z + 34);
   const baseFlatten =
     Math.min(1, Math.max(0, (distPlayer - 11) / 10)) *
     Math.min(1, Math.max(0, (distEnemy - 11) / 10));
 
-  const edgeDist = Math.max(Math.abs(x), Math.abs(z));
+  const edgeDist = Math.max(Math.abs(worldX), Math.abs(worldZ));
   let shoreDrop = 0;
-  if (edgeDist > PLAYABLE_HALF_SIZE_GEO) {
-    const t = Math.min(1, (edgeDist - PLAYABLE_HALF_SIZE_GEO) / (MAP_HALF_SIZE_GEO - PLAYABLE_HALF_SIZE_GEO));
+  if (edgeDist > spec.playableHalfSize) {
+    const t = Math.min(1, (edgeDist - spec.playableHalfSize) / Math.max(1, spec.mapHalfSize - spec.playableHalfSize));
     shoreDrop = -t * t * 4.2;
   }
 
@@ -475,6 +601,39 @@ export function groundHeightAt(x: number, z: number, mapId: MapId = 'mediterrane
 
   const sx = x + nxOff;
   const sz = z + nzOff;
+
+  if (effectiveKey === 'total_war') {
+    // Modeled directly on Total War I.xs:
+    // - Outer deep sea around the map rim
+    // - Central continent (myIsland 0.34 + myCoast 0.28 + varied myInnerValleyA 0.22)
+    // - Circular coastal player peninsulas at radius ~0.42*2 = ~46 world-normalized units
+    // - Wide connectionWidth (12) land bridges linking coastal bases into the central continent
+    const r = Math.hypot(x, z);
+    const continentMask = Math.max(0, 1 - Math.max(0, r - 23.5) / 7.5);
+    const coastRing = Math.max(0, 1 - Math.abs(r - 27.5) / 6.5) * 0.45;
+    const nwDist = Math.hypot(x + 34, z + 34);
+    const seDist = Math.hypot(x - 34, z - 34);
+    const swDist = distPlayer;
+    const neDist = distEnemy;
+    const nearestSpawnPeninsula = Math.min(swDist, neDist, nwDist, seDist);
+    const peninsulaMask = Math.max(0, 1 - Math.max(0, nearestSpawnPeninsula - 12.5) / 6.0);
+
+    // 4 wide land-bridge isthmuses matching myIslandConnection width 12
+    const bridgeSWNE = Math.abs(x + z) / Math.SQRT2 < 6.4 && r < 46;
+    const bridgeNWSE = Math.abs(x - z) / Math.SQRT2 < 6.4 && r < 46;
+    const landBridgeMask = bridgeSWNE || bridgeNWSE ? 0.92 : 0;
+
+    const landMask = Math.max(continentMask, peninsulaMask, landBridgeMask);
+    const innerValleyMask = r < 18 ? Math.max(0, 1 - r / 18) : 0;
+    const envBump = activeTotalWar.environment === 'frozen' ? 1.15 : 0.85;
+    const valleyRelief =
+      (Math.sin(sx * 0.085) * Math.cos(sz * 0.085) * 1.15 + Math.cos((sx - sz) * 0.06) * 0.5) *
+      innerValleyMask *
+      envBump *
+      baseFlatten;
+    const seaDepth = landMask > 0.08 ? 0.48 + landMask * 0.72 + coastRing * 0.35 : -1.95;
+    return Math.max(-3.6, Math.min(2.6, seaDepth + valleyRelief + shoreDrop));
+  }
 
   if (effectiveKey === 'acropolis') {
     const pPlateau = Math.max(0, 1 - Math.max(0, (distPlayer - 15) / 12)) * 2.1;
@@ -673,10 +832,23 @@ export function buildMapResourceProfile(
   worldSize: WorldSizeId
 ): MapResourceProfile {
   const eff = resolveEffectiveMapId(mapId);
+  const spec = getWorldSizeSpec(worldSize);
+  const ws = spec.worldScale;
 
-  const defaultSettlements: [number, number][] =
+  let defaultSettlements: [number, number][] =
     eff === 'sudden_death'
       ? []
+      : eff === 'total_war'
+      ? [
+          [-16, 16],
+          [16, -16],
+          [-16, -16],
+          [16, 16],
+          [0, 22],
+          [0, -22],
+          [-22, 0],
+          [22, 0],
+        ]
       : eff === 'king_of_the_hill'
       ? [
           [-18, 42],
@@ -704,6 +876,9 @@ export function buildMapResourceProfile(
           [15, -42],
           [42, -12],
         ];
+  if (worldSize === 'giant' && eff !== 'sudden_death') {
+    defaultSettlements.push([-32, -32], [32, 32]);
+  }
 
   const defaultBerries: [number, number][] = [
     [-41, 38],
@@ -749,13 +924,25 @@ export function buildMapResourceProfile(
       [14, 12, 1350],
       [0, 0, 1500],
     ];
+  } else if (eff === 'total_war') {
+    goldSpots = [
+      [-28, 40, 1000],
+      [28, -40, 1000],
+      [-28, -40, 1000],
+      [28, 40, 1000],
+      [-9, 9, 1450],
+      [9, -9, 1450],
+      [-11, -11, 1450],
+      [11, 11, 1450],
+      [0, 0, 1800],
+    ];
   }
 
   if (worldSize === 'large' || worldSize === 'giant') {
     goldSpots.push([-20, -24, 1050], [20, 24, 1050]);
   }
   if (worldSize === 'giant') {
-    goldSpots.push([-32, -8, 1100], [32, 8, 1100]);
+    goldSpots.push([-32, -8, 1100], [32, 8, 1100], [0, -28, 1200], [0, 28, 1200]);
   }
 
   let treeClusters: [number, number, number][] = [
@@ -802,10 +989,34 @@ export function buildMapResourceProfile(
       [-22, -20, 6],
       [22, 20, 6],
     ];
+  } else if (eff === 'total_war') {
+    treeClusters = [
+      [-41, 31, 5],
+      [-28, 42, 5],
+      [41, -31, 5],
+      [28, -42, 5],
+      [-40, -31, 5],
+      [40, 31, 5],
+      [-14, 4, 6],
+      [14, -4, 6],
+      [-4, -14, 6],
+      [4, 14, 6],
+      [-8, -8, 5],
+      [8, 8, 5],
+    ];
   }
 
-  if (worldSize !== 'normal') {
-    treeClusters.push([-34, -34, 5], [34, 34, 5]);
+  if (worldSize === 'large') {
+    treeClusters.push([-34, -34, 6], [34, 34, 6], [-28, 0, 5], [28, 0, 5]);
+  } else if (worldSize === 'giant') {
+    treeClusters.push(
+      [-34, -34, 7],
+      [34, 34, 7],
+      [-28, 0, 6],
+      [28, 0, 6],
+      [0, -30, 6],
+      [0, 30, 6]
+    );
   }
 
   // Biome-authentic Fauna herds across all AoM: Retold categories:
@@ -1067,16 +1278,75 @@ export function buildMapResourceProfile(
         ['aurochs', -4, -4], ['wolf', 11, 5], ['wolf', -11, -5],
       ],
     },
+    total_war: {
+      huntPool:
+        activeTotalWar.environment === 'frozen'
+          ? ['reindeer', 'moose', 'bear', 'wolf']
+          : ['boar', 'deer', 'aurochs', 'lion'],
+      spawns:
+        activeTotalWar.environment === 'frozen'
+          ? [
+              ['yak', -30, 30], ['yak', 30, -30], ['yak', -30, -30], ['yak', 30, 30],
+              ['reindeer', -28, 27], ['moose', -38, 25], ['reindeer', 28, -27], ['moose', 38, -25],
+              ['musk_ox', -14, 6], ['musk_ox', 14, -6], ['bear', 0, -12], ['bear', 0, 12],
+              ['wolf', -10, -10], ['wolf', 10, 10],
+            ]
+          : [
+              ['cow', -30, 30], ['goat', 30, -30], ['pig', -30, -30], ['cow', 30, 30],
+              ['chicken', -37, 36], ['chicken', 37, -36],
+              ['boar', -28, 27], ['deer', -38, 25], ['boar', 28, -27], ['deer', 38, -25],
+              ['aurochs', -14, 6], ['aurochs', 14, -6], ['lion', 0, -12], ['lion', 0, 12],
+              ['wolf', -10, -10], ['wolf', 10, 10],
+            ],
+    },
+    rms_custom: {
+      huntPool: ['deer', 'boar', 'aurochs', 'wolf'],
+      spawns: [],
+    },
   };
+
+  if (eff === 'rms_custom') {
+    const rms = getActiveRmsMap();
+    const biomeKey = rms?.biome ?? 'temperate';
+    const huntPool: FaunaKind[] =
+      biomeKey === 'frozen'
+        ? ['reindeer', 'moose', 'musk_ox', 'bear']
+        : biomeKey === 'desert'
+        ? ['gazelle', 'camel', 'lion', 'hyena']
+        : biomeKey === 'savannah'
+        ? ['zebra', 'giraffe', 'rhino', 'lion']
+        : biomeKey === 'tropical'
+        ? ['deer', 'boar', 'tiger', 'alligator']
+        : ['deer', 'boar', 'aurochs', 'wolf'];
+    const aquaticDecorPool: ('sea_turtle' | 'dolphin' | 'whale')[] =
+      biomeKey === 'frozen' ? ['whale', 'dolphin'] : ['sea_turtle', 'dolphin', 'whale'];
+    return {
+      treeClusters: [],
+      goldSpots: [],
+      berrySpots: [],
+      settlementSpots: [],
+      faunaSpawns: [],
+      huntPool,
+      aquaticDecorPool,
+    };
+  }
 
   const herdData = herdsByMap[eff] ?? herdsByMap.mediterranean;
   const faunaSpawns = [...herdData.spawns];
-  if (worldSize !== 'normal') {
+  if (worldSize === 'large' || worldSize === 'giant') {
     faunaSpawns.push(
       [herdData.huntPool[0], -28, -28],
       [herdData.huntPool[1], 28, 28],
       [herdData.huntPool[2], 6, 18],
       [herdData.huntPool[0], -6, -18]
+    );
+  }
+  if (worldSize === 'giant') {
+    faunaSpawns.push(
+      [herdData.huntPool[1], -44, 0],
+      [herdData.huntPool[1], 44, 0],
+      [herdData.huntPool[2], 0, -42],
+      [herdData.huntPool[2], 0, 42]
     );
   }
 
@@ -1087,16 +1357,40 @@ export function buildMapResourceProfile(
     'tundra',
     'highland',
   ];
-  const aquaticDecorPool: ('sea_turtle' | 'dolphin' | 'whale')[] = coldMarineMaps.includes(eff)
-    ? ['whale', 'dolphin']
-    : ['sea_turtle', 'dolphin', 'whale'];
+  const isColdTotalWar = eff === 'total_war' && activeTotalWar.environment === 'frozen';
+  const aquaticDecorPool: ('sea_turtle' | 'dolphin' | 'whale')[] =
+    coldMarineMaps.includes(eff) || isColdTotalWar
+      ? ['whale', 'dolphin']
+      : eff === 'total_war'
+      ? ['dolphin', 'sea_turtle']
+      : ['sea_turtle', 'dolphin', 'whale'];
+
+  // Scale all normalized (-58..+58) coordinates smoothly by WorldSizeSpec.worldScale
+  // and boost extra tree cluster count slightly on giant worlds (capped cleanly for RTS perf)
+  const scaledClusters: [number, number, number][] = treeClusters.map(([cx, cz, cnt]) => [
+    cx * ws,
+    cz * ws,
+    worldSize === 'giant' ? Math.min(9, cnt + 2) : worldSize === 'large' ? Math.min(8, cnt + 1) : cnt,
+  ]);
+  const scaledGold: [number, number, number?][] = goldSpots.map(([gx, gz, amt]) => [
+    gx * ws,
+    gz * ws,
+    eff === 'total_war' ? Math.max(amt ?? 1000, TOTAL_WAR_XS_SPEC.relicMinDistance * 20) : amt,
+  ]);
+  const scaledBerries: [number, number][] = defaultBerries.map(([bx, bz]) => [bx * ws, bz * ws]);
+  const scaledSettlements: [number, number][] = defaultSettlements.map(([sx, sz]) => [sx * ws, sz * ws]);
+  const scaledFauna: [FaunaKind, number, number][] = faunaSpawns.map(([kind, fx, fz]) => [
+    kind,
+    fx * ws,
+    fz * ws,
+  ]);
 
   return {
-    treeClusters,
-    goldSpots,
-    berrySpots: defaultBerries,
-    settlementSpots: defaultSettlements,
-    faunaSpawns,
+    treeClusters: scaledClusters,
+    goldSpots: scaledGold,
+    berrySpots: scaledBerries,
+    settlementSpots: scaledSettlements,
+    faunaSpawns: scaledFauna,
     huntPool: herdData.huntPool,
     aquaticDecorPool,
   };

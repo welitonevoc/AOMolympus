@@ -23,8 +23,8 @@ export type ArchStyleId = 'greek' | 'egyptian' | 'norse' | 'atlantean' | 'chines
 
 export type DifficultyId = 'easy' | 'normal' | 'hard' | 'titan';
 
-import type { MapId, WorldSizeId } from '../textura/maps/mapCatalog';
-export type { MapId, WorldSizeId } from '../textura/maps/mapCatalog';
+import type { MapId, WorldSizeId } from '../maps/mapCatalog';
+export type { MapId, WorldSizeId } from '../maps/mapCatalog';
 
 export type TeamId = 'player' | 'enemy';
 export type ResourceType = 'food' | 'wood' | 'gold' | 'favor';
@@ -359,8 +359,8 @@ export const FORMATIONS: Record<FormationId, FormationSpec> = {
   },
 };
 
-export { MAPS } from '../textura/maps/mapCatalog';
-export type { MapConfig, MapExpansion, MapSpecialRule, MapWeatherKind } from '../textura/maps/mapCatalog';
+export { MAPS } from '../maps/mapCatalog';
+export type { MapConfig, MapExpansion, MapSpecialRule, MapWeatherKind } from '../maps/mapCatalog';
 
 export interface ResourceCost {
   food?: number;
@@ -5259,6 +5259,51 @@ export interface GameHudSnapshot {
   aiPersonality?: AiPersonality;
   campaignScenarioId?: string;
   isSetPlayer?: boolean;
+  wonderAgeActive?: boolean;
+  enemyWonderAgeActive?: boolean;
+  godPowerUses?: Partial<Record<GodPowerId, number>>;
+  godPowerRecastCosts?: Partial<Record<GodPowerId, number>>;
+  townBellActive?: boolean;
+  selectedBuildingGarrison?: {
+    buildingId: string;
+    buildingName?: string;
+    count: number;
+    capacity: number;
+    bonusArrows: number;
+  } | null;
+  selectedMythAbility?: {
+    unitId: string;
+    unitKind: UnitKind;
+    name: string;
+    description: string;
+    cooldownRemaining: number;
+    cooldownTotal: number;
+    autoCast: boolean;
+  } | null;
+  dragWallPreviewCount?: number;
+  replayState?: {
+    active: boolean;
+    playing: boolean;
+    speed: 1 | 2 | 4;
+    currentTime: number;
+    duration: number;
+    fogDisabled: boolean;
+    perspective: 'all' | 'player' | 'enemy';
+    title: string;
+  } | null;
+  timelineHistory?: {
+    timeSec: number;
+    playerEco: number;
+    enemyEco: number;
+    playerArmy: number;
+    enemyArmy: number;
+    playerPop: number;
+    enemyPop: number;
+    playerFavor: number;
+    enemyFavor: number;
+    playerAge: AgeLevel;
+    enemyAge: AgeLevel;
+  }[];
 }
 
 export interface MatchStartOptions {

@@ -3,6 +3,7 @@ import { GameHUD } from './components/GameHUD';
 import { TitleScreen } from './components/TitleScreen';
 import { soundEngine } from './game/audio';
 import { AoMEngine } from './game/engine';
+import { RecordedMatchRecord } from './game/menuData';
 import { multiplayerClient } from './game/multiplayerClient';
 import { ChatMessage } from './game/multiplayerTypes';
 import {
@@ -186,6 +187,33 @@ export default function App() {
     } catch {}
   };
 
+  const handleWatchReplay = (record: RecordedMatchRecord) => {
+    if (!containerRef.current) return;
+    if (mpCleanupRef.current) {
+      mpCleanupRef.current();
+      mpCleanupRef.current = null;
+    }
+    if (engineRef.current) {
+      engineRef.current.dispose();
+      engineRef.current = null;
+    }
+
+    const engine = new AoMEngine(
+      containerRef.current,
+      (snapshot) => {
+        setHudSnapshot(snapshot);
+        setPhase(snapshot.phase);
+        setFps(snapshot.fps ?? 60);
+      },
+      () => {}
+    );
+
+    engineRef.current = engine;
+    engine.applyOptions(options);
+    engine.startReplay(record);
+    setPhase('playing');
+  };
+
   const handleResign = () => {
     if (mpCleanupRef.current) {
       mpCleanupRef.current();
@@ -221,6 +249,7 @@ export default function App() {
           onStartMatch={handleStartMatch}
           onLoadSavedMatch={handleLoadSavedMatch}
           onDeleteSavedMatch={handleDeleteSavedMatch}
+          onWatchReplay={handleWatchReplay}
         />
       )}
 
@@ -289,6 +318,16 @@ export default function App() {
           onAssignControlGroup={(group) => engineRef.current?.assignControlGroup(group)}
           onEmbarkTransport={(shipId) => engineRef.current?.embarkSelectedIntoTransport(shipId)}
           onDisembarkTransport={(shipId) => engineRef.current?.disembarkTransport(shipId)}
+          onToggleTownBell={() => engineRef.current?.toggleTownBell()}
+          onGarrisonSelected={(buildingId) => engineRef.current?.garrisonSelectedIntoBuilding(buildingId)}
+          onConvertWallToGate={() => engineRef.current?.convertSelectedWallToGate()}
+          onTriggerMythSpecial={() => engineRef.current?.triggerSelectedMythSpecial()}
+          onToggleMythAutoCast={() => engineRef.current?.toggleSelectedMythAutoCast()}
+          onReplayTogglePlay={(playing) => engineRef.current?.setReplayPlaying(playing)}
+          onReplaySetSpeed={(speed) => engineRef.current?.setReplaySpeed(speed)}
+          onReplaySeek={(timeSec) => engineRef.current?.seekReplay(timeSec)}
+          onReplayToggleFog={() => engineRef.current?.toggleReplayFog()}
+          onReplaySetPerspective={(p) => engineRef.current?.setReplayPerspective(p)}
           onRestart={() => {
             if (hudSnapshot) {
               handleStartMatch(hudSnapshot.pantheon, hudSnapshot.difficulty, hudSnapshot.mapId, hudSnapshot.revealedMap, {

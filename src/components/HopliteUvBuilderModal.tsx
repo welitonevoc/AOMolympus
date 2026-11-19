@@ -240,7 +240,7 @@ import {
   buildRa,
   getCachedRaTextures,
 } from '../civilizacao/egipcios/raModel';
-import { getEffectiveMapConfig, rollUnknownMapVariant } from '../textura/maps';
+import { getEffectiveMapConfig, rollTotalWarVariant, rollUnknownMapVariant, WORLD_SIZE_SPECS } from '../maps';
 import {
   createBuildingMesh,
   createFaunaMesh,
@@ -264,6 +264,7 @@ import {
   PantheonId,
   UNIT_STATS,
   UnitKind,
+  WorldSizeId,
 } from '../game/types';
 
 export { MAJOR_GODS_BY_CIV, getUnitsForCivAndGod, getBuildingsForCivAndGod };
@@ -374,6 +375,8 @@ const SPECIAL_RULE_LABELS: Record<string, string> = {
   land_unknown: 'Semente Terrestre Aleatória',
   the_unknown: 'Semente Mundial Aleatória',
   sea_of_worms: 'Mar de Vermes',
+  total_war: 'Guerra Total I (.xs/.xml — Anel + Continente + Dia/Noite)',
+  rms_custom: 'Script Procedural AoM: Retold (.xs / .xml)',
 };
 
 const BUILDING_ERA_SPECS: {
@@ -487,6 +490,7 @@ export function HopliteUvBuilderModal({
 
   // Map & Geography state
   const [selectedMap, setSelectedMap] = useState<MapId>('highland');
+  const [mapWorldSize, setMapWorldSize] = useState<WorldSizeId>('normal');
   const [mapExpansionFilter, setMapExpansionFilter] = useState<MapExpansionFilter>('all');
   const [mapWireframe, setMapWireframe] = useState<boolean>(false);
   const [mapShowFlora, setMapShowFlora] = useState<boolean>(true);
@@ -497,11 +501,27 @@ export function HopliteUvBuilderModal({
     maxHeight: number;
     waterCoveragePct: number;
     effectiveBiome: string;
+    worldSizeLabel: string;
+    dimsLabel: string;
+    playableDimsLabel: string;
+    baseDistance: number;
+    treeClusterCount: number;
+    goldMineCount: number;
+    settlementCount: number;
+    faunaCount: number;
   }>({
     minHeight: 0,
     maxHeight: 0,
     waterCoveragePct: 0,
     effectiveBiome: 'Terras Altas',
+    worldSizeLabel: 'Normal',
+    dimsLabel: '148×148',
+    playableDimsLabel: '116×116',
+    baseDistance: 96,
+    treeClusterCount: 0,
+    goldMineCount: 0,
+    settlementCount: 0,
+    faunaCount: 0,
   });
 
   // Fauna state
@@ -767,10 +787,11 @@ export function HopliteUvBuilderModal({
   // Compute canonical studio framing for current subject
   const getFramingForSubject = (focusHead: boolean): { target: [number, number, number]; offset: [number, number, number]; baseDist: number } => {
     if (galleryCategory === 'map') {
+      const sizeMult = mapWorldSize === 'giant' ? 1.38 : mapWorldSize === 'large' ? 1.16 : 0.94;
       return {
-        target: [0, 0.25, 0],
-        offset: [9.4, 8.6, 9.4],
-        baseDist: 15.6,
+        target: [0, 0.2, 0],
+        offset: [9.4 * sizeMult, 8.6 * sizeMult, 9.4 * sizeMult],
+        baseDist: 15.6 * sizeMult,
       };
     }
     if (galleryCategory === 'fauna') {
@@ -1726,6 +1747,7 @@ export function HopliteUvBuilderModal({
           showFlora: mapShowFloraRef.current,
           showFauna: mapShowFaunaRef.current,
           showWireframe: mapWireframeRef.current,
+          worldSize: mapWorldSize,
         });
         dioramaHandleRef.current = handle;
         group = handle.group;
@@ -1734,6 +1756,14 @@ export function HopliteUvBuilderModal({
           maxHeight: Number(handle.maxHeight.toFixed(2)),
           waterCoveragePct: handle.waterCoveragePct,
           effectiveBiome: mapCfg.biomeLabel,
+          worldSizeLabel: handle.worldSizeLabel,
+          dimsLabel: handle.dimsLabel,
+          playableDimsLabel: handle.playableDimsLabel,
+          baseDistance: handle.baseDistance,
+          treeClusterCount: handle.treeClusterCount,
+          goldMineCount: handle.goldMineCount,
+          settlementCount: handle.settlementCount,
+          faunaCount: handle.faunaCount,
         });
       } else if (galleryCategory === 'fauna') {
         scene.background = new THREE.Color(0x0b1019);
@@ -5006,6 +5036,7 @@ export function HopliteUvBuilderModal({
     selectedCiv,
     selectedMajorGod,
     selectedMap,
+    mapWorldSize,
     mapSeedTick,
     selectedFauna,
     selectedFloraId,
@@ -5328,6 +5359,33 @@ export function HopliteUvBuilderModal({
                       {f.label}
                     </button>
                   ))}
+                </div>
+                <div className="pt-1">
+                  <div className="mb-1 flex items-center justify-between text-[9px] font-bold uppercase tracking-wider text-sky-300">
+                    <span>Tamanho do Mapa 3D</span>
+                    <span className="font-mono-num text-amber-300">{WORLD_SIZE_SPECS[mapWorldSize].dimsLabel}</span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-1">
+                    {(['normal', 'large', 'giant'] as WorldSizeId[]).map((sz) => {
+                      const spec = WORLD_SIZE_SPECS[sz];
+                      const active = mapWorldSize === sz;
+                      return (
+                        <button
+                          key={sz}
+                          type="button"
+                          onClick={() => setMapWorldSize(sz)}
+                          className={`flex flex-col items-center rounded py-1 text-[10px] font-semibold border transition cursor-pointer ${
+                            active
+                              ? 'border-amber-400 bg-amber-500/20 text-amber-200'
+                              : 'border-white/10 bg-[#0b0f18] text-[#9ca3af] hover:text-white'
+                          }`}
+                        >
+                          <span>{spec.label}</span>
+                          <span className="font-mono-num text-[9px] opacity-80">{spec.dimsLabel}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
             )}
@@ -5823,6 +5881,38 @@ export function HopliteUvBuilderModal({
                     <div className="text-[9px] uppercase text-[#9ca3af]">Bioma</div>
                     <div className="mt-0.5 text-[10px] font-bold text-emerald-300 truncate">
                       {dioramaMetrics.effectiveBiome}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Tamanho & Escala do Mundo */}
+                <div className="rounded-lg border border-amber-400/25 bg-amber-500/5 p-2.5 space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[9px] font-bold uppercase tracking-wider text-amber-300">
+                      Tamanho · {dioramaMetrics.worldSizeLabel}
+                    </span>
+                    <span className="font-mono-num text-[10px] font-bold text-[#f5e3b0]">
+                      {dioramaMetrics.dimsLabel}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-1.5 text-[10px] text-[#cbd5e1]">
+                    <div className="rounded bg-[#090d16]/80 px-2 py-1 flex justify-between">
+                      <span className="text-[#9ca3af]">Jogável</span>
+                      <span className="font-mono-num font-semibold text-white">{dioramaMetrics.playableDimsLabel}</span>
+                    </div>
+                    <div className="rounded bg-[#090d16]/80 px-2 py-1 flex justify-between">
+                      <span className="text-[#9ca3af]">Dist. Bases</span>
+                      <span className="font-mono-num font-semibold text-sky-300">{dioramaMetrics.baseDistance}m</span>
+                    </div>
+                    <div className="rounded bg-[#090d16]/80 px-2 py-1 flex justify-between">
+                      <span className="text-[#9ca3af]">Bosques</span>
+                      <span className="font-mono-num font-semibold text-emerald-300">{dioramaMetrics.treeClusterCount}</span>
+                    </div>
+                    <div className="rounded bg-[#090d16]/80 px-2 py-1 flex justify-between">
+                      <span className="text-[#9ca3af]">Ouro / Assent.</span>
+                      <span className="font-mono-num font-semibold text-amber-300">
+                        {dioramaMetrics.goldMineCount} / {dioramaMetrics.settlementCount}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -8303,6 +8393,23 @@ export function HopliteUvBuilderModal({
             </>
           ) : galleryCategory === 'map' ? (
             <>
+              <div className="flex items-center rounded-lg border border-amber-400/35 bg-[#090d16] p-0.5">
+                {(['normal', 'large', 'giant'] as WorldSizeId[]).map((sz) => (
+                  <button
+                    key={sz}
+                    type="button"
+                    onClick={() => setMapWorldSize(sz)}
+                    title={`Tamanho ${WORLD_SIZE_SPECS[sz].label} (${WORLD_SIZE_SPECS[sz].dimsLabel})`}
+                    className={`rounded-md px-2 py-1 text-[11px] font-bold transition cursor-pointer whitespace-nowrap ${
+                      mapWorldSize === sz
+                        ? 'bg-amber-400 text-slate-950 shadow'
+                        : 'text-[#cbd5e1] hover:text-white'
+                    }`}
+                  >
+                    {WORLD_SIZE_SPECS[sz].label}
+                  </button>
+                ))}
+              </div>
               <button
                 type="button"
                 onClick={() => setMapWireframe((v) => !v)}
@@ -8339,17 +8446,21 @@ export function HopliteUvBuilderModal({
                 <Compass className="h-3.5 w-3.5" />
                 <span>Fauna Local</span>
               </button>
-              {(selectedMap === 'land_unknown' || selectedMap === 'the_unknown') && (
+              {(selectedMap === 'land_unknown' || selectedMap === 'the_unknown' || selectedMap === 'total_war') && (
                 <button
                   type="button"
                   onClick={() => {
-                    rollUnknownMapVariant(selectedMap);
+                    if (selectedMap === 'total_war') {
+                      rollTotalWarVariant('total_war');
+                    } else {
+                      rollUnknownMapVariant(selectedMap);
+                    }
                     setMapSeedTick((t) => t + 1);
                   }}
                   className="flex items-center gap-1 rounded-lg border border-amber-400/40 bg-amber-500/20 px-2.5 py-1.5 text-xs font-bold text-amber-200 hover:bg-amber-500/30 cursor-pointer whitespace-nowrap"
                 >
                   <Shuffle className="h-3.5 w-3.5" />
-                  <span>Sortear Semente</span>
+                  <span>{selectedMap === 'total_war' ? 'Alternar Bioma' : 'Sortear Semente'}</span>
                 </button>
               )}
             </>

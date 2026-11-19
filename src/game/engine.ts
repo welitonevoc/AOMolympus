@@ -37,7 +37,7 @@ import {
   rollUnknownMapVariant,
   setActiveRmsMap,
   TOTAL_WAR_XS_SPEC,
-} from '../textura/maps';
+} from '../maps';
 import { preloadForestPackGlb } from '../textura';
 import { NavigationGrid, ObstacleCircle, WATER_WALK_LIMIT } from './navigation';
 import {
@@ -48,11 +48,24 @@ import {
 } from './textures';
 import {
   attachWindSwayShader,
+  buildInstancedGroundDecor,
   createTerrainNormalTexture,
   createTerrainRoughnessTexture,
+  upgradeTerrainMaterial,
   upgradeWaterMaterial,
   VisualEffectsManager,
 } from './visualEngine';
+import {
+  buildDemoReplayData,
+  getRetoldCooldown,
+  getRetoldRecastFavorCost,
+  MatchTimelineSample,
+  MYTH_SPECIAL_ABILITIES,
+  ReplayEntityTuple,
+  ReplayKeyframe,
+  ReplayPlaybackState,
+} from './matchAnalytics';
+import { appendRecordedMatch, RecordedMatchRecord } from './menuData';
 import {
   GOD_POWERS,
   TECH_SPECS,
@@ -147,6 +160,9 @@ interface UnitEntity {
   chargeCooldown?: number;
   chargeBurstTimer?: number;
   specialCooldown?: number;
+  specialAutoCast?: boolean;
+  stunTimer?: number;
+  commandQueue?: Array<{ type: 'move' | 'attack' | 'gather' | 'build'; x: number; z: number; targetId?: string }>;
   isPromotedHero?: boolean;
   trainedAtGreatHall?: boolean;
   tradeTargetBuildingId?: string | null;
@@ -542,6 +558,12 @@ export class AoMEngine {
   private palette: MaterialPalette;
   private waterMesh: THREE.Mesh | null = null;
   private waterUniforms: { uTime: { value: number }; uIsLava: { value: number }; uIsIce: { value: number } } | null = null;
+  private terrainUniforms: {
+    uTime: { value: number };
+    uWaterY: { value: number };
+    uIsLava: { value: number };
+  } | null = null;
+  private groundDecorMesh: THREE.InstancedMesh | null = null;
   private windUniforms: { uTime: { value: number } }[] = [];
   private terrainMesh: THREE.Mesh | null = null;
   private terrainTex: THREE.CanvasTexture | null = null;
@@ -550,8 +572,26 @@ export class AoMEngine {
   private vfxManager: VisualEffectsManager | null = null;
   private currentSunOffset = new THREE.Vector3(55, 82, 42);
   private placementGhost: THREE.Group | null = null;
+  private dragWallStart: { x: number; z: number } | null = null;
+  private dragWallPoints: { x: number; z: number }[] = [];
+  private dragWallGhostGroup: THREE.Group | null = null;
   private godPowerRing: THREE.Mesh | null = null;
   private navGrid = new NavigationGrid();
+
+  // Retold God Power recasting, Town Bell, AI timers & Timeline/Replay recording
+  private godPowerUses: Partial<Record<GodPowerId, number>> = {};
+  private townBellActive = false;
+  private timelineHistory: MatchTimelineSample[] = [];
+  private replayFrames: ReplayKeyframe[] = [];
+  private timelineSampleTimer = 0;
+  private replayFrameTimer = 0;
+  private matchRecorded = false;
+  private replayMode = false;
+  private replayActiveFrames: ReplayKeyframe[] = [];
+  private replayState: ReplayPlaybackState | null = null;
+  private replayEntityMeshes = new Map<string, { mesh: THREE.Object3D; team: TeamId; kind: string; isBuilding: boolean }>();
+  private aiNavalTimer = 0;
+  private aiFactionTimer = 0;
 
   private frameId = 0;
   private disposed = false;
@@ -1092,10 +1132,27 @@ export class AoMEngine {
       roughness: 0.92,
       metalness: 0.02,
     });
+    this.terrainUniforms = upgradeTerrainMaterial(terrainMat, mapId, -0.68).uniforms;
 
     this.terrainMesh = new THREE.Mesh(geo, terrainMat);
     this.terrainMesh.receiveShadow = !this.isSoftwareGl;
     this.scene.add(this.terrainMesh);
+
+    if (this.groundDecorMesh) {
+      this.scene.remove(this.groundDecorMesh);
+      this.groundDecorMesh.geometry.dispose();
+      (this.groundDecorMesh.material as THREE.Material).dispose();
+      this.groundDecorMesh = null;
+    }
+    this.groundDecorMesh = buildInstancedGroundDecor(
+      mapId,
+      this.worldSize,
+      (x, z) => groundHeightAt(x, z, mapId, this.worldSize),
+      this.isSoftwareGl
+    );
+    if (this.groundDecorMesh) {
+      this.scene.add(this.groundDecorMesh);
+    }
 
     // Surrounding ocean / river / lava water plane with procedural wave & Fresnel shader
     const waterSegs = this.isSoftwareGl ? 24 : 68;
@@ -1218,6 +1275,31 @@ export class AoMEngine {
       this.scene.remove(this.placementGhost);
       this.placementGhost = null;
     }
+    this.clearDragWallPreview();
+  }
+
+  private clearDragWallPreview() {
+    this.dragWallStart = null;
+    this.dragWallPoints = [];
+    if (this.dragWallGhostGroup) {
+      this.scene.remove(this.dragWallGhostGroup);
+      this.dragWallGhostGroup.traverse((obj) => {
+        if ((obj as THREE.Mesh).isMesh) {
+          const m = obj as THREE.Mesh;
+          m.geometry?.dispose();
+          if (Array.isArray(m.material)) m.material.forEach((mt) => mt.dispose());
+          else (m.material as THREE.Material | undefined)?.dispose();
+        }
+      });
+      this.dragWallGhostGroup = null;
+    }
+  }
+
+  private clearReplayMeshes() {
+    for (const entry of this.replayEntityMeshes.values()) {
+      this.scene.remove(entry.mesh);
+    }
+    this.replayEntityMeshes.clear();
   }
 
   public startNewMatch(
@@ -1405,7 +1487,20 @@ export class AoMEngine {
     this.activeBuildMode = null;
     this.activeGodPowerMode = null;
     this.enemyAiTimer = 0;
+    this.aiNavalTimer = 0;
+    this.aiFactionTimer = 0;
     this.enemyWaveTimer = difficulty === 'titan' ? 28 : difficulty === 'hard' ? 36 : 46;
+    this.godPowerUses = {};
+    this.townBellActive = false;
+    this.timelineHistory = [];
+    this.replayFrames = [];
+    this.timelineSampleTimer = 0;
+    this.replayFrameTimer = 0;
+    this.matchRecorded = false;
+    this.replayMode = false;
+    this.replayState = null;
+    this.replayActiveFrames = [];
+    this.clearReplayMeshes();
     for (const k of Object.keys(this.godPowerCooldowns) as GodPowerId[]) {
       this.godPowerCooldowns[k] = 0;
     }
@@ -2710,7 +2805,7 @@ export class AoMEngine {
         speedMult += 0.15;
       }
       if (this.hasTeamWonder(team)) {
-        hpMult += 0.2;
+        hpMult += 0.25;
         atkMult += 0.2;
       }
     }
@@ -3601,7 +3696,18 @@ export class AoMEngine {
   }
 
   public resignMatch() {
+    if (this.replayMode) {
+      this.replayMode = false;
+      this.replayState = null;
+      this.clearReplayMeshes();
+      this.phase = 'title';
+      this.emitHudSnapshot();
+      return;
+    }
     if (this.phase === 'playing' || this.phase === 'paused') {
+      if (this.elapsedSeconds >= 25) {
+        this.recordCompletedMatch('defeat');
+      }
       this.phase = 'defeat';
       soundEngine.playFanfare(false);
       soundEngine.setMusicScene('defeat');
@@ -4089,7 +4195,7 @@ export class AoMEngine {
   }
 
   public activateGodPower(id: GodPowerId) {
-    if (this.phase !== 'playing') return;
+    if (this.phase !== 'playing' || this.replayMode) return;
     const spec = getCivGodPowerSpec(this.pantheon, id);
     if (!this.unlockedPowers.includes(id)) {
       this.notifyStatus(`${spec.name} ainda não foi desbloqueado pelo panteão.`);
@@ -4103,8 +4209,10 @@ export class AoMEngine {
       this.notifyStatus(`${spec.name} em recarga (${Math.ceil(this.godPowerCooldowns[id])}s).`);
       return;
     }
-    if (this.resources.favor < spec.favorCost) {
-      this.notifyStatus(`Favor Divino insuficiente (${spec.favorCost} necessário). Construa um Templo.`);
+    const uses = this.godPowerUses[id] ?? 0;
+    const recastCost = getRetoldRecastFavorCost(id, uses, this.hasTeamWonder('player'));
+    if (this.resources.favor < recastCost) {
+      this.notifyStatus(`Favor Divino insuficiente (${recastCost} Favor necessário para relançar).`);
       return;
     }
 
@@ -4121,7 +4229,9 @@ export class AoMEngine {
       this.godPowerRing.visible = true;
     }
     soundEngine.playSelect();
-    this.notifyStatus(`Clique no mapa para lançar ${spec.name}.`);
+    this.notifyStatus(
+      `Clique no mapa para lançar ${spec.name} (${recastCost === 0 ? '1º uso Grátis' : `${recastCost} Favor`}).`
+    );
     this.emitHudSnapshot();
   }
 
@@ -4320,9 +4430,13 @@ export class AoMEngine {
         return;
       }
     }
-    this.resources.favor -= spec.favorCost;
+    const uses = this.godPowerUses[id] ?? 0;
+    const wonderActive = this.hasTeamWonder('player');
+    const recastCost = getRetoldRecastFavorCost(id, uses, wonderActive);
+    this.resources.favor = Math.max(0, this.resources.favor - recastCost);
+    this.godPowerUses[id] = uses + 1;
     const cdMult = PANTHEONS[this.pantheon].favoredGodPower === id ? 0.78 : 1;
-    this.godPowerCooldowns[id] = spec.cooldown * cdMult;
+    this.godPowerCooldowns[id] = getRetoldCooldown(spec.cooldown * cdMult, uses, wonderActive);
     this.stats.powersCast++;
     this.activeGodPowerMode = null;
     if (this.godPowerRing) this.godPowerRing.visible = false;
@@ -6196,7 +6310,26 @@ export class AoMEngine {
     }
 
     if (e.button === 0) {
+      if (this.replayMode) {
+        this.isPointerDown = true;
+        this.isMapPanning = true;
+        this.pointerDownPos = { x: e.clientX, y: e.clientY };
+        this.lastPointerPos = { x: e.clientX, y: e.clientY };
+        return;
+      }
       if (this.activeBuildMode) {
+        if (this.activeBuildMode === 'wall') {
+          const pt = this.getGroundPointFromEvent(e.clientX, e.clientY);
+          if (pt) {
+            const sx = THREE.MathUtils.clamp(pt.x, -this.playableHalfSize + 4, this.playableHalfSize - 4);
+            const sz = THREE.MathUtils.clamp(pt.z, -this.playableHalfSize + 4, this.playableHalfSize - 4);
+            this.dragWallStart = { x: sx, z: sz };
+            this.updateDragWallPreview(sx, sz);
+            this.isPointerDown = true;
+            this.commandDragButton = 0;
+          }
+          return;
+        }
         this.handlePlaceBuilding(e);
         return;
       }
@@ -6250,6 +6383,16 @@ export class AoMEngine {
       const dx = e.clientX - this.lastPointerPos.x;
       this.camDesiredYaw -= dx * 0.0065;
       this.lastPointerPos = { x: e.clientX, y: e.clientY };
+      return;
+    }
+
+    if (this.activeBuildMode === 'wall' && this.dragWallStart && this.isPointerDown) {
+      const pt = this.getGroundPointFromEvent(e.clientX, e.clientY);
+      if (pt) {
+        const ex = THREE.MathUtils.clamp(pt.x, -this.playableHalfSize + 4, this.playableHalfSize - 4);
+        const ez = THREE.MathUtils.clamp(pt.z, -this.playableHalfSize + 4, this.playableHalfSize - 4);
+        this.updateDragWallPreview(ex, ez);
+      }
       return;
     }
 
@@ -6391,6 +6534,11 @@ export class AoMEngine {
     if (!this.isPointerDown || (e.button !== 0 && e.button !== 2)) return;
     this.isPointerDown = false;
 
+    if (e.button === 0 && this.activeBuildMode === 'wall' && this.dragWallStart) {
+      this.commitDragWallBuild();
+      return;
+    }
+
     if (this.isMapPanning) {
       this.isMapPanning = false;
       this.commandDragUnitId = null;
@@ -6458,12 +6606,12 @@ export class AoMEngine {
       // trigger the 6-frame Hoplite spear-thrust attack (`atacar()`) if no enemy entity was clicked!
       const pickedRight = this.pickEntityFromEvent(e.clientX, e.clientY);
       const hasSelectedHoplite = selUnits.some((u) => u.kind === 'hoplite');
-      if (hasSelectedHoplite && pickedRight.type === null) {
+      if (hasSelectedHoplite && pickedRight.type === null && !e.shiftKey) {
         const pt = this.getGroundPointFromEvent(e.clientX, e.clientY);
         this.triggerSelectedHopliteAttack(pt ?? undefined);
         return;
       }
-      this.commitCommandOrderAt(e.clientX, e.clientY, []);
+      this.commitCommandOrderAt(e.clientX, e.clientY, [], e.shiftKey);
       return;
     }
 
@@ -6795,6 +6943,410 @@ export class AoMEngine {
     soundEngine.playBuild();
     this.notifyStatus(`🛡️ ${ejectedCount} unidade(s) desembarcada(s) da guarnição!`);
     this.emitHudSnapshot();
+  }
+
+  public toggleTownBell() {
+    if (this.phase !== 'playing' || this.replayMode) return;
+    this.townBellActive = !this.townBellActive;
+    if (this.townBellActive) {
+      const shelters = [...this.buildings.values()].filter(
+        (b) => b.team === 'player' && b.isConstructed && this.canGarrisonIn(b)
+      );
+      if (shelters.length === 0) {
+        this.townBellActive = false;
+        this.notifyStatus('Nenhuma estrutura construída disponível para abrigar aldeões.');
+        this.emitHudSnapshot();
+        return;
+      }
+      const assignedCounts = new Map<string, number>();
+      for (const s of shelters) {
+        assignedCounts.set(s.id, s.garrisonedUnitIds?.length ?? 0);
+      }
+      let sheltered = 0;
+      for (const u of this.units.values()) {
+        if (u.team !== 'player' || u.hp <= 0 || !this.isWorkerKind(u.kind) || u.state === 'garrisoned') continue;
+        let best: BuildingEntity | null = null;
+        let bestD = Infinity;
+        for (const s of shelters) {
+          const cap = s.maxGarrisonCapacity ?? this.getGarrisonCapacity(s.kind);
+          if ((assignedCounts.get(s.id) ?? 0) >= cap) continue;
+          const d = u.mesh.position.distanceTo(s.mesh.position);
+          if (d < bestD) {
+            bestD = d;
+            best = s;
+          }
+        }
+        if (best) {
+          assignedCounts.set(best.id, (assignedCounts.get(best.id) ?? 0) + 1);
+          if (bestD <= best.radius + 2.4) {
+            this.garrisonUnit(u, best);
+          } else {
+            u.state = 'move';
+            u.targetEntityId = best.id;
+            u.targetNodeId = null;
+            u.targetFaunaId = null;
+            u.targetPos = best.mesh.position.clone();
+            u.waypoints = [];
+            u.commandQueue = [];
+            u.repathTimer = 0;
+          }
+          sheltered++;
+        }
+      }
+      soundEngine.playFanfare(false);
+      this.notifyStatus(`🔔 Sino da Cidade tocado! ${sheltered} aldeão(ões) recolhendo-se às fortalezas.`);
+    } else {
+      let released = 0;
+      for (const b of this.buildings.values()) {
+        if (b.team === 'player' && b.garrisonedUnitIds && b.garrisonedUnitIds.length > 0) {
+          released += b.garrisonedUnitIds.length;
+          this.ungarrisonBuilding(b.id);
+        }
+      }
+      // Return idle villagers to nearest resource node automatically
+      for (const u of this.units.values()) {
+        if (u.team === 'player' && this.isWorkerKind(u.kind) && u.state === 'idle') {
+          let bestN: ResourceNodeEntity | null = null;
+          let bestD = 32;
+          for (const n of this.nodes.values()) {
+            if (n.kind === 'fish_spot') continue;
+            const d = n.mesh.position.distanceTo(u.mesh.position);
+            if (d < bestD) {
+              bestD = d;
+              bestN = n;
+            }
+          }
+          if (bestN) {
+            u.state = 'gather';
+            u.targetNodeId = bestN.id;
+            u.gatherResourceType = bestN.resourceType;
+            u.lastGatherPos = bestN.mesh.position.clone();
+          }
+        }
+      }
+      this.notifyStatus(`🔔 Alarme encerrado! ${released} unidade(s) retornaram ao trabalho.`);
+    }
+    this.emitHudSnapshot();
+  }
+
+  public garrisonSelectedIntoBuilding(buildingId: string) {
+    if (this.phase !== 'playing' || this.replayMode) return;
+    const b = this.buildings.get(buildingId);
+    if (!b || b.team !== 'player' || !this.canGarrisonIn(b)) return;
+    const nearby = [...this.units.values()]
+      .filter(
+        (u) =>
+          u.team === 'player' &&
+          u.hp > 0 &&
+          u.state !== 'garrisoned' &&
+          !this.unitStats(u.kind, 'player').isGod &&
+          u.kind !== 'titan' &&
+          u.mesh.position.distanceTo(b.mesh.position) <= 28
+      )
+      .sort((a, c) => a.mesh.position.distanceTo(b.mesh.position) - c.mesh.position.distanceTo(b.mesh.position));
+    const cap = b.maxGarrisonCapacity ?? this.getGarrisonCapacity(b.kind);
+    const avail = Math.max(0, cap - (b.garrisonedUnitIds?.length ?? 0));
+    if (avail <= 0) {
+      this.notifyStatus('Guarnição já está na capacidade máxima.');
+      return;
+    }
+    const batch = nearby.slice(0, avail);
+    if (batch.length === 0) {
+      this.notifyStatus('Aproxime aldeões ou arqueiros desta estrutura para guarnecer.');
+      return;
+    }
+    this.orderGarrison(batch, b);
+  }
+
+  public convertSelectedWallToGate() {
+    if (this.phase !== 'playing' || this.replayMode) return;
+    const selB = this.getSelectedPlayerBuilding();
+    if (!selB || selB.kind !== 'wall' || !selB.isConstructed) {
+      this.notifyStatus('Selecione um trecho de Muralha construído para converter em Portão.');
+      return;
+    }
+    const gateCost: ResourceCost = { wood: 15, gold: 10 };
+    if (!this.canAfford(this.resources, gateCost)) {
+      this.notifyStatus('Necessário 15 Madeira e 10 Ouro para converter em Portão.');
+      return;
+    }
+    const pos = selB.mesh.position.clone();
+    const rotY = selB.mesh.rotation.y;
+    this.deductCost(this.resources, gateCost);
+    this.scene.remove(selB.mesh);
+    this.buildings.delete(selB.id);
+    const gate = this.spawnBuilding('gate', 'player', pos.x, pos.z, true);
+    gate.mesh.rotation.y = rotY;
+    gate.selected = true;
+    this.syncNavObstacles();
+    this.spawnRingVfx(pos, 2.6, 0xfacc15, 0.55);
+    soundEngine.playBuild();
+    this.notifyStatus('🚪 Trecho de Muralha convertido em Portão fortificado!');
+    this.emitHudSnapshot();
+  }
+
+  private updateDragWallPreview(endX: number, endZ: number) {
+    if (!this.dragWallStart) return;
+    const dx = endX - this.dragWallStart.x;
+    const dz = endZ - this.dragWallStart.z;
+    const totalDist = Math.hypot(dx, dz);
+    const step = 3.2;
+    const count = Math.min(24, Math.max(1, Math.floor(totalDist / step) + 1));
+    const pts: { x: number; z: number }[] = [];
+    for (let i = 0; i < count; i++) {
+      const t = count === 1 ? 0 : i / (count - 1);
+      pts.push({
+        x: this.dragWallStart.x + dx * t,
+        z: this.dragWallStart.z + dz * t,
+      });
+    }
+    this.dragWallPoints = pts;
+
+    if (this.dragWallGhostGroup) {
+      this.scene.remove(this.dragWallGhostGroup);
+      this.dragWallGhostGroup.traverse((obj) => {
+        if ((obj as THREE.Mesh).isMesh) {
+          const m = obj as THREE.Mesh;
+          m.geometry?.dispose();
+          if (Array.isArray(m.material)) m.material.forEach((mt) => mt.dispose());
+          else (m.material as THREE.Material | undefined)?.dispose();
+        }
+      });
+    }
+    const group = new THREE.Group();
+    const wallYaw = totalDist > 0.2 ? Math.atan2(dx, dz) + Math.PI * 0.5 : 0;
+    const segGeo = new THREE.BoxGeometry(3.0, 2.2, 0.9);
+    for (const p of pts) {
+      const valid = this.canPlaceBuildingAt('wall', p.x, p.z);
+      const mat = new THREE.MeshBasicMaterial({
+        color: valid ? 0x4ade80 : 0xef4444,
+        transparent: true,
+        opacity: 0.45,
+        wireframe: false,
+      });
+      const m = new THREE.Mesh(segGeo, mat);
+      const y = groundHeightAt(p.x, p.z, this.mapId, this.worldSize);
+      m.position.set(p.x, y + 1.1, p.z);
+      m.rotation.y = wallYaw;
+      group.add(m);
+    }
+    this.dragWallGhostGroup = group;
+    this.scene.add(group);
+    this.emitHudSnapshot();
+  }
+
+  private commitDragWallBuild() {
+    const pts = [...this.dragWallPoints];
+    const start = this.dragWallStart;
+    this.clearDragWallPreview();
+    if (!start || pts.length === 0) return;
+
+    const stats = this.buildingStats('wall', 'player');
+    const last = pts[pts.length - 1];
+    const wallYaw =
+      pts.length > 1 ? Math.atan2(last.x - start.x, last.z - start.z) + Math.PI * 0.5 : 0;
+    let builtCount = 0;
+    const placedWalls: BuildingEntity[] = [];
+
+    for (const p of pts) {
+      if (!this.canPlaceBuildingAt('wall', p.x, p.z)) continue;
+      if (!this.canAfford(this.resources, stats.cost)) break;
+      this.deductCost(this.resources, stats.cost);
+      const b = this.spawnBuilding('wall', 'player', p.x, p.z, false);
+      b.mesh.rotation.y = wallYaw;
+      placedWalls.push(b);
+      builtCount++;
+      this.stats.buildingsBuilt++;
+    }
+
+    if (builtCount > 0) {
+      this.syncNavObstacles();
+      soundEngine.playBuild();
+      const firstWall = placedWalls[0];
+      let assigned = 0;
+      for (const u of this.units.values()) {
+        if (u.team === 'player' && this.isBuilderKind(u.kind) && u.selected) {
+          u.state = 'build';
+          u.targetEntityId = firstWall.id;
+          u.targetNodeId = null;
+          u.targetFaunaId = null;
+          u.waypoints = [];
+          u.repathTimer = 0;
+          assigned++;
+        }
+      }
+      if (assigned === 0) {
+        let best: UnitEntity | null = null;
+        let bestD = Infinity;
+        for (const u of this.units.values()) {
+          if (u.team === 'player' && this.isBuilderKind(u.kind)) {
+            const d = u.mesh.position.distanceTo(firstWall.mesh.position);
+            if (d < bestD) {
+              bestD = d;
+              best = u;
+            }
+          }
+        }
+        if (best) {
+          best.state = 'build';
+          best.targetEntityId = firstWall.id;
+          best.waypoints = [];
+        }
+      }
+      this.notifyStatus(`🧱 ${builtCount} trecho(s) de Muralha posicionado(s) em linha!`);
+    } else {
+      this.notifyStatus('Não foi possível posicionar muralhas neste traçado (terreno bloqueado ou recursos insuficientes).');
+    }
+
+    this.activeBuildMode = null;
+    this.clearPlacementGhost();
+    this.emitHudSnapshot();
+  }
+
+  public triggerSelectedMythSpecial() {
+    if (this.phase !== 'playing' || this.replayMode) return;
+    const selectedMyths = [...this.units.values()].filter(
+      (u) => u.team === 'player' && u.selected && u.hp > 0 && Boolean(MYTH_SPECIAL_ABILITIES[u.kind])
+    );
+    if (selectedMyths.length === 0) return;
+
+    let castCount = 0;
+    for (const u of selectedMyths) {
+      const spec = MYTH_SPECIAL_ABILITIES[u.kind];
+      if (!spec || (u.specialCooldown ?? 0) > 0) continue;
+      const target = this.findNearestEnemy(u.team, u.mesh.position, Math.max(spec.radius + 5, 10));
+      const targetU = target && !target.isBuilding ? this.units.get(target.id) : undefined;
+      if (this.executeMythSpecialAbility(u, targetU)) {
+        castCount++;
+      }
+    }
+    if (castCount > 0) {
+      this.emitHudSnapshot();
+    } else {
+      this.notifyStatus('Habilidade mítica em recarga ou sem alvo próximo.');
+    }
+  }
+
+  public toggleSelectedMythAutoCast() {
+    if (this.phase !== 'playing' || this.replayMode) return;
+    const selectedMyths = [...this.units.values()].filter(
+      (u) => u.team === 'player' && u.selected && u.hp > 0 && Boolean(MYTH_SPECIAL_ABILITIES[u.kind])
+    );
+    if (selectedMyths.length === 0) return;
+    const nextVal = selectedMyths[0].specialAutoCast === false;
+    for (const u of selectedMyths) {
+      u.specialAutoCast = nextVal;
+    }
+    this.notifyStatus(
+      nextVal ? '⚡ Disparo Automático de Habilidade Mítica ativado.' : '⚡ Disparo Automático desativado (use tecla Q).'
+    );
+    this.emitHudSnapshot();
+  }
+
+  private executeMythSpecialAbility(u: UnitEntity, primaryTarget?: UnitEntity): boolean {
+    const spec = MYTH_SPECIAL_ABILITIES[u.kind];
+    if (!spec || (u.specialCooldown ?? 0) > 0) return false;
+
+    const origin = primaryTarget ? primaryTarget.mesh.position : u.mesh.position;
+    if (spec.effect === 'heal_aura') {
+      let healed = 0;
+      for (const ally of this.units.values()) {
+        if (ally.team === u.team && ally.hp > 0 && ally.hp < ally.maxHp && ally.mesh.position.distanceTo(u.mesh.position) <= spec.radius) {
+          ally.hp = Math.min(ally.maxHp, ally.hp + 75);
+          healed++;
+        }
+      }
+      if (healed === 0) return false;
+      u.specialCooldown = spec.cooldown;
+      this.spawnRingVfx(u.mesh.position, spec.radius, spec.vfxHex, 0.85);
+      soundEngine.playSelect();
+      return true;
+    }
+
+    if (!primaryTarget) return false;
+    const dist = u.mesh.position.distanceTo(primaryTarget.mesh.position);
+    if (dist > Math.max(spec.range, spec.radius + 4.5, 9.5)) return false;
+
+    u.specialCooldown = spec.cooldown;
+    const stats = this.unitStats(u.kind, u.team);
+    const dmg = Math.round(stats.attack * spec.damageMultiplier);
+
+    if (spec.effect === 'petrify' || spec.effect === 'frost_freeze') {
+      const stunSec = spec.effect === 'petrify' ? 3.2 : 3.5;
+      primaryTarget.stunTimer = Math.max(primaryTarget.stunTimer ?? 0, stunSec);
+      primaryTarget.frozenTimer = Math.max(primaryTarget.frozenTimer, stunSec);
+      this.damageUnit(primaryTarget, dmg, u.team);
+      this.spawnPillarVfx(origin, spec.vfxHex, 1.1);
+      this.spawnRingVfx(origin, Math.max(2.2, spec.radius), spec.vfxHex, 0.7);
+      if (spec.effect === 'frost_freeze') {
+        for (const e of [...this.units.values()]) {
+          if (e.team !== u.team && e.id !== primaryTarget.id && e.hp > 0 && e.mesh.position.distanceTo(origin) <= spec.radius) {
+            e.stunTimer = Math.max(e.stunTimer ?? 0, stunSec * 0.7);
+            e.frozenTimer = Math.max(e.frozenTimer, stunSec * 0.7);
+            this.damageUnit(e, Math.round(dmg * 0.5), u.team);
+          }
+        }
+      }
+      soundEngine.playLightning?.();
+    } else if (spec.effect === 'throw_aoe' || spec.effect === 'leap_strike' || spec.effect === 'gold_charge') {
+      if (spec.effect === 'leap_strike') {
+        const dx = primaryTarget.mesh.position.x - u.mesh.position.x;
+        const dz = primaryTarget.mesh.position.z - u.mesh.position.z;
+        const len = Math.max(0.1, Math.hypot(dx, dz));
+        const lx = THREE.MathUtils.clamp(primaryTarget.mesh.position.x - (dx / len) * 1.4, -this.playableHalfSize + 2, this.playableHalfSize - 2);
+        const lz = THREE.MathUtils.clamp(primaryTarget.mesh.position.z - (dz / len) * 1.4, -this.playableHalfSize + 2, this.playableHalfSize - 2);
+        u.mesh.position.set(lx, groundHeightAt(lx, lz, this.mapId, this.worldSize), lz);
+      }
+      this.spawnRingVfx(origin, spec.radius, spec.vfxHex, 0.65);
+      for (const e of [...this.units.values()]) {
+        if (e.team !== u.team && e.hp > 0 && e.mesh.position.distanceTo(origin) <= spec.radius) {
+          this.damageUnit(e, e.id === primaryTarget.id ? dmg : Math.round(dmg * 0.65), u.team);
+          e.stunTimer = Math.max(e.stunTimer ?? 0, 1.2);
+          const kx = e.mesh.position.x - u.mesh.position.x;
+          const kz = e.mesh.position.z - u.mesh.position.z;
+          const kl = Math.max(0.1, Math.hypot(kx, kz));
+          const nx = THREE.MathUtils.clamp(e.mesh.position.x + (kx / kl) * 2.6, -this.playableHalfSize + 2, this.playableHalfSize - 2);
+          const nz = THREE.MathUtils.clamp(e.mesh.position.z + (kz / kl) * 2.6, -this.playableHalfSize + 2, this.playableHalfSize - 2);
+          if (this.isWalkableTerrainPoint(nx, nz)) {
+            e.mesh.position.set(nx, groundHeightAt(nx, nz, this.mapId, this.worldSize), nz);
+          }
+        }
+      }
+      soundEngine.playSwordHit();
+    } else if (spec.effect === 'cleave_heal') {
+      u.hp = Math.min(u.maxHp, u.hp + Math.round(u.maxHp * 0.18));
+      this.spawnRingVfx(u.mesh.position, spec.radius, spec.vfxHex, 0.75);
+      for (const e of [...this.units.values()]) {
+        if (e.team !== u.team && e.hp > 0 && e.mesh.position.distanceTo(origin) <= spec.radius) {
+          this.damageUnit(e, Math.round(dmg * 0.85), u.team);
+        }
+      }
+      soundEngine.playSwordHit();
+    } else if (spec.effect === 'flame_cone') {
+      this.spawnPillarVfx(origin, spec.vfxHex, 1.35);
+      this.spawnRingVfx(origin, spec.radius, spec.vfxHex, 0.8);
+      for (const e of [...this.units.values()]) {
+        if (e.team !== u.team && e.hp > 0 && e.mesh.position.distanceTo(origin) <= spec.radius) {
+          this.damageUnit(e, Math.round(dmg * 0.85), u.team);
+        }
+      }
+      soundEngine.playMeteor();
+    } else if (spec.effect === 'poison_nova') {
+      this.spawnPillarVfx(origin, spec.vfxHex, 0.9);
+      this.spawnRingVfx(origin, Math.max(2.2, spec.radius), spec.vfxHex, 0.7);
+      this.damageUnit(primaryTarget, dmg, u.team);
+      for (const e of [...this.units.values()]) {
+        if (e.team !== u.team && e.id !== primaryTarget.id && e.hp > 0 && e.mesh.position.distanceTo(origin) <= spec.radius) {
+          this.damageUnit(e, Math.round(dmg * 0.55), u.team);
+        }
+      }
+      soundEngine.playLightning?.();
+    }
+
+    if (u.team === 'player') {
+      this.notifyStatus(`✨ ${this.unitStats(u.kind, 'player').name} usou ${spec.name}!`);
+    }
+    return true;
   }
 
   public orderGarrison(units: UnitEntity[], building: BuildingEntity) {
@@ -7549,9 +8101,48 @@ export class AoMEngine {
     }
   }
 
-  private commitCommandOrderAt(clientX: number, clientY: number, customWaypoints: THREE.Vector3[]) {
+  private commitCommandOrderAt(clientX: number, clientY: number, customWaypoints: THREE.Vector3[], queueOrder = false) {
     let selectedPlayerUnits = [...this.units.values()].filter((u) => u.team === 'player' && u.selected);
     const picked = this.pickEntityFromEvent(clientX, clientY);
+
+    if (queueOrder && selectedPlayerUnits.length > 0) {
+      const pt = this.getGroundPointFromEvent(clientX, clientY);
+      if (pt) {
+        const cx = THREE.MathUtils.clamp(pt.x, -this.playableHalfSize + 2, this.playableHalfSize - 2);
+        const cz = THREE.MathUtils.clamp(pt.z, -this.playableHalfSize + 2, this.playableHalfSize - 2);
+        let qType: 'move' | 'attack' | 'gather' | 'build' = 'move';
+        let qTargetId: string | undefined = picked.id ?? undefined;
+        if (picked.type === 'unit' && picked.id && this.units.get(picked.id)?.team === 'enemy') qType = 'attack';
+        else if (picked.type === 'building' && picked.id) {
+          const tb = this.buildings.get(picked.id);
+          if (tb && tb.team === 'enemy') qType = 'attack';
+          else if (tb && tb.team === 'player' && !tb.isConstructed) qType = 'build';
+        } else if (picked.type === 'node' && picked.id) {
+          qType = 'gather';
+        }
+        for (const u of selectedPlayerUnits) {
+          if (u.state === 'idle') {
+            u.commandQueue = [];
+          } else {
+            u.commandQueue = u.commandQueue ?? [];
+            u.commandQueue.push({ type: qType, x: cx, z: cz, targetId: qTargetId });
+            if (u.state === 'move') {
+              u.waypoints.push(new THREE.Vector3(cx, groundHeightAt(cx, cz, this.mapId, this.worldSize), cz));
+            }
+          }
+        }
+        if (selectedPlayerUnits.some((u) => u.state !== 'idle')) {
+          this.spawnRingVfx(new THREE.Vector3(cx, groundHeightAt(cx, cz, this.mapId, this.worldSize), cz), 1.15, 0x38bdf8, 0.55);
+          this.notifyStatus(`📍 Waypoint enfileirado (Shift) · ${selectedPlayerUnits[0].commandQueue?.length ?? 1} ordem(ns) na fila.`);
+          this.emitHudSnapshot();
+          return;
+        }
+      }
+    } else if (selectedPlayerUnits.length > 0) {
+      for (const u of selectedPlayerUnits) {
+        u.commandQueue = [];
+      }
+    }
 
     if (
       selectedPlayerUnits.length === 0 &&
@@ -8007,6 +8598,10 @@ export class AoMEngine {
         this.setFormation(next);
       } else if (e.code === 'KeyZ') {
         this.toggleAutoScout();
+      } else if (e.code === 'KeyQ') {
+        this.triggerSelectedMythSpecial();
+      } else if (e.code === 'KeyB') {
+        this.toggleTownBell();
       } else if (/^Digit[1-9]$/.test(e.code)) {
         const groupNum = Number(e.code.replace('Digit', ''));
         if (e.ctrlKey || e.metaKey) {
@@ -9251,9 +9846,9 @@ export class AoMEngine {
       if (b.team === team && b.isConstructed && b.kind === 'wonder') wonders++;
     }
     if (wonders > 0) {
-      const wonderRate = wonders * 3.5;
+      const wonderRate = wonders * 6.0;
       totalRate += wonderRate;
-      breakdown.push({ label: 'Maravilha Divina', rate: Number(wonderRate.toFixed(2)) });
+      breakdown.push({ label: 'Era das Maravilhas', rate: Number(wonderRate.toFixed(2)) });
     }
 
     if (team === 'player' && this.relicsHeld > 0) {
@@ -9574,6 +10169,12 @@ export class AoMEngine {
         }
         target.garrisonedUnitIds = [];
       }
+      this.vfxManager?.spawnBuildingCollapse(
+        target.mesh.position.x,
+        target.mesh.position.y,
+        target.mesh.position.z,
+        target.radius
+      );
       this.scene.remove(target.mesh);
       this.buildings.delete(target.id);
       if (target.kind === 'town_center' && target.settlementId) {
@@ -9586,9 +10187,10 @@ export class AoMEngine {
   }
 
   private checkVictoryOrDefeat() {
-    if (this.phase !== 'playing') return;
+    if (this.phase !== 'playing' || this.replayMode) return;
 
     if (this.gameType === 'regicide' && this.regentUnitId && !this.units.has(this.regentUnitId)) {
+      this.recordCompletedMatch('defeat');
       this.phase = 'defeat';
       soundEngine.playMeteor();
       soundEngine.setMusicScene('defeat');
@@ -9624,11 +10226,13 @@ export class AoMEngine {
     const nomadGraceEnemy = this.mapId === 'nomad' && enemyWorkersAlive > 0 && this.elapsedSeconds < 240;
 
     if (!playerTcAlive && !nomadGracePlayer) {
+      this.recordCompletedMatch('defeat');
       this.phase = 'defeat';
       soundEngine.playMeteor();
       soundEngine.setMusicScene('defeat');
       this.emitHudSnapshot();
     } else if (!enemyTcAlive && !nomadGraceEnemy && enemyBuildings === 0 && (this.gameType !== 'conquest' || enemyUnitsAlive === 0)) {
+      this.recordCompletedMatch('victory');
       this.phase = 'victory';
       soundEngine.playFanfare(true);
       soundEngine.setMusicScene('victory');
@@ -10406,6 +11010,10 @@ export class AoMEngine {
       if ((u.specialCooldown ?? 0) > 0) {
         u.specialCooldown = Math.max(0, (u.specialCooldown ?? 0) - dt);
       }
+      if ((u.stunTimer ?? 0) > 0) {
+        u.stunTimer = Math.max(0, (u.stunTimer ?? 0) - dt);
+        continue;
+      }
       if ((u.kind === 'hydra' || u.kind === 'automaton' || u.kind === 'colossus' || u.kind === 'wadjet' || u.kind === 'behemoth') && u.hp < u.maxHp) {
         const regenRate = u.kind === 'behemoth' ? 6.0 : u.kind === 'colossus' ? 5.0 : u.kind === 'hydra' || u.kind === 'automaton' ? 4.0 : 3.5;
         u.hp = Math.min(u.maxHp, u.hp + regenRate * dt);
@@ -10725,6 +11333,33 @@ export class AoMEngine {
             u.targetPos = null;
             u.formationYaw = null;
             u.formationSpeed = null;
+
+            // Execute next queued Shift-waypoint command if present
+            if (u.commandQueue && u.commandQueue.length > 0) {
+              const nextCmd = u.commandQueue.shift()!;
+              if (nextCmd.type === 'attack' && nextCmd.targetId && (this.units.has(nextCmd.targetId) || this.buildings.has(nextCmd.targetId))) {
+                u.state = 'attack';
+                u.targetEntityId = nextCmd.targetId;
+                continue;
+              } else if (nextCmd.type === 'build' && nextCmd.targetId && this.buildings.has(nextCmd.targetId) && this.isBuilderKind(u.kind)) {
+                u.state = 'build';
+                u.targetEntityId = nextCmd.targetId;
+                continue;
+              } else if (nextCmd.type === 'gather' && nextCmd.targetId && this.nodes.has(nextCmd.targetId) && this.isWorkerKind(u.kind)) {
+                const n = this.nodes.get(nextCmd.targetId)!;
+                u.state = 'gather';
+                u.targetNodeId = n.id;
+                u.gatherResourceType = n.resourceType;
+                u.lastGatherPos = n.mesh.position.clone();
+                continue;
+              } else {
+                const nextPos = new THREE.Vector3(nextCmd.x, groundHeightAt(nextCmd.x, nextCmd.z, this.mapId, this.worldSize), nextCmd.z);
+                u.state = 'move';
+                u.targetPos = nextPos;
+                u.waypoints = this.navGrid.findPath(u.mesh.position.x, u.mesh.position.z, nextPos.x, nextPos.z);
+                continue;
+              }
+            }
 
             if (u.kind === 'transport_ship' && u.tradeTargetBuildingId?.startsWith('disembark:')) {
               const [dx, dz] = u.tradeTargetBuildingId
@@ -11345,9 +11980,9 @@ export class AoMEngine {
               this.spawnRingVfx(b.mesh.position, 11, 0xfacc15, 1.4);
               soundEngine.playFanfare(true);
               if (b.team === 'player') {
-                this.notifyStatus(`🏛️ ERA DAS MARAVILHAS! ${bStats.name} erguida (+3.5 Favor/s, -20% recarga divina, +20% Míticos)!`);
+                this.notifyStatus(`🏛️ ERA DAS MARAVILHAS! ${bStats.name} erguida (+6 Favor/s, -75% custo divino, -50% recarga, +25% HP/+20% Ataque Míticos)!`);
               } else {
-                this.notifyStatus(`⚠️ O inimigo ergueu uma Maravilha (${bStats.name})!`);
+                this.notifyStatus(`⚠️ O inimigo atingiu a Era das Maravilhas (${bStats.name})!`);
               }
             } else if (b.kind === 'farm') {
               u.state = 'gather';
@@ -11470,6 +12105,14 @@ export class AoMEngine {
           );
           if (u.attackTimer <= 0) {
             u.attackTimer = stats.attackCooldown;
+            if (
+              MYTH_SPECIAL_ABILITIES[u.kind] &&
+              u.specialAutoCast !== false &&
+              (u.specialCooldown ?? 0) <= 0 &&
+              targetU
+            ) {
+              this.executeMythSpecialAbility(u, targetU);
+            }
             if (u.mesh.userData.animatePose) {
               u.manualAttackTimer = 6 / 14; // Trigger 6-frame attack animation at 14 FPS
             }
@@ -12276,12 +12919,27 @@ export class AoMEngine {
               if (b.kind === 'mirror_tower') {
                 this.spawnRingVfx(targetU.mesh.position, 1.5, 0xfacc15, 0.35);
               }
-              this.spawnProjectile(_vec3B, _vec3C, targetU.id, Math.round(stats.attack * bAtkMult), b.team, {
-                hasBallistics: bTechs.includes('ballistics'),
-                isFireArrow: bTechs.includes('burning_pitch'),
-                isFireball: b.kind === 'mirror_tower',
-                targetRadius: this.getUnitRadius(targetU.kind),
-              });
+              const bonusArrows = Math.min(4, Math.floor(garrisonCount / 2));
+              const totalArrows = 1 + bonusArrows;
+              for (let aIdx = 0; aIdx < totalArrows; aIdx++) {
+                const spreadX = aIdx === 0 ? 0 : (aIdx % 2 === 0 ? 1 : -1) * (0.35 + aIdx * 0.14);
+                const spreadZ = aIdx === 0 ? 0 : (aIdx % 2 === 0 ? -1 : 1) * (0.28 + aIdx * 0.12);
+                _vec3B.set(b.mesh.position.x + spreadX, b.mesh.position.y + launchY, b.mesh.position.z + spreadZ);
+                _vec3C.copy(targetU.mesh.position).setY(targetU.mesh.position.y + 1.0);
+                this.spawnProjectile(
+                  _vec3B,
+                  _vec3C,
+                  targetU.id,
+                  Math.round(stats.attack * (aIdx === 0 ? bAtkMult : 0.58 * bAtkMult)),
+                  b.team,
+                  {
+                    hasBallistics: bTechs.includes('ballistics'),
+                    isFireArrow: bTechs.includes('burning_pitch'),
+                    isFireball: b.kind === 'mirror_tower',
+                    targetRadius: this.getUnitRadius(targetU.kind),
+                  }
+                );
+              }
               soundEngine.playArrow();
             }
           }
@@ -12293,6 +12951,8 @@ export class AoMEngine {
       }
       this.updateHealthBarVisual(b.mesh, b.hp, b.maxHp, b.selected || !b.isConstructed);
     }
+
+    this.vfxManager?.syncBuildingDamageEffects(this.buildings.values(), dt);
 
     // Favor Divino income tick: Greeks (prayer), Egyptians (monuments/Pharaoh/Isis/Ra), Norse (combat/Thor/Bragi), Atlanteans (Oracles)
     this.favorTimer += dt;
@@ -13615,6 +14275,548 @@ export class AoMEngine {
         this.notifyStatus('Atenção: Tropas inimigas marchando pelo vale!');
       }
     }
+
+    this.updateEnemyNavalAI(dt);
+    this.updateIndependentAiFactions(dt);
+  }
+
+  private updateEnemyNavalAI(dt: number) {
+    this.aiNavalTimer += dt;
+    if (this.aiNavalTimer < 6.0) return;
+    this.aiNavalTimer = 0;
+
+    // Check if the current map has meaningful water/fish nodes
+    let hasFishOrWater = false;
+    for (const n of this.nodes.values()) {
+      if (n.kind === 'fish_spot') {
+        hasFishOrWater = true;
+        break;
+      }
+    }
+    const effMap = resolveEffectiveMapId(this.mapId);
+    if (
+      !hasFishOrWater &&
+      effMap !== 'islands' &&
+      effMap !== 'archipelago' &&
+      effMap !== 'mediterranean' &&
+      effMap !== 'midgard' &&
+      effMap !== 'vinlandsaga' &&
+      effMap !== 'total_war'
+    ) {
+      return;
+    }
+
+    const enemyDocks: BuildingEntity[] = [];
+    let enemyTc: BuildingEntity | null = null;
+    for (const b of this.buildings.values()) {
+      if (b.team === 'enemy' && b.isConstructed) {
+        if (b.kind === 'dock') enemyDocks.push(b);
+        else if (b.kind === 'town_center' && !enemyTc) enemyTc = b;
+      }
+    }
+
+    // 1. Build a coastal Dock if enemy doesn't have one yet
+    if (enemyDocks.length === 0 && enemyTc) {
+      const dockStats = this.buildingStats('dock', 'enemy');
+      if (this.canAfford(this.enemyResources, dockStats.cost)) {
+        const baseX = enemyTc.mesh.position.x;
+        const baseZ = enemyTc.mesh.position.z;
+        for (let r = 10; r <= 34; r += 4) {
+          let built = false;
+          for (let a = 0; a < 16; a++) {
+            const ang = (a / 16) * Math.PI * 2;
+            const cx = THREE.MathUtils.clamp(baseX + Math.cos(ang) * r, -this.playableHalfSize + 5, this.playableHalfSize - 5);
+            const cz = THREE.MathUtils.clamp(baseZ + Math.sin(ang) * r, -this.playableHalfSize + 5, this.playableHalfSize - 5);
+            if (this.canPlaceBuildingAt('dock', cx, cz, 'enemy')) {
+              this.deductCost(this.enemyResources, dockStats.cost);
+              const d = this.spawnBuilding('dock', 'enemy', cx, cz, true);
+              enemyDocks.push(d);
+              this.syncNavObstacles();
+              built = true;
+              break;
+            }
+          }
+          if (built) break;
+        }
+      }
+    }
+
+    if (enemyDocks.length === 0) return;
+    const dock = enemyDocks[0];
+    const enemyPop = this.getPopulation('enemy');
+
+    let enemyFishers = 0;
+    let enemyWarships = 0;
+    let enemyTransports: UnitEntity[] = [];
+    for (const u of this.units.values()) {
+      if (u.team !== 'enemy' || u.hp <= 0) continue;
+      if (u.kind === 'fishing_ship') {
+        enemyFishers++;
+        // Auto-assign idle enemy fishing ships to nearest fish spot
+        if (u.state === 'idle') {
+          let bestFish: ResourceNodeEntity | null = null;
+          let bestD = Infinity;
+          for (const n of this.nodes.values()) {
+            if (n.kind !== 'fish_spot') continue;
+            const d = n.mesh.position.distanceTo(u.mesh.position);
+            if (d < bestD) {
+              bestD = d;
+              bestFish = n;
+            }
+          }
+          if (bestFish) {
+            u.state = 'gather';
+            u.targetNodeId = bestFish.id;
+            u.gatherResourceType = 'food';
+            u.lastGatherPos = bestFish.mesh.position.clone();
+          }
+        }
+      } else if (u.kind === 'war_trireme') {
+        enemyWarships++;
+        if (this.treatyRemaining <= 0 && u.state === 'idle') {
+          const targetShip = [...this.units.values()].find(
+            (pu) => pu.team === 'player' && pu.hp > 0 && this.unitStats(pu.kind, 'player').isNaval
+          );
+          const targetDock = [...this.buildings.values()].find(
+            (pb) => pb.team === 'player' && pb.kind === 'dock'
+          );
+          if (targetShip) {
+            u.state = 'attack';
+            u.targetEntityId = targetShip.id;
+          } else if (targetDock) {
+            u.state = 'attack';
+            u.targetEntityId = targetDock.id;
+          }
+        }
+      } else if (u.kind === 'transport_ship') {
+        enemyTransports.push(u);
+      }
+    }
+
+    // 2. Train Fishing Ships -> War Triremes -> Transport Ships
+    if (dock.trainingQueue.length === 0 && enemyPop.current + 2 <= enemyPop.cap) {
+      if (enemyFishers < 3 && hasFishOrWater) {
+        const fStats = this.unitStats('fishing_ship', 'enemy');
+        if (this.canAfford(this.enemyResources, fStats.cost)) {
+          this.deductCost(this.enemyResources, fStats.cost);
+          dock.trainingQueue.push({ kind: 'fishing_ship', progress: 0, total: fStats.trainTime });
+        }
+      } else if (enemyWarships < 3 && this.enemyAge >= 2) {
+        const wStats = this.unitStats('war_trireme', 'enemy');
+        if (this.canAfford(this.enemyResources, wStats.cost)) {
+          this.deductCost(this.enemyResources, wStats.cost);
+          dock.trainingQueue.push({ kind: 'war_trireme', progress: 0, total: wStats.trainTime });
+        }
+      } else if (enemyTransports.length < 1 && this.enemyAge >= 2) {
+        const tStats = this.unitStats('transport_ship', 'enemy');
+        if (this.canAfford(this.enemyResources, tStats.cost)) {
+          this.deductCost(this.enemyResources, tStats.cost);
+          dock.trainingQueue.push({ kind: 'transport_ship', progress: 0, total: tStats.trainTime });
+        }
+      }
+    }
+
+    // 3. Amphibious transport raid if enemy has an idle transport ship & idle soldiers
+    if (this.treatyRemaining <= 0 && enemyTransports.length > 0) {
+      const ship = enemyTransports[0];
+      const cargo = ship.cargoIds ?? [];
+      if (ship.state === 'idle' && cargo.length === 0) {
+        const nearbySoldiers = [...this.units.values()]
+          .filter(
+            (u) =>
+              u.team === 'enemy' &&
+              u.hp > 0 &&
+              u.state === 'idle' &&
+              !this.isNonCombatEconUnit(u) &&
+              !this.unitStats(u.kind, 'enemy').isNaval &&
+              u.mesh.position.distanceTo(ship.mesh.position) < 28
+          )
+          .slice(0, 4);
+        if (nearbySoldiers.length >= 2) {
+          ship.cargoIds = [];
+          for (const s of nearbySoldiers) {
+            s.state = 'garrisoned';
+            s.transportedInId = ship.id;
+            s.mesh.visible = false;
+            ship.cargoIds.push(s.id);
+          }
+          const playerTc = this.findNearestTownCenter('player', new THREE.Vector3(0, 0, 0));
+          if (playerTc) {
+            const pCell = this.navGrid.worldToCell(playerTc.mesh.position.x, playerTc.mesh.position.z);
+            const sCell = this.navGrid.worldToCell(ship.mesh.position.x, ship.mesh.position.z);
+            const dropWater = this.navGrid.nearestWaterCell(pCell.gx, pCell.gz, sCell.gx, sCell.gz, 22);
+            if (dropWater) {
+              const dw = this.navGrid.cellToWorld(dropWater.gx, dropWater.gz);
+              ship.state = 'move';
+              ship.waypoints = this.navGrid.findWaterPath(ship.mesh.position.x, ship.mesh.position.z, dw.x, dw.z);
+              ship.targetPos = ship.waypoints.shift() ?? new THREE.Vector3(dw.x, -0.22, dw.z);
+              ship.tradeTargetBuildingId = `disembark:${playerTc.mesh.position.x.toFixed(1)},${playerTc.mesh.position.z.toFixed(1)}`;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  private updateIndependentAiFactions(dt: number) {
+    if (this.factions.length <= 2) return;
+    this.aiFactionTimer += dt;
+    if (this.aiFactionTimer < 8.5) return;
+    this.aiFactionTimer = 0;
+
+    for (const fac of this.factions) {
+      if (fac.isSelf || fac.isHuman || fac.defeated) continue;
+      const mult = fac.aiPersonality === 'economic' ? 1.25 : fac.aiPersonality === 'aggressive' ? 1.1 : 1.0;
+      fac.resources.food += 28 * mult;
+      fac.resources.wood += 22 * mult;
+      fac.resources.gold += 20 * mult;
+      fac.resources.favor = Math.min(200, fac.resources.favor + 4.5);
+
+      // Independent Age progression per AI faction
+      const ageThresholds: Record<AgeLevel, number> = { 1: 0, 2: 85, 3: 185, 4: 295, 5: 420 };
+      const nextAge = (fac.age + 1) as AgeLevel;
+      if (nextAge <= 4 && this.elapsedSeconds > ageThresholds[nextAge] && this.canAfford(fac.resources, AGE_COSTS[nextAge])) {
+        this.deductCost(fac.resources, AGE_COSTS[nextAge]);
+        fac.age = nextAge;
+      }
+
+      // Independent reinforcements from faction's own TC/Barracks
+      const facTc = [...this.buildings.values()].find(
+        (b) => b.factionSlot === fac.slotIndex && b.isConstructed && b.kind === 'town_center'
+      );
+      if (!facTc) {
+        const hasAnyBuilding = [...this.buildings.values()].some((b) => b.factionSlot === fac.slotIndex);
+        if (!hasAnyBuilding) fac.defeated = true;
+        continue;
+      }
+
+      const facUnits = [...this.units.values()].filter((u) => u.factionSlot === fac.slotIndex && u.hp > 0);
+      if (facUnits.length < 10 && facTc.trainingQueue.length === 0) {
+        const unitPick: UnitKind =
+          fac.aiPersonality === 'aggressive'
+            ? fac.pantheon === 'norse'
+              ? 'ulfsark'
+              : fac.pantheon === 'egyptian'
+              ? 'egypt_spearman'
+              : 'hoplite'
+            : fac.aiPersonality === 'defensive'
+            ? 'archer'
+            : fac.age >= 2 && fac.resources.favor >= 15
+            ? 'minotaur'
+            : 'cavalry';
+        const uSpec = this.unitStats(unitPick, fac.team);
+        if (this.canAfford(fac.resources, uSpec.cost)) {
+          this.deductCost(fac.resources, uSpec.cost);
+          const spawned = this.spawnUnit(
+            unitPick,
+            fac.team,
+            facTc.mesh.position.x + (Math.random() - 0.5) * 6,
+            facTc.mesh.position.z + (Math.random() - 0.5) * 6
+          );
+          spawned.factionSlot = fac.slotIndex;
+        }
+      }
+    }
+  }
+
+  private captureTimelineSample() {
+    const pScore = this.computeTeamScore('player');
+    const eScore = this.computeTeamScore('enemy');
+    const pPop = this.getPopulation('player');
+    const ePop = this.getPopulation('enemy');
+    this.timelineHistory.push({
+      timeSec: Math.round(this.elapsedSeconds),
+      playerEco: pScore.economy,
+      enemyEco: eScore.economy,
+      playerArmy: pScore.military,
+      enemyArmy: eScore.military,
+      playerPop: pPop.current,
+      enemyPop: ePop.current,
+      playerFavor: Math.round(this.resources.favor),
+      enemyFavor: Math.round(this.enemyResources.favor),
+      playerAge: this.age,
+      enemyAge: this.enemyAge,
+    });
+    if (this.timelineHistory.length > 90) {
+      this.timelineHistory.shift();
+    }
+  }
+
+  private captureReplayKeyframe() {
+    if (this.replayFrames.length >= 120) return;
+    const units: ReplayEntityTuple[] = [];
+    for (const u of this.units.values()) {
+      if (u.hp <= 0 || u.state === 'garrisoned') continue;
+      units.push({
+        id: u.id,
+        k: u.kind,
+        t: u.team,
+        x: Math.round(u.mesh.position.x * 10) / 10,
+        z: Math.round(u.mesh.position.z * 10) / 10,
+        hp: Math.max(1, Math.round((u.hp / Math.max(1, u.maxHp)) * 100)),
+      });
+      if (units.length >= 90) break;
+    }
+    const buildings: ReplayEntityTuple[] = [];
+    for (const b of this.buildings.values()) {
+      if (b.hp <= 0) continue;
+      buildings.push({
+        id: b.id,
+        k: b.kind,
+        t: b.team,
+        x: Math.round(b.mesh.position.x * 10) / 10,
+        z: Math.round(b.mesh.position.z * 10) / 10,
+        hp: Math.max(1, Math.round((b.hp / Math.max(1, b.maxHp)) * 100)),
+      });
+      if (buildings.length >= 55) break;
+    }
+    this.replayFrames.push({
+      timeSec: Math.round(this.elapsedSeconds),
+      pRes: {
+        food: Math.round(this.resources.food),
+        wood: Math.round(this.resources.wood),
+        gold: Math.round(this.resources.gold),
+        favor: Math.round(this.resources.favor),
+      },
+      eRes: {
+        food: Math.round(this.enemyResources.food),
+        wood: Math.round(this.enemyResources.wood),
+        gold: Math.round(this.enemyResources.gold),
+        favor: Math.round(this.enemyResources.favor),
+      },
+      pAge: this.age,
+      eAge: this.enemyAge,
+      units,
+      buildings,
+    });
+  }
+
+  private sampleMatchTimelineAndReplay(simDt: number) {
+    if (this.timelineHistory.length === 0) {
+      this.captureTimelineSample();
+      this.captureReplayKeyframe();
+    }
+    this.timelineSampleTimer += simDt;
+    if (this.timelineSampleTimer >= 15) {
+      this.timelineSampleTimer -= 15;
+      this.captureTimelineSample();
+    }
+    this.replayFrameTimer += simDt;
+    if (this.replayFrameTimer >= 5) {
+      this.replayFrameTimer -= 5;
+      this.captureReplayKeyframe();
+    }
+  }
+
+  private recordCompletedMatch(result: 'victory' | 'defeat') {
+    if (this.matchRecorded || this.replayMode) return;
+    this.matchRecorded = true;
+    this.captureTimelineSample();
+    this.captureReplayKeyframe();
+    const mapSpec = MAPS[this.mapId];
+    const now = new Date();
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const dateStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+    const rec: RecordedMatchRecord = {
+      id: `rec_${Date.now()}`,
+      title: `${this.majorGodName} em ${mapSpec?.name ?? this.mapId}`,
+      date: dateStr,
+      pantheon: this.pantheon,
+      enemyPantheon: this.enemyPantheon,
+      mapId: this.mapId,
+      worldSize: this.worldSize,
+      difficulty: this.difficulty,
+      durationSeconds: Math.max(1, Math.round(this.elapsedSeconds)),
+      result,
+      enemiesDefeated: this.stats.enemiesDefeated,
+      unitsTrained: this.stats.unitsTrained,
+      timelineHistory: [...this.timelineHistory],
+      replayFrames: [...this.replayFrames],
+    };
+    appendRecordedMatch(rec);
+  }
+
+  public startReplay(record: RecordedMatchRecord) {
+    soundEngine.unlock();
+    const mapId = record.mapId ?? 'mediterranean';
+    const pantheon = record.pantheon ?? 'greek';
+    const enemyPantheon = record.enemyPantheon ?? getRivalPantheon(pantheon);
+    this.pantheon = pantheon;
+    this.enemyPantheon = enemyPantheon;
+    this.majorGodName = PANTHEONS[pantheon].deity;
+    this.difficulty = record.difficulty ?? 'normal';
+    this.mapId = mapId;
+    this.worldSize = record.worldSize ?? 'normal';
+    this.revealedMap = true;
+    this.clearEntities();
+    this.clearReplayMeshes();
+    this.rebuildTerrainForMap(mapId);
+    this.initFogOfWar();
+    this.updateFogOfWar(1, true);
+    if (this.fogMesh) {
+      this.fogMesh.visible = false;
+    }
+
+    const demo =
+      record.replayFrames && record.replayFrames.length >= 2
+        ? { frames: record.replayFrames, timeline: record.timelineHistory ?? [] }
+        : buildDemoReplayData(record.durationSeconds || 300);
+
+    this.replayActiveFrames = demo.frames;
+    this.timelineHistory = demo.timeline;
+    const duration = Math.max(10, this.replayActiveFrames[this.replayActiveFrames.length - 1]?.timeSec ?? record.durationSeconds ?? 180);
+    this.replayMode = true;
+    this.replayState = {
+      active: true,
+      title: record.title,
+      playing: true,
+      speed: 1,
+      currentTime: 0,
+      duration,
+      fogDisabled: true,
+      perspective: 'all',
+    };
+    this.phase = 'playing';
+    this.camDesiredTarget.set(0, 0, 0);
+    this.camTarget.set(0, 0, 0);
+    this.camDesiredDistance = 42;
+    this.applyReplayFrameAtTime(0);
+    soundEngine.startMatchMusic(pantheon, record.title);
+    this.notifyStatus(`🎬 Reproduzindo Replay: ${record.title}`);
+    this.emitHudSnapshot();
+  }
+
+  public setReplayPlaying(playing: boolean) {
+    if (!this.replayMode || !this.replayState) return;
+    this.replayState.playing = playing;
+    this.emitHudSnapshot();
+  }
+
+  public setReplaySpeed(speed: 1 | 2 | 4) {
+    if (!this.replayMode || !this.replayState) return;
+    this.replayState.speed = speed;
+    this.emitHudSnapshot();
+  }
+
+  public seekReplay(timeSec: number) {
+    if (!this.replayMode || !this.replayState) return;
+    this.replayState.currentTime = THREE.MathUtils.clamp(timeSec, 0, this.replayState.duration);
+    this.applyReplayFrameAtTime(this.replayState.currentTime);
+    this.emitHudSnapshot();
+  }
+
+  public toggleReplayFog() {
+    if (!this.replayMode || !this.replayState) return;
+    this.replayState.fogDisabled = !this.replayState.fogDisabled;
+    this.revealedMap = this.replayState.fogDisabled;
+    if (this.fogMesh) {
+      this.fogMesh.visible = !this.replayState.fogDisabled;
+    }
+    this.emitHudSnapshot();
+  }
+
+  public setReplayPerspective(perspective: 'all' | 'player' | 'enemy') {
+    if (!this.replayMode || !this.replayState) return;
+    this.replayState.perspective = perspective;
+    this.applyReplayFrameAtTime(this.replayState.currentTime);
+    this.emitHudSnapshot();
+  }
+
+  private updateReplayPlayback(dt: number) {
+    if (!this.replayMode || !this.replayState) return;
+    if (this.replayState.playing) {
+      this.replayState.currentTime = Math.min(
+        this.replayState.duration,
+        this.replayState.currentTime + dt * this.replayState.speed
+      );
+      if (this.replayState.currentTime >= this.replayState.duration) {
+        this.replayState.playing = false;
+      }
+    }
+    this.elapsedSeconds = this.replayState.currentTime;
+    this.applyReplayFrameAtTime(this.replayState.currentTime);
+  }
+
+  private applyReplayFrameAtTime(timeSec: number) {
+    const frames = this.replayActiveFrames;
+    if (!frames || frames.length === 0 || !this.replayState) return;
+
+    let idxA = 0;
+    for (let i = 0; i < frames.length; i++) {
+      if (frames[i].timeSec <= timeSec) idxA = i;
+      else break;
+    }
+    const idxB = Math.min(frames.length - 1, idxA + 1);
+    const frameA = frames[idxA];
+    const frameB = frames[idxB];
+    const span = Math.max(0.001, frameB.timeSec - frameA.timeSec);
+    const alpha = idxA === idxB ? 0 : THREE.MathUtils.clamp((timeSec - frameA.timeSec) / span, 0, 1);
+
+    // Sync HUD economy / age stats to current replay perspective
+    const showEnemy = this.replayState.perspective === 'enemy';
+    const srcResA = showEnemy ? frameA.eRes : frameA.pRes;
+    const srcResB = showEnemy ? frameB.eRes : frameB.pRes;
+    this.resources.food = Math.round(THREE.MathUtils.lerp(srcResA.food, srcResB.food, alpha));
+    this.resources.wood = Math.round(THREE.MathUtils.lerp(srcResA.wood, srcResB.wood, alpha));
+    this.resources.gold = Math.round(THREE.MathUtils.lerp(srcResA.gold, srcResB.gold, alpha));
+    this.resources.favor = Math.round(THREE.MathUtils.lerp(srcResA.favor, srcResB.favor, alpha));
+    this.age = frameA.pAge;
+    this.enemyAge = frameA.eAge;
+
+    const seenIds = new Set<string>();
+    const mapBUnits = new Map<string, ReplayEntityTuple>();
+    frameB.units.forEach((u, idx) => {
+      const uid = u.id ?? `u_${idx}_${u.k}_${u.t}`;
+      mapBUnits.set(uid, u);
+    });
+
+    const syncTupleList = (list: ReplayEntityTuple[], isBuilding: boolean) => {
+      list.forEach((tup, idx) => {
+        const id = tup.id ?? `${isBuilding ? 'b' : 'u'}_${idx}_${tup.k}_${tup.t}`;
+        const kind = tup.k;
+        const team: TeamId = tup.t;
+        const persp = this.replayState!.perspective;
+        const visibleByPersp = persp === 'all' || (persp === 'player' && team === 'player') || (persp === 'enemy' && team === 'enemy');
+        seenIds.add(id);
+
+        const nextTup = !isBuilding ? mapBUnits.get(id) : undefined;
+        const wx = nextTup ? THREE.MathUtils.lerp(tup.x, nextTup.x, alpha) : tup.x;
+        const wz = nextTup ? THREE.MathUtils.lerp(tup.z, nextTup.z, alpha) : tup.z;
+        const wy = groundHeightAt(wx, wz, this.mapId, this.worldSize);
+
+        let rec = this.replayEntityMeshes.get(id);
+        if (!rec) {
+          const teamPantheon = team === 'player' ? this.pantheon : this.enemyPantheon;
+          const mesh = isBuilding
+            ? createBuildingMesh(kind as BuildingKind, team, this.palette, !this.isSoftwareGl, teamPantheon)
+            : createUnitMesh(kind as UnitKind, team, this.palette, !this.isSoftwareGl, teamPantheon);
+          mesh.position.set(wx, wy, wz);
+          this.scene.add(mesh);
+          rec = { mesh, team, kind, isBuilding };
+          this.replayEntityMeshes.set(id, rec);
+        } else {
+          if (!isBuilding && nextTup) {
+            const dx = nextTup.x - tup.x;
+            const dz = nextTup.z - tup.z;
+            if (Math.hypot(dx, dz) > 0.1) {
+              rec.mesh.rotation.y = Math.atan2(dx, dz);
+            }
+          }
+          rec.mesh.position.set(wx, wy, wz);
+        }
+        rec.mesh.visible = visibleByPersp;
+      });
+    };
+
+    syncTupleList(frameA.buildings, true);
+    syncTupleList(frameA.units, false);
+
+    for (const [id, rec] of [...this.replayEntityMeshes.entries()]) {
+      if (!seenIds.has(id)) {
+        this.scene.remove(rec.mesh);
+        this.replayEntityMeshes.delete(id);
+      }
+    }
   }
 
   private projectWorldToScreen(worldPos: THREE.Vector3, offsetY: number): { x: number; y: number } | undefined {
@@ -14434,6 +15636,47 @@ export class AoMEngine {
           aiPersonality: f.aiPersonality,
         };
       }),
+      wonderAgeActive: this.hasTeamWonder('player'),
+      enemyWonderAgeActive: this.hasTeamWonder('enemy'),
+      godPowerUses: { ...this.godPowerUses },
+      godPowerRecastCosts: Object.fromEntries(
+        this.unlockedPowers.map((pid) => [
+          pid,
+          getRetoldRecastFavorCost(pid, this.godPowerUses[pid] ?? 0, this.hasTeamWonder('player')),
+        ])
+      ),
+      townBellActive: this.townBellActive,
+      selectedBuildingGarrison: (() => {
+        const sb = this.getSelectedPlayerBuilding();
+        if (!sb || !sb.isConstructed || !this.canGarrisonIn(sb)) return null;
+        const count = sb.garrisonedUnitIds?.length ?? 0;
+        const capacity = sb.maxGarrisonCapacity ?? this.getGarrisonCapacity(sb.kind);
+        return {
+          buildingId: sb.id,
+          count,
+          capacity,
+          bonusArrows: Math.min(4, Math.floor(count / 2)),
+        };
+      })(),
+      selectedMythAbility: (() => {
+        const selMyth = [...this.units.values()].find(
+          (u) => u.team === 'player' && u.selected && u.hp > 0 && Boolean(MYTH_SPECIAL_ABILITIES[u.kind])
+        );
+        if (!selMyth) return null;
+        const spec = MYTH_SPECIAL_ABILITIES[selMyth.kind]!;
+        return {
+          unitId: selMyth.id,
+          unitKind: selMyth.kind,
+          name: spec.name,
+          description: spec.description,
+          cooldownRemaining: Number((selMyth.specialCooldown ?? 0).toFixed(1)),
+          cooldownTotal: spec.cooldown,
+          autoCast: selMyth.specialAutoCast !== false,
+        };
+      })(),
+      dragWallPreviewCount: this.dragWallPoints.length,
+      replayState: this.replayState ? { ...this.replayState } : null,
+      timelineHistory: [...this.timelineHistory],
     });
   }
 
@@ -14480,6 +15723,9 @@ export class AoMEngine {
     } else if (this.waterMesh) {
       this.waterMesh.position.y = -0.68 + Math.sin(now * 0.0012) * 0.05;
     }
+    if (this.terrainUniforms) {
+      this.terrainUniforms.uTime.value = now * 0.001;
+    }
     for (const wu of this.windUniforms) {
       wu.uTime.value = now * 0.001;
     }
@@ -14492,7 +15738,9 @@ export class AoMEngine {
       this.fpsAccum = 0;
     }
 
-    if (this.phase === 'playing') {
+    if (this.phase === 'playing' && this.replayMode) {
+      this.updateReplayPlayback(dt);
+    } else if (this.phase === 'playing') {
       const simDt = dt * this.gameSpeed;
       this.elapsedSeconds += simDt;
       if (this.treatyRemaining > 0) {
@@ -14509,7 +15757,7 @@ export class AoMEngine {
       if (this.flamingWeaponsTimer > 0) {
         this.flamingWeaponsTimer = Math.max(0, this.flamingWeaponsTimer - simDt);
       }
-      const gpCdMult = this.hasTeamWonder('player') ? 1.25 : 1.0;
+      const gpCdMult = this.hasTeamWonder('player') ? 1.5 : 1.0;
       for (const key of Object.keys(this.godPowerCooldowns) as GodPowerId[]) {
         if (this.godPowerCooldowns[key] > 0) {
           this.godPowerCooldowns[key] = Math.max(0, this.godPowerCooldowns[key] - simDt * gpCdMult);
@@ -14808,6 +16056,7 @@ export class AoMEngine {
       this.updateKingOfTheHill(simDt);
       this.updateCampaignMission(simDt);
       this.updateFogOfWar(simDt);
+      this.sampleMatchTimelineAndReplay(simDt);
     }
 
     if (this.sunLight) {
@@ -15266,6 +16515,13 @@ export class AoMEngine {
     canvas.removeEventListener('webglcontextlost', this.onContextLost);
 
     this.clearEntities();
+    this.clearReplayMeshes();
+    if (this.groundDecorMesh) {
+      this.scene.remove(this.groundDecorMesh);
+      this.groundDecorMesh.geometry.dispose();
+      (this.groundDecorMesh.material as THREE.Material).dispose();
+      this.groundDecorMesh = null;
+    }
     this.vfxManager?.dispose();
     this.vfxManager = null;
     if (this.terrainNormalTex) {

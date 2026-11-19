@@ -1,4 +1,5 @@
 import { GOD_POWERS, MAJOR_GODS } from './divineData';
+import type { MatchTimelineSample, ReplayKeyframe } from './matchAnalytics';
 import {
   AgeLevel,
   DEFAULT_GAME_OPTIONS,
@@ -6,6 +7,7 @@ import {
   GameOptionsConfig,
   MapId,
   PantheonId,
+  WorldSizeId,
 } from './types';
 
 export type PortMenuState =
@@ -241,12 +243,16 @@ export interface RecordedMatchRecord {
   title: string;
   date: string;
   pantheon: PantheonId;
+  enemyPantheon?: PantheonId;
   mapId: MapId;
+  worldSize?: WorldSizeId;
   difficulty: DifficultyId;
   durationSeconds: number;
   result: 'victory' | 'defeat';
   enemiesDefeated: number;
   unitsTrained: number;
+  timelineHistory?: MatchTimelineSample[];
+  replayFrames?: ReplayKeyframe[];
 }
 
 export function loadSavedOptions(): GameOptionsConfig {

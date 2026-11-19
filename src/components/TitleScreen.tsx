@@ -24,7 +24,7 @@ import {
   Wrench,
 } from 'lucide-react';
 import { soundEngine } from '../game/audio';
-import { PortMenuState } from '../game/menuData';
+import { PortMenuState, RecordedMatchRecord } from '../game/menuData';
 import {
   DifficultyId,
   GameOptionsConfig,
@@ -53,6 +53,7 @@ interface TitleScreenProps {
   ) => void;
   onLoadSavedMatch: () => void;
   onDeleteSavedMatch: () => void;
+  onWatchReplay?: (rec: RecordedMatchRecord) => void;
 }
 
 const COMPACT_MENU_STATES = new Set<PortMenuState>([
@@ -76,6 +77,7 @@ export function TitleScreen({
   onStartMatch,
   onLoadSavedMatch,
   onDeleteSavedMatch,
+  onWatchReplay,
 }: TitleScreenProps) {
   const [menuState, setMenuState] = useState<PortMenuState>('MAIN_MENU');
   const [uvModalOpen, setUvModalOpen] = useState(false);
@@ -635,6 +637,7 @@ export function TitleScreen({
                 onStartMatch={launchPreset}
                 onLoadSavedMatch={onLoadSavedMatch}
                 onDeleteSavedMatch={onDeleteSavedMatch}
+                onWatchReplay={onWatchReplay}
                 onBackToMain={() => setMenuState('MAIN_MENU')}
               />
             )}

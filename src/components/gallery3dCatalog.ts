@@ -5,9 +5,11 @@ import {
   buildMapResourceProfile,
   getEffectiveMapConfig,
   getMapBiomeVisuals,
+  getWorldSizeSpec,
   groundHeightAt,
-} from '../textura/maps';
+} from '../maps';
 import {
+  createBuildingMesh,
   createFaunaMesh,
   createPlentyVaultMesh,
   createRelicMesh,
@@ -25,6 +27,7 @@ import {
   PantheonId,
   ResourceNodeKind,
   UnitKind,
+  WorldSizeId,
 } from '../game/types';
 
 export type InspectableUnitId = UnitKind;
@@ -744,6 +747,16 @@ export interface MapDioramaHandle {
   minHeight: number;
   maxHeight: number;
   waterCoveragePct: number;
+  worldSize: WorldSizeId;
+  worldSizeLabel: string;
+  dimsLabel: string;
+  playableDimsLabel: string;
+  baseDistance: number;
+  treeClusterCount: number;
+  goldMineCount: number;
+  settlementCount: number;
+  faunaCount: number;
+  dioramaSize: number;
   dispose: () => void;
 }
 
@@ -756,24 +769,28 @@ const _cFertile = new THREE.Color();
 const _cTmp = new THREE.Color();
 
 /**
- * Constrói um diorama 3D de relevo geográfico fiel a groundHeightAt(), paleta do bioma,
- * lâmina d'água/lava/gelo, flora nativa, minas de ouro e fauna local.
+ * Constrói um diorama 3D de relevo geográfico fiel a groundHeightAt(), tamanho de mundo
+ * (Normal 148×148, Grande 204×204, Gigante 264×264), paleta do bioma, lâmina d'água/lava/gelo,
+ * Centros da Cidade das bases, assentamentos neutros, flora nativa, minas de ouro e fauna local.
  */
 export function buildMapDiorama(
   mapId: MapId,
   pal: MaterialPalette,
-  opts: { showFlora: boolean; showFauna: boolean; showWireframe: boolean }
+  opts: { showFlora: boolean; showFauna: boolean; showWireframe: boolean; worldSize?: WorldSizeId }
 ): MapDioramaHandle {
   const root = new THREE.Group();
+  const worldSize: WorldSizeId = opts.worldSize ?? 'normal';
+  const sizeSpec = getWorldSizeSpec(worldSize);
   const mapCfg = getEffectiveMapConfig(mapId);
   const bio = getMapBiomeVisuals(mapId);
   const effId = mapCfg.id === 'land_unknown' || mapCfg.id === 'the_unknown' ? mapId : mapCfg.id;
 
-  const worldHalf = 58;
-  const dioramaSize = 11.4;
+  const worldHalf = sizeSpec.playableHalfSize;
+  // Escala física proporcional na vitrine 3D para evidenciar Normal vs Grande vs Gigante
+  const dioramaSize = worldSize === 'giant' ? 15.2 : worldSize === 'large' ? 12.6 : 9.8;
   const worldToDiorama = dioramaSize / (worldHalf * 2);
-  const heightScale = 0.58;
-  const segs = 68;
+  const heightScale = worldSize === 'giant' ? 0.64 : worldSize === 'large' ? 0.61 : 0.56;
+  const segs = worldSize === 'giant' ? 88 : worldSize === 'large' ? 76 : 64;
 
   const terrainGeo = new THREE.PlaneGeometry(dioramaSize, dioramaSize, segs, segs);
   terrainGeo.rotateX(-Math.PI / 2);
@@ -788,7 +805,7 @@ export function buildMapDiorama(
     const dz = pos.getZ(i);
     const wx = dx / worldToDiorama;
     const wz = dz / worldToDiorama;
-    const h = groundHeightAt(wx, wz, mapId);
+    const h = groundHeightAt(wx, wz, mapId, worldSize);
     if (h < minH) minH = h;
     if (h > maxH) maxH = h;
     if (h < -0.68) waterVerts++;
@@ -806,6 +823,7 @@ export function buildMapDiorama(
   _cCliff.setHex(mapCfg.cliffHex);
   _cFertile.setHex(bio.fertileHex);
 
+  const ws = sizeSpec.worldScale;
   for (let i = 0; i < pos.count; i++) {
     const dx = pos.getX(i);
     const dz = pos.getZ(i);
@@ -816,16 +834,16 @@ export function buildMapDiorama(
     const slope = Math.max(0, 1 - ny);
 
     const diagDist = Math.abs(wx + wz) / Math.SQRT2;
-    const roadBlend = Math.max(0, 1 - diagDist / 6.5) * (Math.hypot(wx, wz) < 52 ? 0.55 : 0);
+    const roadBlend = Math.max(0, 1 - diagDist / (6.5 * ws)) * (Math.hypot(wx, wz) < 52 * ws ? 0.55 : 0);
 
     _cTmp.copy(_cBase);
     if (effId === 'nile' || effId === 'yellow_river' || effId === 'highland') {
       const riverDist = Math.abs(wx - wz) / Math.SQRT2;
-      if (riverDist < 12) {
-        _cTmp.lerp(_cFertile, Math.max(0, 1 - riverDist / 12) * 0.85);
+      if (riverDist < 12 * ws) {
+        _cTmp.lerp(_cFertile, Math.max(0, 1 - riverDist / (12 * ws)) * 0.85);
       }
-    } else if (effId === 'oasis' && Math.hypot(wx, wz) < 16) {
-      _cTmp.lerp(_cFertile, (1 - Math.hypot(wx, wz) / 16) * 0.85);
+    } else if (effId === 'oasis' && Math.hypot(wx, wz) < 16 * ws) {
+      _cTmp.lerp(_cFertile, (1 - Math.hypot(wx, wz) / (16 * ws)) * 0.85);
     } else if (effId === 'watering_hole' && y < 0.25) {
       _cTmp.lerp(_cFertile, 0.72);
     }
@@ -873,29 +891,29 @@ export function buildMapDiorama(
   root.add(wireframeMesh);
 
   // Architectural geological cutaway base & bronze rim
-  const plinthGeo = new THREE.BoxGeometry(dioramaSize + 0.24, 0.56, dioramaSize + 0.24);
+  const plinthGeo = new THREE.BoxGeometry(dioramaSize + 0.28, 0.58, dioramaSize + 0.28);
   const plinthMat = new THREE.MeshStandardMaterial({
     color: 0x121620,
     roughness: 0.65,
     metalness: 0.35,
   });
   const plinthMesh = new THREE.Mesh(plinthGeo, plinthMat);
-  plinthMesh.position.y = -1.62;
+  plinthMesh.position.y = -1.64;
   plinthMesh.receiveShadow = true;
   root.add(plinthMesh);
 
-  const rimGeo = new THREE.BoxGeometry(dioramaSize + 0.3, 0.08, dioramaSize + 0.3);
+  const rimGeo = new THREE.BoxGeometry(dioramaSize + 0.34, 0.09, dioramaSize + 0.34);
   const rimMat = new THREE.MeshStandardMaterial({
-    color: 0xb08a38,
+    color: worldSize === 'giant' ? 0xeab308 : worldSize === 'large' ? 0xc59a40 : 0xb08a38,
     roughness: 0.32,
     metalness: 0.82,
   });
   const rimMesh = new THREE.Mesh(rimGeo, rimMat);
-  rimMesh.position.y = -1.32;
+  rimMesh.position.y = -1.33;
   root.add(rimMesh);
 
-  // Perimeter geological walls connecting edge elevation down to -1.32
-  const skirtBottomY = -1.32;
+  // Perimeter geological walls connecting edge elevation down to -1.33
+  const skirtBottomY = -1.33;
   const sidePositions: number[] = [];
   const halfD = dioramaSize / 2;
   const pushQuad = (x1: number, y1: number, z1: number, x2: number, y2: number, z2: number) => {
@@ -910,13 +928,13 @@ export function buildMapDiorama(
     const t1 = -halfD + ((s + 1) / segs) * dioramaSize;
 
     // North (z = -halfD)
-    pushQuad(t1, groundHeightAt(t1 / worldToDiorama, -worldHalf, mapId) * heightScale, -halfD, t0, groundHeightAt(t0 / worldToDiorama, -worldHalf, mapId) * heightScale, -halfD);
+    pushQuad(t1, groundHeightAt(t1 / worldToDiorama, -worldHalf, mapId, worldSize) * heightScale, -halfD, t0, groundHeightAt(t0 / worldToDiorama, -worldHalf, mapId, worldSize) * heightScale, -halfD);
     // South (z = +halfD)
-    pushQuad(t0, groundHeightAt(t0 / worldToDiorama, worldHalf, mapId) * heightScale, halfD, t1, groundHeightAt(t1 / worldToDiorama, worldHalf, mapId) * heightScale, halfD);
+    pushQuad(t0, groundHeightAt(t0 / worldToDiorama, worldHalf, mapId, worldSize) * heightScale, halfD, t1, groundHeightAt(t1 / worldToDiorama, worldHalf, mapId, worldSize) * heightScale, halfD);
     // West (x = -halfD)
-    pushQuad(-halfD, groundHeightAt(-worldHalf, t0 / worldToDiorama, mapId) * heightScale, t0, -halfD, groundHeightAt(-worldHalf, t1 / worldToDiorama, mapId) * heightScale, t1);
+    pushQuad(-halfD, groundHeightAt(-worldHalf, t0 / worldToDiorama, mapId, worldSize) * heightScale, t0, -halfD, groundHeightAt(-worldHalf, t1 / worldToDiorama, mapId, worldSize) * heightScale, t1);
     // East (x = +halfD)
-    pushQuad(halfD, groundHeightAt(worldHalf, t1 / worldToDiorama, mapId) * heightScale, t1, halfD, groundHeightAt(worldHalf, t0 / worldToDiorama, mapId) * heightScale, t0);
+    pushQuad(halfD, groundHeightAt(worldHalf, t1 / worldToDiorama, mapId, worldSize) * heightScale, t1, halfD, groundHeightAt(worldHalf, t0 / worldToDiorama, mapId, worldSize) * heightScale, t0);
   }
   const skirtGeo = new THREE.BufferGeometry();
   skirtGeo.setAttribute('position', new THREE.Float32BufferAttribute(sidePositions, 3));
@@ -945,25 +963,27 @@ export function buildMapDiorama(
   waterMesh.position.y = -0.68 * heightScale;
   root.add(waterMesh);
 
-  // Resource profile for authentic flora, gold mines & fauna spawns
-  const profile = buildMapResourceProfile(mapId, 'normal');
+  // Resource profile scaled authentically for Normal / Grande / Gigante
+  const profile = buildMapResourceProfile(mapId, worldSize);
   const floraGroup = new THREE.Group();
   floraGroup.visible = opts.showFlora;
   root.add(floraGroup);
 
   const floraCanopies: THREE.Object3D[] = [];
-  const objScale = 0.21;
+  const objScale = worldSize === 'giant' ? 0.175 : worldSize === 'large' ? 0.19 : 0.205;
+  const maxCoord = worldHalf - 4;
 
   // Populate representative tree clusters
-  profile.treeClusters.forEach(([cx, cz, count], clusterIdx) => {
+  const maxClusters = worldSize === 'giant' ? 28 : worldSize === 'large' ? 20 : 14;
+  profile.treeClusters.slice(0, maxClusters).forEach(([cx, cz, count], clusterIdx) => {
     const sampleCount = Math.min(3, Math.max(2, Math.ceil(count / 2)));
     for (let k = 0; k < sampleCount; k++) {
       const ang = clusterIdx * 1.4 + k * 2.1;
       const rad = 2.0 + k * 1.8;
       const wx = cx + Math.cos(ang) * rad;
       const wz = cz + Math.sin(ang) * rad;
-      if (Math.abs(wx) > 54 || Math.abs(wz) > 54) continue;
-      const wy = groundHeightAt(wx, wz, mapId);
+      if (Math.abs(wx) > maxCoord || Math.abs(wz) > maxCoord) continue;
+      const wy = groundHeightAt(wx, wz, mapId, worldSize);
       if (wy < -0.35) continue;
 
       const style = bio.secondaryTreeStyle && (clusterIdx + k) % 3 === 1 ? bio.secondaryTreeStyle : bio.treeStyle;
@@ -979,13 +999,28 @@ export function buildMapDiorama(
   });
 
   // Populate Gold Mines
-  profile.goldSpots.slice(0, 6).forEach(([gx, gz], idx) => {
-    const wy = groundHeightAt(gx, gz, mapId);
+  const maxGold = worldSize === 'giant' ? 14 : worldSize === 'large' ? 10 : 6;
+  profile.goldSpots.slice(0, maxGold).forEach(([gx, gz], idx) => {
+    if (Math.abs(gx) > maxCoord || Math.abs(gz) > maxCoord) return;
+    const wy = groundHeightAt(gx, gz, mapId, worldSize);
     if (wy < -0.3) return;
     const mine = createResourceMesh('gold_mine', pal, false, mapId, idx);
     mine.scale.setScalar(objScale * 0.95);
     mine.position.set(gx * worldToDiorama, wy * heightScale, gz * worldToDiorama);
     floraGroup.add(mine);
+  });
+
+  // Populate Neutral Settlements
+  const maxSettlements = worldSize === 'giant' ? 10 : worldSize === 'large' ? 6 : 4;
+  profile.settlementSpots.slice(0, maxSettlements).forEach(([sx, sz], idx) => {
+    if (Math.abs(sx) > maxCoord || Math.abs(sz) > maxCoord) return;
+    const wy = groundHeightAt(sx, sz, mapId, worldSize);
+    if (wy < -0.3) return;
+    const st = createSettlementMesh(pal, false);
+    st.scale.setScalar(objScale * 0.62);
+    st.position.set(sx * worldToDiorama, wy * heightScale, sz * worldToDiorama);
+    st.rotation.y = idx * 0.85;
+    floraGroup.add(st);
   });
 
   // Populate Fauna Herds
@@ -994,31 +1029,46 @@ export function buildMapDiorama(
   root.add(faunaGroup);
   const faunaMeshes: THREE.Group[] = [];
 
-  profile.faunaSpawns.slice(0, 8).forEach(([kind, fx, fz], idx) => {
-    const wy = groundHeightAt(fx, fz, mapId);
+  const maxFauna = worldSize === 'giant' ? 16 : worldSize === 'large' ? 12 : 8;
+  profile.faunaSpawns.slice(0, maxFauna).forEach(([kind, fx, fz], idx) => {
+    if (Math.abs(fx) > maxCoord || Math.abs(fz) > maxCoord) return;
+    const wy = groundHeightAt(fx, fz, mapId, worldSize);
     if (wy < -0.25) return;
     const animal = createFaunaMesh(kind, pal, false);
-    animal.scale.setScalar(0.28);
+    animal.scale.setScalar(worldSize === 'giant' ? 0.24 : 0.27);
     animal.position.set(fx * worldToDiorama, wy * heightScale, fz * worldToDiorama);
     animal.rotation.y = idx * 1.1;
     faunaGroup.add(animal);
     faunaMeshes.push(animal);
   });
 
-  // Base corner settlement markers (Player SW, Enemy NE)
+  // Base miniature Town Centers + glowing team beacons (Player SW, Enemy NE) scaled to sizeSpec.baseOffset
+  const bo = sizeSpec.baseOffset;
   const spawnMarkerMatPlayer = new THREE.MeshStandardMaterial({ color: 0x38bdf8, emissive: 0x0284c7, emissiveIntensity: 0.7 });
   const spawnMarkerMatEnemy = new THREE.MeshStandardMaterial({ color: 0xef4444, emissive: 0xb91c1c, emissiveIntensity: 0.7 });
-  const spawnGeo = new THREE.ConeGeometry(0.16, 0.36, 4);
+  const spawnGeo = new THREE.ConeGeometry(0.14, 0.34, 4);
 
-  const pY = groundHeightAt(-34, 34, mapId) * heightScale;
+  const pY = Math.max(-0.2, groundHeightAt(-bo, bo, mapId, worldSize)) * heightScale;
+  const pTc = createBuildingMesh('town_center', 'player', pal, false, 'greek');
+  pTc.scale.setScalar(objScale * 0.56);
+  pTc.position.set(-bo * worldToDiorama, pY, bo * worldToDiorama);
+  pTc.rotation.y = Math.PI * 0.25;
+  root.add(pTc);
+
   const pMarker = new THREE.Mesh(spawnGeo, spawnMarkerMatPlayer);
-  pMarker.position.set(-34 * worldToDiorama, pY + 0.25, 34 * worldToDiorama);
+  pMarker.position.set(-bo * worldToDiorama, pY + 0.68, bo * worldToDiorama);
   pMarker.rotation.x = Math.PI;
   root.add(pMarker);
 
-  const eY = groundHeightAt(34, -34, mapId) * heightScale;
+  const eY = Math.max(-0.2, groundHeightAt(bo, -bo, mapId, worldSize)) * heightScale;
+  const eTc = createBuildingMesh('town_center', 'enemy', pal, false, 'egyptian');
+  eTc.scale.setScalar(objScale * 0.56);
+  eTc.position.set(bo * worldToDiorama, eY, -bo * worldToDiorama);
+  eTc.rotation.y = -Math.PI * 0.75;
+  root.add(eTc);
+
   const eMarker = new THREE.Mesh(spawnGeo, spawnMarkerMatEnemy);
-  eMarker.position.set(34 * worldToDiorama, eY + 0.25, -34 * worldToDiorama);
+  eMarker.position.set(bo * worldToDiorama, eY + 0.68, -bo * worldToDiorama);
   eMarker.rotation.x = Math.PI;
   root.add(eMarker);
 
@@ -1050,6 +1100,16 @@ export function buildMapDiorama(
     minHeight: minH,
     maxHeight: maxH,
     waterCoveragePct: Math.round((waterVerts / pos.count) * 100),
+    worldSize,
+    worldSizeLabel: sizeSpec.label,
+    dimsLabel: sizeSpec.dimsLabel,
+    playableDimsLabel: `${sizeSpec.playableHalfSize * 2}×${sizeSpec.playableHalfSize * 2}`,
+    baseDistance: Math.round(Math.hypot(bo * 2, bo * 2)),
+    treeClusterCount: profile.treeClusters.length,
+    goldMineCount: profile.goldSpots.length,
+    settlementCount: profile.settlementSpots.length,
+    faunaCount: profile.faunaSpawns.length,
+    dioramaSize,
     dispose,
   };
 }

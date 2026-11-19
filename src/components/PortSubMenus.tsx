@@ -113,6 +113,7 @@ interface PortSubMenusProps {
   ) => void;
   onLoadSavedMatch: () => void;
   onDeleteSavedMatch: () => void;
+  onWatchReplay?: (rec: RecordedMatchRecord) => void;
   onBackToMain: () => void;
 }
 
@@ -134,6 +135,7 @@ export function PortSubMenus({
   onStartMatch,
   onLoadSavedMatch,
   onDeleteSavedMatch,
+  onWatchReplay,
   onBackToMain,
 }: PortSubMenusProps) {
   const [selectedBookId, setSelectedBookId] = useState<'trident' | 'titans'>('trident');
@@ -1182,20 +1184,40 @@ export function PortSubMenus({
                   <div>Panteão: {PANTHEONS[rec.pantheon].name} · Mapa: {MAPS[rec.mapId].name}</div>
                   <div>Duração: {Math.floor(rec.durationSeconds / 60)}m {rec.durationSeconds % 60}s</div>
                   <div>Unidades Treinadas: {rec.unitsTrained} · Inimigos Derrotados: {rec.enemiesDefeated}</div>
+                  {rec.replayFrames && rec.replayFrames.length > 1 && (
+                    <div className="text-[#93c5fd]">
+                      Quadros 3D gravados: {rec.replayFrames.length} · Amostras de Linha do Tempo: {rec.timelineHistory?.length ?? 0}
+                    </div>
+                  )}
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={() =>
-                  onStartMatch(rec.pantheon, rec.difficulty, rec.mapId, false, {
-                    scenarioTitle: `Revanche: ${rec.title}`,
-                    gameSpeed: options.gameSpeed,
-                  })
-                }
-                className="rounded border border-[#f5d77f] bg-[#d4af37] py-2 text-xs font-bold text-[#0d1017] cursor-pointer"
-              >
-                Jogar Mesma Configuração
-              </button>
+              <div className="flex flex-col gap-2">
+                {onWatchReplay && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      clickSound();
+                      onWatchReplay(rec);
+                    }}
+                    className="flex items-center justify-center gap-1.5 rounded border border-[#f5d77f] bg-[#d4af37] py-2 text-xs font-bold text-[#0d1017] hover:bg-[#e7c454] cursor-pointer"
+                  >
+                    <Film className="h-3.5 w-3.5" />
+                    <span>Assistir Replay 3D</span>
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() =>
+                    onStartMatch(rec.pantheon, rec.difficulty, rec.mapId, false, {
+                      scenarioTitle: `Revanche: ${rec.title}`,
+                      gameSpeed: options.gameSpeed,
+                    })
+                  }
+                  className="rounded border border-[#c8a962]/45 bg-[#1b2436] py-2 text-xs font-semibold text-[#f3d27a] hover:bg-[#232f46] cursor-pointer"
+                >
+                  Jogar Mesma Configuração
+                </button>
+              </div>
             </div>
           )}
         </div>
