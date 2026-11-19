@@ -266,12 +266,12 @@ export function createEmitterPreviewMesh(kind: AtmosphericEmitterKind): THREE.Gr
  * Runtime manager for animated Layer 2B Atmospheric FX Emitters in Three.js scenes.
  */
 export class AtmosphericFxSystem {
-  private scene: THREE.Scene;
+  private scene: THREE.Object3D;
   private emitters: ActiveEmitterInstance[] = [];
   private mistVisible = true;
   private elapsed = 0;
 
-  constructor(scene: THREE.Scene) {
+  constructor(scene: THREE.Object3D) {
     this.scene = scene;
   }
 

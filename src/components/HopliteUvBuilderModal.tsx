@@ -60,6 +60,12 @@ import {
   StudioArtifactHandle,
 } from './gallery3dArtifacts';
 import {
+  buildTerrainGalleryMesh,
+  GALLERY_TERRAIN_ITEMS,
+  StudioTerrainHandle,
+  TerrainGalleryFilter,
+} from './gallery3dTerrain';
+import {
   AOM_HOPLITE_UV_TIERS,
   createGreekUnitMesh,
   HopliteArmorTier,
@@ -279,7 +285,7 @@ interface HopliteUvBuilderModalProps {
   onSelectTier: (tier: 1 | 2 | 3 | 4) => void;
 }
 
-type GalleryCategory = 'unit' | 'building' | 'map' | 'fauna' | 'flora' | 'utensil' | 'relic';
+type GalleryCategory = 'unit' | 'building' | 'map' | 'terrain' | 'fauna' | 'flora' | 'utensil' | 'relic';
 type LightingMood = 'studio' | 'day' | 'dusk' | 'night';
 type CameraPreset = 'iso' | 'front' | 'side' | 'top';
 type UnitCategoryFilter = 'all' | 'god' | 'hero' | 'troop' | 'myth';
@@ -456,6 +462,7 @@ export function HopliteUvBuilderModal({
   const entityMeshRef = useRef<THREE.Group | null>(null);
   const dioramaHandleRef = useRef<MapDioramaHandle | null>(null);
   const artifactHandleRef = useRef<StudioArtifactHandle | null>(null);
+  const terrainHandleRef = useRef<StudioTerrainHandle | null>(null);
   const controlsRef = useRef<OrbitControls | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const camTransitionRef = useRef<{
@@ -541,6 +548,14 @@ export function HopliteUvBuilderModal({
   const [selectedRelicId, setSelectedRelicId] = useState<string>('chalice_athena');
   const [relicPantheonFilter, setRelicPantheonFilter] = useState<RelicPantheonFilter>('all');
   const [artifactAuraActive, setArtifactAuraActive] = useState<boolean>(true);
+
+  // Terrain & Geological Layers state
+  const [selectedTerrainId, setSelectedTerrainId] = useState<string>('surface:hades_lava');
+  const [terrainFilter, setTerrainFilter] = useState<TerrainGalleryFilter>('all');
+  const [terrainVariantSeed, setTerrainVariantSeed] = useState<number>(0);
+  const [terrainWireframe, setTerrainWireframe] = useState<boolean>(false);
+  const [terrainFxActive, setTerrainFxActive] = useState<boolean>(true);
+  const [terrainRedTide, setTerrainRedTide] = useState<boolean>(false);
 
   // God / Hoplite / Myrmidon special states
   const [zeusMode, setZeusMode] = useState<'pairar' | 'voar' | 'raios' | 'tempestade'>('pairar');
@@ -662,6 +677,8 @@ export function HopliteUvBuilderModal({
   floraWindRef.current = floraWind;
   const artifactAuraRef = useRef(artifactAuraActive);
   artifactAuraRef.current = artifactAuraActive;
+  const terrainFxActiveRef = useRef(terrainFxActive);
+  terrainFxActiveRef.current = terrainFxActive;
   const hopliteActionRef = useRef(hopliteAction);
   hopliteActionRef.current = hopliteAction;
   const villagerGenderRef = useRef(villagerGender);
@@ -783,6 +800,17 @@ export function HopliteUvBuilderModal({
         : GALLERY_RELIC_ITEMS.filter((r) => r.pantheon === relicPantheonFilter),
     [relicPantheonFilter]
   );
+  const selectedTerrainItem = useMemo(
+    () => GALLERY_TERRAIN_ITEMS.find((t) => t.id === selectedTerrainId) || GALLERY_TERRAIN_ITEMS[0],
+    [selectedTerrainId]
+  );
+  const filteredTerrains = useMemo(
+    () =>
+      terrainFilter === 'all'
+        ? GALLERY_TERRAIN_ITEMS
+        : GALLERY_TERRAIN_ITEMS.filter((t) => t.filterGroup === terrainFilter),
+    [terrainFilter]
+  );
 
   // Compute canonical studio framing for current subject
   const getFramingForSubject = (focusHead: boolean): { target: [number, number, number]; offset: [number, number, number]; baseDist: number } => {
@@ -792,6 +820,27 @@ export function HopliteUvBuilderModal({
         target: [0, 0.2, 0],
         offset: [9.4 * sizeMult, 8.6 * sizeMult, 9.4 * sizeMult],
         baseDist: 15.6 * sizeMult,
+      };
+    }
+    if (galleryCategory === 'terrain') {
+      if (selectedTerrainItem.kind === 'fx') {
+        return {
+          target: [0, 1.5, 0],
+          offset: [4.8, 3.2, 5.4],
+          baseDist: 7.9,
+        };
+      }
+      if (selectedTerrainItem.kind === 'rock') {
+        return {
+          target: [0, 1.05, 0],
+          offset: [4.2, 2.7, 4.6],
+          baseDist: 6.7,
+        };
+      }
+      return {
+        target: [0, 0.85, 0],
+        offset: [4.7, 3.8, 4.9],
+        baseDist: 7.7,
       };
     }
     if (galleryCategory === 'fauna') {
@@ -1721,6 +1770,11 @@ export function HopliteUvBuilderModal({
         artifactHandleRef.current.dispose();
         artifactHandleRef.current = null;
       }
+      if (terrainHandleRef.current) {
+        scene.remove(terrainHandleRef.current.group);
+        terrainHandleRef.current.dispose();
+        terrainHandleRef.current = null;
+      }
       while (environmentGroup.children.length > 0) {
         environmentGroup.remove(environmentGroup.children[0]);
       }
@@ -1765,6 +1819,31 @@ export function HopliteUvBuilderModal({
           settlementCount: handle.settlementCount,
           faunaCount: handle.faunaCount,
         });
+      } else if (galleryCategory === 'terrain') {
+        const terrainBg =
+          selectedTerrainItem.filterGroup === 'magma'
+            ? new THREE.Color(0x160908)
+            : selectedTerrainItem.filterGroup === 'water'
+            ? new THREE.Color(terrainRedTide ? 0x1a080b : 0x07141f)
+            : new THREE.Color(0x0c111a);
+        scene.background = terrainBg;
+        scene.fog = new THREE.FogExp2(terrainBg.getHex(), 0.015);
+
+        const handle = buildTerrainGalleryMesh(selectedTerrainItem, {
+          showWireframe: terrainWireframe,
+          variantSeed: terrainVariantSeed,
+          redTide: terrainRedTide,
+          castShadows: !isSoftwareGl,
+        });
+        terrainHandleRef.current = handle;
+        group = handle.group;
+
+        if (showHumanScale) {
+          const refVillager = createUnitMesh('villager', 'player', pal, !isSoftwareGl, selectedCiv, selectedMajorGod);
+          refVillager.position.set(-2.65, 0.32, 1.45);
+          refVillager.rotation.y = 0.55;
+          environmentGroup.add(refVillager);
+        }
       } else if (galleryCategory === 'fauna') {
         scene.background = new THREE.Color(0x0b1019);
         scene.fog = new THREE.FogExp2(0x0b1019, 0.018);
@@ -4604,6 +4683,8 @@ export function HopliteUvBuilderModal({
             }
           }
         }
+      } else if (galleryCategory === 'terrain' && terrainHandleRef.current) {
+        terrainHandleRef.current.animate(simTime, dt, terrainFxActiveRef.current);
       } else if (galleryCategory === 'fauna' && entityMeshRef.current) {
         const ud = entityMeshRef.current.userData;
         const leftLeg = ud.leftLeg as THREE.Object3D | undefined;
@@ -4973,6 +5054,10 @@ export function HopliteUvBuilderModal({
         artifactHandleRef.current.dispose();
         artifactHandleRef.current = null;
       }
+      if (terrainHandleRef.current) {
+        terrainHandleRef.current.dispose();
+        terrainHandleRef.current = null;
+      }
       localDisposables.forEach((d) => d.dispose());
 
       bolts.forEach((b) =>
@@ -5043,6 +5128,10 @@ export function HopliteUvBuilderModal({
     floraVariantSeed,
     selectedUtensilId,
     selectedRelicId,
+    selectedTerrainId,
+    terrainVariantSeed,
+    terrainWireframe,
+    terrainRedTide,
     showHumanScale,
   ]);
 
@@ -5119,13 +5208,14 @@ export function HopliteUvBuilderModal({
             </div>
           </div>
 
-          {/* 7 Studio Categories */}
+          {/* 8 Studio Categories */}
           <nav className="order-3 lg:order-none w-full lg:w-auto flex items-center gap-1 rounded-lg border border-white/10 bg-[#080b12] p-1 overflow-x-auto max-w-full">
             {(
               [
                 { id: 'unit', label: 'Unidades & Deuses', icon: Crown },
                 { id: 'building', label: 'Construções', icon: Building2 },
                 { id: 'map', label: 'Mapas & Relevo', icon: Mountain },
+                { id: 'terrain', label: 'Terreno', icon: Layers },
                 { id: 'fauna', label: 'Fauna', icon: Compass },
                 { id: 'flora', label: 'Flora & Recursos', icon: Trees },
                 { id: 'utensil', label: 'Utensílios', icon: Hammer },
@@ -5423,6 +5513,43 @@ export function HopliteUvBuilderModal({
               </div>
             )}
 
+            {galleryCategory === 'terrain' && (
+              <div className="border-b border-white/10 p-3 space-y-2 bg-[#111827]/70">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-[#f5e3b0]">
+                    Terreno, Rochas & FX (<span className="font-mono-num">{filteredTerrains.length}</span>)
+                  </span>
+                  <Layers className="h-3.5 w-3.5 text-orange-400" />
+                </div>
+                <div className="grid grid-cols-4 gap-1">
+                  {(
+                    [
+                      { id: 'all', label: 'Todos' },
+                      { id: 'rock_cliff', label: 'Rocha' },
+                      { id: 'magma', label: 'Magma' },
+                      { id: 'dust_snow', label: 'Areia/Neve' },
+                      { id: 'water', label: 'Água' },
+                      { id: 'rocks_3d', label: 'Rochas 3D' },
+                      { id: 'fx', label: 'FX Clima' },
+                    ] as const
+                  ).map((f) => (
+                    <button
+                      key={f.id}
+                      type="button"
+                      onClick={() => setTerrainFilter(f.id)}
+                      className={`rounded py-1 text-[9px] font-semibold border transition cursor-pointer ${
+                        terrainFilter === f.id
+                          ? 'border-orange-400/70 bg-orange-500/20 text-orange-200'
+                          : 'border-white/10 bg-[#0b0f18] text-[#9ca3af] hover:text-white'
+                      }`}
+                    >
+                      {f.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {galleryCategory === 'flora' && (
               <div className="border-b border-white/10 p-3 space-y-2 bg-[#111827]/70">
                 <div className="flex items-center justify-between">
@@ -5605,6 +5732,41 @@ export function HopliteUvBuilderModal({
                         </span>
                       </div>
                       <span className="mt-0.5 text-[10px] text-[#9ca3af] line-clamp-1">{m.subtitle}</span>
+                    </button>
+                  );
+                })}
+
+              {galleryCategory === 'terrain' &&
+                filteredTerrains.map((t) => {
+                  const isSelected = selectedTerrainId === t.id;
+                  const kindTag =
+                    t.kind === 'surface' ? 'Piso' : t.kind === 'rock' ? 'Rocha 3D' : 'FX';
+                  return (
+                    <button
+                      key={t.id}
+                      type="button"
+                      onClick={() => setSelectedTerrainId(t.id)}
+                      className={`w-full flex flex-col items-start rounded-lg border px-3 py-2 text-left transition cursor-pointer ${
+                        isSelected
+                          ? 'border-orange-400 bg-orange-500/15 text-orange-100'
+                          : 'border-white/8 bg-[#121826]/70 text-[#d1d5db] hover:border-white/25 hover:bg-[#192236]'
+                      }`}
+                    >
+                      <div className="flex w-full items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span
+                            className="h-3 w-3 shrink-0 rounded-sm border border-white/25"
+                            style={{ backgroundColor: t.swatchCss }}
+                          />
+                          <span className="font-display text-xs font-bold truncate">{t.name}</span>
+                        </div>
+                        <span className="shrink-0 rounded bg-white/8 px-1.5 py-0.5 text-[9px] text-[#cbd5e1]">
+                          {kindTag}
+                        </span>
+                      </div>
+                      <span className="mt-0.5 font-mono-num text-[10px] text-[#9ca3af] line-clamp-1">
+                        {t.rmConstant}
+                      </span>
                     </button>
                   );
                 })}
@@ -6073,6 +6235,76 @@ export function HopliteUvBuilderModal({
                         style={{ backgroundColor: formatHex(selectedFaunaCfg.hornOrTuskHex) }}
                       />
                       <span className="text-[#9ca3af]">Chifre/Presa</span>
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {galleryCategory === 'terrain' && (
+              <>
+                <div className="border-b border-white/10 pb-2.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-orange-300">
+                      {selectedTerrainItem.layerLabel}
+                    </span>
+                  </div>
+                  <h3 className="mt-1 font-display text-base font-bold text-[#f5e3b0]">
+                    {selectedTerrainItem.name}
+                  </h3>
+                  <p className="mt-1 text-[11px] leading-relaxed text-[#cbd5e1]">
+                    {selectedTerrainItem.desc}
+                  </p>
+                </div>
+
+                <div className="space-y-2 text-[11px]">
+                  <div className="rounded-lg border border-white/10 bg-[#090d16] p-2.5">
+                    <div className="text-[9px] font-bold uppercase text-[#9ca3af]">Constante XS / Script (.xs)</div>
+                    <div className="mt-0.5 font-mono-num text-xs font-bold text-amber-300">
+                      {selectedTerrainItem.rmConstant}
+                    </div>
+                    <div className="mt-0.5 font-mono-num text-[10px] text-[#9ca3af]">
+                      Identificador: &quot;{selectedTerrainItem.xsName}&quot;
+                    </div>
+                  </div>
+                  <div className="rounded-lg border border-white/10 bg-[#090d16] p-2.5">
+                    <div className="text-[9px] font-bold uppercase text-[#9ca3af]">Bioma / Civilização</div>
+                    <div className="mt-0.5 text-[#e2e8f0]">{selectedTerrainItem.biomeLabel}</div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    <div className="rounded-lg border border-white/10 bg-[#090d16] p-2">
+                      <div className="text-[9px] font-bold uppercase text-[#9ca3af]">Movimentação</div>
+                      <div
+                        className={`mt-0.5 text-[10px] font-semibold ${
+                          selectedTerrainItem.passableLabel.includes('Intransponível') ||
+                          selectedTerrainItem.passableLabel.includes('Bloqueia')
+                            ? 'text-orange-300'
+                            : 'text-emerald-300'
+                        }`}
+                      >
+                        {selectedTerrainItem.passableLabel}
+                      </div>
+                    </div>
+                    <div className="rounded-lg border border-white/10 bg-[#090d16] p-2">
+                      <div className="text-[9px] font-bold uppercase text-[#9ca3af]">Construção</div>
+                      <div className="mt-0.5 text-[10px] font-semibold text-[#e2e8f0]">
+                        {selectedTerrainItem.buildableLabel}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="rounded-lg border border-white/10 bg-[#090d16] p-2.5 flex items-center justify-between">
+                    <div>
+                      <div className="text-[9px] font-bold uppercase text-[#9ca3af]">Navegação / Estado</div>
+                      <div className="mt-0.5 text-[#cbd5e1]">{selectedTerrainItem.navigableLabel}</div>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span
+                        className="h-4 w-6 rounded-sm border border-white/25"
+                        style={{ backgroundColor: selectedTerrainItem.swatchCss }}
+                      />
+                      <span className="font-mono-num text-[10px] text-[#9ca3af]">
+                        {selectedTerrainItem.swatchCss}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -8544,6 +8776,69 @@ export function HopliteUvBuilderModal({
                 <Sparkles className="h-3.5 w-3.5" />
                 <span>Aura Sagrada</span>
               </button>
+              <button
+                type="button"
+                onClick={() => setShowHumanScale((v) => !v)}
+                className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                  showHumanScale
+                    ? 'bg-sky-500/20 text-sky-200 border border-sky-400/50'
+                    : 'border border-white/12 text-[#9ca3af] hover:text-white'
+                }`}
+              >
+                <Users className="h-3.5 w-3.5" />
+                <span>Escala Aldeão</span>
+              </button>
+            </>
+          ) : galleryCategory === 'terrain' ? (
+            <>
+              <button
+                type="button"
+                onClick={() => setTerrainVariantSeed((s) => (s + 1) % 6)}
+                className="flex items-center gap-1 rounded-lg border border-orange-400/40 bg-orange-500/20 px-2.5 py-1.5 text-xs font-bold text-orange-200 hover:bg-orange-500/30 cursor-pointer whitespace-nowrap"
+              >
+                <Shuffle className="h-3.5 w-3.5" />
+                <span className="font-mono-num">Relevo #{terrainVariantSeed}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setTerrainFxActive((v) => !v)}
+                className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                  terrainFxActive
+                    ? 'bg-amber-500/25 text-amber-200 border border-amber-400/50'
+                    : 'border border-white/12 text-[#9ca3af] hover:text-white'
+                }`}
+              >
+                <Flame className="h-3.5 w-3.5" />
+                <span>Fluxo &amp; FX</span>
+              </button>
+              {selectedTerrainItem.kind !== 'fx' && (
+                <button
+                  type="button"
+                  onClick={() => setTerrainWireframe((v) => !v)}
+                  className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                    terrainWireframe
+                      ? 'bg-cyan-500/25 text-cyan-200 border border-cyan-400/50'
+                      : 'border border-white/12 text-[#9ca3af] hover:text-white'
+                  }`}
+                >
+                  <Layers className="h-3.5 w-3.5" />
+                  <span>Malha</span>
+                </button>
+              )}
+              {selectedTerrainItem.filterGroup === 'water' && (
+                <button
+                  type="button"
+                  onClick={() => setTerrainRedTide((v) => !v)}
+                  className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                    terrainRedTide
+                      ? 'bg-red-600/35 text-red-200 border border-red-400/60'
+                      : 'border border-white/12 text-[#9ca3af] hover:text-white'
+                  }`}
+                >
+                  <Waves className="h-3.5 w-3.5" />
+                  <span>RED TIDE</span>
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => setShowHumanScale((v) => !v)}
