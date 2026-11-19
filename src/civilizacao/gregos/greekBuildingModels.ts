@@ -3,6 +3,7 @@ import { BuildingKind, PantheonId, TeamId } from '../../game/types';
 import type { MaterialPalette } from '../../game/models';
 import { buildGreekFortress as buildProceduralGreekFortress } from './greekFortressModel';
 import { buildProceduralGreekTemple } from './greekTempleModel';
+import { buildProceduralGreekHouse } from './greekHouseModel';
 
 // ─── Procedural Greek Marble, Terracotta & Bronze Textures ─────────────────
 
@@ -795,13 +796,16 @@ export function createGreekBuildingMesh(
       barWidth = 3.2 + (age - 3) * 0.15;
       break;
     }
-    case 'house':
-      buildGreekHouse(group, mats);
-      group.scale.setScalar(1.45);
-      markerRadius = 1.15;
-      barHeight = 2.0;
-      barWidth = 1.3;
+    case 'house': {
+      const rawGod = (majorGod || String(pantheon || 'zeus')).toLowerCase();
+      const effGod = rawGod.includes('poseidon') ? 'poseidon' : rawGod.includes('hades') ? 'hades' : 'zeus';
+      buildProceduralGreekHouse(group, age, effGod, enableShadows);
+      group.scale.setScalar(1.22);
+      markerRadius = 1.35 + (age - 1) * 0.12;
+      barHeight = 2.2 + (age - 1) * 0.25;
+      barWidth = 1.4 + (age - 1) * 0.1;
       break;
+    }
     case 'tower':
       buildGreekTower(group, mats);
       group.scale.setScalar(1.85);

@@ -20,6 +20,10 @@ import {
   GreekTempleGodKey,
 } from '../../civilizacao/gregos/greekTempleModel';
 import {
+  buildGreekHouseStudio,
+  GREEK_BUILDINGS_THEMES,
+} from '../../civilizacao/gregos/greekHouseModel';
+import {
   buildEgyptianTempleStudio,
   EGYPT_TEMPLE_THEMES,
   EgyptianTempleGodKey,
@@ -637,6 +641,62 @@ export function buildBuildingStudioSubject(ctx: BuildingStudioBuildContext): THR
       if (selectedBuilding === 'armory') {
         built.furnaceMat.emissiveIntensity = 1.45 + Math.sin(elapsed * 4.5) * 0.35;
       }
+    };
+  } else if (selectedCiv === 'greek' && selectedBuilding === 'house') {
+    const rawGod = selectedMajorGod.toLowerCase();
+    const godKey = rawGod.includes('poseidon')
+      ? 'poseidon'
+      : rawGod.includes('hades')
+      ? 'hades'
+      : 'zeus';
+    const theme = GREEK_BUILDINGS_THEMES[godKey] || GREEK_BUILDINGS_THEMES.zeus;
+
+    scene.background = new THREE.Color(theme.bgHex);
+    scene.fog = new THREE.FogExp2(theme.bgHex, 0.015);
+    addPedestal(2.8, 3.1, theme.goldHex);
+
+    const effTier = Math.max(1, Math.min(5, buildingAge));
+    const houseStudio = buildGreekHouseStudio(godKey, effTier, !isSoftwareGl);
+    group = houseStudio.root;
+
+    let lastTierApplied = effTier;
+    let lastGodApplied = godKey;
+    let elapsed = 0;
+
+    group.userData.animatePose = (dt: number) => {
+      elapsed += dt;
+      const currentT = Math.max(1, Math.min(5, buildingAge));
+      if (currentT !== lastTierApplied) {
+        lastTierApplied = currentT;
+        houseStudio.setTier(currentT);
+      }
+
+      const nextRaw = selectedMajorGod.toLowerCase();
+      const currentGod = nextRaw.includes('poseidon')
+        ? 'poseidon'
+        : nextRaw.includes('hades')
+        ? 'hades'
+        : 'zeus';
+
+      if (currentGod !== lastGodApplied) {
+        lastGodApplied = currentGod;
+        houseStudio.applyGod(currentGod);
+        const newTheme = GREEK_BUILDINGS_THEMES[currentGod] || GREEK_BUILDINGS_THEMES.zeus;
+        scene.background.setHex(newTheme.bgHex);
+        if (scene.fog) (scene.fog as THREE.FogExp2).color.setHex(newTheme.bgHex);
+      }
+
+      if (houseStudio.auraRing) {
+        houseStudio.auraRing.rotation.z += dt * 0.25;
+        houseStudio.auraRing.scale.setScalar(1 + Math.sin(elapsed * 2.5) * 0.025);
+      }
+      houseStudio.M.flames.forEach((fl, idx) => {
+        fl.scale.set(
+          1 + Math.sin(elapsed * 12 + idx * 1.5) * 0.12,
+          1 + Math.cos(elapsed * 14 + idx * 1.2) * 0.18,
+          1 + Math.sin(elapsed * 10 + idx * 1.7) * 0.12
+        );
+      });
     };
   } else {
     scene.background = defaultBg.clone();
