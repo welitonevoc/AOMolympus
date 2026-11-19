@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { BuildingKind, PantheonId, TeamId } from '../../game/types';
 import type { MaterialPalette } from '../../game/models';
 import { buildNorseHillFort as buildProceduralNorseHillFort } from './norseFortressModel';
+import { buildProceduralNorseTownCenter } from './norseTownCenterModel';
 
 // ─── Procedural Wood-and-Stone Nordic Building Textures ─────────────────────
 
@@ -1537,13 +1538,21 @@ export function createNorseBuildingMesh(
 
   switch (kind) {
     case 'town_center': {
-      const res = buildNorseLonghouseTownCenter(group, mats, age, pantheon);
+      const rawGod = (majorGod || String(pantheon || 'odin')).toLowerCase();
+      const effGod = rawGod.includes('thor')
+        ? 'thor'
+        : rawGod.includes('loki')
+        ? 'loki'
+        : rawGod.includes('freyr')
+        ? 'freyr'
+        : 'odin';
+      const res = buildProceduralNorseTownCenter(group, age, effGod, enableShadows);
       metropolisHalo = res.metropolisHalo;
       metropolisCrystal = res.metropolisCrystal;
-      group.scale.setScalar(1.0 + (age - 1) * 0.055);
-      markerRadius = 3.55 + (age - 1) * 0.22;
-      barHeight = 3.65 + (age - 1) * 0.58;
-      barWidth = 3.0 + (age - 1) * 0.15;
+      group.scale.setScalar(1.05 + (age - 1) * 0.05);
+      markerRadius = 3.6 + (age - 1) * 0.22;
+      barHeight = 3.8 + (age - 1) * 0.55;
+      barWidth = 3.2 + (age - 1) * 0.15;
       break;
     }
     case 'barracks':

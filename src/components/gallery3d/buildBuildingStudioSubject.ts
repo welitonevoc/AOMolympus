@@ -15,6 +15,10 @@ import {
   NorseFortressAction,
 } from '../../civilizacao/nordicos/norseFortressModel';
 import {
+  buildNorseTownCenterStudio,
+  NORSE_TOWN_CENTER_THEMES,
+} from '../../civilizacao/nordicos/norseTownCenterModel';
+import {
   buildGreekTempleStudio,
   GREEK_TEMPLE_THEMES,
   GreekTempleGodKey,
@@ -742,6 +746,69 @@ export function buildBuildingStudioSubject(ctx: BuildingStudioBuildContext): THR
         lastGodApplied = currentGod;
         tcStudio.applyGod(currentGod);
         const newTheme = GREEK_TOWN_CENTER_THEMES[currentGod] || GREEK_TOWN_CENTER_THEMES.zeus;
+        scene.background.setHex(newTheme.bgHex);
+        if (scene.fog) (scene.fog as THREE.FogExp2).color.setHex(newTheme.bgHex);
+      }
+
+      if (tcStudio.auraRing) {
+        tcStudio.auraRing.rotation.z += dt * 0.28;
+        tcStudio.auraRing.scale.setScalar(
+          (1 + (currentT - 1) * 0.11) * (1 + Math.sin(elapsed * 2.2) * 0.02)
+        );
+      }
+
+      tcStudio.M.flames.forEach((fl, idx) => {
+        fl.scale.set(
+          1 + Math.sin(elapsed * 13 + idx) * 0.14,
+          1 + Math.cos(elapsed * 16 + idx) * 0.22,
+          1 + Math.sin(elapsed * 12 + idx) * 0.14
+        );
+      });
+    };
+  } else if (selectedCiv === 'norse' && selectedBuilding === 'town_center') {
+    const rawGod = selectedMajorGod.toLowerCase();
+    const godKey = rawGod.includes('thor')
+      ? 'thor'
+      : rawGod.includes('loki')
+      ? 'loki'
+      : rawGod.includes('freyr')
+      ? 'freyr'
+      : 'odin';
+    const theme = NORSE_TOWN_CENTER_THEMES[godKey] || NORSE_TOWN_CENTER_THEMES.odin;
+
+    scene.background = new THREE.Color(theme.bgHex);
+    scene.fog = new THREE.FogExp2(theme.bgHex, 0.015);
+    addPedestal(4.2, 4.6, theme.goldHex);
+
+    const effTier = Math.max(1, Math.min(5, buildingAge));
+    const tcStudio = buildNorseTownCenterStudio(godKey, effTier, !isSoftwareGl);
+    group = tcStudio.root;
+
+    let lastTierApplied = effTier;
+    let lastGodApplied = godKey;
+    let elapsed = 0;
+
+    group.userData.animatePose = (dt: number) => {
+      elapsed += dt;
+      const currentT = Math.max(1, Math.min(5, buildingAge));
+      if (currentT !== lastTierApplied) {
+        lastTierApplied = currentT;
+        tcStudio.setTier(currentT);
+      }
+
+      const nextRaw = selectedMajorGod.toLowerCase();
+      const currentGod = nextRaw.includes('thor')
+        ? 'thor'
+        : nextRaw.includes('loki')
+        ? 'loki'
+        : nextRaw.includes('freyr')
+        ? 'freyr'
+        : 'odin';
+
+      if (currentGod !== lastGodApplied) {
+        lastGodApplied = currentGod;
+        tcStudio.applyGod(currentGod);
+        const newTheme = NORSE_TOWN_CENTER_THEMES[currentGod] || NORSE_TOWN_CENTER_THEMES.odin;
         scene.background.setHex(newTheme.bgHex);
         if (scene.fog) (scene.fog as THREE.FogExp2).color.setHex(newTheme.bgHex);
       }

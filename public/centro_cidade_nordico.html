@@ -1,0 +1,1440 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Centro da Cidade Nórdico Épico (T1–T5) • Odin, Thor, Loki e Freyr | 3D</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <style>
+    :root {
+      color-scheme: dark;
+      --gold: #facc15;
+      --glass: rgba(10, 16, 28, 0.88);
+      --border: rgba(56, 189, 248, 0.45);
+    }
+    * { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #08101e;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    }
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+      cursor: grab;
+    }
+    canvas:active { cursor: grabbing; }
+
+    #ui {
+      position: fixed;
+      top: 14px;
+      left: 14px;
+      right: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 10;
+      pointer-events: none;
+    }
+    .row {
+      display: flex;
+      gap: 7px;
+      flex-wrap: wrap;
+      align-items: center;
+      pointer-events: auto;
+    }
+    button {
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--glass);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      color: #f8fafc;
+      font-weight: 600;
+      font-size: 12.5px;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.48);
+      transition: all 0.2s ease;
+    }
+    button:hover {
+      transform: translateY(-1px);
+      background: rgba(24, 36, 62, 0.94);
+    }
+    button.god-btn.on[data-god="odin"] {
+      background: linear-gradient(135deg, #38bdf8 0%, #1e3a8a 100%);
+      color: #ffffff;
+      border-color: #bae6fd;
+      box-shadow: 0 0 18px rgba(56, 189, 248, 0.6);
+    }
+    button.god-btn.on[data-god="thor"] {
+      background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+      color: #fef08a;
+      border-color: #fef08a;
+      box-shadow: 0 0 18px rgba(239, 68, 68, 0.6);
+    }
+    button.god-btn.on[data-god="loki"] {
+      background: linear-gradient(135deg, #10b981 0%, #065f46 100%);
+      color: #ffffff;
+      border-color: #a7f3d0;
+      box-shadow: 0 0 18px rgba(16, 185, 129, 0.6);
+    }
+    button.god-btn.on[data-god="freyr"] {
+      background: linear-gradient(135deg, #facc15 0%, #65a30d 100%);
+      color: #091305;
+      border-color: #fef9c3;
+      box-shadow: 0 0 18px rgba(250, 204, 21, 0.6);
+    }
+    button.tier-btn.on {
+      background: linear-gradient(135deg, #fde047 0%, #d97706 100%);
+      color: #140c02;
+      border-color: #fef9c3;
+      box-shadow: 0 0 22px rgba(250, 204, 21, 0.65);
+    }
+    button.tier-btn[data-tier="5"].on {
+      background: linear-gradient(135deg, #fef08a 0%, #f59e0b 50%, #b45309 100%);
+      color: #140c02;
+      border-color: #ffffff;
+      box-shadow: 0 0 28px rgba(250, 204, 21, 0.9);
+    }
+    button.act-btn.on {
+      background: linear-gradient(135deg, #38bdf8 0%, #1d4ed8 100%);
+      color: #ffffff;
+      border-color: #bae6fd;
+      box-shadow: 0 0 16px rgba(56, 189, 248, 0.5);
+    }
+    button.cam-btn {
+      border-color: rgba(125, 211, 252, 0.5);
+    }
+    button.cam-btn.active {
+      background: linear-gradient(135deg, #0ea5e9 0%, #0369a1 100%);
+      color: #fff;
+      border-color: #e0f2fe;
+    }
+
+    #info-card {
+      position: fixed;
+      bottom: 46px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--glass);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid var(--border);
+      padding: 8px 18px;
+      border-radius: 12px;
+      text-align: center;
+      pointer-events: none;
+      z-index: 10;
+      min-width: 320px;
+      max-width: 92vw;
+      box-shadow: 0 6px 22px rgba(0, 0, 0, 0.52);
+    }
+    #card-title {
+      color: #fde047;
+      font-weight: 700;
+      font-size: 13.5px;
+    }
+    #card-sub {
+      color: #cbd5e1;
+      font-size: 11.5px;
+      margin-top: 2px;
+    }
+
+    #badge {
+      position: fixed;
+      top: 14px;
+      right: 16px;
+      background: var(--glass);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border: 1px solid var(--border);
+      padding: 7px 13px;
+      border-radius: 10px;
+      color: #7dd3fc;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      pointer-events: none;
+      z-index: 9;
+    }
+    @media (max-width: 1180px) {
+      #badge { display: none; }
+    }
+
+    #hint {
+      position: fixed;
+      bottom: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(10, 16, 28, 0.82);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      padding: 5px 15px;
+      border-radius: 999px;
+      color: #e2e8f0;
+      font-size: 11.5px;
+      white-space: nowrap;
+      pointer-events: none;
+      z-index: 10;
+    }
+  </style>
+</head>
+<body>
+
+<div id="ui">
+  <!-- Linha 1: Deuses Nórdicos (Odin, Thor, Loki, Freyr) + Evolução T1 a T5 -->
+  <div class="row">
+    <button data-god="odin" class="god-btn on">🐺 Odin</button>
+    <button data-god="thor" class="god-btn">🔨 Thor</button>
+    <button data-god="loki" class="god-btn">🐍 Loki</button>
+    <button data-god="freyr" class="god-btn">🌾 Freyr</button>
+    <span style="width:6px"></span>
+    <button data-tier="1" class="tier-btn on">T1 • Assentamento dos Clãs</button>
+    <button data-tier="2" class="tier-btn">T2 • Aldeia Heroica</button>
+    <button data-tier="3" class="tier-btn">T3 • Fortaleza dos Jarls</button>
+    <button data-tier="4" class="tier-btn">T4 • Cidadela de Midgard</button>
+    <button data-tier="5" class="tier-btn">T5 • Cidadela Suprema de Valhalla</button>
+  </div>
+
+  <!-- Linha 2: Ações e Câmera -->
+  <div class="row">
+    <button data-act="normal" class="act-btn on">Funcionamento Normal</button>
+    <button data-act="bencao" class="act-btn">Invocar Bênção Divina</button>
+    <button id="btn-focus" class="cam-btn">Focar Detalhes</button>
+  </div>
+</div>
+
+<div id="badge">Nórdicos • Centro da Cidade</div>
+
+<div id="info-card">
+  <div id="card-title">Centro da Cidade Nórdico de Odin • Tier 1 (Assentamento dos Clãs)</div>
+  <div id="card-sub">Pátio de terra batida e pedras rústicas, fogueira comunal central com caldeirão de ferro em tripé, silo de provisões, dois salões longos com proas de dragão e a primeira Estátua Guardiã Viking</div>
+</div>
+
+<div id="hint">Arraste para girar 360° • Scroll / Pinça para zoom • Alterne T1–T5 e Deuses</div>
+
+<script>
+const T = THREE;
+
+/* ==========================================================================
+   1. TEMAS VISUAIS DAS 4 DIVINDADES NÓRDICAS E DESCRIÇÕES DOS TIERS T1–T5
+   ========================================================================== */
+const GOD_THEMES = {
+  odin: {
+    id: 'odin',
+    godName: 'Odin',
+    bgHex: 0x091526,
+    hemiSky: 0xe0f2fe,
+    hemiGround: 0x1e3a8a,
+    rimHex: 0x38bdf8,
+    wallBase: 0x9c7448,
+    wallBright: 0xb88b54,
+    logDark: 0x452b14,
+    trimHex: 0x1e3a8a,
+    goldHex: 0xfacc15,
+    roofA: '#c49d59',
+    roofB: '#7a5a2e',
+    roofPatina: '#473318',
+    flameHex: 0x38bdf8,
+    glowHex: 0x38bdf8,
+    particleHex: 0xbae6fd,
+    groundGrass: '#48732a',
+    groundDirt: '#a8926e'
+  },
+  thor: {
+    id: 'thor',
+    godName: 'Thor',
+    bgHex: 0x1b0b09,
+    hemiSky: 0xfef3c7,
+    hemiGround: 0x7f1d1d,
+    rimHex: 0xef4444,
+    wallBase: 0x855336,
+    wallBright: 0xa16643,
+    logDark: 0x3b1608,
+    trimHex: 0xb91c1c,
+    goldHex: 0xf59e0b,
+    roofA: '#9c6644',
+    roofB: '#523421',
+    roofPatina: '#2e1a0f',
+    flameHex: 0xf59e0b,
+    glowHex: 0xef4444,
+    particleHex: 0xfef08a,
+    groundGrass: '#4e6e29',
+    groundDirt: '#9e825e'
+  },
+  loki: {
+    id: 'loki',
+    godName: 'Loki',
+    bgHex: 0x051410,
+    hemiSky: 0xd1fae5,
+    hemiGround: 0x064e3b,
+    rimHex: 0x10b981,
+    wallBase: 0x695c4c,
+    wallBright: 0x827360,
+    logDark: 0x29231c,
+    trimHex: 0x065f46,
+    goldHex: 0xd97706,
+    roofA: '#7d775c',
+    roofB: '#454334',
+    roofPatina: '#24241b',
+    flameHex: 0x10b981,
+    glowHex: 0x10b981,
+    particleHex: 0x6ee7b7,
+    groundGrass: '#3b6329',
+    groundDirt: '#8c7d65'
+  },
+  freyr: {
+    id: 'freyr',
+    godName: 'Freyr',
+    bgHex: 0x121808,
+    hemiSky: 0xfef9c3,
+    hemiGround: 0x3f6212,
+    rimHex: 0xfacc15,
+    wallBase: 0xb58e52,
+    wallBright: 0xd4aa68,
+    logDark: 0x573c18,
+    trimHex: 0x65a30d,
+    goldHex: 0xfacc15,
+    roofA: '#d9b86c',
+    roofB: '#8f7236',
+    roofPatina: '#54411c',
+    flameHex: 0xfacc15,
+    glowHex: 0xa3e635,
+    particleHex: 0xfef08a,
+    groundGrass: '#588027',
+    groundDirt: '#b89f6e'
+  }
+};
+
+const TIER_DESCRIPTIONS = {
+  1: {
+    label: 'Tier 1 (Assentamento dos Clãs)',
+    desc: 'Pátio de terra batida e pedras rústicas, fogueira comunal central com caldeirão de ferro em tripé, silo de provisões, dois salões longos com proas de dragão e a primeira Estátua Guardiã Viking'
+  },
+  2: {
+    label: 'Tier 2 (Aldeia Heroica)',
+    desc: 'Expansão com segundo pavimento no Grande Salão (Mead Hall), pórtico de troncos esculpidos, poço comunitário coberto, braseiros vikings acesos, escudos redondos nas paredes e emblemas divinos'
+  },
+  3: {
+    label: 'Tier 3 (Fortaleza dos Jarls)',
+    desc: 'Paliçada perimetral reforçada de troncos e pedra, torres de vigia nórdicas nos cantos com telhados piramidais e proas de dragão, dupla Estátua Guardiã Viking flanqueando os portões e emblemas gigantes'
+  },
+  4: {
+    label: 'Tier 4 (Cidadela de Midgard)',
+    desc: 'Alas simétricas de dois andares com passarelas de madeira, cúpula dourada no silo real, estátuas guardiãs revestidas em ouro e madeira nobre, pedras rúnicas luminosas e altar sagrado'
+  },
+  5: {
+    label: 'Tier 5 (Cidadela Suprema de Valhalla)',
+    desc: 'Ápice épico e glorioso com Grande Salão imperial de carvalho escuro, bronze e ouro maciço, 4 torres monumentais, galeria elevada com escudos dourados, altar supremo exclusivo do deus e aura rúnica'
+  }
+};
+
+/* ==========================================================================
+   2. TEXTURAS PROCEDURAIS (TÁBUAS DE CARVALHO, TELHAS DE MADEIRA E TERRENO)
+   ========================================================================== */
+function createNorsePlankTexture(isBright = false) {
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = 512;
+  const ctx = canvas.getContext('2d');
+
+  ctx.fillStyle = isBright ? '#c49a68' : '#9c7344';
+  ctx.fillRect(0, 0, 512, 512);
+
+  const planks = 16;
+  const pW = 512 / planks;
+  for (let i = 0; i < planks; i++) {
+    const x = i * pW;
+    const base = isBright ? 195 : 155;
+    const delta = Math.floor((Math.random() - 0.5) * 28);
+    ctx.fillStyle = `rgb(${base + delta}, ${Math.floor((base + delta) * 0.74)}, ${Math.floor((base + delta) * 0.45)})`;
+    ctx.fillRect(x + 1, 0, pW - 2, 512);
+    ctx.strokeStyle = 'rgba(26, 15, 7, 0.52)';
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, 512);
+    ctx.stroke();
+  }
+
+  for (const y of [46, 256, 466]) {
+    ctx.fillStyle = 'rgba(40, 22, 10, 0.52)';
+    ctx.fillRect(0, y - 12, 512, 24);
+    ctx.fillStyle = 'rgba(20, 20, 24, 0.65)';
+    for (let rx = 16; rx < 512; rx += 32) {
+      ctx.beginPath();
+      ctx.arc(rx, y, 3.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  return new T.CanvasTexture(canvas);
+}
+
+function createShingleRoofTexture(theme) {
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = 512;
+  const ctx = canvas.getContext('2d');
+
+  ctx.fillStyle = theme.roofB;
+  ctx.fillRect(0, 0, 512, 512);
+
+  const rows = 14;
+  const cols = 12;
+  const rH = 512 / rows;
+  const cW = 512 / cols;
+
+  for (let r = 0; r < rows; r++) {
+    const y = r * rH;
+    const off = (r % 2 === 0) ? 0 : cW * 0.5;
+    for (let c = -1; c <= cols; c++) {
+      const x = c * cW + off;
+      const grad = ctx.createLinearGradient(0, y, 0, y + rH);
+      grad.addColorStop(0, theme.roofA);
+      grad.addColorStop(0.7, theme.roofB);
+      grad.addColorStop(1, theme.roofPatina);
+      ctx.fillStyle = grad;
+      ctx.fillRect(x + 2, y + 1, cW - 4, rH - 2);
+      ctx.strokeStyle = 'rgba(18, 10, 4, 0.58)';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(x + 1, y + 1, cW - 2, rH - 2);
+    }
+  }
+
+  return new T.CanvasTexture(canvas);
+}
+
+function createGroundTexture(theme, isHighTier = false) {
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = 1024;
+  const ctx = canvas.getContext('2d');
+
+  ctx.fillStyle = theme.groundGrass;
+  ctx.fillRect(0, 0, 1024, 1024);
+
+  for (let i = 0; i < 6500; i++) {
+    ctx.fillStyle = i % 2 === 0 ? 'rgba(255, 255, 255, 0.08)' : 'rgba(15, 35, 10, 0.14)';
+    ctx.fillRect(Math.random() * 1024, Math.random() * 1024, 10, 10);
+  }
+
+  const cx = 512, cy = 512;
+  const dirtGrad = ctx.createRadialGradient(cx, cy, 175, cx, cy, 405);
+  dirtGrad.addColorStop(0, theme.groundDirt);
+  dirtGrad.addColorStop(0.76, theme.groundDirt);
+  dirtGrad.addColorStop(1, 'rgba(168, 146, 110, 0)');
+  ctx.fillStyle = dirtGrad;
+  ctx.fillRect(0, 0, 1024, 1024);
+
+  // Lajes rústicas de pedra nórdica ao redor do pátio
+  ctx.fillStyle = 'rgba(115, 118, 124, 0.62)';
+  const count = isHighTier ? 58 : 34;
+  for (let i = 0; i < count; i++) {
+    const a = (i / count) * Math.PI * 2;
+    const r = 220 + (i % 4) * 35;
+    ctx.fillRect(cx + Math.cos(a) * r - 18, cy + Math.sin(a) * r - 14, 36, 28);
+  }
+
+  return new T.CanvasTexture(canvas);
+}
+
+/* ==========================================================================
+   3. HELPERS DE GEOMETRIA NÓRDICA, EMBLEMAS E ALTARES DIVINOS EXCLUSIVOS
+   ========================================================================== */
+function grp(parent, x = 0, y = 0, z = 0) {
+  const g = new T.Group();
+  g.position.set(x, y, z);
+  if (parent) parent.add(g);
+  return g;
+}
+
+function box(parent, w, h, d, mat, pos = [0, 0, 0], rot = [0, 0, 0]) {
+  const m = new T.Mesh(new T.BoxGeometry(w, h, d), mat);
+  m.position.set(pos[0], pos[1], pos[2]);
+  m.rotation.set(rot[0], rot[1], rot[2]);
+  m.castShadow = true;
+  m.receiveShadow = true;
+  if (parent) parent.add(m);
+  return m;
+}
+
+function cyl(parent, rt, rb, h, segs, mat, pos = [0, 0, 0], rot = [0, 0, 0]) {
+  const m = new T.Mesh(new T.CylinderGeometry(rt, rb, h, segs), mat);
+  m.position.set(pos[0], pos[1], pos[2]);
+  m.rotation.set(rot[0], rot[1], rot[2]);
+  m.castShadow = true;
+  m.receiveShadow = true;
+  if (parent) parent.add(m);
+  return m;
+}
+
+// Emblema Divino Esculpido em Alto Relevo (Valknut, Mjölnir, Jörmungandr ou Gullinbursti/Sol)
+function createDivineEmblem(parent, goldMat, glowMat, trimMat, pos = [0, 0, 0], scale = 1.0, emblemRegistry = null) {
+  const root = grp(parent, pos[0], pos[1], pos[2]);
+  root.scale.setScalar(scale);
+
+  // Medalhão base circular em madeira/cor divina e aro de ouro
+  cyl(root, 0.25, 0.25, 0.04, 20, trimMat, [0, 0, -0.01], [Math.PI / 2, 0, 0]);
+  const borderRing = new T.Mesh(new T.TorusGeometry(0.25, 0.018, 8, 24), goldMat);
+  root.add(borderRing);
+
+  // 1. 🐺 ODIN: Valknut (Três Triângulos Entrelaçados)
+  const odin = grp(root);
+  for (let i = 0; i < 3; i++) {
+    const rotZ = (i / 3) * Math.PI * 2;
+    const ox = Math.sin(rotZ) * 0.06;
+    const oy = Math.cos(rotZ) * 0.06;
+    const triRing = new T.Mesh(new T.TorusGeometry(0.11, 0.016, 6, 3), glowMat);
+    triRing.position.set(ox, oy, 0.02);
+    triRing.rotation.z = rotZ;
+    odin.add(triRing);
+  }
+
+  // 2. 🔨 THOR: Martelo Sagrado Mjölnir
+  const thor = grp(root);
+  box(thor, 0.22, 0.11, 0.045, glowMat, [0, 0.07, 0.02]);
+  box(thor, 0.24, 0.04, 0.05, goldMat, [0, 0.07, 0.025]);
+  cyl(thor, 0.022, 0.026, 0.26, 8, goldMat, [0, -0.05, 0.02]);
+  thor.visible = false;
+
+  // 3. 🐍 LOKI: Serpente do Mundo Jörmungandr / Ouroboros
+  const loki = grp(root);
+  const serpentRing = new T.Mesh(new T.TorusGeometry(0.14, 0.026, 10, 24, Math.PI * 1.72), glowMat);
+  serpentRing.position.set(0, 0, 0.02);
+  loki.add(serpentRing);
+  const sHead = new T.Mesh(new T.ConeGeometry(0.045, 0.10, 6), goldMat);
+  sHead.position.set(0.11, 0.09, 0.025);
+  sHead.rotation.z = -0.7;
+  loki.add(sHead);
+  loki.visible = false;
+
+  // 4. 🌾 FREYR: Javali Dourado Gullinbursti & Halo Solar
+  const freyr = grp(root);
+  const sunCore = new T.Mesh(new T.SphereGeometry(0.075, 12, 12), glowMat);
+  sunCore.position.set(0, 0, 0.02);
+  freyr.add(sunCore);
+  for (let r = 0; r < 8; r++) {
+    const ra = (r / 8) * Math.PI * 2;
+    box(freyr, 0.025, 0.12, 0.02, goldMat, [Math.cos(ra) * 0.14, Math.sin(ra) * 0.14, 0.02], [0, 0, ra + Math.PI / 2]);
+  }
+  freyr.visible = false;
+
+  if (emblemRegistry) emblemRegistry.push({ odin, thor, loki, freyr });
+  return root;
+}
+
+// Escudo Redondo Viking
+function buildVikingShield(parent, goldMat, trimMat, woodMat, pos = [0, 0, 0], rot = [0, 0, 0], radius = 0.20) {
+  const sh = grp(parent, pos[0], pos[1], pos[2]);
+  sh.rotation.set(rot[0], rot[1], rot[2]);
+  cyl(sh, radius, radius, 0.028, 18, trimMat, [0, 0, 0], [Math.PI / 2, 0, 0]);
+  cyl(sh, radius * 0.62, radius * 0.62, 0.032, 18, woodMat, [0, 0, 0], [Math.PI / 2, 0, 0]);
+  cyl(sh, radius * 1.05, radius * 1.05, 0.018, 18, goldMat, [0, 0, -0.004], [Math.PI / 2, 0, 0]);
+  const umbo = new T.Mesh(new T.SphereGeometry(radius * 0.24, 10, 10), goldMat);
+  umbo.position.set(0, 0, 0.015);
+  sh.add(umbo);
+  return sh;
+}
+
+// Telhado Nórdico de Duas Águas (Longhouse) com Empenas e Proas de Dragão Drakkar
+function buildNorseGableRoof(parent, w, d, h, roofMat, wallMat, logMat, trimMat, goldMat, glowMat, yBase, emblemRegistry, hasDragon = true, alongZ = true) {
+  const rGrp = grp(parent, 0, yBase, 0);
+  if (!alongZ) rGrp.rotation.y = Math.PI / 2;
+  const span = alongZ ? w : d;
+  const length = alongZ ? d : w;
+  const rx = span * 0.5;
+  const rz = length * 0.5;
+
+  const slopeLen = Math.hypot(rx, h);
+  const slopeAng = Math.atan2(h, rx);
+  box(rGrp, slopeLen + 0.14, 0.08, length + 0.18, roofMat, [-rx * 0.5, h * 0.5, 0], [0, 0, slopeAng]);
+  box(rGrp, slopeLen + 0.14, 0.08, length + 0.18, roofMat, [rx * 0.5, h * 0.5, 0], [0, 0, -slopeAng]);
+
+  // Cumeeira colorida da divindade
+  box(rGrp, 0.13, 0.10, length + 0.22, trimMat, [0, h + 0.04, 0]);
+
+  const triShape = new T.Shape();
+  triShape.moveTo(-rx, 0);
+  triShape.lineTo(rx, 0);
+  triShape.lineTo(0, h);
+  triShape.closePath();
+  const triGeo = new T.ExtrudeGeometry(triShape, { depth: length - 0.02, bevelEnabled: false });
+  triGeo.translate(0, 0, -(length - 0.02) * 0.5);
+  const ped = new T.Mesh(triGeo, wallMat);
+  ped.castShadow = true;
+  ped.receiveShadow = true;
+  rGrp.add(ped);
+
+  // Proas de Dragão Drakkar nos dois extremos da cumeeira
+  if (hasDragon) {
+    for (const sz of [-1, 1]) {
+      const fin = grp(rGrp, 0, h + 0.05, sz * (rz + 0.06));
+      box(fin, 0.09, 0.12, 0.26, logMat, [0, 0.16, sz * 0.10], [sz * 0.45, 0, 0]);
+      box(fin, 0.10, 0.09, 0.20, goldMat, [0, 0.28, sz * 0.22], [sz * 0.15, 0, 0]);
+      for (const sx of [-1, 1]) {
+        box(fin, 0.07, 0.36, 0.07, logMat, [sx * 0.07, 0.12, 0], [0, 0, sx * -0.45]);
+        box(fin, 0.09, 0.10, 0.09, goldMat, [sx * 0.15, 0.28, 0], [0, 0, sx * -0.45]);
+      }
+    }
+  }
+
+  if (emblemRegistry) {
+    createDivineEmblem(rGrp, goldMat, glowMat, trimMat, [0, h * 0.38, rz + 0.03], h * 1.12, emblemRegistry);
+  }
+  return rGrp;
+}
+
+// Braseiro Viking em Pedra e Ouro com Chama Viva
+function buildBrazier(parent, stoneMat, goldMat, flameMat, flameRegistry, pos = [0, 0, 0], scale = 1.0) {
+  const b = grp(parent, pos[0], pos[1], pos[2]);
+  b.scale.setScalar(scale);
+  cyl(b, 0.16, 0.20, 0.10, 10, stoneMat, [0, 0.05, 0]);
+  cyl(b, 0.06, 0.08, 0.28, 10, stoneMat, [0, 0.22, 0]);
+  cyl(b, 0.22, 0.12, 0.14, 12, goldMat, [0, 0.42, 0]);
+  const flame = new T.Mesh(new T.ConeGeometry(0.15, 0.36, 10), flameMat);
+  flame.position.set(0, 0.62, 0);
+  b.add(flame);
+  if (flameRegistry) flameRegistry.push(flame);
+  return b;
+}
+
+// Pedra Rúnica Luminosa (Runestone)
+function buildRunestone(parent, stoneMat, glowMat, goldMat, pos = [0, 0, 0], scale = 1.0) {
+  const rs = grp(parent, pos[0], pos[1], pos[2]);
+  rs.scale.setScalar(scale);
+
+  const rock = new T.Mesh(new T.DodecahedronGeometry(0.30, 0), stoneMat);
+  rock.position.set(0, 0.44, 0);
+  rock.scale.set(0.85, 1.60, 0.44);
+  rock.castShadow = true;
+  rock.receiveShadow = true;
+  rs.add(rock);
+
+  const arch = new T.Mesh(new T.TorusGeometry(0.15, 0.014, 8, 24, Math.PI), glowMat);
+  arch.position.set(0, 0.52, 0.12);
+  rs.add(arch);
+
+  box(rs, 0.02, 0.38, 0.02, glowMat, [0, 0.44, 0.125]);
+  box(rs, 0.018, 0.14, 0.018, glowMat, [0.045, 0.52, 0.125], [0, 0, -0.55]);
+  box(rs, 0.018, 0.14, 0.018, glowMat, [-0.045, 0.44, 0.125], [0, 0, 0.55]);
+
+  cyl(rs, 0.32, 0.36, 0.10, 8, stoneMat, [0, 0.05, 0]);
+  cyl(rs, 0.33, 0.33, 0.03, 8, goldMat, [0, 0.10, 0]);
+  return rs;
+}
+
+// Estátua Guardiã Viking Esculpida em Madeira Nobre e Ouro
+function buildGuardianMonument(parent, M, tier, pos = [0, 0, 0], rotY = 0, scale = 1.0) {
+  const ped = grp(parent, pos[0], pos[1], pos[2]);
+  ped.rotation.y = rotY;
+  ped.scale.setScalar(scale);
+
+  const trimM = tier >= 4 ? M.gold : M.trim;
+  box(ped, 0.94, 0.15, 0.94, M.stone, [0, 0.075, 0]);
+  box(ped, 0.80, 0.50, 0.80, M.logDark, [0, 0.40, 0]);
+  box(ped, 0.86, 0.09, 0.86, trimM, [0, 0.69, 0]);
+  box(ped, 0.38, 0.28, 0.82, M.gold, [0, 0.40, 0]);
+
+  const statMat = tier >= 4 ? M.gold : M.wallBright;
+  const fig = grp(ped, 0, 0.74, 0);
+  // Pernas e túnica viking
+  box(fig, 0.15, 0.54, 0.16, statMat, [-0.11, 0.27, 0]);
+  box(fig, 0.15, 0.54, 0.16, statMat, [0.11, 0.27, 0]);
+  box(fig, 0.44, 0.48, 0.26, statMat, [0, 0.74, 0]);
+  box(fig, 0.46, 0.10, 0.28, trimM, [0, 0.56, 0]);
+
+  if (tier >= 2) {
+    // Manto nórdico nos ombros
+    box(fig, 0.40, 0.78, 0.06, M.trim, [0, 0.68, -0.15], [0.12, 0, 0]);
+  }
+
+  // Cabeça com barba longa e elmo viking chifrudo/alado
+  const head = new T.Mesh(new T.SphereGeometry(0.135, 16, 16), statMat);
+  head.position.set(0, 1.12, 0.02);
+  fig.add(head);
+  box(fig, 0.18, 0.22, 0.12, statMat, [0, 0.98, 0.11]);
+  cyl(fig, 0.145, 0.145, 0.06, 14, trimM, [0, 1.20, 0.02]);
+  for (const side of [-1, 1]) {
+    const horn = new T.Mesh(new T.ConeGeometry(0.028, 0.28, 6), M.gold);
+    horn.position.set(side * 0.18, 1.32, 0.02);
+    horn.rotation.set(0.1, 0, side * -0.45);
+    fig.add(horn);
+  }
+
+  // Mãos empunhando grande machado de guerra viking
+  box(fig, 0.12, 0.36, 0.12, statMat, [0.24, 0.82, 0.12], [-0.45, 0, -0.25]);
+  box(fig, 0.12, 0.36, 0.12, statMat, [-0.24, 0.82, 0.12], [-0.45, 0, 0.25]);
+  cyl(fig, 0.022, 0.022, 1.55, 8, M.gold, [0, 0.82, 0.24]);
+  box(fig, 0.26, 0.16, 0.08, M.gold, [0, 1.48, 0.24]);
+  createDivineEmblem(fig, M.gold, M.divineGlow, M.trim, [0, 1.82, 0.24], 0.62, M.emblems);
+
+  return ped;
+}
+
+// Altar / Totem Supremo Exclusivo de Cada Deus Nórdico (Tier 4 & Tier 5)
+function buildExclusiveGodAltar(parent, M, pos = [0, 0, 0], scale = 1.0) {
+  const wrap = grp(parent, pos[0], pos[1], pos[2]);
+  wrap.scale.setScalar(scale);
+
+  // Base octogonal rúnica
+  cyl(wrap, 0.42, 0.48, 0.18, 8, M.stone, [0, 0.09, 0]);
+  cyl(wrap, 0.44, 0.44, 0.06, 8, M.trim, [0, 0.20, 0]);
+  cyl(wrap, 0.43, 0.43, 0.04, 8, M.gold, [0, 0.25, 0]);
+
+  // 1. 🐺 ODIN: Lança Gungnir + Valknut + Corvos Huginn & Muninn
+  const odinAlt = grp(wrap);
+  cyl(odinAlt, 0.032, 0.042, 1.45, 10, M.gold, [0, 0.98, 0]);
+  const tip = new T.Mesh(new T.ConeGeometry(0.075, 0.28, 4), M.divineGlow);
+  tip.position.set(0, 1.80, 0);
+  odinAlt.add(tip);
+  box(odinAlt, 0.72, 0.055, 0.055, M.logDark, [0, 1.32, 0]);
+  for (const sx of [-0.30, 0.30]) {
+    const raven = grp(odinAlt, sx, 1.40, 0);
+    box(raven, 0.08, 0.14, 0.16, M.obsidian, [0, 0, 0], [0.3, 0, 0]);
+    const rHead = new T.Mesh(new T.SphereGeometry(0.045, 8, 8), M.obsidian);
+    rHead.position.set(0, 0.09, 0.06);
+    raven.add(rHead);
+    const beak = new T.Mesh(new T.ConeGeometry(0.015, 0.06, 4), M.gold);
+    beak.position.set(0, 0.09, 0.11);
+    beak.rotation.x = Math.PI / 2;
+    raven.add(beak);
+  }
+  const odinEmb = createDivineEmblem(odinAlt, M.gold, M.divineGlow, M.trim, [0, 0.86, 0.06], 0.92);
+  odinEmb.children[2].visible = true;
+
+  // 2. 🔨 THOR: Bigorna Sagrada, Martelo Mjölnir Colossal e Chifres dos Bodes Tanngrisnir & Tanngnjóstr
+  const thorAlt = grp(wrap);
+  box(thorAlt, 0.48, 0.26, 0.28, M.iron, [0, 0.40, 0]);
+  const hammer = grp(thorAlt, 0, 0.92, 0);
+  hammer.rotation.z = 0.20;
+  cyl(hammer, 0.04, 0.045, 0.88, 10, M.logDark, [0, 0.15, 0]);
+  box(hammer, 0.50, 0.26, 0.26, M.gold, [0, 0.48, 0]);
+  box(hammer, 0.52, 0.11, 0.28, M.divineGlow, [0, 0.48, 0]);
+  for (const sx of [-1, 1]) {
+    const horn = new T.Mesh(new T.ConeGeometry(0.042, 0.36, 6), M.gold);
+    horn.position.set(sx * 0.28, 0.62, 0);
+    horn.rotation.z = sx * -0.55;
+    thorAlt.add(horn);
+  }
+  thorAlt.visible = false;
+
+  // 3. 🐍 LOKI: Totem da Serpente Jörmungandr em Espiral + Orbe Místico
+  const lokiAlt = grp(wrap);
+  cyl(lokiAlt, 0.07, 0.09, 1.35, 10, M.logDark, [0, 0.95, 0]);
+  for (let i = 0; i < 14; i++) {
+    const a = (i / 14) * Math.PI * 3.5;
+    const sy = 0.38 + (i / 14) * 1.15;
+    const seg = new T.Mesh(new T.SphereGeometry(0.055, 8, 8), i % 2 === 0 ? M.trim : M.gold);
+    seg.position.set(Math.cos(a) * 0.13, sy, Math.sin(a) * 0.13);
+    lokiAlt.add(seg);
+  }
+  box(lokiAlt, 0.16, 0.12, 0.24, M.gold, [0, 1.62, 0.06], [0.2, 0, 0]);
+  const orb = new T.Mesh(new T.OctahedronGeometry(0.11, 0), M.divineGlow);
+  orb.position.set(0, 1.82, 0);
+  lokiAlt.add(orb);
+  lokiAlt.visible = false;
+
+  // 4. 🌾 FREYR: Altar Solar de Alfheim com o Javali Dourado Gullinbursti
+  const freyrAlt = grp(wrap);
+  cyl(freyrAlt, 0.08, 0.10, 0.92, 10, M.logDark, [0, 0.74, 0]);
+  const boar = grp(freyrAlt, 0, 1.34, 0);
+  box(boar, 0.22, 0.22, 0.44, M.gold, [0, 0, 0]);
+  box(boar, 0.16, 0.16, 0.22, M.gold, [0, -0.02, 0.26], [0.2, 0, 0]);
+  for (const sx of [-1, 1]) {
+    const tusk = new T.Mesh(new T.ConeGeometry(0.02, 0.14, 6), M.divineGlow);
+    tusk.position.set(sx * 0.08, -0.03, 0.35);
+    tusk.rotation.set(0.4, 0, sx * -0.5);
+    boar.add(tusk);
+  }
+  const halo = new T.Mesh(new T.TorusGeometry(0.32, 0.022, 8, 24), M.divineGlow);
+  halo.position.set(0, 0.08, -0.15);
+  boar.add(halo);
+  freyrAlt.visible = false;
+
+  M.godAltars.push({ odinAlt, thorAlt, lokiAlt, freyrAlt });
+  return wrap;
+}
+
+/* ==========================================================================
+   4. CONSTRUTOR ÉPICO DO CENTRO DA CIDADE NÓRDICO (T1 A T5)
+   ========================================================================== */
+function buildNorseTownCenter(parent, M, tier) {
+  const wallM = tier >= 4 ? M.wallBright : M.wallBase;
+  const trimM = tier >= 4 ? M.gold : M.trim;
+  const courtScale = 1 + (tier - 1) * 0.11;
+
+  // 1. PLATAFORMA E PÁTIO CENTRAL EM PEDRA RÚSTICA E TERRA BATIDA
+  box(parent, 3.90 * courtScale, 0.08, 3.70 * courtScale, M.stone, [0, 0.04, 0]);
+  if (tier >= 3) {
+    box(parent, 4.20 * courtScale, 0.06, 4.00 * courtScale, M.logDark, [0, 0.03, 0]);
+    box(parent, 4.25 * courtScale, 0.04, 4.05 * courtScale, trimM, [0, 0.08, 0]);
+  }
+
+  // 2. FOGUEIRA COMUNAL CENTRAL COM CALDEIRÃO DE FERRO EM TRIPÉ DE MADEIRA
+  const hearth = grp(parent, 0.22, 0.08, 0.18);
+  if (tier >= 4) {
+    cyl(hearth, 0.48, 0.56, 0.14, 12, M.stone, [0, 0.07, 0]);
+    cyl(hearth, 0.52, 0.52, 0.05, 12, M.gold, [0, 0.15, 0]);
+  }
+  for (let i = 0; i < 12; i++) {
+    const a = (i / 12) * Math.PI * 2;
+    box(hearth, 0.14, 0.10, 0.12, M.stone, [Math.cos(a) * 0.30, 0.05 + (tier >= 4 ? 0.12 : 0), Math.sin(a) * 0.30], [0, a, 0]);
+  }
+  const fire = new T.Mesh(new T.ConeGeometry(0.22 + tier * 0.02, 0.45 + tier * 0.06, 12), M.flame);
+  fire.position.set(0, 0.26 + (tier >= 4 ? 0.12 : 0), 0);
+  hearth.add(fire);
+  M.flames.push(fire);
+
+  // Tripé de madeira e caldeirão de ferro forjado
+  for (let i = 0; i < 3; i++) {
+    const a = (i / 3) * Math.PI * 2 + 0.4;
+    cyl(hearth, 0.022, 0.026, 0.80, 8, M.logDark, [Math.cos(a) * 0.20, 0.38 + (tier >= 4 ? 0.12 : 0), Math.sin(a) * 0.20], [Math.sin(a) * 0.42, 0, -Math.cos(a) * 0.42]);
+  }
+  cyl(hearth, 0.15, 0.11, 0.16, 14, M.iron, [0, 0.48 + (tier >= 4 ? 0.12 : 0), 0]);
+
+  // 3. GRANDE SALÃO PRINCIPAL (MEAD HALL / LONGHOUSE) — FUNDO ESQUERDO
+  const mainH = 0.98 + (tier - 1) * 0.14;
+  const mainHall = grp(parent, -0.35 * courtScale, 0.08, -1.08 * courtScale);
+  mainHall.rotation.y = -0.35;
+  box(mainHall, 2.15, mainH, 1.25, wallM, [0, mainH * 0.5, 0]);
+  box(mainHall, 2.22, 0.12, 1.32, trimM, [0, 0.18, 0]);
+
+  // Portão duplo reforçado e pórtico de troncos esculpidos
+  box(mainHall, 0.56, 0.74, 0.08, M.logDark, [0.15, 0.37, 0.64]);
+  const postCount = tier >= 3 ? 4 : 2;
+  for (let c = 0; c < postCount; c++) {
+    const cx = -0.30 + (c / Math.max(1, postCount - 1)) * 0.90;
+    cyl(mainHall, 0.055, 0.068, mainH, 10, tier >= 4 ? M.gold : M.logDark, [cx, mainH * 0.5, 0.76]);
+  }
+  box(mainHall, 1.18, 0.12, 0.34, M.logDark, [0.15, mainH + 0.04, 0.68]);
+
+  // Escudos vikings redondos pendurados na fachada (T2+)
+  if (tier >= 2) {
+    for (const sx of [-0.72, -0.45, 0.75]) {
+      buildVikingShield(mainHall, M.gold, M.trim, M.logDark, [sx, 0.62, 0.66], [0, 0, 0], 0.18);
+    }
+  }
+
+  // Telheiro lateral aberto com barris de hidromel
+  box(mainHall, 0.78, 0.07, 0.90, M.roof, [-1.32, 0.84, 0.05], [0, 0, 0.25]);
+  for (const sx of [-1.56, -1.06]) {
+    for (const sz of [-0.28, 0.38]) {
+      cyl(mainHall, 0.048, 0.058, 0.82, 8, M.logDark, [sx, 0.41, sz]);
+    }
+  }
+  cyl(mainHall, 0.14, 0.12, 0.28, 12, M.logDark, [-1.22, 0.14, 0.34]);
+
+  // Segundo pavimento (T2+) ou Telhado de Longhouse com Proas de Dragão
+  if (tier >= 2) {
+    const upperH = 0.48 + (tier - 2) * 0.08;
+    box(mainHall, 1.62, upperH, 0.92, wallM, [0.10, mainH + upperH * 0.5, -0.04]);
+    box(mainHall, 1.68, 0.09, 0.98, trimM, [0.10, mainH + 0.05, -0.04]);
+    buildNorseGableRoof(mainHall, 1.76, 1.06, 0.42, M.roof, wallM, M.logDark, trimM, M.gold, M.divineGlow, mainH + upperH, M.emblems, true, false);
+  } else {
+    buildNorseGableRoof(mainHall, 2.26, 1.38, 0.48, M.roof, wallM, M.logDark, trimM, M.gold, M.divineGlow, mainH, M.emblems, true, false);
+  }
+
+  // 4. SALÃO SECUNDÁRIO / CASA DO CONSELHO DOS CLÃS — FRENTE ESQUERDA
+  const subH = 0.82 + (tier - 1) * 0.08;
+  const subHall = grp(parent, -0.35 * courtScale, 0.08, 1.18 * courtScale);
+  subHall.rotation.y = 0.48;
+  box(subHall, 1.66, subH, 1.00, wallM, [0, subH * 0.5, 0]);
+  box(subHall, 1.72, 0.10, 1.06, trimM, [0, 0.16, 0]);
+  if (tier >= 3) {
+    for (const sx of [-0.55, 0, 0.55]) {
+      cyl(subHall, 0.05, 0.06, subH, 8, M.logDark, [sx, subH * 0.5, 0.58]);
+    }
+  }
+  if (tier >= 5) {
+    // Galeria elevada com escudos dourados no T5
+    for (const sx of [-0.45, 0, 0.45]) {
+      buildVikingShield(subHall, M.gold, M.trim, M.logDark, [sx, subH * 0.65, 0.53], [0, 0, 0], 0.16);
+    }
+  }
+  buildNorseGableRoof(subHall, 1.80, 1.14, 0.40, M.roof, wallM, M.logDark, trimM, M.gold, M.divineGlow, subH, tier >= 2 ? M.emblems : null, true, false);
+
+  // 5. SILO CIRCULAR DE MADEIRA PARA PROVISÕES (LADO DIREITO)
+  const silo = grp(parent, 1.58 * courtScale, 0.08, -0.15);
+  const siloR = 0.46 + (tier - 1) * 0.04;
+  const siloH = 1.02 + (tier - 1) * 0.12;
+  cyl(silo, siloR, siloR + 0.02, siloH, 16, wallM, [0, siloH * 0.5, 0]);
+  cyl(silo, siloR + 0.03, siloR + 0.03, 0.08, 16, trimM, [0, 0.16, 0]);
+  cyl(silo, siloR + 0.03, siloR + 0.03, 0.07, 16, M.gold, [0, siloH - 0.08, 0]);
+  if (tier >= 4) {
+    for (let c = 0; c < 8; c++) {
+      const ca = (c / 8) * Math.PI * 2;
+      cyl(silo, 0.045, 0.055, siloH, 8, M.gold, [Math.cos(ca) * (siloR + 0.10), siloH * 0.5, Math.sin(ca) * (siloR + 0.10)]);
+    }
+  }
+  cyl(silo, 0.08, siloR + 0.15, 0.38, 16, tier >= 4 ? M.gold : M.roof, [0, siloH + 0.19, 0]);
+  createDivineEmblem(silo, M.gold, M.divineGlow, trimM, [0, siloH + 0.55, 0], 0.72, M.emblems);
+
+  // 6. POÇO COMUNITÁRIO COBERTO NO PÁTIO
+  const well = grp(parent, 0.80 * courtScale, 0.08, -0.84 * courtScale);
+  cyl(well, 0.24, 0.26, 0.30, 12, M.stone, [0, 0.15, 0]);
+  cyl(well, 0.19, 0.19, 0.04, 12, M.water, [0, 0.29, 0]);
+  box(well, 0.045, 0.48, 0.045, M.logDark, [-0.22, 0.38, 0]);
+  box(well, 0.045, 0.48, 0.045, M.logDark, [0.22, 0.38, 0]);
+  if (tier >= 2) {
+    buildNorseGableRoof(well, 0.58, 0.46, 0.22, M.roof, wallM, M.logDark, trimM, M.gold, M.divineGlow, 0.60, null, false, true);
+  } else {
+    box(well, 0.52, 0.04, 0.04, M.logDark, [0, 0.58, 0]);
+  }
+
+  // 7. PALIÇADA PERIMETRAL DE TRONCOS E PEDRA, PORTÕES E TORRES DE VIGIA NÓRDICAS
+  const fenceGroup = grp(parent, 0, 0.08, 0);
+  const radX = 2.24 * courtScale;
+  const radZ = 2.06 * courtScale;
+  if (tier >= 3) {
+    for (let i = 0; i < 40; i++) {
+      const a = (i / 40) * Math.PI * 2;
+      if ((a > 0.52 && a < 1.18) || (a > 2.22 && a < 2.88)) continue;
+      const rx = Math.cos(a) * radX;
+      const rz = Math.sin(a) * radZ;
+      box(fenceGroup, 0.36, 0.48 + (tier - 3) * 0.10, 0.14, wallM, [rx, 0.24, rz], [0, -a + Math.PI / 2, 0]);
+      box(fenceGroup, 0.38, 0.06, 0.16, trimM, [rx, 0.50 + (tier - 3) * 0.10, rz], [0, -a + Math.PI / 2, 0]);
+    }
+  } else {
+    for (let i = 0; i < 36; i++) {
+      const a = (i / 36) * Math.PI * 2;
+      if ((a > 0.55 && a < 1.15) || (a > 2.25 && a < 2.85)) continue;
+      cyl(fenceGroup, 0.032, 0.038, 0.46, 6, M.logDark, [Math.cos(a) * radX, 0.23, Math.sin(a) * radZ]);
+    }
+  }
+
+  // Portões de entrada de troncos reforçados
+  for (const [gx, gz, rotY] of [[-1.38 * courtScale, 1.42 * courtScale, 0.65], [1.32 * courtScale, 1.42 * courtScale, -0.65]]) {
+    const gate = grp(fenceGroup, gx, 0, gz);
+    gate.rotation.y = rotY;
+    box(gate, 0.18, 0.86 + tier * 0.05, 0.18, M.logDark, [-0.45, 0.43, 0]);
+    box(gate, 0.18, 0.86 + tier * 0.05, 0.18, M.logDark, [0.45, 0.43, 0]);
+    box(gate, 1.16, 0.14, 0.22, M.logDark, [0, 0.90 + tier * 0.05, 0]);
+    box(gate, 1.20, 0.06, 0.24, trimM, [0, 0.99 + tier * 0.05, 0]);
+    if (tier >= 3) {
+      createDivineEmblem(gate, M.gold, M.divineGlow, trimM, [0, 1.26 + tier * 0.05, 0], 0.58, M.emblems);
+    }
+  }
+
+  // Torres de Vigia Nórdicas nos Cantos (T3: 2 torres | T4–T5: 4 torres monumentais)
+  if (tier >= 3) {
+    const towerCoords = tier >= 4
+      ? [[-radX * 0.92, -radZ * 0.92], [radX * 0.92, -radZ * 0.92], [-radX * 0.95, radZ * 0.88], [radX * 0.95, radZ * 0.88]]
+      : [[-radX * 0.92, -radZ * 0.92], [radX * 0.92, -radZ * 0.92]];
+    const tH = 1.48 + (tier - 3) * 0.25;
+    towerCoords.forEach(([tx, tz]) => {
+      const tw = grp(fenceGroup, tx, 0, tz);
+      box(tw, 0.70, tH, 0.70, wallM, [0, tH * 0.5, 0]);
+      box(tw, 0.76, 0.10, 0.76, trimM, [0, tH + 0.05, 0]);
+      cyl(tw, 0.04, 0.54, 0.44, 4, tier >= 5 ? M.gold : M.roof, [0, tH + 0.32, 0], [0, Math.PI / 4, 0]);
+      createDivineEmblem(tw, M.gold, M.divineGlow, trimM, [0, tH + 0.70, 0], 0.56, M.emblems);
+    });
+  }
+
+  // 8. ESTÁTUAS GUARDIÃS VIKINGS ESCULPIDAS (T1: 1 estátua | T3+: Dupla estátua flanqueando)
+  buildGuardianMonument(parent, M, tier, [-1.84 * courtScale, 0.08, -0.05], 0.55, 1.0 + (tier - 1) * 0.06);
+  if (tier >= 3) {
+    buildGuardianMonument(parent, M, tier, [1.84 * courtScale, 0.08, 0.85], -0.55, 1.0 + (tier - 1) * 0.06);
+  }
+
+  // 9. BRASEIROS VIKINGS ACESOS (T2+) E PEDRAS RÚNICAS LUMINOSAS (T3+)
+  if (tier >= 2) {
+    buildBrazier(parent, M.stone, M.gold, M.flame, M.flames, [-0.68 * courtScale, 0.08, 1.72 * courtScale], 0.85 + tier * 0.06);
+    buildBrazier(parent, M.stone, M.gold, M.flame, M.flames, [0.76 * courtScale, 0.08, 1.70 * courtScale], 0.85 + tier * 0.06);
+  }
+  if (tier >= 3) {
+    buildRunestone(parent, M.stone, M.divineGlow, M.gold, [-1.52 * courtScale, 0.08, 1.05 * courtScale], 0.85 + (tier - 3) * 0.08);
+    if (tier >= 4) {
+      buildRunestone(parent, M.stone, M.divineGlow, M.gold, [1.48 * courtScale, 0.08, 1.05 * courtScale], 0.85 + (tier - 3) * 0.08);
+    }
+  }
+
+  // 10. ALTAR / TOTEM SUPREMO EXCLUSIVO DE CADA DEUS NÓRDICO (T4 & T5)
+  if (tier >= 4) {
+    buildExclusiveGodAltar(parent, M, [0.02 * courtScale, 0.08, 1.56 * courtScale], tier === 5 ? 1.05 : 0.86);
+  }
+}
+
+/* ==========================================================================
+   5. SISTEMA DO CENTRO DA CIDADE NÓRDICO (T1–T5) E TROCA DE DEUSES
+   ========================================================================== */
+function buildNorseTownCenterSystem(initialGod = 'odin') {
+  const theme = GOD_THEMES[initialGod];
+
+  const M = {
+    wallBase: new T.MeshStandardMaterial({
+      map: createNorsePlankTexture(false),
+      color: theme.wallBase,
+      roughness: 0.72,
+      metalness: 0.06
+    }),
+    wallBright: new T.MeshStandardMaterial({
+      map: createNorsePlankTexture(true),
+      color: theme.wallBright,
+      roughness: 0.58,
+      metalness: 0.12
+    }),
+    logDark: new T.MeshStandardMaterial({
+      color: theme.logDark,
+      roughness: 0.78
+    }),
+    stone: new T.MeshStandardMaterial({
+      color: 0x64748b,
+      roughness: 0.84
+    }),
+    trim: new T.MeshStandardMaterial({
+      color: theme.trimHex,
+      roughness: 0.40,
+      metalness: 0.28
+    }),
+    gold: new T.MeshStandardMaterial({
+      color: theme.goldHex,
+      emissive: 0x3b2200,
+      emissiveIntensity: 0.25,
+      metalness: 0.90,
+      roughness: 0.20
+    }),
+    roof: new T.MeshStandardMaterial({
+      map: createShingleRoofTexture(theme),
+      roughness: 0.58,
+      metalness: 0.14,
+      side: T.DoubleSide
+    }),
+    iron: new T.MeshStandardMaterial({
+      color: 0x334155,
+      metalness: 0.80,
+      roughness: 0.34
+    }),
+    obsidian: new T.MeshStandardMaterial({
+      color: 0x111827,
+      metalness: 0.40,
+      roughness: 0.32
+    }),
+    water: new T.MeshStandardMaterial({
+      color: 0x0ea5e9,
+      emissive: 0x0369a1,
+      emissiveIntensity: 0.35,
+      roughness: 0.12
+    }),
+    flame: new T.MeshBasicMaterial({
+      color: theme.flameHex,
+      transparent: true,
+      opacity: 0.92,
+      blending: T.AdditiveBlending
+    }),
+    divineGlow: new T.MeshStandardMaterial({
+      color: 0xffffff,
+      emissive: theme.glowHex,
+      emissiveIntensity: 2.8,
+      roughness: 0.12
+    }),
+    flames: [],
+    emblems: [],
+    godAltars: []
+  };
+
+  const root = new T.Group();
+  const tierGroups = {};
+
+  for (let t = 1; t <= 5; t++) {
+    const tg = grp(root);
+    buildNorseTownCenter(tg, M, t);
+    tg.visible = (t === 1);
+    tierGroups[t] = tg;
+  }
+
+  const auraRing = new T.Mesh(
+    new T.RingGeometry(2.70, 3.05, 64),
+    new T.MeshBasicMaterial({
+      color: theme.glowHex,
+      transparent: true,
+      opacity: 0.24,
+      blending: T.AdditiveBlending,
+      side: T.DoubleSide,
+      depthWrite: false
+    })
+  );
+  auraRing.rotation.x = -Math.PI / 2;
+  auraRing.position.y = 0.03;
+  root.add(auraRing);
+
+  function updateVisibility(tier) {
+    for (let t = 1; t <= 5; t++) {
+      tierGroups[t].visible = (t === tier);
+    }
+    const ringScale = 1 + (tier - 1) * 0.11;
+    auraRing.scale.setScalar(ringScale);
+  }
+
+  function applyGod(godKey) {
+    const next = GOD_THEMES[godKey] || GOD_THEMES.odin;
+    M.wallBase.color.setHex(next.wallBase);
+    M.wallBright.color.setHex(next.wallBright);
+    M.logDark.color.setHex(next.logDark);
+    M.trim.color.setHex(next.trimHex);
+    M.gold.color.setHex(next.goldHex);
+    M.flame.color.setHex(next.flameHex);
+    M.divineGlow.emissive.setHex(next.glowHex);
+    auraRing.material.color.setHex(next.glowHex);
+
+    if (M.roof.map) M.roof.map.dispose();
+    M.roof.map = createShingleRoofTexture(next);
+    M.roof.needsUpdate = true;
+
+    M.emblems.forEach(e => {
+      e.odin.visible = (godKey === 'odin');
+      e.thor.visible = (godKey === 'thor');
+      e.loki.visible = (godKey === 'loki');
+      e.freyr.visible = (godKey === 'freyr');
+    });
+
+    M.godAltars.forEach(a => {
+      a.odinAlt.visible = (godKey === 'odin');
+      a.thorAlt.visible = (godKey === 'thor');
+      a.lokiAlt.visible = (godKey === 'loki');
+      a.freyrAlt.visible = (godKey === 'freyr');
+    });
+  }
+
+  return { root, M, auraRing, updateVisibility, applyGod };
+}
+
+/* ==========================================================================
+   6. INICIALIZAÇÃO DA CENA 3D, LUZES, PARTÍCULAS E CONTROLES
+   ========================================================================== */
+const renderer = new T.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = T.PCFSoftShadowMap;
+renderer.toneMapping = T.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.16;
+document.body.appendChild(renderer.domElement);
+
+const scene = new T.Scene();
+scene.background = new T.Color(GOD_THEMES.odin.bgHex);
+scene.fog = new T.FogExp2(GOD_THEMES.odin.bgHex, 0.015);
+
+const camera = new T.PerspectiveCamera(36, window.innerWidth / window.innerHeight, 0.1, 160);
+
+const hemi = new T.HemisphereLight(0xe0f2fe, 0x1e3a8a, 1.18);
+scene.add(hemi);
+
+const sun = new T.DirectionalLight(0xfffbeb, 2.35);
+sun.position.set(6.5, 11.5, 7.5);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, { left: -9, right: 9, top: 9, bottom: -9, near: 1, far: 34 });
+sun.shadow.bias = -0.0004;
+scene.add(sun);
+
+const rimLight = new T.DirectionalLight(0x38bdf8, 1.45);
+rimLight.position.set(-6.0, 5.5, -6.5);
+scene.add(rimLight);
+
+const blessingLight = new T.PointLight(0x38bdf8, 2.0, 16);
+blessingLight.position.set(0, 4.0, 0);
+scene.add(blessingLight);
+
+const groundMat = new T.MeshStandardMaterial({
+  map: createGroundTexture(GOD_THEMES.odin, false),
+  roughness: 0.80,
+  metalness: 0.04
+});
+const terrain = new T.Mesh(new T.CylinderGeometry(9.6, 9.9, 0.4, 72), groundMat);
+terrain.position.y = -0.20;
+terrain.receiveShadow = true;
+scene.add(terrain);
+
+// Pinheiros nórdicos decorativos ao redor do assentamento
+const pineTrunkMat = new T.MeshStandardMaterial({ color: 0x3b1e08, roughness: 0.85 });
+const pineLeafMat = new T.MeshStandardMaterial({ color: 0x14532d, roughness: 0.80 });
+for (let i = 0; i < 10; i++) {
+  const a = (i / 10) * Math.PI * 2 + 0.25;
+  const dist = 7.4 + (i % 2) * 0.8;
+  const tree = grp(scene, Math.cos(a) * dist, 0, Math.sin(a) * dist);
+  tree.scale.setScalar(0.85 + (i % 3) * 0.2);
+  cyl(tree, 0.12, 0.20, 1.35, 8, pineTrunkMat, [0, 0.68, 0]);
+  cyl(tree, 0.02, 0.90, 1.55, 8, pineLeafMat, [0, 1.70, 0]);
+  cyl(tree, 0.02, 0.68, 1.35, 8, pineLeafMat, [0, 2.48, 0]);
+}
+
+const system = buildNorseTownCenterSystem('odin');
+scene.add(system.root);
+
+const blessingBeam = new T.Mesh(
+  new T.CylinderGeometry(1.05, 2.25, 14, 32, 1, true),
+  new T.MeshBasicMaterial({
+    color: 0x38bdf8,
+    transparent: true,
+    opacity: 0.0,
+    blending: T.AdditiveBlending,
+    side: T.DoubleSide,
+    depthWrite: false
+  })
+);
+blessingBeam.position.y = 7.0;
+scene.add(blessingBeam);
+
+const PART_N = 140;
+const partPos = new Float32Array(PART_N * 3);
+const partSpeed = new Float32Array(PART_N);
+for (let i = 0; i < PART_N; i++) {
+  const a = Math.random() * Math.PI * 2;
+  const r = 0.4 + Math.random() * 2.9;
+  partPos[i * 3] = Math.cos(a) * r;
+  partPos[i * 3 + 1] = Math.random() * 5.2;
+  partPos[i * 3 + 2] = Math.sin(a) * r;
+  partSpeed[i] = 0.42 + Math.random() * 0.72;
+}
+const partGeo = new T.BufferGeometry();
+partGeo.setAttribute('position', new T.BufferAttribute(partPos, 3));
+const particleMat = new T.PointsMaterial({
+  color: 0xbae6fd,
+  size: 0.10,
+  transparent: true,
+  opacity: 0.82,
+  blending: T.AdditiveBlending,
+  depthWrite: false
+});
+scene.add(new T.Points(partGeo, particleMat));
+
+const upgradeWaves = [];
+function triggerUpgradeWave(colorHex) {
+  const ring = new T.Mesh(
+    new T.RingGeometry(1.5, 2.1, 48),
+    new T.MeshBasicMaterial({
+      color: colorHex,
+      transparent: true,
+      opacity: 0.92,
+      blending: T.AdditiveBlending,
+      side: T.DoubleSide,
+      depthWrite: false
+    })
+  );
+  ring.rotation.x = -Math.PI / 2;
+  ring.position.y = 0.05;
+  scene.add(ring);
+  upgradeWaves.push({ mesh: ring, life: 0.85, max: 0.85 });
+}
+
+/* ==========================================================================
+   7. CONTROLES INTERATIVOS E CÂMERA 360°
+   ========================================================================== */
+let currentGod = 'odin';
+let currentTier = 1;
+let actionMode = 'normal';
+let focusDetails = false;
+
+let camAngle = 0.65;
+let camPitch = 0.48;
+let camDist = 11.4;
+let targetCamDist = 11.4;
+let currentLookAt = new T.Vector3(0, 1.15, 0);
+
+let dragging = false;
+let lastX = 0, lastY = 0;
+let pinchStartDist = 0;
+
+const cardTitle = document.getElementById('card-title');
+const cardSub = document.getElementById('card-sub');
+
+function refreshUIAndScene() {
+  const theme = GOD_THEMES[currentGod];
+  const info = TIER_DESCRIPTIONS[currentTier];
+
+  cardTitle.textContent = `Centro da Cidade Nórdico de ${theme.godName} • ${info.label}`;
+  cardSub.textContent = info.desc;
+
+  system.updateVisibility(currentTier);
+
+  if (groundMat.map) groundMat.map.dispose();
+  groundMat.map = createGroundTexture(theme, currentTier >= 3);
+  groundMat.needsUpdate = true;
+}
+
+document.querySelectorAll('button[data-god]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    currentGod = btn.dataset.god;
+    const theme = GOD_THEMES[currentGod];
+    document.querySelectorAll('button[data-god]').forEach(b => b.classList.toggle('on', b === btn));
+
+    scene.background.setHex(theme.bgHex);
+    scene.fog.color.setHex(theme.bgHex);
+    hemi.color.setHex(theme.hemiSky);
+    hemi.groundColor.setHex(theme.hemiGround);
+    rimLight.color.setHex(theme.rimHex);
+    blessingLight.color.setHex(theme.glowHex);
+    blessingBeam.material.color.setHex(theme.glowHex);
+    particleMat.color.setHex(theme.particleHex);
+
+    system.applyGod(currentGod);
+    refreshUIAndScene();
+  });
+});
+
+document.querySelectorAll('button[data-tier]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    currentTier = Number(btn.dataset.tier);
+    document.querySelectorAll('button[data-tier]').forEach(b => b.classList.toggle('on', b === btn));
+    refreshUIAndScene();
+    triggerUpgradeWave(GOD_THEMES[currentGod].glowHex);
+
+    if (!focusDetails) {
+      const distByTier = { 1: 11.4, 2: 12.2, 3: 13.2, 4: 14.0, 5: 15.0 };
+      targetCamDist = distByTier[currentTier] || 12.2;
+    }
+  });
+});
+
+document.querySelectorAll('button[data-act]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    actionMode = btn.dataset.act;
+    document.querySelectorAll('button[data-act]').forEach(b => b.classList.toggle('on', b === btn));
+  });
+});
+
+const btnFocus = document.getElementById('btn-focus');
+btnFocus.addEventListener('click', () => {
+  focusDetails = !focusDetails;
+  btnFocus.classList.toggle('active', focusDetails);
+  btnFocus.textContent = focusDetails ? 'Visão Geral' : 'Focar Detalhes';
+  targetCamDist = focusDetails ? 6.0 : (11.4 + (currentTier - 1) * 0.9);
+  if (focusDetails) {
+    camAngle = 0.42;
+    camPitch = 0.30;
+  }
+});
+
+renderer.domElement.addEventListener('pointerdown', (e) => {
+  dragging = true;
+  lastX = e.clientX;
+  lastY = e.clientY;
+});
+addEventListener('pointerup', () => { dragging = false; });
+addEventListener('pointermove', (e) => {
+  if (!dragging) return;
+  camAngle -= (e.clientX - lastX) * 0.009;
+  camPitch = T.MathUtils.clamp(camPitch + (e.clientY - lastY) * 0.006, 0.08, 1.15);
+  lastX = e.clientX;
+  lastY = e.clientY;
+});
+
+renderer.domElement.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  targetCamDist = T.MathUtils.clamp(targetCamDist + e.deltaY * 0.007, 4.0, 24.0);
+}, { passive: false });
+
+renderer.domElement.addEventListener('touchstart', (e) => {
+  if (e.touches.length === 2) {
+    const dx = e.touches[0].clientX - e.touches[1].clientX;
+    const dy = e.touches[0].clientY - e.touches[1].clientY;
+    pinchStartDist = Math.hypot(dx, dy);
+  }
+}, { passive: true });
+
+renderer.domElement.addEventListener('touchmove', (e) => {
+  if (e.touches.length === 2) {
+    const dx = e.touches[0].clientX - e.touches[1].clientX;
+    const dy = e.touches[0].clientY - e.touches[1].clientY;
+    const dist = Math.hypot(dx, dy);
+    const delta = pinchStartDist - dist;
+    targetCamDist = T.MathUtils.clamp(targetCamDist + delta * 0.02, 4.0, 24.0);
+    pinchStartDist = dist;
+  }
+}, { passive: true });
+
+addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+
+/* ==========================================================================
+   8. LOOP DE ANIMAÇÃO
+   ========================================================================== */
+const clock = new T.Clock();
+let elapsed = 0;
+
+function animate() {
+  const dt = Math.min(clock.getDelta(), 0.05);
+  elapsed += dt;
+
+  system.M.flames.forEach((fl, idx) => {
+    fl.scale.set(
+      1 + Math.sin(elapsed * 13 + idx) * 0.14,
+      1 + Math.cos(elapsed * 16 + idx) * 0.22,
+      1 + Math.sin(elapsed * 12 + idx) * 0.14
+    );
+  });
+
+  const isBlessed = (actionMode === 'bencao');
+  blessingBeam.material.opacity = T.MathUtils.lerp(blessingBeam.material.opacity, isBlessed ? 0.52 : 0.0, 0.08);
+  blessingBeam.rotation.y += dt * 1.1;
+
+  system.auraRing.material.opacity = T.MathUtils.lerp(system.auraRing.material.opacity, isBlessed ? 0.82 : (0.18 + currentTier * 0.04), 0.08);
+  system.auraRing.rotation.z += dt * 0.35;
+  blessingLight.intensity = isBlessed ? (6.0 + Math.sin(elapsed * 10) * 1.4) : (1.5 + currentTier * 0.3);
+
+  const pAttr = partGeo.attributes.position;
+  const speedMult = isBlessed ? 2.6 : 1.0;
+  for (let i = 0; i < PART_N; i++) {
+    let py = pAttr.getY(i) + partSpeed[i] * dt * speedMult;
+    if (py > 5.5) py = 0.2;
+    pAttr.setY(i, py);
+  }
+  pAttr.needsUpdate = true;
+
+  for (let i = upgradeWaves.length - 1; i >= 0; i--) {
+    const uw = upgradeWaves[i];
+    uw.life -= dt;
+    const k = Math.max(0, uw.life / uw.max);
+    uw.mesh.scale.setScalar(1 + (1 - k) * 2.4);
+    uw.mesh.material.opacity = 0.92 * k;
+    if (uw.life <= 0) {
+      scene.remove(uw.mesh);
+      uw.mesh.geometry.dispose();
+      uw.mesh.material.dispose();
+      upgradeWaves.splice(i, 1);
+    }
+  }
+
+  camDist = T.MathUtils.lerp(camDist, targetCamDist, 0.12);
+  if (!dragging && !focusDetails) camAngle += dt * 0.045;
+
+  const desiredTarget = focusDetails
+    ? new T.Vector3(0.0, 1.25, 1.15)
+    : new T.Vector3(0, 1.15 + currentTier * 0.08, 0);
+  currentLookAt.lerp(desiredTarget, 0.13);
+
+  const horizDist = Math.cos(camPitch) * camDist;
+  const vertDist = Math.sin(camPitch) * camDist;
+  camera.position.set(
+    currentLookAt.x + Math.sin(camAngle) * horizDist,
+    currentLookAt.y + vertDist,
+    currentLookAt.z + Math.cos(camAngle) * horizDist
+  );
+  camera.lookAt(currentLookAt);
+
+  renderer.render(scene, camera);
+  requestAnimationFrame(animate);
+}
+
+system.applyGod('odin');
+refreshUIAndScene();
+
+window.onload = function () {
+  animate();
+};
+if (document.readyState === 'complete') {
+  animate();
+}
+</script>
+</body>
+</html>
