@@ -167,7 +167,7 @@ export function createPoseidonMaterials(textures: PoseidonProceduralTextures) {
     tattooGlow: new THREE.MeshStandardMaterial({
       color: 0x2dd4bf,
       emissive: new THREE.Color(0x14b8a6),
-      emissiveIntensity: 2.2,
+      emissiveIntensity: 1.35,
       roughness: 0.2
     }),
     hairDarkSea: new THREE.MeshStandardMaterial({
@@ -210,7 +210,7 @@ export function createPoseidonMaterials(textures: PoseidonProceduralTextures) {
     abyssGem: new THREE.MeshStandardMaterial({
       color: 0x2dd4bf,
       emissive: new THREE.Color(0x0d9488),
-      emissiveIntensity: 2.6,
+      emissiveIntensity: 1.45,
       roughness: 0.12,
       metalness: 0.3
     }),
@@ -231,7 +231,7 @@ export function createPoseidonMaterials(textures: PoseidonProceduralTextures) {
     eyeEmerald: new THREE.MeshStandardMaterial({
       color: 0x34d399,
       emissive: new THREE.Color(0x10b981),
-      emissiveIntensity: 3.4,
+      emissiveIntensity: 1.65,
       roughness: 0.08
     }),
     vortexWater: new THREE.MeshStandardMaterial({
@@ -684,10 +684,9 @@ export function buildPoseidon(textures: PoseidonProceduralTextures): PoseidonMes
     new THREE.MeshBasicMaterial({
       color: 0x2dd4bf,
       transparent: true,
-      opacity: 0.7,
+      opacity: 0.48,
       blending: THREE.AdditiveBlending,
-      depthWrite: false,
-      toneMapped: false
+      depthWrite: false
     })
   );
   tridentTipAnchor.add(tridentTipGlow);

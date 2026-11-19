@@ -234,9 +234,17 @@ export function getHopliteUvTexture(tier: HopliteArmorTier = 3): THREE.Texture {
   return tex;
 }
 
+const spriteTextureClones = new Set<THREE.Texture>();
+const paperDollTextureClones = new Map<string, Set<THREE.Texture>>();
+
 function getHopliteSpriteTexture(): THREE.Texture {
   if (!cachedSpriteTexture) {
-    cachedSpriteTexture = textureLoader.load('/assets/hoplita-iso.png');
+    cachedSpriteTexture = textureLoader.load('/assets/hoplita-iso.png', (loaded) => {
+      for (const clone of spriteTextureClones) {
+        clone.image = loaded.image;
+        clone.needsUpdate = true;
+      }
+    });
     cachedSpriteTexture.colorSpace = THREE.SRGBColorSpace;
     cachedSpriteTexture.magFilter = THREE.NearestFilter;
     cachedSpriteTexture.minFilter = THREE.LinearMipmapLinearFilter;
@@ -244,6 +252,22 @@ function getHopliteSpriteTexture(): THREE.Texture {
     cachedSpriteTexture.wrapT = THREE.ClampToEdgeWrapping;
   }
   return cachedSpriteTexture;
+}
+
+function createHopliteSpriteTextureInstance(): THREE.Texture {
+  const base = getHopliteSpriteTexture();
+  const clone = base.clone();
+  clone.colorSpace = THREE.SRGBColorSpace;
+  clone.magFilter = THREE.NearestFilter;
+  clone.minFilter = THREE.LinearMipmapLinearFilter;
+  clone.wrapS = THREE.ClampToEdgeWrapping;
+  clone.wrapT = THREE.ClampToEdgeWrapping;
+  if (base.image) {
+    clone.image = base.image;
+    clone.needsUpdate = true;
+  }
+  spriteTextureClones.add(clone);
+  return clone;
 }
 
 function getArmorBumpTexture(): THREE.CanvasTexture {
@@ -743,6 +767,12 @@ export function getUvPaperDollSpriteSheetTexture(tier: HopliteArmorTier, team: T
       }
     }
     tex.needsUpdate = true;
+    const clones = paperDollTextureClones.get(key);
+    if (clones) {
+      for (const clone of clones) {
+        clone.needsUpdate = true;
+      }
+    }
   };
 
   const cachedImg = cachedUvImages.get(tier) ?? null;
@@ -760,6 +790,25 @@ export function getUvPaperDollSpriteSheetTexture(tier: HopliteArmorTier, team: T
 
   cachedPaperDollSheets.set(key, tex);
   return tex;
+}
+
+function createUvPaperDollSpriteSheetInstance(tier: HopliteArmorTier, team: TeamId): THREE.Texture {
+  const key = `${tier}_${team}`;
+  const base = getUvPaperDollSpriteSheetTexture(tier, team);
+  const clone = base.clone();
+  clone.colorSpace = THREE.SRGBColorSpace;
+  clone.magFilter = THREE.NearestFilter;
+  clone.minFilter = THREE.LinearFilter;
+  clone.wrapS = THREE.ClampToEdgeWrapping;
+  clone.wrapT = THREE.ClampToEdgeWrapping;
+  clone.needsUpdate = true;
+  let set = paperDollTextureClones.get(key);
+  if (!set) {
+    set = new Set();
+    paperDollTextureClones.set(key, set);
+  }
+  set.add(clone);
+  return clone;
 }
 
 // ============================================================
@@ -1889,8 +1938,8 @@ export function createGreekUnitMesh(
   const groupSprite = new THREE.Group();
   groupSprite.visible = false;
 
-  const isoSpriteTexture = getHopliteSpriteTexture().clone();
-  const uvPaperDollTexture = getUvPaperDollSpriteSheetTexture(currentTier, team).clone();
+  const isoSpriteTexture = createHopliteSpriteTextureInstance();
+  const uvPaperDollTexture = createUvPaperDollSpriteSheetInstance(currentTier, team);
   const cols = 6;
   const rows = 3;
 
@@ -1926,6 +1975,7 @@ export function createGreekUnitMesh(
     metalness: 0.35,
   });
   const brgMesh = new THREE.Mesh(brgGeo, brgMat);
+  brgMesh.frustumCulled = false;
   if (enableShadows) {
     brgMesh.castShadow = true;
     brgMesh.receiveShadow = true;
@@ -2002,9 +2052,11 @@ export function createGreekUnitMesh(
   };
 
   root.userData.setFrame = (frameIndex: number) => {
+    const clampedFrame = Math.max(0, Math.min(cols * rows - 1, Math.floor(frameIndex)));
+    root.userData.currentFrame = clampedFrame;
     const activeTex = root.userData.texture as THREE.Texture;
-    const col = frameIndex % cols;
-    const row = Math.floor(frameIndex / cols);
+    const col = clampedFrame % cols;
+    const row = Math.floor(clampedFrame / cols);
     activeTex.repeat.set(1 / cols, 1 / rows);
     activeTex.offset.set(col / cols, 1 - (row + 1) / rows);
   };
@@ -2051,11 +2103,28 @@ export function createGreekUnitMesh(
     }
 
     if (currentMode === 'uv2d') {
-      const nextSheet = getUvPaperDollSpriteSheetTexture(tier, team).clone();
+      const nextSheet = createUvPaperDollSpriteSheetInstance(tier, team);
       spriteMat.map = nextSheet;
       spriteMat.needsUpdate = true;
       root.userData.texture = nextSheet;
       root.userData.setFrame(root.userData.currentFrame || 0);
+    }
+  };
+
+  const brgPosAttr = brgGeo.getAttribute('position') as THREE.BufferAttribute;
+  const brgNormAttr = brgGeo.getAttribute('normal') as THREE.BufferAttribute;
+  brgPosAttr.setUsage(THREE.DynamicDrawUsage);
+  brgNormAttr.setUsage(THREE.DynamicDrawUsage);
+
+  root.userData.updateBrg = (dt: number, state: string) => {
+    if (!groupBrg.visible) return;
+    const clipName = state === 'attack' ? 'attack' : state === 'move' ? 'walk' : 'idle';
+    brgAnimState.play(clipName);
+    const anim = brgAnimState.update(dt);
+    if (anim) {
+      evaluateBrgClip(anim.clip, anim.t, brgPosAttr.array as Float32Array, brgNormAttr.array as Float32Array);
+      brgPosAttr.needsUpdate = true;
+      brgNormAttr.needsUpdate = true;
     }
   };
 
@@ -2069,11 +2138,12 @@ export function createGreekUnitMesh(
       group3D.visible = false;
       groupSprite.visible = false;
       groupBrg.visible = true;
+      root.userData.updateBrg(0, 'idle');
     } else if (mode === 'uv2d') {
       group3D.visible = false;
       groupSprite.visible = true;
       groupBrg.visible = false;
-      const sheet = getUvPaperDollSpriteSheetTexture(currentTier, team).clone();
+      const sheet = createUvPaperDollSpriteSheetInstance(currentTier, team);
       spriteMat.map = sheet;
       spriteMat.needsUpdate = true;
       root.userData.texture = sheet;
@@ -2086,20 +2156,6 @@ export function createGreekUnitMesh(
       spriteMat.needsUpdate = true;
       root.userData.texture = isoSpriteTexture;
       root.userData.setFrame(root.userData.currentFrame || 0);
-    }
-  };
-
-  const brgPosAttr = brgGeo.getAttribute('position') as THREE.BufferAttribute;
-  const brgNormAttr = brgGeo.getAttribute('normal') as THREE.BufferAttribute;
-  root.userData.updateBrg = (dt: number, state: string) => {
-    if (!groupBrg.visible) return;
-    const clipName = state === 'attack' ? 'attack' : state === 'move' ? 'walk' : 'idle';
-    brgAnimState.play(clipName);
-    const anim = brgAnimState.update(dt);
-    if (anim) {
-      evaluateBrgClip(anim.clip, anim.t, brgPosAttr.array as Float32Array, brgNormAttr.array as Float32Array);
-      brgPosAttr.needsUpdate = true;
-      brgNormAttr.needsUpdate = true;
     }
   };
 

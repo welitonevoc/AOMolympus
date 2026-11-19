@@ -192,10 +192,10 @@ export class VisualEffectsManager {
       this.composer.addPass(this.renderPass);
 
       this.bloomPass = new UnrealBloomPass(
-        new THREE.Vector2(Math.max(1, Math.floor(w / 2)), Math.max(1, Math.floor(h / 2))),
-        0.38, // subtle epic glow strength
-        0.46, // smooth bloom radius
-        0.93  // high threshold so only emissive magic/fire/gold highlights bloom
+        new THREE.Vector2(Math.max(1, w), Math.max(1, h)),
+        0.22, // controlled cinematic glow without white clipping
+        0.34, // crisp selective bloom radius
+        1.32  // HDR linear threshold so only true emissives bloom, never sunlit marble/snow/terrain
       );
       this.composer.addPass(this.bloomPass);
       this.composer.addPass(new OutputPass());
@@ -248,10 +248,10 @@ export class VisualEffectsManager {
     birdShape.setAttribute('position', new THREE.BufferAttribute(birdVerts, 3));
     birdShape.computeVertexNormals();
     const birdMat = new THREE.MeshBasicMaterial({
-      color: 0xf8fafc,
+      color: 0xe2e8f0,
       side: THREE.DoubleSide,
       transparent: true,
-      opacity: 0.82,
+      opacity: 0.78,
     });
     this.birdMesh = new THREE.InstancedMesh(birdShape, birdMat, this.birdCount);
     this.birdMesh.frustumCulled = false;
@@ -334,7 +334,7 @@ export class VisualEffectsManager {
       color: colorHex,
       size: effId === 'erebus' ? 0.34 : 0.26,
       transparent: true,
-      opacity: 0.48,
+      opacity: 0.34,
       depthWrite: false,
       blending: THREE.AdditiveBlending,
     });
@@ -370,10 +370,7 @@ export class VisualEffectsManager {
     this.composer.setPixelRatio(pixelRatio);
     this.composer.setSize(width, height);
     if (this.bloomPass) {
-      this.bloomPass.resolution.set(
-        Math.max(1, Math.floor(width / 2)),
-        Math.max(1, Math.floor(height / 2))
-      );
+      this.bloomPass.setSize(Math.max(1, Math.floor(width)), Math.max(1, Math.floor(height)));
     }
   }
 
@@ -496,7 +493,7 @@ export class VisualEffectsManager {
     const mat = new THREE.MeshBasicMaterial({
       color: colorHex,
       transparent: true,
-      opacity: 0.88,
+      opacity: 0.54,
       side: THREE.DoubleSide,
       depthWrite: false,
       blending: THREE.AdditiveBlending,
@@ -932,7 +929,7 @@ export class VisualEffectsManager {
       }
       const t = s.age / s.lifetime;
       s.mesh.rotation.y = s.startYaw + t * 1.15 * s.sweepDir;
-      s.mat.opacity = 0.88 * (1 - t);
+      s.mat.opacity = 0.54 * (1 - t);
     }
 
     // 6. Update floating popups

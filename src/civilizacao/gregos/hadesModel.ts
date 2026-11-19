@@ -276,7 +276,7 @@ export function createHadesMaterials(textures: HadesProceduralTextures): HadesMa
     soulCore: new THREE.MeshStandardMaterial({
       color: 0x6ee7b7,
       emissive: new THREE.Color(0x10b981),
-      emissiveIntensity: 3.2,
+      emissiveIntensity: 1.55,
       roughness: 0.1
     }),
     tunic: new THREE.MeshStandardMaterial({
@@ -297,7 +297,7 @@ export function createHadesMaterials(textures: HadesProceduralTextures): HadesMa
     eyeSpectral: new THREE.MeshStandardMaterial({
       color: 0xa7f3d0,
       emissive: new THREE.Color(0x10b981),
-      emissiveIntensity: 3.8,
+      emissiveIntensity: 1.7,
       roughness: 0.05
     }),
     shadowVortex: new THREE.MeshStandardMaterial({
@@ -792,10 +792,9 @@ export function buildHades(textures: HadesProceduralTextures): HadesMeshHierarch
     new THREE.MeshBasicMaterial({
       color: 0x10b981,
       transparent: true,
-      opacity: 0.65,
+      opacity: 0.45,
       blending: THREE.AdditiveBlending,
-      depthWrite: false,
-      toneMapped: false
+      depthWrite: false
     })
   );
   bidentAnchor.add(bidentGlow);

@@ -237,14 +237,15 @@ export function buildMedusa(
     gazeGlow: new THREE.MeshStandardMaterial({
       color: 0xffffff,
       emissive: 0x10b981,
-      emissiveIntensity: 4.5,
+      emissiveIntensity: 1.8,
       roughness: 0.05
     }),
     fireGlow: new THREE.MeshBasicMaterial({
       color: 0xf97316,
       transparent: true,
-      opacity: 0.92,
-      blending: THREE.AdditiveBlending
+      opacity: 0.62,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
     })
   };
 

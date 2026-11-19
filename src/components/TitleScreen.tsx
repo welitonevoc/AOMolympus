@@ -35,6 +35,7 @@ import {
 } from '../game/types';
 import { OlympusTitleBackdrop } from './OlympusTitleBackdrop';
 import { PortSubMenus, SkirmishDraft } from './PortSubMenus';
+import { PWAInstallButton } from './PWAInstallButton';
 
 const HopliteUvBuilderModal = lazy(() =>
   import('./HopliteUvBuilderModal').then((m) => ({ default: m.HopliteUvBuilderModal }))
@@ -261,6 +262,7 @@ export function TitleScreen({
 
       {/* Top-Right Minimal Utility Strip */}
       <div className="fixed top-2 right-2 sm:top-4 sm:right-4 z-40 flex items-center gap-1 sm:gap-1.5 rounded-lg border border-white/12 bg-[#0b101b]/92 p-1 shadow-lg">
+        <PWAInstallButton />
         <button
           type="button"
           onClick={() => nav('UI_PROFILE_SELECT')}

@@ -237,14 +237,14 @@ export function upgradeWaterMaterial(
           `
         )
         .replace(
-          '#include <dithering_fragment>',
+          '#include <emissivemap_fragment>',
           `
+          #include <emissivemap_fragment>
           vec3 viewDirW = normalize(cameraPosition - vWaterWorldPos);
           float fresnelW = pow(1.0 - max(dot(viewDirW, vec3(0.0, 1.0, 0.0)), 0.0), 3.0);
-          vec3 fresnelCol = mix(vec3(0.55, 0.82, 0.96), vec3(1.0, 0.55, 0.18), uIsLava);
-          fresnelCol = mix(fresnelCol, vec3(0.95, 0.18, 0.16), uRedTide);
-          gl_FragColor.rgb += fresnelCol * fresnelW * mix(0.24, 0.38, uIsIce);
-          #include <dithering_fragment>
+          vec3 fresnelCol = mix(vec3(0.45, 0.74, 0.90), vec3(0.95, 0.46, 0.14), uIsLava);
+          fresnelCol = mix(fresnelCol, vec3(0.85, 0.14, 0.14), uRedTide);
+          totalEmissiveRadiance += fresnelCol * fresnelW * mix(0.14, 0.22, uIsIce);
           `
         );
   };

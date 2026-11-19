@@ -35,8 +35,9 @@ export function ZeusViewerModal({ isOpen, onClose }: ZeusViewerModalProps) {
     renderer.setSize(width, height);
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.12;
+    renderer.toneMappingExposure = 0.95;
 
     container.innerHTML = '';
     container.appendChild(renderer.domElement);
@@ -52,10 +53,10 @@ export function ZeusViewerModal({ isOpen, onClose }: ZeusViewerModalProps) {
     const camera = new THREE.PerspectiveCamera(36, width / height, 0.1, 120);
 
     // Lights
-    const hemi = new THREE.HemisphereLight(0xffffff, 0x475569, 1.05);
+    const hemi = new THREE.HemisphereLight(0xffffff, 0x475569, 0.68);
     scene.add(hemi);
 
-    const sun = new THREE.DirectionalLight(0xfffbeb, 2.15);
+    const sun = new THREE.DirectionalLight(0xfffbeb, 1.62);
     sun.position.set(3.5, 6.8, 4.5);
     sun.castShadow = true;
     sun.shadow.mapSize.set(2048, 2048);
@@ -63,11 +64,11 @@ export function ZeusViewerModal({ isOpen, onClose }: ZeusViewerModalProps) {
     sun.shadow.bias = -0.0004;
     scene.add(sun);
 
-    const rimLight = new THREE.DirectionalLight(0x7dd3fc, 1.25);
+    const rimLight = new THREE.DirectionalLight(0x7dd3fc, 0.78);
     rimLight.position.set(-3, 4.5, -5);
     scene.add(rimLight);
 
-    const goldLight = new THREE.PointLight(0xffd76a, 1.6, 7);
+    const goldLight = new THREE.PointLight(0xffd76a, 1.1, 7);
     scene.add(goldLight);
 
     const flashLight = new THREE.PointLight(0xfff3c4, 0, 10);
@@ -117,12 +118,11 @@ export function ZeusViewerModal({ isOpen, onClose }: ZeusViewerModalProps) {
         sparkGeo,
         new THREE.PointsMaterial({
           color: 0xfff3a0,
-          size: 0.095,
+          size: 0.09,
           transparent: true,
-          opacity: 0.95,
+          opacity: 0.72,
           blending: THREE.AdditiveBlending,
-          depthWrite: false,
-          toneMapped: false
+          depthWrite: false
         })
       )
     );
@@ -156,35 +156,32 @@ export function ZeusViewerModal({ isOpen, onClose }: ZeusViewerModalProps) {
     const bolts: Array<{ meshes: THREE.Mesh[]; life: number; max: number }> = [];
     const flashes: Array<{ mesh: THREE.Mesh; life: number; max: number }> = [];
     const coreBase = new THREE.MeshBasicMaterial({
-      color: 0xffffff,
+      color: 0xfffbeb,
       transparent: true,
+      opacity: 0.85,
       blending: THREE.AdditiveBlending,
-      depthWrite: false,
-      toneMapped: false
+      depthWrite: false
     });
     const glowBase = new THREE.MeshBasicMaterial({
       color: 0xfde047,
       transparent: true,
-      opacity: 0.6,
+      opacity: 0.42,
       blending: THREE.AdditiveBlending,
-      depthWrite: false,
-      toneMapped: false
+      depthWrite: false
     });
     const electricBase = new THREE.MeshBasicMaterial({
       color: 0x38bdf8,
       transparent: true,
-      opacity: 0.45,
+      opacity: 0.32,
       blending: THREE.AdditiveBlending,
-      depthWrite: false,
-      toneMapped: false
+      depthWrite: false
     });
     const flashBase = new THREE.MeshBasicMaterial({
       color: 0xfff7c2,
       transparent: true,
-      opacity: 0.92,
+      opacity: 0.55,
       blending: THREE.AdditiveBlending,
-      depthWrite: false,
-      toneMapped: false
+      depthWrite: false
     });
     const tmpV = new THREE.Vector3();
 
@@ -216,7 +213,7 @@ export function ZeusViewerModal({ isOpen, onClose }: ZeusViewerModalProps) {
       scene.add(m);
       flashes.push({ mesh: m, life: 0.35, max: 0.35 });
       flashLight.position.set(p.x, 0.7, p.z);
-      flashLight.intensity = 9.5;
+      flashLight.intensity = 3.5;
       for (let i = 0; i < 18; i++) spawnSpark(p);
     }
 

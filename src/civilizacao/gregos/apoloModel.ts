@@ -139,7 +139,7 @@ function createMaterials(textures: ApolloTextures): ApolloMaterials {
     solarCore: new THREE.MeshStandardMaterial({
       color: 0xffffff,
       emissive: 0xfef08a,
-      emissiveIntensity: 3.8,
+      emissiveIntensity: 1.65,
       roughness: 0.08,
     }),
     ivoryGrip: new THREE.MeshStandardMaterial({
@@ -157,14 +157,14 @@ function createMaterials(textures: ApolloTextures): ApolloMaterials {
     amberGem: new THREE.MeshStandardMaterial({
       color: 0xf59e0b,
       emissive: 0xd97706,
-      emissiveIntensity: 2.8,
+      emissiveIntensity: 1.4,
       roughness: 0.1,
       metalness: 0.25,
     }),
     solarRayMat: new THREE.MeshBasicMaterial({
       color: 0xfde047,
       transparent: true,
-      opacity: 0.88,
+      opacity: 0.52,
       blending: THREE.AdditiveBlending,
       side: THREE.DoubleSide,
       depthWrite: false,
@@ -172,7 +172,7 @@ function createMaterials(textures: ApolloTextures): ApolloMaterials {
     eyeSolarGold: new THREE.MeshStandardMaterial({
       color: 0xffffff,
       emissive: 0xfacc15,
-      emissiveIntensity: 3.6,
+      emissiveIntensity: 1.65,
       roughness: 0.06,
     }),
     tunic: new THREE.MeshStandardMaterial({

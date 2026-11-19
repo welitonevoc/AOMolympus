@@ -65,7 +65,7 @@ export function OlympusTitleBackdrop({
       });
       renderer.outputColorSpace = THREE.SRGBColorSpace;
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      renderer.toneMappingExposure = 1.15;
+      renderer.toneMappingExposure = 0.94;
       renderer.setSize(width, height);
       renderer.setPixelRatio(isSoftwareGl ? 1 : Math.min(window.devicePixelRatio || 1, 2));
       renderer.shadowMap.enabled = !isSoftwareGl;
@@ -99,6 +99,7 @@ export function OlympusTitleBackdrop({
       const roomEnv = new RoomEnvironment();
       const envRT = pmremGenerator.fromScene(roomEnv, 0.04);
       scene.environment = envRT.texture;
+      scene.environmentIntensity = 0.38;
       roomEnv.dispose();
       pmremGenerator.dispose();
 
@@ -137,11 +138,30 @@ export function OlympusTitleBackdrop({
         )
       );
 
+      // ── Soft Radial Sun Halo Texture (prevents harsh clipped white disc) ──
+      const haloCanvas = document.createElement('canvas');
+      haloCanvas.width = 128;
+      haloCanvas.height = 128;
+      const hCtx = haloCanvas.getContext('2d');
+      if (hCtx) {
+        const g = hCtx.createRadialGradient(64, 64, 4, 64, 64, 64);
+        g.addColorStop(0.0, 'rgba(255, 248, 220, 0.92)');
+        g.addColorStop(0.32, 'rgba(253, 224, 71, 0.45)');
+        g.addColorStop(0.7, 'rgba(245, 158, 11, 0.14)');
+        g.addColorStop(1.0, 'rgba(245, 158, 11, 0.0)');
+        hCtx.fillStyle = g;
+        hCtx.fillRect(0, 0, 128, 128);
+      }
+      const sunHaloTex = new THREE.CanvasTexture(haloCanvas);
+      sunHaloTex.colorSpace = THREE.SRGBColorSpace;
+      localTexs.push(sunHaloTex);
+
       // ── Radiant Sun Halo Behind Summit Parthenon ──
       const sunHaloOuter = new THREE.Mesh(
-        trackGeo(new THREE.CircleGeometry(14, 36)),
+        trackGeo(new THREE.PlaneGeometry(30, 30)),
         trackMat(
           new THREE.MeshBasicMaterial({
+            map: sunHaloTex,
             color: 0xfde047,
             transparent: true,
             opacity: 0.24,
@@ -155,12 +175,13 @@ export function OlympusTitleBackdrop({
       scene.add(sunHaloOuter);
 
       const sunHaloInner = new THREE.Mesh(
-        trackGeo(new THREE.CircleGeometry(6.2, 32)),
+        trackGeo(new THREE.PlaneGeometry(14, 14)),
         trackMat(
           new THREE.MeshBasicMaterial({
-            color: 0xfffbeb,
+            map: sunHaloTex,
+            color: 0xfef3c7,
             transparent: true,
-            opacity: 0.52,
+            opacity: 0.34,
             blending: THREE.AdditiveBlending,
             depthWrite: false,
             fog: false,
@@ -171,10 +192,10 @@ export function OlympusTitleBackdrop({
       scene.add(sunHaloInner);
 
       // ── Dramatic Golden Backlight & Sculpting Key Lighting Rig ──
-      const hemi = new THREE.HemisphereLight(0xa5d8e6, 0x3b2d22, 1.2);
+      const hemi = new THREE.HemisphereLight(0xa5d8e6, 0x3b2d22, 0.65);
       scene.add(hemi);
 
-      const sunKey = new THREE.DirectionalLight(0xffe19c, 2.85);
+      const sunKey = new THREE.DirectionalLight(0xffe19c, 1.75);
       sunKey.position.set(14, 15, -4);
       sunKey.castShadow = !isSoftwareGl;
       sunKey.shadow.mapSize.set(1024, 1024);
@@ -188,11 +209,11 @@ export function OlympusTitleBackdrop({
       sunKey.shadow.normalBias = 0.02;
       scene.add(sunKey);
 
-      const fillLight = new THREE.DirectionalLight(0x93c5fd, 1.05);
+      const fillLight = new THREE.DirectionalLight(0x93c5fd, 0.52);
       fillLight.position.set(-12, 8, 14);
       scene.add(fillLight);
 
-      const frontWarmGlow = new THREE.DirectionalLight(0xfbbf24, 0.85);
+      const frontWarmGlow = new THREE.DirectionalLight(0xfbbf24, 0.36);
       frontWarmGlow.position.set(6, 5, 16);
       scene.add(frontWarmGlow);
 
@@ -238,7 +259,7 @@ export function OlympusTitleBackdrop({
         new THREE.MeshBasicMaterial({
           color: 0xfdba74,
           transparent: true,
-          opacity: 0.92,
+          opacity: 0.72,
           blending: THREE.AdditiveBlending,
           depthWrite: false,
         })
@@ -341,7 +362,7 @@ export function OlympusTitleBackdrop({
               new THREE.MeshBasicMaterial({
                 color: 0xfde047,
                 transparent: true,
-                opacity: 0.65,
+                opacity: 0.34,
                 blending: THREE.AdditiveBlending,
                 depthWrite: false,
               })
@@ -483,10 +504,10 @@ export function OlympusTitleBackdrop({
       const cloudGeo = trackGeo(new THREE.SphereGeometry(1, 16, 12));
       const cloudMat = trackMat(
         new THREE.MeshStandardMaterial({
-          color: 0xfff8e7,
-          emissive: 0x6b4720,
-          emissiveIntensity: 0.34,
-          roughness: 0.92,
+          color: 0xede4d0,
+          emissive: 0x5c3e1c,
+          emissiveIntensity: 0.12,
+          roughness: 0.94,
           metalness: 0.02,
         })
       );
@@ -562,7 +583,7 @@ export function OlympusTitleBackdrop({
         new THREE.MeshBasicMaterial({
           color: 0xfde68a,
           transparent: true,
-          opacity: 0.065,
+          opacity: 0.038,
           blending: THREE.AdditiveBlending,
           side: THREE.DoubleSide,
           depthWrite: false,
@@ -593,7 +614,7 @@ export function OlympusTitleBackdrop({
           color: 0xfef08a,
           size: 0.09,
           transparent: true,
-          opacity: 0.85,
+          opacity: 0.55,
           blending: THREE.AdditiveBlending,
           depthWrite: false,
         })

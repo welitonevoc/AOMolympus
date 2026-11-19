@@ -11,6 +11,7 @@ import { createChineseUnitMesh, getChineseUnitMarkerSpec } from '../../civilizac
 import { getCivLook, MaterialPalette } from './palette';
 import { attachGroundMarkers, attachHealthBar, getSculptedGeos } from './shared';
 import { buildGodAvatarUnitRoot, buildTitanUnitRoot } from './titanAndGodFactory';
+import { createStudioVillagerGameplayMesh, resolveStudioVillagerCiv } from '../studioVillagerAdapter';
 
 export function createUnitMesh(
   kind: UnitKind,
@@ -118,6 +119,31 @@ export function createUnitMesh(
     return root;
   }
 
+  const studioVillagerCiv = resolveStudioVillagerCiv(kind, look.style, pantheon);
+  if (studioVillagerCiv) {
+    const studioVillager = createStudioVillagerGameplayMesh(
+      studioVillagerCiv,
+      kind,
+      team,
+      teamMat,
+      enableShadows,
+      majorGod
+    );
+    root.add(studioVillager.group);
+    root.userData.villagerMesh = studioVillager.group;
+    root.userData.animatePose = studioVillager.group.userData.animatePose;
+    root.userData.leftLeg = studioVillager.group.userData.leftLeg;
+    root.userData.rightLeg = studioVillager.group.userData.rightLeg;
+    root.userData.leftArm = studioVillager.group.userData.leftArm;
+    root.userData.rightArm = studioVillager.group.userData.rightArm;
+    if (studioVillager.group.userData.setHeroVisual) {
+      root.userData.setHeroVisual = studioVillager.group.userData.setHeroVisual;
+    }
+    attachGroundMarkers(root, studioVillager.markerRadius, pal, team);
+    attachHealthBar(root, studioVillager.barHeight, studioVillager.barWidth);
+    return root;
+  }
+
   const isExplicitEgyptianUnit =
     kind === 'priest' ||
     kind === 'pharaoh' ||
@@ -163,16 +189,6 @@ export function createUnitMesh(
     root.userData.rightLeg = egyptMesh.userData.rightLeg;
     root.userData.leftArm = egyptMesh.userData.leftArm;
     root.userData.rightArm = egyptMesh.userData.rightArm;
-    root.userData.updateBrg = (dt: number, state: string) => {
-      egyptMesh.userData.animatePose?.(
-        dt,
-        state === 'move',
-        3.2,
-        state === 'attack' ? 0.5 : null,
-        state,
-        'wood'
-      );
-    };
     const mSpec = getEgyptianUnitMarkerSpec(kind);
     attachGroundMarkers(root, mSpec.markerRadius, pal, team);
     attachHealthBar(root, mSpec.barHeight, mSpec.barWidth);
@@ -214,16 +230,6 @@ export function createUnitMesh(
     root.userData.rightLeg = norseMesh.userData.rightLeg;
     root.userData.leftArm = norseMesh.userData.leftArm;
     root.userData.rightArm = norseMesh.userData.rightArm;
-    root.userData.updateBrg = (dt: number, state: string) => {
-      norseMesh.userData.animatePose?.(
-        dt,
-        state === 'move',
-        3.2,
-        state === 'attack' ? 0.5 : null,
-        state,
-        'wood'
-      );
-    };
     const mSpec = getNorseUnitMarkerSpec(kind);
     attachGroundMarkers(root, mSpec.markerRadius, pal, team);
     attachHealthBar(root, mSpec.barHeight, mSpec.barWidth);
@@ -267,16 +273,6 @@ export function createUnitMesh(
     root.userData.rightLeg = atlMesh.userData.rightLeg;
     root.userData.leftArm = atlMesh.userData.leftArm;
     root.userData.rightArm = atlMesh.userData.rightArm;
-    root.userData.updateBrg = (dt: number, state: string) => {
-      atlMesh.userData.animatePose?.(
-        dt,
-        state === 'move',
-        3.2,
-        state === 'attack' ? 0.5 : null,
-        state,
-        'wood'
-      );
-    };
     const mSpec = getAtlanteanUnitMarkerSpec(kind);
     attachGroundMarkers(root, mSpec.markerRadius, pal, team);
     attachHealthBar(root, mSpec.barHeight, mSpec.barWidth);
@@ -306,9 +302,6 @@ export function createUnitMesh(
     root.userData.rightLeg = chnMesh.userData.rightLeg;
     root.userData.leftArm = chnMesh.userData.leftArm;
     root.userData.rightArm = chnMesh.userData.rightArm;
-    root.userData.updateBrg = (dt: number, state: string) => {
-      chnMesh.userData.animatePose?.(dt, state === 'move', 3.2, state === 'attack' ? 0.5 : null);
-    };
     const mSpec = getChineseUnitMarkerSpec(kind);
     attachGroundMarkers(root, mSpec.markerRadius, pal, team);
     attachHealthBar(root, mSpec.barHeight, mSpec.barWidth);
@@ -336,6 +329,9 @@ export function createUnitMesh(
     root.userData.rightArm = greekMesh.userData.rightArm;
     root.userData.isSpriteSheet = greekMesh.userData.isSpriteSheet;
     root.userData.spriteMesh = greekMesh.userData.spriteMesh;
+    root.userData.setFrame = (frameIndex: number) => {
+      greekMesh.userData.setFrame?.(frameIndex);
+    };
     root.userData.setMode = (mode: '3d' | 'sprite' | 'brg' | 'uv2d') => {
       greekMesh.userData.setMode?.(mode);
       root.userData.isSpriteSheet = greekMesh.userData.isSpriteSheet;

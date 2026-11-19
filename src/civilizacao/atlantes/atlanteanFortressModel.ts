@@ -562,7 +562,7 @@ export function buildAtlanteanFortress(
     beaconMat: new THREE.MeshStandardMaterial({
       color: 0xffffff,
       emissive: theme.glowHex,
-      emissiveIntensity: 3.0,
+      emissiveIntensity: 1.55,
       roughness: 0.1
     })
   };

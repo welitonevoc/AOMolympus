@@ -365,9 +365,11 @@ export function applyReplayFrameAtTime(ctx: AoMEngineContext, timeSec: number) {
       let rec = ctx.replayEntityMeshes.get(id);
       if (!rec) {
         const teamPantheon = team === 'player' ? ctx.pantheon : ctx.enemyPantheon;
+        const teamMajorGod =
+          team === 'player' ? ctx.majorGodName : teamPantheon === 'greek' ? 'Poseidon' : undefined;
         const mesh = isBuilding
           ? createBuildingMesh(kind as BuildingKind, team, ctx.palette, !ctx.isSoftwareGl, teamPantheon)
-          : createUnitMesh(kind as UnitKind, team, ctx.palette, !ctx.isSoftwareGl, teamPantheon);
+          : createUnitMesh(kind as UnitKind, team, ctx.palette, !ctx.isSoftwareGl, teamPantheon, teamMajorGod);
         mesh.position.set(wx, wy, wz);
         ctx.scene.add(mesh);
         rec = { mesh, team, kind, isBuilding };

@@ -154,21 +154,21 @@ export function buildCharybdisTitan(textures: CaribdisTextures): CharybdisTitan 
   const bioTealVein = new THREE.MeshStandardMaterial({
     color: 0x99f6e4,
     emissive: new THREE.Color(0x14b8a6),
-    emissiveIntensity: 3.4,
+    emissiveIntensity: 1.55,
     roughness: 0.1,
   });
 
   const coralGlow = new THREE.MeshStandardMaterial({
     color: 0xe0f2fe,
     emissive: new THREE.Color(0x38bdf8),
-    emissiveIntensity: 3.0,
+    emissiveIntensity: 1.45,
     roughness: 0.12,
   });
 
   const eyeAbyss = new THREE.MeshStandardMaterial({
     color: 0xffffff,
     emissive: new THREE.Color(0x2dd4bf),
-    emissiveIntensity: 4.5,
+    emissiveIntensity: 1.8,
     roughness: 0.05,
   });
 

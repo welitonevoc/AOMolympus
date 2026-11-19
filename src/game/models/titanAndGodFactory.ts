@@ -74,9 +74,6 @@ export function buildTitanUnitRoot(
     root.userData.setMode = (_mode: '3d' | 'sprite' | 'brg' | 'uv2d') => {
       // 3D & 2.5D support
     };
-    root.userData.updateBrg = (dt: number, state: string) => {
-      root.userData.animatePose?.(dt, state === 'move', 2.0, state === 'attack' ? 0.5 : null);
-    };
 
     attachGroundMarkers(root, 2.25, pal, team);
     attachHealthBar(root, 9.2, 2.8);
@@ -120,9 +117,6 @@ export function buildTitanUnitRoot(
 
     root.userData.setMode = (_mode: '3d' | 'sprite' | 'brg' | 'uv2d') => {
       // 3D & 2.5D support
-    };
-    root.userData.updateBrg = (dt: number, state: string) => {
-      root.userData.animatePose?.(dt, state === 'move', 2.0, state === 'attack' ? 0.5 : null);
     };
 
     attachGroundMarkers(root, 2.25, pal, team);
@@ -189,9 +183,6 @@ export function buildTitanUnitRoot(
     root.userData.setMode = (_mode: '3d' | 'sprite' | 'brg' | 'uv2d') => {
       // 3D & 2.5D support
     };
-    root.userData.updateBrg = (dt: number, state: string) => {
-      root.userData.animatePose?.(dt, state === 'move', 2.0, state === 'attack' ? 0.5 : null);
-    };
 
     attachGroundMarkers(root, 2.25, pal, team);
     attachHealthBar(root, 9.2, 2.8);
@@ -209,7 +200,6 @@ export function buildTitanUnitRoot(
     root.add(chnTitan);
     root.userData.beaconCrystal = chnTitan.userData.beaconCrystal;
     root.userData.animatePose = chnTitan.userData.animatePose;
-    root.userData.updateBrg = chnTitan.userData.updateBrg;
     attachGroundMarkers(root, 2.35, pal, team);
     attachHealthBar(root, 9.5, 3.0);
     return root;
@@ -370,9 +360,7 @@ export function buildGodAvatarUnitRoot(
   pal: MaterialPalette
 ): THREE.Group | null {
   const bindUpdateBrg = () => {
-    root.userData.updateBrg = (dt: number, state: string) => {
-      root.userData.animatePose?.(dt, state === 'move', 2.0, state === 'attack' ? 0.5 : null);
-    };
+    // God avatars are driven directly via animatePose in unitSimulationSystem
   };
 
   if (kind === 'zeus') {

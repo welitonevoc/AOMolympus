@@ -105,6 +105,9 @@ export class StudioVoicePlayer {
 
   private consecutiveServerFailures = 0;
   private cooldownUntilMs = 0;
+  private lastPrefetchAtMs = 0;
+  private prewarmTimer: ReturnType<typeof setTimeout> | null = null;
+  private prewarmQueue: StudioSpeakRequest[] = [];
 
   private ensureMasteringBus(ctx: AudioContext): {
     dryInput: BiquadFilterNode;
@@ -200,6 +203,37 @@ export class StudioVoicePlayer {
     return `${req.role}|${req.action ?? 'select'}|${req.dramatic ? '1' : '0'}|${clean}`;
   }
 
+  public hasCached(req: StudioSpeakRequest): boolean {
+    const clean = normalizeSpokenScript(req.text);
+    if (!clean) return false;
+    return this.bufferCache.has(this.makeCacheKey(req));
+  }
+
+  private async readBrowserCache(cacheKey: string): Promise<ArrayBuffer | null> {
+    if (typeof window === 'undefined' || !('caches' in window)) return null;
+    try {
+      const cache = await window.caches.open('aom-studio-voice-v1');
+      const res = await cache.match(`https://aom.voice.local/${encodeURIComponent(cacheKey)}`);
+      if (!res) return null;
+      return await res.arrayBuffer();
+    } catch {
+      return null;
+    }
+  }
+
+  private async writeBrowserCache(cacheKey: string, data: ArrayBuffer): Promise<void> {
+    if (typeof window === 'undefined' || !('caches' in window)) return;
+    try {
+      const cache = await window.caches.open('aom-studio-voice-v1');
+      await cache.put(
+        `https://aom.voice.local/${encodeURIComponent(cacheKey)}`,
+        new Response(data.slice(0), { headers: { 'Content-Type': 'audio/wav' } })
+      );
+    } catch {
+      // ignore quota/private-browsing cache errors
+    }
+  }
+
   private cacheBuffer(key: string, buffer: AudioBuffer) {
     if (this.bufferCache.has(key)) {
       this.bufferCache.delete(key);
@@ -264,6 +298,14 @@ export class StudioVoicePlayer {
 
     const promise = (async (): Promise<AudioBuffer | null> => {
       try {
+        // Check persistent browser CacheStorage first (~1ms decode, 0 network roundtrip)
+        const browserHit = await this.readBrowserCache(cacheKey);
+        if (browserHit && browserHit.byteLength >= 64) {
+          const decoded = await ctx.decodeAudioData(browserHit.slice(0));
+          this.cacheBuffer(cacheKey, decoded);
+          return decoded;
+        }
+
         const resp = await fetch('/api/tts/speak', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -278,10 +320,31 @@ export class StudioVoicePlayer {
         });
 
         if (!resp.ok) {
+          if (resp.status === 429) {
+            const retryHeader = resp.headers.get('Retry-After');
+            let retrySec = retryHeader ? Number.parseInt(retryHeader, 10) : NaN;
+            if (!Number.isFinite(retrySec) || retrySec <= 0) {
+              try {
+                const payload = (await resp.json()) as { retryAfterSec?: number };
+                if (typeof payload.retryAfterSec === 'number' && payload.retryAfterSec > 0) {
+                  retrySec = payload.retryAfterSec;
+                }
+              } catch {
+                // ignore parse failure
+              }
+            }
+            const waitSec = Number.isFinite(retrySec) && retrySec > 0 ? Math.min(120, retrySec) : 60;
+            this.cooldownUntilMs = Math.max(this.cooldownUntilMs, Date.now() + waitSec * 1000);
+            return null;
+          }
+          if (resp.status === 503) {
+            this.cooldownUntilMs = Math.max(this.cooldownUntilMs, Date.now() + 120_000);
+            return null;
+          }
           this.consecutiveServerFailures++;
           if (this.consecutiveServerFailures >= 3) {
-            // Brief backoff (12s) if server TTS is temporarily unreachable/unconfigured
-            this.cooldownUntilMs = Date.now() + 12_000;
+            // Brief backoff (20s) if server TTS is temporarily unreachable
+            this.cooldownUntilMs = Math.max(this.cooldownUntilMs, Date.now() + 20_000);
           }
           return null;
         }
@@ -291,6 +354,7 @@ export class StudioVoicePlayer {
           return null;
         }
 
+        void this.writeBrowserCache(cacheKey, arrayBuf);
         const decoded = await ctx.decodeAudioData(arrayBuf.slice(0));
         this.consecutiveServerFailures = 0;
         this.cooldownUntilMs = 0;
@@ -407,47 +471,117 @@ export class StudioVoicePlayer {
     }
 
     const myToken = ++this.playbackToken;
+    const requestedAtMs = typeof performance !== 'undefined' ? performance.now() : Date.now();
     void this.fetchAndDecode(ctx, req, cacheKey).then((decoded) => {
       if (!decoded) return;
       // Discard stale async responses if a newer line was requested while fetching
       if (this.playbackToken !== myToken) return;
+      // Never play a delayed unit click/order bark long after the tap — keep it cached for 0ms next click
+      const elapsedMs = (typeof performance !== 'undefined' ? performance.now() : Date.now()) - requestedAtMs;
+      if (priority === 'normal' && elapsedMs > 420) return;
       this.playDecodedBuffer(ctx, decoded, req, sfxScale, onVoiceDuck);
     });
   }
 
+  public prefetch(ctx: AudioContext, req: StudioSpeakRequest): void {
+    const cleanText = normalizeSpokenScript(req.text);
+    if (!cleanText) return;
+    const key = this.makeCacheKey(req);
+    if (this.bufferCache.has(key)) return;
+    const now = Date.now();
+    // Respect server cooldown and avoid firing background prefetches faster than free-tier RPM
+    if (now < this.cooldownUntilMs || now - this.lastPrefetchAtMs < 22_000 || this.inFlightFetch.size > 0) {
+      return;
+    }
+    this.lastPrefetchAtMs = now;
+    void this.fetchAndDecode(ctx, req, key);
+  }
+
+  private schedulePrewarmTrickle(ctx: AudioContext, delayMs: number): void {
+    if (this.prewarmTimer !== null) {
+      clearTimeout(this.prewarmTimer);
+      this.prewarmTimer = null;
+    }
+    if (this.prewarmQueue.length === 0) return;
+
+    this.prewarmTimer = setTimeout(() => {
+      this.prewarmTimer = null;
+      if (this.prewarmQueue.length === 0) return;
+
+      const now = Date.now();
+      if (now < this.cooldownUntilMs) {
+        const waitMs = Math.max(5_000, this.cooldownUntilMs - now + 1_500);
+        this.schedulePrewarmTrickle(ctx, waitMs);
+        return;
+      }
+
+      // Skip already cached items without consuming quota
+      let nextLine: StudioSpeakRequest | undefined;
+      let nextKey = '';
+      while (this.prewarmQueue.length > 0) {
+        const candidate = this.prewarmQueue.shift();
+        if (!candidate) break;
+        const k = this.makeCacheKey(candidate);
+        if (!this.bufferCache.has(k)) {
+          nextLine = candidate;
+          nextKey = k;
+          break;
+        }
+      }
+
+      if (!nextLine) return;
+
+      void this.fetchAndDecode(ctx, nextLine, nextKey).finally(() => {
+        if (this.prewarmQueue.length === 0) return;
+        const afterNow = Date.now();
+        const cooldownWait =
+          afterNow < this.cooldownUntilMs ? this.cooldownUntilMs - afterNow + 2_000 : 24_000;
+        this.schedulePrewarmTrickle(ctx, Math.max(24_000, cooldownWait));
+      });
+    }, delayMs);
+  }
+
   /**
-   * Silently prewarms core voice lines on the server and decodes them into client memory
-   * so early unit clicks respond with zero latency.
+   * Hydrates persisted voice clips immediately from browser CacheStorage (~1ms), then
+   * gently trickles uncached core lines one at a time so free-tier TTS quota is never exceeded.
    */
   public prewarmLines(ctx: AudioContext, lines: StudioSpeakRequest[]): void {
     if (typeof fetch === 'undefined' || lines.length === 0) return;
-    const unique = lines.slice(0, 6);
+    const seen = new Set<string>();
+    const deduped: StudioSpeakRequest[] = [];
+    for (const l of lines) {
+      const k = this.makeCacheKey(l);
+      if (!seen.has(k) && !this.bufferCache.has(k)) {
+        seen.add(k);
+        deduped.push(l);
+      }
+    }
+    const targets = deduped.slice(0, 12);
+    if (targets.length === 0) return;
 
-    // Fire server-side prewarm first, then decode into client AudioBuffer cache in background
-    void fetch('/api/tts/prewarm', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        lines: unique.map((l) => ({
-          text: normalizeSpokenScript(l.text),
-          role: l.role,
-          action: l.action ?? 'select',
-          pantheon: l.pantheon,
-          speaker: l.speaker,
-          dramatic: Boolean(l.dramatic),
-        })),
-      }),
-    })
-      .then(() => {
-        for (const line of unique) {
-          const key = this.makeCacheKey(line);
-          if (!this.bufferCache.has(key)) {
-            void this.fetchAndDecode(ctx, line, key);
+    // First hydrate any lines already persisted in browser CacheStorage at ~1ms speed (0 API calls)
+    const pendingServer: StudioSpeakRequest[] = [];
+    void Promise.all(
+      targets.map(async (line) => {
+        const key = this.makeCacheKey(line);
+        const hit = await this.readBrowserCache(key);
+        if (hit && hit.byteLength >= 64) {
+          try {
+            const decoded = await ctx.decodeAudioData(hit.slice(0));
+            this.cacheBuffer(key, decoded);
+            return;
+          } catch {
+            // fall back to trickle server fetch
           }
         }
+        pendingServer.push(line);
       })
-      .catch(() => {
-        // non-fatal prewarm
-      });
+    ).then(() => {
+      if (pendingServer.length === 0) return;
+      this.prewarmQueue = pendingServer;
+      const initialDelayMs =
+        Date.now() < this.cooldownUntilMs ? this.cooldownUntilMs - Date.now() + 2_000 : 2_500;
+      this.schedulePrewarmTrickle(ctx, initialDelayMs);
+    });
   }
 }

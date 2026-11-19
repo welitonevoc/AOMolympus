@@ -499,13 +499,72 @@ export class SoundManager {
       candidateEntries = bank[actionType] && bank[actionType].length > 0 ? bank[actionType] : bank.select;
     }
 
-    const chosen = this.pickRandomClip(candidateEntries, `${unitType}:${resolvedPantheon}:${actionType}`);
+    const isFemaleUnit = Boolean(unitProfile.isFemale);
+
+    const resolveStudioRole = (): ClientStudioVoiceRole => {
+      if (unitType === 'set') return 'villain_dark';
+      if (unitProfile.voiceRole === 'god') {
+        return isFemaleUnit ? 'major_god_female' : 'major_god_male';
+      }
+      if (unitProfile.voiceRole === 'titan') return 'titan';
+      if (unitType === 'oracle' || unitType === 'priest' || unitType === 'jiang_ziya') {
+        return 'mystic_priest';
+      }
+      if (unitProfile.voiceRole === 'hero' || options.isPromotedHero) {
+        return isFemaleUnit ? 'hero_female' : 'hero_commander';
+      }
+      if (unitProfile.voiceRole === 'citizen') {
+        return isFemaleUnit ? 'villager_female' : 'villager_male';
+      }
+      if (unitProfile.voiceRole === 'myth') {
+        if (isFemaleUnit) return 'hero_female';
+        return unitProfile.isDarkTone ? 'myth_beast' : 'warrior_male';
+      }
+      return isFemaleUnit ? 'warrior_female' : 'warrior_male';
+    };
+
+    const studioRole = resolveStudioRole();
+    const preliminaryDramatic =
+      unitProfile.voiceRole === 'god' ||
+      unitProfile.voiceRole === 'titan' ||
+      unitProfile.voiceRole === 'hero';
+
+    // Smart zero-latency selection: pick randomly, but if that line isn't in RAM yet and
+    // another variation in the bank IS cached in RAM, play the cached one immediately (<2ms)
+    // while background-prefetching the uncached variant for future variety.
+    let chosen = this.pickRandomClip(candidateEntries, `${unitType}:${resolvedPantheon}:${actionType}`);
+    const isChosenCached = soundEngine.hasCachedStudioVoice({
+      text: chosen.spoken,
+      role: studioRole,
+      action: effectiveAction,
+      dramatic: preliminaryDramatic,
+    });
+    if (!isChosenCached && candidateEntries.length > 1) {
+      const cachedAlt = candidateEntries.find((entry) =>
+        soundEngine.hasCachedStudioVoice({
+          text: entry.spoken,
+          role: studioRole,
+          action: effectiveAction,
+          dramatic: preliminaryDramatic,
+        })
+      );
+      if (cachedAlt) {
+        soundEngine.prefetchStudioVoice({
+          text: chosen.spoken,
+          role: studioRole,
+          action: effectiveAction,
+          pantheon: resolvedPantheon,
+          dramatic: preliminaryDramatic,
+        });
+        chosen = cachedAlt;
+      }
+    }
+
     let phrase = chosen.phrase;
     let translation = chosen.pt;
     let spoken = chosen.spoken;
     let syllables = chosen.syllables;
 
-    const isFemaleUnit = Boolean(unitProfile.isFemale);
     if (resolvedPantheon === 'greek' && isFemaleUnit && phrase === 'Étimos.') {
       phrase = 'Étimi.';
       translation = 'Pronta.';
@@ -513,7 +572,7 @@ export class SoundManager {
     }
 
     let speakerName: string | undefined = unitProfile.heroTitle;
-    let dramatic = unitProfile.voiceRole === 'god' || unitProfile.voiceRole === 'titan' || unitProfile.voiceRole === 'hero';
+    let dramatic = preliminaryDramatic;
 
     const godLine = GOD_SOLO_LINES[unitType];
     if (godLine) {
@@ -580,28 +639,6 @@ export class SoundManager {
       spoken = effectiveAction === 'attack' ? 'Vou esmagar todos eles!' : chosen.spoken;
     }
 
-    const resolveStudioRole = (): ClientStudioVoiceRole => {
-      if (unitType === 'set') return 'villain_dark';
-      if (unitProfile.voiceRole === 'god') {
-        return isFemaleUnit ? 'major_god_female' : 'major_god_male';
-      }
-      if (unitProfile.voiceRole === 'titan') return 'titan';
-      if (unitType === 'oracle' || unitType === 'priest' || unitType === 'jiang_ziya') {
-        return 'mystic_priest';
-      }
-      if (unitProfile.voiceRole === 'hero' || options.isPromotedHero) {
-        return isFemaleUnit ? 'hero_female' : 'hero_commander';
-      }
-      if (unitProfile.voiceRole === 'citizen') {
-        return isFemaleUnit ? 'villager_female' : 'villager_male';
-      }
-      if (unitProfile.voiceRole === 'myth') {
-        if (isFemaleUnit) return 'hero_female';
-        return unitProfile.isDarkTone ? 'myth_beast' : 'warrior_male';
-      }
-      return isFemaleUnit ? 'warrior_female' : 'warrior_male';
-    };
-
     const speechRate =
       (effectiveAction === 'attack' ? 1.06 : unitProfile.rateScale) * (options.isPromotedHero ? 0.98 : 1.0);
     const kindPitchMult = unitProfile.pitchScale * (options.isPromotedHero ? 0.94 : 1.0);
@@ -624,7 +661,7 @@ export class SoundManager {
       groupSize: options.groupSize ?? 1,
       audioUrl: chosen.audioUrl,
       respectCooldown: options.respectCooldown,
-      studioRole: resolveStudioRole(),
+      studioRole,
       pantheon: resolvedPantheon,
       speaker: speakerName,
       dramatic,

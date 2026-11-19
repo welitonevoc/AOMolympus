@@ -55,6 +55,15 @@ import {
   setActiveScenarioPlaytest,
 } from '../maps';
 import { EditorModalId, ScenarioEditorModals } from './ScenarioEditorModals';
+import {
+  EDITOR_COMMANDS_LIST,
+  EditorSnapshot,
+  makeSkyGradientTexture,
+  sampleGridHeight,
+  TERRAIN_CODE_COLORS,
+  TerrainClipboard,
+  TopMenuId,
+} from './scenarioEditor/editorHelpers';
 
 interface ScenarioEditorProps {
   onClose: () => void;
@@ -66,97 +75,6 @@ interface ScenarioEditorProps {
     options?: MatchStartOptions
   ) => void;
   gameSpeed?: number;
-}
-
-interface EditorSnapshot {
-  heightGrid: number[];
-  terrainGrid: number[];
-  objects: PlacedScenarioObject[];
-}
-
-interface TerrainClipboard {
-  cols: number;
-  rows: number;
-  heights: number[];
-  terrains: number[];
-}
-
-type TopMenuId = 'map' | 'edit' | 'scenario' | 'world' | 'terrain' | 'objects' | null;
-
-const EDITOR_COMMANDS_LIST: {
-  tool: EditorToolId;
-  label: string;
-  enName: string;
-  presetForest?: EditorForestStyle;
-}[] = [
-  { tool: 'elevate', label: 'Alterar Elevação', enName: 'Change elevation' },
-  { tool: 'elevate_sample', label: 'Elevação por Amostra', enName: 'Change elevation by sample' },
-  { tool: 'smooth', label: 'Suavizar Terreno', enName: 'Smooth' },
-  { tool: 'select_move', label: 'Mover Unidade / Objeto', enName: 'Move unit' },
-  { tool: 'roughen', label: 'Tornar Áspero', enName: 'Roughen' },
-  { tool: 'paint_terrain', label: 'Modificar Terreno', enName: 'Modify terrain' },
-  { tool: 'paint_land', label: 'Pintar Terra', enName: 'Paint' },
-  { tool: 'paint_forest', label: 'Pintar Floresta de Pinheiros', enName: 'Paint Pine Forest', presetForest: 'nordic_pine' },
-  { tool: 'elevate_circular', label: 'Elevação Circular', enName: 'Change elevation circular' },
-  { tool: 'paint_water', label: 'Pintar Água', enName: 'Paint Water' },
-  { tool: 'edit_water_beautify', label: 'Editar / Embelezar Água', enName: 'Edit Water' },
-  { tool: 'paint_cliff', label: 'Pintar Penhasco', enName: 'Paint Cliff' },
-];
-
-const TERRAIN_CODE_COLORS: Record<number, THREE.Color> = {
-  0: new THREE.Color(0x165e82), // Deep Water
-  1: new THREE.Color(0x587a43), // Grass
-  2: new THREE.Color(0x8c7758), // Road / Dirt
-  3: new THREE.Color(0xc9ae74), // Sand
-  4: new THREE.Color(0x746e68), // Cliff / Rock
-  5: new THREE.Color(0x3f7b3e), // Fertile
-  6: new THREE.Color(0xdbe5ef), // Snow
-  7: new THREE.Color(0x3b522c), // Forest Floor
-  8: new THREE.Color(0x3ea4b3), // Shallow Water (Retold)
-  9: new THREE.Color(0xd94814), // Lava / HadesLava
-  10: new THREE.Color(0x4a4447), // HadesAsh / CharredDirt
-  11: new THREE.Color(0xe6dfd0), // OlympusMarble
-};
-
-function makeSkyGradientTexture(topHex: string, horizonHex: string): THREE.CanvasTexture {
-  const c = document.createElement('canvas');
-  c.width = 4;
-  c.height = 128;
-  const ctx = c.getContext('2d');
-  if (ctx) {
-    const grad = ctx.createLinearGradient(0, 0, 0, 128);
-    grad.addColorStop(0, topHex);
-    grad.addColorStop(0.62, horizonHex);
-    grad.addColorStop(1, '#10141c');
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, 4, 128);
-  }
-  const tex = new THREE.CanvasTexture(c);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  return tex;
-}
-
-function sampleGridHeight(doc: ScenarioDocument, wx: number, wz: number): number {
-  const gs = doc.gridSize;
-  const halfW = doc.widthMeters / 2;
-  const halfD = doc.depthMeters / 2;
-  const u = Math.max(0, Math.min(1, (wx + halfW) / Math.max(1, doc.widthMeters)));
-  const v = Math.max(0, Math.min(1, (wz + halfD) / Math.max(1, doc.depthMeters)));
-  const fx = u * (gs - 1);
-  const fz = v * (gs - 1);
-  const x0 = Math.floor(fx);
-  const z0 = Math.floor(fz);
-  const x1 = Math.min(gs - 1, x0 + 1);
-  const z1 = Math.min(gs - 1, z0 + 1);
-  const tx = fx - x0;
-  const tz = fz - z0;
-  const h00 = doc.heightGrid[z0 * gs + x0] ?? 0.35;
-  const h10 = doc.heightGrid[z0 * gs + x1] ?? 0.35;
-  const h01 = doc.heightGrid[z1 * gs + x0] ?? 0.35;
-  const h11 = doc.heightGrid[z1 * gs + x1] ?? 0.35;
-  const hx0 = h00 + (h10 - h00) * tx;
-  const hx1 = h01 + (h11 - h01) * tx;
-  return hx0 + (hx1 - hx0) * tz + doc.globalElevationOffset;
 }
 
 export const ScenarioEditor: React.FC<ScenarioEditorProps> = ({ onClose, onStartMatch, gameSpeed = 1 }) => {
@@ -542,7 +460,7 @@ export const ScenarioEditor: React.FC<ScenarioEditorProps> = ({ onClose, onStart
     renderer.setSize(mount.clientWidth || 960, mount.clientHeight || 600);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.08;
+    renderer.toneMappingExposure = 0.96;
     renderer.shadowMap.enabled = !isSw;
     if (!isSw) renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     mount.innerHTML = '';
@@ -554,9 +472,11 @@ export const ScenarioEditor: React.FC<ScenarioEditorProps> = ({ onClose, onStart
 
     // RoomEnvironment IBL
     const pmrem = new THREE.PMREMGenerator(renderer);
-    const envRT = pmrem.fromScene(new RoomEnvironment(), 0.04);
+    const roomEnv = new RoomEnvironment();
+    const envRT = pmrem.fromScene(roomEnv, 0.04);
     scene.environment = envRT.texture;
-    scene.environmentIntensity = 0.45;
+    scene.environmentIntensity = 0.40;
+    roomEnv.dispose();
     pmrem.dispose();
 
     const camera = new THREE.PerspectiveCamera(
@@ -567,11 +487,11 @@ export const ScenarioEditor: React.FC<ScenarioEditorProps> = ({ onClose, onStart
     );
     cameraRef.current = camera;
 
-    const hemi = new THREE.HemisphereLight(0x8ec5fc, 0x4b5c3e, 0.95);
+    const hemi = new THREE.HemisphereLight(0x8ec5fc, 0x4b5c3e, 0.72);
     scene.add(hemi);
     hemiLightRef.current = hemi;
 
-    const sun = new THREE.DirectionalLight(0xfff5dc, 2.4);
+    const sun = new THREE.DirectionalLight(0xfff5dc, 1.85);
     sun.position.set(60, 85, 45);
     if (!isSw) {
       sun.castShadow = true;

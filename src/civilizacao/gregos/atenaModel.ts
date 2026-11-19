@@ -191,7 +191,7 @@ function createMaterials(textures: AtenaTextures): AtenaMaterials {
     divineLight: new THREE.MeshStandardMaterial({
       color: 0xfef9c3,
       emissive: new THREE.Color(0xfacc15),
-      emissiveIntensity: 3.2,
+      emissiveIntensity: 1.55,
       roughness: 0.1,
     }),
     chiton: new THREE.MeshStandardMaterial({

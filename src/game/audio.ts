@@ -1,1002 +1,55 @@
-import { AgeLevel, GodPowerId, PantheonId, UnitKind, UnitVoiceAction, UnitVoiceLineInfo } from './types';
+import {
+  AgeLevel,
+  FaunaKind,
+  GodPowerId,
+  PantheonId,
+  UnitKind,
+  UnitVoiceAction,
+  UnitVoiceLineInfo,
+} from './types';
+import type { MythSpecialEffectKind } from './matchAnalytics';
 import {
   ClientStudioVoiceRole,
   StudioVoicePlayer,
   inferVoiceRoleFromSpeaker,
 } from './audio/StudioVoicePlayer';
+import {
+  BattleSfxEngine,
+  BattleWeaponClass,
+  FaunaSoundEvent,
+  UnderAttackCategory,
+} from './audio/BattleSfxEngine';
 
-export type MusicMood = 'standard' | 'mellow';
-export type MusicScene = 'title' | 'match' | 'victory' | 'defeat' | 'credits';
+import {
+  MATCH_MUSIC_PLAYLIST,
+  MUSIC_TRACKS,
+  MusicMood,
+  MusicScene,
+  MusicTrackSpec,
+  PANTHEON_THEME_TRACK,
+  PANTHEON_TRACK_POOLS,
+} from "./audio/musicCatalog";
+import {
+  CULTURE_VOICE_BANK,
+  CulturalVoiceEntry,
+  CultureVoiceProfile,
+} from "./audio/cultureVoiceBank";
 
-export interface MusicTrackSpec {
-  id: string;
-  title: string;
-  category: 'state' | 'civilization' | 'match';
-  subtitle: string;
-  pantheon?: PantheonId;
-  bpm: number;
-  rootHz: number;
-  scale: number[];
-  leadWave: OscillatorType;
-  bassWave: OscillatorType;
-  percussionStyle: 'orchestral' | 'nile' | 'nordic' | 'mystic' | 'eastern' | 'light';
-  melody: number[];
-  arp: number[];
-  bass: number[];
-  audioUrl?: string;
-}
-
-export const MUSIC_TRACKS: Record<string, MusicTrackSpec> = {
-  // Temas de Estado do Jogo
-  cat_mittens: {
-    id: 'cat_mittens',
-    title: 'A Cat Named Mittens',
-    category: 'state',
-    subtitle: 'Tema Principal — Abertura Mitológica',
-    bpm: 98,
-    rootHz: 220.0,
-    scale: [0, 2, 3, 5, 7, 9, 10, 12, 14, 15, 17, 19],
-    leadWave: 'triangle',
-    bassWave: 'sine',
-    percussionStyle: 'light',
-    melody: [4, -1, 5, 7, 6, -1, 4, 2, 3, -1, 4, 5, 4, 2, 0, -1],
-    arp: [0, 2, 4, 7, 4, 2, 0, 4, 1, 3, 5, 7, 5, 3, 2, 0],
-    bass: [0, -1, -1, -1, 4, -1, -1, -1, 2, -1, -1, -1, 4, -1, 0, -1],
-  },
-  doorknob: {
-    id: 'doorknob',
-    title: 'If You Can Use a Doorknob',
-    category: 'state',
-    subtitle: 'Tema de Vitória — Triunfo dos Deuses',
-    bpm: 120,
-    rootHz: 261.63,
-    scale: [0, 2, 4, 5, 7, 9, 11, 12, 14, 16, 17, 19],
-    leadWave: 'sawtooth',
-    bassWave: 'triangle',
-    percussionStyle: 'orchestral',
-    melody: [0, 2, 4, -1, 7, -1, 7, 9, 7, 5, 4, 5, 7, -1, 9, 7],
-    arp: [0, 4, 7, 9, 7, 4, 0, 4, 2, 5, 7, 11, 9, 7, 4, 7],
-    bass: [0, -1, 0, -1, 4, -1, 4, -1, 3, -1, 4, -1, 0, -1, 4, -1],
-  },
-  other_sunset: {
-    id: 'other_sunset',
-    title: "Ma'am... Some Other Sunset",
-    category: 'state',
-    subtitle: 'Tema de Derrota — Crepúsculo Melancólico',
-    bpm: 74,
-    rootHz: 196.0,
-    scale: [0, 2, 3, 5, 7, 8, 10, 12, 14, 15, 17, 19],
-    leadWave: 'sine',
-    bassWave: 'sine',
-    percussionStyle: 'light',
-    melody: [4, -1, 3, 2, 0, -1, -1, 2, 3, -1, 2, 1, 0, -1, -1, -1],
-    arp: [0, -1, 4, -1, 2, -1, 4, -1, 1, -1, 5, -1, 0, -1, -1, -1],
-    bass: [0, -1, -1, -1, 3, -1, -1, -1, 4, -1, -1, -1, 0, -1, -1, -1],
-  },
-  garys_reserve: {
-    id: 'garys_reserve',
-    title: "Gary's Reserve",
-    category: 'state',
-    subtitle: 'Créditos Finais — Epílogo do Olimpo',
-    bpm: 84,
-    rootHz: 246.94,
-    scale: [0, 2, 4, 6, 7, 9, 11, 12, 14, 16, 18, 19],
-    leadWave: 'triangle',
-    bassWave: 'sine',
-    percussionStyle: 'light',
-    melody: [0, 2, 4, -1, 6, 4, 2, -1, 4, 5, 7, -1, 6, 4, 2, 0],
-    arp: [0, 4, 7, 4, 2, 6, 7, 4, 0, 4, 7, 9, 7, 4, 2, 0],
-    bass: [0, -1, -1, 0, 4, -1, -1, 4, 2, -1, -1, 2, 4, -1, 0, -1],
-  },
-
-  // Temas Exclusivos por Civilização (3 músicas por panteão jogável)
-  greek_to_me: {
-    id: 'greek_to_me',
-    title: 'Greek to Me',
-    category: 'civilization',
-    pantheon: 'greek',
-    subtitle: 'Tema Grego I — Orquestral Épico Mediterrâneo',
-    bpm: 112,
-    rootHz: 220.0,
-    scale: [0, 2, 3, 5, 7, 9, 10, 12, 14, 15, 17, 19],
-    leadWave: 'triangle',
-    bassWave: 'triangle',
-    percussionStyle: 'orchestral',
-    melody: [0, 4, 5, 4, 2, 3, 4, -1, 7, 5, 4, 2, 3, 2, 0, -1],
-    arp: [0, 2, 4, 7, 4, 2, 0, 4, 0, 3, 5, 7, 5, 3, 2, 0],
-    bass: [0, -1, 0, 4, 2, -1, 2, 4, 3, -1, 4, -1, 0, -1, 4, -1],
-  },
-  olympus_dawn: {
-    id: 'olympus_dawn',
-    title: 'Alvorada do Olimpo',
-    category: 'civilization',
-    pantheon: 'greek',
-    subtitle: 'Tema Grego II — Lira Dourada do Monte Olimpo',
-    bpm: 98,
-    rootHz: 246.94,
-    scale: [0, 2, 4, 5, 7, 9, 11, 12, 14, 16, 19],
-    leadWave: 'sine',
-    bassWave: 'triangle',
-    percussionStyle: 'orchestral',
-    melody: [0, 2, 4, 7, 5, 4, 2, -1, 4, 5, 7, 9, 7, 5, 4, 2],
-    arp: [0, 4, 7, 9, 7, 4, 0, 4, 2, 5, 7, 9, 7, 5, 2, 0],
-    bass: [0, -1, -1, 4, 2, -1, 3, -1, 4, -1, 2, -1, 0, -1, 4, -1],
-  },
-  aegean_trireme: {
-    id: 'aegean_trireme',
-    title: 'Trirremes do Egeu',
-    category: 'civilization',
-    pantheon: 'greek',
-    subtitle: 'Tema Grego III — Marcha Marítima de Poseidon',
-    bpm: 118,
-    rootHz: 196.0,
-    scale: [0, 2, 3, 5, 7, 8, 10, 12, 14, 15, 19],
-    leadWave: 'sawtooth',
-    bassWave: 'triangle',
-    percussionStyle: 'orchestral',
-    melody: [0, 3, 4, 5, 4, 3, 2, 0, 4, 5, 7, 5, 4, 2, 0, -1],
-    arp: [0, 2, 4, 5, 4, 2, 0, 3, 2, 4, 7, 4, 2, 3, 0, -1],
-    bass: [0, 0, -1, 4, 2, -1, 3, -1, 0, -1, 4, -1, 5, 4, 2, 0],
-  },
-  nd_nile: {
-    id: 'nd_nile',
-    title: 'Templos de Heliópolis',
-    category: 'civilization',
-    pantheon: 'egyptian',
-    subtitle: 'Tema Egípcio · Cordas e Percussão de Heliópolis',
-    bpm: 108,
-    rootHz: 207.65,
-    scale: [0, 1, 4, 5, 7, 8, 10, 12, 13, 16, 17, 19],
-    leadWave: 'sawtooth',
-    bassWave: 'triangle',
-    percussionStyle: 'nile',
-    melody: [0, 1, 4, 5, 4, 1, 0, -1, 7, 5, 4, 5, 4, 1, 0, -1],
-    arp: [0, 4, 5, 7, 5, 4, 1, 0, 0, 4, 7, 8, 7, 4, 1, 0],
-    bass: [0, -1, 0, -1, 1, -1, 0, -1, 4, -1, 1, -1, 0, -1, 0, -1],
-  },
-  serenidade_do_nilo: {
-    id: 'serenidade_do_nilo',
-    title: 'Serenidade do Nilo',
-    category: 'civilization',
-    pantheon: 'egyptian',
-    subtitle: 'Tema Egípcio · Serenidade do Nilo (Exclusivo)',
-    bpm: 96,
-    rootHz: 207.65,
-    scale: [0, 1, 4, 5, 7, 8, 10, 12, 13, 16, 17, 19],
-    leadWave: 'triangle',
-    bassWave: 'sine',
-    percussionStyle: 'nile',
-    melody: [0, 1, 4, 5, 7, 5, 4, 1, 0, 4, 5, 4, 1, 0, -1, -1],
-    arp: [0, 4, 5, 7, 8, 7, 5, 4, 1, 4, 7, 8, 7, 4, 1, 0],
-    bass: [0, -1, 1, -1, 4, -1, 1, -1, 0, -1, 4, -1, 1, -1, 0, -1],
-  },
-  the_niles_quiet_breath: {
-    id: 'the_niles_quiet_breath',
-    title: "The Nile's Quiet Breath",
-    category: 'civilization',
-    pantheon: 'egyptian',
-    subtitle: 'Tema Egípcio · The Nile’s Quiet Breath (Exclusivo)',
-    bpm: 92,
-    rootHz: 207.65,
-    scale: [0, 1, 4, 5, 7, 8, 10, 12, 13, 16, 17, 19],
-    leadWave: 'triangle',
-    bassWave: 'sine',
-    percussionStyle: 'nile',
-    melody: [0, 1, 4, 5, 7, 5, 4, 1, 0, 4, 5, 4, 1, 0, -1, -1],
-    arp: [0, 4, 5, 7, 8, 7, 5, 4, 1, 4, 7, 8, 7, 4, 1, 0],
-    bass: [0, -1, 1, -1, 4, -1, 1, -1, 0, -1, 4, -1, 1, -1, 0, -1],
-  },
-  of_norse_not: {
-    id: 'of_norse_not',
-    title: 'Of Norse Not!',
-    category: 'civilization',
-    pantheon: 'norse',
-    subtitle: 'Tema Nórdico I — Metais Pesados e Tambores de Midgard',
-    bpm: 104,
-    rootHz: 164.81,
-    scale: [0, 2, 3, 5, 7, 8, 10, 12, 14, 15, 19],
-    leadWave: 'sawtooth',
-    bassWave: 'sawtooth',
-    percussionStyle: 'nordic',
-    melody: [0, -1, 3, 4, 5, -1, 4, 2, 0, 2, 3, -1, 4, 3, 2, 0],
-    arp: [0, 4, 7, 4, 0, 3, 7, 3, 0, 5, 7, 5, 2, 4, 0, -1],
-    bass: [0, 0, -1, 0, 3, -1, 2, -1, 0, 0, -1, 0, 4, -1, 2, -1],
-  },
-  valhalla_horns: {
-    id: 'valhalla_horns',
-    title: 'Trompas de Valhalla',
-    category: 'civilization',
-    pantheon: 'norse',
-    subtitle: 'Tema Nórdico II — Brado dos Heróis de Asgard',
-    bpm: 112,
-    rootHz: 174.61,
-    scale: [0, 2, 3, 5, 7, 8, 10, 12, 14, 15, 19],
-    leadWave: 'sawtooth',
-    bassWave: 'triangle',
-    percussionStyle: 'nordic',
-    melody: [0, 4, 5, 7, 5, 4, 2, 0, 3, 4, 5, 7, 4, 2, 0, -1],
-    arp: [0, 3, 7, 3, 0, 4, 7, 4, 2, 5, 7, 5, 0, 3, 7, 3],
-    bass: [0, -1, 0, 4, 2, -1, 3, -1, 0, -1, 4, -1, 2, -1, 0, -1],
-  },
-  fjord_march: {
-    id: 'fjord_march',
-    title: 'Neve nos Fiordes',
-    category: 'civilization',
-    pantheon: 'norse',
-    subtitle: 'Tema Nórdico III — Ecos da Tempestade Invernal',
-    bpm: 94,
-    rootHz: 146.83,
-    scale: [0, 2, 3, 5, 7, 8, 10, 12, 14, 15],
-    leadWave: 'triangle',
-    bassWave: 'sine',
-    percussionStyle: 'nordic',
-    melody: [4, -1, 3, 2, 0, -1, 2, 4, 5, 4, 3, 2, 0, -1, -1, -1],
-    arp: [0, 3, 5, 7, 5, 3, 0, 4, 1, 3, 5, 7, 5, 3, 2, 0],
-    bass: [0, -1, -1, 0, 3, -1, -1, 2, 4, -1, -1, 2, 0, -1, -1, 0],
-  },
-  hotlantis: {
-    id: 'hotlantis',
-    title: 'Hotlantis',
-    category: 'civilization',
-    pantheon: 'atlantean',
-    subtitle: 'Tema Atlante I — Atmosfera Mística de Oricalco',
-    bpm: 110,
-    rootHz: 246.94,
-    scale: [0, 2, 4, 6, 7, 9, 11, 12, 14, 16, 18, 19],
-    leadWave: 'triangle',
-    bassWave: 'sine',
-    percussionStyle: 'mystic',
-    melody: [0, 3, 4, 7, 6, 4, 2, -1, 4, 6, 7, 9, 7, 4, 3, 0],
-    arp: [0, 4, 6, 7, 9, 7, 6, 4, 2, 4, 7, 9, 11, 9, 7, 4],
-    bass: [0, -1, -1, 4, 3, -1, 2, -1, 0, -1, 4, -1, 5, -1, 4, -1],
-  },
-  orichalcum_tides: {
-    id: 'orichalcum_tides',
-    title: 'Marés de Oricalco',
-    category: 'civilization',
-    pantheon: 'atlantean',
-    subtitle: 'Tema Atlante II — Cristais da Nova Atlântida',
-    bpm: 102,
-    rootHz: 261.63,
-    scale: [0, 2, 4, 6, 7, 9, 11, 12, 14, 16, 18],
-    leadWave: 'sine',
-    bassWave: 'triangle',
-    percussionStyle: 'mystic',
-    melody: [0, 4, 6, 7, 6, 4, 2, 0, 2, 4, 6, 9, 7, 6, 4, -1],
-    arp: [0, 2, 4, 6, 7, 9, 7, 6, 4, 2, 4, 7, 9, 7, 4, 2],
-    bass: [0, -1, 2, -1, 4, -1, 3, -1, 0, -1, 4, -1, 2, -1, 0, -1],
-  },
-  kronos_echo: {
-    id: 'kronos_echo',
-    title: 'Ecos de Cronos',
-    category: 'civilization',
-    pantheon: 'atlantean',
-    subtitle: 'Tema Atlante III — Vórtice Temporal dos Titãs',
-    bpm: 116,
-    rootHz: 220.0,
-    scale: [0, 2, 4, 6, 7, 9, 11, 12, 14, 16],
-    leadWave: 'sawtooth',
-    bassWave: 'triangle',
-    percussionStyle: 'mystic',
-    melody: [4, 6, 7, 9, 7, 6, 4, 2, 0, 4, 6, 7, 6, 4, 2, 0],
-    arp: [0, 4, 6, 9, 7, 4, 2, 6, 0, 3, 6, 9, 7, 4, 2, 0],
-    bass: [0, 0, -1, 4, 3, -1, 2, -1, 0, -1, 4, -1, 5, 4, 2, 0],
-  },
-  kuafu_panda: {
-    id: 'kuafu_panda',
-    title: 'Pilares Imortais',
-    category: 'civilization',
-    pantheon: 'chinese',
-    subtitle: 'Tema Chinês I — Pentatônica Imperial e Guzheng',
-    bpm: 106,
-    rootHz: 261.63,
-    scale: [0, 2, 4, 7, 9, 12, 14, 16, 19, 21],
-    leadWave: 'triangle',
-    bassWave: 'sine',
-    percussionStyle: 'eastern',
-    melody: [0, 2, 4, -1, 7, 5, 4, 2, 3, 4, 5, -1, 4, 2, 0, -1],
-    arp: [0, 3, 4, 7, 5, 4, 3, 0, 2, 4, 5, 7, 5, 4, 2, 0],
-    bass: [0, -1, 3, -1, 4, -1, 0, -1, 2, -1, 4, -1, 0, -1, 3, -1],
-  },
-  immortal_pillars: {
-    id: 'immortal_pillars',
-    title: 'Jardins de Nü Wa',
-    category: 'civilization',
-    pantheon: 'chinese',
-    subtitle: 'Tema Chinês II — Flauta de Jade e Sinos Celestes',
-    bpm: 94,
-    rootHz: 293.66,
-    scale: [0, 2, 4, 7, 9, 12, 14, 16, 19, 21],
-    leadWave: 'sine',
-    bassWave: 'sine',
-    percussionStyle: 'eastern',
-    melody: [4, -1, 3, 2, 0, 2, 4, -1, 5, 4, 3, 2, 0, -1, 2, 0],
-    arp: [0, 2, 4, 7, 9, 7, 4, 2, 0, 2, 4, 5, 4, 2, 0, -1],
-    bass: [0, -1, -1, 4, 2, -1, 0, -1, 3, -1, 4, -1, 0, -1, -1, 0],
-  },
-  dragon_river: {
-    id: 'dragon_river',
-    title: 'Fúria do Rio Amarelo',
-    category: 'civilization',
-    pantheon: 'chinese',
-    subtitle: 'Tema Chinês III — Tambores de Guerra de Fu Xi',
-    bpm: 118,
-    rootHz: 220.0,
-    scale: [0, 2, 4, 7, 9, 12, 14, 16, 19],
-    leadWave: 'sawtooth',
-    bassWave: 'triangle',
-    percussionStyle: 'eastern',
-    melody: [0, 4, 5, 7, 5, 4, 2, 0, 2, 4, 7, 5, 4, 2, 0, -1],
-    arp: [0, 4, 7, 4, 0, 2, 4, 7, 2, 4, 5, 7, 4, 2, 0, -1],
-    bass: [0, 0, -1, 4, 2, -1, 3, -1, 0, -1, 4, -1, 5, 4, 2, 0],
-  },
-  nori_grets: {
-    id: 'nori_grets',
-    title: 'Nori Grets',
-    category: 'civilization',
-    pantheon: 'japanese',
-    subtitle: 'Tema Japonês — Koto, Sopro e Taiko',
-    bpm: 104,
-    rootHz: 246.94,
-    scale: [0, 1, 5, 7, 8, 12, 13, 17, 19, 20],
-    leadWave: 'triangle',
-    bassWave: 'sine',
-    percussionStyle: 'eastern',
-    melody: [0, 1, 2, -1, 3, 4, 3, 2, 1, 0, 2, -1, 3, 2, 1, 0],
-    arp: [0, 2, 3, 5, 4, 3, 2, 0, 1, 2, 3, 4, 3, 2, 1, 0],
-    bass: [0, -1, -1, 2, 3, -1, 2, -1, 0, -1, 1, -1, 2, -1, 0, -1],
-  },
-  aztec_sun: {
-    id: 'aztec_sun',
-    title: 'Sol de Tenochtitlán',
-    category: 'civilization',
-    pantheon: 'aztec',
-    subtitle: 'Tema Asteca — Tambores Solares e Flauta Mexica',
-    bpm: 112,
-    rootHz: 233.08,
-    scale: [0, 3, 5, 7, 10, 12, 15, 17, 19],
-    leadWave: 'triangle',
-    bassWave: 'triangle',
-    percussionStyle: 'nile',
-    melody: [0, 2, 3, 4, 3, 2, 0, -1, 4, 3, 2, 1, 2, 1, 0, -1],
-    arp: [0, 2, 4, 2, 0, 3, 4, 2, 0, 1, 3, 4, 3, 2, 1, 0],
-    bass: [0, -1, 0, 2, 3, -1, 2, -1, 0, -1, 3, -1, 4, -1, 2, -1],
-  },
-  roman_legion: {
-    id: 'roman_legion',
-    title: 'Glória da Legião',
-    category: 'civilization',
-    pantheon: 'roman',
-    subtitle: 'Tema Romano — Fanfarra Imperial de Bronze',
-    bpm: 114,
-    rootHz: 220.0,
-    scale: [0, 2, 4, 5, 7, 9, 10, 12, 14, 16, 19],
-    leadWave: 'sawtooth',
-    bassWave: 'triangle',
-    percussionStyle: 'orchestral',
-    melody: [0, 4, 4, 5, 7, -1, 5, 4, 2, 4, 5, 4, 2, 0, -1, -1],
-    arp: [0, 2, 4, 7, 4, 2, 0, 4, 1, 3, 5, 7, 5, 3, 2, 0],
-    bass: [0, -1, 0, -1, 4, -1, 2, -1, 3, -1, 4, -1, 0, -1, 4, -1],
-  },
-  eldritch_abyss: {
-    id: 'eldritch_abyss',
-    title: 'Ecos do Abismo',
-    category: 'civilization',
-    pantheon: 'eldritch',
-    subtitle: 'Tema Eldritch — Ressonância Cósmica Sombria',
-    bpm: 88,
-    rootHz: 146.83,
-    scale: [0, 1, 4, 6, 7, 8, 11, 12, 13, 18],
-    leadWave: 'sine',
-    bassWave: 'sawtooth',
-    percussionStyle: 'mystic',
-    melody: [0, -1, 1, 3, 4, -1, 6, 4, 3, -1, 1, 0, 4, 3, 1, -1],
-    arp: [0, 3, 4, 6, 4, 3, 1, 0, 0, 2, 4, 7, 6, 3, 1, 0],
-    bass: [0, -1, -1, 1, 3, -1, -1, 2, 0, -1, 4, -1, 1, -1, 0, -1],
-  },
-  celtic_mist: {
-    id: 'celtic_mist',
-    title: 'Brumas de Tuatha',
-    category: 'civilization',
-    pantheon: 'celtic',
-    subtitle: 'Tema Celta — Harpa das Terras Altas',
-    bpm: 106,
-    rootHz: 220.0,
-    scale: [0, 2, 3, 5, 7, 9, 10, 12, 14, 17],
-    leadWave: 'triangle',
-    bassWave: 'sine',
-    percussionStyle: 'light',
-    melody: [0, 2, 4, 5, 4, 2, 3, 1, 0, 2, 4, 7, 5, 4, 2, 0],
-    arp: [0, 4, 7, 4, 2, 5, 7, 5, 0, 3, 7, 4, 2, 4, 5, 0],
-    bass: [0, -1, 2, -1, 4, -1, 3, -1, 0, -1, 4, -1, 2, -1, 0, -1],
-  },
-  babylon_ziggurat: {
-    id: 'babylon_ziggurat',
-    title: 'Zigurates do Eufrates',
-    category: 'civilization',
-    pantheon: 'babylonian',
-    subtitle: 'Tema Babilônico — Percussão Real da Mesopotâmia',
-    bpm: 105,
-    rootHz: 196.0,
-    scale: [0, 1, 4, 5, 7, 8, 11, 12, 13, 16],
-    leadWave: 'triangle',
-    bassWave: 'triangle',
-    percussionStyle: 'nile',
-    melody: [0, 1, 4, 5, 7, 5, 4, 1, 0, 4, 5, 4, 2, 1, 0, -1],
-    arp: [0, 4, 5, 7, 5, 4, 2, 0, 1, 4, 7, 8, 7, 4, 1, 0],
-    bass: [0, -1, 0, 1, 4, -1, 1, -1, 0, -1, 4, -1, 5, -1, 1, -1],
-  },
-  lakota_wind: {
-    id: 'lakota_wind',
-    title: 'Ventos da Planície',
-    category: 'civilization',
-    pantheon: 'lakota',
-    subtitle: 'Tema Lakota — Flauta Nativa e Tambor da Terra',
-    bpm: 102,
-    rootHz: 220.0,
-    scale: [0, 3, 5, 7, 10, 12, 15, 17, 19],
-    leadWave: 'sine',
-    bassWave: 'triangle',
-    percussionStyle: 'light',
-    melody: [4, -1, 3, 2, 0, -1, 2, 3, 4, 5, 4, 2, 1, 2, 0, -1],
-    arp: [0, 2, 4, 5, 4, 2, 0, 2, 0, 3, 4, 5, 4, 3, 2, 0],
-    bass: [0, -1, 0, -1, 2, -1, 0, -1, 3, -1, 2, -1, 0, -1, 0, -1],
-  },
-  jotunn_frost: {
-    id: 'jotunn_frost',
-    title: 'Fimbulvetr',
-    category: 'civilization',
-    pantheon: 'jotunn',
-    subtitle: 'Tema Jotunn — Ecos Glaciais de Jotunheim',
-    bpm: 92,
-    rootHz: 146.83,
-    scale: [0, 2, 3, 5, 7, 8, 10, 12, 14, 15],
-    leadWave: 'sawtooth',
-    bassWave: 'sawtooth',
-    percussionStyle: 'nordic',
-    melody: [0, -1, 2, 3, 4, -1, 1, 0, 4, -1, 5, 4, 3, 2, 0, -1],
-    arp: [0, 4, 7, 4, 1, 4, 7, 4, 0, 3, 7, 3, 2, 4, 0, -1],
-    bass: [0, -1, -1, 0, 3, -1, -1, 2, 4, -1, -1, 3, 0, -1, -1, 0],
-  },
-
-  // 11 Músicas de Partida Compartilhadas (Standard & Mellow/Quiet Mix)
-  eat_your_potatoes: {
-    id: 'eat_your_potatoes',
-    title: 'Eat Your Potatoes',
-    category: 'match',
-    subtitle: 'Tema de Partida Clássico I',
-    bpm: 112,
-    rootHz: 220.0,
-    scale: [0, 2, 3, 5, 7, 9, 10, 12, 14, 15, 17, 19],
-    leadWave: 'triangle',
-    bassWave: 'triangle',
-    percussionStyle: 'orchestral',
-    melody: [0, 2, 4, -1, 5, 4, 2, 3, 4, -1, 7, 5, 4, 2, 0, -1],
-    arp: [0, 4, 7, 4, 2, 5, 7, 5, 0, 3, 7, 3, 4, 2, 0, -1],
-    bass: [0, -1, 0, 4, 2, -1, 2, 4, 3, -1, 5, -1, 4, -1, 0, -1],
-  },
-  chocolate_outline: {
-    id: 'chocolate_outline',
-    title: 'Chocolate Outline',
-    category: 'match',
-    subtitle: 'Tema de Partida Clássico II',
-    bpm: 106,
-    rootHz: 196.0,
-    scale: [0, 1, 4, 5, 7, 8, 10, 12, 13, 16, 17],
-    leadWave: 'triangle',
-    bassWave: 'sine',
-    percussionStyle: 'nile',
-    melody: [4, 5, 4, 2, 1, 0, -1, 2, 4, 5, 7, 5, 4, 2, 0, -1],
-    arp: [0, 2, 4, 7, 4, 2, 1, 0, 0, 4, 5, 7, 5, 4, 2, 0],
-    bass: [0, -1, 4, -1, 1, -1, 0, -1, 2, -1, 4, -1, 1, -1, 0, -1],
-  },
-  slacks_and_bashers: {
-    id: 'slacks_and_bashers',
-    title: 'Never Mind the Slacks and Bashers',
-    category: 'match',
-    subtitle: 'Tema de Partida Clássico III',
-    bpm: 118,
-    rootHz: 246.94,
-    scale: [0, 2, 3, 5, 7, 8, 10, 12, 14, 15, 19],
-    leadWave: 'sawtooth',
-    bassWave: 'triangle',
-    percussionStyle: 'nordic',
-    melody: [0, 4, 3, 4, 7, -1, 5, 4, 3, 2, 4, 3, 2, 0, 2, -1],
-    arp: [0, 3, 4, 7, 4, 3, 2, 0, 0, 4, 5, 7, 5, 4, 3, 2],
-    bass: [0, 0, -1, 4, 2, -1, 3, -1, 0, -1, 4, -1, 5, 4, 2, 0],
-  },
-  suture_self: {
-    id: 'suture_self',
-    title: 'Suture Self',
-    category: 'match',
-    subtitle: 'Tema de Partida Clássico IV',
-    bpm: 102,
-    rootHz: 220.0,
-    scale: [0, 2, 4, 6, 7, 9, 11, 12, 14, 16],
-    leadWave: 'triangle',
-    bassWave: 'sine',
-    percussionStyle: 'mystic',
-    melody: [4, -1, 6, 7, 4, 2, 0, -1, 3, 4, 6, 4, 2, 3, 0, -1],
-    arp: [0, 4, 6, 9, 7, 6, 4, 0, 2, 4, 7, 9, 7, 4, 2, 0],
-    bass: [0, -1, -1, 4, 2, -1, -1, 0, 3, -1, 4, -1, 2, -1, 0, -1],
-  },
-  flavor_cats: {
-    id: 'flavor_cats',
-    title: 'Flavor Cats (In the Comfort Zone)',
-    category: 'match',
-    subtitle: 'Tema de Partida Clássico V',
-    bpm: 100,
-    rootHz: 261.63,
-    scale: [0, 2, 4, 5, 7, 9, 10, 12, 14, 16],
-    leadWave: 'triangle',
-    bassWave: 'sine',
-    percussionStyle: 'light',
-    melody: [2, 4, 5, 4, 2, 0, 2, -1, 4, 5, 7, 5, 4, 2, 0, -1],
-    arp: [0, 2, 4, 5, 4, 2, 0, 4, 1, 3, 5, 7, 5, 3, 2, 0],
-    bass: [0, -1, 2, -1, 4, -1, 2, -1, 3, -1, 4, -1, 2, -1, 0, -1],
-  },
-  slaysenflite: {
-    id: 'slaysenflite',
-    title: '(Fine Layers of) Slaysenflite',
-    category: 'match',
-    subtitle: 'Tema de Partida Clássico VI',
-    bpm: 114,
-    rootHz: 196.0,
-    scale: [0, 2, 3, 5, 7, 9, 10, 12, 14, 15],
-    leadWave: 'sawtooth',
-    bassWave: 'triangle',
-    percussionStyle: 'orchestral',
-    melody: [0, 3, 4, 5, 7, 5, 4, 3, 2, 4, 5, 7, 9, 7, 4, -1],
-    arp: [0, 3, 5, 7, 5, 3, 0, 4, 2, 4, 6, 7, 6, 4, 2, 0],
-    bass: [0, -1, 4, -1, 3, -1, 2, -1, 0, -1, 4, -1, 5, -1, 4, -1],
-  },
-  real_betterness: {
-    id: 'real_betterness',
-    title: 'Hoping for Real Betterness',
-    category: 'match',
-    subtitle: 'Tema de Partida Clássico VII',
-    bpm: 96,
-    rootHz: 233.08,
-    scale: [0, 2, 4, 5, 7, 9, 11, 12, 14, 16],
-    leadWave: 'triangle',
-    bassWave: 'sine',
-    percussionStyle: 'light',
-    melody: [0, -1, 4, 2, 5, 4, 2, -1, 3, 4, 6, 7, 5, 4, 2, 0],
-    arp: [0, 4, 7, 4, 2, 5, 7, 5, 1, 4, 6, 4, 0, 2, 4, 7],
-    bass: [0, -1, -1, 0, 2, -1, 4, -1, 3, -1, 4, -1, 0, -1, 2, -1],
-  },
-  adult_swim: {
-    id: 'adult_swim',
-    title: 'Adult Swim',
-    category: 'match',
-    subtitle: 'Tema de Partida Clássico VIII',
-    bpm: 110,
-    rootHz: 246.94,
-    scale: [0, 2, 3, 6, 7, 9, 10, 12, 14, 15],
-    leadWave: 'triangle',
-    bassWave: 'triangle',
-    percussionStyle: 'mystic',
-    melody: [0, 3, 4, -1, 2, 3, 4, 6, 7, 6, 4, 3, 2, 3, 0, -1],
-    arp: [0, 2, 4, 7, 6, 4, 2, 0, 1, 3, 5, 7, 5, 3, 2, 0],
-    bass: [0, -1, 3, -1, 2, -1, 4, -1, 0, -1, 3, -1, 4, -1, 0, -1],
-  },
-  ace_lebaron: {
-    id: 'ace_lebaron',
-    title: 'The Ballad of Ace LeBaron',
-    category: 'match',
-    subtitle: 'Tema de Partida Clássico IX',
-    bpm: 94,
-    rootHz: 207.65,
-    scale: [0, 2, 4, 5, 7, 8, 10, 12, 14, 16],
-    leadWave: 'triangle',
-    bassWave: 'sine',
-    percussionStyle: 'orchestral',
-    melody: [4, -1, 2, 3, 4, -1, 5, 4, 2, 0, 2, 4, 3, 2, 0, -1],
-    arp: [0, 2, 4, 7, 4, 2, 0, 4, 1, 3, 5, 7, 5, 3, 1, 0],
-    bass: [0, -1, -1, 4, 2, -1, 3, -1, 4, -1, 2, -1, 0, -1, -1, 0],
-  },
-  pile_of_own_good: {
-    id: 'pile_of_own_good',
-    title: 'In a Pile of Its Own Good',
-    category: 'match',
-    subtitle: 'Tema de Partida Clássico X',
-    bpm: 108,
-    rootHz: 220.0,
-    scale: [0, 1, 3, 5, 7, 8, 10, 12, 13, 15],
-    leadWave: 'sawtooth',
-    bassWave: 'triangle',
-    percussionStyle: 'nile',
-    melody: [0, 1, 3, 4, 5, 4, 3, 1, 0, 2, 4, 5, 4, 2, 1, 0],
-    arp: [0, 3, 4, 7, 4, 3, 1, 0, 0, 2, 4, 5, 4, 2, 1, 0],
-    bass: [0, -1, 1, -1, 4, -1, 3, -1, 0, -1, 2, -1, 4, -1, 1, -1],
-  },
-  great_science_fi: {
-    id: 'great_science_fi',
-    title: 'Behold the Great Science Fi',
-    category: 'match',
-    subtitle: 'Tema de Partida Clássico XI',
-    bpm: 116,
-    rootHz: 261.63,
-    scale: [0, 2, 4, 6, 7, 9, 11, 12, 14, 16],
-    leadWave: 'sawtooth',
-    bassWave: 'triangle',
-    percussionStyle: 'mystic',
-    melody: [0, 4, 6, 7, 9, 7, 6, 4, 2, 4, 6, 7, 11, 9, 7, -1],
-    arp: [0, 4, 6, 9, 7, 6, 4, 2, 0, 4, 7, 11, 9, 7, 4, 2],
-    bass: [0, 0, -1, 4, 3, -1, 2, -1, 0, -1, 4, -1, 5, 4, 2, 0],
-  },
+export {
+  MUSIC_TRACKS,
+  MATCH_MUSIC_PLAYLIST,
+  PANTHEON_THEME_TRACK,
+  PANTHEON_TRACK_POOLS,
+  CULTURE_VOICE_BANK,
+};
+export type {
+  MusicMood,
+  MusicScene,
+  MusicTrackSpec,
+  CulturalVoiceEntry,
+  CultureVoiceProfile,
 };
 
-export const MATCH_MUSIC_PLAYLIST = [
-  'eat_your_potatoes',
-  'chocolate_outline',
-  'slacks_and_bashers',
-  'suture_self',
-  'flavor_cats',
-  'slaysenflite',
-  'real_betterness',
-  'adult_swim',
-  'ace_lebaron',
-  'pile_of_own_good',
-  'great_science_fi',
-] as const;
-
-export const PANTHEON_THEME_TRACK: Record<PantheonId, string> = {
-  greek: 'greek_to_me',
-  egyptian: 'serenidade_do_nilo',
-  norse: 'of_norse_not',
-  atlantean: 'hotlantis',
-  chinese: 'kuafu_panda',
-  japanese: 'nori_grets',
-  aztec: 'aztec_sun',
-  roman: 'roman_legion',
-  eldritch: 'eldritch_abyss',
-  celtic: 'celtic_mist',
-  babylonian: 'babylon_ziggurat',
-  lakota: 'lakota_wind',
-  jotunn: 'jotunn_frost',
-};
-
-export const PANTHEON_TRACK_POOLS: Record<PantheonId, string[]> = {
-  greek: ['greek_to_me', 'olympus_dawn', 'aegean_trireme'],
-  egyptian: ['serenidade_do_nilo', 'the_niles_quiet_breath', 'nd_nile'],
-  norse: ['of_norse_not', 'valhalla_horns', 'fjord_march'],
-  atlantean: ['hotlantis', 'orichalcum_tides', 'kronos_echo'],
-  chinese: ['kuafu_panda', 'immortal_pillars', 'dragon_river'],
-  japanese: ['nori_grets'],
-  aztec: ['aztec_sun'],
-  roman: ['roman_legion'],
-  eldritch: ['eldritch_abyss'],
-  celtic: ['celtic_mist'],
-  babylonian: ['babylon_ziggurat'],
-  lakota: ['lakota_wind'],
-  jotunn: ['jotunn_frost'],
-};
-
-export interface CulturalVoiceEntry {
-  phrase: string;
-  pt: string;
-  spoken: string;
-  syllables: number[];
-  audioUrl?: string;
-}
-
-export interface CultureVoiceProfile {
-  cultureLabel: string;
-  basePitch: number;
-  formantF1: number;
-  formantF2: number;
-  hornPitch: number;
-  select: CulturalVoiceEntry[];
-  attack: CulturalVoiceEntry[];
-  move: CulturalVoiceEntry[];
-  work: CulturalVoiceEntry[];
-}
-
-export const CULTURE_VOICE_BANK: Record<PantheonId, CultureVoiceProfile> = {
-  greek: {
-    cultureLabel: 'Helenos (Grego Antigo)',
-    basePitch: 128,
-    formantF1: 520,
-    formantF2: 1480,
-    hornPitch: 293.66,
-    select: [
-      { phrase: 'Próstagma?', pt: 'Ordens? Qual é o comando?', spoken: 'Próstagma! Qual é o comando?', syllables: [1.04, 1.16, 0.96] },
-      { phrase: 'Lege.', pt: 'Fale, comandante.', spoken: 'Fale, comandante. Estou ouvindo.', syllables: [0.98, 1.15] },
-      { phrase: 'Étimos.', pt: 'Pronto para servir.', spoken: 'Pronto para servir, senhor!', syllables: [1.12, 1.0, 0.95] },
-      { phrase: 'Né.', pt: 'Sim, às suas ordens.', spoken: 'Sim! Às suas ordens.', syllables: [1.14] },
-    ],
-    attack: [
-      { phrase: 'Eis máchin!', pt: 'Para a batalha!', spoken: 'Para a batalha! Avançar!', syllables: [1.06, 1.26, 1.18] },
-      { phrase: 'Eisvolí!', pt: 'Invasão! Pela glória do Olimpo!', spoken: 'Pela glória do Olimpo, ataquem!', syllables: [1.05, 1.18, 1.34] },
-      { phrase: 'Páme!', pt: 'Vamos! Derrubem os inimigos!', spoken: 'Vamos! Derrubem os inimigos!', syllables: [1.22, 1.08] },
-      { phrase: 'Próseche!', pt: 'Formação de combate!', spoken: 'Formação de combate! Sem recuar!', syllables: [1.16, 1.04, 1.14] },
-    ],
-    move: [
-      { phrase: 'Vúlome.', pt: 'Vou fazê-lo agora.', spoken: 'Sim, senhor! Em marcha.', syllables: [1.08, 0.98, 1.05] },
-      { phrase: 'Málista.', pt: 'Certamente, avançando.', spoken: 'Certamente! Avançando agora.', syllables: [1.12, 1.02, 0.94] },
-      { phrase: 'Orthós.', pt: 'Entendido, a caminho.', spoken: 'Entendido! Seguindo posição.', syllables: [0.98, 1.14] },
-      { phrase: 'Kalós.', pt: 'De acordo, partindo.', spoken: 'De acordo! Partindo já.', syllables: [1.0, 1.1] },
-      { phrase: 'Páme!', pt: 'Vamos! Em frente!', spoken: 'Em frente! Sem demora.', syllables: [1.16, 1.02] },
-    ],
-    work: [
-      { phrase: 'Vúlome.', pt: 'Ao trabalho imediatamente.', spoken: 'Ao trabalho imediatamente!', syllables: [1.04, 0.98, 1.0] },
-      { phrase: 'Málista.', pt: 'Certamente, colhendo recursos.', spoken: 'Certamente! Colhendo recursos.', syllables: [1.08, 1.0, 0.94] },
-      { phrase: 'Kalós.', pt: 'Construindo pela cidade.', spoken: 'Construindo pela nossa cidade.', syllables: [0.98, 1.08] },
-      { phrase: 'Orthós.', pt: 'Tarefa iniciada.', spoken: 'Tarefa iniciada, senhor.', syllables: [0.96, 1.08] },
-    ],
-  },
-  egyptian: {
-    cultureLabel: 'Kemet (Egípcio)',
-    basePitch: 124,
-    formantF1: 480,
-    formantF2: 1350,
-    hornPitch: 277.18,
-    select: [
-      { phrase: 'Iu-airu?', pt: 'O que ordenas, Faraó?', spoken: 'O que ordenas, Faraó?', syllables: [0.96, 1.08, 1.14] },
-      { phrase: 'Ha-nefer!', pt: 'Pronto para servir Kemet!', spoken: 'Pronto para servir o Egito!', syllables: [1.04, 0.98, 1.06] },
-      { phrase: 'Em-shere?', pt: 'Suas ordens, senhor?', spoken: 'Quais são suas ordens?', syllables: [0.95, 1.1, 1.02] },
-    ],
-    attack: [
-      { phrase: 'Khepresh!', pt: 'Por Rá, ataquem!', spoken: 'Por Rá, ataquem agora!', syllables: [1.12, 1.26] },
-      { phrase: 'Sema-tawy!', pt: 'Esmaguem os invasores!', spoken: 'Esmaguem os invasores do Nilo!', syllables: [1.04, 1.15, 1.28] },
-      { phrase: 'Ankh-ef-en-Sekhmet!', pt: 'Pela fúria de Sekhmet!', spoken: 'Pela fúria de Sekhmet, avançar!', syllables: [1.08, 1.2, 1.34] },
-    ],
-    move: [
-      { phrase: 'Sechem!', pt: 'Marchando com poder!', spoken: 'Marchando sob o sol!', syllables: [1.02, 1.08] },
-      { phrase: 'Djew!', pt: 'Avançando pelo deserto!', spoken: 'Avançando pelo deserto!', syllables: [1.06, 0.96] },
-    ],
-    work: [
-      { phrase: 'Baku!', pt: 'Colhendo para o Nilo!', spoken: 'Colhendo riquezas para o Nilo!', syllables: [0.98, 1.04] },
-      { phrase: 'Kheper!', pt: 'Construindo para a eternidade!', spoken: 'Construindo para a eternidade!', syllables: [1.0, 1.08] },
-    ],
-  },
-  norse: {
-    cultureLabel: 'Midgard (Nórdico)',
-    basePitch: 112,
-    formantF1: 430,
-    formantF2: 1180,
-    hornPitch: 220.0,
-    select: [
-      { phrase: 'Hvað?', pt: 'O que queres, Jarl?', spoken: 'O que ordena, Jarl?', syllables: [1.08] },
-      { phrase: 'Já?', pt: 'Sim, comandante?', spoken: 'Sim! Diga sua ordem.', syllables: [0.96, 1.12] },
-      { phrase: 'Tilbúinn!', pt: 'Pronto para a luta!', spoken: 'Pronto para a batalha!', syllables: [1.04, 0.96, 1.08] },
-    ],
-    attack: [
-      { phrase: 'Til bardaga!', pt: 'Para a batalha!', spoken: 'Para a batalha! Sem piedade!', syllables: [1.05, 1.18, 1.3, 1.24] },
-      { phrase: 'Drepum þá!', pt: 'Por Odin, abatam todos!', spoken: 'Por Odin, abatam todos eles!', syllables: [1.12, 1.26, 1.36] },
-      { phrase: 'Valhalla!', pt: 'Por Valhalla!', spoken: 'Por Valhalla! Ataquem!', syllables: [1.06, 1.22, 1.34] },
-    ],
-    move: [
-      { phrase: 'Sammála!', pt: 'De acordo, em marcha!', spoken: 'De acordo! Em marcha!', syllables: [1.02, 1.08, 0.98] },
-      { phrase: 'Fram!', pt: 'Avante guerreiros!', spoken: 'Avante, sem hesitar!', syllables: [1.12] },
-    ],
-    work: [
-      { phrase: 'Skipan!', pt: 'Ao trabalho!', spoken: 'Ao trabalho pelo clã!', syllables: [0.98, 1.06] },
-      { phrase: 'Smiður!', pt: 'Forjando e colhendo!', spoken: 'Forjando e colhendo recursos!', syllables: [1.02, 0.94] },
-    ],
-  },
-  atlantean: {
-    cultureLabel: 'Atlântida (Atlante)',
-    basePitch: 136,
-    formantF1: 540,
-    formantF2: 1560,
-    hornPitch: 329.63,
-    select: [
-      { phrase: 'Yuji?', pt: 'Ordens, comandante?', spoken: 'Quais são as ordens, comandante?', syllables: [1.04, 1.16] },
-      { phrase: 'Volat?', pt: 'Pronto por Atlântida.', spoken: 'Pronto por Atlântida!', syllables: [1.02, 1.14] },
-    ],
-    attack: [
-      { phrase: 'Mache!', pt: 'Para a batalha por Atlântida!', spoken: 'Por Atlântida, para a batalha!', syllables: [1.22, 1.14] },
-      { phrase: 'Scopos!', pt: 'Alvo confirmado — atacar!', spoken: 'Alvo confirmado! Atacar agora!', syllables: [1.06, 1.2, 1.12] },
-    ],
-    move: [
-      { phrase: 'Scopos.', pt: 'Confirmado — avançando.', spoken: 'Confirmado! Avançando para o alvo.', syllables: [1.0, 1.1, 1.02] },
-      { phrase: 'Echlost.', pt: 'Ordem reconhecida.', spoken: 'Ordem reconhecida. Em deslocamento.', syllables: [1.08, 0.98] },
-    ],
-    work: [
-      { phrase: 'Echlost.', pt: 'Ordem reconhecida — colhendo.', spoken: 'Ordem reconhecida. Iniciando trabalho.', syllables: [1.04, 0.96] },
-      { phrase: 'Scopos.', pt: 'Confirmado — construindo.', spoken: 'Confirmado! Erguendo por Atlântida.', syllables: [0.98, 1.08, 1.0] },
-    ],
-  },
-  chinese: {
-    cultureLabel: 'Reino do Meio (Chinês)',
-    basePitch: 142,
-    formantF1: 560,
-    formantF2: 1620,
-    hornPitch: 349.23,
-    select: [
-      { phrase: 'Zài!', pt: 'Presente e pronto!', spoken: 'Presente e pronto para servir!', syllables: [1.14, 0.96] },
-      { phrase: 'Qǐng fēnfù?', pt: 'Qual é o seu comando?', spoken: 'Qual é o seu comando, mestre?', syllables: [0.98, 1.1, 1.04] },
-    ],
-    attack: [
-      { phrase: 'Chōngfēng!', pt: 'Carreguem contra o inimigo!', spoken: 'Carreguem contra o inimigo!', syllables: [1.1, 1.28] },
-      { phrase: 'Shā!', pt: 'Ataquem sem trégua!', spoken: 'Pela dinastia, ataquem sem trégua!', syllables: [1.34] },
-    ],
-    move: [
-      { phrase: 'Zūn mìng!', pt: 'Obedecendo à ordem!', spoken: 'Obedecendo à sua ordem!', syllables: [1.06, 1.12] },
-      { phrase: 'Chūfā!', pt: 'Partindo agora!', spoken: 'Partindo imediatamente!', syllables: [1.02, 1.1] },
-    ],
-    work: [
-      { phrase: 'Láodòng!', pt: 'Trabalhando pela dinastia!', spoken: 'Trabalhando pela dinastia!', syllables: [0.98, 1.06] },
-      { phrase: 'Jiànzào!', pt: 'Erguendo e colhendo!', spoken: 'Erguendo e colhendo recursos!', syllables: [1.04, 0.98] },
-    ],
-  },
-  aztec: {
-    cultureLabel: 'Império Mexica (Asteca)',
-    basePitch: 128,
-    formantF1: 510,
-    formantF2: 1440,
-    hornPitch: 311.13,
-    select: [
-      { phrase: 'Tlahtoani?', pt: 'Ordens, Grande Orador?', spoken: 'Quais são suas ordens, Grande Orador?', syllables: [1.0, 1.08, 1.16] },
-      { phrase: 'Nican!', pt: 'Estou pronto!', spoken: 'Estou pronto para a guerra!', syllables: [1.06, 1.0] },
-    ],
-    attack: [
-      { phrase: 'Yaoyotl!', pt: 'Guerra sagrada pelo Sol!', spoken: 'Guerra sagrada pelo Deus Sol!', syllables: [1.08, 1.2, 1.32] },
-      { phrase: 'Huitzilopochtli!', pt: 'Glória ao Deus Sol!', spoken: 'Pela glória do Deus Sol, ataquem!', syllables: [1.04, 1.14, 1.24, 1.35] },
-    ],
-    move: [
-      { phrase: 'Ohtli!', pt: 'Seguindo o caminho!', spoken: 'Seguindo o caminho agora!', syllables: [1.04, 1.08] },
-      { phrase: 'Nemi!', pt: 'Avançando!', spoken: 'Avançando sem demora!', syllables: [1.02, 0.98] },
-    ],
-    work: [
-      { phrase: 'Tequitl!', pt: 'Trabalhando no tributo!', spoken: 'Trabalhando pelo império!', syllables: [0.98, 1.06] },
-      { phrase: 'Calli!', pt: 'Construindo para Tenochtitlán!', spoken: 'Construindo para Tenochtitlán!', syllables: [1.02, 1.0] },
-    ],
-  },
-  roman: {
-    cultureLabel: 'Senado e Povo (Romano)',
-    basePitch: 122,
-    formantF1: 490,
-    formantF2: 1410,
-    hornPitch: 293.66,
-    select: [
-      { phrase: 'Imperium?', pt: 'Qual é o comando, Legatus?', spoken: 'Qual é o comando, Legatus?', syllables: [1.0, 1.08, 1.14] },
-      { phrase: 'Paratus!', pt: 'Pronto pela Legião!', spoken: 'Pronto pela Legião Romana!', syllables: [1.04, 1.1, 0.98] },
-    ],
-    attack: [
-      { phrase: 'Ad arma!', pt: 'Às armas, legionários!', spoken: 'Às armas, legionários! Avançar!', syllables: [1.06, 1.22, 1.32] },
-      { phrase: 'Pro Roma!', pt: 'Pela glória de Roma, ataquem!', spoken: 'Pela glória de Roma, ataquem!', syllables: [1.08, 1.24, 1.3] },
-    ],
-    move: [
-      { phrase: 'Procedite!', pt: 'Marchem em formação!', spoken: 'Marchando em formação!', syllables: [1.02, 1.08, 1.0] },
-      { phrase: 'Celeriter!', pt: 'Com rapidez!', spoken: 'Avançando com rapidez!', syllables: [1.06, 1.02, 1.1] },
-    ],
-    work: [
-      { phrase: 'Laboramus!', pt: 'Trabalhando pelo Império!', spoken: 'Trabalhando pelo Império!', syllables: [0.98, 1.04, 1.0] },
-      { phrase: 'Aedifica!', pt: 'Construindo obra romana!', spoken: 'Construindo pela glória de Roma!', syllables: [1.02, 1.08, 0.96] },
-    ],
-  },
-  japanese: {
-    cultureLabel: 'Takamagahara (Japonês)',
-    basePitch: 130,
-    formantF1: 500,
-    formantF2: 1500,
-    hornPitch: 329.63,
-    select: [
-      { phrase: 'Gomeirei wo?', pt: 'Qual é a sua ordem, Xogum?', spoken: 'Qual é a sua ordem, Xogum?', syllables: [0.98, 1.06, 1.14] },
-      { phrase: 'Kakugo!', pt: 'Pronto com honra!', spoken: 'Pronto com honra e disciplina!', syllables: [1.08, 1.02, 0.96] },
-    ],
-    attack: [
-      { phrase: 'Totsugeki!', pt: 'Ataquem com honra!', spoken: 'Ataquem com honra! Em frente!', syllables: [1.06, 1.18, 1.32] },
-      { phrase: 'Kirifuse!', pt: 'Derrubem os inimigos!', spoken: 'Derrubem os inimigos sem hesitar!', syllables: [1.1, 1.22, 1.34] },
-    ],
-    move: [
-      { phrase: 'Shōchi!', pt: 'Compreendido, em marcha!', spoken: 'Compreendido! Em marcha.', syllables: [1.04, 1.1] },
-      { phrase: 'Susume!', pt: 'Avancem!', spoken: 'Avancem em formação!', syllables: [1.02, 1.08, 1.12] },
-    ],
-    work: [
-      { phrase: 'Fushin!', pt: 'Construindo e colhendo!', spoken: 'Construindo e colhendo recursos!', syllables: [0.98, 1.04] },
-      { phrase: 'Tsutome!', pt: 'Cumprindo o dever!', spoken: 'Cumprindo o nosso dever!', syllables: [1.02, 0.98] },
-    ],
-  },
-  eldritch: {
-    cultureLabel: 'Abismo Cósmico (Eldritch)',
-    basePitch: 92,
-    formantF1: 360,
-    formantF2: 980,
-    hornPitch: 164.81,
-    select: [
-      { phrase: "Iä! Ph'nglui?", pt: 'O vazio escuta seu chamado.', spoken: 'O vazio escuta o seu chamado.', syllables: [0.92, 1.06, 0.88] },
-      { phrase: "R'lyeh!", pt: 'Despertos nas profundezas!', spoken: 'Despertamos das profundezas abissais!', syllables: [1.04, 0.9] },
-    ],
-    attack: [
-      { phrase: 'Fhtagn! Obliterar!', pt: 'Devorar as mentes mortais!', spoken: 'Obliterar e devorar os mortais!', syllables: [1.08, 1.22, 0.94] },
-      { phrase: 'Yogg-Sothoth!', pt: 'Pelo caos abissal, destruam!', spoken: 'Pelo caos abissal, destruam tudo!', syllables: [1.02, 1.18, 1.28] },
-    ],
-    move: [
-      { phrase: 'Nyarlath!', pt: 'Deslizando pelas sombras!', spoken: 'Deslizando pelas sombras antigas.', syllables: [0.96, 1.04] },
-    ],
-    work: [
-      { phrase: 'Shoggoth!', pt: 'Canalizando matéria astral!', spoken: 'Canalizando energia astral.', syllables: [0.94, 1.02] },
-    ],
-  },
-  celtic: {
-    cultureLabel: 'Tuatha Dé Danann (Celta)',
-    basePitch: 126,
-    formantF1: 500,
-    formantF2: 1460,
-    hornPitch: 261.63,
-    select: [
-      { phrase: 'Cén t-ordú?', pt: 'Qual é o comando dos Druidas?', spoken: 'Qual é o comando dos Druidas?', syllables: [1.0, 1.12, 1.04] },
-      { phrase: 'Réidh!', pt: 'Pronto pelo clã!', spoken: 'Pronto para defender o clã!', syllables: [1.1] },
-    ],
-    attack: [
-      { phrase: 'Abú! Chun catha!', pt: 'Vitória! Para a batalha!', spoken: 'Vitória! Para a batalha!', syllables: [1.06, 1.2, 1.32] },
-      { phrase: 'Morrígan!', pt: 'Pela fúria de Morrígan!', spoken: 'Pela fúria de Morrígan, ataquem!', syllables: [1.1, 1.24, 1.18] },
-    ],
-    move: [
-      { phrase: 'Ar aghaidh!', pt: 'Avante pelas colinas!', spoken: 'Avante pelas colinas!', syllables: [1.02, 1.1] },
-    ],
-    work: [
-      { phrase: 'Obair!', pt: 'Colhendo nas terras sagradas!', spoken: 'Colhendo nas terras sagradas!', syllables: [0.98, 1.04] },
-    ],
-  },
-  babylonian: {
-    cultureLabel: 'Mesopotâmia (Babilônico)',
-    basePitch: 120,
-    formantF1: 470,
-    formantF2: 1320,
-    hornPitch: 246.94,
-    select: [
-      { phrase: 'Amātu?', pt: 'Qual é a palavra real?', spoken: 'Qual é a palavra real?', syllables: [0.98, 1.08, 1.12] },
-      { phrase: 'Annû!', pt: 'Pronto na Babilônia!', spoken: 'Pronto pela glória da Babilônia!', syllables: [1.04, 1.0] },
-    ],
-    attack: [
-      { phrase: 'Ina Marduk!', pt: 'Por Marduk, esmaguem-nos!', spoken: 'Por Marduk, esmaguem os inimigos!', syllables: [1.06, 1.18, 1.3] },
-      { phrase: 'Qablu!', pt: 'Ao combate!', spoken: 'Ao combate pela Babilônia!', syllables: [1.12, 1.26] },
-    ],
-    move: [
-      { phrase: 'Alāku!', pt: 'Marchando pelo Eufrates!', spoken: 'Marchando pelas margens do Eufrates!', syllables: [1.02, 1.08, 1.0] },
-    ],
-    work: [
-      { phrase: 'Epēšu!', pt: 'Erguendo o zigurate!', spoken: 'Erguendo o grande zigurate!', syllables: [0.98, 1.06, 1.0] },
-    ],
-  },
-  lakota: {
-    cultureLabel: 'Grande Planície (Lakota)',
-    basePitch: 125,
-    formantF1: 495,
-    formantF2: 1420,
-    hornPitch: 293.66,
-    select: [
-      { phrase: 'Háu, Itancan?', pt: 'Qual é o caminho, Chefe?', spoken: 'Qual é o caminho, Grande Chefe?', syllables: [1.02, 1.1, 1.06] },
-      { phrase: 'Wiyeya!', pt: 'Pronto nas planícies!', spoken: 'Pronto nas grandes planícies!', syllables: [1.06, 1.0, 1.08] },
-    ],
-    attack: [
-      { phrase: 'Hokahey!', pt: 'É um bom dia para lutar!', spoken: 'Hoje é um grande dia para lutar!', syllables: [1.08, 1.2, 1.34] },
-      { phrase: 'Wakinyan!', pt: 'Como o Pássaro-Trovão, ataquem!', spoken: 'Como o Pássaro Trovão, ataquem!', syllables: [1.06, 1.18, 1.28] },
-    ],
-    move: [
-      { phrase: 'Iyaya!', pt: 'Cavalgando como o vento!', spoken: 'Cavalgando rápido como o vento!', syllables: [1.04, 1.1, 1.02] },
-    ],
-    work: [
-      { phrase: 'Wóškate!', pt: 'Sustentando a tribo!', spoken: 'Sustentando nossa tribo!', syllables: [0.98, 1.04, 1.0] },
-    ],
-  },
-  jotunn: {
-    cultureLabel: 'Jotunheim (Gigantes de Gelo)',
-    basePitch: 86,
-    formantF1: 340,
-    formantF2: 920,
-    hornPitch: 146.83,
-    select: [
-      { phrase: 'Kaldur rymr?', pt: 'A geada aguarda sua ordem.', spoken: 'A geada eterna aguarda sua ordem.', syllables: [0.92, 1.02, 0.96] },
-      { phrase: 'Jötunn!', pt: 'Os gigantes despertam!', spoken: 'Os gigantes de gelo despertam!', syllables: [1.04, 0.94] },
-    ],
-    attack: [
-      { phrase: 'Fimbulvetr!', pt: 'Inverno eterno sobre eles!', spoken: 'Inverno eterno sobre nossos inimigos!', syllables: [1.04, 1.16, 1.24] },
-      { phrase: 'Brjóta!', pt: 'Estilhacem no gelo!', spoken: 'Estilhacem tudo no gelo!', syllables: [1.12, 1.26] },
-    ],
-    move: [
-      { phrase: 'Ganga!', pt: 'Passos que tremem a terra!', spoken: 'Marchando com passos que tremem a terra.', syllables: [0.98, 0.92] },
-    ],
-    work: [
-      { phrase: 'Hrímpurs!', pt: 'Moldando o gelo primordial!', spoken: 'Moldando o gelo primordial.', syllables: [0.94, 1.0] },
-    ],
-  },
-};
 
 class SoundEngine {
   private ctx: AudioContext | null = null;
@@ -1011,6 +64,7 @@ class SoundEngine {
   private audioBufferCache = new Map<string, AudioBuffer>();
   private loadingAudioUrls = new Set<string>();
   private studioVoice = new StudioVoicePlayer();
+  private battleSfx = new BattleSfxEngine();
   private bgAudioElement: HTMLAudioElement | null = null;
 
   // Dynamic Hybrid Soundtrack State
@@ -1182,20 +236,81 @@ class SoundEngine {
     );
   }
 
+  public hasCachedStudioVoice(opts: {
+    text: string;
+    role: ClientStudioVoiceRole;
+    action?: 'select' | 'move' | 'attack' | 'work' | 'dialogue' | 'taunt';
+    dramatic?: boolean;
+  }): boolean {
+    return this.studioVoice.hasCached({
+      text: opts.text,
+      role: opts.role,
+      action: opts.action ?? 'select',
+      dramatic: Boolean(opts.dramatic),
+    });
+  }
+
+  public prefetchStudioVoice(opts: {
+    text: string;
+    role: ClientStudioVoiceRole;
+    action?: 'select' | 'move' | 'attack' | 'work';
+    pantheon?: PantheonId;
+    speaker?: string;
+    dramatic?: boolean;
+  }) {
+    const ctx = this.getOrCreateRawContext();
+    if (!ctx || this.effectiveSfxScale <= 0) return;
+    this.studioVoice.prefetch(ctx, {
+      text: opts.text,
+      role: opts.role,
+      action: opts.action ?? 'select',
+      pantheon: opts.pantheon,
+      speaker: opts.speaker,
+      dramatic: Boolean(opts.dramatic),
+    });
+  }
+
   /**
-   * Silently prewarms the active pantheon's core select/move/attack voices at match start
-   * so the first player commands play immediately with studio clarity.
+   * Silently prewarms the active pantheon's select/move/attack/work voices across primary roles
+   * so interactive clicks and orders respond immediately at 0ms.
    */
   public prewarmPantheonVoices(pantheon: PantheonId) {
     const ctx = this.getOrCreateRawContext();
     if (!ctx || this.effectiveSfxScale <= 0) return;
     const bank = CULTURE_VOICE_BANK[pantheon] ?? CULTURE_VOICE_BANK.greek;
-    const lines = [
-      { text: bank.select[0]?.spoken ?? 'Pronto para servir!', role: 'warrior_male' as ClientStudioVoiceRole, action: 'select' as const, pantheon },
-      { text: bank.move[0]?.spoken ?? 'Em marcha!', role: 'warrior_male' as ClientStudioVoiceRole, action: 'move' as const, pantheon },
-      { text: bank.attack[0]?.spoken ?? 'Para a batalha!', role: 'warrior_male' as ClientStudioVoiceRole, action: 'attack' as const, pantheon },
-      { text: bank.work[0]?.spoken ?? 'Ao trabalho!', role: 'villager_male' as ClientStudioVoiceRole, action: 'work' as const, pantheon },
-    ];
+    const lines: Array<{
+      text: string;
+      role: ClientStudioVoiceRole;
+      action: 'select' | 'move' | 'attack' | 'work';
+      pantheon: PantheonId;
+      dramatic?: boolean;
+    }> = [];
+
+    for (const entry of bank.select.slice(0, 3)) {
+      lines.push({ text: entry.spoken, role: 'warrior_male', action: 'select', pantheon });
+    }
+    for (const entry of bank.move.slice(0, 3)) {
+      lines.push({ text: entry.spoken, role: 'warrior_male', action: 'move', pantheon });
+    }
+    for (const entry of bank.attack.slice(0, 3)) {
+      lines.push({ text: entry.spoken, role: 'warrior_male', action: 'attack', pantheon });
+    }
+    for (const entry of bank.work.slice(0, 3)) {
+      lines.push({ text: entry.spoken, role: 'villager_male', action: 'work', pantheon });
+    }
+    // Primary villager select & hero select/attack lines
+    if (bank.select[0]) {
+      lines.push({ text: bank.select[0].spoken, role: 'villager_male', action: 'select', pantheon });
+      lines.push({ text: bank.select[0].spoken, role: 'hero_commander', action: 'select', pantheon, dramatic: true });
+    }
+    if (bank.move[0]) {
+      lines.push({ text: bank.move[0].spoken, role: 'villager_male', action: 'move', pantheon });
+      lines.push({ text: bank.move[0].spoken, role: 'hero_commander', action: 'move', pantheon, dramatic: true });
+    }
+    if (bank.attack[0]) {
+      lines.push({ text: bank.attack[0].spoken, role: 'hero_commander', action: 'attack', pantheon, dramatic: true });
+    }
+
     this.studioVoice.prewarmLines(ctx, lines);
   }
 
@@ -1319,7 +434,9 @@ class SoundEngine {
       action: opts.action,
     };
 
-    if (opts.respectCooldown !== false && !this.canPlay('unit_voice', 280)) {
+    const cooldownKey = opts.action === 'select' ? 'unit_voice_select' : 'unit_voice_order';
+    const cooldownMs = opts.action === 'select' ? 120 : 100;
+    if (opts.respectCooldown !== false && !this.canPlay(cooldownKey, cooldownMs)) {
       return result;
     }
 
@@ -1328,6 +445,9 @@ class SoundEngine {
     if (!ctx || scale <= 0) {
       return result;
     }
+
+    // Immediate 0ms synchronous tactical feedback on click/order (AoM: Retold responsiveness)
+    this.battleSfx.playInstantCommandCue(ctx, scale, opts.action);
 
     // 0. Play registered custom audio clip URL if decoded and cached
     let playedRegisteredClip = false;
@@ -1377,18 +497,11 @@ class SoundEngine {
           speaker: opts.speaker,
           dramatic: Boolean(opts.dramatic || isHighPriority),
           priority: isHighPriority ? 'high' : 'normal',
-          volumeScale: isHighPriority ? 1.08 : 0.96,
+          volumeScale: isHighPriority ? 1.08 : 0.98,
         },
         scale,
         (dur) => this.duckMusicForVoice(dur)
       );
-    }
-
-    // Subtle crisp UI acknowledgement click (clean, never masking the studio voice)
-    if (opts.action === 'select') {
-      this.playSelect();
-    } else if (opts.action !== 'attack') {
-      this.playCommand();
     }
 
     return result;
@@ -1658,89 +771,132 @@ class SoundEngine {
     osc.stop(now + 0.13);
   }
 
-  public playSwordHit() {
-    if (!this.canPlay('hit', 110)) return;
+  public playSwordHit(weapon: BattleWeaponClass = 'blade', atten = 1.0, isHeroOrMyth = false) {
     const ctx = this.ensureContext();
     const scale = this.effectiveSfxScale;
     if (!ctx || scale <= 0) return;
-    const now = ctx.currentTime;
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = 'sawtooth';
-    osc.frequency.setValueAtTime(260 + Math.random() * 90, now);
-    osc.frequency.exponentialRampToValueAtTime(95, now + 0.08);
-    gain.gain.setValueAtTime(0.04 * scale, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start(now);
-    osc.stop(now + 0.1);
+    this.battleSfx.playBattleHit(ctx, scale, weapon, atten, isHeroOrMyth);
+  }
+
+  public playBattleHit(weapon: BattleWeaponClass = 'blade', atten = 1.0, isHeroOrMyth = false) {
+    const ctx = this.ensureContext();
+    const scale = this.effectiveSfxScale;
+    if (!ctx || scale <= 0) return;
+    this.battleSfx.playBattleHit(ctx, scale, weapon, atten, isHeroOrMyth);
   }
 
   public playArrow() {
-    if (!this.canPlay('arrow', 120)) return;
     const ctx = this.ensureContext();
     const scale = this.effectiveSfxScale;
     if (!ctx || scale <= 0) return;
-    const now = ctx.currentTime;
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = 'triangle';
-    osc.frequency.setValueAtTime(680, now);
-    osc.frequency.exponentialRampToValueAtTime(240, now + 0.08);
-    gain.gain.setValueAtTime(0.035 * scale, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start(now);
-    osc.stop(now + 0.1);
+    this.battleSfx.playProjectileLaunch(ctx, scale, {});
+  }
+
+  public playProjectileLaunch(opts: {
+    isBoulder?: boolean;
+    isFireball?: boolean;
+    isPetrify?: boolean;
+    isFireArrow?: boolean;
+    isTurret?: boolean;
+    atten?: number;
+  } = {}) {
+    const ctx = this.ensureContext();
+    const scale = this.effectiveSfxScale;
+    if (!ctx || scale <= 0) return;
+    this.battleSfx.playProjectileLaunch(ctx, scale, opts);
+  }
+
+  public playProjectileImpact(opts: {
+    isBoulder?: boolean;
+    isFireball?: boolean;
+    isPetrify?: boolean;
+    isBuilding?: boolean;
+    atten?: number;
+  } = {}) {
+    const ctx = this.ensureContext();
+    const scale = this.effectiveSfxScale;
+    if (!ctx || scale <= 0) return;
+    this.battleSfx.playProjectileImpact(ctx, scale, opts);
+  }
+
+  public playBuildingCollapse(radius = 3.0, atten = 1.0) {
+    const ctx = this.ensureContext();
+    const scale = this.effectiveSfxScale;
+    if (!ctx || scale <= 0) return;
+    this.battleSfx.playBuildingCollapse(ctx, scale, radius, atten);
+  }
+
+  public playUnitDeathDetailed(opts: {
+    isMythic?: boolean;
+    isNaval?: boolean;
+    isHeroOrGod?: boolean;
+    atten?: number;
+  } = {}) {
+    const ctx = this.ensureContext();
+    const scale = this.effectiveSfxScale;
+    if (!ctx || scale <= 0) return;
+    this.battleSfx.playUnitDeathDetailed(ctx, scale, opts);
+  }
+
+  public playBattleClashAmbience(activeFighters: number) {
+    const ctx = this.ensureContext();
+    const scale = this.effectiveSfxScale;
+    if (!ctx || scale <= 0) return;
+    this.battleSfx.playBattleClashAmbience(ctx, scale, activeFighters);
+  }
+
+  public playUnderAttackWarning(category: UnderAttackCategory = 'unit') {
+    const ctx = this.ensureContext();
+    const scale = this.effectiveSfxScale;
+    if (!ctx || scale <= 0) return;
+    this.battleSfx.playUnderAttackWarning(ctx, scale, category);
+  }
+
+  public playFaunaSound(kind: FaunaKind, event: FaunaSoundEvent = 'select', atten = 1.0) {
+    const ctx = this.ensureContext();
+    const scale = this.effectiveSfxScale;
+    if (!ctx || scale <= 0) return;
+    this.battleSfx.playFaunaSound(ctx, scale, kind, event, atten);
+  }
+
+  public playGodPowerSound(id: GodPowerId, phase: 'cast' | 'impact' = 'impact') {
+    const ctx = this.ensureContext();
+    const scale = this.effectiveSfxScale;
+    if (!ctx || scale <= 0) return;
+    this.battleSfx.playGodPowerSound(ctx, scale, id, phase);
+  }
+
+  public playMythEffectSound(
+    unitKind: UnitKind,
+    effectHint?:
+      | MythSpecialEffectKind
+      | 'cyclops_throw'
+      | 'chain_lightning'
+      | 'acid_burst'
+      | 'solar_laser'
+      | 'scarab_explode'
+      | 'promethean_split'
+      | 'titan_stomp',
+    atten = 1.0
+  ) {
+    const ctx = this.ensureContext();
+    const scale = this.effectiveSfxScale;
+    if (!ctx || scale <= 0) return;
+    this.battleSfx.playMythEffectSound(ctx, scale, unitKind, effectHint, atten);
   }
 
   public playLightning() {
     const ctx = this.ensureContext();
     const scale = this.effectiveSfxScale;
     if (!ctx || scale <= 0) return;
-    const now = ctx.currentTime;
-    const bufferSize = ctx.sampleRate * 0.55;
-    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-    const data = buffer.getChannelData(0);
-    for (let i = 0; i < bufferSize; i++) {
-      data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (ctx.sampleRate * 0.16));
-    }
-    const noise = ctx.createBufferSource();
-    noise.buffer = buffer;
-
-    const filter = ctx.createBiquadFilter();
-    filter.type = 'lowpass';
-    filter.frequency.setValueAtTime(1600, now);
-    filter.frequency.exponentialRampToValueAtTime(180, now + 0.5);
-
-    const gain = ctx.createGain();
-    gain.gain.setValueAtTime(0.24 * scale, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.54);
-
-    noise.connect(filter);
-    filter.connect(gain);
-    gain.connect(ctx.destination);
-    noise.start(now);
+    this.battleSfx.playGodPowerSound(ctx, scale, 'lightning', 'impact');
   }
 
   public playMeteor() {
     const ctx = this.ensureContext();
     const scale = this.effectiveSfxScale;
     if (!ctx || scale <= 0) return;
-    const now = ctx.currentTime;
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = 'sawtooth';
-    osc.frequency.setValueAtTime(140, now);
-    osc.frequency.exponentialRampToValueAtTime(34, now + 0.65);
-    gain.gain.setValueAtTime(0.22 * scale, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.68);
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start(now);
-    osc.stop(now + 0.7);
+    this.battleSfx.playGodPowerSound(ctx, scale, 'meteor', 'impact');
   }
 
   public playFanfare(isVictory = false) {

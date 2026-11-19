@@ -52,11 +52,11 @@ export function createDivinePostProcessing(
 ): DivinePostProcessingPipeline {
   const {
     preset = 'premium_mobile',
-    bloomStrength = 1.05,
-    bloomRadius = 0.45,
-    bloomThreshold = 0.82,
+    bloomStrength = 0.26,
+    bloomRadius = 0.36,
+    bloomThreshold = 1.28,
     enableVignette = true,
-    vignetteDarkness = 1.08,
+    vignetteDarkness = 1.05,
     vignetteOffset = 1.15,
     enableFxaa = true,
     dprCap = 1.5,
@@ -64,7 +64,7 @@ export function createDivinePostProcessing(
 
   // Calibra ToneMapping no Renderer
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.05;
+  renderer.toneMappingExposure = 0.96;
 
   // Limita DPR para mobile (máximo 1.5x)
   const currentDpr = Math.min(window.devicePixelRatio || 1, dprCap);
@@ -89,7 +89,11 @@ export function createDivinePostProcessing(
   const bloomPass = new UnrealBloomPass(bloomResolution, bloomStrength, bloomRadius, bloomThreshold);
   composer.addPass(bloomPass);
 
-  // 3. VignettePass (Foco cinematográfico nas bordas)
+  // 3. OutputPass (Tone mapping ACESFilmic + conversão de espaço de cores sRGB)
+  const outputPass = new OutputPass();
+  composer.addPass(outputPass);
+
+  // 4. VignettePass (Foco cinematográfico nas bordas em sRGB pós-tonemapping)
   let vignettePass: ShaderPass | undefined;
   if (enableVignette) {
     vignettePass = new ShaderPass(VignetteShader);
@@ -97,10 +101,6 @@ export function createDivinePostProcessing(
     vignettePass.uniforms['offset'].value = vignetteOffset;
     composer.addPass(vignettePass);
   }
-
-  // 4. OutputPass (Tone mapping ACESFilmic + conversão de espaço de cores sRGB)
-  const outputPass = new OutputPass();
-  composer.addPass(outputPass);
 
   // 5. FXAAShader (Anti-aliasing leve pós-composer)
   let fxaaPass: ShaderPass | undefined;
@@ -119,9 +119,9 @@ export function createDivinePostProcessing(
     const h = Math.max(1, Math.floor(newHeight));
     composer.setSize(w, h);
 
-    const bW = activePreset === 'desktop_high' ? w : Math.floor(w * 0.75);
-    const bH = activePreset === 'desktop_high' ? h : Math.floor(h * 0.75);
-    bloomPass.resolution.set(bW, bH);
+    const bW = activePreset === 'desktop_high' ? w : Math.max(1, Math.floor(w * 0.75));
+    const bH = activePreset === 'desktop_high' ? h : Math.max(1, Math.floor(h * 0.75));
+    bloomPass.setSize(bW, bH);
 
     if (fxaaPass) {
       const pRatio = renderer.getPixelRatio();
@@ -130,7 +130,7 @@ export function createDivinePostProcessing(
     }
   };
 
-  const setBloom = (strength: number, radius = 0.45, threshold = 0.82) => {
+  const setBloom = (strength: number, radius = 0.36, threshold = 1.28) => {
     bloomPass.strength = strength;
     bloomPass.radius = radius;
     bloomPass.threshold = threshold;
@@ -144,16 +144,16 @@ export function createDivinePostProcessing(
       if (fxaaPass) fxaaPass.enabled = false;
     } else if (p === 'premium_mobile') {
       bloomPass.enabled = true;
-      bloomPass.strength = 1.05;
-      bloomPass.radius = 0.42;
-      bloomPass.threshold = 0.85;
+      bloomPass.strength = 0.24;
+      bloomPass.radius = 0.34;
+      bloomPass.threshold = 1.32;
       if (vignettePass) vignettePass.enabled = true;
       if (fxaaPass) fxaaPass.enabled = true;
     } else if (p === 'desktop_high') {
       bloomPass.enabled = true;
-      bloomPass.strength = 1.35;
-      bloomPass.radius = 0.52;
-      bloomPass.threshold = 0.78;
+      bloomPass.strength = 0.34;
+      bloomPass.radius = 0.38;
+      bloomPass.threshold = 1.24;
       if (vignettePass) vignettePass.enabled = true;
       if (fxaaPass) fxaaPass.enabled = true;
     }

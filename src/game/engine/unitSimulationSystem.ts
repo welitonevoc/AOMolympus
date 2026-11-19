@@ -7,6 +7,9 @@ import type { AoMEngineContext, UnitEntity, UnitModifiers } from './engineTypes'
 
 const _vfxOrigin = new THREE.Vector3();
 const _vfxTarget = new THREE.Vector3();
+const _invParentQuat = new THREE.Quaternion();
+const _camRight = new THREE.Vector3();
+const _unitFwd = new THREE.Vector3();
 
 type PoseAnimator = (
   dt: number,
@@ -258,33 +261,77 @@ function updateUnitVisualPose(
   poseAnim: PoseAnimator | undefined,
   stats: ReturnType<AoMEngineContext['unitStats']>
 ) {
-  if (u.mesh.userData.isSpriteSheet && ctx.hopliteRenderMode === 'sprite') {
+  const isAttackingVisual = u.manualAttackTimer > 0;
+  const lastMovedAt = u.mesh.userData.lastMovedAt as number | undefined;
+  const movedRecently =
+    typeof lastMovedAt === 'number' &&
+    ctx.elapsedSeconds - lastMovedAt <= Math.max(0.14, dt * 2.5);
+  const isCaravanMoving = u.kind === 'llama_caravan' && u.state === 'idle' && Boolean(u.tradePhase);
+  const isMovingVisual =
+    !isAttackingVisual &&
+    (u.state === 'move' || u.state === 'return' || movedRecently || isCaravanMoving);
+
+  if (
+    u.mesh.userData.isSpriteSheet &&
+    (ctx.hopliteRenderMode === 'sprite' || ctx.hopliteRenderMode === 'uv2d')
+  ) {
     let frame = 0;
-    if (u.manualAttackTimer > 0 || u.state === 'attack') {
-      const progress =
-        1 - (u.manualAttackTimer > 0 ? u.manualAttackTimer / (6 / 14) : Math.max(0, u.attackTimer / 1.0));
+    let flipX = 1;
+
+    if (ctx.camera) {
+      _camRight.set(1, 0, 0).applyQuaternion(ctx.camera.quaternion);
+      _camRight.y = 0;
+      if (_camRight.lengthSq() > 1e-6) _camRight.normalize();
+      _unitFwd.set(Math.sin(u.mesh.rotation.y), 0, Math.cos(u.mesh.rotation.y));
+      flipX = _camRight.dot(_unitFwd) < -0.05 ? -1 : 1;
+    }
+
+    if (isAttackingVisual) {
+      const progress = THREE.MathUtils.clamp(1 - u.manualAttackTimer / (6 / 14), 0, 0.999);
       frame = 12 + Math.min(5, Math.floor(progress * 6));
-    } else if (u.state === 'move') {
-      frame = 6 + (Math.floor(u.animPhase * 3) % 6);
+    } else if (isMovingVisual) {
+      frame = 6 + (Math.floor(u.animPhase * 1.35) % 6);
+    } else if (ctx.hopliteRenderMode === 'uv2d') {
+      frame = Math.floor(ctx.elapsedSeconds * 5 + u.mesh.id) % 6;
     } else {
-      const camAzimuth = Math.atan2(ctx.camera.position.x - u.mesh.position.x, ctx.camera.position.z - u.mesh.position.z);
+      const camAzimuth = Math.atan2(
+        ctx.camera.position.x - u.mesh.position.x,
+        ctx.camera.position.z - u.mesh.position.z
+      );
       let relAngle = (u.mesh.rotation.y - camAzimuth) % (Math.PI * 2);
       if (relAngle < 0) relAngle += Math.PI * 2;
-      frame = Math.floor((relAngle + Math.PI / 6) / (Math.PI / 3)) % 6;
+      // Row 0 of hoplita-iso.png sweeps 0..PI (front -> right -> back); mirror left half for 10-way turnaround
+      if (relAngle <= Math.PI) {
+        frame = Math.min(5, Math.floor((relAngle / Math.PI) * 5.999));
+        flipX = 1;
+      } else {
+        const mirrored = Math.PI * 2 - relAngle;
+        frame = Math.min(5, Math.floor((mirrored / Math.PI) * 5.999));
+        flipX = -1;
+      }
     }
-    if (u.mesh.userData.setFrame) u.mesh.userData.setFrame(frame);
-    if (u.mesh.userData.spriteMesh && ctx.camera) {
-      u.mesh.userData.spriteMesh.quaternion.copy(ctx.camera.quaternion);
+
+    u.mesh.userData.setFrame?.(frame);
+    const spriteMesh = u.mesh.userData.spriteMesh as THREE.Mesh | undefined;
+    if (spriteMesh && ctx.camera) {
+      const parent = spriteMesh.parent;
+      if (parent) {
+        parent.getWorldQuaternion(_invParentQuat).invert();
+        spriteMesh.quaternion.copy(_invParentQuat).multiply(ctx.camera.quaternion);
+      } else {
+        spriteMesh.quaternion.copy(ctx.camera.quaternion);
+      }
+      spriteMesh.scale.x = flipX;
     }
   }
 
-  u.mesh.userData.updateBrg?.(dt, u.manualAttackTimer > 0 ? 'attack' : u.state);
+  const brgState = isAttackingVisual ? 'attack' : isMovingVisual ? 'move' : 'idle';
+  u.mesh.userData.updateBrg?.(dt, brgState);
 
   if (poseAnim) {
-    const attackT = u.manualAttackTimer > 0 ? 1 - u.manualAttackTimer / (6 / 14) : null;
+    const attackT = isAttackingVisual ? 1 - u.manualAttackTimer / (6 / 14) : null;
     const resType = u.gatherResourceType ?? u.carryType;
-    const isCaravanMoving = u.kind === 'llama_caravan' && u.state === 'idle' && Boolean(u.tradePhase);
-    poseAnim(dt, u.state === 'move' || isCaravanMoving, effectiveSpeed, attackT, u.state, resType, u.carryAmount);
+    poseAnim(dt, isMovingVisual, effectiveSpeed, attackT, u.state, resType, u.carryAmount);
   }
 
   if ((u.hitFlashTimer ?? 0) > 0) {
@@ -1106,7 +1153,7 @@ function stepAttackingUnit(
   if (MYTH_SPECIAL_ABILITIES[u.kind] && u.specialAutoCast !== false && (u.specialCooldown ?? 0) <= 0 && targetU) {
     ctx.executeMythSpecialAbility(u, targetU);
   }
-  if (u.mesh.userData.animatePose) {
+  if (u.mesh.userData.animatePose || u.mesh.userData.isSpriteSheet || u.mesh.userData.updateBrg) {
     u.manualAttackTimer = 6 / 14;
   }
   if (

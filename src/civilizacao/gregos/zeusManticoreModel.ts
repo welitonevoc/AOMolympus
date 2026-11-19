@@ -224,7 +224,7 @@ export function buildZeusManticore(options: ManticoreBuildOptions = {}): Mantico
     eyeGlow: new THREE.MeshStandardMaterial({
       color: 0xffffff,
       emissive: 0xfacc15,
-      emissiveIntensity: 3.6,
+      emissiveIntensity: 1.65,
       roughness: 0.05
     })
   };

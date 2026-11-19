@@ -230,13 +230,13 @@ export function buildCerberusTitan(textures: CerberusTextures): CerberusTitan {
     hellfireVein: new THREE.MeshStandardMaterial({
       color: 0xfef08a,
       emissive: new THREE.Color(0xea580c),
-      emissiveIntensity: 3.2,
+      emissiveIntensity: 1.45,
       roughness: 0.12,
     }),
     soulVein: new THREE.MeshStandardMaterial({
       color: 0x6ee7b7,
       emissive: new THREE.Color(0x10b981),
-      emissiveIntensity: 2.6,
+      emissiveIntensity: 1.35,
       roughness: 0.15,
     }),
     blackIron: new THREE.MeshStandardMaterial({
@@ -261,19 +261,19 @@ export function buildCerberusTitan(textures: CerberusTextures): CerberusTitan {
     mawGlow: new THREE.MeshStandardMaterial({
       color: 0xfef08a,
       emissive: new THREE.Color(0xf97316),
-      emissiveIntensity: 4.0,
+      emissiveIntensity: 1.65,
       roughness: 0.1,
     }),
     eyeHellfire: new THREE.MeshStandardMaterial({
       color: 0xffffff,
       emissive: new THREE.Color(0xf97316),
-      emissiveIntensity: 4.2,
+      emissiveIntensity: 1.75,
       roughness: 0.05,
     }),
     eyeSoulAlpha: new THREE.MeshStandardMaterial({
       color: 0xd1fae5,
       emissive: new THREE.Color(0x10b981),
-      emissiveIntensity: 4.4,
+      emissiveIntensity: 1.75,
       roughness: 0.05,
     }),
     loincloth: new THREE.MeshStandardMaterial({

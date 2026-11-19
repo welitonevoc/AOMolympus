@@ -222,7 +222,7 @@ export function createEmitterPreviewMesh(kind: AtmosphericEmitterKind): THREE.Gr
     const beamMat = new THREE.MeshBasicMaterial({
       color: 0xfff3b0,
       transparent: true,
-      opacity: 0.22,
+      opacity: 0.09,
       side: THREE.DoubleSide,
       depthWrite: false,
       blending: THREE.AdditiveBlending,
@@ -286,7 +286,7 @@ export class AtmosphericFxSystem {
       const beamMat = new THREE.MeshBasicMaterial({
         color: 0xfff3b0,
         transparent: true,
-        opacity: 0.16,
+        opacity: 0.08,
         side: THREE.DoubleSide,
         depthWrite: false,
         blending: THREE.AdditiveBlending,
@@ -312,7 +312,7 @@ export class AtmosphericFxSystem {
         const mat = new THREE.MeshBasicMaterial({
           color,
           transparent: true,
-          opacity: isSpark ? 0.92 : isMist ? 0.2 : isSmoke ? 0.36 : 0.28,
+          opacity: isSpark ? 0.68 : isMist ? 0.2 : isSmoke ? 0.36 : 0.28,
           depthWrite: false,
           blending: isSpark ? THREE.AdditiveBlending : THREE.NormalBlending,
         });

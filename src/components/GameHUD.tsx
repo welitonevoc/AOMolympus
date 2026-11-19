@@ -20,6 +20,9 @@ import { HudSelectionPanel } from './hud/HudSelectionPanel';
 import { HudTopBar } from './hud/HudTopBar';
 import { MatchChatAndCinematic } from './hud/MatchChatAndCinematic';
 import { MinorGodAgeUpModal } from './hud/MinorGodAgeUpModal';
+import { MobileCommandSheet } from './hud/MobileCommandSheet';
+import { MobileCompactTopBar } from './hud/MobileCompactTopBar';
+import { MobileTouchActionBar } from './hud/MobileTouchActionBar';
 import {
   GameHUDProps,
   getUnitKindsForPantheon,
@@ -108,7 +111,10 @@ export function GameHUD({
   onRestart,
   onReturnTitle,
 }: GameHUDProps) {
-  const [dockCollapsed, setDockCollapsed] = useState(false);
+  const [dockCollapsed, setDockCollapsed] = useState(
+    () => typeof window !== 'undefined' && window.innerWidth < 768
+  );
+  const [mobileSheetOpen, setMobileSheetOpen] = useState(false);
   const [showAgeBonuses, setShowAgeBonuses] = useState(false);
   const [showFavorPanel, setShowFavorPanel] = useState(false);
   const [showDuelScore, setShowDuelScore] = useState(true);
@@ -247,67 +253,83 @@ export function GameHUD({
 
   return (
     <>
-      <HudTopBar
+      <MobileCompactTopBar
         hud={hud}
-        options={options}
-        muted={muted}
         nextAge={nextAge}
-        nextAgeCost={nextAgeCost}
         canAffordNextAge={canAffordNextAge}
-        activeMajorGodCount={activeMajorGodCount}
-        ageAdvancePct={ageAdvancePct}
         isAdvancingAge={isAdvancingAge}
-        ageReadinessPct={ageReadinessPct}
-        powerList={powerList}
-        showDuelScore={showDuelScore}
-        setShowDuelScore={setShowDuelScore}
-        showAgeBonuses={showAgeBonuses}
-        setShowAgeBonuses={setShowAgeBonuses}
-        showCameraBar={showCameraBar}
-        setShowCameraBar={setShowCameraBar}
-        showTimelineOverlay={showTimelineOverlay}
-        setShowTimelineOverlay={setShowTimelineOverlay}
-        activeDialog={activeDialog}
-        setActiveDialog={setActiveDialog}
-        showMatchChat={showMatchChat}
-        onToggleMatchChat={() => {
-          setShowMatchChat((v) => !v);
-          setTimeout(() => chatInputRef.current?.focus(), 20);
-        }}
-        hasMatchChat={Boolean(onSendMatchChat)}
-        inMatchMessageCount={inMatchMessages.length}
-        failedMinorPortraits={failedMinorPortraits}
-        onMinorPortraitError={handleMinorPortraitError}
+        ageAdvancePct={ageAdvancePct}
         onAdvanceAge={onAdvanceAge}
-        onActivateGodPower={onActivateGodPower}
-        onCancelMode={onCancelMode}
-        onSelectIdleVillager={onSelectIdleVillager}
-        onSelectIdleMilitary={onSelectIdleMilitary}
-        onReplayTogglePlay={onReplayTogglePlay}
-        onReplaySetSpeed={onReplaySetSpeed}
-        onReplaySeek={onReplaySeek}
-        onReplayToggleFog={onReplayToggleFog}
-        onReplaySetPerspective={onReplaySetPerspective}
-        onReturnTitle={onReturnTitle}
-        onToggleTownBell={onToggleTownBell}
-        onSaveMatch={onSaveMatch}
-        onToggleMute={onToggleMute}
         onOpenPauseMenu={() => {
+          setMobileSheetOpen(false);
           setPausePrompt('menu');
           onTogglePause();
         }}
-        onZoomCamera={onZoomCamera}
-        onSetCameraPanMode={onSetCameraPanMode}
-        onRotateCamera={onRotateCamera}
-        onCenterCamera={onCenterCamera}
-        onToggleProjectionMode={onToggleProjectionMode}
-        onOrderVillagersToTarget={onOrderVillagersToTarget}
-        onConvertFauna={onConvertFauna}
       />
 
-      {/* AoM: RETOLD ANCHORED COMMAND DOCK (PAINEL H) */}
+      <div className="hidden md:block">
+        <HudTopBar
+          hud={hud}
+          options={options}
+          muted={muted}
+          nextAge={nextAge}
+          nextAgeCost={nextAgeCost}
+          canAffordNextAge={canAffordNextAge}
+          activeMajorGodCount={activeMajorGodCount}
+          ageAdvancePct={ageAdvancePct}
+          isAdvancingAge={isAdvancingAge}
+          ageReadinessPct={ageReadinessPct}
+          powerList={powerList}
+          showDuelScore={showDuelScore}
+          setShowDuelScore={setShowDuelScore}
+          showAgeBonuses={showAgeBonuses}
+          setShowAgeBonuses={setShowAgeBonuses}
+          showCameraBar={showCameraBar}
+          setShowCameraBar={setShowCameraBar}
+          showTimelineOverlay={showTimelineOverlay}
+          setShowTimelineOverlay={setShowTimelineOverlay}
+          activeDialog={activeDialog}
+          setActiveDialog={setActiveDialog}
+          showMatchChat={showMatchChat}
+          onToggleMatchChat={() => {
+            setShowMatchChat((v) => !v);
+            setTimeout(() => chatInputRef.current?.focus(), 20);
+          }}
+          hasMatchChat={Boolean(onSendMatchChat)}
+          inMatchMessageCount={inMatchMessages.length}
+          failedMinorPortraits={failedMinorPortraits}
+          onMinorPortraitError={handleMinorPortraitError}
+          onAdvanceAge={onAdvanceAge}
+          onActivateGodPower={onActivateGodPower}
+          onCancelMode={onCancelMode}
+          onSelectIdleVillager={onSelectIdleVillager}
+          onSelectIdleMilitary={onSelectIdleMilitary}
+          onReplayTogglePlay={onReplayTogglePlay}
+          onReplaySetSpeed={onReplaySetSpeed}
+          onReplaySeek={onReplaySeek}
+          onReplayToggleFog={onReplayToggleFog}
+          onReplaySetPerspective={onReplaySetPerspective}
+          onReturnTitle={onReturnTitle}
+          onToggleTownBell={onToggleTownBell}
+          onSaveMatch={onSaveMatch}
+          onToggleMute={onToggleMute}
+          onOpenPauseMenu={() => {
+            setPausePrompt('menu');
+            onTogglePause();
+          }}
+          onZoomCamera={onZoomCamera}
+          onSetCameraPanMode={onSetCameraPanMode}
+          onRotateCamera={onRotateCamera}
+          onCenterCamera={onCenterCamera}
+          onToggleProjectionMode={onToggleProjectionMode}
+          onOrderVillagersToTarget={onOrderVillagersToTarget}
+          onConvertFauna={onConvertFauna}
+        />
+      </div>
+
+      {/* AoM: RETOLD ANCHORED COMMAND DOCK (PAINEL H — DESKTOP) */}
       <div
-        className={`fixed bottom-0 inset-x-0 z-20 pointer-events-none transition-transform duration-200 ${
+        className={`hidden md:block fixed bottom-0 inset-x-0 z-20 pointer-events-none transition-transform duration-200 ${
           dockCollapsed ? 'translate-y-[calc(100%-24px)]' : 'translate-y-0'
         }`}
       >
@@ -504,26 +526,55 @@ export function GameHUD({
         </div>
       </div>
 
-      {/* FLOATING MINIMAP WHEN DOCK IS COLLAPSED */}
-      {dockCollapsed && (
-        <div className="fixed bottom-2 right-2 z-20">
-          <Minimap
-            blips={hud.minimapBlips}
-            pantheon={hud.pantheon}
-            mapId={hud.mapId}
-            worldSize={hud.worldSize}
-            revealedMap={hud.revealedMap}
-            fogGrid={hud.fogGrid}
-            fogGridSize={hud.fogGridSize}
-            cameraTarget={hud.cameraTarget}
-            cameraYaw={hud.cameraYaw}
-            cameraDistance={hud.cameraDistance}
-            onJumpCamera={onJumpCamera}
-            onMoveOrder={onMinimapMoveOrder}
-            onFocusTownCenter={onFocusTownCenter}
-          />
-        </div>
-      )}
+      {/* FLOATING MINIMAP WHEN DESKTOP DOCK IS COLLAPSED OR ON MOBILE */}
+      <div className={`${dockCollapsed ? 'block' : 'block md:hidden'} fixed bottom-2 right-2 z-20`}>
+        <Minimap
+          blips={hud.minimapBlips}
+          pantheon={hud.pantheon}
+          mapId={hud.mapId}
+          worldSize={hud.worldSize}
+          revealedMap={hud.revealedMap}
+          fogGrid={hud.fogGrid}
+          fogGridSize={hud.fogGridSize}
+          cameraTarget={hud.cameraTarget}
+          cameraYaw={hud.cameraYaw}
+          cameraDistance={hud.cameraDistance}
+          onJumpCamera={onJumpCamera}
+          onMoveOrder={onMinimapMoveOrder}
+          onFocusTownCenter={onFocusTownCenter}
+        />
+      </div>
+
+      <MobileTouchActionBar
+        hud={hud}
+        dockCollapsed={!mobileSheetOpen}
+        onToggleDock={() => setMobileSheetOpen((prev) => !prev)}
+        onSetCameraPanMode={onSetCameraPanMode}
+        onSelectIdleVillager={onSelectIdleVillager}
+        onFocusTownCenter={onFocusTownCenter}
+        onSelectCombat={onSelectCombat}
+        onCancelMode={onCancelMode}
+      />
+
+      <MobileCommandSheet
+        open={mobileSheetOpen}
+        onClose={() => setMobileSheetOpen(false)}
+        hud={hud}
+        buildingList={buildingList}
+        unitList={unitList}
+        powerList={powerList}
+        techList={techList}
+        nextAge={nextAge}
+        nextAgeCost={nextAgeCost}
+        canAffordNextAge={canAffordNextAge}
+        isAdvancingAge={isAdvancingAge}
+        ageAdvancePct={ageAdvancePct}
+        onStartBuild={onStartBuild}
+        onTrainUnit={onTrainUnit}
+        onActivateGodPower={onActivateGodPower}
+        onResearchTech={onResearchTech}
+        onAdvanceAge={onAdvanceAge}
+      />
 
       <MinorGodAgeUpModal
         hud={hud}

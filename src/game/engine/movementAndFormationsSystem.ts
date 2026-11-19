@@ -671,21 +671,31 @@ export function moveUnitToward(
   }
 
   u.mesh.position.set(nx, isShip ? -0.22 : groundHeightAt(nx, nz, ctx.mapId, ctx.worldSize), nz);
-  if (Math.hypot(nx - oldX, nz - oldZ) > 0.001) {
+  const movedDist = Math.hypot(nx - oldX, nz - oldZ);
+  if (movedDist > 0.001) {
     u.mesh.rotation.y = Math.atan2(nx - oldX, nz - oldZ);
-    if (!isShip && Math.random() < 0.09) {
+    u.mesh.userData.lastMovedAt = ctx.elapsedSeconds;
+    const isWorkerUnit =
+      u.kind === 'villager' ||
+      u.kind === 'norse_dwarf' ||
+      u.kind === 'citizen' ||
+      u.kind === 'chinese_peasant' ||
+      u.kind === 'kuafu';
+    if (!isShip && !isWorkerUnit && Math.random() < 0.09) {
       ctx.spawnDustParticleVfx(u.mesh.position);
     }
   } else {
     u.mesh.rotation.y = Math.atan2(_moveVec.x, _moveVec.z);
   }
 
+  // Always advance animPhase even when animatePose is present so 2.5D sprites & paper-dolls animate smoothly
+  u.animPhase += dt * speed * 2.2;
+
   const poseAnim = u.mesh.userData.animatePose as
     | ((dt: number, moving: boolean, speed: number, attackT: number | null) => void)
     | undefined;
   if (poseAnim) return false;
 
-  u.animPhase += dt * speed * 2.2;
   const swing = Math.sin(u.animPhase) * 0.52;
   if (u.mesh.userData.leftLeg) u.mesh.userData.leftLeg.rotation.x = swing;
   if (u.mesh.userData.rightLeg) u.mesh.userData.rightLeg.rotation.x = -swing;

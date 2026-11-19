@@ -6,6 +6,7 @@ import { RecordedMatchRecord } from './game/menuData';
 import { multiplayerClient } from './game/multiplayerClient';
 import { ChatMessage } from './game/multiplayerTypes';
 import { clearSavedMatchFromStorage, hasSavedMatchInStorage } from './game/saveLoadSystem';
+import { OfflineIndicator } from './components/OfflineIndicator';
 
 const GameHUD = lazy(() => import('./components/GameHUD').then((m) => ({ default: m.GameHUD })));
 import {
@@ -174,6 +175,7 @@ export default function App() {
     engineRef.current = engine;
     const ok = engine.loadMatchFromStorage();
     if (ok) {
+      engine.applyOptions(options);
       setPhase('playing');
     } else {
       setPhase('title');
@@ -292,10 +294,22 @@ export default function App() {
           onRotateCamera={(rad) => engineRef.current?.rotateCameraBy(rad)}
           onCenterCamera={() => engineRef.current?.centerCameraOnBase()}
           onSetCameraPanMode={(mode) => engineRef.current?.setCameraPanMode(mode)}
-          onToggleProjectionMode={() => engineRef.current?.toggleProjectionMode()}
-          onToggleDayNightCycle={() => engineRef.current?.toggleDayNightCycle()}
-          onToggleHopliteMode={() => engineRef.current?.toggleHopliteRenderMode()}
-          onSetHopliteMode={(mode) => engineRef.current?.setHopliteRenderMode(mode)}
+          onToggleProjectionMode={() => {
+            const next = engineRef.current?.toggleProjectionMode();
+            if (next) setOptions((prev) => ({ ...prev, projectionMode: next }));
+          }}
+          onToggleDayNightCycle={() => {
+            const next = engineRef.current?.toggleDayNightCycle();
+            if (typeof next === 'boolean') setOptions((prev) => ({ ...prev, dayNightCycle: next }));
+          }}
+          onToggleHopliteMode={() => {
+            const next = engineRef.current?.toggleHopliteRenderMode();
+            if (next) setOptions((prev) => ({ ...prev, hopliteRenderMode: next }));
+          }}
+          onSetHopliteMode={(mode) => {
+            engineRef.current?.setHopliteRenderMode(mode);
+            setOptions((prev) => ({ ...prev, hopliteRenderMode: mode }));
+          }}
           onSetHopliteArmorTier={(tier) => engineRef.current?.setHopliteArmorTier(tier)}
           onCycleScaleProfile={() => engineRef.current?.cycleScaleProfile()}
           onSetFormation={(form) => engineRef.current?.setFormation(form)}
@@ -358,6 +372,7 @@ export default function App() {
         />
         </Suspense>
       )}
+      <OfflineIndicator />
     </div>
   );
 }

@@ -169,13 +169,13 @@ export function createZeusMaterials(textures: ZeusProceduralTextures) {
     eyeGlow: new THREE.MeshStandardMaterial({
       color: 0xffffff,
       emissive: new THREE.Color(0x38bdf8),
-      emissiveIntensity: 3.4,
+      emissiveIntensity: 1.65,
       roughness: 0.08
     }),
     eyeIris: new THREE.MeshStandardMaterial({
       color: 0x7dd3fc,
       emissive: new THREE.Color(0xfef08a),
-      emissiveIntensity: 2.2
+      emissiveIntensity: 1.35
     }),
     sandalLeather: new THREE.MeshStandardMaterial({
       color: 0x451a03,
@@ -468,7 +468,7 @@ export function buildZeus(textures: ZeusProceduralTextures): ZeusMeshHierarchy {
   const boltCoreMat = new THREE.MeshStandardMaterial({
     color: 0xffffff,
     emissive: new THREE.Color(0xfde047),
-    emissiveIntensity: 3.6,
+    emissiveIntensity: 1.75,
     roughness: 0.1
   });
   const boltAuraMat = new THREE.MeshBasicMaterial({
@@ -514,10 +514,9 @@ export function buildZeus(textures: ZeusProceduralTextures): ZeusMeshHierarchy {
     new THREE.MeshBasicMaterial({
       color: 0xfff3a0,
       transparent: true,
-      opacity: 0.75,
+      opacity: 0.52,
       blending: THREE.AdditiveBlending,
-      depthWrite: false,
-      toneMapped: false
+      depthWrite: false
     })
   );
   handAnchor.add(handGlow);
@@ -597,10 +596,9 @@ export function buildZeus(textures: ZeusProceduralTextures): ZeusMeshHierarchy {
   const ringMat = new THREE.MeshBasicMaterial({
     color: 0xfde68a,
     transparent: true,
-    opacity: 0.5,
+    opacity: 0.36,
     blending: THREE.AdditiveBlending,
-    depthWrite: false,
-    toneMapped: false
+    depthWrite: false
   });
   const ring1 = new THREE.Mesh(new THREE.TorusGeometry(1.12, 0.014, 8, 72), ringMat);
   ring1.rotation.x = Math.PI / 2;

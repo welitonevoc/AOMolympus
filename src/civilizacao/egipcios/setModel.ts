@@ -205,13 +205,13 @@ export function buildSet(textures?: SetTextures): SetModel {
     chaosPurple: new THREE.MeshStandardMaterial({
       color: 0xa855f7,
       emissive: 0x7e22ce,
-      emissiveIntensity: 2.8,
+      emissiveIntensity: 1.45,
       roughness: 0.1,
     }),
     eyeChaosGlow: new THREE.MeshStandardMaterial({
       color: 0xffffff,
       emissive: 0xf97316,
-      emissiveIntensity: 4.2,
+      emissiveIntensity: 1.75,
       roughness: 0.05,
     }),
     nemesMat: new THREE.MeshStandardMaterial({

@@ -253,7 +253,7 @@ export function buildZeusHydra(options: HydraBuildOptions = {}): HydraBuildResul
     eyeGlow: new THREE.MeshStandardMaterial({
       color: 0xffffff,
       emissive: 0xfacc15,
-      emissiveIntensity: 3.2,
+      emissiveIntensity: 1.6,
       roughness: 0.05
     })
   };

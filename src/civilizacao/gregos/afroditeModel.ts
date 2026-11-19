@@ -158,7 +158,7 @@ function createMaterials(textures: AphroditeTextures): AphroditeMaterials {
     rubyHeartGem: new THREE.MeshStandardMaterial({
       color: 0xf43f5e,
       emissive: 0xe11d48,
-      emissiveIntensity: 2.8,
+      emissiveIntensity: 1.5,
       roughness: 0.08,
       metalness: 0.3,
     }),
@@ -171,7 +171,7 @@ function createMaterials(textures: AphroditeTextures): AphroditeMaterials {
     eyeSapphireSky: new THREE.MeshStandardMaterial({
       color: 0x38bdf8,
       emissive: 0x0284c7,
-      emissiveIntensity: 2.4,
+      emissiveIntensity: 1.4,
       roughness: 0.06,
     }),
     eyePupil: new THREE.MeshStandardMaterial({

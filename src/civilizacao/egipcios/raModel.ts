@@ -273,13 +273,13 @@ export function buildRa(textures?: RaTextures): RaModel {
     solarDiscMat: new THREE.MeshStandardMaterial({
       color: 0xffffff,
       emissive: 0xf59e0b,
-      emissiveIntensity: 3.8,
+      emissiveIntensity: 1.65,
       roughness: 0.08,
     }),
     eyeSolarGold: new THREE.MeshStandardMaterial({
       color: 0xffffff,
       emissive: 0xfde047,
-      emissiveIntensity: 4.0,
+      emissiveIntensity: 1.7,
       roughness: 0.05,
     }),
   };

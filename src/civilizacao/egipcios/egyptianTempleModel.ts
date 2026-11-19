@@ -428,13 +428,14 @@ export function buildEgyptianTempleSystem(
     flame: new THREE.MeshBasicMaterial({
       color: theme.flameHex,
       transparent: true,
-      opacity: 0.92,
-      blending: THREE.AdditiveBlending
+      opacity: 0.65,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
     }),
     divineGlow: new THREE.MeshStandardMaterial({
       color: 0xffffff,
       emissive: theme.glowHex,
-      emissiveIntensity: 3.2,
+      emissiveIntensity: 1.6,
       roughness: 0.1
     })
   };

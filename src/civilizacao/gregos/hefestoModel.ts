@@ -168,7 +168,7 @@ export function createHephaestusMaterials(textures: HephaestusTextures): Record<
     magmaGlow: new THREE.MeshStandardMaterial({
       color: 0xfef08a,
       emissive: new THREE.Color(0xf97316),
-      emissiveIntensity: 3.8,
+      emissiveIntensity: 1.65,
       roughness: 0.1,
     }),
     apronLeather: new THREE.MeshStandardMaterial({
@@ -180,7 +180,7 @@ export function createHephaestusMaterials(textures: HephaestusTextures): Record<
     eyeAmberFire: new THREE.MeshStandardMaterial({
       color: 0xffffff,
       emissive: new THREE.Color(0xf59e0b),
-      emissiveIntensity: 3.8,
+      emissiveIntensity: 1.65,
       roughness: 0.06,
     }),
   };

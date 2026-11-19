@@ -541,10 +541,9 @@ export function buildDionysus(textures: DionysusTextures): DionysusModel {
     new THREE.MeshBasicMaterial({
       color: 0xd946ef,
       transparent: true,
-      opacity: 0.72,
+      opacity: 0.48,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
-      toneMapped: false,
     })
   );
   thyrsusAnchor.add(thyrsusGlow);

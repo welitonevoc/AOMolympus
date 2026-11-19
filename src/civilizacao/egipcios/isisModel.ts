@@ -218,19 +218,19 @@ export function buildIsis(tex?: IsisTextures): IsisModel {
     magicCyan: new THREE.MeshStandardMaterial({
       color: 0xffffff,
       emissive: 0x2dd4bf,
-      emissiveIntensity: 3.5,
+      emissiveIntensity: 1.6,
       roughness: 0.1,
     }),
     magicGreen: new THREE.MeshStandardMaterial({
       color: 0xffffff,
       emissive: 0x10b981,
-      emissiveIntensity: 3.5,
+      emissiveIntensity: 1.6,
       roughness: 0.1,
     }),
     waterMagic: new THREE.MeshBasicMaterial({
       color: 0x0ea5e9,
       transparent: true,
-      opacity: 0.8,
+      opacity: 0.52,
       blending: THREE.AdditiveBlending,
       side: THREE.DoubleSide,
       depthWrite: false,

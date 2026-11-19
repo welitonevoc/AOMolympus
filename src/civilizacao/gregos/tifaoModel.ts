@@ -145,14 +145,14 @@ export function buildTyphonTitan(textures: TyphonTextures): TyphonTitan {
   const lightningVein = new THREE.MeshStandardMaterial({
     color: 0xffffff,
     emissive: new THREE.Color(0x38bdf8),
-    emissiveIntensity: 3.4,
+    emissiveIntensity: 1.6,
     roughness: 0.1,
   });
 
   const goldVein = new THREE.MeshStandardMaterial({
     color: 0xfef08a,
     emissive: new THREE.Color(0xfacc15),
-    emissiveIntensity: 2.8,
+    emissiveIntensity: 1.45,
     roughness: 0.12,
   });
 
@@ -192,7 +192,7 @@ export function buildTyphonTitan(textures: TyphonTextures): TyphonTitan {
   const eyeLightning = new THREE.MeshStandardMaterial({
     color: 0xffffff,
     emissive: new THREE.Color(0x38bdf8),
-    emissiveIntensity: 4.5,
+    emissiveIntensity: 1.8,
     roughness: 0.05,
   });
 

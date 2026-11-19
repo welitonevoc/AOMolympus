@@ -34,8 +34,9 @@ export function PoseidonViewerModal({ isOpen, onClose }: PoseidonViewerModalProp
     renderer.setSize(width, height);
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.15;
+    renderer.toneMappingExposure = 0.95;
 
     container.innerHTML = '';
     container.appendChild(renderer.domElement);
@@ -48,10 +49,10 @@ export function PoseidonViewerModal({ isOpen, onClose }: PoseidonViewerModalProp
 
     const camera = new THREE.PerspectiveCamera(36, width / height, 0.1, 140);
 
-    const hemi = new THREE.HemisphereLight(0xbae6fd, 0x042f2e, 0.95);
+    const hemi = new THREE.HemisphereLight(0xbae6fd, 0x042f2e, 0.65);
     scene.add(hemi);
 
-    const sun = new THREE.DirectionalLight(0xfef08a, 2.25);
+    const sun = new THREE.DirectionalLight(0xfef08a, 1.62);
     sun.position.set(4.5, 7.5, 5.0);
     sun.castShadow = true;
     sun.shadow.mapSize.set(2048, 2048);
@@ -59,11 +60,11 @@ export function PoseidonViewerModal({ isOpen, onClose }: PoseidonViewerModalProp
     sun.shadow.bias = -0.0004;
     scene.add(sun);
 
-    const abyssUpLight = new THREE.DirectionalLight(0x2dd4bf, 1.35);
+    const abyssUpLight = new THREE.DirectionalLight(0x2dd4bf, 0.78);
     abyssUpLight.position.set(0, -4, 2);
     scene.add(abyssUpLight);
 
-    const tridentLight = new THREE.PointLight(0x2dd4bf, 2.2, 8);
+    const tridentLight = new THREE.PointLight(0x2dd4bf, 1.35, 8);
     scene.add(tridentLight);
 
     const impactLight = new THREE.PointLight(0x99f6e4, 0, 14);
@@ -89,12 +90,11 @@ export function PoseidonViewerModal({ isOpen, onClose }: PoseidonViewerModalProp
         sprayGeo,
         new THREE.PointsMaterial({
           color: 0xe0f2fe,
-          size: 0.11,
+          size: 0.1,
           transparent: true,
-          opacity: 0.9,
+          opacity: 0.65,
           blending: THREE.AdditiveBlending,
-          depthWrite: false,
-          toneMapped: false
+          depthWrite: false
         })
       )
     );
@@ -150,9 +150,9 @@ export function PoseidonViewerModal({ isOpen, onClose }: PoseidonViewerModalProp
         const sw = new THREE.Mesh(
           new THREE.RingGeometry(0.35, 0.65, 48),
           new THREE.MeshBasicMaterial({
-            color: k === 0 ? 0xffffff : 0x2dd4bf,
+            color: k === 0 ? 0xe0f2fe : 0x2dd4bf,
             transparent: true,
-            opacity: 0.92,
+            opacity: 0.58,
             blending: THREE.AdditiveBlending,
             side: THREE.DoubleSide,
             depthWrite: false
@@ -174,7 +174,7 @@ export function PoseidonViewerModal({ isOpen, onClose }: PoseidonViewerModalProp
           new THREE.MeshBasicMaterial({
             color: 0x5eead4,
             transparent: true,
-            opacity: 0.82,
+            opacity: 0.52,
             blending: THREE.AdditiveBlending,
             side: THREE.DoubleSide,
             depthWrite: false
@@ -187,7 +187,7 @@ export function PoseidonViewerModal({ isOpen, onClose }: PoseidonViewerModalProp
       }
 
       impactLight.position.set(originX + dirX * 1.2, 1.2, originZ + dirZ * 1.2);
-      impactLight.intensity = 10.0;
+      impactLight.intensity = 3.6;
       for (let i = 0; i < 36; i++) spawnSpray(originX + dirX * 0.9, 0.25, originZ + dirZ * 0.9, 5.2, 2.2, 6.2);
     }
 

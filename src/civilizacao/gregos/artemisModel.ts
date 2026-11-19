@@ -183,7 +183,7 @@ export function createArtemisMaterials(textures: ArtemisTextures): Record<string
     moonCore: new THREE.MeshStandardMaterial({
       color: 0xffffff,
       emissive: new THREE.Color(0x38bdf8),
-      emissiveIntensity: 3.6,
+      emissiveIntensity: 1.65,
       roughness: 0.08,
     }),
     leatherForest: new THREE.MeshStandardMaterial({
@@ -215,7 +215,7 @@ export function createArtemisMaterials(textures: ArtemisTextures): Record<string
     eyeMoonSilver: new THREE.MeshStandardMaterial({
       color: 0x7dd3fc,
       emissive: new THREE.Color(0x38bdf8),
-      emissiveIntensity: 2.8,
+      emissiveIntensity: 1.45,
       roughness: 0.06,
     }),
     eyePupil: new THREE.MeshStandardMaterial({
@@ -489,10 +489,9 @@ export function buildArtemis(textures: ArtemisTextures): ArtemisModel {
     new THREE.MeshBasicMaterial({
       color: 0x38bdf8,
       transparent: true,
-      opacity: 0.8,
+      opacity: 0.52,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
-      toneMapped: false,
     })
   );
   glaiveAnchor.add(glaiveGlow);

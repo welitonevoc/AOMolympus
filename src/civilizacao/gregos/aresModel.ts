@@ -180,13 +180,13 @@ function createMaterials(textures: AresTextures): AresMaterials {
     eyeEmber: new THREE.MeshStandardMaterial({
       color: 0xffedd5,
       emissive: new THREE.Color(0xf97316),
-      emissiveIntensity: 4.2,
+      emissiveIntensity: 1.75,
       roughness: 0.05,
     }),
     magmaEdge: new THREE.MeshStandardMaterial({
       color: 0xfef08a,
       emissive: new THREE.Color(0xef4444),
-      emissiveIntensity: 3.8,
+      emissiveIntensity: 1.65,
       roughness: 0.1,
     }),
     shieldFace: new THREE.MeshStandardMaterial({

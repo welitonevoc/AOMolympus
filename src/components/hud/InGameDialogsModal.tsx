@@ -517,7 +517,6 @@ export function InGameDialogsModal({
               onClick={() => {
                 const nextMode = (hud.projectionMode ?? options.projectionMode) === '2.5d' ? '3d' : '2.5d';
                 onUpdateOptions({ ...options, projectionMode: nextMode });
-                if (onToggleProjectionMode) onToggleProjectionMode();
               }}
               className="flex w-full items-center justify-between rounded border border-white/15 bg-[#161b26] px-4 py-2.5 font-semibold text-white cursor-pointer"
             >
@@ -538,10 +537,10 @@ export function InGameDialogsModal({
             <button
               type="button"
               onClick={() => {
-                const cur = hud.hopliteRenderMode ?? options.hopliteRenderMode ?? 'sprite';
-                const nextMode = cur === 'sprite' ? 'brg' : cur === 'brg' ? '3d' : 'sprite';
+                const cur = hud.hopliteRenderMode ?? options.hopliteRenderMode ?? '3d';
+                const nextMode =
+                  cur === '3d' ? 'brg' : cur === 'brg' ? 'uv2d' : cur === 'uv2d' ? 'sprite' : '3d';
                 onUpdateOptions({ ...options, hopliteRenderMode: nextMode });
-                if (onToggleHopliteMode) onToggleHopliteMode();
               }}
               className="flex w-full items-center justify-between rounded border border-white/15 bg-[#161b26] px-4 py-2.5 font-semibold text-white cursor-pointer"
             >
@@ -552,6 +551,8 @@ export function InGameDialogsModal({
                     ? 'Folha PNG 2.5D (Billboard)'
                     : (hud.hopliteRenderMode ?? options.hopliteRenderMode) === 'brg'
                     ? '2.5D BRG Vertex-Cache (AoM Nativo)'
+                    : (hud.hopliteRenderMode ?? options.hopliteRenderMode) === 'uv2d'
+                    ? '2D Paper-Doll (Atlas UV 64x64)'
                     : 'Modelo 3D Real (Poligonal)'}
                 </div>
               </div>
@@ -561,6 +562,8 @@ export function InGameDialogsModal({
                     ? 'text-amber-400'
                     : (hud.hopliteRenderMode ?? options.hopliteRenderMode) === 'brg'
                     ? 'text-purple-400'
+                    : (hud.hopliteRenderMode ?? options.hopliteRenderMode) === 'uv2d'
+                    ? 'text-sky-400'
                     : 'text-emerald-400'
                 }
               >
@@ -568,15 +571,16 @@ export function InGameDialogsModal({
                   ? '2.5D SPRITE'
                   : (hud.hopliteRenderMode ?? options.hopliteRenderMode) === 'brg'
                   ? '2.5D BRG'
+                  : (hud.hopliteRenderMode ?? options.hopliteRenderMode) === 'uv2d'
+                  ? '2D UV'
                   : '3D REAL'}
               </span>
             </button>
             <button
               type="button"
               onClick={() => {
-                const nextVal = !(options.dayNightCycle ?? hud.dayNightCycle);
+                const nextVal = !(hud.dayNightCycle ?? options.dayNightCycle);
                 onUpdateOptions({ ...options, dayNightCycle: nextVal });
-                if (onToggleDayNightCycle) onToggleDayNightCycle();
               }}
               className="flex w-full items-center justify-between rounded border border-white/15 bg-[#161b26] px-4 py-2.5 font-semibold text-white cursor-pointer hover:bg-[#1f2533]"
             >
