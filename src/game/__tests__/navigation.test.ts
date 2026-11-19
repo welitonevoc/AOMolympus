@@ -40,4 +40,30 @@ describe('NavigationGrid', () => {
     const last = path[path.length - 1];
     expect(Math.hypot(last.x - goalX, last.z - goalZ)).toBeLessThan(3.5);
   });
+
+  it('classifies water vs land cells accurately on maritime maps and computes naval water paths', () => {
+    const grid = new NavigationGrid();
+    grid.rebuildTerrain('mediterranean', 'normal');
+
+    const centerCell = grid.worldToCell(0, 0);
+    const waterCell = grid.nearestWaterCell(centerCell.gx, centerCell.gz, centerCell.gx, centerCell.gz, 35);
+    expect(waterCell).not.toBeNull();
+
+    const waterWorld = grid.cellToWorld(waterCell!.gx, waterCell!.gz);
+    expect(grid.isWaterTerrain(waterWorld.x, waterWorld.z)).toBe(true);
+    expect(grid.isTerrainWalkable(waterWorld.x, waterWorld.z)).toBe(false);
+
+    // Find another water cell across the sea and verify findWaterPath returns waypoints
+    const farWaterCell = grid.nearestWaterCell(
+      Math.min(grid.width - 2, waterCell!.gx + 8),
+      waterCell!.gz,
+      waterCell!.gx,
+      waterCell!.gz,
+      20
+    );
+    expect(farWaterCell).not.toBeNull();
+    const farWaterWorld = grid.cellToWorld(farWaterCell!.gx, farWaterCell!.gz);
+    const waterPath = grid.findWaterPath(waterWorld.x, waterWorld.z, farWaterWorld.x, farWaterWorld.z);
+    expect(waterPath.length).toBeGreaterThan(0);
+  });
 });
