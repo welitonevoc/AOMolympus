@@ -1,7 +1,37 @@
+import godCronosImg from '../assets/images/god_cronos_1795121376307.jpg';
+import godDemeterImg from '../assets/images/god_demeter_1795121446731.jpg';
+import godFreyrImg from '../assets/images/god_freyr_1795121379821.jpg';
+import godFuxiImg from '../assets/images/god_fuxi_1795121379264.jpg';
+import godGaiaImg from '../assets/images/god_gaia_1795121443392.jpg';
+import godHadesImg from '../assets/images/god_hades_1795121382402.jpg';
+import godIsisImg from '../assets/images/god_isis_1795121377823.jpg';
+import godLokiImg from '../assets/images/god_loki_1795121492099.jpg';
+import godNuwaImg from '../assets/images/god_nuwa_1795121442653.jpg';
+import godOdinImg from '../assets/images/god_odin_1795121378948.jpg';
+import godPoseidonImg from '../assets/images/god_poseidon_1795121381693.jpg';
+import godRaImg from '../assets/images/god_ra_1795121377571.jpg';
+import godSetImg from '../assets/images/god_set_1795121442507.jpg';
+import godShennongImg from '../assets/images/god_shennong_1795121385670.jpg';
+import godThorImg from '../assets/images/god_thor_1795121380520.jpg';
+import godUranoImg from '../assets/images/god_urano_1795121379668.jpg';
+import godZeusImg from '../assets/images/god_zeus_1795121378343.jpg';
+
+import mapAegeanIslandsImg from '../assets/images/map_aegean_islands_1795121379463.jpg';
+import mapErebusLavaImg from '../assets/images/map_erebus_lava_1795121380261.jpg';
+import mapNileDesertImg from '../assets/images/map_nile_desert_1795121378637.jpg';
+import mapNordicFjordsImg from '../assets/images/map_nordic_fjords_1795121376458.jpg';
+import mapSavannahJungleImg from '../assets/images/map_savannah_jungle_1795121381811.jpg';
+import mapOlympusCitadelImg from '../assets/images/olympus_citadel_hero_1794768157018.jpg';
+
+import minorAnubisImg from '../assets/images/minor_anubis_1795121379262.jpg';
+import minorApolloImg from '../assets/images/minor_apollo_1795121444032.jpg';
+import minorAresImg from '../assets/images/minor_ares_1795121389862.jpg';
+import minorAthenaImg from '../assets/images/minor_athena_1795121377095.jpg';
+import minorFreyjaImg from '../assets/images/minor_freyja_1795121441841.jpg';
+import minorHelImg from '../assets/images/minor_hel_1795121380282.jpg';
 import minorHorusImg from '../assets/images/minor_horus_1794937407134.jpg';
 import minorPrometheusImg from '../assets/images/minor_prometheus_1794937410006.jpg';
 import minorSkadiImg from '../assets/images/minor_skadi_1794937409845.jpg';
-import mapOlympusCitadelImg from '../assets/images/olympus_citadel_hero_1794768157018.jpg';
 
 import { MapId, PantheonId } from './types';
 
@@ -34,42 +64,7 @@ function makePortraitSvg(title: string, emblem: string, accent: string, bgTop: s
   );
 }
 
-function makeLandscapeSvg(title: string, sky: string, horizon: string, ground: string, water: string): string {
-  const safeTitle = title.replace(/[<>&"']/g, '');
-  return encodeSvgDataUri(
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 220">
-      <defs>
-        <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="${sky}"/>
-          <stop offset="100%" stop-color="${horizon}"/>
-        </linearGradient>
-      </defs>
-      <rect width="480" height="220" fill="url(#sky)"/>
-      <circle cx="385" cy="54" r="24" fill="#fef08a" fill-opacity="0.75"/>
-      <path d="M0 145 L95 92 L185 132 L285 78 L390 128 L480 96 L480 220 L0 220 Z" fill="${ground}"/>
-      <path d="M0 170 Q130 155 240 176 T480 168 L480 220 L0 220 Z" fill="${water}" fill-opacity="0.88"/>
-      <rect x="18" y="168" width="210" height="32" rx="6" fill="#070a10" fill-opacity="0.72"/>
-      <text x="32" y="189" font-family="Georgia, serif" font-size="15" font-weight="bold" fill="#f3d27a">${safeTitle}</text>
-    </svg>`
-  );
-}
-
-const godZeusImg = makePortraitSvg('ZEUS', '⚡', '#facc15', '#1d3557', '#0b1324');
-const godPoseidonImg = makePortraitSvg('POSEIDON', 'Ψ', '#38bdf8', '#0c4a6e', '#081826');
-const godHadesImg = makePortraitSvg('HADES', 'Ω', '#a855f7', '#2e1065', '#090714');
-const godDemeterImg = makePortraitSvg('DEMÉTER', '🌾', '#84cc16', '#26401c', '#0b1409');
-const godRaImg = makePortraitSvg('RÁ', '☀', '#f59e0b', '#78350f', '#1c0f05');
-const godIsisImg = makePortraitSvg('ÍSIS', '☥', '#eab308', '#1e3a5f', '#0a1426');
-const godSetImg = makePortraitSvg('SET', '🜂', '#dc2626', '#450a0a', '#120505');
-const godOdinImg = makePortraitSvg('ODIN', 'ᛟ', '#60a5fa', '#1e293b', '#090d16');
-const godThorImg = makePortraitSvg('THOR', '🔨', '#fbbf24', '#334155', '#0f172a');
-const godLokiImg = makePortraitSvg('LOKI', '🔥', '#f97316', '#3b0764', '#11041c');
-const godFreyrImg = makePortraitSvg('FREYR', '🌿', '#34d399', '#14532d', '#061f12');
-const godCronosImg = makePortraitSvg('CRONOS', '⏳', '#c084fc', '#311042', '#0b0614');
-const godUranoImg = makePortraitSvg('URANO', '✦', '#38bdf8', '#172554', '#080e24');
-const godGaiaImg = makePortraitSvg('GAIA', '🌳', '#4ade80', '#166534', '#072213');
-
-const civChineseImg = makePortraitSvg('CHINESES', '龍', '#ef4444', '#7f1d1d', '#1c0707');
+// Coming-soon expansion emblem cards
 const civJapaneseImg = makePortraitSvg('JAPONESES', '⛩', '#fb7185', '#4c0519', '#140309');
 const civAztecImg = makePortraitSvg('ASTECAS', '☉', '#10b981', '#064e3b', '#041a14');
 const civRomanImg = makePortraitSvg('ROMANOS', '🦅', '#f43f5e', '#7f1d1d', '#190808');
@@ -79,43 +74,36 @@ const civBabylonianImg = makePortraitSvg('BABILÔNIOS', '🦁', '#f59e0b', '#1e3
 const civLakotaImg = makePortraitSvg('LAKOTA', '🏹', '#fb923c', '#7c2d12', '#1c0a04');
 const civJotunnImg = makePortraitSvg('JOTUNN', '❄', '#7dd3fc', '#0f172a', '#050914');
 
-const mapNileDesertImg = makeLandscapeSvg('DESERTO & NILO', '#38bdf8', '#fde68a', '#b45309', '#0284c7');
-const mapNordicFjordsImg = makeLandscapeSvg('FIORDES NÓRDICOS', '#64748b', '#cbd5e1', '#334155', '#0c4a6e');
-const mapErebusLavaImg = makeLandscapeSvg('ÉREBO VULCÂNICO', '#1c1917', '#7f1d1d', '#292524', '#dc2626');
-const mapSavannahJungleImg = makeLandscapeSvg('SAVANA & SELVA', '#38bdf8', '#bbf7d0', '#4d7c0f', '#0e7490');
-const mapAegeanIslandsImg = makeLandscapeSvg('MAR EGEU', '#0284c7', '#bae6fd', '#65a30d', '#0369a1');
-
-const minorAthenaImg = makePortraitSvg('ATENA', '🦉', '#facc15', '#1e3a8a', '#0a1430');
-const minorAresImg = makePortraitSvg('ARES', '⚔', '#ef4444', '#7f1d1d', '#1c0606');
-const minorHermesImg = makePortraitSvg('HERMES', '🪽', '#38bdf8', '#1e293b', '#0b111c');
-const minorApolloImg = makePortraitSvg('APOLO', '☀', '#fbbf24', '#713f12', '#1f1105');
-const minorAphroditeImg = makePortraitSvg('AFRODITE', '🐚', '#f472b6', '#831843', '#240715');
-const minorHephaestusImg = makePortraitSvg('HEFESTO', '⚒', '#f97316', '#431407', '#140603');
-const minorArtemisImg = makePortraitSvg('ÁRTEMIS', '🌙', '#a7f3d0', '#064e3b', '#041a14');
-const minorBastImg = makePortraitSvg('BAST', '🐈', '#eab308', '#422006', '#140a02');
-const minorAnubisImg = makePortraitSvg('ANÚBIS', '⚖', '#a855f7', '#27272a', '#09090b');
-const minorFreyjaImg = makePortraitSvg('FREYJA', '❄', '#f472b6', '#312e81', '#0f0e29');
-const minorHelImg = makePortraitSvg('HEL', '💀', '#94a3b8', '#1e1b4b', '#070614');
+function normalizeKey(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+}
 
 const GOD_PORTRAITS_BY_KEY: Record<string, string> = {
   zeus: godZeusImg,
   poseidon: godPoseidonImg,
   hades: godHadesImg,
   demeter: godDemeterImg,
-  'deméter': godDemeterImg,
   ra: godRaImg,
-  'rá': godRaImg,
   isis: godIsisImg,
-  'ísis': godIsisImg,
   set: godSetImg,
   odin: godOdinImg,
   thor: godThorImg,
   loki: godLokiImg,
   freyr: godFreyrImg,
   cronos: godCronosImg,
+  kronos: godCronosImg,
   urano: godUranoImg,
   oranos: godUranoImg,
   gaia: godGaiaImg,
+  'fu xi': godFuxiImg,
+  fuxi: godFuxiImg,
+  'nu wa': godNuwaImg,
+  nuwa: godNuwaImg,
+  shennong: godShennongImg,
 };
 
 const PANTHEON_PORTRAITS: Record<PantheonId, string> = {
@@ -123,7 +111,7 @@ const PANTHEON_PORTRAITS: Record<PantheonId, string> = {
   egyptian: godRaImg,
   norse: godOdinImg,
   atlantean: godCronosImg,
-  chinese: civChineseImg,
+  chinese: godFuxiImg,
   japanese: civJapaneseImg,
   aztec: civAztecImg,
   roman: civRomanImg,
@@ -138,45 +126,52 @@ const MINOR_GOD_PORTRAITS: Record<string, string> = {
   // Gregos
   athena: minorAthenaImg,
   ares: minorAresImg,
-  hermes: minorHermesImg,
+  hermes: minorApolloImg,
   apollo: minorApolloImg,
-  dionysos: minorAphroditeImg,
-  aphrodite: minorAphroditeImg,
-  hephaestus: minorHephaestusImg,
+  dionysos: godDemeterImg,
+  aphrodite: godDemeterImg,
+  hephaestus: minorPrometheusImg,
   hera: minorAthenaImg,
-  artemis: minorArtemisImg,
+  artemis: minorSkadiImg,
   // Egípcios
-  bast: minorBastImg,
-  ptah: minorHephaestusImg,
+  bast: godIsisImg,
+  ptah: godRaImg,
   anubis: minorAnubisImg,
-  hathor: minorBastImg,
+  hathor: godIsisImg,
   nephthys: minorAnubisImg,
-  sekhmet: minorAresImg,
+  sekhmet: godSetImg,
   horus: minorHorusImg,
   osiris: minorHorusImg,
-  thoth: minorApolloImg,
+  thoth: godRaImg,
   // Nórdicos
-  forseti: minorHermesImg,
+  forseti: godFreyrImg,
   freyja: minorFreyjaImg,
-  heimdall: minorAthenaImg,
+  heimdall: godOdinImg,
   skadi: minorSkadiImg,
   bragi: minorFreyjaImg,
   njord: godPoseidonImg,
   aegir: godPoseidonImg,
-  baldr: minorApolloImg,
-  tyr: minorAresImg,
+  baldr: godFreyrImg,
+  tyr: godThorImg,
   hel: minorHelImg,
   vidar: minorSkadiImg,
   // Atlantes
   prometheus: minorPrometheusImg,
   okeanus: godPoseidonImg,
-  leto: minorArtemisImg,
+  leto: godGaiaImg,
   hyperion: minorApolloImg,
-  theia: minorAphroditeImg,
+  theia: godUranoImg,
   rheia: godGaiaImg,
   helios: minorApolloImg,
   hekate: minorHelImg,
   atlas: godCronosImg,
+  // Chineses (Immortal Pillars)
+  chiyou: minorAresImg,
+  xuannu: godNuwaImg,
+  houtu: godShennongImg,
+  gonggong: godPoseidonImg,
+  huangdi: godFuxiImg,
+  zhurong: minorPrometheusImg,
   // Expansões
   divine_war2: minorAresImg,
   divine_eco2: godDemeterImg,
@@ -187,12 +182,12 @@ const MINOR_GOD_PORTRAITS: Record<string, string> = {
 };
 
 export function getMajorGodPortrait(godIdOrName: string, pantheon: PantheonId): string {
-  const key = godIdOrName.trim().toLowerCase();
+  const key = normalizeKey(godIdOrName);
   return GOD_PORTRAITS_BY_KEY[key] ?? PANTHEON_PORTRAITS[pantheon] ?? godZeusImg;
 }
 
 export function getMinorGodPortrait(minorGodId: string, pantheon: PantheonId): string {
-  const key = minorGodId.trim().toLowerCase();
+  const key = normalizeKey(minorGodId);
   return MINOR_GOD_PORTRAITS[key] ?? PANTHEON_PORTRAITS[pantheon] ?? minorAthenaImg;
 }
 
