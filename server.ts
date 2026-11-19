@@ -1,44 +1,34 @@
 import 'dotenv/config';
 import express from 'express';
-import http from 'node:http';
-import path from 'node:path';
-import crypto from 'node:crypto';
-import { WebSocketServer, WebSocket } from 'ws';
+import http from 'http';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { WebSocket, WebSocketServer } from 'ws';
 import { registerVoiceStudioRoutes } from './src/server/voiceStudio.ts';
 import {
-  MP_COLORS,
-  MP_CRESTS,
-  MP_PLAYABLE_PANTHEONS,
-  formatTeamModeLabel,
   getDefaultGodForPantheon,
   getMpColorById,
-  getMpCrestById,
+  MP_COLORS,
+  MP_CRESTS,
+  type ChatMessage,
+  type ClientToServerMessage,
+  type LobbyRoomSettings,
+  type LobbyRoomState,
+  type LobbyRoomSummary,
+  type LobbySlot,
+  type MpFormatSize,
+  type MultiplayerMatchFaction,
+  type MultiplayerMatchPayload,
+  type OnlinePlayerPresence,
+  type ServerToClientMessage,
 } from './src/game/multiplayerTypes.ts';
-import type {
-  AiPersonality,
-  ChatMessage,
-  ClientToServerMessage,
-  LobbyRoomSettings,
-  LobbyRoomState,
-  LobbyRoomSummary,
-  LobbySlot,
-  MpFormatSize,
-  MultiplayerMatchPayload,
-  OnlinePlayerPresence,
-  ServerToClientMessage,
-} from './src/game/multiplayerTypes.ts';
-import type {
-  AgeLevel,
-  DifficultyId,
-  GameTypeId,
-  MapId,
-  PantheonId,
-  VisibilityMode,
-  WorldSizeId,
-} from './src/game/types.ts';
+import type { PantheonId } from './src/game/types.ts';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 interface ConnectedClient {
-  clientId: string;
+  id: string;
   ws: WebSocket;
   playerName: string;
   crestId: string;
@@ -47,646 +37,412 @@ interface ConnectedClient {
   majorGodName: string;
   pingMs: number;
   roomId: string | null;
-  isAlive: boolean;
-  cmdWindowStart: number;
-  cmdCountInWindow: number;
 }
 
-const VALID_PANTHEONS: Set<PantheonId> = new Set(['greek', 'egyptian', 'norse', 'atlantean', 'chinese']);
-const VALID_FORMATS: Set<MpFormatSize> = new Set([2, 4, 6, 8, 10, 12]);
-const VALID_DIFFICULTIES: Set<DifficultyId> = new Set(['easy', 'normal', 'hard', 'titan']);
-const VALID_PERSONALITIES: Set<AiPersonality> = new Set(['balanced', 'aggressive', 'defensive', 'economic']);
-const VALID_GAME_TYPES: Set<GameTypeId> = new Set(['supremacy', 'conquest', 'lightning', 'deathmatch', 'regicide']);
-const VALID_VISIBILITY: Set<VisibilityMode> = new Set(['normal', 'explored', 'revealed']);
-const VALID_WORLD_SIZES: Set<WorldSizeId> = new Set(['normal', 'large', 'giant']);
-const VALID_RESOURCES: Set<'standard' | 'high' | 'abundant'> = new Set(['standard', 'high', 'abundant']);
-const VALID_AGES: Set<AgeLevel> = new Set([1, 2, 3, 4, 5]);
-
-const clients = new Map<string, ConnectedClient>();
-const rooms = new Map<string, LobbyRoomState>();
-const roomCommandSeq = new Map<string, number>();
-const globalMessages: ChatMessage[] = [];
-
-function sanitizeText(raw: unknown, maxLen: number, fallback = ''): string {
-  if (typeof raw !== 'string') return fallback;
-  const cleaned = raw.replace(/\s+/g, ' ').trim().slice(0, maxLen);
-  return cleaned || fallback;
+interface ServerRoom extends LobbyRoomState {
+  serverSeq: number;
 }
 
-function sanitizePantheon(raw: unknown): PantheonId {
-  return typeof raw === 'string' && VALID_PANTHEONS.has(raw as PantheonId)
-    ? (raw as PantheonId)
-    : 'greek';
+const DEFAULT_SETTINGS: LobbyRoomSettings = {
+  mapId: 'mediterranean',
+  gameType: 'supremacy',
+  worldSize: 'normal',
+  visibilityMode: 'normal',
+  startingAge: 1,
+  startingResources: 'standard',
+  treatyMinutes: 0,
+  dayNightCycle: true,
+  titansEnabled: true,
+  maxPlayers: 2,
+};
+
+function makeId(prefix: string): string {
+  return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`;
 }
 
-function sanitizeGodForPantheon(pantheon: PantheonId, rawGod: unknown): string {
-  const entry = MP_PLAYABLE_PANTHEONS.find((p) => p.pantheon === pantheon);
-  if (!entry) return 'Zeus';
-  if (typeof rawGod === 'string' && entry.gods.includes(rawGod)) {
-    return rawGod;
-  }
-  return entry.gods[0];
-}
-
-function sanitizeColorId(raw: unknown): string {
-  return typeof raw === 'string' && MP_COLORS.some((c) => c.id === raw) ? raw : MP_COLORS[0].id;
-}
-
-function sanitizeCrestId(raw: unknown): string {
-  return typeof raw === 'string' && MP_CRESTS.some((c) => c.id === raw) ? raw : MP_CRESTS[0].id;
-}
-
-function generateRoomCode(): string {
+function makeRoomCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let code = '';
+  let out = '';
   for (let i = 0; i < 5; i++) {
-    code += chars[crypto.randomInt(0, chars.length)];
+    out += chars[Math.floor(Math.random() * chars.length)];
   }
-  return code;
+  return out;
 }
 
-function makeUniqueRoomCode(): string {
-  for (let attempt = 0; attempt < 24; attempt++) {
-    const code = generateRoomCode();
-    const conflict = [...rooms.values()].some((r) => r.code === code);
-    if (!conflict) return code;
-  }
-  return crypto.randomUUID().slice(0, 5).toUpperCase();
-}
-
-function isSlotActiveForMax(slotIndex: number, maxPlayers: MpFormatSize): boolean {
-  const teamSize = Math.floor(maxPlayers / 2);
-  if (slotIndex < 6) {
-    return slotIndex < teamSize;
-  }
-  return slotIndex - 6 < teamSize;
-}
-
-function pickAvailableColor(room: LobbyRoomState, preferredColorId?: string, excludeSlotIndex?: number): string {
-  const used = new Set(
-    room.slots
-      .filter((s, idx) => idx !== excludeSlotIndex && (s.kind === 'human' || s.kind === 'ai'))
-      .map((s) => s.colorId)
-  );
-  if (preferredColorId && MP_COLORS.some((c) => c.id === preferredColorId) && !used.has(preferredColorId)) {
-    return preferredColorId;
-  }
-  const free = MP_COLORS.find((c) => !used.has(c.id));
-  if (free) return free.id;
-  return preferredColorId && MP_COLORS.some((c) => c.id === preferredColorId)
-    ? preferredColorId
-    : MP_COLORS[0].id;
-}
-
-function createInitialSlots(maxPlayers: MpFormatSize): LobbySlot[] {
+function createInitialSlots(maxPlayers: MpFormatSize, host: ConnectedClient): LobbySlot[] {
+  const half = Math.max(1, Math.floor(maxPlayers / 2));
+  const aiPantheons: PantheonId[] = ['norse', 'egyptian', 'atlantean', 'greek', 'chinese'];
   const slots: LobbySlot[] = [];
-  for (let i = 0; i < 12; i++) {
-    const team: 1 | 2 = i < 6 ? 1 : 2;
-    const active = isSlotActiveForMax(i, maxPlayers);
-    const defaultPantheon: PantheonId = team === 1 ? 'greek' : 'egyptian';
-    slots.push({
-      slotIndex: i,
-      team,
-      kind: active ? 'open' : 'closed',
-      playerName: active ? 'Vaga Aberta' : 'Fechado',
-      crestId: MP_CRESTS[i % MP_CRESTS.length].id,
-      colorId: MP_COLORS[i % MP_COLORS.length].id,
-      pantheon: defaultPantheon,
-      majorGodName: getDefaultGodForPantheon(defaultPantheon),
-      aiDifficulty: 'normal',
-      aiPersonality: 'balanced',
-      ready: false,
-      isHost: false,
-    });
+
+  for (let i = 0; i < maxPlayers; i++) {
+    const team: 1 | 2 = i < half ? 1 : 2;
+    const color = MP_COLORS[i % MP_COLORS.length];
+    const crest = MP_CRESTS[i % MP_CRESTS.length];
+    if (i === 0) {
+      slots.push({
+        slotIndex: i,
+        team,
+        kind: 'human',
+        clientId: host.id,
+        playerName: host.playerName,
+        crestId: host.crestId || crest.id,
+        colorId: host.colorId || color.id,
+        pantheon: host.pantheon || 'greek',
+        majorGodName: host.majorGodName || getDefaultGodForPantheon(host.pantheon || 'greek'),
+        aiDifficulty: 'normal',
+        ready: true,
+        isHost: true,
+      });
+    } else if (i === half) {
+      const p = aiPantheons[0];
+      slots.push({
+        slotIndex: i,
+        team,
+        kind: 'ai',
+        playerName: 'Computador (Normal)',
+        crestId: crest.id,
+        colorId: color.id,
+        pantheon: p,
+        majorGodName: getDefaultGodForPantheon(p),
+        aiDifficulty: 'normal',
+        aiPersonality: 'balanced',
+        ready: true,
+        isHost: false,
+      });
+    } else {
+      const p = aiPantheons[i % aiPantheons.length];
+      slots.push({
+        slotIndex: i,
+        team,
+        kind: 'open',
+        playerName: 'Espaço Aberto',
+        crestId: crest.id,
+        colorId: color.id,
+        pantheon: p,
+        majorGodName: getDefaultGodForPantheon(p),
+        aiDifficulty: 'normal',
+        aiPersonality: 'balanced',
+        ready: false,
+        isHost: false,
+      });
+    }
   }
   return slots;
 }
 
-function sendJson(ws: WebSocket, msg: ServerToClientMessage) {
-  if (ws.readyState === WebSocket.OPEN) {
-    ws.send(JSON.stringify(msg));
-  }
-}
-
-function buildOnlineUsersList(): OnlinePlayerPresence[] {
-  const list: OnlinePlayerPresence[] = [];
-  for (const c of clients.values()) {
-    const room = c.roomId ? rooms.get(c.roomId) : undefined;
-    list.push({
-      clientId: c.clientId,
-      playerName: c.playerName,
-      crestId: c.crestId,
-      colorId: c.colorId,
-      pantheon: c.pantheon,
-      majorGodName: c.majorGodName,
-      pingMs: c.pingMs,
-      roomId: room ? room.id : null,
-      roomName: room ? room.name : null,
-    });
-  }
-  return list.sort((a, b) => a.playerName.localeCompare(b.playerName, 'pt-BR'));
-}
-
-function buildRoomSummary(room: LobbyRoomState): LobbyRoomSummary {
-  const humanCount = room.slots.filter((s) => s.kind === 'human').length;
-  const aiCount = room.slots.filter((s) => s.kind === 'ai').length;
-  return {
-    id: room.id,
-    code: room.code,
-    name: room.name,
-    region: room.region,
-    isPublic: room.isPublic,
-    hostName: room.hostName,
-    status: room.status,
-    mapId: room.settings.mapId,
-    gameType: room.settings.gameType,
-    maxPlayers: room.settings.maxPlayers,
-    humanCount,
-    aiCount,
-    occupiedCount: humanCount + aiCount,
-  };
-}
-
-function buildPublicRoomsList(): LobbyRoomSummary[] {
-  return [...rooms.values()]
-    .filter((r) => r.isPublic)
-    .sort((a, b) => b.createdAt - a.createdAt)
-    .map(buildRoomSummary);
-}
-
-function broadcastPlazaSync() {
-  const onlineUsers = buildOnlineUsersList();
-  const roomSummaries = buildPublicRoomsList();
-  const msg: ServerToClientMessage = {
-    type: 'server:plaza_sync',
-    onlineUsers,
-    rooms: roomSummaries,
-  };
-  for (const c of clients.values()) {
-    sendJson(c.ws, msg);
-  }
-}
-
-function broadcastGlobalMessage(message: ChatMessage) {
-  globalMessages.push(message);
-  if (globalMessages.length > 60) {
-    globalMessages.splice(0, globalMessages.length - 60);
-  }
-  const payload: ServerToClientMessage = {
-    type: 'global:chat_message',
-    message,
-  };
-  for (const c of clients.values()) {
-    sendJson(c.ws, payload);
-  }
-}
-
-function broadcastRoomState(room: LobbyRoomState) {
-  const payload: ServerToClientMessage = {
-    type: 'room:state',
-    room,
-  };
-  for (const slot of room.slots) {
-    if (slot.kind === 'human' && slot.clientId) {
-      const target = clients.get(slot.clientId);
-      if (target) sendJson(target.ws, payload);
-    }
-  }
-}
-
-function appendRoomSystemMessage(room: LobbyRoomState, text: string) {
-  const msg: ChatMessage = {
-    id: crypto.randomUUID(),
-    senderId: 'system',
-    senderName: 'Oráculo da Sala',
-    crestId: 'zeus_bolt',
-    colorId: 'ra_gold',
-    text,
-    timestamp: Date.now(),
-    isSystem: true,
-  };
-  room.messages.push(msg);
-  if (room.messages.length > 100) {
-    room.messages.splice(0, room.messages.length - 100);
-  }
-  const packet: ServerToClientMessage = {
-    type: 'room:chat_message',
-    roomId: room.id,
-    message: msg,
-  };
-  for (const slot of room.slots) {
-    if (slot.kind === 'human' && slot.clientId) {
-      const target = clients.get(slot.clientId);
-      if (target) sendJson(target.ws, packet);
-    }
-  }
-}
-
-function resetSlotToOpen(slot: LobbySlot, active: boolean) {
-  slot.kind = active ? 'open' : 'closed';
-  slot.clientId = undefined;
-  slot.playerName = active ? 'Vaga Aberta' : 'Fechado';
-  slot.ready = false;
-  slot.isHost = false;
-}
-
-function removeClientFromRoom(client: ConnectedClient, reasonText?: string) {
-  if (!client.roomId) return;
-  const room = rooms.get(client.roomId);
-  client.roomId = null;
-  if (!room) {
-    broadcastPlazaSync();
-    return;
-  }
-
-  const slot = room.slots.find((s) => s.kind === 'human' && s.clientId === client.clientId);
-  if (slot) {
-    resetSlotToOpen(slot, isSlotActiveForMax(slot.slotIndex, room.settings.maxPlayers));
-  }
-
-  const remainingHumans = room.slots.filter((s) => s.kind === 'human' && s.clientId);
-  if (remainingHumans.length === 0) {
-    rooms.delete(room.id);
-    broadcastPlazaSync();
-    return;
-  }
-
-  if (room.hostClientId === client.clientId) {
-    const nextHostSlot = remainingHumans[0];
-    nextHostSlot.isHost = true;
-    nextHostSlot.ready = true;
-    room.hostClientId = nextHostSlot.clientId ?? '';
-    room.hostName = nextHostSlot.playerName;
-    appendRoomSystemMessage(
-      room,
-      `${client.playerName} saiu. ${nextHostSlot.playerName} agora é o anfitrião da sala.`
-    );
-  } else {
-    appendRoomSystemMessage(room, reasonText ?? `${client.playerName} saiu da sala.`);
-  }
-
-  broadcastRoomState(room);
-  broadcastPlazaSync();
-}
-
-function assignClientToSlot(
-  room: LobbyRoomState,
-  slot: LobbySlot,
-  client: ConnectedClient,
-  isHost: boolean
-) {
-  slot.kind = 'human';
-  slot.clientId = client.clientId;
-  slot.playerName = client.playerName;
-  slot.crestId = client.crestId;
-  slot.colorId = pickAvailableColor(room, client.colorId, slot.slotIndex);
-  slot.pantheon = client.pantheon;
-  slot.majorGodName = sanitizeGodForPantheon(client.pantheon, client.majorGodName);
-  slot.ready = isHost;
-  slot.isHost = isHost;
-  client.colorId = slot.colorId;
-}
-
-function resizeRoomSlots(room: LobbyRoomState, nextMax: MpFormatSize) {
-  room.settings.maxPlayers = nextMax;
-  for (let i = 0; i < 12; i++) {
-    const slot = room.slots[i];
-    const active = isSlotActiveForMax(i, nextMax);
-    if (active) {
-      if (slot.kind === 'closed') {
-        resetSlotToOpen(slot, true);
-      }
-    } else {
-      if (slot.kind === 'human' && slot.clientId) {
-        // Relocate human player into an active open slot on same team first, then any open active slot
-        const sameTeamOpen = room.slots.find(
-          (candidate) =>
-            candidate.team === slot.team &&
-            isSlotActiveForMax(candidate.slotIndex, nextMax) &&
-            candidate.kind === 'open'
-        );
-        const anyOpen =
-          sameTeamOpen ??
-          room.slots.find(
-            (candidate) => isSlotActiveForMax(candidate.slotIndex, nextMax) && candidate.kind === 'open'
-          );
-        const displacedClient = clients.get(slot.clientId);
-        if (anyOpen && displacedClient) {
-          assignClientToSlot(room, anyOpen, displacedClient, slot.isHost);
-        } else if (displacedClient) {
-          displacedClient.roomId = null;
-          sendJson(displacedClient.ws, {
-            type: 'room:left',
-            reason: `A sala foi reduzida para ${formatTeamModeLabel(nextMax)}.`,
-          });
-        }
-      }
-      resetSlotToOpen(slot, false);
-    }
-  }
-}
-
 async function startServer() {
   const app = express();
-  app.use(express.json());
+  app.use(express.json({ limit: '1mb' }));
 
   app.get('/api/health', (_req, res) => {
-    res.json({
-      ok: true,
-      onlineCount: clients.size,
-      roomCount: rooms.size,
-      maxPlayersPerRoom: 12,
-      uptimeSec: Math.round(process.uptime()),
-    });
-  });
-
-  app.get('/api/rooms', (_req, res) => {
-    res.json({
-      rooms: buildPublicRoomsList(),
-      onlineUsers: buildOnlineUsersList(),
-    });
+    res.json({ ok: true, service: 'age-of-mythology-olympus' });
   });
 
   registerVoiceStudioRoutes(app);
 
   const server = http.createServer(app);
-  const wss = new WebSocketServer({
-    server,
-    path: '/ws',
-    maxPayload: 64 * 1024, // 64 KB protection against oversized WS payloads
+  const wss = new WebSocketServer({ server, path: '/ws' });
+
+  const clients = new Map<string, ConnectedClient>();
+  const rooms = new Map<string, ServerRoom>();
+  const globalMessages: ChatMessage[] = [
+    {
+      id: makeId('sys'),
+      senderId: 'system',
+      senderName: 'Oráculo da Rede',
+      crestId: 'zeus_bolt',
+      colorId: 'ra_gold',
+      text: 'Bem-vindo à Praça Multijogador do Olimpo. Crie ou entre em uma sala.',
+      timestamp: Date.now(),
+      isSystem: true,
+    },
+  ];
+
+  const sendTo = (ws: WebSocket, msg: ServerToClientMessage) => {
+    if (ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify(msg));
+    }
+  };
+
+  const getOnlineUsers = (): OnlinePlayerPresence[] =>
+    Array.from(clients.values()).map((c) => {
+      const r = c.roomId ? rooms.get(c.roomId) : undefined;
+      return {
+        clientId: c.id,
+        playerName: c.playerName,
+        crestId: c.crestId,
+        colorId: c.colorId,
+        pantheon: c.pantheon,
+        majorGodName: c.majorGodName,
+        pingMs: c.pingMs,
+        roomId: c.roomId,
+        roomName: r ? r.name : null,
+      };
+    });
+
+  const getRoomSummaries = (): LobbyRoomSummary[] =>
+    Array.from(rooms.values()).map((r) => {
+      const humanCount = r.slots.filter((s) => s.kind === 'human').length;
+      const aiCount = r.slots.filter((s) => s.kind === 'ai').length;
+      return {
+        id: r.id,
+        code: r.code,
+        name: r.name,
+        region: r.region,
+        isPublic: r.isPublic,
+        hostName: r.hostName,
+        status: r.status,
+        mapId: r.settings.mapId,
+        gameType: r.settings.gameType,
+        maxPlayers: r.settings.maxPlayers,
+        humanCount,
+        aiCount,
+        occupiedCount: humanCount + aiCount,
+      };
+    });
+
+  const broadcastAll = (msg: ServerToClientMessage) => {
+    const raw = JSON.stringify(msg);
+    for (const c of clients.values()) {
+      if (c.ws.readyState === WebSocket.OPEN) {
+        c.ws.send(raw);
+      }
+    }
+  };
+
+  const broadcastPlazaSync = () => {
+    broadcastAll({
+      type: 'server:plaza_sync',
+      onlineUsers: getOnlineUsers(),
+      rooms: getRoomSummaries(),
+    });
+  };
+
+  const serializeRoom = (r: ServerRoom): LobbyRoomState => ({
+    id: r.id,
+    code: r.code,
+    name: r.name,
+    region: r.region,
+    isPublic: r.isPublic,
+    hostClientId: r.hostClientId,
+    hostName: r.hostName,
+    status: r.status,
+    createdAt: r.createdAt,
+    settings: r.settings,
+    slots: r.slots,
+    messages: r.messages,
   });
 
-  // Periodic WebSocket heartbeat (25s) to terminate ghost connections and reap empty rooms
-  const heartbeatInterval = setInterval(() => {
-    for (const [id, c] of clients.entries()) {
-      if (!c.isAlive) {
-        try {
-          c.ws.terminate();
-        } catch {
-          // ignore
-        }
-        clients.delete(id);
-        removeClientFromRoom(c, `${c.playerName} perdeu conexão (timeout).`);
-        continue;
-      }
-      c.isAlive = false;
-      try {
-        c.ws.ping();
-      } catch {
-        // ignore
+  const broadcastRoomState = (room: ServerRoom) => {
+    const msg: ServerToClientMessage = { type: 'room:state', room: serializeRoom(room) };
+    for (const slot of room.slots) {
+      if (slot.kind === 'human' && slot.clientId) {
+        const client = clients.get(slot.clientId);
+        if (client) sendTo(client.ws, msg);
       }
     }
-    const now = Date.now();
-    for (const [roomId, room] of rooms.entries()) {
-      const hasHuman = room.slots.some((s) => s.kind === 'human' && s.clientId && clients.has(s.clientId));
-      if (!hasHuman && now - room.createdAt > 15_000) {
-        rooms.delete(roomId);
-        roomCommandSeq.delete(roomId);
-      }
+  };
+
+  const removeClientFromRoom = (client: ConnectedClient, reason?: string) => {
+    if (!client.roomId) return;
+    const room = rooms.get(client.roomId);
+    client.roomId = null;
+    if (!room) return;
+
+    const slot = room.slots.find((s) => s.kind === 'human' && s.clientId === client.id);
+    if (slot) {
+      slot.kind = 'open';
+      slot.clientId = undefined;
+      slot.playerName = 'Espaço Aberto';
+      slot.ready = false;
+      slot.isHost = false;
     }
-  }, 25_000);
-  wss.on('close', () => clearInterval(heartbeatInterval));
+
+    sendTo(client.ws, { type: 'room:left', reason });
+
+    const remainingHumans = room.slots.filter((s) => s.kind === 'human' && s.clientId);
+    if (remainingHumans.length === 0) {
+      rooms.delete(room.id);
+    } else {
+      if (room.hostClientId === client.id) {
+        const nextHost = remainingHumans[0];
+        nextHost.isHost = true;
+        nextHost.ready = true;
+        room.hostClientId = nextHost.clientId!;
+        room.hostName = nextHost.playerName;
+      }
+      broadcastRoomState(room);
+    }
+    broadcastPlazaSync();
+  };
 
   wss.on('connection', (ws) => {
-    const clientId = crypto.randomUUID();
-    const fallbackColor = MP_COLORS[clients.size % MP_COLORS.length].id;
-    const fallbackCrest = MP_CRESTS[clients.size % MP_CRESTS.length].id;
     const client: ConnectedClient = {
-      clientId,
+      id: makeId('cli'),
       ws,
-      playerName: `Herói-${clientId.slice(0, 4).toUpperCase()}`,
-      crestId: fallbackCrest,
-      colorId: fallbackColor,
+      playerName: 'Arkantos',
+      crestId: 'zeus_bolt',
+      colorId: 'olympus_blue',
       pantheon: 'greek',
       majorGodName: 'Zeus',
-      pingMs: 12,
+      pingMs: 15,
       roomId: null,
-      isAlive: true,
-      cmdWindowStart: Date.now(),
-      cmdCountInWindow: 0,
     };
-    clients.set(clientId, client);
+    clients.set(client.id, client);
 
-    ws.on('pong', () => {
-      client.isAlive = true;
-    });
-
-    sendJson(ws, {
-      type: 'server:welcome',
-      clientId,
-      onlineUsers: buildOnlineUsersList(),
-      rooms: buildPublicRoomsList(),
-      globalMessages: [...globalMessages],
-    });
-    broadcastPlazaSync();
-
-    ws.on('message', (raw) => {
+    ws.on('message', (data) => {
       let msg: ClientToServerMessage;
       try {
-        msg = JSON.parse(raw.toString()) as ClientToServerMessage;
+        msg = JSON.parse(String(data)) as ClientToServerMessage;
       } catch {
-        sendJson(ws, { type: 'server:error', message: 'Mensagem WebSocket inválida.' });
         return;
       }
 
-      if (!msg || typeof msg.type !== 'string') return;
-
       switch (msg.type) {
-        case 'ping': {
-          const sentAt = typeof msg.t === 'number' ? msg.t : Date.now();
-          if (typeof msg.rttMs === 'number' && Number.isFinite(msg.rttMs)) {
-            client.pingMs = Math.max(1, Math.min(999, Math.round(msg.rttMs)));
-          }
-          sendJson(ws, { type: 'pong', t: sentAt, serverTime: Date.now() });
+        case 'client:hello': {
+          client.playerName = (msg.playerName || 'Arkantos').slice(0, 28);
+          client.crestId = msg.crestId || 'zeus_bolt';
+          client.colorId = msg.colorId || 'olympus_blue';
+          client.pantheon = msg.pantheon || 'greek';
+          client.majorGodName = msg.majorGodName || getDefaultGodForPantheon(client.pantheon);
+          sendTo(ws, {
+            type: 'server:welcome',
+            clientId: client.id,
+            onlineUsers: getOnlineUsers(),
+            rooms: getRoomSummaries(),
+            globalMessages: globalMessages.slice(-60),
+          });
+          broadcastPlazaSync();
           break;
         }
 
-        case 'client:hello':
         case 'client:profile_update': {
-          client.playerName = sanitizeText(msg.playerName, 24, client.playerName);
-          client.crestId = sanitizeCrestId(msg.crestId);
-          client.colorId = sanitizeColorId(msg.colorId);
-          client.pantheon = sanitizePantheon(msg.pantheon);
-          client.majorGodName = sanitizeGodForPantheon(client.pantheon, msg.majorGodName);
+          client.playerName = (msg.playerName || client.playerName).slice(0, 28);
+          client.crestId = msg.crestId || client.crestId;
+          client.colorId = msg.colorId || client.colorId;
+          client.pantheon = msg.pantheon || client.pantheon;
+          client.majorGodName = msg.majorGodName || client.majorGodName;
 
           if (client.roomId) {
             const room = rooms.get(client.roomId);
-            if (room) {
-              const slot = room.slots.find((s) => s.kind === 'human' && s.clientId === client.clientId);
-              if (slot) {
-                slot.playerName = client.playerName;
-                slot.crestId = client.crestId;
-                slot.colorId = pickAvailableColor(room, client.colorId, slot.slotIndex);
-                slot.pantheon = client.pantheon;
-                slot.majorGodName = client.majorGodName;
-                if (slot.isHost) {
-                  room.hostName = client.playerName;
-                }
-                broadcastRoomState(room);
-              }
+            const slot = room?.slots.find((s) => s.kind === 'human' && s.clientId === client.id);
+            if (room && slot) {
+              slot.playerName = client.playerName;
+              slot.crestId = client.crestId;
+              slot.colorId = client.colorId;
+              slot.pantheon = client.pantheon;
+              slot.majorGodName = client.majorGodName;
+              if (room.hostClientId === client.id) room.hostName = client.playerName;
+              broadcastRoomState(room);
             }
           }
           broadcastPlazaSync();
           break;
         }
 
+        case 'ping': {
+          if (typeof msg.rttMs === 'number' && Number.isFinite(msg.rttMs)) {
+            client.pingMs = Math.max(1, Math.min(999, Math.round(msg.rttMs)));
+          }
+          sendTo(ws, { type: 'pong', t: msg.t, serverTime: Date.now() });
+          break;
+        }
+
         case 'global:chat': {
-          const text = sanitizeText(msg.text, 240, '');
+          const text = String(msg.text || '').trim().slice(0, 240);
           if (!text) return;
-          broadcastGlobalMessage({
-            id: crypto.randomUUID(),
-            senderId: client.clientId,
+          const chatMsg: ChatMessage = {
+            id: makeId('gchat'),
+            senderId: client.id,
             senderName: client.playerName,
             crestId: client.crestId,
             colorId: client.colorId,
             text,
             timestamp: Date.now(),
-          });
+          };
+          globalMessages.push(chatMsg);
+          if (globalMessages.length > 60) globalMessages.shift();
+          broadcastAll({ type: 'global:chat_message', message: chatMsg });
           break;
         }
 
         case 'room:create': {
-          if (client.roomId) {
-            removeClientFromRoom(client);
-          }
-
-          const rawSettings = msg.settings ?? {};
-          const maxPlayers: MpFormatSize = VALID_FORMATS.has(rawSettings.maxPlayers as MpFormatSize)
-            ? (rawSettings.maxPlayers as MpFormatSize)
-            : 12;
-
+          removeClientFromRoom(client);
           const settings: LobbyRoomSettings = {
-            mapId: sanitizeText(rawSettings.mapId, 40, 'mediterranean') as MapId,
-            gameType: VALID_GAME_TYPES.has(rawSettings.gameType as GameTypeId)
-              ? (rawSettings.gameType as GameTypeId)
-              : 'supremacy',
-            worldSize: VALID_WORLD_SIZES.has(rawSettings.worldSize as WorldSizeId)
-              ? (rawSettings.worldSize as WorldSizeId)
-              : 'large',
-            visibilityMode: VALID_VISIBILITY.has(rawSettings.visibilityMode as VisibilityMode)
-              ? (rawSettings.visibilityMode as VisibilityMode)
-              : 'normal',
-            startingAge: VALID_AGES.has(rawSettings.startingAge as AgeLevel)
-              ? (rawSettings.startingAge as AgeLevel)
-              : 1,
-            startingResources: VALID_RESOURCES.has(rawSettings.startingResources as 'standard' | 'high' | 'abundant')
-              ? (rawSettings.startingResources as 'standard' | 'high' | 'abundant')
-              : 'standard',
-            treatyMinutes:
-              typeof rawSettings.treatyMinutes === 'number'
-                ? Math.max(0, Math.min(20, Math.round(rawSettings.treatyMinutes)))
-                : 0,
-            dayNightCycle: rawSettings.dayNightCycle !== undefined ? Boolean(rawSettings.dayNightCycle) : true,
-            titansEnabled: rawSettings.titansEnabled !== undefined ? Boolean(rawSettings.titansEnabled) : true,
-            maxPlayers,
+            ...DEFAULT_SETTINGS,
+            ...msg.settings,
           };
-
-          const roomId = crypto.randomUUID();
-          const roomCode = makeUniqueRoomCode();
-          const roomName = sanitizeText(msg.name, 42, `Arena de ${client.playerName}`);
-          const region = sanitizeText(msg.region, 28, 'América do Sul');
-          const slots = createInitialSlots(maxPlayers);
-
-          const room: LobbyRoomState = {
+          const roomId = makeId('room');
+          const room: ServerRoom = {
             id: roomId,
-            code: roomCode,
-            name: roomName,
-            region,
+            code: makeRoomCode(),
+            name: (msg.name || `Sala de ${client.playerName}`).slice(0, 42),
+            region: (msg.region || 'América do Sul').slice(0, 32),
             isPublic: msg.isPublic !== false,
-            hostClientId: client.clientId,
+            hostClientId: client.id,
             hostName: client.playerName,
             status: 'waiting',
             createdAt: Date.now(),
             settings,
-            slots,
-            messages: [],
+            slots: createInitialSlots(settings.maxPlayers, client),
+            messages: [
+              {
+                id: makeId('rsys'),
+                senderId: 'system',
+                senderName: 'Sistema',
+                crestId: 'zeus_bolt',
+                colorId: 'ra_gold',
+                text: `${client.playerName} criou a sala.`,
+                timestamp: Date.now(),
+                isSystem: true,
+              },
+            ],
+            serverSeq: 0,
           };
-
-          assignClientToSlot(room, room.slots[0], client, true);
-          client.roomId = room.id;
           rooms.set(room.id, room);
-
-          appendRoomSystemMessage(
-            room,
-            `Sala "${room.name}" [${room.code}] criada no formato ${formatTeamModeLabel(maxPlayers)} (até ${maxPlayers} jogadores).`
-          );
+          client.roomId = room.id;
           broadcastRoomState(room);
           broadcastPlazaSync();
           break;
         }
 
         case 'room:join': {
-          const targetRoom = msg.roomId
+          const target = msg.roomId
             ? rooms.get(msg.roomId)
-            : msg.roomCode
-            ? [...rooms.values()].find((r) => r.code.toUpperCase() === msg.roomCode!.trim().toUpperCase())
-            : undefined;
-
-          if (!targetRoom) {
-            sendJson(ws, {
-              type: 'server:error',
-              message: 'Sala não encontrada ou já foi encerrada.',
-            });
+            : Array.from(rooms.values()).find(
+                (r) => r.code.toUpperCase() === String(msg.roomCode || '').trim().toUpperCase()
+              );
+          if (!target) {
+            sendTo(ws, { type: 'server:error', message: 'Sala não encontrada ou já encerrada.' });
             return;
           }
-
-          if (client.roomId === targetRoom.id) {
-            sendJson(ws, { type: 'room:state', room: targetRoom });
+          if (target.status !== 'waiting') {
+            sendTo(ws, { type: 'server:error', message: 'A partida desta sala já está em andamento.' });
             return;
           }
-
-          if (targetRoom.status === 'started') {
-            sendJson(ws, {
-              type: 'server:error',
-              message: 'Esta partida já foi iniciada pelo anfitrião.',
-            });
-            return;
-          }
-
-          const t1Count = targetRoom.slots.filter((s) => s.team === 1 && (s.kind === 'human' || s.kind === 'ai')).length;
-          const t2Count = targetRoom.slots.filter((s) => s.team === 2 && (s.kind === 'human' || s.kind === 'ai')).length;
-          const preferredTeam: 1 | 2 = t2Count <= t1Count ? 2 : 1;
-
-          const openSlot =
-            targetRoom.slots.find(
-              (s) =>
-                s.team === preferredTeam &&
-                isSlotActiveForMax(s.slotIndex, targetRoom.settings.maxPlayers) &&
-                s.kind === 'open'
-            ) ??
-            targetRoom.slots.find(
-              (s) => isSlotActiveForMax(s.slotIndex, targetRoom.settings.maxPlayers) && s.kind === 'open'
-            );
-
+          const openSlot = target.slots.find((s) => s.kind === 'open');
           if (!openSlot) {
-            sendJson(ws, {
-              type: 'server:error',
-              message: 'A sala está lotada. Peça ao anfitrião para abrir uma vaga ou expandir para 6x6.',
-            });
+            sendTo(ws, { type: 'server:error', message: 'A sala está lotada.' });
             return;
           }
-
-          if (client.roomId) {
-            removeClientFromRoom(client);
-          }
-
-          assignClientToSlot(targetRoom, openSlot, client, false);
-          client.roomId = targetRoom.id;
-
-          const crest = getMpCrestById(openSlot.crestId);
-          const color = getMpColorById(openSlot.colorId);
-          appendRoomSystemMessage(
-            targetRoom,
-            `${client.playerName} entrou no Time ${openSlot.team} (${crest.name} · ${color.name}).`
-          );
-          broadcastRoomState(targetRoom);
+          removeClientFromRoom(client);
+          openSlot.kind = 'human';
+          openSlot.clientId = client.id;
+          openSlot.playerName = client.playerName;
+          openSlot.crestId = client.crestId;
+          openSlot.colorId = client.colorId;
+          openSlot.pantheon = client.pantheon;
+          openSlot.majorGodName = client.majorGodName;
+          openSlot.ready = false;
+          openSlot.isHost = false;
+          client.roomId = target.id;
+          broadcastRoomState(target);
           broadcastPlazaSync();
           break;
         }
 
         case 'room:leave': {
           removeClientFromRoom(client);
-          sendJson(ws, { type: 'room:left' });
           break;
         }
 
@@ -694,149 +450,77 @@ async function startServer() {
           if (!client.roomId) return;
           const room = rooms.get(client.roomId);
           if (!room) return;
-
-          const currentSlot = room.slots.find((s) => s.kind === 'human' && s.clientId === client.clientId);
+          const currentSlot = room.slots.find((s) => s.kind === 'human' && s.clientId === client.id);
           if (!currentSlot) return;
 
           let activeSlot = currentSlot;
-
-          // Switch to another open slot (same team or opposite team)
           if (
             typeof msg.targetSlotIndex === 'number' &&
-            msg.targetSlotIndex >= 0 &&
-            msg.targetSlotIndex < 12 &&
-            msg.targetSlotIndex !== currentSlot.slotIndex
+            msg.targetSlotIndex !== currentSlot.slotIndex &&
+            room.slots[msg.targetSlotIndex]?.kind === 'open'
           ) {
             const dest = room.slots[msg.targetSlotIndex];
-            if (
-              dest &&
-              dest.kind === 'open' &&
-              isSlotActiveForMax(dest.slotIndex, room.settings.maxPlayers)
-            ) {
-              const wasHost = currentSlot.isHost;
-              const prevReady = currentSlot.ready;
-              const prevColor = currentSlot.colorId;
-              const prevCrest = currentSlot.crestId;
-              const prevPantheon = currentSlot.pantheon;
-              const prevGod = currentSlot.majorGodName;
+            dest.kind = 'human';
+            dest.clientId = currentSlot.clientId;
+            dest.playerName = currentSlot.playerName;
+            dest.crestId = currentSlot.crestId;
+            dest.colorId = currentSlot.colorId;
+            dest.pantheon = currentSlot.pantheon;
+            dest.majorGodName = currentSlot.majorGodName;
+            dest.ready = currentSlot.ready;
+            dest.isHost = currentSlot.isHost;
 
-              resetSlotToOpen(currentSlot, true);
-              dest.kind = 'human';
-              dest.clientId = client.clientId;
-              dest.playerName = client.playerName;
-              dest.crestId = prevCrest;
-              dest.colorId = prevColor;
-              dest.pantheon = prevPantheon;
-              dest.majorGodName = prevGod;
-              dest.ready = prevReady;
-              dest.isHost = wasHost;
-              activeSlot = dest;
-
-              appendRoomSystemMessage(
-                room,
-                `${client.playerName} mudou para o Time ${dest.team} (Posição ${(dest.slotIndex % 6) + 1}).`
-              );
-            }
+            currentSlot.kind = 'open';
+            currentSlot.clientId = undefined;
+            currentSlot.playerName = 'Espaço Aberto';
+            currentSlot.ready = false;
+            currentSlot.isHost = false;
+            activeSlot = dest;
           }
 
-          if (msg.pantheon !== undefined) {
-            activeSlot.pantheon = sanitizePantheon(msg.pantheon);
-            activeSlot.majorGodName = sanitizeGodForPantheon(activeSlot.pantheon, msg.majorGodName);
-            client.pantheon = activeSlot.pantheon;
-            client.majorGodName = activeSlot.majorGodName;
-          } else if (msg.majorGodName !== undefined) {
-            activeSlot.majorGodName = sanitizeGodForPantheon(activeSlot.pantheon, msg.majorGodName);
-            client.majorGodName = activeSlot.majorGodName;
-          }
-
-          if (msg.crestId !== undefined) {
-            activeSlot.crestId = sanitizeCrestId(msg.crestId);
-            client.crestId = activeSlot.crestId;
-          }
-
-          if (msg.colorId !== undefined) {
-            const requested = sanitizeColorId(msg.colorId);
-            const conflict = room.slots.some(
-              (s) =>
-                s.slotIndex !== activeSlot.slotIndex &&
-                (s.kind === 'human' || s.kind === 'ai') &&
-                s.colorId === requested
-            );
-            if (conflict) {
-              sendJson(ws, {
-                type: 'server:error',
-                message: 'Essa cor já está em uso por outro jogador nesta sala.',
-              });
-            } else {
-              activeSlot.colorId = requested;
-              client.colorId = requested;
-            }
-          }
-
-          if (typeof msg.ready === 'boolean') {
-            activeSlot.ready = msg.ready;
-          }
+          if (msg.pantheon) activeSlot.pantheon = msg.pantheon;
+          if (msg.majorGodName) activeSlot.majorGodName = msg.majorGodName;
+          if (msg.colorId) activeSlot.colorId = msg.colorId;
+          if (msg.crestId) activeSlot.crestId = msg.crestId;
+          if (typeof msg.ready === 'boolean') activeSlot.ready = activeSlot.isHost ? true : msg.ready;
 
           broadcastRoomState(room);
-          broadcastPlazaSync();
           break;
         }
 
         case 'room:host_set_slot': {
           if (!client.roomId) return;
           const room = rooms.get(client.roomId);
-          if (!room || room.hostClientId !== client.clientId) return;
-          if (typeof msg.slotIndex !== 'number' || msg.slotIndex < 0 || msg.slotIndex >= 12) return;
-
+          if (!room || room.hostClientId !== client.id) return;
           const slot = room.slots[msg.slotIndex];
-          if (!isSlotActiveForMax(slot.slotIndex, room.settings.maxPlayers)) return;
+          if (!slot) return;
 
-          if (msg.action === 'kick') {
-            if (slot.kind === 'human' && slot.clientId && slot.clientId !== client.clientId) {
-              const kicked = clients.get(slot.clientId);
-              resetSlotToOpen(slot, true);
-              if (kicked) {
-                kicked.roomId = null;
-                sendJson(kicked.ws, {
-                  type: 'room:left',
-                  reason: `Você foi removido da sala "${room.name}" pelo anfitrião.`,
-                });
-              }
-              appendRoomSystemMessage(room, `${kicked?.playerName ?? 'Jogador'} foi removido da sala.`);
-            }
-          } else if (msg.action === 'open') {
-            if (slot.kind !== 'human') {
-              resetSlotToOpen(slot, true);
-            }
+          if (msg.action === 'kick' && slot.kind === 'human' && slot.clientId && slot.clientId !== client.id) {
+            const kicked = clients.get(slot.clientId);
+            if (kicked) removeClientFromRoom(kicked, 'Você foi removido da sala pelo anfitrião.');
+            return;
+          }
+
+          if (slot.kind === 'human') return;
+
+          if (msg.action === 'open') {
+            slot.kind = 'open';
+            slot.playerName = 'Espaço Aberto';
+            slot.ready = false;
           } else if (msg.action === 'close') {
-            if (slot.kind !== 'human') {
-              resetSlotToOpen(slot, false);
-            }
+            slot.kind = 'closed';
+            slot.playerName = 'Fechado';
+            slot.ready = false;
           } else if (msg.action === 'ai' || msg.action === 'config_ai') {
-            if (slot.kind !== 'human') {
-              const nextPantheon =
-                msg.pantheon !== undefined ? sanitizePantheon(msg.pantheon) : slot.pantheon;
-              const nextGod = sanitizeGodForPantheon(nextPantheon, msg.majorGodName ?? slot.majorGodName);
-              const nextDiff =
-                msg.aiDifficulty && VALID_DIFFICULTIES.has(msg.aiDifficulty)
-                  ? msg.aiDifficulty
-                  : slot.aiDifficulty;
-              const nextPersonality =
-                msg.aiPersonality && VALID_PERSONALITIES.has(msg.aiPersonality)
-                  ? msg.aiPersonality
-                  : slot.aiPersonality ?? 'balanced';
-              slot.kind = 'ai';
-              slot.clientId = undefined;
-              slot.playerName = `IA ${nextGod}`;
-              slot.pantheon = nextPantheon;
-              slot.majorGodName = nextGod;
-              slot.aiDifficulty = nextDiff;
-              slot.aiPersonality = nextPersonality;
-              slot.crestId = msg.crestId ? sanitizeCrestId(msg.crestId) : slot.crestId;
-              slot.colorId = pickAvailableColor(room, msg.colorId ?? slot.colorId, slot.slotIndex);
-              slot.ready = true;
-              slot.isHost = false;
-            }
+            slot.kind = 'ai';
+            if (msg.pantheon) slot.pantheon = msg.pantheon;
+            if (msg.majorGodName) slot.majorGodName = msg.majorGodName;
+            if (msg.colorId) slot.colorId = msg.colorId;
+            if (msg.crestId) slot.crestId = msg.crestId;
+            if (msg.aiDifficulty) slot.aiDifficulty = msg.aiDifficulty;
+            if (msg.aiPersonality) slot.aiPersonality = msg.aiPersonality;
+            slot.playerName = `IA (${slot.aiDifficulty.toUpperCase()})`;
+            slot.ready = true;
           }
 
           broadcastRoomState(room);
@@ -847,42 +531,50 @@ async function startServer() {
         case 'room:update_settings': {
           if (!client.roomId) return;
           const room = rooms.get(client.roomId);
-          if (!room || room.hostClientId !== client.clientId) return;
-          const s = msg.settings ?? {};
+          if (!room || room.hostClientId !== client.id) return;
 
-          if (typeof s.mapId === 'string' && s.mapId.trim()) {
-            room.settings.mapId = s.mapId.trim() as MapId;
-          }
-          if (s.gameType && VALID_GAME_TYPES.has(s.gameType)) {
-            room.settings.gameType = s.gameType;
-          }
-          if (s.worldSize && VALID_WORLD_SIZES.has(s.worldSize)) {
-            room.settings.worldSize = s.worldSize;
-          }
-          if (s.visibilityMode && VALID_VISIBILITY.has(s.visibilityMode)) {
-            room.settings.visibilityMode = s.visibilityMode;
-          }
-          if (s.startingAge && VALID_AGES.has(s.startingAge)) {
-            room.settings.startingAge = s.startingAge;
-          }
-          if (s.startingResources && VALID_RESOURCES.has(s.startingResources)) {
-            room.settings.startingResources = s.startingResources;
-          }
-          if (typeof s.treatyMinutes === 'number') {
-            room.settings.treatyMinutes = Math.max(0, Math.min(20, Math.round(s.treatyMinutes)));
-          }
-          if (typeof s.dayNightCycle === 'boolean') {
-            room.settings.dayNightCycle = s.dayNightCycle;
-          }
-          if (typeof s.titansEnabled === 'boolean') {
-            room.settings.titansEnabled = s.titansEnabled;
-          }
-          if (s.maxPlayers && VALID_FORMATS.has(s.maxPlayers) && s.maxPlayers !== room.settings.maxPlayers) {
-            resizeRoomSlots(room, s.maxPlayers);
-            appendRoomSystemMessage(
-              room,
-              `Formato alterado para ${formatTeamModeLabel(s.maxPlayers)} (até ${s.maxPlayers} jogadores).`
-            );
+          const prevMax = room.settings.maxPlayers;
+          room.settings = { ...room.settings, ...msg.settings };
+
+          if (room.settings.maxPlayers !== prevMax) {
+            const nextMax = room.settings.maxPlayers;
+            const half = Math.max(1, Math.floor(nextMax / 2));
+            const nextSlots: LobbySlot[] = [];
+            for (let i = 0; i < nextMax; i++) {
+              const existing = room.slots[i];
+              if (existing) {
+                nextSlots.push({ ...existing, slotIndex: i, team: i < half ? 1 : 2 });
+              } else {
+                const color = MP_COLORS[i % MP_COLORS.length];
+                const crest = MP_CRESTS[i % MP_CRESTS.length];
+                nextSlots.push({
+                  slotIndex: i,
+                  team: i < half ? 1 : 2,
+                  kind: 'open',
+                  playerName: 'Espaço Aberto',
+                  crestId: crest.id,
+                  colorId: color.id,
+                  pantheon: 'greek',
+                  majorGodName: 'Zeus',
+                  aiDifficulty: 'normal',
+                  aiPersonality: 'balanced',
+                  ready: false,
+                  isHost: false,
+                });
+              }
+            }
+            // Kick any humans displaced by downsizing
+            for (let i = nextMax; i < room.slots.length; i++) {
+              const displaced = room.slots[i];
+              if (displaced.kind === 'human' && displaced.clientId) {
+                const dc = clients.get(displaced.clientId);
+                if (dc) {
+                  dc.roomId = null;
+                  sendTo(dc.ws, { type: 'room:left', reason: 'A sala foi redimensionada.' });
+                }
+              }
+            }
+            room.slots = nextSlots;
           }
 
           broadcastRoomState(room);
@@ -894,12 +586,11 @@ async function startServer() {
           if (!client.roomId) return;
           const room = rooms.get(client.roomId);
           if (!room) return;
-          const text = sanitizeText(msg.text, 240, '');
+          const text = String(msg.text || '').trim().slice(0, 240);
           if (!text) return;
-
           const chatMsg: ChatMessage = {
-            id: crypto.randomUUID(),
-            senderId: client.clientId,
+            id: makeId('rchat'),
+            senderId: client.id,
             senderName: client.playerName,
             crestId: client.crestId,
             colorId: client.colorId,
@@ -907,18 +598,11 @@ async function startServer() {
             timestamp: Date.now(),
           };
           room.messages.push(chatMsg);
-          if (room.messages.length > 100) {
-            room.messages.splice(0, room.messages.length - 100);
-          }
-          const packet: ServerToClientMessage = {
-            type: 'room:chat_message',
-            roomId: room.id,
-            message: chatMsg,
-          };
+          if (room.messages.length > 100) room.messages.shift();
           for (const slot of room.slots) {
             if (slot.kind === 'human' && slot.clientId) {
               const target = clients.get(slot.clientId);
-              if (target) sendJson(target.ws, packet);
+              if (target) sendTo(target.ws, { type: 'room:chat_message', roomId: room.id, message: chatMsg });
             }
           }
           break;
@@ -927,70 +611,60 @@ async function startServer() {
         case 'room:start_match': {
           if (!client.roomId) return;
           const room = rooms.get(client.roomId);
-          if (!room || room.hostClientId !== client.clientId) return;
-
-          const humanSlots = room.slots.filter((s) => s.kind === 'human');
-          const unreadyOthers = humanSlots.filter((s) => !s.isHost && !s.ready);
-          if (unreadyOthers.length > 0) {
-            sendJson(ws, {
-              type: 'server:error',
-              message: `Aguardando confirmação de: ${unreadyOthers.map((s) => s.playerName).join(', ')}`,
-            });
-            return;
-          }
+          if (!room || room.hostClientId !== client.id) return;
 
           room.status = 'started';
-          const matchSeed = crypto.randomInt(1, 2147483647);
-          roomCommandSeq.set(room.id, 0);
-          const team1Slots = room.slots.filter((s) => s.team === 1 && (s.kind === 'human' || s.kind === 'ai'));
-          const team2Slots = room.slots.filter((s) => s.team === 2 && (s.kind === 'human' || s.kind === 'ai'));
-          const humanCount = room.slots.filter((s) => s.kind === 'human').length;
-          const aiCount = room.slots.filter((s) => s.kind === 'ai').length;
-          const formatLabel = formatTeamModeLabel(room.settings.maxPlayers);
+          const matchSeed = Math.floor(Math.random() * 1_000_000) + 1;
+          const occupied = room.slots.filter((s) => s.kind === 'human' || s.kind === 'ai');
+          const team1Count = occupied.filter((s) => s.team === 1).length;
+          const team2Count = occupied.filter((s) => s.team === 2).length;
+          const humanCount = occupied.filter((s) => s.kind === 'human').length;
+          const aiCount = occupied.filter((s) => s.kind === 'ai').length;
+          const half = Math.max(1, Math.floor(room.settings.maxPlayers / 2));
 
-          appendRoomSystemMessage(room, 'Partida iniciada! Invocando os deuses para o campo de batalha...');
-
-          const activeMatchSlots = room.slots.filter((s) => s.kind === 'human' || s.kind === 'ai');
-          for (const slot of humanSlots) {
-            if (!slot.clientId) continue;
+          for (const slot of room.slots) {
+            if (slot.kind !== 'human' || !slot.clientId) continue;
             const target = clients.get(slot.clientId);
             if (!target) continue;
+
+            const factions: MultiplayerMatchFaction[] = occupied.map((s) => ({
+              slotIndex: s.slotIndex,
+              label: s.playerName,
+              teamIndex: s.team,
+              pantheon: s.pantheon,
+              majorGod: s.majorGodName,
+              colorHex: getMpColorById(s.colorId).css,
+              crestId: s.crestId,
+              isHuman: s.kind === 'human',
+              isSelf: s.slotIndex === slot.slotIndex,
+              aiPersonality: s.aiPersonality,
+            }));
+
             const payload: MultiplayerMatchPayload = {
               roomId: room.id,
               roomCode: room.code,
               roomName: room.name,
               matchSeed,
-              settings: { ...room.settings },
-              slots: room.slots.map((s) => ({ ...s })),
+              settings: room.settings,
+              slots: room.slots,
               roster: {
                 roomName: room.name,
                 roomCode: room.code,
-                formatLabel,
-                team1Count: Math.max(1, team1Slots.length),
-                team2Count: Math.max(1, team2Slots.length),
+                formatLabel: `${half}x${half}`,
+                team1Count,
+                team2Count,
                 humanCount,
                 aiCount,
                 playerTeam: slot.team,
                 playerSlotIndex: slot.slotIndex,
                 matchSeed,
-                factions: activeMatchSlots.map((s) => ({
-                  slotIndex: s.slotIndex,
-                  label: s.playerName,
-                  teamIndex: s.team,
-                  pantheon: s.pantheon,
-                  majorGod: s.majorGodName,
-                  colorHex: getMpColorById(s.colorId).css,
-                  crestId: s.crestId,
-                  isHuman: s.kind === 'human',
-                  isSelf: s.slotIndex === slot.slotIndex,
-                  aiPersonality: s.aiPersonality ?? 'balanced',
-                })),
+                factions,
               },
             };
-            sendJson(target.ws, { type: 'room:match_started', payload });
+
+            sendTo(target.ws, { type: 'room:match_started', payload });
           }
 
-          broadcastRoomState(room);
           broadcastPlazaSync();
           break;
         }
@@ -998,35 +672,20 @@ async function startServer() {
         case 'match:command': {
           if (!client.roomId) return;
           const room = rooms.get(client.roomId);
-          if (!room || !msg.command || typeof msg.command.kind !== 'string') return;
-          const senderSlot = room.slots.find((s) => s.kind === 'human' && s.clientId === client.clientId);
-          if (!senderSlot) return;
-
-          // Rate-limit match commands (max 45 commands / sec per client)
-          const now = Date.now();
-          if (now - client.cmdWindowStart >= 1000) {
-            client.cmdWindowStart = now;
-            client.cmdCountInWindow = 0;
-          }
-          client.cmdCountInWindow++;
-          if (client.cmdCountInWindow > 45) return;
-
-          const seq = (roomCommandSeq.get(room.id) ?? 0) + 1;
-          roomCommandSeq.set(room.id, seq);
-
+          if (!room) return;
+          room.serverSeq += 1;
           const packet: ServerToClientMessage = {
             type: 'match:command_broadcast',
             roomId: room.id,
-            senderClientId: client.clientId,
-            serverSeq: seq,
+            senderClientId: client.id,
+            serverSeq: room.serverSeq,
             serverTime: Date.now(),
             command: msg.command,
           };
-
           for (const slot of room.slots) {
             if (slot.kind === 'human' && slot.clientId) {
               const target = clients.get(slot.clientId);
-              if (target) sendJson(target.ws, packet);
+              if (target) sendTo(target.ws, packet);
             }
           }
           break;
@@ -1036,15 +695,14 @@ async function startServer() {
           if (!client.roomId) return;
           const room = rooms.get(client.roomId);
           if (!room) return;
-          const senderSlot = room.slots.find((s) => s.kind === 'human' && s.clientId === client.clientId);
-          if (!senderSlot) return;
-          const text = sanitizeText(msg.text, 240, '');
-          if (!text) return;
-          const channel: 'all' | 'team' = msg.channel === 'team' ? 'team' : 'all';
+          const senderSlot = room.slots.find((s) => s.kind === 'human' && s.clientId === client.id);
+          const text = String(msg.text || '').trim().slice(0, 240);
+          if (!text || !senderSlot) return;
 
+          const channel: 'all' | 'team' = msg.channel === 'team' ? 'team' : 'all';
           const chatMsg: ChatMessage = {
-            id: crypto.randomUUID(),
-            senderId: client.clientId,
+            id: makeId('mchat'),
+            senderId: client.id,
             senderName: client.playerName,
             crestId: client.crestId,
             colorId: client.colorId,
@@ -1053,18 +711,17 @@ async function startServer() {
             channel,
           };
 
-          const packet: ServerToClientMessage = {
-            type: 'match:chat_message',
-            roomId: room.id,
-            channel,
-            message: chatMsg,
-          };
-
           for (const slot of room.slots) {
-            if (slot.kind === 'human' && slot.clientId) {
-              if (channel === 'team' && slot.team !== senderSlot.team) continue;
-              const target = clients.get(slot.clientId);
-              if (target) sendJson(target.ws, packet);
+            if (slot.kind !== 'human' || !slot.clientId) continue;
+            if (channel === 'team' && slot.team !== senderSlot.team) continue;
+            const target = clients.get(slot.clientId);
+            if (target) {
+              sendTo(target.ws, {
+                type: 'match:chat_message',
+                roomId: room.id,
+                channel,
+                message: chatMsg,
+              });
             }
           }
           break;
@@ -1073,11 +730,8 @@ async function startServer() {
     });
 
     ws.on('close', () => {
-      const leaving = clients.get(clientId);
-      clients.delete(clientId);
-      if (leaving) {
-        removeClientFromRoom(leaving, `${leaving.playerName} desconectou-se da sala.`);
-      }
+      removeClientFromRoom(client);
+      clients.delete(client.id);
       broadcastPlazaSync();
     });
   });
@@ -1090,23 +744,20 @@ async function startServer() {
     });
     app.use(vite.middlewares);
   } else {
-    const distDir = path.resolve(process.cwd(), 'dist');
+    const distDir = path.resolve(__dirname, 'dist');
     app.use(express.static(distDir));
-    app.get('*', (req, res, next) => {
-      if (req.path.startsWith('/api') || req.path.startsWith('/ws')) {
-        return next();
-      }
+    app.get('*', (_req, res) => {
       res.sendFile(path.join(distDir, 'index.html'));
     });
   }
 
-  const port = Number(process.env.PORT) || 3000;
+  const port = Number(process.env.PORT || 3000);
   server.listen(port, '0.0.0.0', () => {
-    console.log(`[Olympus Server] Express + WebSocket Hub ativo na porta ${port}`);
+    console.log(`[Server] Age of Mythology: Olympus running on http://0.0.0.0:${port}`);
   });
 }
 
 startServer().catch((err) => {
-  console.error('[Olympus Server] Falha ao iniciar servidor:', err);
+  console.error('[Server] Fatal startup error:', err);
   process.exit(1);
 });

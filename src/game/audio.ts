@@ -169,7 +169,6 @@ export const MUSIC_TRACKS: Record<string, MusicTrackSpec> = {
     melody: [0, 1, 4, 5, 7, 5, 4, 1, 0, 4, 5, 4, 1, 0, -1, -1],
     arp: [0, 4, 5, 7, 8, 7, 5, 4, 1, 4, 7, 8, 7, 4, 1, 0],
     bass: [0, -1, 1, -1, 4, -1, 1, -1, 0, -1, 4, -1, 1, -1, 0, -1],
-    audioUrl: '/assets/aistudio/Serenidade_do_Nilo_8e8ce22d.mp3',
   },
   the_niles_quiet_breath: {
     id: 'the_niles_quiet_breath',
@@ -186,7 +185,6 @@ export const MUSIC_TRACKS: Record<string, MusicTrackSpec> = {
     melody: [0, 1, 4, 5, 7, 5, 4, 1, 0, 4, 5, 4, 1, 0, -1, -1],
     arp: [0, 4, 5, 7, 8, 7, 5, 4, 1, 4, 7, 8, 7, 4, 1, 0],
     bass: [0, -1, 1, -1, 4, -1, 1, -1, 0, -1, 4, -1, 1, -1, 0, -1],
-    audioUrl: '/assets/aistudio/The_Nile_s_Quiet_Breath_90ab5f25.mp3',
   },
   of_norse_not: {
     id: 'of_norse_not',
