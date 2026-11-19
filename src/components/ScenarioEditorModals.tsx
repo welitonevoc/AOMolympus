@@ -37,6 +37,8 @@ import {
   SCENARIO_LIGHTING_PRESETS,
   ScenarioDocument,
   ScenarioObjectiveItem,
+  ScenarioTriggerConditionType,
+  ScenarioTriggerEffectType,
   TERRAIN_PAINT_PALETTE,
   WORLD_SIZE_SPECS,
   deleteScenarioFromStorage,
@@ -135,6 +137,11 @@ export const ScenarioEditorModals: React.FC<ScenarioEditorModalsProps> = ({
   const [newObjTitle, setNewObjTitle] = useState<string>('');
   const [newObjDesc, setNewObjDesc] = useState<string>('');
   const [newObjType, setNewObjType] = useState<ScenarioObjectiveItem['type']>('primary');
+  const [newTrigName, setNewTrigName] = useState<string>('');
+  const [newTrigCond, setNewTrigCond] = useState<ScenarioTriggerConditionType>('timer_elapsed');
+  const [newTrigVal, setNewTrigVal] = useState<number>(30);
+  const [newTrigEff, setNewTrigEff] = useState<ScenarioTriggerEffectType>('spawn_reinforcements');
+  const [newTrigMsg, setNewTrigMsg] = useState<string>('');
 
   const summary = useMemo(() => {
     let minH = Infinity;
@@ -990,6 +997,127 @@ export const ScenarioEditorModals: React.FC<ScenarioEditorModalsProps> = ({
                     </button>
                   </div>
                 ))}
+              </div>
+
+              {/* Gatilhos de Cenário (Executados em Tempo Real no Playtest) */}
+              <div className="border-t border-white/10 pt-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="text-xs font-bold uppercase tracking-wider text-amber-300">
+                    Gatilhos de Cenário ({(doc.triggers ?? []).length}) — Ativos no Playtest
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-2 rounded-lg border border-white/10 bg-[#121826] p-3">
+                  <input
+                    type="text"
+                    placeholder="Nome do gatilho..."
+                    value={newTrigName}
+                    onChange={(e) => setNewTrigName(e.target.value)}
+                    className="rounded border border-white/15 bg-[#090d16] px-2.5 py-1.5 text-xs text-white"
+                  />
+                  <select
+                    value={newTrigCond}
+                    onChange={(e) => setNewTrigCond(e.target.value as ScenarioTriggerConditionType)}
+                    className="rounded border border-white/15 bg-[#090d16] px-2.5 py-1.5 text-xs text-white"
+                  >
+                    <option value="timer_elapsed">Tempo Decorrido (s)</option>
+                    <option value="player_unit_count_gte">Tropas do Jogador &gt;=</option>
+                    <option value="resources_gold_gte">Ouro do Jogador &gt;=</option>
+                    <option value="enemy_buildings_destroyed">Prédios Inimigos Destruídos</option>
+                    <option value="enemy_defeated">Inimigo Eliminado</option>
+                    <option value="area_entered">Unidade no Centro do Mapa</option>
+                  </select>
+                  <select
+                    value={newTrigEff}
+                    onChange={(e) => setNewTrigEff(e.target.value as ScenarioTriggerEffectType)}
+                    className="rounded border border-white/15 bg-[#090d16] px-2.5 py-1.5 text-xs text-white"
+                  >
+                    <option value="spawn_reinforcements">Criar Reforços (4 Hoplitas)</option>
+                    <option value="grant_resources">Conceder Recursos (+250)</option>
+                    <option value="announcement">Exibir Anúncio / Mensagem</option>
+                    <option value="reveal_map">Revelar Mapa Completo</option>
+                    <option value="victory">Disparar Vitória</option>
+                    <option value="defeat">Disparar Derrota</option>
+                  </select>
+                  <input
+                    type="number"
+                    min={0}
+                    max={9999}
+                    value={newTrigVal}
+                    onChange={(e) => setNewTrigVal(Math.max(0, Number(e.target.value) || 0))}
+                    placeholder="Valor (s / qtd)"
+                    className="rounded border border-white/15 bg-[#090d16] px-2.5 py-1.5 font-mono text-xs text-white"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Mensagem exibida ao disparar..."
+                    value={newTrigMsg}
+                    onChange={(e) => setNewTrigMsg(e.target.value)}
+                    className="md:col-span-3 rounded border border-white/15 bg-[#090d16] px-2.5 py-1.5 text-xs text-white"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const title = newTrigName.trim() || `Gatilho #${(doc.triggers ?? []).length + 1}`;
+                      onUpdateDoc((p) => ({
+                        ...p,
+                        triggers: [
+                          ...(p.triggers ?? []),
+                          {
+                            id: `trig_${Date.now()}`,
+                            name: title,
+                            active: true,
+                            loop: false,
+                            conditionType: newTrigCond,
+                            conditionValue: newTrigVal,
+                            effectType: newTrigEff,
+                            effectAmount: newTrigEff === 'spawn_reinforcements' ? 4 : 250,
+                            effectMessage: newTrigMsg.trim() || undefined,
+                          },
+                        ],
+                      }));
+                      setNewTrigName('');
+                      setNewTrigMsg('');
+                    }}
+                    className="flex items-center justify-center gap-1 rounded bg-amber-500 px-3 py-1.5 text-xs font-bold text-[#0b0f18] cursor-pointer hover:bg-amber-400"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    <span>Criar Gatilho</span>
+                  </button>
+                </div>
+
+                {(doc.triggers ?? []).length === 0 ? (
+                  <div className="rounded-lg border border-white/8 bg-[#0b101b] p-3 text-xs text-[#94a3b8]">
+                    Nenhum gatilho personalizado criado. Ao testar o cenário, gatilhos automáticos de briefing, suprimentos e cinemática de abertura são ativados.
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {(doc.triggers ?? []).map((tr) => (
+                      <div key={tr.id} className="flex items-center justify-between gap-3 rounded-lg border border-amber-400/20 bg-[#121826] p-2.5">
+                        <div className="text-xs">
+                          <span className="font-bold text-amber-200">{tr.name}</span>
+                          <span className="ml-2 font-mono text-[10px] text-[#94a3b8]">
+                            SE {tr.conditionType} ({tr.conditionValue}) → {tr.effectType}
+                          </span>
+                          {tr.effectMessage && (
+                            <div className="text-[11px] text-[#cbd5e1] mt-0.5">&ldquo;{tr.effectMessage}&rdquo;</div>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            onUpdateDoc((p) => ({
+                              ...p,
+                              triggers: (p.triggers ?? []).filter((x) => x.id !== tr.id),
+                            }))
+                          }
+                          className="rounded border border-red-400/30 bg-red-500/15 p-1 text-red-300 hover:bg-red-500/25 cursor-pointer"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           )}

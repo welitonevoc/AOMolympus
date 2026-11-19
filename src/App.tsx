@@ -1,11 +1,13 @@
-import { useEffect, useRef, useState } from 'react';
-import { GameHUD } from './components/GameHUD';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { TitleScreen } from './components/TitleScreen';
 import { soundEngine } from './game/audio';
 import { AoMEngine } from './game/engine';
 import { RecordedMatchRecord } from './game/menuData';
 import { multiplayerClient } from './game/multiplayerClient';
 import { ChatMessage } from './game/multiplayerTypes';
+import { clearSavedMatchFromStorage, hasSavedMatchInStorage } from './game/saveLoadSystem';
+
+const GameHUD = lazy(() => import('./components/GameHUD').then((m) => ({ default: m.GameHUD })));
 import {
   DEFAULT_GAME_OPTIONS,
   DifficultyId,
@@ -35,13 +37,7 @@ export default function App() {
     }
   });
 
-  const [hasSavedMatch, setHasSavedMatch] = useState(() => {
-    try {
-      return Boolean(localStorage.getItem('aom_saved_match'));
-    } catch {
-      return false;
-    }
-  });
+  const [hasSavedMatch, setHasSavedMatch] = useState(() => hasSavedMatchInStorage());
 
   const [lastPantheon, setLastPantheon] = useState<PantheonId>(() => {
     try {
@@ -181,10 +177,8 @@ export default function App() {
   };
 
   const handleDeleteSavedMatch = () => {
-    try {
-      localStorage.removeItem('aom_saved_match');
-      setHasSavedMatch(false);
-    } catch {}
+    clearSavedMatchFromStorage();
+    setHasSavedMatch(false);
   };
 
   const handleWatchReplay = (record: RecordedMatchRecord) => {
@@ -255,7 +249,14 @@ export default function App() {
 
       {/* Game HUD (Playing, Paused, Victory, Defeat) */}
       {phase !== 'title' && hudSnapshot && (
-        <GameHUD
+        <Suspense
+          fallback={
+            <div className="pointer-events-none fixed inset-0 z-30 flex items-center justify-center bg-black/55 text-xs font-semibold uppercase tracking-widest text-[#f3d27a]">
+              Carregando Interface de Batalha...
+            </div>
+          }
+        >
+          <GameHUD
           hud={hudSnapshot}
           muted={muted}
           hasSavedMatch={hasSavedMatch}
@@ -348,8 +349,10 @@ export default function App() {
               });
             }
           }}
+          onSkipCinematic={() => engineRef.current?.skipActiveCinematic()}
           onReturnTitle={handleResign}
         />
+        </Suspense>
       )}
     </div>
   );

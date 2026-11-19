@@ -182,6 +182,7 @@ interface GameHUDProps {
   onReplaySeek?: (timeSec: number) => void;
   onReplayToggleFog?: () => void;
   onReplaySetPerspective?: (p: 'all' | 'player' | 'enemy') => void;
+  onSkipCinematic?: () => void;
   onRestart: () => void;
   onReturnTitle: () => void;
 }
@@ -345,6 +346,7 @@ export function GameHUD({
   onReplaySeek,
   onReplayToggleFog,
   onReplaySetPerspective,
+  onSkipCinematic,
   onRestart,
   onReturnTitle,
 }: GameHUDProps) {
@@ -4524,6 +4526,42 @@ export function GameHUD({
               <Send className="h-3 w-3" />
             </button>
           </form>
+        </div>
+      )}
+
+      {/* Scenario Playtest Cinematic Letterbox Overlay */}
+      {hud.cinematic?.active && (
+        <div className="pointer-events-none fixed inset-0 z-40 flex flex-col justify-between">
+          <div className="flex items-center justify-between bg-black/88 px-5 py-3 border-b border-[#d4af37]/35">
+            <div>
+              <div className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#d4af37]">
+                Cinemática de Cenário
+              </div>
+              <div className="font-display text-sm font-bold text-[#f7e9c3]">
+                {hud.cinematic.title}
+              </div>
+            </div>
+            {onSkipCinematic && (
+              <button
+                type="button"
+                onClick={onSkipCinematic}
+                className="pointer-events-auto rounded border border-[#d4af37]/50 bg-[#1a2236] px-3 py-1 text-xs font-semibold text-[#f3d27a] hover:bg-[#25314d] cursor-pointer"
+              >
+                Pular Cinemática
+              </button>
+            )}
+          </div>
+          <div className="bg-black/88 px-6 py-4 border-t border-[#d4af37]/35 text-center">
+            <p className="mx-auto max-w-2xl text-sm font-medium text-[#f5efe0] leading-relaxed">
+              {hud.cinematic.subtitle}
+            </p>
+            <div className="mx-auto mt-2.5 h-1 max-w-md overflow-hidden rounded-full bg-white/15">
+              <div
+                className="h-full bg-[#d4af37] transition-all duration-150"
+                style={{ width: `${Math.round(hud.cinematic.progress * 100)}%` }}
+              />
+            </div>
+          </div>
         </div>
       )}
     </>

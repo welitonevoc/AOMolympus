@@ -11,6 +11,27 @@ export default defineConfig(() => {
         '@': path.resolve(__dirname, '.'),
       },
     },
+    build: {
+      chunkSizeWarningLimit: 1200,
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (id.includes('node_modules/three')) return 'vendor-three';
+            if (id.includes('node_modules/react') || id.includes('node_modules/lucide-react')) return 'vendor-react';
+            if (
+              id.includes('HopliteUvBuilderModal') ||
+              id.includes('gallery3dCatalog') ||
+              id.includes('gallery3dArtifacts') ||
+              id.includes('gallery3dTerrain')
+            ) {
+              return 'studio-gallery';
+            }
+            if (id.includes('ScenarioEditor')) return 'studio-editor';
+            if (id.includes('RmsMapLab') || id.includes('xsScriptInterpreter')) return 'studio-rms';
+          },
+        },
+      },
+    },
     server: {
       host: '0.0.0.0',
       port: 3000,

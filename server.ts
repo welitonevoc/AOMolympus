@@ -45,6 +45,9 @@ interface ConnectedClient {
   majorGodName: string;
   pingMs: number;
   roomId: string | null;
+  isAlive: boolean;
+  cmdWindowStart: number;
+  cmdCountInWindow: number;
 }
 
 const VALID_PANTHEONS: Set<PantheonId> = new Set(['greek', 'egyptian', 'norse', 'atlantean', 'chinese']);
@@ -403,7 +406,42 @@ async function startServer() {
   });
 
   const server = http.createServer(app);
-  const wss = new WebSocketServer({ server, path: '/ws' });
+  const wss = new WebSocketServer({
+    server,
+    path: '/ws',
+    maxPayload: 64 * 1024, // 64 KB protection against oversized WS payloads
+  });
+
+  // Periodic WebSocket heartbeat (25s) to terminate ghost connections and reap empty rooms
+  const heartbeatInterval = setInterval(() => {
+    for (const [id, c] of clients.entries()) {
+      if (!c.isAlive) {
+        try {
+          c.ws.terminate();
+        } catch {
+          // ignore
+        }
+        clients.delete(id);
+        removeClientFromRoom(c, `${c.playerName} perdeu conexão (timeout).`);
+        continue;
+      }
+      c.isAlive = false;
+      try {
+        c.ws.ping();
+      } catch {
+        // ignore
+      }
+    }
+    const now = Date.now();
+    for (const [roomId, room] of rooms.entries()) {
+      const hasHuman = room.slots.some((s) => s.kind === 'human' && s.clientId && clients.has(s.clientId));
+      if (!hasHuman && now - room.createdAt > 15_000) {
+        rooms.delete(roomId);
+        roomCommandSeq.delete(roomId);
+      }
+    }
+  }, 25_000);
+  wss.on('close', () => clearInterval(heartbeatInterval));
 
   wss.on('connection', (ws) => {
     const clientId = crypto.randomUUID();
@@ -419,8 +457,15 @@ async function startServer() {
       majorGodName: 'Zeus',
       pingMs: 12,
       roomId: null,
+      isAlive: true,
+      cmdWindowStart: Date.now(),
+      cmdCountInWindow: 0,
     };
     clients.set(clientId, client);
+
+    ws.on('pong', () => {
+      client.isAlive = true;
+    });
 
     sendJson(ws, {
       type: 'server:welcome',
@@ -952,6 +997,15 @@ async function startServer() {
           if (!room || !msg.command || typeof msg.command.kind !== 'string') return;
           const senderSlot = room.slots.find((s) => s.kind === 'human' && s.clientId === client.clientId);
           if (!senderSlot) return;
+
+          // Rate-limit match commands (max 45 commands / sec per client)
+          const now = Date.now();
+          if (now - client.cmdWindowStart >= 1000) {
+            client.cmdWindowStart = now;
+            client.cmdCountInWindow = 0;
+          }
+          client.cmdCountInWindow++;
+          if (client.cmdCountInWindow > 45) return;
 
           const seq = (roomCommandSeq.get(room.id) ?? 0) + 1;
           roomCommandSeq.set(room.id, seq);

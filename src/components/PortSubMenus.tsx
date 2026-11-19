@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import {
   ArrowLeft,
   Award,
@@ -72,11 +72,16 @@ import {
   WorldSizeId,
 } from '../game/types';
 import { EraIcon, getEraSubtitle } from './EraIcon';
-import { MultiplayerOnlineHub } from './MultiplayerOnlineHub';
-import { RmsMapLab } from './RmsMapLab';
-import { ScenarioEditor } from './ScenarioEditor';
 import { SkirmishSetupFlow } from './SkirmishSetupFlow';
 import { TechIcon } from './TechIcon';
+
+const MultiplayerOnlineHub = lazy(() =>
+  import('./MultiplayerOnlineHub').then((m) => ({ default: m.MultiplayerOnlineHub }))
+);
+const RmsMapLab = lazy(() => import('./RmsMapLab').then((m) => ({ default: m.RmsMapLab })));
+const ScenarioEditor = lazy(() =>
+  import('./ScenarioEditor').then((m) => ({ default: m.ScenarioEditor }))
+);
 
 export interface SkirmishDraft {
   pantheon: PantheonId;
@@ -904,14 +909,22 @@ export function PortSubMenus({
     menuState === 'UI_MP_ESO'
   ) {
     return (
-      <MultiplayerOnlineHub
-        initialMode={menuState === 'UI_HOST_GAME_DIALOG' ? 'private' : 'global'}
-        options={options}
-        skirmish={skirmish}
-        onUpdateOptions={onUpdateOptions}
-        onStartMatch={onStartMatch}
-        onBack={() => navTo('SUB_MULTIPLAYER')}
-      />
+      <Suspense
+        fallback={
+          <div className="flex min-h-[260px] items-center justify-center text-xs font-semibold uppercase tracking-wider text-[#f3d27a]">
+            Conectando ao Hub Multijogador...
+          </div>
+        }
+      >
+        <MultiplayerOnlineHub
+          initialMode={menuState === 'UI_HOST_GAME_DIALOG' ? 'private' : 'global'}
+          options={options}
+          skirmish={skirmish}
+          onUpdateOptions={onUpdateOptions}
+          onStartMatch={onStartMatch}
+          onBack={() => navTo('SUB_MULTIPLAYER')}
+        />
+      </Suspense>
     );
   }
 
@@ -1229,24 +1242,40 @@ export function PortSubMenus({
   // ── 10b. UI_RMS_LAB (Random Map Scripting Lab) ──
   if (menuState === 'UI_RMS_LAB') {
     return (
-      <RmsMapLab
-        defaultPantheon={skirmish.pantheon}
-        defaultDifficulty={options.defaultDifficulty || 'normal'}
-        gameSpeed={options.gameSpeed}
-        onBack={() => setMenuState('SUB_SINGLE_PLAYER')}
-        onStartMatch={onStartMatch}
-      />
+      <Suspense
+        fallback={
+          <div className="flex min-h-[300px] items-center justify-center text-xs font-semibold uppercase tracking-wider text-[#f3d27a]">
+            Carregando Laboratório RMS (.xs)...
+          </div>
+        }
+      >
+        <RmsMapLab
+          defaultPantheon={skirmish.pantheon}
+          defaultDifficulty={options.defaultDifficulty || 'normal'}
+          gameSpeed={options.gameSpeed}
+          onBack={() => setMenuState('SUB_SINGLE_PLAYER')}
+          onStartMatch={onStartMatch}
+        />
+      </Suspense>
     );
   }
 
   // ── 11. UI_EDITOR ──
   if (menuState === 'UI_EDITOR') {
     return (
-      <ScenarioEditor
-        onClose={() => setMenuState('SUB_MORE')}
-        onStartMatch={onStartMatch}
-        gameSpeed={options.gameSpeed}
-      />
+      <Suspense
+        fallback={
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#080c14]/95 text-sm font-semibold text-[#f5e3b0]">
+            Carregando Editor de Cenários 3D...
+          </div>
+        }
+      >
+        <ScenarioEditor
+          onClose={() => setMenuState('SUB_MORE')}
+          onStartMatch={onStartMatch}
+          gameSpeed={options.gameSpeed}
+        />
+      </Suspense>
     );
   }
 

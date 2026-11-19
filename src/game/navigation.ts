@@ -1,9 +1,30 @@
 import * as THREE from 'three';
+import { getActiveRmsMap, resolveEffectiveMapId } from '../maps';
 import { getWorldSizeSpec, groundHeightAt, PLAYABLE_HALF_SIZE } from './models';
 import { MapId, WorldSizeId } from './types';
 
 export const WATER_WALK_LIMIT = -0.34;
 export const MAX_WALKABLE_SLOPE_RAD = 0.68;
+
+/**
+ * Returns true if the world position sits on impassable volcanic magma/HadesLava.
+ * Lava is NEVER walkable by land units and NEVER navigable by ships.
+ */
+export function isLavaAt(wx: number, wz: number, mapId: MapId, worldSize: WorldSizeId = 'normal'): boolean {
+  if (mapId === 'rms_custom') {
+    const rms = getActiveRmsMap();
+    if (rms) {
+      const code = Number(rms.sampleTerrainCode(wx, wz));
+      if (code === 9) return true;
+      if (rms.biome === 'volcanic' && groundHeightAt(wx, wz, mapId, worldSize) < WATER_WALK_LIMIT) return true;
+    }
+  }
+  const eff = resolveEffectiveMapId(mapId);
+  if (eff === 'erebus' && groundHeightAt(wx, wz, mapId, worldSize) < WATER_WALK_LIMIT) {
+    return true;
+  }
+  return false;
+}
 
 export interface ObstacleCircle {
   x: number;
@@ -58,6 +79,11 @@ export class NavigationGrid {
         const wz = -this.playableHalfSize + (gz + 0.5) * this.cellSize;
         const h = groundHeightAt(wx, wz, mapId, worldSize);
         const idx = gz * this.width + gx;
+        if (isLavaAt(wx, wz, mapId, worldSize)) {
+          this.terrainBlocked[idx] = 1;
+          this.waterGrid[idx] = 0;
+          continue;
+        }
         if (h < WATER_WALK_LIMIT - 0.04) {
           this.waterGrid[idx] = 1;
         }
@@ -122,6 +148,7 @@ export class NavigationGrid {
   }
 
   public isWaterTerrain(wx: number, wz: number): boolean {
+    if (isLavaAt(wx, wz, this.mapId, this.worldSize)) return false;
     const h = groundHeightAt(wx, wz, this.mapId, this.worldSize);
     if (h < WATER_WALK_LIMIT - 0.04) return true;
     const c = this.worldToCell(wx, wz);

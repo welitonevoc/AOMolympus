@@ -5304,6 +5304,12 @@ export interface GameHudSnapshot {
     playerAge: AgeLevel;
     enemyAge: AgeLevel;
   }[];
+  cinematic?: {
+    active: boolean;
+    title: string;
+    subtitle: string;
+    progress: number;
+  } | null;
 }
 
 export interface MatchStartOptions {

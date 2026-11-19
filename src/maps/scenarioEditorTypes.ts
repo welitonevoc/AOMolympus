@@ -189,6 +189,48 @@ export interface ScenarioLightingPreset {
   exposure: number;
 }
 
+export type ScenarioTriggerConditionType =
+  | 'timer_elapsed'
+  | 'player_unit_count_gte'
+  | 'enemy_buildings_destroyed'
+  | 'enemy_defeated'
+  | 'resources_gold_gte'
+  | 'area_entered';
+
+export type ScenarioTriggerEffectType =
+  | 'announcement'
+  | 'grant_resources'
+  | 'spawn_reinforcements'
+  | 'reveal_map'
+  | 'victory'
+  | 'defeat';
+
+export interface ScenarioTriggerDef {
+  id: string;
+  name: string;
+  active: boolean;
+  loop: boolean;
+  conditionType: ScenarioTriggerConditionType;
+  conditionValue: number;
+  areaX?: number;
+  areaZ?: number;
+  areaRadius?: number;
+  effectType: ScenarioTriggerEffectType;
+  effectMessage?: string;
+  effectAmount?: number;
+  effectUnitKind?: UnitKind;
+  effectTeam?: 'player' | 'enemy';
+}
+
+export interface ScenarioCinematicKeyframe {
+  id: string;
+  x: number;
+  z: number;
+  zoom: number;
+  durationSec: number;
+  caption: string;
+}
+
 export interface ScenarioDocument {
   id: string;
   title: string;
@@ -217,6 +259,8 @@ export interface ScenarioDocument {
   diplomacy: Record<string, DiplomacyStance>; // key `${fromSlot}_${toSlot}`
   objectives: ScenarioObjectiveItem[];
   forbiddenByPlayer: Record<number, string[]>; // playerSlot -> array of unitKind/buildingKind
+  triggers?: ScenarioTriggerDef[];
+  cinematics?: ScenarioCinematicKeyframe[];
 }
 
 export interface CustomCampaignDocument {

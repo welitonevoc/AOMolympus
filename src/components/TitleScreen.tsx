@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import {
   ArrowLeft,
   BookOpen,
@@ -33,9 +33,12 @@ import {
   PANTHEONS,
   PantheonId,
 } from '../game/types';
-import { HopliteUvBuilderModal } from './HopliteUvBuilderModal';
 import { OlympusTitleBackdrop } from './OlympusTitleBackdrop';
 import { PortSubMenus, SkirmishDraft } from './PortSubMenus';
+
+const HopliteUvBuilderModal = lazy(() =>
+  import('./HopliteUvBuilderModal').then((m) => ({ default: m.HopliteUvBuilderModal }))
+);
 
 interface TitleScreenProps {
   hasSavedMatch: boolean;
@@ -318,14 +321,24 @@ export function TitleScreen({
         </div>
       )}
 
-      <HopliteUvBuilderModal
-        isOpen={uvModalOpen}
-        onClose={() => setUvModalOpen(false)}
-        activeMode={options.hopliteRenderMode ?? '3d'}
-        activeTier={options.hopliteArmorTier ?? 3}
-        onSelectMode={(mode) => onUpdateOptions({ ...options, hopliteRenderMode: mode })}
-        onSelectTier={(tier) => onUpdateOptions({ ...options, hopliteArmorTier: tier })}
-      />
+      {uvModalOpen && (
+        <Suspense
+          fallback={
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#07090f]/95 text-sm font-semibold text-[#f5e3b0]">
+              Carregando Galeria 3D Mitológica...
+            </div>
+          }
+        >
+          <HopliteUvBuilderModal
+            isOpen={uvModalOpen}
+            onClose={() => setUvModalOpen(false)}
+            activeMode={options.hopliteRenderMode ?? '3d'}
+            activeTier={options.hopliteArmorTier ?? 3}
+            onSelectMode={(mode) => onUpdateOptions({ ...options, hopliteRenderMode: mode })}
+            onSelectTier={(tier) => onUpdateOptions({ ...options, hopliteArmorTier: tier })}
+          />
+        </Suspense>
+      )}
 
       {/* Main Architectural Menu Container */}
       <div

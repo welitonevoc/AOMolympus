@@ -52,6 +52,9 @@ import {
   WaterShaderUniforms,
 } from '../textura/terreno';
 import { NavigationGrid, ObstacleCircle, WATER_WALK_LIMIT } from './navigation';
+import { collectPaletteMaterials, disposeObject3D } from './disposeUtils';
+import { readSavedMatchFromStorage, writeSavedMatchToStorage } from './saveLoadSystem';
+import { ScenarioTriggerRuntime } from './scenarioTriggerRuntime';
 import {
   createContactShadowTexture,
   createMarbleTexture,
@@ -624,6 +627,9 @@ export class AoMEngine {
   private scenarioPropMeshes: THREE.Object3D[] = [];
   private blockingRockObstacles: ObstacleCircle[] = [];
   private atmosphericFx: AtmosphericFxSystem | null = null;
+  private scenarioTriggerRuntime: ScenarioTriggerRuntime | null = null;
+  private protectedPaletteMaterials: Set<THREE.Material> = new Set();
+  private appliedRemoteSeqs: Set<number> = new Set();
   private darkestNightStep = 0;
   private wrathOfTheGodsCheat = false;
   private redTideActive = false;
@@ -931,6 +937,7 @@ export class AoMEngine {
       ringEnemyTex,
       PANTHEONS[this.pantheon].bannerHex
     );
+    this.protectedPaletteMaterials = collectPaletteMaterials(this.palette);
     this.windUniforms = [
       attachWindSwayShader(this.palette.foliagePine),
       attachWindSwayShader(this.palette.foliageDark),
@@ -1248,24 +1255,22 @@ export class AoMEngine {
     this.scene.add(this.godPowerRing);
   }
 
+  private removeAndDisposeMesh(obj: THREE.Object3D | null | undefined) {
+    if (!obj) return;
+    this.scene.remove(obj);
+    disposeObject3D(obj, this.protectedPaletteMaterials);
+  }
+
   private clearEntities() {
-    for (const u of this.units.values()) this.scene.remove(u.mesh);
-    for (const b of this.buildings.values()) this.scene.remove(b.mesh);
-    for (const n of this.nodes.values()) this.scene.remove(n.mesh);
-    for (const s of this.settlements.values()) this.scene.remove(s.mesh);
-    for (const r of this.relics.values()) this.scene.remove(r.mesh);
-    for (const f of this.fauna.values()) this.scene.remove(f.mesh);
-    for (const p of this.projectiles) this.scene.remove(p.mesh);
+    for (const u of this.units.values()) this.removeAndDisposeMesh(u.mesh);
+    for (const b of this.buildings.values()) this.removeAndDisposeMesh(b.mesh);
+    for (const n of this.nodes.values()) this.removeAndDisposeMesh(n.mesh);
+    for (const s of this.settlements.values()) this.removeAndDisposeMesh(s.mesh);
+    for (const r of this.relics.values()) this.removeAndDisposeMesh(r.mesh);
+    for (const f of this.fauna.values()) this.removeAndDisposeMesh(f.mesh);
+    for (const p of this.projectiles) this.removeAndDisposeMesh(p.mesh);
     for (const v of this.transientVfx) {
-      this.scene.remove(v.object);
-      v.object.traverse((obj) => {
-        if ((obj as THREE.Mesh).isMesh || (obj as THREE.Line).isLine || (obj as THREE.Points).isPoints) {
-          const m = obj as THREE.Mesh | THREE.Line | THREE.Points;
-          m.geometry?.dispose();
-          if (Array.isArray(m.material)) m.material.forEach((mat) => mat.dispose());
-          else (m.material as THREE.Material | undefined)?.dispose();
-        }
-      });
+      this.removeAndDisposeMesh(v.object);
     }
 
     this.units.clear();
@@ -1281,15 +1286,17 @@ export class AoMEngine {
     this.commandDragPreviewKind = null;
     this.clearPlacementGhost();
     if (this.kothVaultMesh) {
-      this.scene.remove(this.kothVaultMesh);
+      this.removeAndDisposeMesh(this.kothVaultMesh);
       this.kothVaultMesh = null;
     }
     for (const sp of this.scenarioPropMeshes) {
-      this.scene.remove(sp);
+      this.removeAndDisposeMesh(sp);
     }
     this.scenarioPropMeshes = [];
     this.blockingRockObstacles = [];
     this.atmosphericFx?.clear();
+    this.scenarioTriggerRuntime = null;
+    this.appliedRemoteSeqs.clear();
     this.darkestNightStep = 0;
     this.wrathOfTheGodsCheat = false;
     this.redTideActive = false;
@@ -2224,6 +2231,7 @@ export class AoMEngine {
           this.hemiLight.intensity = preset.hemiIntensity;
         }
         const primaryObj = scDoc.objectives.find((o) => o.type === 'primary') ?? scDoc.objectives[0];
+        this.scenarioTriggerRuntime = new ScenarioTriggerRuntime(scDoc, playSlot);
         this.notifyStatus(
           primaryObj
             ? `📜 Cenário "${scDoc.title}": ${primaryObj.title} — ${primaryObj.description}`
@@ -4181,6 +4189,12 @@ export class AoMEngine {
       }
     }
     if (changed) {
+      const stoppedIds = [...this.units.values()]
+        .filter((u) => u.team === 'player' && u.selected)
+        .map((u) => u.id);
+      if (stoppedIds.length > 0) {
+        this.emitMpCommand({ kind: 'stop', unitIds: stoppedIds });
+      }
       soundEngine.playSelect();
       this.emitHudSnapshot();
     }
@@ -5092,9 +5106,20 @@ export class AoMEngine {
     } as MatchGameCommand);
   }
 
+  public skipActiveCinematic() {
+    if (this.scenarioTriggerRuntime) {
+      this.scenarioTriggerRuntime.skipCinematic();
+      this.emitHudSnapshot();
+    }
+  }
+
   public applyRemoteCommand(cmd: MatchGameCommand) {
     if (this.phase !== 'playing' && this.phase !== 'paused') return;
     if (cmd.senderSlot === this.localSlotIndex) return;
+    if (cmd.seq !== undefined) {
+      if (this.appliedRemoteSeqs.has(cmd.seq)) return;
+      this.appliedRemoteSeqs.add(cmd.seq);
+    }
     const f = this.factions.find((fac) => fac.slotIndex === cmd.senderSlot);
     const senderTeam: TeamId = f?.team ?? 'enemy';
     const senderLabel = f?.label ?? `Jogador ${cmd.senderSlot + 1}`;
@@ -5121,6 +5146,14 @@ export class AoMEngine {
       }
       this.notifyStatus(`🏛️ ${senderLabel} avançou para a ${AGE_NAMES[cmd.age as AgeLevel]}!`);
       this.emitHudSnapshot();
+      return;
+    }
+
+    if (cmd.kind === 'research_tech' && cmd.techId) {
+      const tech = TECH_SPECS[cmd.techId];
+      if (tech) {
+        this.notifyStatus(`📜 ${senderLabel} pesquisou ${tech.name}!`);
+      }
       return;
     }
 
@@ -5155,6 +5188,61 @@ export class AoMEngine {
         }
         this.notifyStatus(`⚡ ${senderLabel} lançou ${spec.name}!`);
       }
+      return;
+    }
+
+    if (cmd.kind === 'stop') {
+      for (const u of this.units.values()) {
+        if (u.team === senderTeam && (cmd.unitIds?.includes(u.id) || u.factionSlot === cmd.senderSlot)) {
+          u.state = 'idle';
+          u.targetPos = null;
+          u.targetEntityId = null;
+          u.waypoints = [];
+        }
+      }
+      return;
+    }
+
+    if (cmd.kind === 'stance' && cmd.stance) {
+      for (const u of this.units.values()) {
+        if (u.team === senderTeam && (cmd.unitIds?.includes(u.id) || u.factionSlot === cmd.senderSlot)) {
+          u.stance = cmd.stance;
+        }
+      }
+      return;
+    }
+
+    if (cmd.kind === 'attack_unit' && cmd.targetUnitId) {
+      const targetU = this.units.get(cmd.targetUnitId);
+      if (targetU) {
+        for (const u of this.units.values()) {
+          if (u.team === senderTeam && (cmd.unitIds?.includes(u.id) || u.factionSlot === cmd.senderSlot)) {
+            u.state = 'attack';
+            u.targetEntityId = targetU.id;
+            u.targetPos = targetU.mesh.position.clone();
+          }
+        }
+      }
+      return;
+    }
+
+    if (cmd.kind === 'attack_building' && cmd.targetBuildingId) {
+      const targetB = this.buildings.get(cmd.targetBuildingId);
+      if (targetB) {
+        for (const u of this.units.values()) {
+          if (u.team === senderTeam && (cmd.unitIds?.includes(u.id) || u.factionSlot === cmd.senderSlot)) {
+            u.state = 'attack';
+            u.targetEntityId = targetB.id;
+            u.targetPos = targetB.mesh.position.clone();
+          }
+        }
+      }
+      return;
+    }
+
+    if (cmd.kind === 'resign') {
+      this.notifyStatus(`🏳️ ${senderLabel} rendeu-se na partida!`);
+      this.emitHudSnapshot();
       return;
     }
 
@@ -5349,6 +5437,7 @@ export class AoMEngine {
       defensive: 'Defensivo',
       stand_ground: 'Manter Posição',
     };
+    this.emitMpCommand({ kind: 'stance', stance, unitIds: selected.map((u) => u.id) });
     soundEngine.playSelect();
     this.notifyStatus(`Postura de combate: ${labels[stance]}`);
     this.emitHudSnapshot();
@@ -6267,22 +6356,20 @@ export class AoMEngine {
       })),
       fogExplored: this.revealedMap ? undefined : Array.from(this.fogState, (v) => (v > 0 ? 1 : 0)),
     };
-    try {
-      localStorage.setItem('aom_modern_save_v1', JSON.stringify(data));
+    const ok = writeSavedMatchToStorage(data);
+    if (ok) {
       this.notifyStatus('Partida salva localmente com sucesso.');
       this.emitHudSnapshot();
       return true;
-    } catch {
-      this.notifyStatus('Não foi possível salvar a partida.');
-      return false;
     }
+    this.notifyStatus('Não foi possível salvar a partida.');
+    return false;
   }
 
   public loadMatchFromStorage(): boolean {
     try {
-      const raw = localStorage.getItem('aom_modern_save_v1');
-      if (!raw) return false;
-      const data = JSON.parse(raw) as SerializedMatch;
+      const data = readSavedMatchFromStorage<SerializedMatch>();
+      if (!data) return false;
       this.clearEntities();
       this.pantheon = data.pantheon;
       this.majorGodName = getMajorGodSpec(data.majorGodName, this.pantheon).name;
@@ -7718,7 +7805,7 @@ export class AoMEngine {
     this.deductCost(pool, stats.cost);
     const sx = settlement.mesh.position.x;
     const sz = settlement.mesh.position.z;
-    this.scene.remove(settlement.mesh);
+    this.removeAndDisposeMesh(settlement.mesh);
     this.settlements.delete(settlement.id);
 
     const b = this.spawnBuilding('town_center', team, sx, sz, false, undefined, settlement.id);
@@ -7774,7 +7861,7 @@ export class AoMEngine {
       const settlement = this.findNearestSettlement(x, z, 3.2);
       if (settlement) {
         claimedSettlementId = settlement.id;
-        this.scene.remove(settlement.mesh);
+        this.removeAndDisposeMesh(settlement.mesh);
         this.settlements.delete(settlement.id);
       }
     }
@@ -7782,6 +7869,7 @@ export class AoMEngine {
     this.deductCost(this.resources, stats.cost);
     const b = this.spawnBuilding(kind, 'player', x, z, false, undefined, claimedSettlementId);
     this.syncNavObstacles();
+    this.emitMpCommand({ kind: 'build', buildingKind: kind, x, z });
     this.stats.buildingsBuilt++;
     soundEngine.playBuild();
 
@@ -10467,7 +10555,7 @@ export class AoMEngine {
         target.mesh.position.z,
         target.radius
       );
-      this.scene.remove(target.mesh);
+      this.removeAndDisposeMesh(target.mesh);
       this.buildings.delete(target.id);
       if (target.kind === 'town_center' && target.settlementId) {
         this.spawnSettlement(target.mesh.position.x, target.mesh.position.z, target.settlementId);
@@ -13467,7 +13555,8 @@ export class AoMEngine {
         if (this.campaignSpawnedWaveIds.has(waveKey)) continue;
         if (this.elapsedSeconds >= wave.atSeconds) {
           this.campaignSpawnedWaveIds.add(waveKey);
-          const enemyTc = this.findNearestTownCenter('enemy', new THREE.Vector3(this.baseOffset, 0, -this.baseOffset));
+          _vec3A.set(this.baseOffset, 0, -this.baseOffset);
+          const enemyTc = this.findNearestTownCenter('enemy', _vec3A);
           const ox = enemyTc ? enemyTc.mesh.position.x - 4 : this.baseOffset - 4;
           const oz = enemyTc ? enemyTc.mesh.position.z + 4 : -this.baseOffset + 4;
           const waveUnits: UnitEntity[] = [];
@@ -13477,7 +13566,8 @@ export class AoMEngine {
               waveUnits.push(this.spawnUnit(entry.kind, 'enemy', slot.x, slot.z));
             }
           }
-          const playerTc = this.findNearestTownCenter('player', new THREE.Vector3(-this.baseOffset, 0, this.baseOffset));
+          _vec3A.set(-this.baseOffset, 0, this.baseOffset);
+          const playerTc = this.findNearestTownCenter('player', _vec3A);
           if (waveUnits.length > 0 && playerTc) {
             this.issueFormationMove(waveUnits, playerTc.mesh.position.x, playerTc.mesh.position.z, [], 'line');
           }
@@ -13861,7 +13951,7 @@ export class AoMEngine {
       const p = this.projectiles[i];
       p.progress += dt / p.duration;
       if (p.progress >= 1) {
-        this.scene.remove(p.mesh);
+        this.removeAndDisposeMesh(p.mesh);
         this.projectiles.splice(i, 1);
         if (p.damage > 0) {
           const targetU = this.units.get(p.targetId);
@@ -15873,6 +15963,7 @@ export class AoMEngine {
       aiPersonality: this.aiPersonality,
       campaignScenarioId: this.campaignScenarioId,
       isSetPlayer: this.isTeamSet('player'),
+      cinematic: this.scenarioTriggerRuntime ? this.scenarioTriggerRuntime.getCinematicState() : null,
       controlGroups: Array.from(this.controlGroups.entries())
         .filter(([, ids]) => ids.some((id) => {
           const u = this.units.get(id);
@@ -16052,6 +16143,70 @@ export class AoMEngine {
       }
       if (this.flamingWeaponsTimer > 0) {
         this.flamingWeaponsTimer = Math.max(0, this.flamingWeaponsTimer - simDt);
+      }
+      if (this.scenarioTriggerRuntime) {
+        this.scenarioTriggerRuntime.update(simDt, {
+          elapsedSeconds: this.elapsedSeconds,
+          playerResources: this.resources,
+          getPlayerUnitCount: () => {
+            let count = 0;
+            for (const u of this.units.values()) if (u.team === 'player' && u.hp > 0) count++;
+            return count;
+          },
+          getEnemyBuildingCount: () => {
+            let count = 0;
+            for (const b of this.buildings.values()) if (b.team === 'enemy' && b.hp > 0) count++;
+            return count;
+          },
+          getEnemyUnitCount: () => {
+            let count = 0;
+            for (const u of this.units.values()) if (u.team === 'enemy' && u.hp > 0) count++;
+            return count;
+          },
+          hasPlayerUnitInArea: (ax, az, radius) => {
+            const r2 = radius * radius;
+            for (const u of this.units.values()) {
+              if (u.team !== 'player' || u.hp <= 0) continue;
+              const dx = u.mesh.position.x - ax;
+              const dz = u.mesh.position.z - az;
+              if (dx * dx + dz * dz <= r2) return true;
+            }
+            return false;
+          },
+          spawnUnit: (kind, team, x, z) => {
+            this.spawnUnit(kind, team, x, z);
+          },
+          grantResources: (res) => {
+            if (res.food) this.resources.food += res.food;
+            if (res.wood) this.resources.wood += res.wood;
+            if (res.gold) this.resources.gold += res.gold;
+            if (res.favor) this.resources.favor += res.favor;
+          },
+          revealFullMap: () => {
+            this.revealedMap = true;
+            this.fogState.fill(2);
+            this.minimapFogCache.fill(2);
+          },
+          notifyStatus: (msg) => this.notifyStatus(msg),
+          setCameraTarget: (cx, cz, zoom) => {
+            this.camDesiredTarget.set(cx, 0, cz);
+            if (zoom !== undefined) this.camDesiredDistance = zoom;
+          },
+          triggerVictory: (reason) => {
+            this.notifyStatus(`🏆 ${reason}`);
+            this.recordCompletedMatch('victory');
+            this.phase = 'victory';
+            soundEngine.setMusicScene('victory');
+            this.emitHudSnapshot();
+          },
+          triggerDefeat: (reason) => {
+            this.notifyStatus(`💀 ${reason}`);
+            this.recordCompletedMatch('defeat');
+            this.phase = 'defeat';
+            soundEngine.setMusicScene('defeat');
+            this.emitHudSnapshot();
+          },
+        });
       }
       const gpCdMult = this.hasTeamWonder('player') ? 1.5 : 1.0;
       for (const key of Object.keys(this.godPowerCooldowns) as GodPowerId[]) {
