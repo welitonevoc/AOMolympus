@@ -44,6 +44,10 @@ import {
   resolveEgyptianArchGod,
 } from '../../civilizacao/egipcios/egyptianArchitectureSuite';
 import {
+  buildEgyptianTownCenterStudio,
+  EGYPTIAN_TOWN_CENTER_THEMES,
+} from '../../civilizacao/egipcios/egyptianTownCenterModel';
+import {
   createBuildingMesh,
   createUnitMesh,
   MaterialPalette,
@@ -809,6 +813,65 @@ export function buildBuildingStudioSubject(ctx: BuildingStudioBuildContext): THR
         lastGodApplied = currentGod;
         tcStudio.applyGod(currentGod);
         const newTheme = NORSE_TOWN_CENTER_THEMES[currentGod] || NORSE_TOWN_CENTER_THEMES.odin;
+        scene.background.setHex(newTheme.bgHex);
+        if (scene.fog) (scene.fog as THREE.FogExp2).color.setHex(newTheme.bgHex);
+      }
+
+      if (tcStudio.auraRing) {
+        tcStudio.auraRing.rotation.z += dt * 0.28;
+        tcStudio.auraRing.scale.setScalar(
+          (1 + (currentT - 1) * 0.11) * (1 + Math.sin(elapsed * 2.2) * 0.02)
+        );
+      }
+
+      tcStudio.M.flames.forEach((fl, idx) => {
+        fl.scale.set(
+          1 + Math.sin(elapsed * 13 + idx) * 0.14,
+          1 + Math.cos(elapsed * 16 + idx) * 0.22,
+          1 + Math.sin(elapsed * 12 + idx) * 0.14
+        );
+      });
+    };
+  } else if (selectedCiv === 'egyptian' && selectedBuilding === 'town_center') {
+    const rawGod = selectedMajorGod.toLowerCase();
+    const godKey = rawGod.includes('isis')
+      ? 'isis'
+      : rawGod.includes('set')
+      ? 'set'
+      : 'ra';
+    const theme = EGYPTIAN_TOWN_CENTER_THEMES[godKey] || EGYPTIAN_TOWN_CENTER_THEMES.ra;
+
+    scene.background = new THREE.Color(theme.bgHex);
+    scene.fog = new THREE.FogExp2(theme.bgHex, 0.015);
+    addPedestal(4.2, 4.6, theme.goldHex);
+
+    const effTier = Math.max(1, Math.min(5, buildingAge));
+    const tcStudio = buildEgyptianTownCenterStudio(godKey, effTier, !isSoftwareGl);
+    group = tcStudio.root;
+
+    let lastTierApplied = effTier;
+    let lastGodApplied = godKey;
+    let elapsed = 0;
+
+    group.userData.animatePose = (dt: number) => {
+      elapsed += dt;
+      const currentT = Math.max(1, Math.min(5, buildingAge));
+      if (currentT !== lastTierApplied) {
+        lastTierApplied = currentT;
+        tcStudio.setTier(currentT);
+      }
+
+      const nextRaw = selectedMajorGod.toLowerCase();
+      const currentGod = nextRaw.includes('isis')
+        ? 'isis'
+        : nextRaw.includes('set')
+        ? 'set'
+        : 'ra';
+
+      if (currentGod !== lastGodApplied) {
+        lastGodApplied = currentGod;
+        tcStudio.applyGod(currentGod);
+        const newTheme = EGYPTIAN_TOWN_CENTER_THEMES[currentGod] || EGYPTIAN_TOWN_CENTER_THEMES.ra;
         scene.background.setHex(newTheme.bgHex);
         if (scene.fog) (scene.fog as THREE.FogExp2).color.setHex(newTheme.bgHex);
       }

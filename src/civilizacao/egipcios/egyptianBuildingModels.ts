@@ -6,6 +6,7 @@ import {
   buildEgyptianArchBuilding,
   resolveEgyptianArchGod,
 } from './egyptianArchitectureSuite';
+import { buildProceduralEgyptianTownCenter } from './egyptianTownCenterModel';
 
 // ─── Procedural Egyptian Sandstone, Hieroglyph, Lapis & Gold Textures ───────
 
@@ -771,13 +772,28 @@ export function createEgyptianBuildingMesh(
 
   switch (kind) {
     case 'town_center': {
-      const res = buildEgyptianTownCenter(group, mats, age, pantheon);
-      metropolisHalo = res.metropolisHalo;
-      metropolisCrystal = res.metropolisCrystal;
-      group.scale.setScalar(1.0 + (age - 1) * 0.055);
-      markerRadius = 3.55 + (age - 1) * 0.22;
-      barHeight = 3.75 + (age - 1) * 0.58;
-      barWidth = 3.0 + (age - 1) * 0.15;
+      if (pantheon === 'egyptian') {
+        const rawGod = (majorGod || 'ra').toLowerCase();
+        const effGod = rawGod.includes('isis') ? 'isis' : rawGod.includes('set') ? 'set' : 'ra';
+        const res = buildProceduralEgyptianTownCenter(group, age, effGod, enableShadows);
+        metropolisHalo = res.metropolisHalo;
+        metropolisCrystal = res.metropolisCrystal;
+        if (res.flames && res.flames.length > 0) {
+          group.userData.egyptArchFlames = res.flames;
+        }
+        group.scale.setScalar(1.0 + (age - 1) * 0.055);
+        markerRadius = 3.6 + (age - 1) * 0.22;
+        barHeight = 3.8 + (age - 1) * 0.55;
+        barWidth = 3.2 + (age - 1) * 0.15;
+      } else {
+        const res = buildEgyptianTownCenter(group, mats, age, pantheon);
+        metropolisHalo = res.metropolisHalo;
+        metropolisCrystal = res.metropolisCrystal;
+        group.scale.setScalar(1.0 + (age - 1) * 0.055);
+        markerRadius = 3.55 + (age - 1) * 0.22;
+        barHeight = 3.75 + (age - 1) * 0.58;
+        barWidth = 3.0 + (age - 1) * 0.15;
+      }
       break;
     }
     case 'barracks':
