@@ -622,7 +622,57 @@ export function updateBuildings(ctx: BuildingsAndProductionContext, dt: number):
       }
     }
 
-    if (b.mesh.userData.greekPortalRings) {
+    if (b.isConstructed && b.mesh.userData.egyptFlags) {
+      const flags = b.mesh.userData.egyptFlags as Array<{ node: THREE.Object3D; phase: number }>;
+      for (let i = 0; i < flags.length; i++) {
+        flags[i].node.rotation.y = Math.sin(ctx.elapsedSeconds * 3.2 + flags[i].phase) * 0.22;
+      }
+    }
+
+    if (b.isConstructed && b.mesh.userData.egyptWaterwheels) {
+      const wheels = b.mesh.userData.egyptWaterwheels as THREE.Object3D[];
+      for (let i = 0; i < wheels.length; i++) {
+        wheels[i].rotation.x += dt * 1.45;
+      }
+    }
+
+    if (b.isConstructed && b.mesh.userData.egyptCrops) {
+      const crops = b.mesh.userData.egyptCrops as Array<{ node: THREE.Object3D; phase: number }>;
+      for (let i = 0; i < crops.length; i++) {
+        const cc = crops[i];
+        cc.node.rotation.z = Math.sin(ctx.elapsedSeconds * 2.1 + cc.phase) * 0.07;
+        cc.node.rotation.x = Math.cos(ctx.elapsedSeconds * 1.7 + cc.phase) * 0.05;
+      }
+    }
+
+    if (b.isConstructed && b.mesh.userData.egyptOilStreams) {
+      const streams = b.mesh.userData.egyptOilStreams as Array<{
+        stream: THREE.Object3D;
+        pool: THREE.Object3D;
+        phase: number;
+      }>;
+      for (let i = 0; i < streams.length; i++) {
+        const os = streams[i];
+        const pulse = 1 + Math.sin(ctx.elapsedSeconds * 9 + os.phase) * 0.18;
+        os.stream.scale.set(pulse, 1, pulse);
+        os.pool.scale.setScalar(1 + Math.cos(ctx.elapsedSeconds * 7 + os.phase) * 0.14);
+      }
+    }
+
+    if (b.mesh.userData.egyptVortexPairs) {
+      const vPairs = b.mesh.userData.egyptVortexPairs as Array<{
+        outer: THREE.Object3D;
+        inner: THREE.Object3D;
+        core: THREE.Object3D;
+      }>;
+      const mult = b.isConstructed ? 1.0 : 0.4;
+      for (let i = 0; i < vPairs.length; i++) {
+        const vp = vPairs[i];
+        vp.outer.rotation.z += dt * 1.25 * mult;
+        vp.inner.rotation.z -= dt * 2.15 * mult;
+        vp.core.scale.setScalar(1 + Math.sin(ctx.elapsedSeconds * 4.5 + i) * 0.07);
+      }
+    } else if (b.mesh.userData.greekPortalRings) {
       const rings = b.mesh.userData.greekPortalRings as THREE.Object3D[];
       const mult = b.isConstructed ? 1.0 : 0.4;
       for (let i = 0; i < rings.length; i++) {

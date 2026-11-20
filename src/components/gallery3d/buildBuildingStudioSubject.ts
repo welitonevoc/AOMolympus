@@ -675,33 +675,35 @@ export function buildBuildingStudioSubject(ctx: BuildingStudioBuildContext): THR
     const theme = EGYPT_ARCH_THEMES[godKey];
 
     scene.background = new THREE.Color(theme.bg);
-    scene.fog = new THREE.FogExp2(theme.bg, 0.016);
+    scene.fog = new THREE.FogExp2(theme.bg, 0.015);
 
     const groundTex = getEgyptianArchGroundTexture(godKey);
     groundTex.userData.shared = true;
     const groundDisc = new THREE.Mesh(
-      new THREE.CylinderGeometry(8.6, 8.9, 0.3, 64),
+      new THREE.CylinderGeometry(8.8, 9.2, 0.34, 64),
       new THREE.MeshStandardMaterial({
         map: groundTex,
         roughness: 0.78,
+        metalness: 0.05,
       })
     );
-    groundDisc.position.y = -0.15;
+    groundDisc.position.y = -0.17;
     groundDisc.receiveShadow = !isSoftwareGl;
     environmentGroup.add(groundDisc);
 
     const deityRing = new THREE.Mesh(
-      new THREE.RingGeometry(4.2, 4.38, 64),
+      new THREE.RingGeometry(3.45, 3.82, 64),
       new THREE.MeshBasicMaterial({
         color: theme.glow,
         transparent: true,
-        opacity: 0.68,
+        opacity: 0.28 + buildingAge * 0.04,
+        blending: THREE.AdditiveBlending,
         side: THREE.DoubleSide,
         depthWrite: false,
       })
     );
     deityRing.rotation.x = -Math.PI / 2;
-    deityRing.position.y = 0.015;
+    deityRing.position.y = 0.025;
     environmentGroup.add(deityRing);
 
     const built = buildEgyptianArchBuilding(
@@ -712,9 +714,42 @@ export function buildBuildingStudioSubject(ctx: BuildingStudioBuildContext): THR
     );
     group = built.root;
 
+    // Fire-arrow volley showcase for Egyptian Watch Tower
+    const isTower = selectedBuilding === 'tower';
+    const arrowGeo = isTower ? new THREE.CylinderGeometry(0.016, 0.016, 0.65, 6) : null;
+    if (arrowGeo) arrowGeo.rotateX(Math.PI / 2);
+    const tipGeo = isTower ? new THREE.SphereGeometry(0.055, 8, 8) : null;
+    const arrowMat = isTower ? new THREE.MeshBasicMaterial({ color: 0xfef08a }) : null;
+    const flameTipMat = isTower
+      ? new THREE.MeshBasicMaterial({
+          color: 0xf97316,
+          transparent: true,
+          opacity: 0.95,
+          blending: THREE.AdditiveBlending,
+        })
+      : null;
+    const activeArrows: Array<{
+      mesh: THREE.Group;
+      start: THREE.Vector3;
+      target: THREE.Vector3;
+      progress: number;
+      speed: number;
+    }> = [];
+    let volleyTimer = 0;
+
+    if (arrowGeo && tipGeo && arrowMat && flameTipMat) {
+      group.userData.disposeExtra = () => {
+        arrowGeo.dispose();
+        tipGeo.dispose();
+        arrowMat.dispose();
+        flameTipMat.dispose();
+      };
+    }
+
     let elapsed = 0;
     group.userData.animatePose = (dt: number) => {
       elapsed += dt;
+
       built.flames.forEach((fl, idx) => {
         fl.scale.set(
           1 + Math.sin(elapsed * 12 + idx * 1.7) * 0.14,
@@ -722,8 +757,109 @@ export function buildBuildingStudioSubject(ctx: BuildingStudioBuildContext): THR
           1 + Math.sin(elapsed * 11 + idx * 1.1) * 0.14
         );
       });
+
+      built.flags.forEach((f) => {
+        f.node.rotation.y = Math.sin(elapsed * 3.2 + f.phase) * 0.22;
+      });
+
+      built.cranes.forEach((cr, idx) => {
+        cr.rotation.y = Math.sin(elapsed * 0.65 + idx) * 0.55;
+      });
+
+      built.windmills.forEach((wm) => {
+        wm.rotation.z -= dt * 1.15;
+      });
+
+      built.waterwheels.forEach((ww) => {
+        ww.rotation.x += dt * 1.45;
+      });
+
+      built.cropClusters.forEach((cc) => {
+        cc.node.rotation.z = Math.sin(elapsed * 2.1 + cc.phase) * 0.07;
+        cc.node.rotation.x = Math.cos(elapsed * 1.7 + cc.phase) * 0.05;
+      });
+
+      built.vortexPairs.forEach((vp) => {
+        vp.outer.rotation.z += dt * 1.25;
+        vp.inner.rotation.z -= dt * 2.15;
+        vp.core.scale.setScalar(1 + Math.sin(elapsed * 4.5) * 0.07);
+      });
+
+      built.oilStreams.forEach((os) => {
+        const pulse = 1 + Math.sin(elapsed * 9 + os.phase) * 0.18;
+        os.stream.scale.set(pulse, 1, pulse);
+        os.pool.scale.setScalar(1 + Math.cos(elapsed * 7 + os.phase) * 0.14);
+      });
+
+      if (built.gates.length > 0) {
+        const shouldOpen = Math.sin(elapsed * 0.85) > 0.0;
+        const targetAng = shouldOpen ? Math.PI * 0.46 : 0.0;
+        for (const gt of built.gates) {
+          gt.currentAngle = THREE.MathUtils.damp(gt.currentAngle, targetAng, 5.0, dt);
+          gt.leftPivot.rotation.y = -gt.currentAngle;
+          gt.rightPivot.rotation.y = gt.currentAngle;
+        }
+      }
+
+      if (built.beaconCrystal) {
+        built.beaconCrystal.rotation.y += dt * 1.5;
+      }
+      if (built.vortexRing && built.vortexPairs.length === 0) {
+        built.vortexRing.rotation.z += dt * 1.4;
+      }
+      if (built.metropolisHalo) {
+        built.metropolisHalo.rotation.z += dt * 0.8;
+      }
+      if (built.metropolisCrystal) {
+        built.metropolisCrystal.rotation.y += dt * 1.5;
+      }
+
       if (selectedBuilding === 'armory') {
-        built.furnaceMat.emissiveIntensity = 1.45 + Math.sin(elapsed * 4.5) * 0.35;
+        built.furnaceMat.emissiveIntensity = 3.2 + Math.sin(elapsed * 4.5) * 0.6;
+      }
+
+      deityRing.rotation.z += dt * 0.35;
+
+      if (isTower && arrowGeo && tipGeo && arrowMat && flameTipMat) {
+        volleyTimer -= dt;
+        if (volleyTimer <= 0) {
+          volleyTimer = 0.5;
+          const a = Math.random() * Math.PI * 2;
+          const dist = 3.2 + Math.random() * 2.4;
+          const originY = built.towerFireOriginY ?? 2.8;
+          const start = new THREE.Vector3(Math.cos(a) * 0.58, originY, Math.sin(a) * 0.58);
+          const target = new THREE.Vector3(Math.cos(a) * dist, 0.06, Math.sin(a) * dist);
+          const arrowGrp = new THREE.Group();
+          const shaft = new THREE.Mesh(arrowGeo, arrowMat);
+          const tip = new THREE.Mesh(tipGeo, flameTipMat);
+          tip.position.z = 0.34;
+          arrowGrp.add(shaft, tip);
+          arrowGrp.position.copy(start);
+          environmentGroup.add(arrowGrp);
+          activeArrows.push({
+            mesh: arrowGrp,
+            start,
+            target,
+            progress: 0,
+            speed: 1.55 + Math.random() * 0.35,
+          });
+        }
+        for (let i = activeArrows.length - 1; i >= 0; i--) {
+          const ar = activeArrows[i];
+          ar.progress += dt * ar.speed;
+          const p = Math.min(1, ar.progress);
+          const pos = new THREE.Vector3().lerpVectors(ar.start, ar.target, p);
+          pos.y += Math.sin(p * Math.PI) * 0.85;
+          ar.mesh.position.copy(pos);
+          const nextP = Math.min(1, p + 0.05);
+          const nextPos = new THREE.Vector3().lerpVectors(ar.start, ar.target, nextP);
+          nextPos.y += Math.sin(nextP * Math.PI) * 0.85;
+          ar.mesh.lookAt(nextPos);
+          if (p >= 1) {
+            environmentGroup.remove(ar.mesh);
+            activeArrows.splice(i, 1);
+          }
+        }
       }
     };
   } else if (selectedCiv === 'greek' && selectedBuilding === 'house') {

@@ -21,6 +21,11 @@ function forwardBuildingAnimRefs(root: THREE.Group, builtGroup: THREE.Group): vo
   if (ud.greekWindmills) root.userData.greekWindmills = ud.greekWindmills;
   if (ud.greekPortalRings) root.userData.greekPortalRings = ud.greekPortalRings;
   if (ud.greekGates) root.userData.greekGates = ud.greekGates;
+  if (ud.egyptFlags) root.userData.egyptFlags = ud.egyptFlags;
+  if (ud.egyptWaterwheels) root.userData.egyptWaterwheels = ud.egyptWaterwheels;
+  if (ud.egyptCrops) root.userData.egyptCrops = ud.egyptCrops;
+  if (ud.egyptVortexPairs) root.userData.egyptVortexPairs = ud.egyptVortexPairs;
+  if (ud.egyptOilStreams) root.userData.egyptOilStreams = ud.egyptOilStreams;
 }
 
 function finalizeBuiltBuilding(

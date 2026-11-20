@@ -371,22 +371,16 @@ export function StudioWorldBottomControls(props: StudioWorldBottomControlsProps)
   }
 
   if (galleryCategory === 'building' && selectedCiv === 'egyptian' && isEgyptianArchBuilding(selectedBuilding)) {
-    const tiers =
-      selectedBuilding === 'house'
-        ? [
-            { tier: 1 as AgeLevel, label: 'T1 • Arcaico' },
-            { tier: 2 as AgeLevel, label: 'T2 • Clássico' },
-            { tier: 3 as AgeLevel, label: 'T3 • Heroico' },
-            { tier: 4 as AgeLevel, label: 'T4 • Mítico' },
-            { tier: 5 as AgeLevel, label: 'T5 • Olímpico' },
-          ]
-        : [
-            { tier: 2 as AgeLevel, label: 'T2 • Clássico' },
-            { tier: 3 as AgeLevel, label: 'T3 • Heroico' },
-            { tier: 4 as AgeLevel, label: 'T4 • Mítico' },
-            { tier: 5 as AgeLevel, label: 'T5 • Olímpico' },
-          ];
-    const effTier = Math.max(EGYPT_ARCH_BUILDING_META[selectedBuilding].minTier, Math.min(5, buildingAge));
+    const meta = EGYPT_ARCH_BUILDING_META[selectedBuilding];
+    const allTiers: Array<{ tier: AgeLevel; label: string }> = [
+      { tier: 1, label: 'T1 • Arcaico' },
+      { tier: 2, label: 'T2 • Clássico' },
+      { tier: 3, label: 'T3 • Heroico' },
+      { tier: 4, label: 'T4 • Mítico' },
+      { tier: 5, label: 'T5 • Imperial' },
+    ];
+    const tiers = allTiers.filter((item) => item.tier >= meta.minTier);
+    const effTier = Math.max(meta.minTier, Math.min(5, buildingAge));
 
     return (
       <>

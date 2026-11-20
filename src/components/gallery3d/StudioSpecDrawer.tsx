@@ -601,14 +601,17 @@ export function StudioSpecDrawer(props: StudioSpecDrawerProps) {
                   const godKey = resolveEgyptianArchGod(selectedMajorGod);
                   const theme = EGYPT_ARCH_THEMES[godKey];
                   const meta = EGYPT_ARCH_BUILDING_META[selectedBuilding];
-                  const effTier = Math.max(meta.minTier, Math.min(5, buildingAge));
+                  const effTier = Math.max(meta.minTier, Math.min(5, buildingAge)) as 1 | 2 | 3 | 4 | 5;
                   const eraLabel = EGYPT_ARCH_ERA_NAMES[effTier] || `Era ${effTier}`;
+                  const tierDesc = meta.tierDescriptions[effTier];
                   return (
                     <>
                       <div className="font-bold text-amber-300">
                         {`${meta.label} ${theme.title} • Tier ${effTier} (${eraLabel})`}
                       </div>
-                      <div className="mt-0.5 text-[#fde68a]/90">{theme.subtitle}</div>
+                      <div className="mt-0.5 text-[#fde68a]/90">
+                        {tierDesc ? `${tierDesc} — ${theme.subtitle}` : theme.subtitle}
+                      </div>
                     </>
                   );
                 })()

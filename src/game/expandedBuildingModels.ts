@@ -5,6 +5,10 @@ import {
   buildGreekArchBuilding,
   resolveGreekArchGod,
 } from '../civilizacao/gregos/greekArchitectureSuite';
+import {
+  buildEgyptianArchBuilding,
+  resolveEgyptianArchGod,
+} from '../civilizacao/egipcios/egyptianArchitectureSuite';
 
 export const EXPANDED_BUILDING_KINDS: ReadonlySet<BuildingKind> = new Set<BuildingKind>([
   'village_center',
@@ -323,6 +327,14 @@ export function createExpandedBuildingMesh(
       markerRadius = 1.45;
       barHeight = 2.6 + age * 0.32;
       barWidth = 1.8;
+    } else if (pantheon === 'egyptian') {
+      const god = resolveEgyptianArchGod(majorGod || String(pantheon));
+      const built = buildEgyptianArchBuilding('wall', god, age, enableShadows, teamMat);
+      group.add(built.root);
+      if (built.flames.length > 0) group.userData.tcFlames = built.flames;
+      markerRadius = 1.45;
+      barHeight = 2.6 + age * 0.34;
+      barWidth = 1.8;
     } else {
       // Evolving Wall across all 5 Ages:
       // Age 1: Rough wood palisade -> Age 2: Braced timber/bronze -> Age 3: Stone masonry
@@ -382,6 +394,21 @@ export function createExpandedBuildingMesh(
       beaconCrystal = built.beaconCrystal;
       markerRadius = 1.95;
       barHeight = 3.6 + age * 0.35;
+      barWidth = 2.4;
+    } else if (pantheon === 'egyptian') {
+      const god = resolveEgyptianArchGod(majorGod || String(pantheon));
+      const built = buildEgyptianArchBuilding('gate', god, age, enableShadows, teamMat);
+      built.root.scale.setScalar(built.meta.gameplayScale);
+      group.add(built.root);
+      if (built.flames.length > 0) {
+        group.userData.egyptArchFlames = built.flames;
+        group.userData.tcFlames = built.flames;
+      }
+      if (built.flags.length > 0) group.userData.egyptFlags = built.flags;
+      if (built.gates.length > 0) group.userData.greekGates = built.gates;
+      beaconCrystal = built.beaconCrystal;
+      markerRadius = 1.95;
+      barHeight = 3.6 + age * 0.38;
       barWidth = 2.4;
     } else {
       // Fortified arched gatehouse evolving cleanly from Age 1 -> Age 5

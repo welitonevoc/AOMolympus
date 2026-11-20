@@ -42,7 +42,12 @@ export function hasBespokeAgeEvolution(style: ArchStyleId, kind: BuildingKind): 
       kind === 'archery_range' ||
       kind === 'stable' ||
       kind === 'market' ||
-      kind === 'armory'
+      kind === 'armory' ||
+      kind === 'siege_works' ||
+      kind === 'fortress' ||
+      kind === 'tower' ||
+      kind === 'farm' ||
+      kind === 'titan_gate'
     );
   }
   if (style === 'norse') {
