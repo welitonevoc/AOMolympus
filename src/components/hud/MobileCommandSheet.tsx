@@ -20,6 +20,11 @@ import {
   UnitKind,
   UnitStats,
 } from '../../game/types';
+import {
+  getBuildingExclusiveTechs,
+  getBuildingExclusiveUnits,
+  getVillagerCultureDetails,
+} from './commandCenterUtils';
 import { formatCost } from './hudTypes';
 
 type SheetTab = 'build' | 'train' | 'powers' | 'tech';
@@ -79,11 +84,38 @@ export const MobileCommandSheet: React.FC<MobileCommandSheetProps> = ({
   onResearchTech,
   onAdvanceAge,
 }) => {
-  const [tab, setTab] = useState<SheetTab>('build');
+  const selectedBuildingKind =
+    hud.selection.primaryType === 'building' && hud.selection.team === 'player'
+      ? hud.selection.buildingKind
+      : undefined;
+
+  const initialTab: SheetTab = selectedBuildingKind ? 'train' : 'build';
+  const [tab, setTab] = useState<SheetTab>(initialTab);
 
   if (!open || hud.phase !== 'playing') return null;
 
-  const visibleTechs = techList.filter((t) => {
+  // Filter units and techs exclusively for the selected building if one is chosen
+  const displayedUnits = selectedBuildingKind
+    ? getBuildingExclusiveUnits(
+        selectedBuildingKind,
+        hud.pantheon,
+        hud.majorGodName,
+        unitList,
+        hud.chosenMinorGods
+      )
+    : unitList;
+
+  const displayedTechs = selectedBuildingKind
+    ? getBuildingExclusiveTechs(
+        selectedBuildingKind,
+        hud.pantheon,
+        hud.majorGodName,
+        techList,
+        hud.chosenMinorGods
+      )
+    : techList;
+
+  const visibleTechs = displayedTechs.filter((t) => {
     if (t.pantheons && !t.pantheons.includes(hud.pantheon)) return false;
     if (hud.researchedTechs.includes(t.id)) return false;
     return true;
@@ -226,7 +258,7 @@ export const MobileCommandSheet: React.FC<MobileCommandSheetProps> = ({
 
           {tab === 'train' && (
             <div className="grid grid-cols-2 gap-2">
-              {unitList.map((u) => {
+              {displayedUnits.map((u) => {
                 const locked = hud.age < u.minAge;
                 const affordable = !locked && canAffordCost(hud.resources, u.cost);
                 return (

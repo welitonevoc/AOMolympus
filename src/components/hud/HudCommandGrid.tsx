@@ -1,5 +1,7 @@
+import React, { useState } from 'react';
 import {
   Anchor,
+  Castle,
   Check,
   Compass,
   Crown,
@@ -7,6 +9,8 @@ import {
   Eye,
   GripHorizontal,
   Hammer,
+  HelpCircle,
+  Info,
   LayoutGrid,
   Lock,
   LogOut,
@@ -41,6 +45,13 @@ import { EraIcon } from '../EraIcon';
 import { ResourceIcon } from '../ResourceIcon';
 import { TechIcon } from '../TechIcon';
 import { UnitIcon } from '../UnitIcon';
+import {
+  getBuildingCategory,
+  getBuildingExclusiveTechs,
+  getBuildingExclusiveUnits,
+  getVillagerCultureDetails,
+  VillagerBuildCategory,
+} from './commandCenterUtils';
 import { formatCost } from './hudTypes';
 
 type BuildingSpecItem = ReturnType<typeof getCivBuildingSpec>;
@@ -126,22 +137,85 @@ export function HudCommandGrid({
   onSelectCombat,
   onFocusTownCenter,
 }: HudCommandGridProps) {
+  // Local state for categorized tabs to keep the command center compact ("enxugar a barra")
+  const [villagerTab, setVillagerTab] = useState<VillagerBuildCategory>('all');
+  const [buildingSubTab, setBuildingSubTab] = useState<'all' | 'units' | 'techs'>('all');
+
+  // Culture-specific details for villager selection
+  const villagerCulture = getVillagerCultureDetails(
+    hud.pantheon,
+    hud.selection.unitKind,
+    hud.selection.isHero
+  );
+
+  // Buildings filtered by the active category tab
+  const filteredBuildings = buildingList.filter((b) => {
+    if (villagerTab === 'all') return true;
+    return getBuildingCategory(b.kind) === villagerTab;
+  });
+
+  // Category counts for badges
+  const ecoCount = buildingList.filter((b) => getBuildingCategory(b.kind) === 'eco').length;
+  const milCount = buildingList.filter((b) => getBuildingCategory(b.kind) === 'military').length;
+  const defCount = buildingList.filter((b) => getBuildingCategory(b.kind) === 'defense').length;
+  const divCount = buildingList.filter((b) => getBuildingCategory(b.kind) === 'divine').length;
+
+  // Header Title calculation
+  const getHeaderTitle = () => {
+    if (hud.selection.hasVillagerSelected) {
+      return villagerCulture.title;
+    }
+    if (selectedPlayerBuildingKind) {
+      if (selectedPlayerBuildingKind === 'fortress' || selectedPlayerBuildingKind === 'asgard_hill_fort') {
+        if (hud.pantheon === 'egyptian') return 'Fortaleza Migdol (Bastião Real)';
+        if (hud.pantheon === 'norse') return 'Forte da Colina (Hill Fort)';
+        if (hud.pantheon === 'atlantean') return 'Palácio Atlante (Cidadela)';
+        return 'Fortaleza Helênica (Bastião)';
+      }
+      if (selectedPlayerBuildingKind === 'temple') {
+        return `Templo Sagrado de ${hud.majorGodName}`;
+      }
+      if (selectedPlayerBuildingKind === 'barracks' || selectedPlayerBuildingKind === 'counter_barracks') {
+        if (selectedPlayerBuildingKind === 'counter_barracks') return 'Quartel de Contra-Ataque';
+        if (hud.pantheon === 'greek') return 'Academia Militar';
+        if (hud.pantheon === 'norse') return 'Quartel Nórdico';
+        return 'Quartel de Infantaria';
+      }
+      if (selectedPlayerBuildingKind === 'archery_range') {
+        if (hud.pantheon === 'egyptian') return 'Campo de Fundeiros & Arquearia';
+        return 'Campo de Arquearia';
+      }
+      if (selectedPlayerBuildingKind === 'stable') {
+        return 'Estábulo (Cavalaria)';
+      }
+      if (selectedPlayerBuildingKind === 'great_hall') {
+        return 'Grande Salão Nórdico';
+      }
+      if (selectedPlayerBuildingKind === 'siege_works') {
+        return 'Oficina de Cerco';
+      }
+      return getCivBuildingSpec(hud.pantheon, selectedPlayerBuildingKind, hud.majorGodName, hud.age).name;
+    }
+    if (hud.selection.primaryType === 'unit' && hud.selection.team === 'player') {
+      return 'Ordens & Formações';
+    }
+    return 'Central de Comandos';
+  };
+
   return (
     <div className="md:col-span-5 flex flex-col justify-between gap-1.5 md:border-r border-[#c8a962]/20 md:pr-2">
+      {/* HEADER STRIP */}
       <div className="flex items-center justify-between gap-1.5 border-b border-[#c8a962]/25 pb-1">
         <div className="flex items-center gap-1.5 min-w-0">
-          {selectedPlayerBuildingKind && !hud.selection.hasVillagerSelected && (
+          {selectedPlayerBuildingKind && !hud.selection.hasVillagerSelected ? (
             <BuildingIcon kind={selectedPlayerBuildingKind} pantheon={hud.pantheon} size={20} />
-          )}
+          ) : hud.selection.hasVillagerSelected ? (
+            <Hammer className="h-4 w-4 text-[#facc15] shrink-0" />
+          ) : null}
           <span className="font-display text-[11px] font-bold uppercase tracking-wider text-[#f3d27a] truncate">
-            {hud.selection.hasVillagerSelected
-              ? 'Construções & Tarefas'
-              : selectedPlayerBuildingKind
-              ? getCivBuildingSpec(hud.pantheon, selectedPlayerBuildingKind, hud.majorGodName, hud.age).name
-              : hud.selection.primaryType === 'unit' && hud.selection.team === 'player'
-              ? 'Ordens & Formações'
-              : 'Comandos'}
+            {getHeaderTitle()}
           </span>
+
           {selectedPlayerBuildingKind === 'town_center' && hud.selection.townCenterTier && (
             <span
               title={
@@ -158,6 +232,13 @@ export function HudCommandGrid({
               {hud.selection.townCenterTier >= 5 ? 'T5 METRÓPOLE' : `T${hud.selection.townCenterTier}`}
             </span>
           )}
+
+          {(selectedPlayerBuildingKind === 'fortress' || selectedPlayerBuildingKind === 'asgard_hill_fort') && (
+            <span className="shrink-0 rounded border border-[#f59e0b]/50 bg-[#261909] px-1.5 py-0.5 font-mono-num text-[9px] font-bold text-[#fde68a]">
+              Era III+
+            </span>
+          )}
+
           {selectedPlayerBuildingKind === 'monument' && hud.monumentCount !== undefined && (
             <span className="shrink-0 rounded border border-[#c8a962]/45 bg-[#192030] px-1 py-0.5 font-mono-num text-[9px] font-bold text-[#fde68a]">
               {hud.monumentCount}/5
@@ -169,6 +250,7 @@ export function HudCommandGrid({
             </span>
           )}
         </div>
+
         {isProductionBuilding && hud.selection.buildingId && (
           <button
             type="button"
@@ -186,9 +268,20 @@ export function HudCommandGrid({
         )}
       </div>
 
-      {/* CASE A: Villager Selected -> Retold Quick Gather Icons + Visual Building Tiles */}
+      {/* ========================================================================= */}
+      {/* CASE A: VILLAGER SELECTED -> CUSTOMIZED PER VILLAGER TYPE & CATEGORIZED   */}
+      {/* ========================================================================= */}
       {hud.selection.hasVillagerSelected ? (
         <div className="flex flex-1 flex-col justify-between gap-1.5">
+          {/* Villager Cultural Trait Badge */}
+          <div className="flex items-center justify-between gap-1 rounded bg-[#161d2b] px-2 py-0.5 text-[10px]">
+            <span className="text-[#94a3b8] truncate">{villagerCulture.subtitle}</span>
+            <span className="shrink-0 rounded border border-[#facc15]/40 bg-[#29200b] px-1.5 py-0.2 font-semibold text-[#fde68a] text-[9px]">
+              {villagerCulture.badge}
+            </span>
+          </div>
+
+          {/* Quick Gather Task Icons */}
           {onOrderVillagerTask && (
             <div className="grid grid-cols-5 gap-1">
               <button
@@ -197,7 +290,7 @@ export function HudCommandGrid({
                 title="Colher Madeira"
                 className="flex items-center justify-center gap-1 rounded border border-[#c8a962]/25 bg-[#121927] py-1 text-[10px] font-semibold text-[#cbd5e1] hover:border-[#4ade80] hover:bg-[#16261d] hover:text-white cursor-pointer"
               >
-                <ResourceIcon kind="wood" size={16} />
+                <ResourceIcon kind="wood" size={15} />
                 <span className="hidden sm:inline">Mad</span>
               </button>
               <button
@@ -206,7 +299,7 @@ export function HudCommandGrid({
                 title="Minerar Ouro"
                 className="flex items-center justify-center gap-1 rounded border border-[#c8a962]/25 bg-[#121927] py-1 text-[10px] font-semibold text-[#cbd5e1] hover:border-[#facc15] hover:bg-[#26200d] hover:text-white cursor-pointer"
               >
-                <ResourceIcon kind="gold" size={16} />
+                <ResourceIcon kind="gold" size={15} />
                 <span className="hidden sm:inline">Ouro</span>
               </button>
               <button
@@ -215,7 +308,7 @@ export function HudCommandGrid({
                 title="Colher Alimento"
                 className="flex items-center justify-center gap-1 rounded border border-[#c8a962]/25 bg-[#121927] py-1 text-[10px] font-semibold text-[#cbd5e1] hover:border-[#ef4444] hover:bg-[#261215] hover:text-white cursor-pointer"
               >
-                <ResourceIcon kind="food" size={16} />
+                <ResourceIcon kind="food" size={15} />
                 <span className="hidden sm:inline">Alim</span>
               </button>
               <button
@@ -224,7 +317,7 @@ export function HudCommandGrid({
                 title="Caçar Animais"
                 className="flex items-center justify-center gap-1 rounded border border-[#c8a962]/25 bg-[#121927] py-1 text-[10px] font-semibold text-[#cbd5e1] hover:border-[#f59e0b] hover:bg-[#26190d] hover:text-white cursor-pointer"
               >
-                <ResourceIcon kind="hunt" size={16} />
+                <ResourceIcon kind="hunt" size={15} />
                 <span className="hidden sm:inline">Caça</span>
               </button>
               <button
@@ -239,27 +332,29 @@ export function HudCommandGrid({
             </div>
           )}
 
+          {/* Contextual Action: Pray at Temple (Greeks) */}
           {hud.selection.canPrayAtTemple && onOrderPrayTemple && (
             <button
               type="button"
               onClick={() => onOrderPrayTemple()}
               title="Enviar aldeões selecionados para orar no Templo e gerar Favor Divino"
-              className="flex items-center justify-between gap-2 rounded border border-[#38bdf8]/55 bg-[#0e2234] px-2 py-1 text-[10px] font-bold text-[#bae6fd] hover:border-[#7dd3fc] hover:bg-[#143047] cursor-pointer"
+              className="flex items-center justify-between gap-2 rounded border border-[#38bdf8]/55 bg-[#0e2234] px-2 py-0.5 text-[10px] font-bold text-[#bae6fd] hover:border-[#7dd3fc] hover:bg-[#143047] cursor-pointer"
             >
               <span className="flex items-center gap-1.5">
                 <Sparkles className="h-3 w-3 text-[#38bdf8] shrink-0" />
-                <span>Orar no Templo (Favor Divino)</span>
+                <span>Orar no Templo (Gerar Favor)</span>
               </span>
               <span className="font-mono-num text-[9px] text-[#7dd3fc]">+Favor</span>
             </button>
           )}
 
+          {/* Contextual Action: Promote to Hero (Atlanteans) */}
           {hud.selection.canPromoteToHero && onPromoteToHero && (
             <button
               type="button"
               onClick={onPromoteToHero}
               title="Promover Cidadãos Atlantes selecionados a Herói (★)"
-              className="flex items-center justify-between gap-2 rounded border border-[#facc15]/60 bg-[#281f0b] px-2 py-1 text-[10px] font-bold text-[#fde68a] hover:border-[#fde047] hover:bg-[#382b10] cursor-pointer"
+              className="flex items-center justify-between gap-2 rounded border border-[#facc15]/60 bg-[#281f0b] px-2 py-0.5 text-[10px] font-bold text-[#fde68a] hover:border-[#fde047] hover:bg-[#382b10] cursor-pointer"
             >
               <span className="flex items-center gap-1 truncate">
                 <Crown className="h-3 w-3 text-[#facc15] shrink-0" />
@@ -280,8 +375,46 @@ export function HudCommandGrid({
             </button>
           )}
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-1 max-h-[88px] sm:max-h-[124px] overflow-y-auto pr-0.5">
-            {buildingList.map((b) => {
+          {/* CATEGORY TABS TO CLEAN UP / ENXUGAR A BARRA */}
+          <div className="flex items-center gap-1 overflow-x-auto pb-0.5 text-[9px] font-semibold border-b border-white/8">
+            {(
+              [
+                { id: 'all', label: 'Todas' },
+                { id: 'eco', label: `Econômicas (${ecoCount})` },
+                { id: 'military', label: `Militares (${milCount})` },
+                { id: 'defense', label: `Defesa (${defCount})` },
+                { id: 'divine', label: `Sagradas (${divCount})` },
+              ] as const
+            ).map((tab) => {
+              const active = villagerTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setVillagerTab(tab.id)}
+                  className={`rounded-sm px-1.5 py-0.5 transition-colors cursor-pointer whitespace-nowrap ${
+                    active
+                      ? 'bg-[#d4af37] text-[#0b0e14] font-bold shadow-xs'
+                      : 'bg-[#141a27] text-[#94a3b8] hover:text-[#f3d27a]'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Norse Gatherer info if military tab is selected */}
+          {hud.pantheon === 'norse' && villagerTab === 'military' && (
+            <div className="flex items-center gap-1 rounded bg-[#1f1910] border border-[#f59e0b]/40 px-2 py-0.5 text-[9px] text-[#fde68a]">
+              <Info className="h-3 w-3 text-[#facc15] shrink-0" />
+              <span>Dica Retold: Guerreiros nórdicos (Ulfsark / Infantaria) erguem quartéis e fortificações!</span>
+            </div>
+          )}
+
+          {/* Categorized Buildings Grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-1 max-h-[88px] sm:max-h-[120px] overflow-y-auto pr-0.5">
+            {filteredBuildings.map((b) => {
               const tcAtMax = b.kind === 'town_center' && hud.playerTownCenterCount >= hud.maxTownCenters;
               const monAtMax = b.kind === 'monument' && (hud.monumentCount ?? 0) >= 5;
               const wonderAtMax = b.kind === 'wonder' && (hud.wonderCount ?? 0) >= 1;
@@ -307,12 +440,14 @@ export function HudCommandGrid({
                       ? 'border-emerald-400 bg-emerald-950/80 text-white'
                       : locked
                       ? 'border-white/8 bg-[#10141e] text-[#64748b] opacity-65 cursor-not-allowed'
+                      : b.kind === 'fortress' || b.kind === 'asgard_hill_fort'
+                      ? 'border-[#f59e0b]/60 bg-[#241a0b] text-[#fde68a] hover:border-[#facc15] hover:bg-[#32230e]'
                       : b.kind === 'titan_gate' || b.kind === 'wonder'
                       ? 'border-[#f59e0b]/55 bg-[#22190b] text-[#fde68a] hover:border-[#facc15] hover:bg-[#2d210e]'
                       : 'border-[#c8a962]/28 bg-[#131926] text-[#f3efe6] hover:border-[#f3d27a] hover:bg-[#1c2438]'
                   }`}
                 >
-                  <BuildingIcon kind={b.kind} pantheon={hud.pantheon} size={24} />
+                  <BuildingIcon kind={b.kind} pantheon={hud.pantheon} size={22} />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-1">
                       <span className="text-[10px] font-semibold leading-tight truncate">{b.name}</span>
@@ -336,7 +471,9 @@ export function HudCommandGrid({
           </div>
         </div>
       ) : selectedPlayerBuildingKind ? (
-        /* CASE B: Player Building Selected -> Strictly Units & Techs of THAT Building */
+        /* ========================================================================= */
+        /* CASE B: PLAYER BUILDING SELECTED -> STRICTLY THAT BUILDING'S UNITS & TECH */
+        /* ========================================================================= */
         !hud.selection.isConstructed ? (
           <div className="flex flex-1 flex-col justify-center gap-2 rounded border border-[#f59e0b]/35 bg-[#1a1610] p-2.5">
             <div className="flex items-center gap-2 text-[11px] font-semibold text-[#fbbf24]">
@@ -356,92 +493,145 @@ export function HudCommandGrid({
           </div>
         ) : (
           (() => {
-            const buildingUnits = unitList.filter(
-              (u) =>
-                u.producedAt === selectedPlayerBuildingKind ||
-                ((selectedPlayerBuildingKind === 'town_center' || selectedPlayerBuildingKind === 'village_center') &&
-                  u.producedAt === 'town_center') ||
-                (u.kind === 'priest' &&
-                  (selectedPlayerBuildingKind === 'temple' ||
-                    selectedPlayerBuildingKind === 'town_center' ||
-                    selectedPlayerBuildingKind === 'village_center')) ||
-                (u.kind === 'oracle' &&
-                  (selectedPlayerBuildingKind === 'temple' ||
-                    selectedPlayerBuildingKind === 'town_center' ||
-                    selectedPlayerBuildingKind === 'village_center')) ||
-                ((u.kind === 'hersir' || u.kind === 'godi') &&
-                  (selectedPlayerBuildingKind === 'barracks' ||
-                    selectedPlayerBuildingKind === 'great_hall' ||
-                    selectedPlayerBuildingKind === 'temple' ||
-                    selectedPlayerBuildingKind === 'fortress' ||
-                    selectedPlayerBuildingKind === 'asgard_hill_fort')) ||
-                ((u.kind === 'raiding_cavalry' || u.kind === 'jarl') &&
-                  (selectedPlayerBuildingKind === 'great_hall' ||
-                    selectedPlayerBuildingKind === 'stable' ||
-                    selectedPlayerBuildingKind === 'fortress' ||
-                    selectedPlayerBuildingKind === 'asgard_hill_fort')) ||
-                ((u.kind === 'ulfsark' || u.kind === 'throwing_axeman' || u.kind === 'huskarl') &&
-                  (selectedPlayerBuildingKind === 'barracks' ||
-                    selectedPlayerBuildingKind === 'fortress' ||
-                    selectedPlayerBuildingKind === 'asgard_hill_fort')) ||
-                ((u.kind === 'katapeltes' || u.kind === 'turma' || u.kind === 'cheiroballista') &&
-                  selectedPlayerBuildingKind === 'counter_barracks') ||
-                (u.kind === 'contarius' &&
-                  (selectedPlayerBuildingKind === 'stable' || selectedPlayerBuildingKind === 'barracks')) ||
-                (u.isHero &&
-                  u.kind !== 'priest' &&
-                  u.kind !== 'hersir' &&
-                  u.kind !== 'godi' &&
-                  (selectedPlayerBuildingKind === 'town_center' ||
-                    selectedPlayerBuildingKind === 'fortress' ||
-                    selectedPlayerBuildingKind === 'asgard_hill_fort')) ||
-                (u.kind === 'myrmidon' &&
-                  (selectedPlayerBuildingKind === 'barracks' || selectedPlayerBuildingKind === 'fortress')) ||
-                ((u.kind === 'ram' ||
-                  u.kind === 'siege' ||
-                  u.kind === 'siege_tower' ||
-                  u.kind === 'egypt_catapult' ||
-                  u.kind === 'portable_ram' ||
-                  u.kind === 'norse_ballista' ||
-                  u.kind === 'cheiroballista' ||
-                  u.kind === 'fire_siphon' ||
-                  u.kind === 'onager') &&
-                  (selectedPlayerBuildingKind === 'siege_works' ||
-                    selectedPlayerBuildingKind === 'fortress' ||
-                    selectedPlayerBuildingKind === 'asgard_hill_fort'))
+            // Strictly get units and techs belonging to this building
+            const buildingUnits = getBuildingExclusiveUnits(
+              selectedPlayerBuildingKind,
+              hud.pantheon,
+              hud.majorGodName,
+              unitList,
+              hud.chosenMinorGods
             );
-            const buildingTechs = techList.filter((t) => {
-              if (t.pantheons && !t.pantheons.includes(hud.pantheon)) return false;
-              if (t.requiresMinorGod && !t.requiresMinorGod.some((mg) => hud.chosenMinorGods.includes(mg))) return false;
-              if (
-                t.requiresMajorGod &&
-                !t.requiresMajorGod.some((mg) => mg.toLowerCase() === hud.majorGodName.toLowerCase())
-              ) {
-                return false;
-              }
-              if (t.building === selectedPlayerBuildingKind) return true;
-              if (t.secondaryBuildings?.includes(selectedPlayerBuildingKind)) return true;
-              if (
-                selectedPlayerBuildingKind === 'asgard_hill_fort' &&
-                (t.building === 'fortress' || t.secondaryBuildings?.includes('fortress'))
-              ) {
-                return true;
-              }
-              if (selectedPlayerBuildingKind === 'fortress' && t.id === 'watch_tower') return true;
-              if (
-                (selectedPlayerBuildingKind === 'tower' || selectedPlayerBuildingKind === 'mirror_tower') &&
-                (t.id === 'watch_tower' || t.id === 'burning_pitch')
-              ) {
-                return true;
-              }
-              return false;
-            });
+
+            const buildingTechs = getBuildingExclusiveTechs(
+              selectedPlayerBuildingKind,
+              hud.pantheon,
+              hud.majorGodName,
+              techList,
+              hud.chosenMinorGods
+            );
+
+            const isFortress =
+              selectedPlayerBuildingKind === 'fortress' || selectedPlayerBuildingKind === 'asgard_hill_fort';
+            const isTemple = selectedPlayerBuildingKind === 'temple';
             const showAgeUp = selectedPlayerBuildingKind === 'town_center' && nextAge && nextAgeCost;
             const showMarket = selectedPlayerBuildingKind === 'market';
             const showSkyPassage = selectedPlayerBuildingKind === 'sky_passage';
 
+            // Filter by subtab if both units and techs exist
+            const showUnits = buildingSubTab === 'all' || buildingSubTab === 'units';
+            const showTechs = buildingSubTab === 'all' || buildingSubTab === 'techs';
+
             return (
               <div className="flex flex-1 flex-col gap-1.5 max-h-[96px] sm:max-h-[148px] overflow-y-auto pr-0.5">
+                {/* 1. FORTRESS RETOLD GARRISON & DEFENSE BAR */}
+                {isFortress && (
+                  <div className="flex flex-col gap-1 rounded border border-[#f59e0b]/50 bg-[#201508] p-1.5">
+                    <div className="flex items-center justify-between text-[10px]">
+                      <span className="flex items-center gap-1 font-semibold text-[#fde68a]">
+                        <Castle className="h-3.5 w-3.5 text-[#facc15]" />
+                        <span>Bastião Defensivo (Retold)</span>
+                      </span>
+                      <span className="font-mono-num font-bold text-[#fde047]">
+                        {hud.selection.garrisonedCount ?? 0} / 20 tropas
+                        {(hud.selectedBuildingGarrison?.bonusArrows ?? 0) > 0 && (
+                          <span className="ml-1 text-[#67e8f9]">
+                            (+{hud.selectedBuildingGarrison!.bonusArrows} flechas)
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      {onGarrisonSelected && hud.selection.buildingId && (
+                        <button
+                          type="button"
+                          onClick={() => onGarrisonSelected(hud.selection.buildingId!)}
+                          className="flex flex-1 items-center justify-center gap-1 rounded border border-[#60a5fa]/60 bg-[#132948] px-2 py-0.5 text-[9.5px] font-bold text-[#dbeafe] hover:bg-[#1a3760] cursor-pointer"
+                        >
+                          <Shield className="h-3 w-3 text-[#60a5fa]" />
+                          <span>Guarnecer Tropas</span>
+                        </button>
+                      )}
+                      {hud.selection.canUngarrison && hud.selection.buildingId && onUngarrisonBuilding && (
+                        <button
+                          type="button"
+                          onClick={() => onUngarrisonBuilding(hud.selection.buildingId!)}
+                          className="flex flex-1 items-center justify-center gap-1 rounded border border-[#f59e0b]/70 bg-[#2d1b06] px-2 py-0.5 text-[9.5px] font-bold text-[#fef3c7] hover:bg-[#452709] cursor-pointer"
+                        >
+                          <LogOut className="h-3 w-3 text-[#fbbf24]" />
+                          <span>Liberar ({hud.selection.garrisonedCount})</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* 2. TEMPLE DIVINE ACTIONS BAR */}
+                {isTemple && (
+                  <div className="flex flex-col gap-1 rounded border border-[#38bdf8]/45 bg-[#0b1c2b] p-1.5">
+                    <div className="flex items-center justify-between text-[10px]">
+                      <span className="flex items-center gap-1 font-semibold text-[#bae6fd]">
+                        <Sparkles className="h-3.5 w-3.5 text-[#38bdf8]" />
+                        <span>Favor Sagrado de {hud.majorGodName}</span>
+                      </span>
+                      <span className="font-mono-num font-bold text-[#fde047]">
+                        {Math.floor(hud.resources.favor)} Favor
+                      </span>
+                    </div>
+
+                    {/* Greek Villagers Call to Pray */}
+                    {hud.selection.canCallVillagersToPray && onOrderPrayTemple && (
+                      <button
+                        type="button"
+                        onClick={() => onOrderPrayTemple(hud.selection.buildingId)}
+                        className="flex items-center justify-between gap-2 rounded border border-[#38bdf8]/65 bg-[#0d2638] px-2 py-1 text-[10px] font-bold text-[#bae6fd] hover:border-[#7dd3fc] hover:bg-[#13364f] cursor-pointer"
+                      >
+                        <span className="flex items-center gap-1.5 truncate">
+                          <Sparkles className="h-3.5 w-3.5 text-[#38bdf8] shrink-0" />
+                          <span>Chamar Aldeões para Orar</span>
+                        </span>
+                        <span className="font-mono-num text-[9px] text-[#7dd3fc] shrink-0">
+                          {hud.selection.prayingCount ?? 0} ald. · +{(hud.selection.templePrayerRatePerSec ?? 0).toFixed(2)}/s
+                        </span>
+                      </button>
+                    )}
+
+                    {/* Egyptian Set Animals */}
+                    {hud.isSetPlayer && onSummonSetAnimal && (
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-1 pt-0.5">
+                        {(
+                          [
+                            { kind: 'baboon', label: 'Babuíno', cost: 8, minAge: 1 },
+                            { kind: 'hyena', label: 'Hiena', cost: 12, minAge: 1 },
+                            { kind: 'crocodile', label: 'Crocodilo', cost: 16, minAge: 2 },
+                            { kind: 'hippo', label: 'Hipopótamo', cost: 22, minAge: 3 },
+                          ] as const
+                        ).map((sa) => {
+                          const locked = hud.age < sa.minAge || hud.resources.favor < sa.cost;
+                          return (
+                            <button
+                              key={sa.kind}
+                              type="button"
+                              disabled={locked}
+                              onClick={() => onSummonSetAnimal(sa.kind)}
+                              className={`flex flex-col items-start rounded border px-1.5 py-0.5 text-left transition-colors cursor-pointer ${
+                                locked
+                                  ? 'border-white/10 bg-[#10131b] text-[#64748b] cursor-not-allowed'
+                                  : 'border-amber-400/50 bg-[#2b1d0b] text-amber-100 hover:border-amber-300 hover:bg-[#3a270f]'
+                              }`}
+                            >
+                              <span className="text-[9.5px] font-semibold leading-tight truncate w-full">{sa.label}</span>
+                              <span className="font-mono-num text-[8.5px] text-amber-300">
+                                {hud.age < sa.minAge ? AGE_NAMES[sa.minAge] : `${sa.cost} Fav`}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* 3. TOWN CENTER AGE UP */}
                 {showAgeUp && nextAge && nextAgeCost && (
                   <button
                     type="button"
@@ -461,187 +651,165 @@ export function HudCommandGrid({
                   </button>
                 )}
 
-                {hud.selection.canCallVillagersToPray && onOrderPrayTemple && (
-                  <button
-                    type="button"
-                    onClick={() => onOrderPrayTemple(hud.selection.buildingId)}
-                    className="flex items-center justify-between gap-2 rounded border border-[#38bdf8]/65 bg-[#0d2638] px-2.5 py-1.5 text-[11px] font-bold text-[#bae6fd] hover:border-[#7dd3fc] hover:bg-[#13364f] cursor-pointer"
-                  >
-                    <span className="flex items-center gap-1.5 truncate">
-                      <Sparkles className="h-3.5 w-3.5 text-[#38bdf8] shrink-0" />
-                      <span>Chamar Aldeão p/ Orar</span>
-                    </span>
-                    <span className="font-mono-num text-[9px] text-[#7dd3fc] shrink-0">
-                      {hud.selection.prayingCount ?? 0} ald. · +{(hud.selection.templePrayerRatePerSec ?? 0).toFixed(2)}/s
-                    </span>
-                  </button>
-                )}
-
-                {hud.isSetPlayer &&
-                  onSummonSetAnimal &&
-                  (selectedPlayerBuildingKind === 'temple' ||
-                    selectedPlayerBuildingKind === 'town_center' ||
-                    selectedPlayerBuildingKind === 'village_center') && (
-                    <div className="flex flex-col gap-1 rounded border border-amber-500/40 bg-[#1e1509] p-1.5">
-                      <div className="flex items-center justify-between text-[10px] font-bold text-amber-300">
-                        <span className="flex items-center gap-1">
-                          <Sparkles className="h-3 w-3 text-amber-400" />
-                          <span>Animais de Set (Favor)</span>
-                        </span>
-                        <span className="font-mono-num text-[9px] text-amber-200/80">
-                          {Math.floor(hud.resources.favor)} Fav
-                        </span>
-                      </div>
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-1">
-                        {(
-                          [
-                            { kind: 'baboon', label: 'Babuíno', cost: 8, minAge: 1 },
-                            { kind: 'hyena', label: 'Hiena', cost: 12, minAge: 1 },
-                            { kind: 'crocodile', label: 'Crocodilo', cost: 16, minAge: 2 },
-                            { kind: 'hippo', label: 'Hipopótamo', cost: 22, minAge: 3 },
-                          ] as const
-                        ).map((sa) => {
-                          const locked = hud.age < sa.minAge || hud.resources.favor < sa.cost;
-                          return (
-                            <button
-                              key={sa.kind}
-                              type="button"
-                              disabled={locked}
-                              onClick={() => onSummonSetAnimal(sa.kind)}
-                              title={
-                                hud.age < sa.minAge
-                                  ? `Disponível a partir da Era ${sa.minAge}`
-                                  : `Invocar ${sa.label} de Set por ${sa.cost} Favor`
-                              }
-                              className={`flex flex-col items-start rounded border px-1.5 py-1 text-left transition-colors cursor-pointer ${
-                                locked
-                                  ? 'border-white/10 bg-[#10131b] text-[#64748b] cursor-not-allowed'
-                                  : 'border-amber-400/50 bg-[#2b1d0b] text-amber-100 hover:border-amber-300 hover:bg-[#3a270f]'
-                              }`}
-                            >
-                              <span className="text-[10px] font-semibold leading-tight truncate w-full">
-                                {sa.label}
-                              </span>
-                              <span className="font-mono-num text-[9px] text-amber-300/90">
-                                {hud.age < sa.minAge ? AGE_NAMES[sa.minAge] : `${sa.cost} Fav`}
-                              </span>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-
-                {selectedPlayerBuildingKind === 'monument' && (
-                  <div className="flex flex-col gap-1 rounded border border-[#facc15]/35 bg-[#1b170d] p-2">
-                    <div className="flex flex-wrap items-center justify-between gap-1 text-[10px]">
-                      <span
-                        className={`font-semibold ${
-                          hud.selection.isEmpowered ? 'text-[#fde047]' : 'text-[#94a3b8]'
-                        }`}
-                      >
-                        {hud.selection.isEmpowered ? hud.selection.empoweredByLabel : 'Aguardando Energização'}
-                      </span>
-                      {hud.selection.isisProtected && (
-                        <span className="rounded border border-emerald-400/50 bg-emerald-950/60 px-1.5 py-0.5 text-[9px] font-bold text-emerald-300">
-                          Ísis: Cura & Escudo Divino
-                        </span>
-                      )}
-                    </div>
-                    {hud.selection.canEmpowerMonument && onOrderEmpowerMonument && (
-                      <button
-                        type="button"
-                        onClick={() => onOrderEmpowerMonument(hud.selection.buildingId)}
-                        className="flex items-center justify-center gap-1.5 rounded border border-[#facc15]/65 bg-[#2d230c] px-2 py-1 text-[10px] font-bold text-[#fef08a] hover:bg-[#3e3010] cursor-pointer"
-                      >
-                        <Sun className="h-3.5 w-3.5 text-[#facc15]" />
-                        <span>Energizar Monumento (Faraó / Sacerdote)</span>
-                      </button>
-                    )}
+                {/* 4. SUB-TABS TO TIDY UP WHEN BOTH UNITS AND TECHS ARE PRESENT */}
+                {buildingUnits.length > 0 && buildingTechs.length > 0 && (
+                  <div className="flex items-center gap-1 border-b border-white/8 pb-0.5 text-[9px] font-semibold">
+                    <button
+                      type="button"
+                      onClick={() => setBuildingSubTab('all')}
+                      className={`rounded px-1.5 py-0.5 cursor-pointer ${
+                        buildingSubTab === 'all'
+                          ? 'bg-[#d4af37] text-[#0b0e14] font-bold'
+                          : 'bg-[#141a27] text-[#94a3b8] hover:text-[#f3d27a]'
+                      }`}
+                    >
+                      Todos ({buildingUnits.length + buildingTechs.length})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setBuildingSubTab('units')}
+                      className={`rounded px-1.5 py-0.5 cursor-pointer ${
+                        buildingSubTab === 'units'
+                          ? 'bg-[#d4af37] text-[#0b0e14] font-bold'
+                          : 'bg-[#141a27] text-[#94a3b8] hover:text-[#f3d27a]'
+                      }`}
+                    >
+                      {isFortress
+                        ? `Tropas de Cerco & Elite (${buildingUnits.length})`
+                        : isTemple
+                        ? `Míticas & Invocação (${buildingUnits.length})`
+                        : `Treinar Unidades (${buildingUnits.length})`}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setBuildingSubTab('techs')}
+                      className={`rounded px-1.5 py-0.5 cursor-pointer ${
+                        buildingSubTab === 'techs'
+                          ? 'bg-[#d4af37] text-[#0b0e14] font-bold'
+                          : 'bg-[#141a27] text-[#94a3b8] hover:text-[#f3d27a]'
+                      }`}
+                    >
+                      {isFortress
+                        ? `Tecnologias do Bastião (${buildingTechs.length})`
+                        : isTemple
+                        ? `Pesquisas Sagradas (${buildingTechs.length})`
+                        : `Pesquisas (${buildingTechs.length})`}
+                    </button>
                   </div>
                 )}
 
-                {showSkyPassage && hud.selection.buildingId && onTeleportSkyPassage && (
-                  <button
-                    type="button"
-                    disabled={(hud.skyPassageCount ?? 0) < 2}
-                    onClick={() => onTeleportSkyPassage(hud.selection.buildingId!)}
-                    title={
-                      (hud.skyPassageCount ?? 0) < 2
-                        ? 'Construa ao menos 2 Passagens Celestes para teleportar tropas'
-                        : 'Teletransportar tropas aliadas próximas para outra Passagem Celeste'
-                    }
-                    className={`flex items-center justify-between gap-2 rounded border px-2.5 py-1.5 text-[11px] font-bold cursor-pointer ${
-                      (hud.skyPassageCount ?? 0) >= 2
-                        ? 'border-[#22d3ee]/70 bg-[#0d2838] text-[#bae6fd] hover:border-[#67e8f9] hover:bg-[#12384e]'
-                        : 'border-white/10 bg-[#121620] text-[#64748b] cursor-not-allowed'
-                    }`}
-                  >
-                    <span className="flex items-center gap-1.5">
-                      <BuildingIcon kind="sky_passage" pantheon={hud.pantheon} size={20} />
-                      <span>Teletransportar Tropas</span>
-                    </span>
-                    <span className="font-mono-num text-[9px]">
-                      {(hud.skyPassageCount ?? 0) >= 2 ? 'Ativo' : 'Requer 2 Portais'}
-                    </span>
-                  </button>
-                )}
-
-                {hud.selection.canGarrison && hud.selection.buildingId && (
-                  <div className="flex flex-col gap-1 rounded border border-[#60a5fa]/35 bg-[#0f1d32] p-2">
-                    <div className="flex items-center justify-between gap-1 text-[10px]">
-                      <span className="flex items-center gap-1.5 font-semibold text-[#93c5fd]">
-                        <Shield className="h-3.5 w-3.5 text-[#60a5fa]" />
-                        <span>Guarnição Defensiva</span>
-                      </span>
-                      <span className="font-mono-num text-[10px] font-bold text-[#fde047]">
-                        {hud.selection.garrisonedCount ?? 0} / {hud.selection.garrisonMaxCapacity ?? 10}
-                        {(hud.selectedBuildingGarrison?.bonusArrows ?? 0) > 0 && (
-                          <span className="ml-1 text-[#7dd3fc]">
-                            (+{hud.selectedBuildingGarrison!.bonusArrows} flechas)
-                          </span>
-                        )}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      {onGarrisonSelected && (
+                {/* 5. UNITS GRID */}
+                {showUnits && buildingUnits.length > 0 && (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-1">
+                    {buildingUnits.map((u) => {
+                      const ageLocked = hud.age < u.minAge;
+                      const minorGodLocked = Boolean(
+                        u.requiresMinorGod && !u.requiresMinorGod.some((mg) => hud.chosenMinorGods.includes(mg))
+                      );
+                      const alreadyActive = Boolean(u.isMajorGod && hud.activeGodKinds?.includes(u.kind));
+                      const alreadyQueued = Boolean(u.isMajorGod && hud.queuedGodKinds?.includes(u.kind));
+                      const locked = ageLocked || minorGodLocked || alreadyActive || alreadyQueued;
+                      return (
                         <button
+                          key={u.kind}
                           type="button"
-                          onClick={() => onGarrisonSelected(hud.selection.buildingId!)}
-                          className="flex flex-1 items-center justify-center gap-1 rounded border border-[#60a5fa]/60 bg-[#132948] px-2 py-1 text-[10px] font-bold text-[#dbeafe] hover:bg-[#1a3760] cursor-pointer"
+                          disabled={locked}
+                          onClick={() => onTrainUnit(u.kind)}
+                          title={`${u.name} — ${u.role}${formatCost(u.cost) ? ` (${formatCost(u.cost)})` : ''}`}
+                          className={`flex items-center gap-1.5 rounded border px-1.5 py-1 text-left transition-colors cursor-pointer ${
+                            alreadyActive
+                              ? 'border-[#facc15]/50 bg-[#231d0c] text-[#fde68a] cursor-default'
+                              : locked
+                              ? 'border-white/8 bg-[#10141e] text-[#64748b] opacity-65 cursor-not-allowed'
+                              : u.isMajorGod
+                              ? 'border-[#facc15]/60 bg-[#241c0b] text-[#fef08a] hover:border-[#fde047]'
+                              : u.isGod
+                              ? 'border-[#c084fc]/50 bg-[#1d152b] text-[#f3e8ff] hover:border-[#c084fc]'
+                              : u.isMythic
+                              ? 'border-[#38bdf8]/40 bg-[#10202e] text-[#f3efe6] hover:border-[#38bdf8]'
+                              : u.isHero
+                              ? 'border-[#f59e0b]/40 bg-[#221910] text-[#fde68a] hover:border-[#f59e0b]'
+                              : 'border-[#c8a962]/28 bg-[#131926] text-[#f3efe6] hover:border-[#f3d27a] hover:bg-[#1c2438]'
+                          }`}
                         >
-                          <Shield className="h-3 w-3 text-[#60a5fa]" />
-                          <span>Guarnecer</span>
+                          <UnitIcon kind={u.kind} pantheon={hud.pantheon} size={22} />
+                          <div className="min-w-0 flex-1">
+                            <span className="block text-[10px] font-semibold leading-tight truncate">{u.name}</span>
+                            <span className="block font-mono-num text-[9px] text-[#94a3b8] leading-tight truncate">
+                              {ageLocked
+                                ? AGE_NAMES[u.minAge]
+                                : minorGodLocked
+                                ? `Req: ${u.requiresMinorGodLabel ?? 'Deus'}`
+                                : alreadyActive
+                                ? 'Em Campo'
+                                : alreadyQueued
+                                ? 'Invocando...'
+                                : formatCost(u.cost)}
+                            </span>
+                          </div>
                         </button>
-                      )}
-                      {hud.selection.canUngarrison && onUngarrisonBuilding && (
-                        <button
-                          type="button"
-                          onClick={() => onUngarrisonBuilding(hud.selection.buildingId!)}
-                          className="flex flex-1 items-center justify-center gap-1 rounded border border-[#f59e0b]/70 bg-[#2d1b06] px-2 py-1 text-[10px] font-bold text-[#fef3c7] hover:bg-[#452709] cursor-pointer"
-                        >
-                          <LogOut className="h-3 w-3 text-[#fbbf24]" />
-                          <span>Liberar ({hud.selection.garrisonedCount})</span>
-                        </button>
-                      )}
-                    </div>
+                      );
+                    })}
                   </div>
                 )}
 
-                {hud.selection.buildingKind === 'wall' && hud.selection.isConstructed && onConvertWallToGate && (
-                  <button
-                    type="button"
-                    onClick={onConvertWallToGate}
-                    className="flex items-center justify-between gap-2 rounded border border-[#d4af37]/60 bg-[#241e0d] px-2.5 py-1.5 text-[10px] font-bold text-[#fde68a] hover:bg-[#352b12] cursor-pointer"
-                  >
-                    <span className="flex items-center gap-1.5">
-                      <DoorOpen className="h-3.5 w-3.5 text-[#facc15]" />
-                      <span>Converter em Portão</span>
-                    </span>
-                    <span className="font-mono-num text-[9px] text-[#cbd5e1]">15M · 10O</span>
-                  </button>
+                {/* 6. TECHNOLOGIES GRID */}
+                {showTechs && buildingTechs.length > 0 && (
+                  <div className="grid grid-cols-2 gap-1">
+                    {buildingTechs.map((t) => {
+                      const researched = hud.researchedTechs.includes(t.id);
+                      const activeNow = hud.activeTechResearch?.id === t.id;
+                      const missingPrereq = t.requires && !hud.researchedTechs.includes(t.requires);
+                      const ageLocked = hud.age < t.minAge;
+                      const effectiveCost = getEffectiveTechCost(t, hud.researchedTechs);
+                      const disabled =
+                        researched || activeNow || Boolean(hud.activeTechResearch) || Boolean(missingPrereq) || ageLocked;
+                      return (
+                        <button
+                          key={t.id}
+                          type="button"
+                          disabled={disabled}
+                          onClick={() => onResearchTech(t.id)}
+                          title={`${t.name}${t.requiresMinorGodLabel ? ` (${t.requiresMinorGodLabel})` : ''} — ${t.description}`}
+                          className={`flex items-center justify-between gap-1.5 rounded border px-1.5 py-1 text-left transition-colors cursor-pointer ${
+                            researched
+                              ? 'border-emerald-500/35 bg-[#10241c] text-emerald-200 cursor-default'
+                              : activeNow
+                              ? 'border-[#facc15] bg-[#262010] text-[#fde68a]'
+                              : disabled
+                              ? 'border-white/8 bg-[#10141e] text-[#64748b] cursor-not-allowed'
+                              : t.category === 'mythic' || isTemple
+                              ? 'border-[#a855f7]/45 bg-[#1c1528] text-[#f3e8ff] hover:border-[#c084fc] hover:bg-[#261c36]'
+                              : 'border-[#c8a962]/30 bg-[#171d2c] text-[#f3efe6] hover:border-[#d4af37] hover:bg-[#20293d]'
+                          }`}
+                        >
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <TechIcon techId={t.id} size={22} className="shrink-0" />
+                            <div className="min-w-0">
+                              <div className="text-[10px] font-semibold leading-tight truncate">{t.name}</div>
+                              <div className="font-mono-num text-[9px] text-[#94a3b8] leading-tight truncate">
+                                {researched
+                                  ? 'Concluída'
+                                  : ageLocked
+                                  ? AGE_NAMES[t.minAge]
+                                  : missingPrereq
+                                  ? `Req: ${TECH_SPECS[t.requires!].name}`
+                                  : formatCost(effectiveCost)}
+                              </div>
+                            </div>
+                          </div>
+                          {researched ? (
+                            <Check className="h-3 w-3 text-emerald-400 shrink-0" />
+                          ) : ageLocked || missingPrereq ? (
+                            <Lock className="h-3 w-3 text-[#64748b] shrink-0" />
+                          ) : null}
+                        </button>
+                      );
+                    })}
+                  </div>
                 )}
 
+                {/* 7. MARKET DIRECT TRIBUTE EXCHANGES */}
                 {showMarket && (
                   <div className="grid grid-cols-2 gap-1">
                     <button
@@ -695,157 +863,156 @@ export function HudCommandGrid({
                   </div>
                 )}
 
-                {buildingUnits.length > 0 && (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-1">
-                    {buildingUnits.map((u) => {
-                      const ageLocked = hud.age < u.minAge;
-                      const minorGodLocked = Boolean(
-                        u.requiresMinorGod && !u.requiresMinorGod.some((mg) => hud.chosenMinorGods.includes(mg))
-                      );
-                      const alreadyActive = Boolean(u.isMajorGod && hud.activeGodKinds?.includes(u.kind));
-                      const alreadyQueued = Boolean(u.isMajorGod && hud.queuedGodKinds?.includes(u.kind));
-                      const locked = ageLocked || minorGodLocked || alreadyActive || alreadyQueued;
-                      return (
-                        <button
-                          key={u.kind}
-                          type="button"
-                          disabled={locked}
-                          onClick={() => onTrainUnit(u.kind)}
-                          title={`${u.name} — ${u.role}${formatCost(u.cost) ? ` (${formatCost(u.cost)})` : ''}`}
-                          className={`flex items-center gap-1.5 rounded border px-1.5 py-1 text-left transition-colors cursor-pointer ${
-                            alreadyActive
-                              ? 'border-[#facc15]/50 bg-[#231d0c] text-[#fde68a] cursor-default'
-                              : locked
-                              ? 'border-white/8 bg-[#10141e] text-[#64748b] opacity-65 cursor-not-allowed'
-                              : u.isMajorGod
-                              ? 'border-[#facc15]/60 bg-[#241c0b] text-[#fef08a] hover:border-[#fde047]'
-                              : u.isGod
-                              ? 'border-[#c084fc]/50 bg-[#1d152b] text-[#f3e8ff] hover:border-[#c084fc]'
-                              : u.isMythic
-                              ? 'border-[#38bdf8]/40 bg-[#10202e] text-[#f3efe6] hover:border-[#38bdf8]'
-                              : u.isHero
-                              ? 'border-[#f59e0b]/40 bg-[#221910] text-[#fde68a] hover:border-[#f59e0b]'
-                              : 'border-[#c8a962]/28 bg-[#131926] text-[#f3efe6] hover:border-[#f3d27a] hover:bg-[#1c2438]'
-                          }`}
-                        >
-                          <UnitIcon kind={u.kind} pantheon={hud.pantheon} size={24} />
-                          <div className="min-w-0 flex-1">
-                            <span className="block text-[10px] font-semibold leading-tight truncate">{u.name}</span>
-                            <span className="block font-mono-num text-[9px] text-[#94a3b8] leading-tight truncate">
-                              {ageLocked
-                                ? AGE_NAMES[u.minAge]
-                                : minorGodLocked
-                                ? `Req: ${u.requiresMinorGodLabel ?? 'Deus'}`
-                                : alreadyActive
-                                ? 'Em Campo'
-                                : alreadyQueued
-                                ? 'Invocando...'
-                                : formatCost(u.cost)}
-                            </span>
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-
-                {buildingTechs.length > 0 && (
-                  <div className="grid grid-cols-2 gap-1">
-                    {buildingTechs.map((t) => {
-                      const researched = hud.researchedTechs.includes(t.id);
-                      const activeNow = hud.activeTechResearch?.id === t.id;
-                      const missingPrereq = t.requires && !hud.researchedTechs.includes(t.requires);
-                      const ageLocked = hud.age < t.minAge;
-                      const effectiveCost = getEffectiveTechCost(t, hud.researchedTechs);
-                      const disabled =
-                        researched || activeNow || Boolean(hud.activeTechResearch) || Boolean(missingPrereq) || ageLocked;
-                      return (
-                        <button
-                          key={t.id}
-                          type="button"
-                          disabled={disabled}
-                          onClick={() => onResearchTech(t.id)}
-                          title={`${t.name}${t.requiresMinorGodLabel ? ` (${t.requiresMinorGodLabel})` : ''} — ${t.description}`}
-                          className={`flex items-center justify-between gap-1.5 rounded border px-1.5 py-1 text-left transition-colors cursor-pointer ${
-                            researched
-                              ? 'border-emerald-500/35 bg-[#10241c] text-emerald-200 cursor-default'
-                              : activeNow
-                              ? 'border-[#facc15] bg-[#262010] text-[#fde68a]'
-                              : disabled
-                              ? 'border-white/8 bg-[#10141e] text-[#64748b] cursor-not-allowed'
-                              : t.category === 'mythic'
-                              ? 'border-[#a855f7]/45 bg-[#1c1528] text-[#f3e8ff] hover:border-[#c084fc] hover:bg-[#261c36]'
-                              : 'border-[#c8a962]/30 bg-[#171d2c] text-[#f3efe6] hover:border-[#d4af37] hover:bg-[#20293d]'
-                          }`}
-                        >
-                          <div className="flex items-center gap-1.5 min-w-0">
-                            <TechIcon techId={t.id} size={24} className="shrink-0" />
-                            <div className="min-w-0">
-                              <div className="text-[10px] font-semibold leading-tight truncate">{t.name}</div>
-                              <div className="font-mono-num text-[9px] text-[#94a3b8] leading-tight truncate">
-                                {researched
-                                  ? 'Concluída'
-                                  : ageLocked
-                                  ? AGE_NAMES[t.minAge]
-                                  : missingPrereq
-                                  ? `Req: ${TECH_SPECS[t.requires!].name}`
-                                  : formatCost(effectiveCost)}
-                              </div>
-                            </div>
-                          </div>
-                          {researched ? (
-                            <Check className="h-3 w-3 text-emerald-400 shrink-0" />
-                          ) : ageLocked || missingPrereq ? (
-                            <Lock className="h-3 w-3 text-[#64748b] shrink-0" />
-                          ) : null}
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-
-                {buildingUnits.length === 0 && buildingTechs.length === 0 && !showMarket && !showAgeUp && !showSkyPassage && (
-                  <div className="flex items-center gap-2 rounded border border-[#c8a962]/20 bg-[#121824] px-2.5 py-2 text-[11px] text-[#cbd5e1]">
-                    <BuildingIcon kind={selectedPlayerBuildingKind} pantheon={hud.pantheon} size={26} />
-                    <span className="leading-snug">
-                      {selectedPlayerBuildingKind === 'house'
-                        ? hud.pantheon === 'atlantean'
-                          ? 'Mansão Atlante: +10 de Limite Populacional com alta resistência.'
-                          : hud.pantheon === 'norse'
-                          ? 'Casa Nórdica: +8 de Limite Populacional.'
-                          : 'Habitação civil: +6 de Limite Populacional.'
-                        : selectedPlayerBuildingKind === 'farm'
-                        ? 'Fonte infinita de Alimento para Aldeões.'
-                        : selectedPlayerBuildingKind === 'granary'
-                        ? 'Ponto de entrega de Alimento e melhorias de caça/fazenda.'
-                        : selectedPlayerBuildingKind === 'storehouse'
-                        ? 'Ponto de entrega de Madeira e Ouro.'
-                        : selectedPlayerBuildingKind === 'lumber_camp'
-                        ? 'Campo Madeireiro egípcio: entrega de Madeira.'
-                        : selectedPlayerBuildingKind === 'mining_camp'
-                        ? 'Campo de Mineração egípcio: entrega de Ouro.'
-                        : selectedPlayerBuildingKind === 'monument'
-                        ? 'Monumento Sagrado: gera Favor Divino continuamente (+0,85/s).'
-                        : selectedPlayerBuildingKind === 'obelisk'
-                        ? 'Obelisco Vigia: revela ampla área do mapa ao redor.'
-                        : selectedPlayerBuildingKind === 'lighthouse'
-                        ? 'Farol do Nilo: ilumina vasta extensão do mapa contra névoa de guerra.'
-                        : selectedPlayerBuildingKind === 'wonder'
-                        ? 'Maravilha Divina: ativa a Era das Maravilhas (+Favor, +20% Míticas e -20% Recarga).'
-                        : selectedPlayerBuildingKind === 'wall' || selectedPlayerBuildingKind === 'gate'
-                        ? 'Fortificação perimetral: evolui por Era (Madeira → Pedra → Fortificada / Cidadela / Oricalco).'
-                        : selectedPlayerBuildingKind === 'titan_gate'
-                        ? 'Portal do Titã: libera o Titã quando concluído.'
-                        : 'Estrutura defensiva e de apoio territorial.'}
+                {/* 8. SKY PASSAGE TELEPORT */}
+                {showSkyPassage && hud.selection.buildingId && onTeleportSkyPassage && (
+                  <button
+                    type="button"
+                    disabled={(hud.skyPassageCount ?? 0) < 2}
+                    onClick={() => onTeleportSkyPassage(hud.selection.buildingId!)}
+                    title={
+                      (hud.skyPassageCount ?? 0) < 2
+                        ? 'Construa ao menos 2 Passagens Celestes para teleportar tropas'
+                        : 'Teletransportar tropas aliadas próximas para outra Passagem Celeste'
+                    }
+                    className={`flex items-center justify-between gap-2 rounded border px-2.5 py-1.5 text-[11px] font-bold cursor-pointer ${
+                      (hud.skyPassageCount ?? 0) >= 2
+                        ? 'border-[#22d3ee]/70 bg-[#0d2838] text-[#bae6fd] hover:border-[#67e8f9] hover:bg-[#12384e]'
+                        : 'border-white/10 bg-[#121620] text-[#64748b] cursor-not-allowed'
+                    }`}
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <BuildingIcon kind="sky_passage" pantheon={hud.pantheon} size={20} />
+                      <span>Teletransportar Tropas</span>
                     </span>
+                    <span className="font-mono-num text-[9px]">
+                      {(hud.skyPassageCount ?? 0) >= 2 ? 'Ativo' : 'Requer 2 Portais'}
+                    </span>
+                  </button>
+                )}
+
+                {/* 9. WALL TO GATE CONVERSION */}
+                {hud.selection.buildingKind === 'wall' && hud.selection.isConstructed && onConvertWallToGate && (
+                  <button
+                    type="button"
+                    onClick={onConvertWallToGate}
+                    className="flex items-center justify-between gap-2 rounded border border-[#d4af37]/60 bg-[#241e0d] px-2.5 py-1.5 text-[10px] font-bold text-[#fde68a] hover:bg-[#352b12] cursor-pointer"
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <DoorOpen className="h-3.5 w-3.5 text-[#facc15]" />
+                      <span>Converter em Portão</span>
+                    </span>
+                    <span className="font-mono-num text-[9px] text-[#cbd5e1]">15M · 10O</span>
+                  </button>
+                )}
+
+                {/* 10. NON-FORTRESS GARRISON BAR */}
+                {!isFortress && hud.selection.canGarrison && hud.selection.buildingId && (
+                  <div className="flex flex-col gap-1 rounded border border-[#60a5fa]/35 bg-[#0f1d32] p-1.5">
+                    <div className="flex items-center justify-between gap-1 text-[10px]">
+                      <span className="flex items-center gap-1.5 font-semibold text-[#93c5fd]">
+                        <Shield className="h-3.5 w-3.5 text-[#60a5fa]" />
+                        <span>Guarnição</span>
+                      </span>
+                      <span className="font-mono-num text-[10px] font-bold text-[#fde047]">
+                        {hud.selection.garrisonedCount ?? 0} / {hud.selection.garrisonMaxCapacity ?? 10}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      {onGarrisonSelected && (
+                        <button
+                          type="button"
+                          onClick={() => onGarrisonSelected(hud.selection.buildingId!)}
+                          className="flex flex-1 items-center justify-center gap-1 rounded border border-[#60a5fa]/60 bg-[#132948] px-2 py-0.5 text-[9.5px] font-bold text-[#dbeafe] hover:bg-[#1a3760] cursor-pointer"
+                        >
+                          <Shield className="h-3 w-3 text-[#60a5fa]" />
+                          <span>Guarnecer</span>
+                        </button>
+                      )}
+                      {hud.selection.canUngarrison && onUngarrisonBuilding && (
+                        <button
+                          type="button"
+                          onClick={() => onUngarrisonBuilding(hud.selection.buildingId!)}
+                          className="flex flex-1 items-center justify-center gap-1 rounded border border-[#f59e0b]/70 bg-[#2d1b06] px-2 py-0.5 text-[9.5px] font-bold text-[#fef3c7] hover:bg-[#452709] cursor-pointer"
+                        >
+                          <LogOut className="h-3 w-3 text-[#fbbf24]" />
+                          <span>Liberar ({hud.selection.garrisonedCount})</span>
+                        </button>
+                      )}
+                    </div>
                   </div>
                 )}
+
+                {/* 11. MONUMENT EMPOWER STATUS */}
+                {selectedPlayerBuildingKind === 'monument' && (
+                  <div className="flex flex-col gap-1 rounded border border-[#facc15]/35 bg-[#1b170d] p-1.5">
+                    <div className="flex flex-wrap items-center justify-between gap-1 text-[10px]">
+                      <span className={`font-semibold ${hud.selection.isEmpowered ? 'text-[#fde047]' : 'text-[#94a3b8]'}`}>
+                        {hud.selection.isEmpowered ? hud.selection.empoweredByLabel : 'Aguardando Energização'}
+                      </span>
+                      {hud.selection.isisProtected && (
+                        <span className="rounded border border-emerald-400/50 bg-emerald-950/60 px-1.5 py-0.5 text-[9px] font-bold text-emerald-300">
+                          Ísis: Escudo Divino
+                        </span>
+                      )}
+                    </div>
+                    {hud.selection.canEmpowerMonument && onOrderEmpowerMonument && (
+                      <button
+                        type="button"
+                        onClick={() => onOrderEmpowerMonument(hud.selection.buildingId)}
+                        className="flex items-center justify-center gap-1.5 rounded border border-[#facc15]/65 bg-[#2d230c] px-2 py-1 text-[10px] font-bold text-[#fef08a] hover:bg-[#3e3010] cursor-pointer"
+                      >
+                        <Sun className="h-3.5 w-3.5 text-[#facc15]" />
+                        <span>Energizar Monumento (Faraó / Sacerdote)</span>
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                {/* EMPTY BUILDING FALLBACK */}
+                {buildingUnits.length === 0 &&
+                  buildingTechs.length === 0 &&
+                  !showMarket &&
+                  !showAgeUp &&
+                  !showSkyPassage &&
+                  selectedPlayerBuildingKind !== 'monument' &&
+                  selectedPlayerBuildingKind !== 'wall' && (
+                    <div className="flex items-center gap-2 rounded border border-[#c8a962]/20 bg-[#121824] px-2.5 py-2 text-[11px] text-[#cbd5e1]">
+                      <BuildingIcon kind={selectedPlayerBuildingKind} pantheon={hud.pantheon} size={24} />
+                      <span className="leading-snug">
+                        {selectedPlayerBuildingKind === 'house'
+                          ? hud.pantheon === 'atlantean'
+                            ? 'Mansão Atlante: +10 de Limite Populacional com alta resistência.'
+                            : hud.pantheon === 'norse'
+                            ? 'Casa Nórdica: +8 de Limite Populacional.'
+                            : 'Habitação civil: +6 de Limite Populacional.'
+                          : selectedPlayerBuildingKind === 'farm'
+                          ? 'Fonte infinita de Alimento para Aldeões.'
+                          : selectedPlayerBuildingKind === 'granary'
+                          ? 'Ponto de entrega de Alimento e melhorias de caça/fazenda.'
+                          : selectedPlayerBuildingKind === 'storehouse'
+                          ? 'Ponto de entrega de Madeira e Ouro.'
+                          : selectedPlayerBuildingKind === 'lumber_camp'
+                          ? 'Campo Madeireiro egípcio: entrega de Madeira.'
+                          : selectedPlayerBuildingKind === 'mining_camp'
+                          ? 'Campo de Mineração egípcio: entrega de Ouro.'
+                          : selectedPlayerBuildingKind === 'obelisk'
+                          ? 'Obelisco Vigia: revela ampla área do mapa ao redor.'
+                          : selectedPlayerBuildingKind === 'lighthouse'
+                          ? 'Farol do Nilo: ilumina vasta extensão do mapa contra névoa de guerra.'
+                          : selectedPlayerBuildingKind === 'wonder'
+                          ? 'Maravilha Divina: ativa a Era das Maravilhas (+Favor, +20% Míticas).'
+                          : 'Estrutura defensiva e de apoio territorial.'}
+                      </span>
+                    </div>
+                  )}
               </div>
             );
           })()
         )
       ) : hud.selection.primaryType === 'unit' && hud.selection.team === 'player' ? (
-        /* CASE C: Player Military / Hero / Mythic / Naval / God Unit Selected */
+        /* ========================================================================= */
+        /* CASE C: MILITARY / HERO / MYTHIC / NAVAL / GOD UNIT SELECTED              */
+        /* ========================================================================= */
         <div className="flex flex-1 flex-col justify-between gap-1.5">
           {hud.selectedMythAbility && (
             <div className="flex items-center justify-between gap-2 rounded border border-[#d4af37]/55 bg-[#1e180a] px-2 py-1.5">
@@ -1016,76 +1183,6 @@ export function HudCommandGrid({
             </div>
           </div>
 
-          {hud.selection.canEmpowerMonument && onOrderEmpowerMonument && (
-            <button
-              type="button"
-              onClick={() => onOrderEmpowerMonument()}
-              title="Enviar Faraó ou Sacerdote de Rá para energizar um Monumento e acelerar Favor Divino"
-              className="flex items-center justify-between gap-2 rounded border border-[#facc15]/65 bg-[#29200b] px-2.5 py-1 text-[10px] font-bold text-[#fef08a] hover:border-[#fde047] hover:bg-[#3a2d0e] cursor-pointer"
-            >
-              <span className="flex items-center gap-1.5">
-                <Sun className="h-3.5 w-3.5 text-[#facc15] shrink-0" />
-                <span>Energizar Monumento</span>
-              </span>
-              <span className="font-mono-num text-[9px] text-[#fde68a]">+Favor</span>
-            </button>
-          )}
-
-          {hud.isSetPlayer &&
-            (hud.selection.unitKind === 'priest' ||
-              hud.selection.unitKind === 'pharaoh' ||
-              hud.selection.unitKind === 'son_of_osiris') && (
-              <div className="flex items-center gap-1">
-                {onConvertFauna && (
-                  <button
-                    type="button"
-                    onClick={onConvertFauna}
-                    title="Converter o animal selvagem mais próximo para lutar por Set"
-                    className="flex flex-1 items-center justify-center gap-1 rounded border border-amber-400/60 bg-[#2a1c0b] px-2 py-1 text-[10px] font-bold text-amber-200 hover:bg-[#3b270e] cursor-pointer"
-                  >
-                    <Sparkles className="h-3 w-3 text-amber-300 shrink-0" />
-                    <span>Converter Fera</span>
-                  </button>
-                )}
-                {onSummonSetAnimal && (
-                  <button
-                    type="button"
-                    disabled={hud.resources.favor < 12}
-                    onClick={() => onSummonSetAnimal('hyena')}
-                    title="Invocar Hiena de Set (12 Favor)"
-                    className="rounded border border-amber-400/50 bg-[#241809] px-2 py-1 text-[10px] font-bold text-amber-200 hover:bg-[#35230d] disabled:opacity-45 cursor-pointer"
-                  >
-                    +Hiena 12F
-                  </button>
-                )}
-              </div>
-            )}
-
-          {hud.selection.unitKind === 'oracle' && (
-            <div className="flex flex-col gap-1">
-              <div className="flex items-center justify-between rounded border border-[#38bdf8]/40 bg-[#0d1e2e] px-2 py-1 text-[10px]">
-                <span className="flex items-center gap-1 text-[#bae6fd] font-semibold">
-                  <Eye className="h-3 w-3 text-[#38bdf8]" />
-                  <span>Visão do Oráculo</span>
-                </span>
-                <span className="font-mono-num font-bold text-[#7dd3fc]">
-                  {hud.selection.oracleVisionPct ?? 0}% · +{(hud.selection.oracleFavorPerSec ?? 0).toFixed(2)}/s
-                </span>
-              </div>
-              {onSpreadOracles && (
-                <button
-                  type="button"
-                  onClick={onSpreadOracles}
-                  title="Posicionar Oráculos em pontos estratégicos sem sobreposição de visão para Favor máximo"
-                  className="flex items-center justify-center gap-1.5 rounded border border-[#38bdf8]/60 bg-[#0f293d] px-2 py-1 text-[10px] font-bold text-[#bae6fd] hover:border-[#7dd3fc] hover:bg-[#153954] cursor-pointer"
-                >
-                  <Eye className="h-3.5 w-3.5 text-[#38bdf8]" />
-                  <span>Espalhar Oráculos (Visão Plena)</span>
-                </button>
-              )}
-            </div>
-          )}
-
           {hud.selection.canPromoteToHero && onPromoteToHero && (
             <button
               type="button"
@@ -1143,7 +1240,9 @@ export function HudCommandGrid({
           </div>
         </div>
       ) : (
-        /* CASE D: Empty / Resource / Fauna / Settlement / Enemy Selection */
+        /* ========================================================================= */
+        /* CASE D: EMPTY / RESOURCE / FAUNA / SETTLEMENT / ENEMY SELECTION           */
+        /* ========================================================================= */
         <div className="flex flex-1 flex-col justify-between gap-2">
           <p className="text-[11px] leading-snug text-[#94a3b8]">
             {hud.selection.primaryType === 'settlement'

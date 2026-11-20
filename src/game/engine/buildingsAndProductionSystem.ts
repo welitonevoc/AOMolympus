@@ -172,6 +172,8 @@ export function matchesUnitProducer(
       (bKind === 'great_hall' || bKind === 'stable' || bKind === 'fortress' || bKind === 'asgard_hill_fort')) ||
     (kind === 'huskarl' && (bKind === 'barracks' || bKind === 'fortress' || bKind === 'asgard_hill_fort')) ||
     (kind === 'myrmidon' && (bKind === 'barracks' || bKind === 'fortress')) ||
+    (kind === 'gastraphetes' && (bKind === 'archery_range' || bKind === 'fortress')) ||
+    (kind === 'cavalry' && (bKind === 'stable' || bKind === 'fortress')) ||
     ((kind === 'katapeltes' || kind === 'turma' || kind === 'cheiroballista') &&
       (bKind === 'counter_barracks' || bKind === 'archery_range' || bKind === 'stable' || bKind === 'fortress')) ||
     (kind === 'contarius' && (bKind === 'barracks' || bKind === 'stable' || bKind === 'fortress')) ||
