@@ -110,20 +110,20 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="MenuPanel" type="PanelContainer" parent="CanvasLayer/CenterContainer"]
-custom_minimum_size = Vector2(440, 520)
+custom_minimum_size = Vector2(500, 560)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_menu")
 
 [node name="Margin" type="MarginContainer" parent="CanvasLayer/CenterContainer/MenuPanel"]
 layout_mode = 2
 theme_override_constants/margin_left = 24
-theme_override_constants/margin_top = 20
+theme_override_constants/margin_top = 18
 theme_override_constants/margin_right = 24
-theme_override_constants/margin_bottom = 20
+theme_override_constants/margin_bottom = 18
 
 [node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer/CenterContainer/MenuPanel/Margin"]
 layout_mode = 2
-theme_override_constants/separation = 12
+theme_override_constants/separation = 10
 
 [node name="Header" type="VBoxContainer" parent="CanvasLayer/CenterContainer/MenuPanel/Margin/VBoxContainer"]
 layout_mode = 2
@@ -157,7 +157,7 @@ layout_mode = 2
 theme_override_colors/font_color = Color(0.06, 0.08, 0.12, 1)
 theme_override_font_sizes/font_size = 14
 theme_override_styles/normal = SubResource("StyleBoxFlat_btn_gold")
-text = "⚔️ Um Jogador (Batalha Personalizada)"
+text = "⚔️ Um Jogador (Batalha com Deuses & Mapas)"
 
 [node name="BtnCampaign" type="Button" parent="CanvasLayer/CenterContainer/MenuPanel/Margin/VBoxContainer/MainMenuButtons"]
 custom_minimum_size = Vector2(0, 38)
@@ -191,49 +191,91 @@ text = "🚪 Sair do Jogo"
 visible = false
 layout_mode = 2
 size_flags_vertical = 3
-theme_override_constants/separation = 6
+theme_override_constants/separation = 8
 
 [node name="Title" type="Label" parent="CanvasLayer/CenterContainer/MenuPanel/Margin/VBoxContainer/SinglePlayerMenu"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.9, 0.8, 0.4, 1)
 theme_override_font_sizes/font_size = 14
-text = "Configuração de Batalha (Skirmish)"
+text = "Batalha Mitológica (Skirmish)"
 horizontal_alignment = 1
 
-[node name="LabelGod" type="Label" parent="CanvasLayer/CenterContainer/MenuPanel/Margin/VBoxContainer/SinglePlayerMenu"]
+[node name="GodContainer" type="HBoxContainer" parent="CanvasLayer/CenterContainer/MenuPanel/Margin/VBoxContainer/SinglePlayerMenu"]
 layout_mode = 2
-text = "Deus Principal Maior:"
+theme_override_constants/separation = 12
 
-[node name="GodSelect" type="OptionButton" parent="CanvasLayer/CenterContainer/MenuPanel/Margin/VBoxContainer/SinglePlayerMenu"]
-custom_minimum_size = Vector2(0, 36)
+[node name="GodPortrait" type="TextureRect" parent="CanvasLayer/CenterContainer/MenuPanel/Margin/VBoxContainer/SinglePlayerMenu/GodContainer"]
+custom_minimum_size = Vector2(90, 90)
+layout_mode = 2
+expand_mode = 1
+stretch_mode = 6
+
+[node name="Details" type="VBoxContainer" parent="CanvasLayer/CenterContainer/MenuPanel/Margin/VBoxContainer/SinglePlayerMenu/GodContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 4
+
+[node name="LabelGod" type="Label" parent="CanvasLayer/CenterContainer/MenuPanel/Margin/VBoxContainer/SinglePlayerMenu/GodContainer/Details"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "Deus Maior:"
+
+[node name="GodSelect" type="OptionButton" parent="CanvasLayer/CenterContainer/MenuPanel/Margin/VBoxContainer/SinglePlayerMenu/GodContainer/Details"]
+custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 
-[node name="LabelMap" type="Label" parent="CanvasLayer/CenterContainer/MenuPanel/Margin/VBoxContainer/SinglePlayerMenu"]
+[node name="GodInfoLabel" type="Label" parent="CanvasLayer/CenterContainer/MenuPanel/Margin/VBoxContainer/SinglePlayerMenu/GodContainer/Details"]
 layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.85, 0.9, 1)
+theme_override_font_sizes/font_size = 10
+text = "Foco: Infantaria & Favor"
+autowrap_mode = 2
+
+[node name="MapContainer" type="HBoxContainer" parent="CanvasLayer/CenterContainer/MenuPanel/Margin/VBoxContainer/SinglePlayerMenu"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="MapLandscape" type="TextureRect" parent="CanvasLayer/CenterContainer/MenuPanel/Margin/VBoxContainer/SinglePlayerMenu/MapContainer"]
+custom_minimum_size = Vector2(90, 75)
+layout_mode = 2
+expand_mode = 1
+stretch_mode = 6
+
+[node name="Details" type="VBoxContainer" parent="CanvasLayer/CenterContainer/MenuPanel/Margin/VBoxContainer/SinglePlayerMenu/MapContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 4
+
+[node name="LabelMap" type="Label" parent="CanvasLayer/CenterContainer/MenuPanel/Margin/VBoxContainer/SinglePlayerMenu/MapContainer/Details"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
 text = "Mapa do Campo de Batalha:"
 
-[node name="MapSelect" type="OptionButton" parent="CanvasLayer/CenterContainer/MenuPanel/Margin/VBoxContainer/SinglePlayerMenu"]
-custom_minimum_size = Vector2(0, 36)
+[node name="MapSelect" type="OptionButton" parent="CanvasLayer/CenterContainer/MenuPanel/Margin/VBoxContainer/SinglePlayerMenu/MapContainer/Details"]
+custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 
-[node name="LabelDiff" type="Label" parent="CanvasLayer/CenterContainer/MenuPanel/Margin/VBoxContainer/SinglePlayerMenu"]
+[node name="MapInfoLabel" type="Label" parent="CanvasLayer/CenterContainer/MenuPanel/Margin/VBoxContainer/SinglePlayerMenu/MapContainer/Details"]
 layout_mode = 2
-text = "Dificuldade da Inteligência Artificial:"
+theme_override_colors/font_color = Color(0.8, 0.85, 0.9, 1)
+theme_override_font_sizes/font_size = 10
+text = "Bioma: Mediterrâneo"
+autowrap_mode = 2
 
 [node name="DifficultySelect" type="OptionButton" parent="CanvasLayer/CenterContainer/MenuPanel/Margin/VBoxContainer/SinglePlayerMenu"]
-custom_minimum_size = Vector2(0, 36)
+custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 
 [node name="BtnStartGame" type="Button" parent="CanvasLayer/CenterContainer/MenuPanel/Margin/VBoxContainer/SinglePlayerMenu"]
 custom_minimum_size = Vector2(0, 42)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.06, 0.08, 0.12, 1)
-theme_override_font_sizes/font_size = 15
+theme_override_font_sizes/font_size = 14
 theme_override_styles/normal = SubResource("StyleBoxFlat_btn_gold")
 text = "⚔️ Iniciar Batalha no Olimpo"
 
 [node name="BtnBackSP" type="Button" parent="CanvasLayer/CenterContainer/MenuPanel/Margin/VBoxContainer/SinglePlayerMenu"]
-custom_minimum_size = Vector2(0, 34)
+custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 text = "‹ Voltar ao Menu Principal"
 
@@ -347,11 +389,11 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 12
 text = "• Economia: Aldeões coletam Alimento, Madeira e Ouro. O Centro Urbano é o ponto de entrega.
 
-• Combate: Construa o Quartel Militar com seus aldeões para treinar Hoplitas (infantaria pesada com lança) e Hipaspistas (anti-infantaria veloz).
+• Combate: Construa o Quartel Militar com seus aldeões para treinar Hoplitas e Hipaspistas.
 
 • Poderes Divinos: Acumule Favor rezando no Templo para invocar o Raio de Zeus na Central de Comandos.
 
-• Câmera: No mobile, use pinça com 2 dedos para zoom in/out e deslize dois dedos para arrastar o mapa."
+• Câmera: No mobile, use pinça com 2 dedos para zoom in/out e deslize com 1 dedo para navegar pelo mapa."
 autowrap_mode = 2
 
 [node name="BtnBackLearn" type="Button" parent="CanvasLayer/CenterContainer/MenuPanel/Margin/VBoxContainer/LearnMenu"]
