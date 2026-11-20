@@ -1,0 +1,2099 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Age of Mythology: Olympus — Edificações Gregas 3D (T1–T5)</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --gold: #facc15;
+      --glass: rgba(10, 16, 28, 0.88);
+      --border: rgba(250, 204, 21, 0.42);
+    }
+    * { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #09111e;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    }
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+      cursor: grab;
+    }
+    canvas:active { cursor: grabbing; }
+
+    #ui {
+      position: fixed;
+      top: 12px;
+      left: 12px;
+      right: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      z-index: 10;
+      pointer-events: none;
+    }
+    .row {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      align-items: center;
+      pointer-events: auto;
+    }
+    button {
+      padding: 7px 11px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--glass);
+      backdrop-filter: blur(10px);
+      color: #f8fafc;
+      font-weight: 600;
+      font-size: 12px;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.48);
+      transition: all 0.2s ease;
+    }
+    button:hover:not(:disabled) {
+      transform: translateY(-1px);
+      background: rgba(24, 36, 62, 0.95);
+    }
+    button:disabled {
+      opacity: 0.34;
+      cursor: not-allowed;
+      filter: grayscale(0.8);
+      border-color: rgba(148, 163, 184, 0.25);
+    }
+
+    /* Botões das 3 Divindades */
+    button.god-btn.on[data-god="zeus"] {
+      background: linear-gradient(135deg, #fde047 0%, #2563eb 100%);
+      color: #091326;
+      border-color: #fef9c3;
+      box-shadow: 0 0 18px rgba(250, 204, 21, 0.62);
+    }
+    button.god-btn.on[data-god="poseidon"] {
+      background: linear-gradient(135deg, #2dd4bf 0%, #0284c7 100%);
+      color: #031521;
+      border-color: #ccfbf1;
+      box-shadow: 0 0 18px rgba(45, 212, 191, 0.62);
+    }
+    button.god-btn.on[data-god="hades"] {
+      background: linear-gradient(135deg, #dc2626 0%, #10b981 100%);
+      color: #ffffff;
+      border-color: #a7f3d0;
+      box-shadow: 0 0 18px rgba(16, 185, 129, 0.62);
+    }
+
+    /* Botões das 10 Edificações */
+    button.bld-btn {
+      font-size: 11.5px;
+      padding: 6px 10px;
+      border-color: rgba(148, 163, 184, 0.35);
+    }
+    button.bld-btn.on {
+      background: linear-gradient(135deg, #f8fafc 0%, #cbd5e1 100%);
+      color: #0f172a;
+      border-color: #ffffff;
+      box-shadow: 0 0 16px rgba(248, 250, 252, 0.45);
+    }
+
+    /* Botões de Tier T1-T5 */
+    button.tier-btn.on {
+      background: linear-gradient(135deg, #fde047 0%, #d97706 100%);
+      color: #140c02;
+      border-color: #fef9c3;
+      box-shadow: 0 0 20px rgba(250, 204, 21, 0.65);
+    }
+    button.tier-btn[data-tier="5"].on {
+      background: linear-gradient(135deg, #fef08a 0%, #f59e0b 50%, #b45309 100%);
+      color: #140c02;
+      border-color: #ffffff;
+      box-shadow: 0 0 26px rgba(250, 204, 21, 0.9);
+    }
+
+    /* Ação e Câmera */
+    button.act-btn.on {
+      background: linear-gradient(135deg, #38bdf8 0%, #1d4ed8 100%);
+      color: #ffffff;
+      border-color: #bae6fd;
+      box-shadow: 0 0 16px rgba(56, 189, 248, 0.5);
+    }
+    button.cam-btn {
+      border-color: rgba(125, 211, 252, 0.5);
+    }
+    button.cam-btn.active {
+      background: linear-gradient(135deg, #0ea5e9 0%, #0369a1 100%);
+      color: #fff;
+      border-color: #e0f2fe;
+    }
+
+    #info-card {
+      position: fixed;
+      bottom: 44px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--glass);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--border);
+      padding: 8px 18px;
+      border-radius: 12px;
+      text-align: center;
+      pointer-events: none;
+      z-index: 10;
+      min-width: 320px;
+      max-width: 94vw;
+      box-shadow: 0 6px 22px rgba(0, 0, 0, 0.55);
+    }
+    #card-title {
+      color: #fde047;
+      font-weight: 700;
+      font-size: 13.5px;
+    }
+    #card-sub {
+      color: #cbd5e1;
+      font-size: 11.5px;
+      margin-top: 2px;
+    }
+
+    #badge {
+      position: fixed;
+      top: 12px;
+      right: 14px;
+      background: var(--glass);
+      backdrop-filter: blur(8px);
+      border: 1px solid var(--border);
+      padding: 7px 12px;
+      border-radius: 10px;
+      color: #fde047;
+      font-size: 11.5px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      pointer-events: none;
+      z-index: 9;
+    }
+    @media (max-width: 1180px) {
+      #badge { display: none; }
+    }
+
+    #hint {
+      position: fixed;
+      bottom: 11px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(10, 16, 28, 0.84);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      padding: 5px 15px;
+      border-radius: 999px;
+      color: #e2e8f0;
+      font-size: 11px;
+      white-space: nowrap;
+      pointer-events: none;
+      z-index: 10;
+    }
+  </style>
+</head>
+<body>
+
+<div id="ui">
+  <!-- Linha 1: Divindades + Tiers -->
+  <div class="row">
+    <button data-god="zeus" class="god-btn on">⚡ Zeus</button>
+    <button data-god="poseidon" class="god-btn">🔱 Poseidon</button>
+    <button data-god="hades" class="god-btn">💀 Hades</button>
+    <span style="width:4px"></span>
+    <button data-tier="1" class="tier-btn">T1 • Arcaico</button>
+    <button data-tier="2" class="tier-btn">T2 • Clássico</button>
+    <button data-tier="3" class="tier-btn on">T3 • Heroico</button>
+    <button data-tier="4" class="tier-btn">T4 • Mítico</button>
+    <button data-tier="5" class="tier-btn">T5 • Ápice Divino</button>
+  </div>
+
+  <!-- Linha 2: As 10 Edificações Gregas -->
+  <div class="row">
+    <button data-bld="quarteis" class="bld-btn on">🛡️ Quartéis</button>
+    <button data-bld="estabulos" class="bld-btn">🐎 Estábulos</button>
+    <button data-bld="arquearia" class="bld-btn">🏹 Centro de Arquearia</button>
+    <button data-bld="cerco" class="bld-btn">⚙️ Oficina de Cerco (T3+)</button>
+    <button data-bld="arsenal" class="bld-btn">⚔️ Arsenal Divino</button>
+    <button data-bld="torre" class="bld-btn">🗼 Torre de Vigia</button>
+    <button data-bld="fazenda" class="bld-btn">🌾 Fazenda</button>
+    <button data-bld="titan" class="bld-btn">🌀 Portal do Titã (T4+)</button>
+    <button data-bld="mercado" class="bld-btn">⚖️ Mercado (T3+)</button>
+    <button data-bld="ferreiro" class="bld-btn">🔨 Ferreiro (T2+)</button>
+    <button data-bld="muro" class="bld-btn">🏰 Muralha & Portão</button>
+  </div>
+
+  <!-- Linha 3: Modo de Operação e Câmera -->
+  <div class="row">
+    <button data-act="operacao" class="act-btn on">Produção / Operação Ativa</button>
+    <button data-act="bencao" class="act-btn">Bênção Divina Suprema</button>
+    <button id="btn-gate" class="cam-btn" style="display:none; border-color: rgba(250, 204, 21, 0.75);">🚪 Abrir Portão</button>
+    <button id="btn-focus" class="cam-btn">Focar Detalhe</button>
+  </div>
+</div>
+
+<div id="badge">Grécia • Olympus 3D</div>
+
+<div id="info-card">
+  <div id="card-title">Quartéis de Zeus • Tier 3 (Heroico)</div>
+  <div id="card-sub">Complexo militar em L com telhado de terracota canelada, pórtico de mármore, estandartes olímpicos e bonecos de treino</div>
+</div>
+
+<div id="hint">Arraste para girar 360° • Scroll / Pinça para zoom</div>
+
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+const T = THREE;
+
+/* ==========================================================================
+   1. CONFIGURAÇÃO DAS 3 DIVINDADES GREGAS E METADADOS DAS 10 EDIFICAÇÕES
+   ========================================================================== */
+const GOD_THEMES = {
+  zeus: {
+    id: 'zeus',
+    name: 'Zeus',
+    titleSuffix: 'de Zeus',
+    bgHex: 0x0f1f38,
+    hemiSky: 0xfef9c3,
+    hemiGround: 0x1e3a8a,
+    rimHex: 0x38bdf8,
+    marbleBase: 0xe6e1d3,
+    marbleBright: 0xf8fafc,
+    trimHex: 0x1d4ed8,
+    trimCss: '#1d4ed8',
+    goldHex: 0xfacc15,
+    roofBase: '#8c5332',
+    roofRib: '#d97706',
+    roofPatina: '#6b4226',
+    flameHex: 0xf59e0b,
+    glowHex: 0x38bdf8,
+    waterHex: 0x38bdf8,
+    cropHex: 0xeab308,
+    groundGrass: '#52802c',
+    groundDirt: '#bfa070',
+    blessingDesc: 'Tempestade Olímpica com raios celestiais e aura dourada'
+  },
+  poseidon: {
+    id: 'poseidon',
+    name: 'Poseidon',
+    titleSuffix: 'de Poseidon',
+    bgHex: 0x061f2e,
+    hemiSky: 0xccfbf1,
+    hemiGround: 0x0c4a6e,
+    rimHex: 0x2dd4bf,
+    marbleBase: 0xdbeafe,
+    marbleBright: 0xf0f9ff,
+    trimHex: 0x0d9488,
+    trimCss: '#0d9488',
+    goldHex: 0xfbbf24,
+    roofBase: '#2f6f66',
+    roofRib: '#2dd4bf',
+    roofPatina: '#115e59',
+    flameHex: 0x2dd4bf,
+    glowHex: 0x2dd4bf,
+    waterHex: 0x06b6d4,
+    cropHex: 0x84cc16,
+    groundGrass: '#457a49',
+    groundDirt: '#c2aa7e',
+    blessingDesc: 'Maré Atlante com anéis aquáticos turbulentos e névoa marinha'
+  },
+  hades: {
+    id: 'hades',
+    name: 'Hades',
+    titleSuffix: 'de Hades',
+    bgHex: 0x080510,
+    hemiSky: 0xa7f3d0,
+    hemiGround: 0x2e1065,
+    rimHex: 0x10b981,
+    marbleBase: 0x3f3f46,
+    marbleBright: 0x52525b,
+    trimHex: 0x991b1b,
+    trimCss: '#991b1b',
+    goldHex: 0xd97706,
+    roofBase: '#27272a',
+    roofRib: '#dc2626',
+    roofPatina: '#450a0a',
+    flameHex: 0x10b981,
+    glowHex: 0x10b981,
+    waterHex: 0x10b981,
+    cropHex: 0x65a30d,
+    groundGrass: '#2e382b',
+    groundDirt: '#4f463f',
+    blessingDesc: 'Chamas Esmeraldas do Estige e fendas sombrias do Tártaro'
+  }
+};
+
+const BUILDINGS_INFO = {
+  quarteis: {
+    name: 'Quartéis',
+    minTier: 1,
+    focusOffset: [0, 1.3, 1.2],
+    tiers: {
+      1: 'Acampamento de Hoplitas em madeira e pedra bruta com estandarte e pátio de treino',
+      2: 'Quartel Clássico de pedra lavrada com pórtico frontal e rastel de lanças',
+      3: 'Complexo militar em L com telhado canelado, pórtico de mármore, estandartes e bonecos de treino',
+      4: 'Quartel Mítico em U com duas alas colunadas, escudos sagrados e braseiros acesos',
+      5: 'Academia de Elite Olímpica em mármore/obsidiana com estátua do patrono e armas douradas'
+    }
+  },
+  estabulos: {
+    name: 'Estábulos',
+    minTier: 1,
+    focusOffset: [-0.4, 1.1, 1.1],
+    tiers: {
+      1: 'Cercado rústico de madeira com cocho, fardos de feno e abrigo simples para montarias',
+      2: 'Estábulo Clássico de pedra com telhado grego, baias abertas e estandarte de ferradura',
+      3: 'Pavilhão de dois pavimentos com ala lateral aberta, cavalos nas baias, feno e barris',
+      4: 'Estábulo Mítico com colunata lateral, bebedouro de pedra e equipamentos de cavalaria pesada',
+      5: 'Hipódromo Real com colunas douradas/sagradas, estátuas equestres e braseiros divinos'
+    }
+  },
+  arquearia: {
+    name: 'Centro de Arquearia',
+    minTier: 1,
+    focusOffset: [0.3, 1.1, 1.3],
+    tiers: {
+      1: 'Campo de tiro primitivo com paliçada de madeira e dois alvos de palha',
+      2: 'Alpendre de arqueiros em pedra com galeria de escudos e linha de tiro demarcada',
+      3: 'Edifício alongado com galeria coberta de escudos redondos e alvos de tiro com flechas cravadas',
+      4: 'Campo Heroico com colunata de mármore, alvos reforçados e estandartes da divindade',
+      5: 'Santuário dos Arqueiros Divinos com frontão ornamentado, alvos dourados e piras sagradas'
+    }
+  },
+  cerco: {
+    name: 'Oficina de Cerco',
+    minTier: 3,
+    focusOffset: [0.2, 1.4, 1.1],
+    tiers: {
+      1: 'Indisponível (Inicia na Era Heroica - Tier 3)',
+      2: 'Indisponível (Inicia na Era Heroica - Tier 3)',
+      3: 'Complexo monumental de engenharia grega com pórtico duplo, guindaste giratório pesado, aríete blindado, balista e barris de óleo',
+      4: 'Arsenal de Cerco Mítico com duas alas colunadas, petrobolo gigante em montagem, forja de engrenagens e munição incendiária',
+      5: 'Cidadela Suprema de Engenharia Olímpica com guindaste colosso de ouro, aríete titânico, balistas laterais e braseiros divinos'
+    }
+  },
+  arsenal: {
+    name: 'Arsenal Divino',
+    minTier: 1,
+    focusOffset: [0, 1.7, 1.4],
+    tiers: {
+      1: 'Bastião inicial em pedra lavrada com guarita de arqueiros, portão reforçado e rastel de lanças',
+      2: 'Fortaleza Clássica com duas torres quadradas, muralha ameada, escudos hoplitas e pátio de armas',
+      3: 'Cidadela Heroica com colunata frontal, torres altas com guaritas de flechas, portão de bronze e emblema divino',
+      4: 'Grande Bastilha Mítica de dois pavimentos com balistas nas torres, cúpula de armas sagradas e braseiros',
+      5: 'Santuário Bélico Supremo de mármore/obsidiana e ouro, colunata imperial, quatro torres guardiãs e relíquia divina'
+    }
+  },
+  torre: {
+    name: 'Torre de Vigia',
+    minTier: 1,
+    focusOffset: [0, 2.3, 0.5],
+    tiers: {
+      1: 'Torre de madeira e pedra com plataforma de vigia e guarita superior de seteiras para flechas',
+      2: 'Torre Clássica de pedra lavrada com guarita saliente de madeira/telhas, seteiras de arqueiros e estandarte',
+      3: 'Torre Heroica de mármore/basalto com guarita fechada de seteiras em todas as faces e telhado grego canelado',
+      4: 'Torre Mítica fortificada com guarita blindada dupla, balista montada no topo e escudos sagrados nas muralhas',
+      5: 'Bastilha-Farol Divina Suprema com guarita de ouro, seteiras luminosas, balista pesada e braseiro sagrado eterno'
+    }
+  },
+  fazenda: {
+    name: 'Fazenda',
+    minTier: 1,
+    focusOffset: [-0.4, 1.1, 0.9],
+    tiers: {
+      1: 'Horta rústica com sulcos arados, cerca de madeira, espantalho, abóboras e ferramentas manuais',
+      2: 'Propriedade Clássica com trigo dourado denso, celeiro de pedra, carroça de madeira e fardos de feno',
+      3: 'Granja Grega completa com moinho de vento giratório, silo abobadado, horta irrigada e campos dourados',
+      4: 'Herdade Mítica com aqueduto de água cristalina, moinho colunado, pomar mediterrâneo e colheita farta',
+      5: 'Campos Elísios Olímpicos com moinho dourado, canais sagrados brilhantes, templo da colheita e trigo luminoso'
+    }
+  },
+  titan: {
+    name: 'Portal do Titã',
+    minTier: 4,
+    focusOffset: [0, 2.2, 0.9],
+    tiers: {
+      1: 'Indisponível (Inicia na Era Mítica - Tier 4)',
+      2: 'Indisponível (Inicia na Era Mítica - Tier 4)',
+      3: 'Indisponível (Inicia na Era Mítica - Tier 4)',
+      4: 'Escavação Titânica Monumental com pilares colossais, obeliscos rúnicos, correntes pesadas e anel dimensional em formação',
+      5: 'Portal do Titã Desperto: arco colosso completo em mármore/obsidiana e ouro, vórtice cósmico giratório e piras sagradas'
+    }
+  },
+  mercado: {
+    name: 'Mercado',
+    minTier: 3,
+    focusOffset: [0.2, 1.3, 1.2],
+    tiers: {
+      1: 'Indisponível (Inicia na Era Heroica - Tier 3)',
+      2: 'Indisponível (Inicia na Era Heroica - Tier 3)',
+      3: 'Ágora Grega de dois andares com escada monumental, sacada balaustrada, quatro barracas listradas, ânforas e tapetes',
+      4: 'Grande Bolsa Mítica com pórtico colunado, tendas de seda da divindade, balanças de ouro e carroça mercante',
+      5: 'Empório Imperial Olímpico com colunata de mármore e ouro, arcadas comerciais, tesouros expostos e braseiros'
+    }
+  },
+  ferreiro: {
+    name: 'Ferreiro',
+    minTier: 2,
+    focusOffset: [0.2, 1.2, 1.2],
+    tiers: {
+      1: 'Indisponível (Inicia na Era Clássica - Tier 2)',
+      2: 'Forja Clássica de pedra com alto-forno circular, fole articulado, bigorna, cocho de água e rastel de espadas',
+      3: 'Oficina em L com telhado canelado, forno de fundição com chaminé, roda d’água de martelo, bigorna e escudos',
+      4: 'Forja Mítica de dois pavimentos com fornalha dupla incandescente, caldeirão de bronze fundido e armaduras',
+      5: 'Forja Divina de Hefesto com alto-forno monumental dourado/infernal, bigorna rúnica brilhante e armas lendárias'
+    }
+  },
+  muro: {
+    name: 'Muralha & Portão',
+    minTier: 1,
+    focusOffset: [0, 1.4, 0.8],
+    tiers: {
+      1: 'Paliçada de madeira reforçada com estacas pontiagudas, torres de canto rústicas e portão duplo articulado',
+      2: 'Muralha Clássica de pedra lavrada com ameias, passadiço superior, estandartes e portão de madeira chapeada',
+      3: 'Muralha Heroica de mármore/basalto com bastiões laterais, guaritas de arqueiros e portão de bronze articulado',
+      4: 'Muralha Mítica fortificada com torres colunadas, frisos da divindade, balistas e portão monumental',
+      5: 'Muralha Divina Suprema de mármore/obsidiana e ouro com emblemas sagrados, braseiros eternos e portão imperial'
+    }
+  }
+};
+
+/* ==========================================================================
+   2. SHADERS E TEXTURAS PROCEDURAIS PBR (MÁRMORE, TELHAS, TOLDOS, PLANTAÇÕES)
+   ========================================================================== */
+function createMarbleTexture(isBright = false) {
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = 512;
+  const ctx = canvas.getContext('2d');
+
+  ctx.fillStyle = isBright ? '#f4f1ea' : '#dcd7ca';
+  ctx.fillRect(0, 0, 512, 512);
+
+  const rows = 12;
+  const rH = 512 / rows;
+  for (let r = 0; r < rows; r++) {
+    const y = r * rH;
+    const cols = 6;
+    const cW = 512 / cols;
+    const off = (r % 2 === 0) ? 0 : cW * 0.5;
+    for (let c = -1; c <= cols; c++) {
+      const x = c * cW + off;
+      const v = isBright ? 236 : 212;
+      const d = Math.floor((Math.random() - 0.5) * 18);
+      ctx.fillStyle = `rgb(${v + d}, ${v + d - 4}, ${v + d - 12})`;
+      ctx.fillRect(x + 2, y + 2, cW - 4, rH - 4);
+      ctx.strokeStyle = 'rgba(35, 33, 30, 0.25)';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(x + 1, y + 1, cW - 2, rH - 2);
+    }
+  }
+  const tex = new T.CanvasTexture(canvas);
+  tex.wrapS = tex.wrapT = T.RepeatWrapping;
+  tex.colorSpace = T.SRGBColorSpace;
+  return tex;
+}
+
+function createTiledRoofTexture(theme) {
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = 512;
+  const ctx = canvas.getContext('2d');
+
+  ctx.fillStyle = theme.roofBase;
+  ctx.fillRect(0, 0, 512, 512);
+
+  const tiles = 24;
+  const tW = 512 / tiles;
+  for (let i = 0; i < tiles; i++) {
+    const x = i * tW;
+    const grad = ctx.createLinearGradient(x, 0, x + tW, 0);
+    grad.addColorStop(0, 'rgba(0,0,0,0.34)');
+    grad.addColorStop(0.35, theme.roofRib);
+    grad.addColorStop(0.75, theme.roofPatina);
+    grad.addColorStop(1, 'rgba(0,0,0,0.38)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(x, 0, tW, 512);
+  }
+  ctx.strokeStyle = 'rgba(15, 15, 15, 0.32)';
+  ctx.lineWidth = 2;
+  for (let y = 0; y < 512; y += 32) {
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(512, y); ctx.stroke();
+  }
+  const tex = new T.CanvasTexture(canvas);
+  tex.wrapS = tex.wrapT = T.RepeatWrapping;
+  tex.colorSpace = T.SRGBColorSpace;
+  return tex;
+}
+
+function createStripedAwningTexture(trimCss) {
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = 256;
+  const ctx = canvas.getContext('2d');
+
+  const stripes = 12;
+  const sW = 256 / stripes;
+  for (let i = 0; i < stripes; i++) {
+    ctx.fillStyle = (i % 2 === 0) ? trimCss : '#f8fafc';
+    ctx.fillRect(i * sW, 0, sW, 256);
+  }
+  ctx.fillStyle = 'rgba(0,0,0,0.12)';
+  ctx.fillRect(0, 220, 256, 36);
+
+  const tex = new T.CanvasTexture(canvas);
+  tex.colorSpace = T.SRGBColorSpace;
+  return tex;
+}
+
+function createTargetTexture(trimCss) {
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = 256;
+  const ctx = canvas.getContext('2d');
+  const cx = 128, cy = 128;
+
+  const rings = [
+    { r: 120, c: '#78350f' },
+    { r: 106, c: '#f8fafc' },
+    { r: 80, c: trimCss },
+    { r: 54, c: '#f8fafc' },
+    { r: 28, c: '#ef4444' }
+  ];
+  rings.forEach(ring => {
+    ctx.beginPath();
+    ctx.arc(cx, cy, ring.r, 0, Math.PI * 2);
+    ctx.fillStyle = ring.c;
+    ctx.fill();
+  });
+
+  const tex = new T.CanvasTexture(canvas);
+  tex.colorSpace = T.SRGBColorSpace;
+  return tex;
+}
+
+function createGroundTexture(theme, isHighTier = false) {
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = 1024;
+  const ctx = canvas.getContext('2d');
+
+  ctx.fillStyle = theme.groundGrass;
+  ctx.fillRect(0, 0, 1024, 1024);
+
+  for (let i = 0; i < 6500; i++) {
+    ctx.fillStyle = i % 2 === 0 ? 'rgba(255, 255, 255, 0.08)' : 'rgba(15, 35, 10, 0.14)';
+    ctx.fillRect(Math.random() * 1024, Math.random() * 1024, 10, 10);
+  }
+
+  const cx = 512, cy = 512;
+  const dirtGrad = ctx.createRadialGradient(cx, cy, 180, cx, cy, 410);
+  dirtGrad.addColorStop(0, theme.groundDirt);
+  dirtGrad.addColorStop(0.76, theme.groundDirt);
+  dirtGrad.addColorStop(1, 'rgba(191, 160, 112, 0)');
+  ctx.fillStyle = dirtGrad;
+  ctx.fillRect(0, 0, 1024, 1024);
+
+  if (isHighTier) {
+    ctx.fillStyle = 'rgba(148, 138, 122, 0.52)';
+    for (let i = 0; i < 40; i++) {
+      const a = (i / 40) * Math.PI * 2;
+      const r = 270 + (i % 3) * 36;
+      ctx.fillRect(cx + Math.cos(a) * r - 20, cy + Math.sin(a) * r - 16, 40, 32);
+    }
+  }
+
+  const tex = new T.CanvasTexture(canvas);
+  tex.colorSpace = T.SRGBColorSpace;
+  return tex;
+}
+
+/* ==========================================================================
+   3. PRIMITIVAS ARQUITETÔNICAS GREGAS E PROPS COMPARTILHADOS
+   ========================================================================== */
+function group(parent, x = 0, y = 0, z = 0) {
+  const g = new T.Group();
+  g.position.set(x, y, z);
+  if (parent) parent.add(g);
+  return g;
+}
+
+function box(parent, w, h, d, mat, pos = [0, 0, 0], rot = [0, 0, 0]) {
+  const m = new T.Mesh(new T.BoxGeometry(w, h, d), mat);
+  m.position.set(pos[0], pos[1], pos[2]);
+  m.rotation.set(rot[0], rot[1], rot[2]);
+  m.castShadow = true;
+  m.receiveShadow = true;
+  if (parent) parent.add(m);
+  return m;
+}
+
+function cyl(parent, rt, rb, h, segs, mat, pos = [0, 0, 0], rot = [0, 0, 0]) {
+  const m = new T.Mesh(new T.CylinderGeometry(rt, rb, h, segs), mat);
+  m.position.set(pos[0], pos[1], pos[2]);
+  m.rotation.set(rot[0], rot[1], rot[2]);
+  m.castShadow = true;
+  m.receiveShadow = true;
+  if (parent) parent.add(m);
+  return m;
+}
+
+// Símbolo 3D dinâmico das 3 divindades (Raio / Tridente / Bidente + Crânio)
+function createDivineSymbol3D(parent, goldMat, glowMat, pos = [0, 0, 0], scale = 1.0, symbolList = null) {
+  const symRoot = group(parent, pos[0], pos[1], pos[2]);
+  symRoot.scale.setScalar(scale);
+
+  // Zeus: Raio
+  const zeusBolt = group(symRoot);
+  box(zeusBolt, 0.08, 0.34, 0.05, glowMat, [-0.04, 0.14, 0], [0, 0, -0.35]);
+  box(zeusBolt, 0.14, 0.06, 0.05, goldMat, [0, 0, 0]);
+  cyl(zeusBolt, 0.005, 0.07, 0.36, 4, glowMat, [0.05, -0.15, 0], [0, 0, Math.PI - 0.35]);
+
+  // Poseidon: Tridente
+  const poseidonTrident = group(symRoot);
+  cyl(poseidonTrident, 0.025, 0.025, 0.56, 8, goldMat, [0, -0.06, 0]);
+  box(poseidonTrident, 0.28, 0.04, 0.04, goldMat, [0, 0.08, 0]);
+  cyl(poseidonTrident, 0.005, 0.045, 0.28, 4, glowMat, [0, 0.24, 0]);
+  for (const sx of [-1, 1]) {
+    cyl(poseidonTrident, 0.005, 0.035, 0.22, 4, glowMat, [sx * 0.12, 0.20, 0], [0, 0, sx * -0.08]);
+  }
+  poseidonTrident.visible = false;
+
+  // Hades: Bidente + Crânio
+  const hadesBident = group(symRoot);
+  cyl(hadesBident, 0.025, 0.025, 0.46, 8, goldMat, [0, -0.12, 0]);
+  box(hadesBident, 0.24, 0.04, 0.04, goldMat, [0, 0.06, 0]);
+  for (const sx of [-1, 1]) {
+    cyl(hadesBident, 0.005, 0.042, 0.26, 4, glowMat, [sx * 0.10, 0.20, 0]);
+  }
+  const skull = new T.Mesh(new T.SphereGeometry(0.065, 10, 10), glowMat);
+  skull.position.set(0, 0.06, 0.03);
+  hadesBident.add(skull);
+  hadesBident.visible = false;
+
+  const entry = { zeusBolt, poseidonTrident, hadesBident };
+  if (symbolList) symbolList.push(entry);
+  return entry;
+}
+
+// Telhado Grego com Frontão Triangular
+function buildPedimentRoof(parent, w, d, h, roofMat, wallMat, trimMat, yBase, rotY = 0) {
+  const g = group(parent, 0, yBase, 0);
+  g.rotation.y = rotY;
+  const rx = w * 0.5, rz = d * 0.5;
+  const slopeLen = Math.hypot(rx, h);
+  const slopeAng = Math.atan2(h, rx);
+
+  box(g, slopeLen + 0.1, 0.08, d + 0.14, roofMat, [-rx * 0.5, h * 0.5, 0], [0, 0, slopeAng]);
+  box(g, slopeLen + 0.1, 0.08, d + 0.14, roofMat, [rx * 0.5, h * 0.5, 0], [0, 0, -slopeAng]);
+  box(g, 0.12, 0.09, d + 0.18, wallMat, [0, h + 0.03, 0]);
+
+  const tri = new T.Shape();
+  tri.moveTo(-rx, 0);
+  tri.lineTo(rx, 0);
+  tri.lineTo(0, h);
+  tri.closePath();
+  const geo = new T.ExtrudeGeometry(tri, { depth: d - 0.02, bevelEnabled: false });
+  geo.translate(0, 0, -(d - 0.02) * 0.5);
+  const ped = new T.Mesh(geo, wallMat);
+  ped.castShadow = true;
+  ped.receiveShadow = true;
+  g.add(ped);
+
+  if (trimMat) {
+    box(g, w + 0.06, 0.07, d + 0.06, trimMat, [0, -0.02, 0]);
+  }
+  return g;
+}
+
+// Estandarte Grego Vertical em Mastro
+function buildBanner(parent, woodMat, trimMat, goldMat, pos = [0, 0, 0], rotY = 0) {
+  const b = group(parent, pos[0], pos[1], pos[2]);
+  b.rotation.y = rotY;
+  cyl(b, 0.03, 0.04, 1.65, 8, woodMat, [0, 0.825, 0]);
+  cyl(b, 0.005, 0.05, 0.14, 6, goldMat, [0, 1.70, 0]);
+  box(b, 0.44, 0.04, 0.04, woodMat, [0.22, 1.52, 0]);
+  box(b, 0.38, 0.62, 0.02, trimMat, [0.22, 1.18, 0]);
+  box(b, 0.14, 0.14, 0.03, goldMat, [0.22, 1.20, 0], [0, 0, Math.PI / 4]);
+  return b;
+}
+
+// Braseiro Grego com Chama
+function buildBrazier(parent, goldMat, flameMat, pos = [0, 0, 0], scale = 1.0, flameList = null) {
+  const g = group(parent, pos[0], pos[1], pos[2]);
+  g.scale.setScalar(scale);
+  cyl(g, 0.14, 0.20, 0.09, 10, goldMat, [0, 0.045, 0]);
+  cyl(g, 0.045, 0.06, 0.42, 8, goldMat, [0, 0.28, 0]);
+  cyl(g, 0.24, 0.12, 0.14, 12, goldMat, [0, 0.54, 0]);
+  const fl = new T.Mesh(new T.ConeGeometry(0.17, 0.40, 10), flameMat);
+  fl.position.set(0, 0.78, 0);
+  g.add(fl);
+  if (flameList) flameList.push(fl);
+  return g;
+}
+
+// Barril, Ânfora e Cipreste
+function buildBarrel(parent, woodMat, metalMat, pos = [0, 0, 0], scale = 1.0) {
+  const g = group(parent, pos[0], pos[1], pos[2]);
+  g.scale.setScalar(scale);
+  cyl(g, 0.16, 0.16, 0.42, 12, woodMat, [0, 0.21, 0]);
+  cyl(g, 0.17, 0.17, 0.04, 12, metalMat, [0, 0.11, 0]);
+  cyl(g, 0.17, 0.17, 0.04, 12, metalMat, [0, 0.31, 0]);
+  return g;
+}
+
+function buildCypress(parent, woodMat, foliageMat, pos = [0, 0, 0], scale = 1.0) {
+  const g = group(parent, pos[0], pos[1], pos[2]);
+  g.scale.setScalar(scale);
+  cyl(g, 0.04, 0.07, 0.32, 8, woodMat, [0, 0.16, 0]);
+  cyl(g, 0.02, 0.24, 1.45, 10, foliageMat, [0, 0.96, 0]);
+  return g;
+}
+
+// Escudo Redondo Hoplita
+function buildRoundShield(parent, trimMat, goldMat, pos = [0, 0, 0], rot = [0, 0, 0], radius = 0.26) {
+  const g = group(parent, pos[0], pos[1], pos[2]);
+  g.rotation.set(rot[0], rot[1], rot[2]);
+  cyl(g, radius, radius, 0.04, 18, goldMat, [0, 0, 0], [Math.PI / 2, 0, 0]);
+  cyl(g, radius * 0.82, radius * 0.82, 0.045, 18, trimMat, [0, 0, 0.005], [Math.PI / 2, 0, 0]);
+  const boss = new T.Mesh(new T.SphereGeometry(radius * 0.25, 10, 10), goldMat);
+  boss.position.z = 0.02;
+  g.add(boss);
+  return g;
+}
+
+/* ==========================================================================
+   4. CONSTRUTOR DAS 10 EDIFICAÇÕES GREGAS (COM EVOLUÇÃO COMPLETA T1–T5)
+   ========================================================================== */
+function buildGreekBuildingsSystem(initialGod = 'zeus', initialBld = 'quarteis', initialTier = 3) {
+  const theme = GOD_THEMES[initialGod];
+
+  const M = {
+    marbleBase: new T.MeshStandardMaterial({
+      map: createMarbleTexture(false),
+      color: theme.marbleBase,
+      roughness: 0.62,
+      metalness: 0.08
+    }),
+    marbleBright: new T.MeshStandardMaterial({
+      map: createMarbleTexture(true),
+      color: theme.marbleBright,
+      roughness: 0.48,
+      metalness: 0.12
+    }),
+    trim: new T.MeshStandardMaterial({
+      color: theme.trimHex,
+      roughness: 0.36,
+      metalness: 0.32
+    }),
+    gold: new T.MeshStandardMaterial({
+      color: theme.goldHex,
+      emissive: 0x3b2200,
+      emissiveIntensity: 0.25,
+      metalness: 0.88,
+      roughness: 0.20
+    }),
+    roof: new T.MeshStandardMaterial({
+      map: createTiledRoofTexture(theme),
+      roughness: 0.55,
+      metalness: 0.16,
+      side: T.DoubleSide
+    }),
+    awning: new T.MeshStandardMaterial({
+      map: createStripedAwningTexture(theme.trimCss),
+      roughness: 0.65,
+      side: T.DoubleSide
+    }),
+    target: new T.MeshStandardMaterial({
+      map: createTargetTexture(theme.trimCss),
+      roughness: 0.6
+    }),
+    wood: new T.MeshStandardMaterial({
+      color: 0x6b3818,
+      roughness: 0.72
+    }),
+    straw: new T.MeshStandardMaterial({
+      color: theme.cropHex,
+      roughness: 0.85
+    }),
+    metalDark: new T.MeshStandardMaterial({
+      color: 0x27272a,
+      metalness: 0.75,
+      roughness: 0.35
+    }),
+    foliage: new T.MeshStandardMaterial({
+      color: 0x1e4d20,
+      roughness: 0.82
+    }),
+    water: new T.MeshStandardMaterial({
+      color: theme.waterHex,
+      emissive: theme.waterHex,
+      emissiveIntensity: 0.35,
+      roughness: 0.15,
+      metalness: 0.3
+    }),
+    flame: new T.MeshBasicMaterial({
+      color: theme.flameHex,
+      transparent: true,
+      opacity: 0.92,
+      blending: T.AdditiveBlending
+    }),
+    glow: new T.MeshStandardMaterial({
+      color: 0xffffff,
+      emissive: theme.glowHex,
+      emissiveIntensity: 3.0,
+      roughness: 0.1
+    })
+  };
+
+  const root = new T.Group();
+  const buildingRoots = {};
+  const tierMap = {};
+  const allFlames = [];
+  const allSymbols = [];
+  const animatedParts = {
+    cranes: [],
+    portalRings: [],
+    forges: [],
+    waterMeshes: [],
+    windmills: [],
+    gates: []
+  };
+
+  // Inicializar contêineres das 10 edificações
+  Object.keys(BUILDINGS_INFO).forEach(key => {
+    buildingRoots[key] = group(root);
+    buildingRoots[key].visible = (key === initialBld);
+    tierMap[key] = {};
+    for (let t = 1; t <= 5; t++) {
+      tierMap[key][t] = group(buildingRoots[key]);
+      tierMap[key][t].visible = (t === initialTier);
+    }
+  });
+
+  /* ------------------------------------------------------------------------
+     EDIFICAÇÃO 4: OFICINA DE CERCO (T3–T5) — GRANDIOSA E DETALHADA
+     ------------------------------------------------------------------------ */
+  for (let t = 3; t <= 5; t++) {
+    const g = tierMap.cerco[t];
+    const wallMat = t >= 4 ? M.marbleBright : M.marbleBase;
+    const accentMat = t === 5 ? M.gold : M.trim;
+
+    box(g, 5.2 + (t - 3) * 0.3, 0.20, 4.6 + (t - 3) * 0.3, M.marbleBase, [0, 0.10, 0]);
+    if (t >= 4) box(g, 4.9, 0.14, 4.3, M.marbleBright, [0, 0.27, 0]);
+    const y0 = t >= 4 ? 0.34 : 0.20;
+
+    // Grande nave principal de engenharia ao fundo
+    const mainH = 1.65 + (t - 3) * 0.22;
+    box(g, 4.2, mainH, 1.65, wallMat, [0, y0 + mainH * 0.5, -1.15]);
+    box(g, 4.32, 0.14, 1.76, accentMat, [0, y0 + mainH + 0.05, -1.15]);
+    buildPedimentRoof(g, 4.42, 1.85, 0.62, M.roof, wallMat, accentMat, y0 + mainH + 0.12, 0);
+
+    // Ala lateral esquerda de carpintaria e rodas
+    box(g, 1.35, 1.25, 2.05, wallMat, [-1.65, y0 + 0.625, 0.55]);
+    buildPedimentRoof(g, 1.48, 2.18, 0.45, M.roof, wallMat, accentMat, y0 + 1.25, 0);
+
+    // Grande Hangar Aberto à direita com colunas duplas para montagem de Máquinas Colosso
+    const rigH = 1.85 + (t - 3) * 0.18;
+    for (const sx of [-0.35, 1.85]) {
+      for (const sz of [-0.25, 1.55]) {
+        cyl(g, 0.10, 0.12, rigH, 12, t === 5 ? M.gold : M.marbleBright, [sx, y0 + rigH * 0.5, sz]);
+      }
+    }
+    box(g, 2.45, 0.16, 2.05, wallMat, [0.75, y0 + rigH + 0.08, 0.65]);
+    buildPedimentRoof(g, 2.55, 2.15, 0.55, M.roof, wallMat, accentMat, y0 + rigH + 0.16, 0);
+
+    // Máquina de Cerco Monumental sob o hangar (Aríete Blindado / Petrobolo Pesado)
+    const machine = group(g, 0.75, y0, 0.65);
+    box(machine, 1.15, 0.28, 1.75, M.wood, [0, 0.30, 0]);
+    for (const wx of [-0.64, 0.64]) {
+      for (const wz of [-0.55, 0.55]) {
+        cyl(machine, 0.24, 0.24, 0.09, 16, M.metalDark, [wx, 0.24, wz], [0, 0, Math.PI / 2]);
+      }
+    }
+    // Cobertura triangular blindada do aríete + tronco com cabeça dourada
+    buildPedimentRoof(machine, 1.18, 1.65, 0.48, M.roof, M.wood, M.gold, 0.44, 0);
+    cyl(machine, 0.16, 0.18, 2.05, 14, M.wood, [0, 0.62, 0.18], [Math.PI / 2, 0, 0]);
+    cyl(machine, 0.02, 0.22, 0.44, 12, M.gold, [0, 0.62, 1.32], [Math.PI / 2, 0, 0]);
+
+    // Guindaste Colosso Giratório no pátio frontal
+    const crane = group(g, -0.65, y0, 1.35);
+    cyl(crane, 0.12, 0.16, 2.05, 12, M.wood, [0, 1.02, 0]);
+    box(crane, 0.12, 0.12, 1.85, t === 5 ? M.gold : M.wood, [0, 1.88, 0.45], [-0.38, 0, 0]);
+    // Cabo e pedra suspensa
+    cyl(crane, 0.015, 0.015, 0.75, 6, M.metalDark, [0, 1.75, 1.25]);
+    const loadStone = new T.Mesh(new T.DodecahedronGeometry(0.22), M.marbleBright);
+    loadStone.position.set(0, 1.35, 1.25);
+    crane.add(loadStone);
+    animatedParts.cranes.push(crane);
+
+    // Pilhas de munição, barris e estandartes
+    for (let px = -1.35; px <= -0.85; px += 0.25) {
+      const ball = new T.Mesh(new T.SphereGeometry(0.13, 12, 12), M.marbleBright);
+      ball.position.set(px, y0 + 0.13, 1.85);
+      g.add(ball);
+    }
+    buildBanner(g, M.wood, M.trim, M.gold, [-2.15, y0, 1.65], 0);
+    buildBanner(g, M.wood, M.trim, M.gold, [2.15, y0, 1.65], 0);
+
+    if (t >= 4) {
+      buildBrazier(g, M.gold, M.flame, [-1.95, y0, 1.95], 1.0, allFlames);
+      buildBrazier(g, M.gold, M.flame, [1.95, y0, 1.95], 1.0, allFlames);
+    }
+    createDivineSymbol3D(g, M.gold, M.glow, [0, y0 + mainH + 1.05, -1.15], 1.15, allSymbols);
+  }
+
+  /* ------------------------------------------------------------------------
+     EDIFICAÇÃO 5: ARSENAL DIVINO / FORTALEZA MILITAR (T1–T5) — REFORMULADO
+     ------------------------------------------------------------------------ */
+  for (let t = 1; t <= 5; t++) {
+    const g = tierMap.arsenal[t];
+    const wallMat = t === 1 ? M.wood : (t >= 4 ? M.marbleBright : M.marbleBase);
+    const colMat = t === 5 ? M.gold : M.marbleBright;
+
+    box(g, 5.2 + t * 0.25, 0.24, 4.8 + t * 0.25, M.marbleBase, [0, 0.12, 0]);
+    if (t >= 3) box(g, 4.9 + t * 0.22, 0.16, 4.5 + t * 0.22, M.marbleBright, [0, 0.30, 0]);
+    const y0 = t >= 3 ? 0.38 : 0.24;
+
+    // Grande Cidadela Central de Dois Pavimentos
+    const fortW = 2.9 + t * 0.22;
+    const fortH = 1.75 + t * 0.26;
+    const fortD = 2.5 + t * 0.18;
+    box(g, fortW, fortH, fortD, wallMat, [0, y0 + fortH * 0.5, -0.35]);
+    box(g, fortW + 0.18, 0.16, fortD + 0.18, M.trim, [0, y0 + fortH + 0.06, -0.35]);
+    box(g, fortW + 0.22, 0.08, fortD + 0.22, M.gold, [0, y0 + fortH + 0.16, -0.35]);
+    buildPedimentRoof(g, fortW + 0.26, fortD + 0.26, 0.65 + t * 0.06, M.roof, wallMat, M.gold, y0 + fortH + 0.20, 0);
+
+    // Colunata frontal na fachada do Arsenal (T3+)
+    if (t >= 3) {
+      for (let cx = -1.15; cx <= 1.15; cx += 0.575) {
+        if (Math.abs(cx) > 0.35) {
+          cyl(g, 0.09, 0.11, fortH * 0.88, 12, colMat, [cx, y0 + fortH * 0.44, fortD * 0.5 - 0.15]);
+        }
+      }
+    }
+
+    // Portão Monumental com Arco e Escadaria
+    box(g, 1.45, fortH * 0.76, 0.55, M.marbleBright, [0, y0 + fortH * 0.38, fortD * 0.5 - 0.12]);
+    box(g, 0.85, fortH * 0.60, 0.14, t >= 3 ? M.gold : M.wood, [0, y0 + fortH * 0.30, fortD * 0.5 + 0.16]);
+
+    // 4 Torres Bastião com Guaritas de Flechas nos cantos (T2+)
+    if (t >= 2) {
+      const twH = fortH + 0.48;
+      const ox = fortW * 0.5 + 0.38;
+      const oz = fortD * 0.5 + 0.20;
+      for (const sx of [-1, 1]) {
+        for (const sz of [-1, 1]) {
+          box(g, 0.82, twH, 0.82, wallMat, [sx * ox, y0 + twH * 0.5, sz * oz - 0.35]);
+          // Guarita de flechas no topo de cada torre
+          box(g, 0.96, 0.52, 0.96, M.marbleBright, [sx * ox, y0 + twH + 0.26, sz * oz - 0.35]);
+          box(g, 1.00, 0.08, 1.00, M.trim, [sx * ox, y0 + twH + 0.54, sz * oz - 0.35]);
+          // Seteiras escuras
+          box(g, 0.10, 0.28, 0.99, M.metalDark, [sx * ox - 0.22, y0 + twH + 0.26, sz * oz - 0.35]);
+          box(g, 0.10, 0.28, 0.99, M.metalDark, [sx * ox + 0.22, y0 + twH + 0.26, sz * oz - 0.35]);
+          const cap = new T.Mesh(new T.ConeGeometry(0.76, 0.55, 4), M.roof);
+          cap.rotation.y = Math.PI / 4;
+          cap.position.set(sx * ox, y0 + twH + 0.82, sz * oz - 0.35);
+          g.add(cap);
+        }
+      }
+    }
+
+    // Rastéis de armas douradas e escudos no pátio frontal
+    for (const rx of [-1.25, 1.25]) {
+      box(g, 0.75, 0.08, 0.28, M.wood, [rx, y0 + 0.42, fortD * 0.5 + 0.55]);
+      for (let sp = -0.25; sp <= 0.25; sp += 0.125) {
+        cyl(g, 0.015, 0.015, 1.15, 6, M.gold, [rx + sp, y0 + 0.58, fortD * 0.5 + 0.55]);
+      }
+      buildRoundShield(g, M.trim, M.gold, [rx, y0 + 0.42, fortD * 0.5 + 0.72], [-0.2, 0, 0], 0.24);
+    }
+
+    if (t >= 4) {
+      buildBrazier(g, M.gold, M.flame, [-0.95, y0, fortD * 0.5 + 0.95], 1.05, allFlames);
+      buildBrazier(g, M.gold, M.flame, [0.95, y0, fortD * 0.5 + 0.95], 1.05, allFlames);
+    }
+    createDivineSymbol3D(g, M.gold, M.glow, [0, y0 + fortH + 0.52, fortD * 0.5 - 0.16], 0.9 + t * 0.08, allSymbols);
+  }
+
+  /* ------------------------------------------------------------------------
+     EDIFICAÇÃO 6: TORRE DE VIGIA COM GUARITA DE FLECHAS (T1–T5) — REFORMULADA
+     ------------------------------------------------------------------------ */
+  for (let t = 1; t <= 5; t++) {
+    const g = tierMap.torre[t];
+    const wallMat = t === 1 ? M.wood : (t >= 4 ? M.marbleBright : M.marbleBase);
+
+    box(g, 2.5 + t * 0.16, 0.26, 2.5 + t * 0.16, M.marbleBase, [0, 0.13, 0]);
+    const y0 = 0.26;
+
+    // Corpo principal da torre com contrafortes nos cantos
+    const twW = 1.22 + t * 0.08;
+    const twH = 2.0 + t * 0.38;
+    box(g, twW, twH, twW, wallMat, [0, y0 + twH * 0.5, 0]);
+    for (const sx of [-1, 1]) {
+      for (const sz of [-1, 1]) {
+        box(g, 0.24, twH * 0.85, 0.24, M.marbleBright, [sx * (twW * 0.48), y0 + twH * 0.425, sz * (twW * 0.48)]);
+      }
+    }
+
+    // Faixa colorida da divindade e escudos pendurados nas faces
+    box(g, twW + 0.14, 0.14, twW + 0.14, M.trim, [0, y0 + twH * 0.62, 0]);
+    buildRoundShield(g, M.trim, M.gold, [0, y0 + twH * 0.62, twW * 0.5 + 0.09], [0, 0, 0], 0.26);
+    buildRoundShield(g, M.trim, M.gold, [0, y0 + twH * 0.62, -twW * 0.5 - 0.09], [0, Math.PI, 0], 0.26);
+
+    // GUARITA DE FLECHAS SALIENTE NO TOPO (Machicolation / Sentry Box com Seteiras!)
+    const gBoxY = y0 + twH;
+    const gBoxW = twW + 0.52;
+    const gBoxH = 0.72 + (t >= 4 ? 0.14 : 0);
+
+    // Cachorros / mísulas de sustentação da guarita
+    for (const off of [-0.36, 0, 0.36]) {
+      box(g, 0.12, 0.22, gBoxW - 0.1, M.marbleBright, [off, gBoxY + 0.06, 0]);
+      box(g, gBoxW - 0.1, 0.22, 0.12, M.marbleBright, [0, gBoxY + 0.06, off]);
+    }
+
+    // Estrutura da Guarita de Flechas
+    box(g, gBoxW, gBoxH, gBoxW, t === 5 ? M.gold : M.marbleBright, [0, gBoxY + 0.16 + gBoxH * 0.5, 0]);
+    box(g, gBoxW + 0.08, 0.10, gBoxW + 0.08, M.trim, [0, gBoxY + 0.16 + gBoxH, 0]);
+
+    // Seteiras de Flechas (aberturas verticais nas 4 faces + aljava de flechas!)
+    for (const sx of [-0.42, 0, 0.42]) {
+      box(g, 0.09, gBoxH * 0.58, gBoxW + 0.04, M.metalDark, [sx, gBoxY + 0.16 + gBoxH * 0.52, 0]);
+      box(g, gBoxW + 0.04, gBoxH * 0.58, 0.09, M.metalDark, [0, gBoxY + 0.16 + gBoxH * 0.52, sx]);
+    }
+    // Pontas de flechas prontas apontando para fora nas seteiras
+    for (const dir of [1, -1]) {
+      cyl(g, 0.005, 0.025, 0.45, 6, M.gold, [0, gBoxY + 0.52, dir * (gBoxW * 0.5 + 0.18)], [dir * Math.PI / 2, 0, 0]);
+      cyl(g, 0.005, 0.025, 0.45, 6, M.gold, [dir * (gBoxW * 0.5 + 0.18), gBoxY + 0.52, 0], [0, 0, -dir * Math.PI / 2]);
+    }
+
+    const roofY = gBoxY + 0.20 + gBoxH;
+    // Telhado piramidal da Guarita + Braseiro / Símbolo Divino
+    const pyr = new T.Mesh(new T.ConeGeometry(gBoxW * 0.82, 0.85, 4), M.roof);
+    pyr.rotation.y = Math.PI / 4;
+    pyr.position.set(0, roofY + 0.42, 0);
+    pyr.castShadow = true;
+    g.add(pyr);
+
+    if (t >= 4) {
+      buildBrazier(g, M.gold, M.flame, [0, roofY + 0.82, 0], 0.85, allFlames);
+    }
+    if (t === 5) {
+      createDivineSymbol3D(g, M.gold, M.glow, [0, roofY + 1.85, 0], 0.95, allSymbols);
+    }
+    buildBanner(g, M.wood, M.trim, M.gold, [twW * 0.5 + 0.38, y0, twW * 0.5 + 0.28], 0);
+  }
+
+  /* ------------------------------------------------------------------------
+     EDIFICAÇÃO 7: FAZENDA (T1–T5) — MOINHO DE VENTO, SILO, POMAR E IRRIGAÇÃO
+     ------------------------------------------------------------------------ */
+  for (let t = 1; t <= 5; t++) {
+    const g = tierMap.fazenda[t];
+    const wallMat = t === 1 ? M.wood : (t >= 4 ? M.marbleBright : M.marbleBase);
+
+    box(g, 5.2, 0.12, 4.6, M.marbleBase, [0, 0.06, 0]);
+    const y0 = 0.12;
+
+    // Celeiro Principal com telhado grego
+    const barnH = 1.15 + t * 0.14;
+    box(g, 1.55, barnH, 1.75, wallMat, [-1.55, y0 + barnH * 0.5, -1.15]);
+    buildPedimentRoof(g, 1.68, 1.88, 0.48, M.roof, wallMat, M.trim, y0 + barnH, 0);
+
+    // Moinho de Vento Grego com pás giratórias (T3+)
+    if (t >= 3) {
+      const millH = 1.65 + (t - 3) * 0.22;
+      cyl(g, 0.46, 0.58, millH, 14, wallMat, [-0.32, y0 + millH * 0.5, -1.25]);
+      box(g, 1.12, 0.10, 1.12, M.trim, [-0.32, y0 + millH, -1.25]);
+      const cap = new T.Mesh(new T.ConeGeometry(0.62, 0.52, 14), M.roof);
+      cap.position.set(-0.32, y0 + millH + 0.30, -1.25);
+      g.add(cap);
+
+      // Rotor com 4 velas/pás
+      const rotor = group(g, -0.32, y0 + millH * 0.78, -0.68);
+      cyl(rotor, 0.06, 0.06, 0.24, 8, M.gold, [0, 0, 0], [Math.PI / 2, 0, 0]);
+      for (let b = 0; b < 4; b++) {
+        const blade = group(rotor, 0, 0, 0.08);
+        blade.rotation.z = (b * Math.PI) / 2;
+        box(blade, 0.05, 1.05, 0.04, M.wood, [0, 0.52, 0]);
+        box(blade, 0.24, 0.78, 0.02, M.awning, [0.10, 0.58, 0.02]);
+      }
+      animatedParts.windmills.push(rotor);
+    }
+
+    // Campos de cultivo dourados/sagrados densos
+    const rows = 5 + t;
+    const cropH = 0.16 + t * 0.05;
+    for (let r = 0; r < rows; r++) {
+      const rz = -0.35 + r * 0.25;
+      box(g, 2.55, 0.06, 0.16, M.wood, [1.05, y0 + 0.03, rz]);
+      box(g, 2.48, cropH, 0.12, M.straw, [1.05, y0 + 0.06 + cropH * 0.5, rz]);
+    }
+
+    // Horta de abóboras / melões dourados no canto frontal
+    for (let px = -0.45; px <= 0.25; px += 0.35) {
+      const melon = new T.Mesh(new T.SphereGeometry(0.14, 10, 10), M.gold);
+      melon.scale.set(1.2, 0.85, 1.2);
+      melon.position.set(px, y0 + 0.12, 1.72);
+      g.add(melon);
+    }
+
+    // Canal de irrigação cristalino
+    if (t >= 3) {
+      const waterCanal = box(g, 0.22, 0.10, 2.75, M.water, [-0.42, y0 + 0.05, 0.75]);
+      animatedParts.waterMeshes.push(waterCanal);
+    }
+
+    // Carroça de colheita e ciprestes
+    box(g, 0.92, 0.20, 0.56, M.wood, [-1.45, y0 + 0.25, 1.05]);
+    cyl(g, 0.20, 0.20, 0.07, 12, M.metalDark, [-1.45, y0 + 0.20, 1.36], [Math.PI / 2, 0, 0]);
+    cyl(g, 0.20, 0.20, 0.07, 12, M.metalDark, [-1.45, y0 + 0.20, 0.74], [Math.PI / 2, 0, 0]);
+    box(g, 0.58, 0.26, 0.40, M.straw, [-1.45, y0 + 0.45, 1.05]);
+    buildCypress(g, M.wood, M.foliage, [2.25, 0, -1.65], 0.9);
+
+    if (t === 5) {
+      createDivineSymbol3D(g, M.gold, M.glow, [-1.55, y0 + barnH + 0.78, -1.15], 0.95, allSymbols);
+    }
+  }
+
+  /* ------------------------------------------------------------------------
+     EDIFICAÇÃO 8: PORTAL DO TITÃ (T4–T5) — INICIA NA ERA MÍTICA (T4)
+     ------------------------------------------------------------------------ */
+  for (let t = 4; t <= 5; t++) {
+    const g = tierMap.titan[t];
+    const wallMat = M.marbleBright;
+    const isApex = (t === 5);
+
+    // Grande Plataforma Escalonada de Mármore/Obsidiana
+    box(g, 5.4, 0.24, 4.8, M.marbleBase, [0, 0.12, 0]);
+    box(g, 5.0, 0.18, 4.4, wallMat, [0, 0.33, 0]);
+    const y0 = 0.42;
+
+    // Fosso Dimensional Circular Incandescente
+    const pit = new T.Mesh(new T.CylinderGeometry(1.55, 1.55, 0.08, 32), M.metalDark);
+    pit.position.set(0, y0 + 0.04, 0);
+    g.add(pit);
+    const pitRing = new T.Mesh(new T.RingGeometry(1.35, 1.62, 32), M.glow);
+    pitRing.rotation.x = -Math.PI / 2;
+    pitRing.position.set(0, y0 + 0.09, 0);
+    g.add(pitRing);
+
+    // Pilares Colossais Duplos do Arco do Titã
+    const archH = isApex ? 3.65 : 2.95;
+    for (const sx of [-1.65, 1.65]) {
+      box(g, 0.85, archH, 0.95, wallMat, [sx, y0 + archH * 0.5, 0]);
+      box(g, 0.95, 0.18, 1.05, M.trim, [sx, y0 + archH * 0.35, 0]);
+      box(g, 0.95, 0.18, 1.05, M.trim, [sx, y0 + archH * 0.72, 0]);
+      // Colunas Douradas internas
+      cyl(g, 0.15, 0.18, archH, 14, M.gold, [sx * 0.68, y0 + archH * 0.5, 0.45]);
+      cyl(g, 0.15, 0.18, archH, 14, M.gold, [sx * 0.68, y0 + archH * 0.5, -0.45]);
+    }
+
+    // Verga Monumental e Frontão Titânico
+    const lintelW = isApex ? 4.35 : 3.45;
+    box(g, lintelW, 0.52, 1.05, wallMat, [0, y0 + archH + 0.26, 0]);
+    box(g, lintelW + 0.16, 0.14, 1.14, M.gold, [0, y0 + archH + 0.56, 0]);
+    if (isApex) {
+      buildPedimentRoof(g, 4.45, 1.18, 0.82, M.roof, wallMat, M.gold, y0 + archH + 0.62, 0);
+    }
+
+    // Vórtice Cósmico Duplo no Centro do Portal
+    const vortexOuter = new T.Mesh(new T.TorusGeometry(isApex ? 1.28 : 1.05, 0.11, 14, 36), M.glow);
+    vortexOuter.position.set(0, y0 + archH * 0.54, 0);
+    g.add(vortexOuter);
+    animatedParts.portalRings.push(vortexOuter);
+
+    const vortexInner = new T.Mesh(new T.TorusGeometry(isApex ? 0.82 : 0.65, 0.07, 12, 28), M.gold);
+    vortexInner.position.set(0, y0 + archH * 0.54, 0);
+    g.add(vortexInner);
+    animatedParts.portalRings.push(vortexInner);
+
+    // 4 Braseiros Gigantes e Símbolo Divino Supremo
+    for (const sx of [-2.05, 2.05]) {
+      for (const sz of [-1.45, 1.45]) {
+        buildBrazier(g, M.gold, M.flame, [sx, y0, sz], isApex ? 1.2 : 1.0, allFlames);
+      }
+    }
+    createDivineSymbol3D(g, M.gold, M.glow, [0, y0 + archH + (isApex ? 1.65 : 0.95), 0], 1.35, allSymbols);
+  }
+
+  /* ------------------------------------------------------------------------
+     EDIFICAÇÃO 9: MERCADO / ÁGORA (T3–T5) — INICIA NA ERA HEROICA (T3)
+     ------------------------------------------------------------------------ */
+  for (let t = 3; t <= 5; t++) {
+    const g = tierMap.mercado[t];
+    const wallMat = t >= 4 ? M.marbleBright : M.marbleBase;
+
+    box(g, 5.1 + (t - 3) * 0.25, 0.18, 4.6 + (t - 3) * 0.25, M.marbleBase, [0, 0.09, 0]);
+    const y0 = 0.18;
+
+    // Grande Edifício Mercantil de Dois Pavimentos
+    const bldH = 1.75 + (t - 3) * 0.18;
+    box(g, 3.05, bldH, 1.45, wallMat, [-0.45, y0 + bldH * 0.5, -1.15]);
+    buildPedimentRoof(g, 3.18, 1.58, 0.52, M.roof, wallMat, M.trim, y0 + bldH, 0);
+
+    // Ala lateral colunada à esquerda
+    box(g, 1.15, 1.15, 1.35, wallMat, [-1.95, y0 + 0.575, -0.35]);
+    buildPedimentRoof(g, 1.25, 1.45, 0.38, M.roof, wallMat, M.trim, y0 + 1.15, 0);
+
+    // Sacada Balaustrada e Escadaria Lateral Monumental
+    box(g, 2.95, 0.09, 0.52, M.marbleBright, [-0.45, y0 + 0.95, -0.25]);
+    box(g, 2.95, 0.07, 0.07, M.trim, [-0.45, y0 + 1.22, 0.0]);
+    for (let bx = -1.85; bx <= 0.95; bx += 0.24) {
+      cyl(g, 0.022, 0.022, 0.26, 6, t === 5 ? M.gold : M.metalDark, [bx, y0 + 1.08, 0.0]);
+    }
+    box(g, 0.46, 0.09, 1.32, M.marbleBright, [1.28, y0 + 0.48, 0.25], [0.72, 0, 0]);
+
+    // 4 Barracas Ricas com Toldos Listrados nas Cores da Divindade
+    const stalls = [
+      { pos: [-1.25, y0, 1.28], rot: 0.28 },
+      { pos: [0.05, y0, 1.38], rot: -0.15 },
+      { pos: [1.35, y0, 1.12], rot: -0.42 },
+      { pos: [1.85, y0, -0.15], rot: -1.15 }
+    ];
+    for (let s = 0; s < stalls.length; s++) {
+      const st = group(g, stalls[s].pos[0], stalls[s].pos[1], stalls[s].pos[2]);
+      st.rotation.y = stalls[s].rot;
+      box(st, 0.98, 0.36, 0.52, M.wood, [0, 0.18, 0]);
+      // Mercadorias (frutas douradas, tecidos e especiarias)
+      box(st, 0.86, 0.09, 0.42, s % 2 === 0 ? M.gold : M.trim, [0, 0.38, 0]);
+      cyl(st, 0.028, 0.028, 0.84, 8, t === 5 ? M.gold : M.wood, [-0.44, 0.42, -0.20]);
+      cyl(st, 0.028, 0.028, 0.84, 8, t === 5 ? M.gold : M.wood, [0.44, 0.42, -0.20]);
+      const awning = new T.Mesh(new T.BoxGeometry(1.04, 0.04, 0.72), M.awning);
+      awning.position.set(0, 0.78, 0.05);
+      awning.rotation.x = 0.38;
+      awning.castShadow = true;
+      st.add(awning);
+    }
+
+    // Caixotes, barris, ânforas e carroça de mercadorias no pátio
+    box(g, 0.40, 0.34, 0.40, M.wood, [-0.45, y0 + 0.17, 0.42]);
+    buildBarrel(g, M.wood, M.metalDark, [0.18, y0, 0.52], 0.9);
+    cyl(g, 0.11, 0.15, 0.38, 12, M.gold, [-0.12, y0 + 0.19, 0.62]);
+
+    if (t >= 4) {
+      buildBrazier(g, M.gold, M.flame, [-2.05, y0, 1.55], 0.9, allFlames);
+    }
+    createDivineSymbol3D(g, M.gold, M.glow, [-0.45, y0 + bldH + 0.85, -1.15], 1.05, allSymbols);
+  }
+
+  /* ------------------------------------------------------------------------
+     EDIFICAÇÃO 10: FERREIRO (T2–T5) — ELABORADO COM RODA D'ÁGUA E FORJA DUPLA
+     ------------------------------------------------------------------------ */
+  for (let t = 2; t <= 5; t++) {
+    const g = tierMap.ferreiro[t];
+    const wallMat = t >= 4 ? M.marbleBright : M.marbleBase;
+
+    box(g, 4.9 + (t - 2) * 0.22, 0.18, 4.4 + (t - 2) * 0.22, M.marbleBase, [0, 0.09, 0]);
+    const y0 = 0.18;
+
+    // Oficina principal à esquerda
+    const mainH = 1.38 + (t - 2) * 0.16;
+    box(g, 1.75, mainH, 2.95, wallMat, [-1.15, y0 + mainH * 0.5, -0.35]);
+    buildPedimentRoof(g, 1.88, 3.08, 0.52, M.roof, wallMat, M.trim, y0 + mainH, 0);
+
+    // Ala anexa aberta de fundição à direita
+    box(g, 2.05, 1.05, 1.25, wallMat, [0.75, y0 + 0.525, -0.95]);
+    buildPedimentRoof(g, 2.15, 1.38, 0.42, M.roof, wallMat, M.trim, y0 + 1.05, 0);
+
+    // Alto-Forno Circular de Pedra com Chaminé e Brasas Vivas
+    const furnace = group(g, -0.05, y0, 1.22);
+    cyl(furnace, 0.58, 0.65, 0.42, 18, M.marbleBase, [0, 0.21, 0]);
+    cyl(furnace, 0.30, 0.48, 0.68, 18, M.marbleBright, [0, 0.74, 0]);
+    box(furnace, 0.32, 0.28, 0.18, M.metalDark, [0, 0.32, 0.54]); // Boca frontal do forno
+    const emberFront = new T.Mesh(new T.BoxGeometry(0.24, 0.20, 0.05), M.flame);
+    emberFront.position.set(0, 0.32, 0.62);
+    furnace.add(emberFront);
+    allFlames.push(emberFront);
+
+    const emberTop = new T.Mesh(new T.CylinderGeometry(0.22, 0.22, 0.06, 14), M.flame);
+    emberTop.position.set(0, 1.08, 0);
+    furnace.add(emberTop);
+    allFlames.push(emberTop);
+    animatedParts.forges.push(furnace);
+
+    // Cocho de água para têmpera + Bigorna Dourada/Aço + Rastel de Armaduras
+    box(g, 0.78, 0.28, 0.38, M.wood, [0.85, y0 + 0.14, 0.92]);
+    const quenchWater = box(g, 0.68, 0.07, 0.28, M.water, [0.85, y0 + 0.26, 0.92]);
+    animatedParts.waterMeshes.push(quenchWater);
+
+    box(g, 0.38, 0.24, 0.20, M.metalDark, [0.48, y0 + 0.12, 0.18]);
+    box(g, 0.52, 0.12, 0.22, t >= 4 ? M.gold : M.metalDark, [0.48, y0 + 0.30, 0.18]);
+
+    // Roda hidráulica lateral giratória para fole mecânico (T3+)
+    if (t >= 3) {
+      const wheel = group(g, -2.08, y0 + 0.62, -0.35);
+      const rim = new T.Mesh(new T.TorusGeometry(0.52, 0.05, 8, 20), M.wood);
+      rim.rotation.y = Math.PI / 2;
+      wheel.add(rim);
+      for (let sp = 0; sp < 4; sp++) {
+        const spoke = box(wheel, 0.04, 1.02, 0.06, M.wood, [0, 0, 0], [(sp * Math.PI) / 4, 0, 0]);
+        spoke.castShadow = true;
+      }
+      animatedParts.windmills.push(wheel);
+    }
+
+    buildBarrel(g, M.wood, M.metalDark, [-0.25, y0, 0.15], 0.92);
+    buildRoundShield(g, M.trim, M.gold, [1.72, y0 + 0.28, 0.12], [0, 0.5, -0.25], 0.26);
+    buildRoundShield(g, M.trim, M.gold, [1.78, y0 + 0.28, 0.52], [0, 0.5, -0.25], 0.26);
+
+    if (t === 5) {
+      buildBrazier(g, M.gold, M.flame, [-2.05, y0, 1.45], 0.95, allFlames);
+      createDivineSymbol3D(g, M.gold, M.glow, [-1.15, y0 + mainH + 0.82, -0.35], 1.05, allSymbols);
+    }
+  }
+
+  /* ------------------------------------------------------------------------
+     EDIFICAÇÃO 11: MURALHA & PORTÃO ARTICULADO (T1–T5) — NOVO!
+     Muralha grega evolutiva com duas torres bastião com guaritas de flechas,
+     passadiço superior, ameias e PORTÃO DUPLO QUE ABRE E FECHA EM 3D!
+     ------------------------------------------------------------------------ */
+  for (let t = 1; t <= 5; t++) {
+    const g = tierMap.muro[t];
+    const wallMat = t === 1 ? M.wood : (t >= 4 ? M.marbleBright : M.marbleBase);
+    const gateMat = t === 1 ? M.wood : (t >= 4 ? M.gold : M.trim);
+
+    box(g, 6.2, 0.20, 2.6, M.marbleBase, [0, 0.10, 0]);
+    const y0 = 0.20;
+
+    const wallH = 1.25 + t * 0.24;
+    const twH = wallH + 0.65;
+
+    // Trechos esquerdo e direito da muralha
+    for (const sx of [-1, 1]) {
+      box(g, 1.45, wallH, 0.72, wallMat, [sx * 2.15, y0 + wallH * 0.5, 0]);
+      box(g, 1.50, 0.12, 0.82, M.trim, [sx * 2.15, y0 + wallH + 0.04, 0]);
+      // Ameias superiores
+      for (let mx = -0.52; mx <= 0.52; mx += 0.52) {
+        box(g, 0.28, 0.24, 0.16, wallMat, [sx * 2.15 + mx, y0 + wallH + 0.20, 0.30]);
+      }
+
+      // Torres Bastião flanqueando o Portão
+      const bx = sx * 1.22;
+      box(g, 0.92, twH, 1.05, wallMat, [bx, y0 + twH * 0.5, 0]);
+      box(g, 1.04, 0.14, 1.16, M.trim, [bx, y0 + twH + 0.05, 0]);
+      if (t >= 3) {
+        // Guarita de flechas e telhado nas torres do portão
+        box(g, 1.02, 0.45, 1.14, M.marbleBright, [bx, y0 + twH + 0.32, 0]);
+        box(g, 0.10, 0.24, 1.18, M.metalDark, [bx, y0 + twH + 0.32, 0]);
+        const cap = new T.Mesh(new T.ConeGeometry(0.84, 0.58, 4), M.roof);
+        cap.rotation.y = Math.PI / 4;
+        cap.position.set(bx, y0 + twH + 0.82, 0);
+        g.add(cap);
+      }
+      buildRoundShield(g, M.trim, M.gold, [bx, y0 + twH * 0.65, 0.55], [0, 0, 0], 0.24);
+      buildBanner(g, M.wood, M.trim, M.gold, [bx + sx * 0.35, y0, 0.68], 0);
+    }
+
+    // Arco Superior (Passadiço acima do Portão)
+    const archTopY = y0 + wallH;
+    box(g, 1.65, 0.45, 0.85, wallMat, [0, archTopY - 0.12, 0]);
+    box(g, 1.72, 0.12, 0.92, M.gold, [0, archTopY + 0.14, 0]);
+    createDivineSymbol3D(g, M.gold, M.glow, [0, archTopY + 0.58, 0.38], 0.82 + t * 0.06, allSymbols);
+
+    // PORTÃO DUPLO ARTICULADO (Folha Esquerda e Folha Direita com Pivô nas Dobradiças!)
+    const doorH = wallH - 0.36;
+    const leftPivot = group(g, -0.74, y0, 0);
+    const leftDoor = box(leftPivot, 0.72, doorH, 0.14, gateMat, [0.36, doorH * 0.5, 0]);
+    box(leftDoor, 0.62, 0.10, 0.18, M.gold, [0, 0.25, 0]);
+    box(leftDoor, 0.62, 0.10, 0.18, M.gold, [0, -0.25, 0]);
+
+    const rightPivot = group(g, 0.74, y0, 0);
+    const rightDoor = box(rightPivot, 0.72, doorH, 0.14, gateMat, [-0.36, doorH * 0.5, 0]);
+    box(rightDoor, 0.62, 0.10, 0.18, M.gold, [0, 0.25, 0]);
+    box(rightDoor, 0.62, 0.10, 0.18, M.gold, [0, -0.25, 0]);
+
+    animatedParts.gates.push({ leftPivot, rightPivot });
+
+    if (t >= 4) {
+      buildBrazier(g, M.gold, M.flame, [-1.22, y0, 0.78], 0.85, allFlames);
+      buildBrazier(g, M.gold, M.flame, [1.22, y0, 0.78], 0.85, allFlames);
+    }
+  }
+
+  /* ------------------------------------------------------------------------
+     EDIFICAÇÃO 2: ESTÁBULOS (T1–T5) — Ref. image_6e0aee.png
+     Pavilhão de dois andares, cobertura lateral aberta com baias para cavalos,
+     montes de feno dourado, barris e estandarte de ferradura.
+     ------------------------------------------------------------------------ */
+  for (let t = 1; t <= 5; t++) {
+    const g = tierMap.estabulos[t];
+    const wallMat = t === 1 ? M.wood : (t >= 4 ? M.marbleBright : M.marbleBase);
+    const colMat = t === 5 ? M.gold : M.wood;
+
+    box(g, 4.5 + t * 0.2, 0.16, 4.0 + t * 0.2, M.marbleBase, [0, 0.08, 0]);
+    const y0 = 0.16;
+
+    // Celeiro principal (ganha segundo andar no T3+)
+    const barnH = t >= 3 ? 1.65 : 1.15;
+    box(g, 3.1 + t * 0.15, barnH, 1.55, wallMat, [0.35, y0 + barnH * 0.5, -0.75]);
+    buildPedimentRoof(g, 3.25 + t * 0.15, 1.68, 0.48, M.roof, wallMat, M.trim, y0 + barnH, 0);
+
+    // Galeria lateral aberta em L com baias e postes
+    const stallH = 0.98;
+    const roofSlope = new T.Mesh(new T.BoxGeometry(3.2, 0.07, 1.35), M.roof);
+    roofSlope.position.set(0.15, y0 + stallH + 0.12, 0.55);
+    roofSlope.rotation.x = 0.22;
+    roofSlope.castShadow = true;
+    g.add(roofSlope);
+
+    // Postes das baias
+    for (let sx = -1.25; sx <= 1.55; sx += 0.70) {
+      cyl(g, 0.055, 0.065, stallH, 8, colMat, [sx, y0 + stallH * 0.5, 1.12]);
+      if (sx < 1.5) {
+        box(g, 0.64, 0.36, 0.05, M.wood, [sx + 0.35, y0 + 0.22, 1.12]);
+      }
+    }
+
+    // Cavalos estilizados dentro das baias (T2+)
+    const numHorses = Math.min(t, 3);
+    for (let h = 0; h < numHorses; h++) {
+      const hx = -0.90 + h * 0.70;
+      const horseMat = h % 2 === 0 ? M.marbleBright : M.wood;
+      box(g, 0.28, 0.34, 0.62, horseMat, [hx, y0 + 0.52, 0.65]); // Corpo
+      box(g, 0.14, 0.36, 0.18, horseMat, [hx, y0 + 0.76, 0.92], [0.35, 0, 0]); // Pescoço/Cabeça
+    }
+
+    // Montes de feno e barris no pátio frontal
+    const hay1 = new T.Mesh(new T.SphereGeometry(0.42, 12, 10), M.straw);
+    hay1.scale.set(1.2, 0.65, 1.0);
+    hay1.position.set(-0.35, y0 + 0.18, 1.65);
+    g.add(hay1);
+
+    const hay2 = new T.Mesh(new T.SphereGeometry(0.32, 12, 10), M.straw);
+    hay2.scale.set(1.1, 0.6, 1.0);
+    hay2.position.set(0.22, y0 + 0.14, 1.75);
+    g.add(hay2);
+
+    buildBarrel(g, M.wood, M.metalDark, [1.85, y0, 0.35], 0.95);
+    buildBarrel(g, M.wood, M.metalDark, [2.15, y0, 0.55], 0.85);
+    buildBanner(g, M.wood, M.trim, M.gold, [0.75, y0, 1.85], 0);
+
+    if (t >= 4) {
+      buildBrazier(g, M.gold, M.flame, [-1.85, y0, 1.55], 0.85, allFlames);
+    }
+    if (t === 5) {
+      createDivineSymbol3D(g, M.gold, M.glow, [0.35, y0 + barnH + 0.78, -0.75], 1.0, allSymbols);
+    }
+  }
+
+  /* ------------------------------------------------------------------------
+     EDIFICAÇÃO 3: CENTRO DE ARQUEARIA (T1–T5) — Ref. image_6e0b63.png
+     Edifício alongado com galeria lateral coberta repleta de escudos redondos
+     e campo de tiro frontal com alvos circulares e flechas cravadas.
+     ------------------------------------------------------------------------ */
+  for (let t = 1; t <= 5; t++) {
+    const g = tierMap.arquearia[t];
+    const wallMat = t === 1 ? M.wood : (t >= 4 ? M.marbleBright : M.marbleBase);
+
+    box(g, 4.6 + t * 0.2, 0.16, 4.1 + t * 0.2, M.marbleBase, [0, 0.08, 0]);
+    const y0 = 0.16;
+
+    // Edifício principal alongado à esquerda
+    const mainH = 1.15 + t * 0.14;
+    box(g, 1.65, mainH, 2.85 + t * 0.15, wallMat, [-1.05, y0 + mainH * 0.5, -0.35]);
+    buildPedimentRoof(g, 1.78, 2.98 + t * 0.15, 0.48, M.roof, wallMat, M.trim, y0 + mainH, 0);
+
+    // Galeria lateral direita coberta com fileira de escudos redondos (Ref. image_6e0b63.png!)
+    if (t >= 2) {
+      const galW = 2.0 + t * 0.15;
+      box(g, galW, 0.85, 0.72, wallMat, [0.85, y0 + 0.425, -0.95]);
+      const galRoof = new T.Mesh(new T.BoxGeometry(galW + 0.15, 0.07, 0.92), M.roof);
+      galRoof.position.set(0.85, y0 + 0.95, -0.88);
+      galRoof.rotation.x = 0.24;
+      galRoof.castShadow = true;
+      g.add(galRoof);
+
+      // Escudos redondos alinhados sob a galeria
+      const shieldsCount = Math.min(t + 1, 5);
+      for (let s = 0; s < shieldsCount; s++) {
+        const sx = 0.05 + s * 0.44;
+        buildRoundShield(g, M.trim, M.gold, [sx, y0 + 0.44, -0.56], [0, 0, 0], 0.20);
+      }
+    }
+
+    // Cercas de demarcação e Alvos de Tiro no pátio externo (Ref. image_6e0b63.png!)
+    box(g, 1.85, 0.05, 0.05, M.wood, [0.35, y0 + 0.32, 0.45]);
+    box(g, 2.15, 0.05, 0.05, M.wood, [0.55, y0 + 0.32, 1.15]);
+
+    const numTargets = Math.min(t, 3);
+    for (let tg = 0; tg < numTargets; tg++) {
+      const tx = 0.15 + tg * 0.72;
+      const tz = 1.48 - tg * 0.15;
+      // Tripé de madeira
+      cyl(g, 0.025, 0.03, 0.85, 6, M.wood, [tx, y0 + 0.42, tz - 0.08], [-0.2, 0, 0]);
+      // Disco do alvo
+      const disc = new T.Mesh(new T.CylinderGeometry(0.28, 0.28, 0.06, 20), M.target);
+      disc.rotation.set(Math.PI / 2 - 0.18, 0, 0);
+      disc.position.set(tx, y0 + 0.46, tz);
+      disc.castShadow = true;
+      g.add(disc);
+      // Flechas cravadas no alvo
+      cyl(g, 0.008, 0.008, 0.42, 6, M.gold, [tx + 0.04, y0 + 0.48, tz + 0.18], [Math.PI / 2 - 0.15, 0.1, 0]);
+    }
+
+    buildBanner(g, M.wood, M.trim, M.gold, [-0.25, y0, 1.65], 0);
+    if (t === 5) {
+      buildBrazier(g, M.gold, M.flame, [-1.95, y0, 1.35], 0.9, allFlames);
+      createDivineSymbol3D(g, M.gold, M.glow, [-1.05, y0 + mainH + 0.78, -0.35], 1.0, allSymbols);
+    }
+  }
+
+  /* ------------------------------------------------------------------------
+     EDIFICAÇÃO 1: QUARTÉIS (T1–T5) — Ref. image_6e078a.png
+     Complexo militar em L/U com telhado de telhas caneladas, pórtico de mármore,
+     estandartes da divindade e pátio de treinamento de hoplitas.
+     ------------------------------------------------------------------------ */
+  for (let t = 1; t <= 5; t++) {
+    const g = tierMap.quarteis[t];
+    const wallMat = t === 1 ? M.wood : (t >= 4 ? M.marbleBright : M.marbleBase);
+
+    box(g, 4.8 + t * 0.2, 0.18, 4.4 + t * 0.2, M.marbleBase, [0, 0.09, 0]);
+    const y0 = 0.18;
+
+    // Nave principal ao fundo
+    const mainH = 1.25 + t * 0.15;
+    box(g, 3.6 + t * 0.15, mainH, 1.45, wallMat, [0, y0 + mainH * 0.5, -0.95]);
+    buildPedimentRoof(g, 3.75 + t * 0.15, 1.58, 0.50, M.roof, wallMat, M.trim, y0 + mainH, 0);
+
+    // Pórtico central de entrada
+    box(g, 1.15, mainH * 0.85, 0.48, M.marbleBright, [0, y0 + mainH * 0.425, -0.05]);
+    box(g, 0.65, mainH * 0.65, 0.10, t >= 4 ? M.gold : M.wood, [0, y0 + mainH * 0.325, 0.20]);
+    buildPedimentRoof(g, 1.28, 0.58, 0.34, M.roof, M.marbleBright, M.trim, y0 + mainH * 0.85, 0);
+
+    // Alas laterais em L (T3) e em U (T4+)
+    if (t >= 3) {
+      box(g, 1.05, 1.05, 1.85, wallMat, [-1.45, y0 + 0.525, 0.55]);
+      buildPedimentRoof(g, 1.18, 1.98, 0.40, M.roof, wallMat, M.trim, y0 + 1.05, 0);
+    }
+    if (t >= 4) {
+      box(g, 1.05, 1.05, 1.85, wallMat, [1.45, y0 + 0.525, 0.55]);
+      buildPedimentRoof(g, 1.18, 1.98, 0.40, M.roof, wallMat, M.trim, y0 + 1.05, 0);
+    }
+
+    // Boneco de treino de madeira e rastel de lanças no pátio
+    cyl(g, 0.06, 0.08, 1.05, 8, M.wood, [-0.55, y0 + 0.525, 0.95]);
+    box(g, 0.68, 0.08, 0.08, M.wood, [-0.55, y0 + 0.82, 0.95]);
+    buildRoundShield(g, M.trim, M.gold, [-0.22, y0 + 0.78, 0.98], [0, 0, 0], 0.18);
+
+    buildBanner(g, M.wood, M.trim, M.gold, [-1.35, y0, 1.65], 0);
+    buildBanner(g, M.wood, M.trim, M.gold, [1.35, y0, 1.65], 0);
+
+    if (t === 5) {
+      buildBrazier(g, M.gold, M.flame, [-0.85, y0, 1.55], 0.95, allFlames);
+      buildBrazier(g, M.gold, M.flame, [0.85, y0, 1.55], 0.95, allFlames);
+      createDivineSymbol3D(g, M.gold, M.glow, [0, y0 + mainH + 0.78, -0.95], 1.05, allSymbols);
+    }
+  }
+
+  // Aura Circular de Bênção no Solo
+  const auraRing = new T.Mesh(
+    new T.RingGeometry(3.35, 3.72, 64),
+    new T.MeshBasicMaterial({
+      color: theme.glowHex,
+      transparent: true,
+      opacity: 0.24,
+      blending: T.AdditiveBlending,
+      side: T.DoubleSide,
+      depthWrite: false
+    })
+  );
+  auraRing.rotation.x = -Math.PI / 2;
+  auraRing.position.y = 0.03;
+  root.add(auraRing);
+
+  function updateVisibility(bldKey, tierNum) {
+    Object.keys(buildingRoots).forEach(k => {
+      const isBld = (k === bldKey);
+      buildingRoots[k].visible = isBld;
+      if (isBld) {
+        for (let t = 1; t <= 5; t++) {
+          tierMap[k][t].visible = (t === tierNum);
+        }
+      }
+    });
+  }
+
+  function applyGodTheme(godKey) {
+    const next = GOD_THEMES[godKey] || GOD_THEMES.zeus;
+    M.marbleBase.color.setHex(next.marbleBase);
+    M.marbleBright.color.setHex(next.marbleBright);
+    M.trim.color.setHex(next.trimHex);
+    M.gold.color.setHex(next.goldHex);
+    M.flame.color.setHex(next.flameHex);
+    M.glow.emissive.setHex(next.glowHex);
+    M.water.color.setHex(next.waterHex);
+    M.water.emissive.setHex(next.waterHex);
+    M.straw.color.setHex(next.cropHex);
+    auraRing.material.color.setHex(next.glowHex);
+
+    allSymbols.forEach(sym => {
+      sym.zeusBolt.visible = (godKey === 'zeus');
+      sym.poseidonTrident.visible = (godKey === 'poseidon');
+      sym.hadesBident.visible = (godKey === 'hades');
+    });
+
+    if (M.roof.map) M.roof.map.dispose();
+    M.roof.map = createTiledRoofTexture(next);
+    M.roof.needsUpdate = true;
+
+    if (M.awning.map) M.awning.map.dispose();
+    M.awning.map = createStripedAwningTexture(next.trimCss);
+    M.awning.needsUpdate = true;
+
+    if (M.target.map) M.target.map.dispose();
+    M.target.map = createTargetTexture(next.trimCss);
+    M.target.needsUpdate = true;
+  }
+
+  updateVisibility(initialBld, initialTier);
+  applyGodTheme(initialGod);
+
+  return {
+    root,
+    auraRing,
+    allFlames,
+    animatedParts,
+    updateVisibility,
+    applyGodTheme
+  };
+}
+
+/* ==========================================================================
+   5. CENA THREE.JS, EFEITOS ESPECÍFICOS DE ZEUS / POSEIDON / HADES E CÂMERA
+   ========================================================================== */
+const renderer = new T.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = T.PCFSoftShadowMap;
+renderer.toneMapping = T.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.15;
+document.body.appendChild(renderer.domElement);
+
+const scene = new T.Scene();
+scene.background = new T.Color(GOD_THEMES.zeus.bgHex);
+scene.fog = new T.FogExp2(GOD_THEMES.zeus.bgHex, 0.015);
+
+const camera = new T.PerspectiveCamera(36, window.innerWidth / window.innerHeight, 0.1, 160);
+
+const hemi = new T.HemisphereLight(0xfef9c3, 0x1e3a8a, 1.15);
+scene.add(hemi);
+
+const sun = new T.DirectionalLight(0xfffbeb, 2.35);
+sun.position.set(6.8, 11.5, 7.5);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, { left: -9, right: 9, top: 9, bottom: -9, near: 1, far: 34 });
+sun.shadow.bias = -0.0004;
+scene.add(sun);
+
+const rimLight = new T.DirectionalLight(0x38bdf8, 1.45);
+rimLight.position.set(-6.0, 5.5, -6.5);
+scene.add(rimLight);
+
+const divinePointLight = new T.PointLight(0xfacc15, 2.0, 16);
+divinePointLight.position.set(0, 4.0, 0);
+scene.add(divinePointLight);
+
+const groundMat = new T.MeshStandardMaterial({
+  map: createGroundTexture(GOD_THEMES.zeus, false),
+  roughness: 0.78,
+  metalness: 0.05
+});
+const terrain = new T.Mesh(new T.CylinderGeometry(9.8, 10.2, 0.4, 72), groundMat);
+terrain.position.y = -0.20;
+terrain.receiveShadow = true;
+scene.add(terrain);
+
+const citySystem = buildGreekBuildingsSystem('zeus', 'quarteis', 3);
+scene.add(citySystem.root);
+
+// Pilar de Bênção Celestial
+const blessingBeam = new T.Mesh(
+  new T.CylinderGeometry(1.1, 2.1, 13, 32, 1, true),
+  new T.MeshBasicMaterial({
+    color: 0xfef08a,
+    transparent: true,
+    opacity: 0.0,
+    blending: T.AdditiveBlending,
+    side: T.DoubleSide,
+    depthWrite: false
+  })
+);
+blessingBeam.position.y = 6.5;
+scene.add(blessingBeam);
+
+// Raios de Zeus (3D Zigzag Bolts)
+const lightningBolts = [];
+const boltMat = new T.MeshBasicMaterial({ color: 0xe0f2fe, transparent: true, opacity: 0.0 });
+for (let b = 0; b < 4; b++) {
+  const bolt = new T.Mesh(new T.CylinderGeometry(0.03, 0.06, 6.5, 5), boltMat);
+  bolt.position.set((b - 1.5) * 1.3, 3.2, (b % 2 === 0 ? 1 : -1) * 0.9);
+  bolt.rotation.z = (b % 2 === 0 ? 0.14 : -0.14);
+  scene.add(bolt);
+  lightningBolts.push(bolt);
+}
+
+// Ondas de Poseidon (Anéis Aquáticos Expansivos)
+const seaWaves = [];
+for (let w = 0; w < 3; w++) {
+  const wave = new T.Mesh(
+    new T.RingGeometry(1.4, 1.65, 48),
+    new T.MeshBasicMaterial({
+      color: 0x2dd4bf,
+      transparent: true,
+      opacity: 0.0,
+      blending: T.AdditiveBlending,
+      side: T.DoubleSide,
+      depthWrite: false
+    })
+  );
+  wave.rotation.x = -Math.PI / 2;
+  wave.position.y = 0.05;
+  scene.add(wave);
+  seaWaves.push({ mesh: wave, phase: w * 0.33 });
+}
+
+// Partículas Ambientais (Fagulhas Douradas / Bolhas Turquesas / Brasas Verdes do Estige)
+const PARTICLE_N = 130;
+const pPos = new Float32Array(PARTICLE_N * 3);
+const pSpeed = new Float32Array(PARTICLE_N);
+for (let i = 0; i < PARTICLE_N; i++) {
+  const a = Math.random() * Math.PI * 2;
+  const r = 0.6 + Math.random() * 2.9;
+  pPos[i * 3] = Math.cos(a) * r;
+  pPos[i * 3 + 1] = Math.random() * 5.2;
+  pPos[i * 3 + 2] = Math.sin(a) * r;
+  pSpeed[i] = 0.4 + Math.random() * 0.7;
+}
+const pGeo = new T.BufferGeometry();
+pGeo.setAttribute('position', new T.BufferAttribute(pPos, 3));
+const pMat = new T.PointsMaterial({
+  color: 0xfef08a,
+  size: 0.10,
+  transparent: true,
+  opacity: 0.85,
+  blending: T.AdditiveBlending,
+  depthWrite: false
+});
+scene.add(new T.Points(pGeo, pMat));
+
+const upgradeWaves = [];
+function triggerUpgradeBurst(colorHex) {
+  const ring = new T.Mesh(
+    new T.RingGeometry(1.5, 2.2, 56),
+    new T.MeshBasicMaterial({
+      color: colorHex,
+      transparent: true,
+      opacity: 0.95,
+      blending: T.AdditiveBlending,
+      side: T.DoubleSide,
+      depthWrite: false
+    })
+  );
+  ring.rotation.x = -Math.PI / 2;
+  ring.position.y = 0.05;
+  scene.add(ring);
+  upgradeWaves.push({ mesh: ring, life: 0.9, max: 0.9 });
+}
+
+/* ==========================================================================
+   6. CONTROLE DE ESTADO DA INTERFACE HUD E CÂMERA ORBITAL 360°
+   ========================================================================== */
+let currentGod = 'zeus';
+let currentBld = 'quarteis';
+let currentTier = 3;
+let currentAction = 'operacao';
+let focusDetail = false;
+let gateOpen = false;
+let gateAngle = 0.0;
+
+let camAngle = 0.68;
+let camPitch = 0.46;
+let camDist = 11.8;
+let targetCamDist = 11.8;
+let currentLookAt = new T.Vector3(0, 1.35, 0);
+
+let dragging = false;
+let lastX = 0, lastY = 0;
+let pinchStartDist = 0;
+
+const cardTitle = document.getElementById('card-title');
+const cardSub = document.getElementById('card-sub');
+const btnGate = document.getElementById('btn-gate');
+
+function syncUIAndScene(withBurst = false) {
+  const godTheme = GOD_THEMES[currentGod];
+  const bldInfo = BUILDINGS_INFO[currentBld];
+
+  // Bloqueia automaticamente Tiers anteriores ao minTier de cada edificação
+  if (currentTier < bldInfo.minTier) {
+    currentTier = bldInfo.minTier;
+  }
+
+  document.querySelectorAll('button[data-tier]').forEach(btn => {
+    const tVal = Number(btn.dataset.tier);
+    btn.disabled = (tVal < bldInfo.minTier);
+    btn.classList.toggle('on', tVal === currentTier);
+  });
+
+  // Exibe o botão Abrir/Fechar Portão apenas quando a Muralha estiver selecionada
+  btnGate.style.display = (currentBld === 'muro') ? 'inline-block' : 'none';
+
+  citySystem.updateVisibility(currentBld, currentTier);
+
+  const tierLabels = { 1: 'Arcaico', 2: 'Clássico', 3: 'Heroico', 4: 'Mítico', 5: 'Ápice Divino' };
+  cardTitle.textContent = `${bldInfo.name} ${godTheme.titleSuffix} • Tier ${currentTier} (${tierLabels[currentTier]})`;
+  const gateStatus = (currentBld === 'muro') ? (gateOpen ? ' [Portão Aberto]' : ' [Portão Fechado]') : '';
+  cardSub.textContent = (currentAction === 'bencao'
+    ? `${bldInfo.tiers[currentTier]} — [${godTheme.blessingDesc}]`
+    : bldInfo.tiers[currentTier]) + gateStatus;
+
+  if (groundMat.map) groundMat.map.dispose();
+  groundMat.map = createGroundTexture(godTheme, currentTier >= 4);
+  groundMat.needsUpdate = true;
+
+  if (withBurst) {
+    triggerUpgradeBurst(godTheme.glowHex);
+  }
+}
+
+btnGate.addEventListener('click', () => {
+  gateOpen = !gateOpen;
+  btnGate.classList.toggle('active', gateOpen);
+  btnGate.textContent = gateOpen ? '🔒 Fechar Portão' : '🚪 Abrir Portão';
+  syncUIAndScene(false);
+});
+
+document.querySelectorAll('button[data-god]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    currentGod = btn.dataset.god;
+    const godTheme = GOD_THEMES[currentGod];
+    document.querySelectorAll('button[data-god]').forEach(b => b.classList.toggle('on', b === btn));
+
+    scene.background.setHex(godTheme.bgHex);
+    scene.fog.color.setHex(godTheme.bgHex);
+    hemi.color.setHex(godTheme.hemiSky);
+    hemi.groundColor.setHex(godTheme.hemiGround);
+    rimLight.color.setHex(godTheme.rimHex);
+    divinePointLight.color.setHex(godTheme.glowHex);
+    blessingBeam.material.color.setHex(godTheme.glowHex);
+    pMat.color.setHex(godTheme.glowHex);
+
+    citySystem.applyGodTheme(currentGod);
+    syncUIAndScene(true);
+  });
+});
+
+document.querySelectorAll('button[data-bld]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    currentBld = btn.dataset.bld;
+    document.querySelectorAll('button[data-bld]').forEach(b => b.classList.toggle('on', b === btn));
+    syncUIAndScene(true);
+  });
+});
+
+document.querySelectorAll('button[data-tier]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    if (btn.disabled) return;
+    currentTier = Number(btn.dataset.tier);
+    syncUIAndScene(true);
+    if (!focusDetail) {
+      targetCamDist = 10.2 + currentTier * 0.55;
+    }
+  });
+});
+
+document.querySelectorAll('button[data-act]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    currentAction = btn.dataset.act;
+    document.querySelectorAll('button[data-act]').forEach(b => b.classList.toggle('on', b === btn));
+    syncUIAndScene(false);
+  });
+});
+
+const btnFocus = document.getElementById('btn-focus');
+btnFocus.addEventListener('click', () => {
+  focusDetail = !focusDetail;
+  btnFocus.classList.toggle('active', focusDetail);
+  btnFocus.textContent = focusDetail ? 'Visão Geral' : 'Focar Detalhe';
+  targetCamDist = focusDetail ? 5.6 : (10.2 + currentTier * 0.55);
+  if (focusDetail) {
+    camAngle = 0.42;
+    camPitch = 0.28;
+  }
+});
+
+renderer.domElement.addEventListener('pointerdown', (e) => {
+  dragging = true;
+  lastX = e.clientX;
+  lastY = e.clientY;
+});
+addEventListener('pointerup', () => { dragging = false; });
+addEventListener('pointermove', (e) => {
+  if (!dragging) return;
+  camAngle -= (e.clientX - lastX) * 0.009;
+  camPitch = T.MathUtils.clamp(camPitch + (e.clientY - lastY) * 0.006, 0.08, 1.15);
+  lastX = e.clientX;
+  lastY = e.clientY;
+});
+
+renderer.domElement.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  targetCamDist = T.MathUtils.clamp(targetCamDist + e.deltaY * 0.007, 4.2, 22.0);
+}, { passive: false });
+
+renderer.domElement.addEventListener('touchstart', (e) => {
+  if (e.touches.length === 2) {
+    const dx = e.touches[0].clientX - e.touches[1].clientX;
+    const dy = e.touches[0].clientY - e.touches[1].clientY;
+    pinchStartDist = Math.hypot(dx, dy);
+  }
+}, { passive: true });
+
+renderer.domElement.addEventListener('touchmove', (e) => {
+  if (e.touches.length === 2) {
+    const dx = e.touches[0].clientX - e.touches[1].clientX;
+    const dy = e.touches[0].clientY - e.touches[1].clientY;
+    const dist = Math.hypot(dx, dy);
+    targetCamDist = T.MathUtils.clamp(targetCamDist + (pinchStartDist - dist) * 0.02, 4.2, 22.0);
+    pinchStartDist = dist;
+  }
+}, { passive: true });
+
+addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+
+/* ==========================================================================
+   7. LOOP DE ANIMAÇÃO EM TEMPO REAL
+   ========================================================================== */
+const clock = new T.Clock();
+let elapsed = 0;
+
+function animate() {
+  const dt = Math.min(clock.getDelta(), 0.05);
+  elapsed += dt;
+
+  // Animação das chamas e brasas
+  citySystem.allFlames.forEach((fl, idx) => {
+    fl.scale.set(
+      1 + Math.sin(elapsed * 12 + idx) * 0.14,
+      1 + Math.cos(elapsed * 15 + idx) * 0.22,
+      1 + Math.sin(elapsed * 11 + idx) * 0.14
+    );
+  });
+
+  // Animação dos guindastes, moinhos de vento/rodas d'água e anéis do Portal do Titã
+  citySystem.animatedParts.cranes.forEach(cr => {
+    cr.rotation.y = Math.sin(elapsed * 0.9) * 0.45;
+  });
+  citySystem.animatedParts.windmills.forEach(wm => {
+    wm.rotation.z += dt * 1.35;
+  });
+  citySystem.animatedParts.portalRings.forEach((ring, i) => {
+    ring.rotation.z += dt * (i % 2 === 0 ? 1.6 : -1.2);
+    const s = 1 + Math.sin(elapsed * 5) * 0.06;
+    ring.scale.setScalar(s);
+  });
+
+  // Animação suave de abertura e fechamento do Portão da Muralha
+  const targetGateAngle = gateOpen ? 1.28 : 0.0;
+  gateAngle = T.MathUtils.damp(gateAngle, targetGateAngle, 5.5, dt);
+  citySystem.animatedParts.gates.forEach(gt => {
+    gt.leftPivot.rotation.y = -gateAngle;
+    gt.rightPivot.rotation.y = gateAngle;
+  });
+
+  const isBlessing = (currentAction === 'bencao');
+  const beamTarget = isBlessing ? 0.52 : 0.0;
+  blessingBeam.material.opacity = T.MathUtils.damp(blessingBeam.material.opacity, beamTarget, 4, dt);
+  blessingBeam.rotation.y += dt * 1.1;
+
+  // Efeitos específicos por Divindade no modo Bênção Suprema
+  // 1) Zeus: flashes de raios elétricos
+  if (isBlessing && currentGod === 'zeus') {
+    const flash = Math.sin(elapsed * 28) > 0.65 ? 0.95 : 0.0;
+    boltMat.opacity = flash;
+  } else {
+    boltMat.opacity = 0.0;
+  }
+
+  // 2) Poseidon: ondas marítimas concêntricas
+  seaWaves.forEach(sw => {
+    if (isBlessing && currentGod === 'poseidon') {
+      const prog = (elapsed * 0.65 + sw.phase) % 1;
+      sw.mesh.scale.setScalar(0.8 + prog * 2.4);
+      sw.mesh.material.opacity = (1 - prog) * 0.75;
+    } else {
+      sw.mesh.material.opacity = 0.0;
+    }
+  });
+
+  // 3) Hades e todas as divindades: aura no solo e partículas ascendentes
+  const ringTarget = isBlessing ? 0.85 : (0.18 + currentTier * 0.04);
+  citySystem.auraRing.material.opacity = T.MathUtils.damp(citySystem.auraRing.material.opacity, ringTarget, 4, dt);
+  citySystem.auraRing.rotation.z += dt * 0.35;
+
+  divinePointLight.intensity = isBlessing ? (6.2 + Math.sin(elapsed * 10) * 1.4) : (1.5 + currentTier * 0.32);
+
+  const posAttr = pGeo.attributes.position;
+  const speedMult = isBlessing ? 2.6 : 1.0;
+  for (let i = 0; i < PARTICLE_N; i++) {
+    let py = posAttr.getY(i) + pSpeed[i] * dt * speedMult;
+    if (py > 5.8) py = 0.15;
+    posAttr.setY(i, py);
+  }
+  posAttr.needsUpdate = true;
+
+  for (let i = upgradeWaves.length - 1; i >= 0; i--) {
+    const uw = upgradeWaves[i];
+    uw.life -= dt;
+    const k = Math.max(0, uw.life / uw.max);
+    uw.mesh.scale.setScalar(1 + (1 - k) * 2.4);
+    uw.mesh.material.opacity = 0.95 * k;
+    if (uw.life <= 0) {
+      scene.remove(uw.mesh);
+      uw.mesh.geometry.dispose();
+      uw.mesh.material.dispose();
+      upgradeWaves.splice(i, 1);
+    }
+  }
+
+  camDist = T.MathUtils.damp(camDist, targetCamDist, 6, dt);
+  if (!dragging && !focusDetail) camAngle += dt * 0.05;
+
+  const off = BUILDINGS_INFO[currentBld].focusOffset;
+  const desiredTarget = focusDetail
+    ? new T.Vector3(off[0], off[1], off[2])
+    : new T.Vector3(0, 1.25 + currentTier * 0.1, 0);
+  currentLookAt.lerp(desiredTarget, 0.14);
+
+  const horizDist = Math.cos(camPitch) * camDist;
+  const vertDist = Math.sin(camPitch) * camDist;
+  camera.position.set(
+    currentLookAt.x + Math.sin(camAngle) * horizDist,
+    currentLookAt.y + vertDist,
+    currentLookAt.z + Math.cos(camAngle) * horizDist
+  );
+  camera.lookAt(currentLookAt);
+
+  renderer.render(scene, camera);
+  requestAnimationFrame(animate);
+}
+
+syncUIAndScene(false);
+if (document.readyState === 'complete') {
+  animate();
+} else {
+  window.addEventListener('load', animate);
+}
+</script>
+</body>
+</html>

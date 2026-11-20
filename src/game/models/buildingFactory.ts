@@ -17,6 +17,10 @@ function forwardBuildingAnimRefs(root: THREE.Group, builtGroup: THREE.Group): vo
   if (ud.atlanteanFlames) root.userData.atlanteanFlames = ud.atlanteanFlames;
   if (ud.atlanteanRelics) root.userData.atlanteanRelics = ud.atlanteanRelics;
   if (ud.atlanteanRelicRings) root.userData.atlanteanRelicRings = ud.atlanteanRelicRings;
+  if (ud.greekCranes) root.userData.greekCranes = ud.greekCranes;
+  if (ud.greekWindmills) root.userData.greekWindmills = ud.greekWindmills;
+  if (ud.greekPortalRings) root.userData.greekPortalRings = ud.greekPortalRings;
+  if (ud.greekGates) root.userData.greekGates = ud.greekGates;
 }
 
 function finalizeBuiltBuilding(

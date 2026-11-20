@@ -19,7 +19,20 @@ export function hasBespokeAgeEvolution(style: ArchStyleId, kind: BuildingKind): 
   if (kind === 'wall' || kind === 'gate') return true;
   if (kind === 'town_center') return true;
   if (style === 'greek') {
-    return kind === 'house' || kind === 'temple' || kind === 'fortress';
+    return (
+      kind === 'house' ||
+      kind === 'temple' ||
+      kind === 'fortress' ||
+      kind === 'barracks' ||
+      kind === 'stable' ||
+      kind === 'archery_range' ||
+      kind === 'siege_works' ||
+      kind === 'armory' ||
+      kind === 'tower' ||
+      kind === 'farm' ||
+      kind === 'titan_gate' ||
+      kind === 'market'
+    );
   }
   if (style === 'egyptian') {
     return (

@@ -1,9 +1,12 @@
 import * as THREE from 'three';
+import { GreekFortressAction } from '../../civilizacao/gregos/greekFortressModel';
 import {
-  buildGreekFortress as buildGreekFortressStudio,
-  GREEK_FORTRESS_THEMES,
-  GreekFortressAction,
-} from '../../civilizacao/gregos/greekFortressModel';
+  buildGreekArchBuilding,
+  getGreekArchGroundTexture,
+  GREEK_ARCH_THEMES,
+  isGreekArchBuilding,
+  resolveGreekArchGod,
+} from '../../civilizacao/gregos/greekArchitectureSuite';
 import {
   buildAtlanteanFortress as buildAtlanteanFortressStudio,
   ATLANTEAN_FORTRESS_THEMES,
@@ -99,98 +102,163 @@ export function buildBuildingStudioSubject(ctx: BuildingStudioBuildContext): THR
 
   let group: THREE.Group;
 
-  if (selectedCiv === 'greek' && selectedBuilding === 'fortress') {
-    const godKey = (
-      selectedMajorGod.toLowerCase() === 'poseidon'
-        ? 'poseidon'
-        : selectedMajorGod.toLowerCase() === 'hades'
-        ? 'hades'
-        : 'zeus'
-    ) as 'zeus' | 'poseidon' | 'hades';
-    const theme = GREEK_FORTRESS_THEMES[godKey] || GREEK_FORTRESS_THEMES.zeus;
+  if (selectedCiv === 'greek' && isGreekArchBuilding(selectedBuilding)) {
+    const godKey = resolveGreekArchGod(selectedMajorGod);
+    const theme = GREEK_ARCH_THEMES[godKey];
 
     scene.background = new THREE.Color(theme.bgHex);
-    scene.fog = new THREE.FogExp2(theme.bgHex, 0.016);
-    addPedestal(3.2, 3.5, theme.goldColor);
+    scene.fog = new THREE.FogExp2(theme.bgHex, 0.015);
 
-    const effTier = buildingAge >= 4 ? 4 : 3;
-    const fortress = buildGreekFortressStudio(godKey, effTier, !isSoftwareGl);
-    group = fortress.root;
+    const groundTex = getGreekArchGroundTexture(godKey, buildingAge >= 4);
+    groundTex.userData.shared = true;
+    const groundDisc = new THREE.Mesh(
+      new THREE.CylinderGeometry(8.8, 9.2, 0.34, 64),
+      new THREE.MeshStandardMaterial({
+        map: groundTex,
+        roughness: 0.78,
+        metalness: 0.05,
+      })
+    );
+    groundDisc.position.y = -0.17;
+    groundDisc.receiveShadow = !isSoftwareGl;
+    environmentGroup.add(groundDisc);
 
-    const arrowGeo = new THREE.CylinderGeometry(0.016, 0.016, 0.75, 6);
-    arrowGeo.rotateX(Math.PI / 2);
-    const arrowMat = new THREE.MeshBasicMaterial({ color: theme.arrowHex });
-    const activeArrows: Array<{ mesh: THREE.Mesh; start: THREE.Vector3; target: THREE.Vector3; progress: number; speed: number }> = [];
+    const auraRing = new THREE.Mesh(
+      new THREE.RingGeometry(3.35, 3.72, 64),
+      new THREE.MeshBasicMaterial({
+        color: theme.glowHex,
+        transparent: true,
+        opacity: 0.24 + buildingAge * 0.04,
+        blending: THREE.AdditiveBlending,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+      })
+    );
+    auraRing.rotation.x = -Math.PI / 2;
+    auraRing.position.y = 0.025;
+    environmentGroup.add(auraRing);
 
+    const built = buildGreekArchBuilding(
+      selectedBuilding,
+      godKey,
+      buildingAge,
+      !isSoftwareGl
+    );
+    group = built.root;
+
+    // Optional arrow volley when showcasing the Greek Fortress in defense mode
+    const isFortress = selectedBuilding === 'fortress';
+    const arrowGeo = isFortress ? new THREE.CylinderGeometry(0.016, 0.016, 0.75, 6) : null;
+    if (arrowGeo) arrowGeo.rotateX(Math.PI / 2);
+    const arrowMat = isFortress ? new THREE.MeshBasicMaterial({ color: theme.goldHex }) : null;
+    const activeArrows: Array<{
+      mesh: THREE.Mesh;
+      start: THREE.Vector3;
+      target: THREE.Vector3;
+      progress: number;
+      speed: number;
+    }> = [];
     let volleyTimer = 0;
-    const spawnVolley = (isT4: boolean) => {
-      const count = isT4 ? 8 : 5;
-      const originY = isT4 ? 4.4 : 3.2;
-      for (let i = 0; i < count; i++) {
-        const a = (i / count) * Math.PI * 2 + Math.random() * 0.4;
-        const dist = 4.6 + Math.random() * 2.8;
-        const start = new THREE.Vector3(Math.cos(a) * 1.4, originY, Math.sin(a) * 1.4);
-        const target = new THREE.Vector3(Math.cos(a) * dist, 0.05, Math.sin(a) * dist);
 
-        const mesh = new THREE.Mesh(arrowGeo, arrowMat);
-        mesh.position.copy(start);
-        environmentGroup.add(mesh);
+    if (arrowGeo && arrowMat) {
+      group.userData.disposeExtra = () => {
+        arrowGeo.dispose();
+        arrowMat.dispose();
+      };
+    }
 
-        activeArrows.push({ mesh, start, target, progress: 0, speed: 1.45 + Math.random() * 0.35 });
-      }
-    };
-
-    let lastTierApplied = effTier;
-
-    group.userData.disposeExtra = () => {
-      arrowGeo.dispose();
-      arrowMat.dispose();
-    };
-
+    let elapsed = 0;
     group.userData.animatePose = (dt: number) => {
+      elapsed += dt;
       const simTime = getSimTime();
-      const act = fortressActionRef.current;
-      const currentT = buildingAge >= 4 ? 4 : 3;
-      if (currentT !== lastTierApplied) {
-        lastTierApplied = currentT;
-        fortress.setTier(currentT);
+
+      built.flames.forEach((fl, idx) => {
+        fl.scale.set(
+          1 + Math.sin(elapsed * 12 + idx) * 0.14,
+          1 + Math.cos(elapsed * 15 + idx) * 0.22,
+          1 + Math.sin(elapsed * 11 + idx) * 0.14
+        );
+      });
+
+      built.cranes.forEach((cr, idx) => {
+        cr.rotation.y = Math.sin(elapsed * 0.9 + idx) * 0.45;
+      });
+
+      built.windmills.forEach((wm) => {
+        wm.rotation.z += dt * 1.35;
+      });
+
+      built.portalRings.forEach((ring, i) => {
+        ring.rotation.z += dt * (i % 2 === 0 ? 1.6 : -1.2);
+        ring.scale.setScalar(1 + Math.sin(elapsed * 5 + i) * 0.055);
+      });
+
+      if (built.beaconCrystal) {
+        built.beaconCrystal.rotation.y += dt * 1.5;
+      }
+      if (built.metropolisHalo) {
+        built.metropolisHalo.rotation.z += dt * 0.8;
+      }
+      if (built.metropolisCrystal) {
+        built.metropolisCrystal.rotation.y += dt * 1.5;
       }
 
-      if (fortress.apexCrystal) {
-        fortress.apexCrystal.rotation.y += dt * 1.4;
-        fortress.apexCrystal.position.y = 3.22 + Math.sin(simTime * 2.6) * 0.06;
-      }
-
-      const targetAura = act === 'bencao' ? 0.78 : currentT === 4 ? 0.25 : 0.0;
-      const ringMat = fortress.divineRing.material as THREE.MeshBasicMaterial;
-      ringMat.opacity = THREE.MathUtils.damp(ringMat.opacity, targetAura, 4, dt);
-      fortress.divineRing.rotation.z += dt * 0.4;
-      fortress.divineRing.scale.setScalar(1 + Math.sin(simTime * 3.5) * 0.04);
-
-      if (act === 'defesa') {
-        volleyTimer -= dt;
-        if (volleyTimer <= 0) {
-          volleyTimer = 0.75;
-          spawnVolley(currentT === 4);
+      // Smooth periodic demonstration of the articulated Greek double gate doors
+      if (built.gates.length > 0) {
+        const shouldOpen = Math.sin(elapsed * 0.85) > 0.0;
+        const targetAng = shouldOpen ? 1.28 : 0.0;
+        for (const gt of built.gates) {
+          gt.currentAngle = THREE.MathUtils.damp(gt.currentAngle, targetAng, 4.5, dt);
+          gt.leftPivot.rotation.y = -gt.currentAngle;
+          gt.rightPivot.rotation.y = gt.currentAngle;
         }
       }
 
-      for (let i = activeArrows.length - 1; i >= 0; i--) {
-        const ar = activeArrows[i];
-        ar.progress += dt * ar.speed;
-        const p = Math.min(1, ar.progress);
-        const pos = new THREE.Vector3().lerpVectors(ar.start, ar.target, p);
-        pos.y += Math.sin(p * Math.PI) * 1.35;
-        ar.mesh.position.copy(pos);
+      auraRing.rotation.z += dt * 0.35;
 
-        const nextP = Math.min(1, p + 0.04);
-        const nextPos = new THREE.Vector3().lerpVectors(ar.start, ar.target, nextP);
-        nextPos.y += Math.sin(nextP * Math.PI) * 1.35;
-        ar.mesh.lookAt(nextPos);
+      if (isFortress && arrowGeo && arrowMat) {
+        const act = fortressActionRef.current;
+        const ringMat = auraRing.material as THREE.MeshBasicMaterial;
+        const targetAura = act === 'bencao' ? 0.78 : 0.24 + buildingAge * 0.04;
+        ringMat.opacity = THREE.MathUtils.damp(ringMat.opacity, targetAura, 4, dt);
+        auraRing.scale.setScalar(1 + Math.sin(simTime * 3.2) * 0.03);
 
-        if (p >= 1) {
-          environmentGroup.remove(ar.mesh);
-          activeArrows.splice(i, 1);
+        if (act === 'defesa') {
+          volleyTimer -= dt;
+          if (volleyTimer <= 0) {
+            volleyTimer = 0.75;
+            const count = buildingAge >= 4 ? 8 : 5;
+            const originY = 2.6 + buildingAge * 0.32;
+            for (let i = 0; i < count; i++) {
+              const a = (i / count) * Math.PI * 2 + Math.random() * 0.4;
+              const dist = 4.6 + Math.random() * 2.8;
+              const start = new THREE.Vector3(Math.cos(a) * 1.5, originY, Math.sin(a) * 1.5);
+              const target = new THREE.Vector3(Math.cos(a) * dist, 0.05, Math.sin(a) * dist);
+              const mesh = new THREE.Mesh(arrowGeo, arrowMat);
+              mesh.position.copy(start);
+              environmentGroup.add(mesh);
+              activeArrows.push({ mesh, start, target, progress: 0, speed: 1.45 + Math.random() * 0.35 });
+            }
+          }
+        }
+
+        for (let i = activeArrows.length - 1; i >= 0; i--) {
+          const ar = activeArrows[i];
+          ar.progress += dt * ar.speed;
+          const p = Math.min(1, ar.progress);
+          const pos = new THREE.Vector3().lerpVectors(ar.start, ar.target, p);
+          pos.y += Math.sin(p * Math.PI) * 1.35;
+          ar.mesh.position.copy(pos);
+
+          const nextP = Math.min(1, p + 0.04);
+          const nextPos = new THREE.Vector3().lerpVectors(ar.start, ar.target, nextP);
+          nextPos.y += Math.sin(nextP * Math.PI) * 1.35;
+          ar.mesh.lookAt(nextPos);
+
+          if (p >= 1) {
+            environmentGroup.remove(ar.mesh);
+            activeArrows.splice(i, 1);
+          }
         }
       }
     };

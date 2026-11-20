@@ -547,30 +547,24 @@ export function updateBuildings(ctx: BuildingsAndProductionContext, dt: number):
       }
     }
 
-    if (b.isConstructed && b.kind === 'town_center') {
+    if (b.isConstructed && (b.kind === 'town_center' || b.kind === 'tower' || b.kind === 'fortress')) {
       const halo = b.mesh.userData.metropolisHalo as THREE.Object3D | undefined;
       if (halo) {
         halo.rotation.z += dt * 0.75;
         const baseY = (halo.userData.baseY as number | undefined) ?? halo.position.y;
+        if (halo.userData.baseY === undefined) halo.userData.baseY = baseY;
         halo.position.y = baseY + Math.sin(ctx.elapsedSeconds * 2.1) * 0.06;
       }
       const crystal = b.mesh.userData.metropolisCrystal as THREE.Object3D | undefined;
       if (crystal) {
         crystal.rotation.y += dt * 1.45;
         const baseY = (crystal.userData.baseY as number | undefined) ?? crystal.position.y;
+        if (crystal.userData.baseY === undefined) crystal.userData.baseY = baseY;
         crystal.position.y = baseY + Math.sin(ctx.elapsedSeconds * 2.5 + 0.6) * 0.1;
       }
-      const tcFlames = b.mesh.userData.tcFlames as THREE.Object3D[] | undefined;
-      if (tcFlames && tcFlames.length > 0) {
-        for (let i = 0; i < tcFlames.length; i++) {
-          const fl = tcFlames[i];
-          fl.scale.set(
-            1 + Math.sin(ctx.elapsedSeconds * 13 + i) * 0.14,
-            1 + Math.cos(ctx.elapsedSeconds * 16 + i) * 0.22,
-            1 + Math.sin(ctx.elapsedSeconds * 12 + i) * 0.14
-          );
-        }
-      }
+    }
+
+    if (b.isConstructed && b.kind === 'town_center') {
       const atlRelics = b.mesh.userData.atlanteanRelics as THREE.Object3D[] | undefined;
       if (atlRelics && atlRelics.length > 0) {
         for (let i = 0; i < atlRelics.length; i++) {
@@ -590,6 +584,18 @@ export function updateBuildings(ctx: BuildingsAndProductionContext, dt: number):
       }
     }
 
+    if (b.isConstructed && b.mesh.userData.tcFlames) {
+      const tcFlames = b.mesh.userData.tcFlames as THREE.Object3D[];
+      for (let i = 0; i < tcFlames.length; i++) {
+        const fl = tcFlames[i];
+        fl.scale.set(
+          1 + Math.sin(ctx.elapsedSeconds * 13 + i) * 0.14,
+          1 + Math.cos(ctx.elapsedSeconds * 16 + i) * 0.22,
+          1 + Math.sin(ctx.elapsedSeconds * 12 + i) * 0.14
+        );
+      }
+    }
+
     if (b.isConstructed && b.mesh.userData.egyptArchFlames) {
       const eFlames = b.mesh.userData.egyptArchFlames as THREE.Object3D[];
       for (let i = 0; i < eFlames.length; i++) {
@@ -602,8 +608,55 @@ export function updateBuildings(ctx: BuildingsAndProductionContext, dt: number):
       }
     }
 
-    if (b.kind === 'titan_gate' && b.mesh.userData.vortexRing) {
+    if (b.isConstructed && b.mesh.userData.greekCranes) {
+      const cranes = b.mesh.userData.greekCranes as THREE.Object3D[];
+      for (let i = 0; i < cranes.length; i++) {
+        cranes[i].rotation.y = Math.sin(ctx.elapsedSeconds * 0.9 + i) * 0.45;
+      }
+    }
+
+    if (b.isConstructed && b.mesh.userData.greekWindmills) {
+      const windmills = b.mesh.userData.greekWindmills as THREE.Object3D[];
+      for (let i = 0; i < windmills.length; i++) {
+        windmills[i].rotation.z += dt * 1.35;
+      }
+    }
+
+    if (b.mesh.userData.greekPortalRings) {
+      const rings = b.mesh.userData.greekPortalRings as THREE.Object3D[];
+      const mult = b.isConstructed ? 1.0 : 0.4;
+      for (let i = 0; i < rings.length; i++) {
+        rings[i].rotation.z += dt * (i % 2 === 0 ? 1.6 : -1.2) * mult;
+        const s = 1 + Math.sin(ctx.elapsedSeconds * 5 + i) * 0.05;
+        rings[i].scale.setScalar(s);
+      }
+    } else if (b.kind === 'titan_gate' && b.mesh.userData.vortexRing) {
       b.mesh.userData.vortexRing.rotation.z += dt * (b.isConstructed ? 2.2 : 0.8);
+    }
+
+    if (b.isConstructed && b.mesh.userData.greekGates) {
+      const gatePairs = b.mesh.userData.greekGates as Array<{
+        leftPivot: THREE.Object3D;
+        rightPivot: THREE.Object3D;
+        currentAngle: number;
+      }>;
+      let allyNear = false;
+      for (const u of ctx.units.values()) {
+        if (
+          u.team === b.team &&
+          u.hp > 0 &&
+          Math.hypot(u.mesh.position.x - b.mesh.position.x, u.mesh.position.z - b.mesh.position.z) <= 5.5
+        ) {
+          allyNear = true;
+          break;
+        }
+      }
+      const targetAngle = allyNear ? 1.28 : 0.0;
+      for (const gt of gatePairs) {
+        gt.currentAngle = THREE.MathUtils.damp(gt.currentAngle, targetAngle, 5.5, dt);
+        gt.leftPivot.rotation.y = -gt.currentAngle;
+        gt.rightPivot.rotation.y = gt.currentAngle;
+      }
     }
 
     if (b.isConstructed && b.trainingQueue.length > 0) {
