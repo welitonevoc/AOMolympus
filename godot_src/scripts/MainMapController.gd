@@ -4,6 +4,7 @@ class_name MainMapController
 @onready var camera: Camera3D = $RtsCameraRig/ElevationPivot/Camera3D
 @onready var hud: RtsHudCommandCenter = $CanvasLayer/CommandCenter
 @onready var ground: StaticBody3D = $Ground
+@onready var nav_region: NavigationRegion3D = $NavigationRegion3D if has_node("NavigationRegion3D") else null
 
 var selected_entities: Array[Node] = []
 
@@ -28,10 +29,11 @@ func _handle_selection(screen_pos: Vector2) -> void:
 	)
 	query.collide_with_bodies = true
 	query.collide_with_areas = true
+	# Camadas 2 (unidade), 4 (edifício)
+	query.collision_mask = 2 | 4
 	
 	var result := space_state.intersect_ray(query)
 	
-	# Desselecionar anteriores
 	_deselect_all()
 	
 	if result.is_empty():
@@ -40,8 +42,6 @@ func _handle_selection(screen_pos: Vector2) -> void:
 		return
 		
 	var collider: Node = result.collider
-	
-	# Procurar nó com RtsUnit ou RtsBuilding
 	var selectable := _find_selectable_in_ancestors(collider)
 	if selectable:
 		selectable.is_selected = true
@@ -65,26 +65,40 @@ func _handle_order(screen_pos: Vector2) -> void:
 		ray_origin,
 		ray_origin + ray_dir * ray_length
 	)
-	query.collision_mask = 1 # Apenas o chão (layer 1)
+	# Checar se clicou em um recurso (layer 8) ou no chão (layer 1)
+	query.collision_mask = 1 | 8
 	
 	var result := space_state.intersect_ray(query)
-	if not result.is_empty():
-		var click_pos: Vector3 = result.position
-		var unit_count := 0
+	if result.is_empty():
+		return
+
+	var collider: Node = result.collider
+	var resource := _find_resource_in_ancestors(collider)
+	
+	if resource:
+		# Ordem de Coleta para aldeões selecionados
 		for entity in selected_entities:
-			if entity is RtsUnit:
-				unit_count += 1
-		
-		var index := 0
-		for entity in selected_entities:
-			if entity is RtsUnit:
-				# Formação simples em leque ou linha se múltiplas unidades
-				var offset := Vector3.ZERO
-				if unit_count > 1:
-					var angle := (float(index) / float(unit_count)) * TAU
-					offset = Vector3(cos(angle) * 1.5, 0, sin(angle) * 1.5)
-				entity.order_move(click_pos + offset)
-				index += 1
+			if entity is RtsUnit and (entity as RtsUnit).unit_type == "villager":
+				(entity as RtsUnit).order_gather(resource)
+		print("[MainMap] Ordem de coleta no recurso: ", resource.resource_name)
+		return
+
+	# Caso contrário, ordem de movimentação no chão
+	var click_pos: Vector3 = result.position
+	var unit_count := 0
+	for entity in selected_entities:
+		if entity is RtsUnit:
+			unit_count += 1
+	
+	var index := 0
+	for entity in selected_entities:
+		if entity is RtsUnit:
+			var offset := Vector3.ZERO
+			if unit_count > 1:
+				var angle := (float(index) / float(unit_count)) * TAU
+				offset = Vector3(cos(angle) * 1.5, 0, sin(angle) * 1.5)
+			(entity as RtsUnit).order_move(click_pos + offset)
+			index += 1
 
 func _deselect_all() -> void:
 	for entity in selected_entities:
@@ -97,5 +111,13 @@ func _find_selectable_in_ancestors(node: Node) -> Node:
 	while curr != null and curr != self:
 		if curr is RtsUnit or curr is RtsBuilding:
 			return curr
+		curr = curr.get_parent()
+	return null
+
+func _find_resource_in_ancestors(node: Node) -> RtsResource:
+	var curr: Node = node
+	while curr != null and curr != self:
+		if curr is RtsResource:
+			return curr as RtsResource
 		curr = curr.get_parent()
 	return null

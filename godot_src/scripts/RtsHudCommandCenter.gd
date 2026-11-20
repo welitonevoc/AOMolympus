@@ -7,10 +7,17 @@ class_name RtsHudCommandCenter
 @onready var fortress_bar: PanelContainer = $VBoxContainer/FortressBar
 @onready var temple_bar: PanelContainer = $VBoxContainer/TempleBar
 
+# Barra de Recursos Superior (injetada dinamicamente ou na cena)
+@export var resource_label: Label = null
+
 var current_entity: Node = null
 
 func _ready() -> void:
 	clear_selection()
+	var gm := _get_game_manager()
+	if gm:
+		gm.resources_changed.connect(_on_resources_updated)
+		_on_resources_updated(gm.food, gm.wood, gm.gold, gm.favor, gm.population, gm.max_population)
 
 func set_selected_entity(entity: Node) -> void:
 	current_entity = entity
@@ -39,7 +46,10 @@ func clear_selection() -> void:
 
 func _setup_unit_view(unit: RtsUnit) -> void:
 	entity_title.text = unit.unit_name
-	entity_subtitle.text = "Unidade • PV: %d/%d" % [int(unit.current_hp), int(unit.max_hp)]
+	var extra := ""
+	if unit.carry_amount > 0:
+		extra = " • Carregando: %d %s" % [unit.carry_amount, unit.carry_type]
+	entity_subtitle.text = "Unidade • PV: %d/%d%s" % [int(unit.current_hp), int(unit.max_hp), extra]
 	if fortress_bar:
 		fortress_bar.visible = false
 	if temple_bar:
@@ -47,10 +57,7 @@ func _setup_unit_view(unit: RtsUnit) -> void:
 	_clear_actions()
 	
 	if unit.unit_type == "villager":
-		_add_action_button("🌾 Coletar Alimento", Callable(self, "_on_villager_task").bind("food"))
-		_add_action_button("🌲 Cortar Madeira", Callable(self, "_on_villager_task").bind("wood"))
-		_add_action_button("⛏️ Minerar Ouro", Callable(self, "_on_villager_task").bind("gold"))
-		_add_action_button("🏛️ Orar no Templo", Callable(self, "_on_villager_task").bind("pray"))
+		_add_action_button("🌾 Coletar", Callable(self, "_on_villager_task").bind("gather"))
 		_add_action_button("🔨 Construir", Callable(self, "_on_open_build_menu"))
 	else:
 		_add_action_button("⚔️ Modo Agressivo", Callable(self, "_on_set_stance").bind("aggressive"))
@@ -59,7 +66,10 @@ func _setup_unit_view(unit: RtsUnit) -> void:
 
 func _setup_building_view(building: RtsBuilding) -> void:
 	entity_title.text = building.building_name
-	entity_subtitle.text = "Estrutura • PV: %d/%d" % [int(building.current_hp), int(building.max_hp)]
+	var queue_text := ""
+	if not building.training_queue.is_empty():
+		queue_text = " • Em produção (%d)" % [building.training_queue.size()]
+	entity_subtitle.text = "Estrutura • PV: %d/%d%s" % [int(building.current_hp), int(building.max_hp), queue_text]
 	_clear_actions()
 	
 	if fortress_bar:
@@ -69,7 +79,7 @@ func _setup_building_view(building: RtsBuilding) -> void:
 		
 	match building.building_kind:
 		"town_center":
-			_add_action_button("👨‍🌾 Treinar Aldeão (50 Alim)", Callable(self, "_on_train_unit").bind("villager"))
+			_add_action_button("👨‍🌾 Treinar Aldeão (50 Alim)", Callable(self, "_on_train_villager_clicked").bind(building))
 			_add_action_button("👑 Evoluir Era", Callable(self, "_on_advance_age"))
 		"fortress":
 			_add_action_button("⚔️ Treinar Mirmidão", Callable(self, "_on_train_unit").bind("myrmidon"))
@@ -82,6 +92,16 @@ func _setup_building_view(building: RtsBuilding) -> void:
 			_add_action_button("🗡️ Treinar Hoplita", Callable(self, "_on_train_unit").bind("hoplite"))
 			_add_action_button("🛡️ Treinar Hipaspista", Callable(self, "_on_train_unit").bind("hypaspist"))
 
+func _on_train_villager_clicked(building: RtsBuilding) -> void:
+	if building:
+		var ok := building.queue_training("villager")
+		if ok:
+			_setup_building_view(building)
+
+func _on_resources_updated(f: int, w: int, g: int, fav: float, pop: int, max_pop: int) -> void:
+	if resource_label:
+		resource_label.text = "🌾 %d  |  🌲 %d  |  ⛏️ %d  |  ⚡ %.1f  |  👥 %d/%d" % [f, w, g, fav, pop, max_pop]
+
 func _clear_actions() -> void:
 	if actions_container:
 		for child in actions_container.get_children():
@@ -92,24 +112,32 @@ func _add_action_button(text: String, callback: Callable) -> void:
 		return
 	var btn := Button.new()
 	btn.text = text
-	btn.custom_minimum_size = Vector2(140, 36)
+	btn.custom_minimum_size = Vector2(160, 38)
 	btn.pressed.connect(callback)
 	actions_container.add_child(btn)
 
 func _on_villager_task(task: String) -> void:
-	print("[CommandCenter] Tarefa do aldeão: ", task)
+	print("[CommandCenter] Ordem do aldeão: ", task)
 
 func _on_open_build_menu() -> void:
-	print("[CommandCenter] Abrir menu de construções")
-
-func _on_train_unit(unit_id: String) -> void:
-	print("[CommandCenter] Treinar unidade: ", unit_id)
+	print("[CommandCenter] Menu de construções")
 
 func _on_advance_age() -> void:
 	print("[CommandCenter] Avançar de Era")
 
 func _on_garrison_action() -> void:
-	print("[CommandCenter] Guarnecer tropas na Fortaleza")
+	print("[CommandCenter] Guarnecer tropas")
 
 func _on_set_stance(stance: String) -> void:
-	print("[CommandCenter] Postura de combate: ", stance)
+	print("[CommandCenter] Postura: ", stance)
+
+func _on_train_unit(unit_id: String) -> void:
+	print("[CommandCenter] Treinar unidade: ", unit_id)
+
+func _get_game_manager() -> Node:
+	if get_node_or_null("/root/GameManager"):
+		return get_node("/root/GameManager")
+	var root := get_tree().current_scene
+	if root and root.has_node("GameManager"):
+		return root.get_node("GameManager")
+	return null
