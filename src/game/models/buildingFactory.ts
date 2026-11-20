@@ -26,6 +26,13 @@ function forwardBuildingAnimRefs(root: THREE.Group, builtGroup: THREE.Group): vo
   if (ud.egyptCrops) root.userData.egyptCrops = ud.egyptCrops;
   if (ud.egyptVortexPairs) root.userData.egyptVortexPairs = ud.egyptVortexPairs;
   if (ud.egyptOilStreams) root.userData.egyptOilStreams = ud.egyptOilStreams;
+  if (ud.atlanteanRotators) root.userData.atlanteanRotators = ud.atlanteanRotators;
+  if (ud.atlanteanFloaters) root.userData.atlanteanFloaters = ud.atlanteanFloaters;
+  if (ud.atlanteanGyroscopes) root.userData.atlanteanGyroscopes = ud.atlanteanGyroscopes;
+  if (ud.atlanteanSlidingGates) root.userData.atlanteanSlidingGates = ud.atlanteanSlidingGates;
+  if (ud.atlanteanPresses) root.userData.atlanteanPresses = ud.atlanteanPresses;
+  if (ud.atlanteanMirrors) root.userData.atlanteanMirrors = ud.atlanteanMirrors;
+  if (ud.atlanteanFountains) root.userData.atlanteanFountains = ud.atlanteanFountains;
 }
 
 function finalizeBuiltBuilding(

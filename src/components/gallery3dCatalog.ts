@@ -555,6 +555,28 @@ export function getBuildingsForCivAndGod(civ: PantheonId, majorGod: string): { i
       { id: 'titan_gate', name: `Portão Titã (${g})`, role: 'Escavação colossal da Era Mítica para despertar o Titã de Osíris' },
     ];
   }
+  if (civ === 'atlantean') {
+    const g = majorGod || 'Cronos';
+    return [
+      { id: 'town_center', name: `Centro da Cidade Atlante (${g})`, role: `Metrópole octogonal de mármore e Oricalco consagrada a ${g} — evolui T1–T5` },
+      { id: 'barracks', name: `Caserna Atlante (${g})`, role: `Cidadela octogonal de infantaria com cúpula escalonada e pórtico de Oricalco (T2–T5)` },
+      { id: 'counter_barracks', name: `Arsenal Divino (${g})`, role: `Observatório circular de armas com anéis astrolábicos e escudos Murmillo levitantes (T2–T5)` },
+      { id: 'archery_range', name: `Galeria de Precisão (${g})`, role: `Semi-octógono escalonado em dois níveis com alvos em arco e linhas de mira douradas (T2–T5)` },
+      { id: 'stable', name: `Picadeiro Circular (${g})`, role: `Arena octogonal de cavalaria com arquibancadas, estábulos e canal d’água (T2–T5)` },
+      { id: 'siege_works', name: `Oficina de Cerco Atlante (${g})`, role: `Estaleiro octogonal com Sifão de Fogo, Cheirobalista e pórtico de calibração (T3–T5)` },
+      { id: 'armory', name: `Refinaria de Oricalco (${g})`, role: `Fundição radial com cadinho central, prensa mecânica e calhas de metal incandescente (T2–T5)` },
+      { id: 'market', name: `Ágora Concêntrica (${g})`, role: `Pátio octogonal com globo celeste giratório, tendas de seda listrada e ânforas (T3–T5)` },
+      { id: 'fortress', name: `Palácio de Atlântida (${g})`, role: `Cidadela Imperial de 3 cúpulas com cristais de Oricalco e rajada defensiva sob ${g}` },
+      { id: 'tower', name: `Torre de Vigia / Espelho (${g})`, role: `Torre octogonal que evolui de vigia com pira até Torre de Espelho com lente solar (T1–T5)` },
+      { id: 'mirror_tower', name: `Torre de Espelho de Hélio (${g})`, role: `Lente parabólica de ouro reflexivo que concentra feixe solar letal sobre invasores (T4–T5)` },
+      { id: 'wall', name: `Muralha de Oricalco (${g})`, role: `Muralha poligonal chanfrada com frisos de Atlântida, torres octogonais e canais d’água (T1–T5)` },
+      { id: 'gate', name: `Portão Deslizante Atlante (${g})`, role: `Arco monumental de Oricalco com folhas mecanizadas deslizantes e cúpula central (T1–T5)` },
+      { id: 'farm', name: `Jardins Concêntricos (${g})`, role: `Hidroponia em terraços circulares com fonte central, canais aquáticos e estufa de cristal (T1–T5)` },
+      { id: 'house', name: `Mansão Atlante (${g})`, role: `Residência octogonal evolutiva com pórtico, cúpulas escalonadas e espelhos d’água (T1–T5)` },
+      { id: 'temple', name: `Templo Atlante (${g})`, role: `Santuário de Oricalco e cristal para invocar criaturas míticas sob ${g}` },
+      { id: 'titan_gate', name: `Monólito Estelar (${g})`, role: `Portal Titã com 3 anéis giroscópicos em contra-rotação e feixe dimensional (T4–T5)` },
+    ];
+  }
   return [
     { id: 'town_center', name: `Centro da Cidade (${god})`, role: `Sede principal consagrada a ${god} — evolui da Era Arcaica até a Metrópole Divina (T5)` },
     { id: 'barracks', name: `Quartel de ${god}`, role: `Treina infantaria sob a bênção de ${god}` },

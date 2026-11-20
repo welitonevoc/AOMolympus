@@ -9,6 +9,11 @@ import {
   buildEgyptianArchBuilding,
   resolveEgyptianArchGod,
 } from '../civilizacao/egipcios/egyptianArchitectureSuite';
+import {
+  buildAtlanteanArchBuilding,
+  resolveAtlanteanArchGod,
+} from '../civilizacao/atlantes/atlanteanArchitectureSuite';
+import { attachAtlanteanArchUserData } from '../civilizacao/atlantes/atlanteanBuildingModels';
 
 export const EXPANDED_BUILDING_KINDS: ReadonlySet<BuildingKind> = new Set<BuildingKind>([
   'village_center',
@@ -42,6 +47,8 @@ export interface ExpandedBuildingMeshResult {
   barWidth: number;
   beaconCrystal?: THREE.Object3D;
   vortexRing?: THREE.Object3D;
+  metropolisHalo?: THREE.Object3D;
+  metropolisCrystal?: THREE.Object3D;
 }
 
 interface CultureMaterials {
@@ -138,6 +145,8 @@ export function createExpandedBuildingMesh(
   let barWidth = 2.4;
   let beaconCrystal: THREE.Object3D | undefined;
   let vortexRing: THREE.Object3D | undefined;
+  let metropolisHalo: THREE.Object3D | undefined;
+  let metropolisCrystal: THREE.Object3D | undefined;
 
   if (kind === 'village_center') {
     // Compact cultural fortified outpost hall with watch post & supply crates
@@ -224,21 +233,36 @@ export function createExpandedBuildingMesh(
     barHeight = 4.4;
     barWidth = 2.4;
   } else if (kind === 'counter_barracks') {
-    // Atlantean angular tactical barracks with dual spear racks and turquoise domed bastion
-    addPart(new THREE.BoxGeometry(4.8, 0.34, 4.2), cm.base, 0, 0.17, 0);
-    addPart(new THREE.BoxGeometry(4.2, 1.9, 3.4), cm.wall, 0, 1.28, 0);
-    addPart(new THREE.BoxGeometry(4.4, 0.2, 3.6), cm.trim, 0, 2.26, 0);
-    addPart(new THREE.ConeGeometry(2.15, 1.25, 6), cm.roof, 0, 2.98, 0);
-    // Flanking spear pylons
-    addPart(new THREE.BoxGeometry(0.72, 2.55, 0.72), cm.trim, -1.9, 1.55, 1.55);
-    addPart(new THREE.BoxGeometry(0.72, 2.55, 0.72), cm.trim, 1.9, 1.55, 1.55);
-    addPart(new THREE.OctahedronGeometry(0.28, 0), pal.crystalGlow, -1.9, 3.05, 1.55);
-    addPart(new THREE.OctahedronGeometry(0.28, 0), pal.crystalGlow, 1.9, 3.05, 1.55);
-    addPart(new THREE.BoxGeometry(1.15, 1.4, 0.14), pal.obsidian, 0, 1.0, 1.72);
-    addPart(new THREE.BoxGeometry(0.95, 0.65, 0.08), teamMat, 0, 2.0, 1.78);
-    markerRadius = 2.6;
-    barHeight = 4.1;
-    barWidth = 2.6;
+    if (pantheon === 'atlantean') {
+      const god = resolveAtlanteanArchGod(majorGod || String(pantheon));
+      const built = buildAtlanteanArchBuilding('counter_barracks', god, age, enableShadows, teamMat);
+      built.root.scale.setScalar(built.meta.gameplayScale);
+      group.add(built.root);
+      attachAtlanteanArchUserData(group, built);
+      beaconCrystal = built.beaconCrystal;
+      vortexRing = built.vortexRing;
+      metropolisHalo = built.metropolisHalo;
+      metropolisCrystal = built.metropolisCrystal;
+      const ageDelta = Math.max(0, built.effectiveTier - built.meta.minTier);
+      markerRadius = built.meta.markerRadius + ageDelta * 0.12;
+      barHeight = built.meta.barHeight + ageDelta * 0.35;
+      barWidth = built.meta.barWidth;
+    } else {
+      // Tactical counter-barracks for non-Atlantean factions
+      addPart(new THREE.BoxGeometry(4.8, 0.34, 4.2), cm.base, 0, 0.17, 0);
+      addPart(new THREE.BoxGeometry(4.2, 1.9, 3.4), cm.wall, 0, 1.28, 0);
+      addPart(new THREE.BoxGeometry(4.4, 0.2, 3.6), cm.trim, 0, 2.26, 0);
+      addPart(new THREE.ConeGeometry(2.15, 1.25, 6), cm.roof, 0, 2.98, 0);
+      addPart(new THREE.BoxGeometry(0.72, 2.55, 0.72), cm.trim, -1.9, 1.55, 1.55);
+      addPart(new THREE.BoxGeometry(0.72, 2.55, 0.72), cm.trim, 1.9, 1.55, 1.55);
+      addPart(new THREE.OctahedronGeometry(0.28, 0), pal.crystalGlow, -1.9, 3.05, 1.55);
+      addPart(new THREE.OctahedronGeometry(0.28, 0), pal.crystalGlow, 1.9, 3.05, 1.55);
+      addPart(new THREE.BoxGeometry(1.15, 1.4, 0.14), pal.obsidian, 0, 1.0, 1.72);
+      addPart(new THREE.BoxGeometry(0.95, 0.65, 0.08), teamMat, 0, 2.0, 1.78);
+      markerRadius = 2.6;
+      barHeight = 4.1;
+      barWidth = 2.6;
+    }
   } else if (kind === 'great_hall') {
     // Norse Retold Great Hall: dragon-prow gabled timber hall with shield wall & glowing hearth
     addPart(new THREE.BoxGeometry(5.2, 0.38, 4.4), pal.stoneDark, 0, 0.19, 0);
@@ -335,17 +359,22 @@ export function createExpandedBuildingMesh(
       markerRadius = 1.45;
       barHeight = 2.6 + age * 0.34;
       barWidth = 1.8;
+    } else if (pantheon === 'atlantean') {
+      const god = resolveAtlanteanArchGod(majorGod || String(pantheon));
+      const built = buildAtlanteanArchBuilding('wall', god, age, enableShadows, teamMat);
+      built.root.scale.setScalar(built.meta.gameplayScale);
+      group.add(built.root);
+      attachAtlanteanArchUserData(group, built);
+      markerRadius = built.meta.markerRadius;
+      barHeight = built.meta.barHeight + age * 0.34;
+      barWidth = built.meta.barWidth;
     } else {
       // Evolving Wall across all 5 Ages:
       // Age 1: Rough wood palisade -> Age 2: Braced timber/bronze -> Age 3: Stone masonry
       // Age 4: Fortified Citadel / Orichalcum -> Age 5: Era dos Deuses gilded battlements & glowing beacons
       const wallHeight = age >= 5 ? 2.85 : age >= 4 ? 2.55 : age >= 3 ? 2.2 : age >= 2 ? 1.92 : 1.65;
-      const isWood = age <= 2 && pantheon !== 'atlantean';
-      const bodyMat = isWood
-        ? pal.timber
-        : age >= 4 && pantheon === 'atlantean'
-          ? pal.orichalcum
-          : cm.wall;
+      const isWood = age <= 2;
+      const bodyMat = isWood ? pal.timber : cm.wall;
       addPart(new THREE.BoxGeometry(2.85, 0.26, 1.05), cm.base, 0, 0.13, 0);
       addPart(new THREE.BoxGeometry(2.7, wallHeight, 0.82), bodyMat, 0, 0.26 + wallHeight / 2, 0);
       if (age >= 2) {
@@ -410,11 +439,21 @@ export function createExpandedBuildingMesh(
       markerRadius = 1.95;
       barHeight = 3.6 + age * 0.38;
       barWidth = 2.4;
+    } else if (pantheon === 'atlantean') {
+      const god = resolveAtlanteanArchGod(majorGod || String(pantheon));
+      const built = buildAtlanteanArchBuilding('gate', god, age, enableShadows, teamMat);
+      built.root.scale.setScalar(built.meta.gameplayScale);
+      group.add(built.root);
+      attachAtlanteanArchUserData(group, built);
+      beaconCrystal = built.beaconCrystal;
+      markerRadius = built.meta.markerRadius;
+      barHeight = built.meta.barHeight + age * 0.36;
+      barWidth = built.meta.barWidth;
     } else {
       // Fortified arched gatehouse evolving cleanly from Age 1 -> Age 5
       const gateH = age >= 5 ? 3.2 : age >= 4 ? 2.85 : age >= 3 ? 2.45 : age >= 2 ? 2.18 : 1.92;
-      const isWood = age <= 2 && pantheon !== 'atlantean';
-      const pillarMat = isWood ? pal.timber : age >= 4 && pantheon === 'atlantean' ? pal.orichalcum : cm.base;
+      const isWood = age <= 2;
+      const pillarMat = isWood ? pal.timber : cm.base;
       addPart(new THREE.BoxGeometry(1.05, gateH, 1.25), pillarMat, -1.25, gateH / 2, 0);
       addPart(new THREE.BoxGeometry(1.05, gateH, 1.25), pillarMat, 1.25, gateH / 2, 0);
       addPart(new THREE.BoxGeometry(3.45, 0.68, 1.12), isWood ? pal.timber : cm.wall, 0, gateH + 0.2, 0);
@@ -446,18 +485,32 @@ export function createExpandedBuildingMesh(
       barWidth = 2.2;
     }
   } else if (kind === 'mirror_tower') {
-    // Atlantean Helios Mirror Tower: slender orichalcum spire with golden parabolic sun mirror & radiant crystal
-    addPart(new THREE.CylinderGeometry(1.45, 1.72, 0.44, 10), pal.obsidian, 0, 0.22, 0);
-    addPart(new THREE.CylinderGeometry(0.88, 1.18, 3.4, 10), pal.ivory, 0, 2.1, 0);
-    addPart(new THREE.CylinderGeometry(1.02, 0.94, 0.34, 10), pal.orichalcum, 0, 3.9, 0);
-    // Reflective Golden Mirror Dish + Solar Crystal Focus
-    const dish = addPart(new THREE.CylinderGeometry(0.85, 0.52, 0.26, 12), pal.gold, 0, 4.75, 0, Math.PI / 3, 0, 0);
-    dish.castShadow = true;
-    beaconCrystal = addPart(new THREE.OctahedronGeometry(0.45, 0), pal.ember, 0, 4.95, 0.35);
-    addPart(new THREE.BoxGeometry(0.72, 0.48, 0.08), teamMat, 0, 2.2, 1.08);
-    markerRadius = 1.8;
-    barHeight = 5.8;
-    barWidth = 2.1;
+    if (pantheon === 'atlantean') {
+      const god = resolveAtlanteanArchGod(majorGod || String(pantheon));
+      const built = buildAtlanteanArchBuilding('mirror_tower', god, age, enableShadows, teamMat);
+      built.root.scale.setScalar(built.meta.gameplayScale);
+      group.add(built.root);
+      attachAtlanteanArchUserData(group, built);
+      beaconCrystal = built.beaconCrystal;
+      metropolisHalo = built.metropolisHalo;
+      metropolisCrystal = built.metropolisCrystal;
+      const ageDelta = Math.max(0, built.effectiveTier - built.meta.minTier);
+      markerRadius = built.meta.markerRadius + ageDelta * 0.1;
+      barHeight = built.meta.barHeight + ageDelta * 0.4;
+      barWidth = built.meta.barWidth;
+    } else {
+      // Fallback Helios Mirror Tower for non-Atlantean factions
+      addPart(new THREE.CylinderGeometry(1.45, 1.72, 0.44, 10), pal.obsidian, 0, 0.22, 0);
+      addPart(new THREE.CylinderGeometry(0.88, 1.18, 3.4, 10), pal.ivory, 0, 2.1, 0);
+      addPart(new THREE.CylinderGeometry(1.02, 0.94, 0.34, 10), pal.orichalcum, 0, 3.9, 0);
+      const dish = addPart(new THREE.CylinderGeometry(0.85, 0.52, 0.26, 12), pal.gold, 0, 4.75, 0, Math.PI / 3, 0, 0);
+      dish.castShadow = true;
+      beaconCrystal = addPart(new THREE.OctahedronGeometry(0.45, 0), pal.ember, 0, 4.95, 0.35);
+      addPart(new THREE.BoxGeometry(0.72, 0.48, 0.08), teamMat, 0, 2.2, 1.08);
+      markerRadius = 1.8;
+      barHeight = 5.8;
+      barWidth = 2.1;
+    }
   } else if (kind === 'asgard_hill_fort') {
     // Freyr's Asgardian Hill Fort: Norse stone keep reinforced with glowing golden Asgardian runes & watch spires
     addPart(new THREE.BoxGeometry(6.6, 0.52, 6.6), pal.stoneDark, 0, 0.26, 0);
@@ -534,5 +587,14 @@ export function createExpandedBuildingMesh(
     barWidth = 3.8;
   }
 
-  return { group, markerRadius, barHeight, barWidth, beaconCrystal, vortexRing };
+  return {
+    group,
+    markerRadius,
+    barHeight,
+    barWidth,
+    beaconCrystal,
+    vortexRing,
+    metropolisHalo,
+    metropolisCrystal,
+  };
 }

@@ -17,6 +17,13 @@ import {
   ATLANTEAN_TOWN_CENTER_THEMES,
 } from '../../civilizacao/atlantes/atlanteanTownCenterModel';
 import {
+  ATLANTEAN_ARCH_THEMES,
+  buildAtlanteanArchBuilding,
+  getAtlanteanArchGroundTexture,
+  isAtlanteanArchBuilding,
+  resolveAtlanteanArchGod,
+} from '../../civilizacao/atlantes/atlanteanArchitectureSuite';
+import {
   buildNorseHillFort as buildNorseFortressStudio,
   NORSE_FORTRESS_THEMES,
   NorseFortressAction,
@@ -355,6 +362,199 @@ export function buildBuildingStudioSubject(ctx: BuildingStudioBuildContext): THR
         if (p >= 1) {
           environmentGroup.remove(b.mesh);
           activeBolts.splice(i, 1);
+        }
+      }
+    };
+  } else if (selectedCiv === 'atlantean' && isAtlanteanArchBuilding(selectedBuilding)) {
+    const godKey = resolveAtlanteanArchGod(selectedMajorGod);
+    const theme = ATLANTEAN_ARCH_THEMES[godKey];
+
+    scene.background = new THREE.Color(theme.bgHex);
+    scene.fog = new THREE.FogExp2(theme.bgHex, 0.015);
+
+    const groundTex = getAtlanteanArchGroundTexture(godKey);
+    groundTex.userData.shared = true;
+    const groundDisc = new THREE.Mesh(
+      new THREE.CylinderGeometry(8.8, 9.2, 0.34, 64),
+      new THREE.MeshStandardMaterial({
+        map: groundTex,
+        roughness: 0.78,
+        metalness: 0.06,
+      })
+    );
+    groundDisc.position.y = -0.17;
+    groundDisc.receiveShadow = !isSoftwareGl;
+    environmentGroup.add(groundDisc);
+
+    const deityRing = new THREE.Mesh(
+      new THREE.RingGeometry(3.45, 3.82, 64),
+      new THREE.MeshBasicMaterial({
+        color: theme.glowHex,
+        transparent: true,
+        opacity: 0.28 + buildingAge * 0.04,
+        blending: THREE.AdditiveBlending,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+      })
+    );
+    deityRing.rotation.x = -Math.PI / 2;
+    deityRing.position.y = 0.025;
+    environmentGroup.add(deityRing);
+
+    const built = buildAtlanteanArchBuilding(
+      selectedBuilding,
+      godKey,
+      buildingAge,
+      !isSoftwareGl
+    );
+    group = built.root;
+
+    // Orichalcum dart volleys for Atlantean Watch Tower / Mirror Tower
+    const isTower = selectedBuilding === 'tower' || selectedBuilding === 'mirror_tower';
+    const dartGeo = isTower ? new THREE.CylinderGeometry(0.018, 0.018, 0.72, 6) : null;
+    if (dartGeo) dartGeo.rotateX(Math.PI / 2);
+    const tipGeo = isTower ? new THREE.OctahedronGeometry(0.055, 0) : null;
+    const dartMat = isTower ? new THREE.MeshBasicMaterial({ color: theme.goldHex }) : null;
+    const tipMat = isTower
+      ? new THREE.MeshBasicMaterial({
+          color: theme.glowHex,
+          transparent: true,
+          opacity: 0.95,
+          blending: THREE.AdditiveBlending,
+        })
+      : null;
+    const activeDarts: Array<{
+      mesh: THREE.Group;
+      start: THREE.Vector3;
+      target: THREE.Vector3;
+      progress: number;
+      speed: number;
+    }> = [];
+    let volleyTimer = 0;
+
+    if (dartGeo && tipGeo && dartMat && tipMat) {
+      group.userData.disposeExtra = () => {
+        dartGeo.dispose();
+        tipGeo.dispose();
+        dartMat.dispose();
+        tipMat.dispose();
+      };
+    }
+
+    let elapsed = 0;
+    group.userData.animatePose = (dt: number) => {
+      elapsed += dt;
+
+      built.flames.forEach((fl, idx) => {
+        fl.scale.set(
+          1 + Math.sin(elapsed * 12 + idx * 1.5) * 0.14,
+          1 + Math.cos(elapsed * 15 + idx * 1.3) * 0.22,
+          1 + Math.sin(elapsed * 11 + idx * 1.1) * 0.14
+        );
+      });
+
+      built.rotators.forEach((r) => {
+        r.node.rotation[r.axis] += dt * r.speed;
+      });
+
+      built.floaters.forEach((f) => {
+        f.node.position.y = f.baseY + Math.sin(elapsed * f.speed + f.phase) * f.amp;
+      });
+
+      built.fountainHeads.forEach((fh) => {
+        fh.rotation.y += dt * 0.95;
+      });
+
+      if (built.pressHammers.length > 0) {
+        const c = Math.sin(elapsed * 3.4);
+        const drop = Math.pow(Math.max(0, c), 2) * 0.36;
+        built.pressHammers.forEach((ph) => {
+          ph.node.position.y = ph.baseY - drop;
+        });
+      }
+
+      built.mirrorAssemblies.forEach((ma, idx) => {
+        ma.pivot.rotation.y = Math.sin(elapsed * 0.85 + idx) * 1.15;
+        ma.crystal.rotation.y += dt * 1.8;
+        const bMat = ma.beam.material as THREE.MeshBasicMaterial;
+        if (bMat && typeof bMat.opacity === 'number') {
+          bMat.opacity = 0.28 + (Math.sin(elapsed * 4.5 + idx) * 0.5 + 0.5) * 0.42;
+        }
+      });
+
+      built.cropClusters.forEach((cc) => {
+        cc.node.rotation.z = Math.sin(elapsed * 2.1 + cc.phase) * 0.07;
+        cc.node.rotation.x = Math.cos(elapsed * 1.7 + cc.phase) * 0.05;
+      });
+
+      built.gyroscopes.forEach((g, idx) => {
+        g.outer.rotation.z += dt * 1.15;
+        g.mid.rotation.x += dt * 1.45;
+        g.inner.rotation.y -= dt * 2.1;
+        g.core.scale.setScalar(1 + Math.sin(elapsed * 4.2 + idx) * 0.12);
+      });
+
+      if (built.slidingGates.length > 0) {
+        const shouldOpen = Math.sin(elapsed * 0.85) > 0.0;
+        const targetSlide = shouldOpen ? 0.68 : 0.0;
+        for (const sg of built.slidingGates) {
+          sg.currentSlide = THREE.MathUtils.damp(sg.currentSlide, targetSlide, 4.8, dt);
+          sg.left.position.x = -sg.baseX - sg.currentSlide;
+          sg.right.position.x = sg.baseX + sg.currentSlide;
+        }
+      }
+
+      if (built.beaconCrystal && built.rotators.every((r) => r.node !== built.beaconCrystal)) {
+        built.beaconCrystal.rotation.y += dt * 1.5;
+      }
+      if (built.metropolisHalo) {
+        built.metropolisHalo.rotation.z += dt * 0.8;
+      }
+      if (built.metropolisCrystal) {
+        built.metropolisCrystal.rotation.y += dt * 1.5;
+      }
+
+      deityRing.rotation.z += dt * 0.35;
+
+      if (isTower && dartGeo && tipGeo && dartMat && tipMat) {
+        volleyTimer -= dt;
+        if (volleyTimer <= 0) {
+          volleyTimer = 0.52;
+          const a = Math.random() * Math.PI * 2;
+          const dist = 3.4 + Math.random() * 2.4;
+          const originY = built.towerFireOriginY ?? 3.1;
+          const start = new THREE.Vector3(Math.cos(a) * 0.62, originY, Math.sin(a) * 0.62);
+          const target = new THREE.Vector3(Math.cos(a) * dist, 0.06, Math.sin(a) * dist);
+          const dartGrp = new THREE.Group();
+          const shaft = new THREE.Mesh(dartGeo, dartMat);
+          const tip = new THREE.Mesh(tipGeo, tipMat);
+          tip.position.z = 0.38;
+          dartGrp.add(shaft, tip);
+          dartGrp.position.copy(start);
+          environmentGroup.add(dartGrp);
+          activeDarts.push({
+            mesh: dartGrp,
+            start,
+            target,
+            progress: 0,
+            speed: 1.65 + Math.random() * 0.35,
+          });
+        }
+        for (let i = activeDarts.length - 1; i >= 0; i--) {
+          const d = activeDarts[i];
+          d.progress += dt * d.speed;
+          const p = Math.min(1, d.progress);
+          const pos = new THREE.Vector3().lerpVectors(d.start, d.target, p);
+          pos.y += Math.sin(p * Math.PI) * 0.72;
+          d.mesh.position.copy(pos);
+          const nextP = Math.min(1, p + 0.05);
+          const nextPos = new THREE.Vector3().lerpVectors(d.start, d.target, nextP);
+          nextPos.y += Math.sin(nextP * Math.PI) * 0.72;
+          d.mesh.lookAt(nextPos);
+          if (p >= 1) {
+            environmentGroup.remove(d.mesh);
+            activeDarts.splice(i, 1);
+          }
         }
       }
     };

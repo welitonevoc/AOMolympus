@@ -547,7 +547,10 @@ export function updateBuildings(ctx: BuildingsAndProductionContext, dt: number):
       }
     }
 
-    if (b.isConstructed && (b.kind === 'town_center' || b.kind === 'tower' || b.kind === 'fortress')) {
+    if (
+      b.isConstructed &&
+      (b.kind === 'town_center' || b.kind === 'tower' || b.kind === 'mirror_tower' || b.kind === 'fortress')
+    ) {
       const halo = b.mesh.userData.metropolisHalo as THREE.Object3D | undefined;
       if (halo) {
         halo.rotation.z += dt * 0.75;
@@ -659,7 +662,22 @@ export function updateBuildings(ctx: BuildingsAndProductionContext, dt: number):
       }
     }
 
-    if (b.mesh.userData.egyptVortexPairs) {
+    if (b.mesh.userData.atlanteanGyroscopes) {
+      const gyros = b.mesh.userData.atlanteanGyroscopes as Array<{
+        outer: THREE.Object3D;
+        mid: THREE.Object3D;
+        inner: THREE.Object3D;
+        core: THREE.Object3D;
+      }>;
+      const mult = b.isConstructed ? 1.0 : 0.4;
+      for (let i = 0; i < gyros.length; i++) {
+        const g = gyros[i];
+        g.outer.rotation.z += dt * 1.15 * mult;
+        g.mid.rotation.x += dt * 1.45 * mult;
+        g.inner.rotation.y -= dt * 2.1 * mult;
+        g.core.scale.setScalar(1 + Math.sin(ctx.elapsedSeconds * 4.2 + i) * 0.12);
+      }
+    } else if (b.mesh.userData.egyptVortexPairs) {
       const vPairs = b.mesh.userData.egyptVortexPairs as Array<{
         outer: THREE.Object3D;
         inner: THREE.Object3D;
@@ -684,6 +702,68 @@ export function updateBuildings(ctx: BuildingsAndProductionContext, dt: number):
       b.mesh.userData.vortexRing.rotation.z += dt * (b.isConstructed ? 2.2 : 0.8);
     }
 
+    if (b.isConstructed && b.mesh.userData.atlanteanRotators) {
+      const rots = b.mesh.userData.atlanteanRotators as Array<{
+        node: THREE.Object3D;
+        axis: 'x' | 'y' | 'z';
+        speed: number;
+      }>;
+      for (let i = 0; i < rots.length; i++) {
+        const r = rots[i];
+        r.node.rotation[r.axis] += dt * r.speed;
+      }
+    }
+
+    if (b.isConstructed && b.mesh.userData.atlanteanFloaters) {
+      const flts = b.mesh.userData.atlanteanFloaters as Array<{
+        node: THREE.Object3D;
+        baseY: number;
+        amp: number;
+        speed: number;
+        phase: number;
+      }>;
+      for (let i = 0; i < flts.length; i++) {
+        const f = flts[i];
+        f.node.position.y = f.baseY + Math.sin(ctx.elapsedSeconds * f.speed + f.phase) * f.amp;
+      }
+    }
+
+    if (b.isConstructed && b.mesh.userData.atlanteanFountains) {
+      const fHeads = b.mesh.userData.atlanteanFountains as THREE.Object3D[];
+      for (let i = 0; i < fHeads.length; i++) {
+        fHeads[i].rotation.y += dt * 0.95;
+      }
+    }
+
+    if (b.isConstructed && b.mesh.userData.atlanteanPresses) {
+      const presses = b.mesh.userData.atlanteanPresses as Array<{
+        node: THREE.Object3D;
+        baseY: number;
+      }>;
+      const c = Math.sin(ctx.elapsedSeconds * 3.4);
+      const drop = Math.pow(Math.max(0, c), 2) * 0.36;
+      for (let i = 0; i < presses.length; i++) {
+        presses[i].node.position.y = presses[i].baseY - drop;
+      }
+    }
+
+    if (b.isConstructed && b.mesh.userData.atlanteanMirrors) {
+      const mirrors = b.mesh.userData.atlanteanMirrors as Array<{
+        pivot: THREE.Object3D;
+        beam: THREE.Mesh;
+        crystal: THREE.Object3D;
+      }>;
+      for (let i = 0; i < mirrors.length; i++) {
+        const ma = mirrors[i];
+        ma.pivot.rotation.y = Math.sin(ctx.elapsedSeconds * 0.85 + i) * 1.15;
+        ma.crystal.rotation.y += dt * 1.8;
+        const bMat = ma.beam.material as THREE.MeshBasicMaterial;
+        if (bMat && typeof bMat.opacity === 'number') {
+          bMat.opacity = 0.28 + (Math.sin(ctx.elapsedSeconds * 4.5 + i) * 0.5 + 0.5) * 0.42;
+        }
+      }
+    }
+
     if (b.isConstructed && b.mesh.userData.greekGates) {
       const gatePairs = b.mesh.userData.greekGates as Array<{
         leftPivot: THREE.Object3D;
@@ -706,6 +786,32 @@ export function updateBuildings(ctx: BuildingsAndProductionContext, dt: number):
         gt.currentAngle = THREE.MathUtils.damp(gt.currentAngle, targetAngle, 5.5, dt);
         gt.leftPivot.rotation.y = -gt.currentAngle;
         gt.rightPivot.rotation.y = gt.currentAngle;
+      }
+    }
+
+    if (b.isConstructed && b.mesh.userData.atlanteanSlidingGates) {
+      const sGates = b.mesh.userData.atlanteanSlidingGates as Array<{
+        left: THREE.Object3D;
+        right: THREE.Object3D;
+        baseX: number;
+        currentSlide: number;
+      }>;
+      let allyNear = false;
+      for (const u of ctx.units.values()) {
+        if (
+          u.team === b.team &&
+          u.hp > 0 &&
+          Math.hypot(u.mesh.position.x - b.mesh.position.x, u.mesh.position.z - b.mesh.position.z) <= 5.5
+        ) {
+          allyNear = true;
+          break;
+        }
+      }
+      const targetSlide = allyNear ? 0.68 : 0.0;
+      for (const sg of sGates) {
+        sg.currentSlide = THREE.MathUtils.damp(sg.currentSlide, targetSlide, 5.5, dt);
+        sg.left.position.x = -sg.baseX - sg.currentSlide;
+        sg.right.position.x = sg.baseX + sg.currentSlide;
       }
     }
 

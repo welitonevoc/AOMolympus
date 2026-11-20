@@ -18,6 +18,11 @@ import {
 } from 'lucide-react';
 import { AtlanteanFortressAction } from '../../civilizacao/atlantes/atlanteanFortressModel';
 import {
+  ATLANTEAN_ARCH_BUILDING_META,
+  isAtlanteanArchBuilding,
+  resolveAtlanteanArchGod,
+} from '../../civilizacao/atlantes/atlanteanArchitectureSuite';
+import {
   EGYPT_ARCH_BUILDING_META,
   isEgyptianArchBuilding,
   resolveEgyptianArchGod,
@@ -679,6 +684,103 @@ export function StudioWorldBottomControls(props: StudioWorldBottomControlsProps)
         })}
 
         <div className="h-4 w-px bg-white/20 mx-1" />
+        <button
+          type="button"
+          onClick={() => setShowHumanScale((v) => !v)}
+          className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+            showHumanScale
+              ? 'bg-sky-500/20 text-sky-200 border border-sky-400/50'
+              : 'border border-white/12 text-[#9ca3af] hover:text-white'
+          }`}
+        >
+          <Users className="h-3.5 w-3.5" />
+          <span>Escala Aldeão</span>
+        </button>
+      </>
+    );
+  }
+
+  if (galleryCategory === 'building' && selectedCiv === 'atlantean' && isAtlanteanArchBuilding(selectedBuilding)) {
+    const meta = ATLANTEAN_ARCH_BUILDING_META[selectedBuilding];
+    const allTiers: Array<{ tier: AgeLevel; label: string }> = [
+      { tier: 1, label: 'T1 • Arcaico' },
+      { tier: 2, label: 'T2 • Clássico' },
+      { tier: 3, label: 'T3 • Heroico' },
+      { tier: 4, label: 'T4 • Mítico' },
+      { tier: 5, label: 'T5 • Imperial' },
+    ];
+    const tiers = allTiers.filter((item) => item.tier >= meta.minTier);
+    const effTier = Math.max(meta.minTier, Math.min(5, buildingAge));
+    const curAtlGod = resolveAtlanteanArchGod(selectedMajorGod);
+
+    return (
+      <>
+        {(
+          [
+            { id: 'Cronos', key: 'kronos', label: '⏳ Kronos', active: 'bg-gradient-to-r from-sky-400 to-indigo-700 text-white font-black shadow-lg shadow-sky-500/30 ring-1 ring-sky-300' },
+            { id: 'Urano', key: 'oranos', label: '🌪️ Oranos', active: 'bg-gradient-to-r from-amber-300 to-sky-600 text-slate-950 font-black shadow-lg shadow-amber-500/30 ring-1 ring-amber-300' },
+            { id: 'Gaia', key: 'gaia', label: '🌿 Gaia', active: 'bg-gradient-to-r from-emerald-400 to-emerald-800 text-white font-black shadow-lg shadow-emerald-500/30 ring-1 ring-emerald-300' },
+          ] as const
+        ).map((g) => {
+          const isSel = curAtlGod === g.key;
+          return (
+            <button
+              key={g.id}
+              type="button"
+              onClick={() => setSelectedMajorGod(g.id)}
+              className={`rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                isSel ? g.active : 'border border-white/10 text-[#cbd5e1] hover:bg-white/10'
+              }`}
+            >
+              <span>{g.label}</span>
+            </button>
+          );
+        })}
+
+        <div className="h-4 w-px bg-white/20 mx-1" />
+
+        {tiers.map((t) => {
+          const isSel = effTier === t.tier;
+          return (
+            <button
+              key={t.tier}
+              type="button"
+              onClick={() => {
+                setBuildingAge(t.tier);
+                if (t.tier <= 4) {
+                  onSelectTier(t.tier as 1 | 2 | 3 | 4);
+                }
+              }}
+              className={`rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                isSel
+                  ? t.tier === 5
+                    ? 'bg-gradient-to-r from-yellow-200 via-amber-400 to-amber-600 text-slate-950 shadow-lg font-black ring-1 ring-amber-200'
+                    : 'bg-gradient-to-r from-amber-300 to-amber-500 text-slate-950 shadow-md font-black'
+                  : 'border border-white/10 text-[#cbd5e1] hover:bg-white/10'
+              }`}
+            >
+              <span>{t.label}</span>
+            </button>
+          );
+        })}
+
+        <div className="h-4 w-px bg-white/20 mx-1" />
+
+        <button
+          type="button"
+          onClick={() => setFocusDivine((v) => !v)}
+          className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+            focusDivine
+              ? 'bg-sky-500 text-slate-950 shadow font-black'
+              : 'border border-sky-400/40 text-sky-200 hover:bg-sky-500/20'
+          }`}
+        >
+          <Eye className="h-3.5 w-3.5" />
+          <span>{focusDivine ? 'Visão Geral' : 'Focar Detalhe'}</span>
+        </button>
+
+        <div className="h-4 w-px bg-white/20 mx-1" />
+
         <button
           type="button"
           onClick={() => setShowHumanScale((v) => !v)}

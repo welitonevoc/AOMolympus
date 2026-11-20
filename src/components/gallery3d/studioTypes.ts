@@ -1,5 +1,9 @@
 import { EGYPT_ARCH_BUILDING_META, isEgyptianArchBuilding } from '../../civilizacao/egipcios/egyptianArchitectureSuite';
 import {
+  ATLANTEAN_ARCH_BUILDING_META,
+  isAtlanteanArchBuilding,
+} from '../../civilizacao/atlantes/atlanteanArchitectureSuite';
+import {
   AgeLevel,
   BuildingKind,
   FaunaKind,
@@ -315,6 +319,34 @@ export function getFramingForSubject(params: FramingParams, focusHead: boolean):
       return {
         target: [0, 1.35, 0],
         offset: [dist * 0.54, dist * 0.42, dist * 0.72],
+        baseDist: dist,
+      };
+    }
+    const isAtlanteanArch = selectedCiv === 'atlantean' && isAtlanteanArchBuilding(selectedBuilding);
+    if (isAtlanteanArch) {
+      const meta = ATLANTEAN_ARCH_BUILDING_META[selectedBuilding];
+      if (focusHead) {
+        const [fx, fy, fz] = meta.focus;
+        const dist = 5.4;
+        return {
+          target: [fx, fy, fz],
+          offset: [dist * 0.24, dist * 0.22, dist * 0.94],
+          baseDist: dist,
+        };
+      }
+      const effTier = Math.max(meta.minTier, Math.min(5, buildingAge));
+      const baseOverview =
+        selectedBuilding === 'house'
+          ? 7.0
+          : selectedBuilding === 'titan_gate'
+            ? 10.2
+            : selectedBuilding === 'wall' || selectedBuilding === 'gate'
+              ? 8.2
+              : 8.8;
+      const dist = baseOverview + (effTier - meta.minTier) * 0.52;
+      return {
+        target: [0, 1.4, 0],
+        offset: [dist * 0.56, dist * 0.44, dist * 0.70],
         baseDist: dist,
       };
     }

@@ -54,7 +54,21 @@ export function hasBespokeAgeEvolution(style: ArchStyleId, kind: BuildingKind): 
     return kind === 'fortress';
   }
   if (style === 'atlantean') {
-    return kind === 'fortress';
+    return (
+      kind === 'fortress' ||
+      kind === 'siege_works' ||
+      kind === 'counter_barracks' ||
+      kind === 'tower' ||
+      kind === 'mirror_tower' ||
+      kind === 'farm' ||
+      kind === 'titan_gate' ||
+      kind === 'market' ||
+      kind === 'armory' ||
+      kind === 'barracks' ||
+      kind === 'stable' ||
+      kind === 'archery_range' ||
+      kind === 'house'
+    );
   }
   return false;
 }

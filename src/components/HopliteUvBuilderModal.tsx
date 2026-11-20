@@ -4,6 +4,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { AtlanteanAction } from '../civilizacao/atlantes/atlanteanVillagerModel';
 import { AtlanteanFortressAction } from '../civilizacao/atlantes/atlanteanFortressModel';
 import { isEgyptianArchBuilding } from '../civilizacao/egipcios/egyptianArchitectureSuite';
+import { isAtlanteanArchBuilding } from '../civilizacao/atlantes/atlanteanArchitectureSuite';
 import { EgyptianLaborerAction } from '../civilizacao/egipcios/egyptianVillagerModel';
 import { GreekFortressAction } from '../civilizacao/gregos/greekFortressModel';
 import { ZeusHopliteAction } from '../civilizacao/gregos/zeusHopliteModel';
@@ -389,8 +390,12 @@ export function HopliteUvBuilderModal({
       galleryCategory === 'building' &&
       selectedCiv === 'egyptian' &&
       isEgyptianArchBuilding(selectedBuilding);
+    const isAtlanteanArch =
+      galleryCategory === 'building' &&
+      selectedCiv === 'atlantean' &&
+      isAtlanteanArchBuilding(selectedBuilding);
     const isGod = galleryCategory === 'unit' && isGreekOrEgyptianGod(selectedUnit, selectedCiv);
-    if (!isTemple && !isEgyptArch && !isGod) return;
+    if (!isTemple && !isEgyptArch && !isAtlanteanArch && !isGod) return;
     const framing = getFraming(focusDivine);
     const ctrl = controlsRef.current;
     const cam = cameraRef.current;
