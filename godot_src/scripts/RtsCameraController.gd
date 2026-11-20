@@ -16,8 +16,11 @@ var touch_points: Dictionary = {}
 var initial_pinch_distance: float = 0.0
 var initial_pinch_zoom: float = 0.0
 var is_pinching: bool = false
-var last_single_touch_pos: Vector2 = Vector2.ZERO
-var is_dragging_map: bool = false
+
+# Arrastar com 1 dedo (Drag Pan)
+var touch_start_pos: Vector2 = Vector2.ZERO
+var is_one_finger_drag: bool = false
+var drag_threshold: float = 12.0 # pixels para diferenciar toque/clique de arrasto
 
 func _ready() -> void:
 	if camera:
@@ -54,12 +57,11 @@ func _unhandled_input(event: InputEvent) -> void:
 		if event.pressed:
 			touch_points[event.index] = event.position
 			if touch_points.size() == 1:
-				last_single_touch_pos = event.position
-				is_dragging_map = false
+				touch_start_pos = event.position
+				is_one_finger_drag = false
 			elif touch_points.size() == 2:
-				# Início do gesto de Pinch (2 dedos)
 				is_pinching = true
-				is_dragging_map = false
+				is_one_finger_drag = false
 				var points := touch_points.values()
 				initial_pinch_distance = (points[0] as Vector2).distance_to(points[1] as Vector2)
 				initial_pinch_zoom = current_zoom
@@ -67,32 +69,41 @@ func _unhandled_input(event: InputEvent) -> void:
 			touch_points.erase(event.index)
 			if touch_points.size() < 2:
 				is_pinching = false
-			if touch_points.size() == 1:
-				var remaining := touch_points.values()
-				last_single_touch_pos = remaining[0]
-			elif touch_points.is_empty():
-				is_dragging_map = false
+			if touch_points.is_empty():
+				is_one_finger_drag = false
 
 	# 3. Arrastar dedos na tela (ScreenDrag)
 	elif event is InputEventScreenDrag:
 		touch_points[event.index] = event.position
 		
-		# PINCH-TO-ZOOM com 2 dedos
+		# Gesto 1: PINCH-TO-ZOOM com 2 dedos
 		if is_pinching and touch_points.size() >= 2:
 			var points := touch_points.values()
 			var current_dist: float = (points[0] as Vector2).distance_to(points[1] as Vector2)
 			if initial_pinch_distance > 10.0:
 				var ratio := current_dist / initial_pinch_distance
-				# Aproximar os dedos (ratio < 1) afasta a câmera (zoom out)
-				# Afastar os dedos (ratio > 1) aproxima a câmera (zoom in)
 				current_zoom = clampf(initial_pinch_zoom / ratio, min_zoom, max_zoom)
 				_apply_zoom()
 				
-		# PAN/ARRASTAR com 2 dedos juntos ou arrasto contínuo
-		elif touch_points.size() == 2:
-			var pan_speed := 0.04 * (current_zoom / 28.0)
-			var offset_3d := Vector3(-event.relative.x * pan_speed, 0.0, -event.relative.y * pan_speed)
-			global_position += offset_3d
+		# Gesto 2: ARRASTAR O MAPA (com 1 dedo ou 2 dedos)
+		else:
+			# Se moveu além do limite de clique, ativa o arrasto
+			if not is_one_finger_drag and event.position.distance_to(touch_start_pos) > drag_threshold:
+				is_one_finger_drag = true
+				
+			if is_one_finger_drag or touch_points.size() == 2:
+				# Converte o arrasto de tela 2D para movimento 3D no plano do chão alinhado à rotação da câmera (45 graus isométrica)
+				var pan_scale := 0.055 * (current_zoom / 28.0)
+				# Projeção isométrica (yaw em ~45 graus)
+				var cam_forward := -transform.basis.z
+				cam_forward.y = 0.0
+				cam_forward = cam_forward.normalized()
+				var cam_right := transform.basis.x
+				cam_right.y = 0.0
+				cam_right = cam_right.normalized()
+				
+				var move_delta := (-cam_right * event.relative.x + -cam_forward * event.relative.y) * pan_scale
+				global_position += move_delta
 
 func _apply_zoom() -> void:
 	if camera:

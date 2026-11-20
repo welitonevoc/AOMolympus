@@ -1,20 +1,74 @@
 extends Node3D
 class_name MainMapController
 
-@onready var camera: Camera3D = $RtsCameraRig/ElevationPivot/Camera3D
-@onready var hud: RtsHudCommandCenter = $CanvasLayer/CommandCenter
+@onready var camera: Camera3D = $RtsCameraRig/ElevationPivot/Camera3D if has_node("RtsCameraRig/ElevationPivot/Camera3D") else null
+@onready var hud: RtsHudCommandCenter = $CanvasLayer/CommandCenter if has_node("CanvasLayer/CommandCenter") else null
 @onready var ground: StaticBody3D = $NavigationRegion3D/Ground if has_node("NavigationRegion3D/Ground") else null
 
 var selected_entities: Array[Node] = []
+
+# Detecção de toque vs arrasto para mobile
+var touch_down_pos: Vector2 = Vector2.ZERO
+var is_drag_gesture: bool = false
+var drag_threshold: float = 14.0
 
 func _unhandled_input(event: InputEvent) -> void:
 	if not camera:
 		return
 		
-	if event.is_action_pressed("mouse_select"):
-		_handle_selection(event.position)
-	elif event.is_action_pressed("mouse_order"):
-		_handle_order(event.position)
+	# Mouse / Touch inicial
+	if event is InputEventMouseButton:
+		if event.pressed:
+			touch_down_pos = event.position
+			is_drag_gesture = false
+		else:
+			# Se soltou e NÃO foi arrasto de câmera, executa clique
+			if not is_drag_gesture:
+				if event.button_index == MOUSE_BUTTON_LEFT:
+					_handle_selection(event.position)
+				elif event.button_index == MOUSE_BUTTON_RIGHT:
+					_handle_order(event.position)
+					
+	elif event is InputEventScreenTouch:
+		if event.pressed:
+			touch_down_pos = event.position
+			is_drag_gesture = false
+		else:
+			if not is_drag_gesture:
+				# Toque rápido seleciona ou dá ordem se já houver selecionado
+				if selected_entities.is_empty():
+					_handle_selection(event.position)
+				else:
+					_handle_touch_smart(event.position)
+					
+	elif event is InputEventScreenDrag or event is InputEventMouseMotion:
+		if event.position.distance_to(touch_down_pos) > drag_threshold:
+			is_drag_gesture = true
+
+func _handle_touch_smart(screen_pos: Vector2) -> void:
+	# Em mobile: se clicar em um recurso ou inimigo, dá ordem; senão tenta selecionar nova unidade
+	var ray_origin := camera.project_ray_origin(screen_pos)
+	var ray_dir := camera.project_ray_normal(screen_pos)
+	var space_state := get_world_3d().direct_space_state
+	var query := PhysicsRayQueryParameters3D.create(ray_origin, ray_origin + ray_dir * 1000.0)
+	query.collision_mask = 2 | 4 | 8 # unidades, edifícios ou recursos
+	var result := space_state.intersect_ray(query)
+	
+	if not result.is_empty():
+		var col: Node = result.collider
+		var res := _find_resource_in_ancestors(col)
+		if res:
+			_handle_order(screen_pos)
+			return
+		var sel := _find_selectable_in_ancestors(col)
+		if sel and sel.team == "enemy":
+			_handle_order(screen_pos)
+			return
+		# Se tocou em outra unidade própria, troca a seleção
+		_handle_selection(screen_pos)
+	else:
+		# Tocou no chão: move
+		_handle_order(screen_pos)
 
 func _handle_selection(screen_pos: Vector2) -> void:
 	var ray_origin := camera.project_ray_origin(screen_pos)
@@ -28,7 +82,6 @@ func _handle_selection(screen_pos: Vector2) -> void:
 	)
 	query.collide_with_bodies = true
 	query.collide_with_areas = true
-	# Camadas 2 (unidade), 4 (edifício)
 	query.collision_mask = 2 | 4
 	
 	var result := space_state.intersect_ray(query)
@@ -64,7 +117,6 @@ func _handle_order(screen_pos: Vector2) -> void:
 		ray_origin,
 		ray_origin + ray_dir * ray_length
 	)
-	# Checar alvos de ataque (layer 2/4), recursos (layer 8) ou chão (layer 1)
 	query.collision_mask = 1 | 2 | 4 | 8
 	
 	var result := space_state.intersect_ray(query)
@@ -73,7 +125,6 @@ func _handle_order(screen_pos: Vector2) -> void:
 
 	var collider: Node = result.collider
 	
-	# 1. Alvo de Ataque (Unidade ou Edifício de time oposto ou neutro)
 	var target_enemy := _find_selectable_in_ancestors(collider)
 	if target_enemy and target_enemy.has_method("take_damage") and not selected_entities.has(target_enemy):
 		for entity in selected_entities:
@@ -82,7 +133,6 @@ func _handle_order(screen_pos: Vector2) -> void:
 		print("[MainMap] Ordem de ataque emitida contra: ", target_enemy.name)
 		return
 
-	# 2. Recurso (layer 8)
 	var resource := _find_resource_in_ancestors(collider)
 	if resource:
 		for entity in selected_entities:
@@ -91,7 +141,6 @@ func _handle_order(screen_pos: Vector2) -> void:
 		print("[MainMap] Ordem de coleta no recurso: ", resource.resource_name)
 		return
 
-	# 3. Ordem de movimentação no chão
 	var click_pos: Vector3 = result.position
 	var unit_count := 0
 	for entity in selected_entities:
