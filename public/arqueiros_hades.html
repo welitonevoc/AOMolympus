@@ -1,0 +1,1128 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Arqueiros de Hades 3D • Age of Mythology: Retold</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --ember: #ea580c;
+      --soul: #10b981;
+      --gold: #facc15;
+      --glass: rgba(10, 8, 18, 0.86);
+      --border: rgba(234, 88, 12, 0.45);
+    }
+    * { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #07050d;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      color: #f8fafc;
+    }
+    #canvas-wrap {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+      cursor: grab;
+    }
+    canvas:active { cursor: grabbing; }
+
+    #top-bar {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      right: 10px;
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      align-items: center;
+      z-index: 10;
+      pointer-events: none;
+    }
+    .pill-group {
+      display: flex;
+      gap: 4px;
+      background: var(--glass);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--border);
+      padding: 4px;
+      border-radius: 10px;
+      pointer-events: auto;
+    }
+    button {
+      padding: 6px 10px;
+      border: 1px solid transparent;
+      border-radius: 7px;
+      background: transparent;
+      color: #e2e8f0;
+      font-weight: 600;
+      font-size: 11.5px;
+      cursor: pointer;
+      transition: all 0.16s ease;
+    }
+    button:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+    button.on {
+      background: linear-gradient(135deg, #ea580c 0%, #6d28d9 100%);
+      color: #ffffff;
+      font-weight: 700;
+      box-shadow: 0 2px 12px rgba(234, 88, 12, 0.55);
+    }
+    button.tech-btn.on {
+      background: linear-gradient(135deg, #10b981 0%, #047857 100%);
+      color: #ffffff;
+    }
+
+    #bottom-pill {
+      position: fixed;
+      bottom: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--glass);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--border);
+      padding: 6px 16px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #fb923c;
+      white-space: nowrap;
+      pointer-events: none;
+      z-index: 10;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+    }
+    #bottom-pill span {
+      color: #cbd5e1;
+      font-weight: 500;
+    }
+
+    #guide-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(4, 3, 10, 0.90);
+      backdrop-filter: blur(12px);
+      z-index: 30;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    #guide-modal.open { display: flex; }
+    #guide-box {
+      background: #0d0a18;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      max-width: 860px;
+      width: 100%;
+      max-height: 85vh;
+      overflow-y: auto;
+      padding: 20px 24px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.85);
+      user-select: text;
+      -webkit-user-select: text;
+    }
+    #guide-box h2 { margin: 0 0 10px; color: #fb923c; font-size: 17px; }
+    #guide-box h3 { margin: 14px 0 6px; color: #34d399; font-size: 13.5px; border-bottom: 1px solid rgba(255,255,255,0.12); padding-bottom: 4px; }
+    #guide-box p, #guide-box li { font-size: 12.5px; color: #cbd5e1; line-height: 1.5; }
+  </style>
+</head>
+<body>
+
+<div id="canvas-wrap"></div>
+
+<!-- Barra Superior Exclusiva dos Arqueiros de Hades -->
+<div id="top-bar">
+  <div class="pill-group">
+    <button data-unit="toxote" class="unit-btn on">🏹 Toxote (55🪵 35🪙)</button>
+    <button data-unit="gastraphetoros" class="unit-btn">🎯 Gastraphetoros (100🪵 60🪙)</button>
+    <button data-unit="peltasta" class="unit-btn">🛡️ Peltasta (60🪵 45🪙)</button>
+  </div>
+
+  <div class="pill-group">
+    <button data-act="disparar" class="act-btn on">💀 Disparar</button>
+    <button data-act="andar" class="act-btn">🚶 Andar</button>
+    <button data-act="correr" class="act-btn">🏃 Correr</button>
+    <button data-act="vigilia" class="act-btn">👁️ Vigília</button>
+  </div>
+
+  <div class="pill-group">
+    <button data-target="infantaria" class="tgt-btn on">⚔️ Alvo: Infantaria</button>
+    <button data-target="torre" class="tgt-btn">🏰 Alvo: Construção (×12)</button>
+    <button data-target="arqueiro" class="tgt-btn">🏹 Alvo: Arqueiros</button>
+  </div>
+
+  <div class="pill-group">
+    <button id="btn-champ" class="tech-btn on">⭐ Campeão (-33%)</button>
+    <button id="btn-pantheon" class="tech-btn on">🔥 Ares+Apolo+Ártemis</button>
+    <button id="btn-hestia" class="tech-btn">✨ Flechas Predestinadas</button>
+    <button id="btn-guide">📖 Guia</button>
+  </div>
+</div>
+
+<!-- Linha Única de Atributos Calculados -->
+<div id="bottom-pill">
+  Hades • Toxote Campeão <span>| Alcance: 19 (+1 Hades) • Balística & Breu Grátis • Arco do Horror + Veneno</span>
+</div>
+
+<!-- Modal Enciclopédico dos Arqueiros de Hades -->
+<div id="guide-modal">
+  <div id="guide-box">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <h2>💀 Arqueria Suprema de Hades (Age of Mythology: Retold)</h2>
+      <button id="btn-close-guide" style="background:#dc2626; color:#fff; padding:6px 12px;">Fechar ✕</button>
+    </div>
+    <p>Em <strong>Age of Mythology: Retold</strong>, Hades domina o combate à distância graças aos seus bônus passivos exclusivos, economia em pesquisas e o temido <strong>Gastraphetoros</strong>.</p>
+
+    <h3>1. Arqueiros Principais e Unidades de Apoio</h3>
+    <ul>
+      <li><strong>Toxote (Campo de Tiro — Idade Clássica | 55🪵 35🪙):</strong> Forte contra infantaria; beneficia-se do alcance extra de Hades e do <em>Arco do Horror</em> de Ares.</li>
+      <li><strong>Gastraphetoros (Fortaleza — Idade Mítica | 100🪵 60🪙):</strong> Besteiro exclusivo de Hades que opera uma besta pesada antiga (<em>gastraphetes</em>, "arco de barriga"). Dispara <strong>1 virote pesado</strong> de alcance extremo com multiplicador massivo de <strong>12x contra construções e torres</strong>, além de ótimo dano contra infantaria.</li>
+      <li><strong>Flechas Predestinadas (Héstia — Expansão):</strong> Faz o projétil do Gastraphetoros ricochetear em até <strong>2 alvos extras próximos</strong> após o primeiro impacto.</li>
+      <li><strong>Peltasta (Campo de Tiro — Idade Heroica):</strong> Atirador de dardos especializado em eliminar arqueiros inimigos.</li>
+    </ul>
+
+    <h3>2. Bônus Passivos Exclusivos de Hades</h3>
+    <ul>
+      <li><strong>+1 de alcance e linha de visão</strong> para soldados e heróis de longo alcance.</li>
+      <li><strong>-33% no custo</strong> das tecnologias de soldados de longo alcance.</li>
+      <li>Pesquisa <strong>automática e gratuita de Balística e Breu Flamejante</strong> nas respectivas eras.</li>
+    </ul>
+
+    <h3>3. Rota Ideal de Deuses Menores: Ares → Apolo → Ártemis</h3>
+    <ul>
+      <li><strong>Arco do Horror (Ares — Idade Clássica):</strong> Aumenta o ataque dos Toxotes e a velocidade dos projéteis para acertar alvos em movimento.</li>
+      <li><strong>Raio Solar (Apolo — Idade Heroica):</strong> Aumenta o dano e revela a área ao redor dos inimigos atingidos.</li>
+      <li><strong>Flechas Envenenadas (Ártemis — Idade Mítica):</strong> Aplica dano contínuo de veneno em Toxotes, Peltastas e Gastraphetoros.</li>
+      <li><strong>Chamas de Tifão (Ártemis — Idade Mítica):</strong> Bônus massivo de ataque aos Gastraphetoros contra construções e tropas.</li>
+    </ul>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function () {
+  const T = window.THREE;
+  const wrap = document.getElementById('canvas-wrap');
+
+  function damp(a, b, l, dt) { return a + (b - a) * (1 - Math.exp(-l * dt)); }
+  function grp(p, x = 0, y = 0, z = 0) { const g = new T.Group(); g.position.set(x, y, z); if (p) p.add(g); return g; }
+  function sculpt(p, geo, mat, pos = [0, 0, 0], rot = [0, 0, 0], scl = [1, 1, 1]) {
+    const m = new T.Mesh(geo, mat);
+    m.position.set(pos[0], pos[1], pos[2]);
+    m.rotation.set(rot[0], rot[1], rot[2]);
+    m.scale.set(scl[0], scl[1], scl[2]);
+    m.castShadow = true; m.receiveShadow = true;
+    if (p) p.add(m);
+    return m;
+  }
+
+  /* ========================================================================
+     1. TEXTURAS PROCEDURAIS PBR (SAIA CHITON COM RUNAS & ESCUDO DO BIDENTE)
+     ======================================================================== */
+  function createHadesTextures() {
+    const tunicC = document.createElement('canvas');
+    tunicC.width = 512; tunicC.height = 256;
+    const tCtx = tunicC.getContext('2d');
+    tCtx.fillStyle = '#27272a';
+    tCtx.fillRect(0, 0, 512, 256);
+    tCtx.fillStyle = 'rgba(9, 9, 11, 0.25)';
+    for (let x = 0; x < 512; x += 8) tCtx.fillRect(x, 0, 3, 256);
+
+    tCtx.fillStyle = '#450a0a';
+    tCtx.fillRect(0, 196, 512, 40);
+    tCtx.fillStyle = '#ea580c';
+    tCtx.fillRect(0, 192, 512, 4);
+    tCtx.fillRect(0, 236, 512, 4);
+
+    tCtx.strokeStyle = '#6ee7b7';
+    tCtx.lineWidth = 2.8;
+    for (let x = 0; x < 512; x += 32) {
+      tCtx.beginPath();
+      tCtx.moveTo(x + 16, 203);
+      tCtx.lineTo(x + 26, 216);
+      tCtx.lineTo(x + 16, 229);
+      tCtx.lineTo(x + 6, 216);
+      tCtx.closePath();
+      tCtx.stroke();
+    }
+    const tunicTex = new T.CanvasTexture(tunicC);
+    tunicTex.wrapS = tunicTex.wrapT = T.RepeatWrapping;
+
+    const peltaC = document.createElement('canvas');
+    peltaC.width = peltaC.height = 512;
+    const pCtx = peltaC.getContext('2d');
+    const grad = pCtx.createRadialGradient(256, 256, 20, 256, 256, 250);
+    grad.addColorStop(0, '#1e1035');
+    grad.addColorStop(0.58, '#090612');
+    grad.addColorStop(0.80, '#090612');
+    grad.addColorStop(0.87, '#facc15');
+    grad.addColorStop(0.95, '#18181b');
+    grad.addColorStop(1, '#ea580c');
+    pCtx.fillStyle = grad;
+    pCtx.fillRect(0, 0, 512, 512);
+
+    pCtx.strokeStyle = '#facc15';
+    pCtx.lineWidth = 6;
+    pCtx.beginPath();
+    pCtx.arc(256, 256, 206, 0, Math.PI * 2);
+    pCtx.stroke();
+
+    pCtx.fillStyle = '#6ee7b7';
+    for (let i = 0; i < 16; i++) {
+      const a = (i / 16) * Math.PI * 2;
+      pCtx.beginPath();
+      pCtx.moveTo(256 + Math.cos(a - 0.06) * 195, 256 + Math.sin(a - 0.06) * 195);
+      pCtx.lineTo(256 + Math.cos(a) * 166, 256 + Math.sin(a) * 166);
+      pCtx.lineTo(256 + Math.cos(a + 0.06) * 195, 256 + Math.sin(a + 0.06) * 195);
+      pCtx.closePath();
+      pCtx.fill();
+    }
+
+    pCtx.strokeStyle = '#6ee7b7';
+    pCtx.fillStyle = '#6ee7b7';
+    pCtx.lineCap = 'round';
+    pCtx.lineWidth = 14;
+    pCtx.beginPath();
+    pCtx.moveTo(256, 396);
+    pCtx.lineTo(256, 232);
+    pCtx.stroke();
+    pCtx.beginPath();
+    pCtx.moveTo(202, 148);
+    pCtx.quadraticCurveTo(202, 232, 256, 232);
+    pCtx.quadraticCurveTo(310, 232, 310, 148);
+    pCtx.stroke();
+    for (const s of [-1, 1]) {
+      const px = 256 + s * 54;
+      pCtx.beginPath();
+      pCtx.moveTo(px, 108);
+      pCtx.lineTo(px - 17, 158);
+      pCtx.lineTo(px + 17, 158);
+      pCtx.closePath();
+      pCtx.fill();
+    }
+    pCtx.fillStyle = '#ea580c';
+    pCtx.beginPath();
+    pCtx.arc(256, 232, 18, 0, Math.PI * 2);
+    pCtx.fill();
+    const peltaTex = new T.CanvasTexture(peltaC);
+
+    const flC = document.createElement('canvas');
+    flC.width = flC.height = 1024;
+    const fCtx = flC.getContext('2d');
+    fCtx.fillStyle = '#0f0c18';
+    fCtx.fillRect(0, 0, 1024, 1024);
+    for (let i = 0; i < 3600; i++) {
+      fCtx.fillStyle = i % 2 === 0 ? 'rgba(30,27,46,0.45)' : 'rgba(5,4,10,0.6)';
+      fCtx.fillRect(Math.random() * 1024, Math.random() * 1024, 10, 10);
+    }
+    fCtx.strokeStyle = '#ea580c';
+    fCtx.lineWidth = 14;
+    fCtx.beginPath(); fCtx.arc(512, 512, 430, 0, Math.PI * 2); fCtx.stroke();
+    fCtx.strokeStyle = '#10b981';
+    fCtx.lineWidth = 6;
+    fCtx.beginPath(); fCtx.arc(512, 512, 448, 0, Math.PI * 2); fCtx.stroke();
+    const floorTex = new T.CanvasTexture(flC);
+
+    return { tunicTex, peltaTex, floorTex };
+  }
+
+  /* ========================================================================
+     2. DADOS DOS ARQUEIROS DE HADES (RETOLD — GASTRAPHETOROS ×12 VS PRÉDIOS!)
+     ======================================================================== */
+  const HADES_UNITS = {
+    toxote: {
+      name: 'Toxote',
+      hp: 65,
+      atk: 6,
+      range: 17,
+      bonusVs: 'infantaria',
+      bonusMult: 1.5,
+      fireRate: 1.22
+    },
+    gastraphetoros: {
+      name: 'Gastraphetoros',
+      hp: 115,
+      atk: 14,
+      range: 21,
+      bonusVs: 'torre',
+      bonusMult: 12.0,
+      infantryMult: 1.5,
+      fireRate: 0.72
+    },
+    peltasta: {
+      name: 'Peltasta',
+      hp: 75,
+      atk: 6,
+      range: 15,
+      bonusVs: 'arqueiro',
+      bonusMult: 2.25,
+      fireRate: 1.12
+    }
+  };
+
+  /* ========================================================================
+     3. CONSTRUÇÃO DO GUERREIRO DE HADES & POSIÇÃO ALINHADA DOS ARCOS
+     ======================================================================== */
+  function buildHadesMarksman(textures) {
+    const M = {
+      skin: new T.MeshStandardMaterial({ color: 0x9e8474, roughness: 0.46 }),
+      tunic: new T.MeshStandardMaterial({ map: textures.tunicTex, roughness: 0.56, side: T.DoubleSide }),
+      obsidianArmor: new T.MeshStandardMaterial({ color: 0x1e1b2e, metalness: 0.90, roughness: 0.22 }),
+      bronzeEmber: new T.MeshStandardMaterial({ color: 0xd97706, metalness: 0.88, roughness: 0.24 }),
+      steel: new T.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.94, roughness: 0.16 }),
+      cape: new T.MeshStandardMaterial({ color: 0x450a0a, roughness: 0.54, side: T.DoubleSide }),
+      crestMat: new T.MeshStandardMaterial({ color: 0xea580c, emissive: 0x2e1065, emissiveIntensity: 0.35, roughness: 0.42 }),
+      leather: new T.MeshStandardMaterial({ color: 0x18181b, roughness: 0.72 }),
+      wood: new T.MeshStandardMaterial({ color: 0x3b1d0e, roughness: 0.62 }),
+      pelta: new T.MeshStandardMaterial({ map: textures.peltaTex, metalness: 0.78, roughness: 0.28, side: T.DoubleSide }),
+      eyeGlow: new T.MeshStandardMaterial({ color: 0xffffff, emissive: 0xea580c, emissiveIntensity: 2.4 }),
+      venomFireGlow: new T.MeshBasicMaterial({ color: 0x10b981, transparent: true, opacity: 0.95, blending: T.AdditiveBlending })
+    };
+
+    const root = new T.Group();
+    const body = grp(root, 0, 1.02, 0);
+
+    // Pelve e Pernas
+    const pelvis = grp(body, 0, 0.86, 0);
+    sculpt(pelvis, new T.SphereGeometry(0.20, 16, 14), M.leather, [0, 0, 0], [0, 0, 0], [1.1, 0.78, 0.84]);
+
+    const legs = {};
+    for (const s of [-1, 1]) {
+      const side = s === 1 ? 'R' : 'L';
+      const hip = grp(pelvis, s * 0.14, -0.04, 0);
+      sculpt(hip, new T.CylinderGeometry(0.118, 0.086, 0.46, 14), M.skin, [0, -0.22, 0]);
+      const knee = grp(hip, 0, -0.46, 0);
+      sculpt(knee, new T.CylinderGeometry(0.082, 0.054, 0.44, 14), M.skin, [0, -0.22, 0]);
+      sculpt(knee, new T.CylinderGeometry(0.086, 0.058, 0.35, 14, 1, false, -0.88, 1.76), M.obsidianArmor, [0, -0.22, 0.01]);
+      sculpt(knee, new T.ConeGeometry(0.044, 0.09, 4), M.bronzeEmber, [0, -0.02, 0.075], [0.15, 0, 0], [1.1, 1, 0.42]);
+      const ankle = grp(knee, 0, -0.44, 0.02);
+      sculpt(ankle, new T.BoxGeometry(0.088, 0.045, 0.20), M.leather, [0, -0.02, 0.035]);
+      sculpt(ankle, new T.BoxGeometry(0.094, 0.016, 0.21), M.bronzeEmber, [0, -0.042, 0.035]);
+      legs[side] = { hip, knee, ankle };
+    }
+
+    // Tronco Sombrio de Hades
+    const torso = grp(body, 0, 1.28, 0);
+    sculpt(torso, new T.CylinderGeometry(0.29, 0.21, 0.74, 18), M.obsidianArmor, [0, 0.04, 0], [0, 0, 0], [1.15, 1.0, 0.76]);
+    for (const s of [-1, 1]) {
+      sculpt(torso, new T.SphereGeometry(0.15, 14, 14), M.obsidianArmor, [s * 0.13, 0.18, 0.14], [0.12, s * 0.2, s * 0.14], [1.0, 0.85, 0.55]);
+      sculpt(torso, new T.BoxGeometry(0.065, 0.026, 0.28), M.bronzeEmber, [s * 0.18, 0.38, 0.01], [0.1, 0, s * -0.12]);
+    }
+    const gorget = new T.TorusGeometry(0.19, 0.022, 8, 24);
+    gorget.rotateX(Math.PI / 2);
+    sculpt(torso, gorget, M.bronzeEmber, [0, 0.39, 0.01], [0.16, 0, 0], [1.12, 1, 0.9]);
+
+    // Saia Plissada Grega (Chiton) com Ondulações Reais em 3D + Cinturão + Tiras Pteruges
+    const beltGeo = new T.TorusGeometry(0.24, 0.024, 10, 28);
+    beltGeo.rotateX(Math.PI / 2);
+    sculpt(torso, beltGeo, M.leather, [0, -0.34, 0.01], [0.04, 0, 0], [1.12, 1, 0.84]);
+    sculpt(torso, new T.BoxGeometry(0.095, 0.075, 0.024), M.bronzeEmber, [0, -0.34, 0.21]);
+
+    for (let i = 0; i < 14; i++) {
+      const a = (i / 14) * Math.PI * 2;
+      sculpt(
+        torso,
+        new T.BoxGeometry(0.068, 0.30, 0.016),
+        i % 2 === 0 ? M.leather : M.obsidianArmor,
+        [Math.sin(a) * 0.25, -0.46, Math.cos(a) * 0.20],
+        [Math.cos(a) * 0.15, a, -Math.sin(a) * 0.15]
+      );
+    }
+
+    const skirtGeo = new T.CylinderGeometry(0.23, 0.42, 0.58, 44, 14, true);
+    const skPos = skirtGeo.attributes.position;
+    for (let i = 0; i < skPos.count; i++) {
+      const x = skPos.getX(i), y = skPos.getY(i), z = skPos.getZ(i);
+      const angle = Math.atan2(z, x);
+      const normY = Math.max(0, Math.min(1, (0.29 - y) / 0.58));
+      const pleat = Math.sin(angle * 16) * 0.022 * (0.2 + normY * 0.9);
+      const r = Math.sqrt(x * x + z * z) + pleat;
+      skPos.setXYZ(i, Math.cos(angle) * r * 1.06, y, Math.sin(angle) * r * 0.84);
+    }
+    skirtGeo.computeVertexNormals();
+    sculpt(torso, skirtGeo, M.tunic, [0, -0.56, 0], [0.03, 0, 0]);
+
+    // Aljava nas costas
+    const quiver = grp(torso, -0.15, 0.18, -0.18);
+    quiver.rotation.set(0.18, 0, -0.40);
+    sculpt(quiver, new T.CylinderGeometry(0.072, 0.052, 0.56, 12), M.leather, [0, 0, 0]);
+    sculpt(quiver, new T.CylinderGeometry(0.078, 0.078, 0.05, 12), M.bronzeEmber, [0, 0.25, 0]);
+
+    // Capa Carmesim do Submundo
+    const capeGeo = new T.PlaneGeometry(0.96, 1.32, 16, 20);
+    const cPos = capeGeo.attributes.position;
+    const capeBase = new Float32Array(cPos.array.length);
+    for (let i = 0; i < cPos.count; i++) {
+      const x = cPos.getX(i), y = cPos.getY(i);
+      const normY = Math.max(0, Math.min(1, (0.66 - y) / 1.32));
+      const z = -0.15 - normY * 0.34;
+      const fx = x * (0.60 + normY * 0.65);
+      cPos.setXYZ(i, fx, y, z);
+      capeBase[i * 3] = fx;
+      capeBase[i * 3 + 1] = y;
+      capeBase[i * 3 + 2] = z;
+    }
+    capeGeo.computeVertexNormals();
+    const cape = sculpt(torso, capeGeo, M.cape, [0, -0.26, -0.02]);
+
+    // Capacete Coríntio de Hades
+    sculpt(torso, new T.CylinderGeometry(0.09, 0.11, 0.20, 14), M.skin, [0, 0.46, 0]);
+    const head = grp(torso, 0, 0.66, 0.02);
+    sculpt(head, new T.SphereGeometry(0.16, 20, 20), M.skin, [0, 0, 0], [0, 0, 0], [0.92, 1.12, 0.96]);
+    for (const s of [-1, 1]) {
+      sculpt(head, new T.SphereGeometry(0.016, 10, 10), M.eyeGlow, [s * 0.045, 0.02, 0.148], [0, 0, 0], [1.15, 0.7, 0.8]);
+    }
+
+    const helm = grp(head, 0, 0.03, -0.01);
+    sculpt(helm, new T.SphereGeometry(0.180, 22, 18, 0, Math.PI * 2, 0, Math.PI * 0.56), M.obsidianArmor, [0, 0.02, 0], [-0.08, 0, 0], [0.98, 1.08, 1.06]);
+    sculpt(helm, new T.BoxGeometry(0.018, 0.095, 0.024), M.bronzeEmber, [0, 0.025, 0.178], [-0.06, 0, 0]);
+    for (const s of [-1, 1]) {
+      const cheek = grp(helm, s * 0.132, -0.040, 0.088);
+      cheek.rotation.set(0.08, s * 0.50, s * -0.12);
+      sculpt(cheek, new T.BoxGeometry(0.018, 0.135, 0.105), M.obsidianArmor);
+    }
+    sculpt(helm, new T.CylinderGeometry(0.172, 0.195, 0.11, 20, 1, true, Math.PI * 0.62, Math.PI * 0.76), M.obsidianArmor, [0, -0.06, -0.012], [0.12, 0, 0]);
+
+    const crestMount = grp(helm, 0, 0.19, -0.01);
+    sculpt(crestMount, new T.BoxGeometry(0.028, 0.065, 0.24), M.bronzeEmber, [0, 0, 0], [-0.08, 0, 0]);
+    const helmCrest = sculpt(crestMount, new T.BoxGeometry(0.022, 0.16, 0.22), M.crestMat, [0, 0.08, 0], [-0.08, 0, 0]);
+    const crestSegments = [];
+    for (let i = 0; i < 18; i++) {
+      const t = i / 17;
+      const ang = -0.5 + t * 2.45;
+      const r = 0.20;
+      const cy = Math.cos(ang) * r * 0.88 - 0.02;
+      const cz = Math.sin(ang) * r * 1.12 - 0.02;
+      const seg = sculpt(crestMount, new T.BoxGeometry(0.022, 0.13 + Math.sin(t * Math.PI) * 0.045, 0.028), M.crestMat, [0, cy, cz], [ang, 0, 0]);
+      crestSegments.push({ mesh: seg, phase: i * 0.45, factor: 0.3 + t * 0.9 });
+    }
+
+    for (const s of [-1, 1]) {
+      const hPiv = grp(helm, s * 0.16, 0.05, 0.01);
+      hPiv.rotation.set(0.15, s * 0.25, s * -0.35);
+      sculpt(hPiv, new T.ConeGeometry(0.026, 0.22, 6), M.bronzeEmber, [s * 0.03, 0.09, 0], [0, 0, s * -0.25]);
+    }
+
+    // Braços Articulados
+    const armR = grp(torso, 0.33, 0.32, 0);
+    sculpt(armR, new T.SphereGeometry(0.135, 14, 12, 0, Math.PI * 2, 0, Math.PI * 0.48), M.obsidianArmor, [0.015, 0.03, 0], [0, 0, -0.32], [1.1, 0.76, 1.12]);
+    sculpt(armR, new T.CylinderGeometry(0.064, 0.056, 0.26, 12), M.skin, [0.01, -0.13, 0]);
+    const elbowR = grp(armR, 0.02, -0.28, 0);
+    sculpt(elbowR, new T.CylinderGeometry(0.056, 0.042, 0.26, 12), M.skin, [0, -0.13, 0]);
+    sculpt(elbowR, new T.CylinderGeometry(0.052, 0.046, 0.09, 14, 1, true), M.bronzeEmber, [0, -0.20, 0]);
+    const handR = grp(elbowR, 0, -0.27, 0);
+
+    const armL = grp(torso, -0.33, 0.32, 0);
+    sculpt(armL, new T.SphereGeometry(0.135, 14, 12, 0, Math.PI * 2, 0, Math.PI * 0.48), M.obsidianArmor, [-0.015, 0.03, 0], [0, 0, 0.32], [1.1, 0.76, 1.12]);
+    sculpt(armL, new T.CylinderGeometry(0.064, 0.056, 0.26, 12), M.skin, [-0.01, -0.13, 0]);
+    const elbowL = grp(armL, -0.02, -0.28, 0);
+    sculpt(elbowL, new T.CylinderGeometry(0.056, 0.042, 0.26, 12), M.skin, [0, -0.13, 0]);
+    sculpt(elbowL, new T.CylinderGeometry(0.052, 0.046, 0.09, 14, 1, true), M.bronzeEmber, [0, -0.20, 0]);
+    const handL = grp(elbowL, 0, -0.27, 0);
+
+    // ======================================================================
+    // 1. TOXOTE: Arco Composto do Horror (Alinhado perfeitamente com as 2 mãos!)
+    //    No sistema local do arco: +Y é o topo do arco, -Y é a base, +Z aponta para o alvo!
+    // ======================================================================
+    const bowToxote = grp(handL, 0, -0.02, 0.03);
+    const bowCurve = new T.CatmullRomCurve3([
+      new T.Vector3(0, -0.68, -0.15),
+      new T.Vector3(0, -0.36, 0.13),
+      new T.Vector3(0,  0.0,  0.20),
+      new T.Vector3(0,  0.36, 0.13),
+      new T.Vector3(0,  0.68, -0.15)
+    ]);
+    sculpt(bowToxote, new T.TubeGeometry(bowCurve, 22, 0.020, 8, false), M.wood);
+    sculpt(bowToxote, new T.CylinderGeometry(0.025, 0.025, 0.16, 10), M.bronzeEmber, [0, 0, 0.20]);
+    for (const sy of [-1, 1]) {
+      sculpt(bowToxote, new T.ConeGeometry(0.022, 0.11, 6), M.gold, [0, sy * 0.70, -0.17], [sy * -0.4, 0, 0]);
+    }
+    const bowString = sculpt(bowToxote, new T.CylinderGeometry(0.004, 0.004, 1.36, 6), M.bronzeEmber, [0, 0, -0.15]);
+    const nockedArrow = grp(bowToxote, 0, 0, 0.15);
+    sculpt(nockedArrow, new T.CylinderGeometry(0.009, 0.009, 0.88, 6), M.wood, [0, 0, 0.14], [Math.PI / 2, 0, 0]);
+    sculpt(nockedArrow, new T.ConeGeometry(0.024, 0.12, 4), M.steel, [0, 0, 0.58], [Math.PI / 2, 0, 0]);
+    const arrowTipGlow = sculpt(nockedArrow, new T.ConeGeometry(0.036, 0.18, 6), M.venomFireGlow, [0, 0, 0.60], [Math.PI / 2, 0, 0]);
+
+    // ======================================================================
+    // 2. GASTRAPHETOROS: Besta Compacta de 2 Mãos Apoiada no Peitoral/Abdômen
+    // ======================================================================
+    const gastraphetes = grp(torso, 0.0, 0.12, 0.34);
+    // Descanso côncavo apoiado firmemente no centro do peitoral
+    sculpt(gastraphetes, new T.CylinderGeometry(0.11, 0.11, 0.06, 12, 1, false, -Math.PI * 0.45, Math.PI * 0.9), M.bronzeEmber, [0, 0, -0.22], [0, Math.PI, Math.PI / 2]);
+    sculpt(gastraphetes, new T.BoxGeometry(0.085, 0.095, 0.78), M.wood, [0, 0, 0.14]);
+    sculpt(gastraphetes, new T.BoxGeometry(0.095, 0.025, 0.74), M.bronzeEmber, [0, 0.048, 0.16]);
+    // Empunhadura dianteira (mão esquerda) e gatilho traseiro (mão direita)
+    sculpt(gastraphetes, new T.CylinderGeometry(0.022, 0.022, 0.12, 8), M.leather, [-0.04, -0.08, 0.30], [0, 0, -0.25]);
+    sculpt(gastraphetes, new T.BoxGeometry(0.028, 0.09, 0.08), M.bronzeEmber, [0.02, -0.07, -0.04], [0.25, 0, 0]);
+    const xbowArc = new T.CatmullRomCurve3([
+      new T.Vector3(-0.46, 0.03, 0.34),
+      new T.Vector3(-0.24, 0.03, 0.48),
+      new T.Vector3(0.0,   0.03, 0.53),
+      new T.Vector3(0.24,  0.03, 0.48),
+      new T.Vector3(0.46,  0.03, 0.34)
+    ]);
+    sculpt(gastraphetes, new T.TubeGeometry(xbowArc, 22, 0.022, 8, false), M.steel);
+    sculpt(gastraphetes, new T.TubeGeometry(xbowArc, 22, 0.014, 8, false), M.bronzeEmber, [0, 0.016, -0.008]);
+    const xbowStringL = sculpt(gastraphetes, new T.CylinderGeometry(0.004, 0.004, 0.52, 6), M.bronzeEmber, [-0.23, 0.045, 0.16], [0, -1.16, Math.PI / 2]);
+    const xbowStringR = sculpt(gastraphetes, new T.CylinderGeometry(0.004, 0.004, 0.52, 6), M.bronzeEmber, [0.23, 0.045, 0.16], [0, 1.16, Math.PI / 2]);
+
+    const heavyBolt = grp(gastraphetes, 0, 0.068, 0.24);
+    sculpt(heavyBolt, new T.CylinderGeometry(0.014, 0.014, 0.62, 8), M.bronzeEmber, [0, 0, 0.10], [Math.PI / 2, 0, 0]);
+    sculpt(heavyBolt, new T.ConeGeometry(0.036, 0.18, 4), M.steel, [0, 0, 0.44], [Math.PI / 2, 0, 0]);
+    const boltTipGlow = sculpt(heavyBolt, new T.ConeGeometry(0.048, 0.22, 6), M.venomFireGlow, [0, 0, 0.46], [Math.PI / 2, 0, 0]);
+
+    // ======================================================================
+    // 3. PELTASTA: Escudo Pelta Abobadado com Borda Dourada e Bidente + Dardos
+    // ======================================================================
+    const peltaShield = grp(elbowL, -0.06, -0.18, 0.04);
+    peltaShield.rotation.set(0, -Math.PI / 2, 0);
+    const shieldDome = new T.SphereGeometry(0.48, 28, 20, 0, Math.PI * 2, 0, Math.PI * 0.28);
+    shieldDome.rotateX(Math.PI / 2);
+    sculpt(peltaShield, shieldDome, M.pelta, [0, 0, -0.36]);
+    sculpt(peltaShield, new T.TorusGeometry(0.46, 0.024, 10, 36), M.bronzeEmber, [0, 0, 0.02]);
+
+    const javelinHand = grp(handR, 0, -0.02, 0.04);
+    sculpt(javelinHand, new T.CylinderGeometry(0.013, 0.015, 1.48, 8), M.wood, [0, 0, 0.24], [Math.PI / 2, 0, 0]);
+    sculpt(javelinHand, new T.ConeGeometry(0.032, 0.26, 4), M.steel, [0, 0, 1.05], [Math.PI / 2, 0, 0]);
+    const javGlow = sculpt(javelinHand, new T.ConeGeometry(0.040, 0.30, 4), M.venomFireGlow, [0, 0, 1.07], [Math.PI / 2, 0, 0]);
+
+    const launchAnchor = grp(torso, 0, 0.24, 0.80);
+
+    function syncVisuals(st) {
+      helmCrest.visible = st.champion;
+      M.venomFireGlow.color.setHex(st.hestia ? 0xfacc15 : (st.pantheon ? 0x10b981 : 0xf97316));
+      arrowTipGlow.visible = st.pantheon;
+      javGlow.visible = st.pantheon;
+      boltTipGlow.visible = true;
+
+      bowToxote.visible = (st.unit === 'toxote');
+      gastraphetes.visible = (st.unit === 'gastraphetoros');
+      peltaShield.visible = (st.unit === 'peltasta');
+      javelinHand.visible = (st.unit === 'peltasta');
+    }
+
+    return {
+      root, body, torso, head, legs,
+      armR, elbowR, handR, armL, elbowL, handL,
+      bowToxote, bowString, nockedArrow,
+      gastraphetes, xbowStringL, xbowStringR, heavyBolt,
+      javelinHand, launchAnchor, helmCrest, crestSegments, cape, capeBase, syncVisuals
+    };
+  }
+
+  /* ========================================================================
+     4. ALVOS NA PISTA DE TIRO (COM ALVOS SECUNDÁRIOS PARA RICOCHETE DE HÉSTIA)
+     ======================================================================== */
+  function buildTargetDummy() {
+    const tRoot = grp(null, 0, 0, 4.4);
+    const redMat = new T.MeshStandardMaterial({ color: 0xb91c1c, roughness: 0.45 });
+    const bronzeMat = new T.MeshStandardMaterial({ color: 0xd97706, metalness: 0.85, roughness: 0.25 });
+    const stoneMat = new T.MeshStandardMaterial({ color: 0x64748b, roughness: 0.78 });
+    const skinMat = new T.MeshStandardMaterial({ color: 0xc98a5b, roughness: 0.48 });
+
+    const infGroup = grp(tRoot, 0, 0, 0);
+    for (const sx of [0, -0.95, 0.95]) {
+      const s = grp(infGroup, sx, 0, sx === 0 ? 0 : 0.35);
+      if (sx !== 0) s.scale.setScalar(0.88);
+      sculpt(s, new T.CylinderGeometry(0.18, 0.24, 0.85, 12), redMat, [0, 0.65, 0]);
+      sculpt(s, new T.BoxGeometry(0.46, 0.50, 0.26), bronzeMat, [0, 1.25, 0]);
+      sculpt(s, new T.SphereGeometry(0.15, 14, 14), skinMat, [0, 1.68, 0]);
+    }
+
+    const towerGroup = grp(tRoot, 0, 0, 0);
+    sculpt(towerGroup, new T.BoxGeometry(1.15, 2.35, 1.15), stoneMat, [0, 1.175, 0]);
+    sculpt(towerGroup, new T.BoxGeometry(1.32, 0.22, 1.32), bronzeMat, [0, 2.42, 0]);
+    sculpt(towerGroup, new T.ConeGeometry(0.95, 0.75, 4), redMat, [0, 2.90, 0], [0, Math.PI / 4, 0]);
+    towerGroup.visible = false;
+
+    const archGroup = grp(tRoot, 0, 0, 0);
+    for (const sx of [-0.55, 0.55]) {
+      sculpt(archGroup, new T.CylinderGeometry(0.16, 0.22, 0.85, 12), redMat, [sx, 0.65, 0]);
+      sculpt(archGroup, new T.SphereGeometry(0.14, 12, 12), skinMat, [sx, 1.32, 0]);
+    }
+    archGroup.visible = false;
+
+    function setTargetType(type) {
+      infGroup.visible = (type === 'infantaria');
+      towerGroup.visible = (type === 'torre');
+      archGroup.visible = (type === 'arqueiro');
+    }
+
+    return { root: tRoot, setTargetType };
+  }
+
+  /* ========================================================================
+     5. CENA, PROJÉTEIS (1 VIROTE + RICOCHETE HÉSTIA) & CONTROLES 360°
+     ======================================================================== */
+  const renderer = new T.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = T.PCFSoftShadowMap;
+  wrap.appendChild(renderer.domElement);
+
+  const scene = new T.Scene();
+  scene.background = new T.Color(0x07050d);
+  scene.fog = new T.FogExp2(0x07050d, 0.017);
+
+  const camera = new T.PerspectiveCamera(36, 1, 0.1, 140);
+  scene.add(new T.HemisphereLight(0xa7f3d0, 0x2e1065, 1.15));
+
+  const sun = new T.DirectionalLight(0xffedd5, 2.35);
+  sun.position.set(6, 10, 6);
+  sun.castShadow = true;
+  sun.shadow.mapSize.set(1024, 1024);
+  scene.add(sun);
+
+  const rim = new T.DirectionalLight(0x10b981, 1.55);
+  rim.position.set(-5, 5, -5);
+  scene.add(rim);
+
+  const textures = createHadesTextures();
+  sculpt(scene, new T.CylinderGeometry(8.8, 9.1, 0.34, 72), new T.MeshStandardMaterial({ map: textures.floorTex, roughness: 0.45 }), [0, -0.17, 0]);
+
+  const marksman = buildHadesMarksman(textures);
+  marksman.root.position.set(0, 0, -1.65);
+  scene.add(marksman.root);
+
+  const targetDummy = buildTargetDummy();
+  scene.add(targetDummy.root);
+
+  const projectiles = [];
+  function createProjectileMesh(unitType, isRicochet = false) {
+    const pGrp = new T.Group();
+    const isBolt = unitType === 'gastraphetoros';
+    const isJav = unitType === 'peltasta';
+    const len = isJav ? 1.25 : (isBolt ? 0.68 : 0.85);
+    const rad = isBolt ? 0.016 : (isJav ? 0.015 : 0.010);
+
+    const shaft = new T.Mesh(new T.CylinderGeometry(rad, rad, len, 6), new T.MeshBasicMaterial({ color: 0xfacc15 }));
+    shaft.rotation.x = Math.PI / 2;
+    pGrp.add(shaft);
+
+    const tip = new T.Mesh(new T.ConeGeometry(rad * 2.8, isBolt ? 0.20 : 0.16, 4), new T.MeshBasicMaterial({ color: isRicochet ? 0xf97316 : 0x10b981 }));
+    tip.rotation.x = Math.PI / 2;
+    tip.position.z = len * 0.5 + 0.05;
+    pGrp.add(tip);
+
+    const fletch = new T.Mesh(new T.PlaneGeometry(rad * 5.5, 0.16), new T.MeshBasicMaterial({ color: 0xea580c, side: T.DoubleSide }));
+    fletch.rotation.y = Math.PI / 2;
+    fletch.position.z = -len * 0.42;
+    pGrp.add(fletch);
+
+    return pGrp;
+  }
+
+  function spawnProjectile(unitType) {
+    marksman.root.updateMatrixWorld(true);
+    const start = new T.Vector3();
+    marksman.launchAnchor.getWorldPosition(start);
+
+    const end = new T.Vector3(0, 1.25, 4.35);
+    const m = createProjectileMesh(unitType, false);
+    m.position.copy(start);
+    m.lookAt(end);
+    scene.add(m);
+
+    projectiles.push({
+      mesh: m,
+      start,
+      end,
+      progress: 0,
+      speed: unitType === 'gastraphetoros' ? 2.65 : 2.25,
+      arc: unitType === 'peltasta' ? 0.44 : (unitType === 'gastraphetoros' ? 0.10 : 0.22),
+      unitType,
+      ricochetsLeft: (unitType === 'gastraphetes' || unitType === 'gastraphetoros') && state.hestia ? 2 : 0
+    });
+  }
+
+  const state = {
+    unit: 'toxote',
+    action: 'disparar',
+    target: 'infantaria',
+    champion: true,
+    pantheon: true,
+    hestia: false
+  };
+
+  const bottomPill = document.getElementById('bottom-pill');
+
+  function refreshState() {
+    const uCfg = HADES_UNITS[state.unit];
+    const hp = Math.round(uCfg.hp * (state.champion ? 1.45 : 1.0));
+    const baseDmg = uCfg.atk + (state.champion ? 3 : 0) + (state.pantheon ? 3 : 0);
+
+    let mult = 1.0;
+    if (state.target === uCfg.bonusVs) {
+      mult = uCfg.bonusMult;
+    } else if (state.unit === 'gastraphetoros' && state.target === 'infantaria') {
+      mult = uCfg.infantryMult;
+    }
+
+    const effDmg = Math.round(baseDmg * mult);
+    const rng = uCfg.range + (state.champion ? 2 : 0);
+
+    const bonusStr = mult > 1.0 ? ` (Bônus ×${mult} vs ${state.target}!)` : '';
+    const hestiaStr = (state.unit === 'gastraphetoros' && state.hestia) ? ' • Ricochete +2 Alvos (Héstia)' : '';
+    const techStr = state.pantheon ? ' • Arco do Horror + Veneno/Tifão' : '';
+
+    bottomPill.innerHTML = `Hades • ${uCfg.name} (${state.champion ? 'Campeão' : 'Padrão'}) <span>| HP: ${hp} • Dano: ${effDmg}${bonusStr} • Alcance: ${rng}${hestiaStr}${techStr}</span>`;
+
+    targetDummy.setTargetType(state.target);
+    marksman.syncVisuals(state);
+  }
+
+  document.querySelectorAll('.unit-btn').forEach(b => b.addEventListener('click', () => {
+    state.unit = b.dataset.unit;
+    document.querySelectorAll('.unit-btn').forEach(x => x.classList.toggle('on', x === b));
+    refreshState();
+  }));
+
+  document.querySelectorAll('.act-btn').forEach(b => b.addEventListener('click', () => {
+    state.action = b.dataset.act;
+    document.querySelectorAll('.act-btn').forEach(x => x.classList.toggle('on', x === b));
+    if (state.action !== 'andar' && state.action !== 'correr') {
+      marksman.root.position.set(0, 0, -1.65);
+      marksman.root.rotation.set(0, 0, 0);
+    }
+  }));
+
+  document.querySelectorAll('.tgt-btn').forEach(b => b.addEventListener('click', () => {
+    state.target = b.dataset.target;
+    document.querySelectorAll('.tgt-btn').forEach(x => x.classList.toggle('on', x === b));
+    refreshState();
+  }));
+
+  document.getElementById('btn-champ').addEventListener('click', e => {
+    state.champion = !state.champion;
+    e.target.classList.toggle('on', state.champion);
+    refreshState();
+  });
+
+  document.getElementById('btn-pantheon').addEventListener('click', e => {
+    state.pantheon = !state.pantheon;
+    e.target.classList.toggle('on', state.pantheon);
+    refreshState();
+  });
+
+  document.getElementById('btn-hestia').addEventListener('click', e => {
+    state.hestia = !state.hestia;
+    e.target.classList.toggle('on', state.hestia);
+    refreshState();
+  });
+
+  const modal = document.getElementById('guide-modal');
+  document.getElementById('btn-guide').addEventListener('click', () => modal.classList.add('open'));
+  document.getElementById('btn-close-guide').addEventListener('click', () => modal.classList.remove('open'));
+  modal.addEventListener('click', e => { if (e.target === modal) modal.classList.remove('open'); });
+
+  // Câmera 360°
+  let camAngle = 0.72, camPitch = 0.24, camDist = 8.4, targetCamDist = 8.4;
+  let dragging = false, lastX = 0, lastY = 0, pinchDist = 0;
+
+  renderer.domElement.addEventListener('pointerdown', e => { dragging = true; lastX = e.clientX; lastY = e.clientY; });
+  window.addEventListener('pointerup', () => dragging = false);
+  window.addEventListener('pointermove', e => {
+    if (!dragging) return;
+    camAngle -= (e.clientX - lastX) * 0.009;
+    camPitch = Math.max(0.05, Math.min(0.95, camPitch + (e.clientY - lastY) * 0.006));
+    lastX = e.clientX; lastY = e.clientY;
+  });
+  renderer.domElement.addEventListener('wheel', e => {
+    e.preventDefault();
+    targetCamDist = Math.max(3.0, Math.min(14.5, targetCamDist + e.deltaY * 0.006));
+  }, { passive: false });
+
+  renderer.domElement.addEventListener('touchstart', e => {
+    if (e.touches.length === 2) {
+      pinchDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+    }
+  }, { passive: true });
+  renderer.domElement.addEventListener('touchmove', e => {
+    if (e.touches.length === 2) {
+      const d = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+      targetCamDist = Math.max(3.0, Math.min(14.5, targetCamDist + (pinchDist - d) * 0.016));
+      pinchDist = d;
+    }
+  }, { passive: true });
+
+  function handleResize() {
+    const w = wrap.clientWidth || window.innerWidth || 800;
+    const h = wrap.clientHeight || window.innerHeight || 600;
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+    renderer.setSize(w, h, false);
+  }
+  window.addEventListener('resize', handleResize);
+  handleResize();
+
+  refreshState();
+
+  // Loop de Animação com Alinhamento Exato dos Arcos e Mãos
+  const clock = new T.Clock();
+  let shootCycle = 0;
+  let shotTriggered = false;
+  let targetHitKnock = 0;
+
+  function animate() {
+    requestAnimationFrame(animate);
+    const dt = Math.min(clock.getDelta(), 0.05);
+    const t = clock.getElapsedTime();
+
+    const uCfg = HADES_UNITS[state.unit];
+    let bobY = Math.sin(t * 2.2) * 0.015;
+    let bodyPitch = 0;
+    let bodyRoll = 0;
+    let torsoYaw = 0;
+
+    if (state.action === 'andar' || state.action === 'correr') {
+      const isRun = (state.action === 'correr');
+      const orbitSpd = isRun ? 1.55 : 0.85;
+      const stepFreq = isRun ? 10.5 : 5.4;
+      const a = t * orbitSpd;
+      const R = 2.55;
+
+      marksman.root.position.set(Math.cos(a) * R, 0, Math.sin(a) * R);
+      marksman.root.rotation.set(0, -a, 0);
+
+      const stride = t * stepFreq;
+      const sinS = Math.sin(stride);
+      const cosS = Math.cos(stride);
+      bobY = Math.abs(cosS) * (isRun ? 0.095 : 0.042);
+      bodyPitch = isRun ? 0.22 : 0.06;
+      bodyRoll = isRun ? -0.18 : -0.05;
+      torsoYaw = sinS * (isRun ? 0.16 : 0.08);
+
+      const hipAmp = isRun ? 0.62 : 0.36;
+      const kneeAmp = isRun ? 0.65 : 0.36;
+      marksman.legs.L.hip.rotation.set(-0.22 + sinS * hipAmp, -0.10, -0.06);
+      marksman.legs.L.knee.rotation.set(0.28 + Math.max(0, -cosS) * kneeAmp, 0, 0);
+      marksman.legs.R.hip.rotation.set(-0.22 - sinS * hipAmp, 0.10, 0.06);
+      marksman.legs.R.knee.rotation.set(0.28 + Math.max(0, cosS) * kneeAmp, 0, 0);
+
+      marksman.head.rotation.set(0, 0, 0);
+      if (state.unit === 'gastraphetoros') {
+        marksman.gastraphetes.position.set(0.0, 0.12, 0.34);
+        marksman.gastraphetes.rotation.set(0, 0, 0);
+        marksman.armL.rotation.set(-0.88, 0.36, -0.16);
+        marksman.elbowL.rotation.set(-0.52, 0, 0);
+        marksman.armR.rotation.set(-0.68, -0.34, 0.20);
+        marksman.elbowR.rotation.set(-0.82, 0, 0);
+        marksman.heavyBolt.visible = true;
+      } else {
+        // Toxote carrega o arco composto na mão esquerda abaixada de lado
+        marksman.armL.rotation.set(-0.35 + sinS * 0.22, 0.15, -0.22);
+        marksman.elbowL.rotation.set(-0.45, 0, 0);
+        marksman.bowToxote.rotation.set(0.80, -0.15, 0.22);
+        marksman.nockedArrow.visible = false;
+        marksman.armR.rotation.set(-0.45 - sinS * 0.25, -0.25, 0.22);
+        marksman.elbowR.rotation.set(-0.55, 0, 0);
+      }
+    } else if (state.action === 'disparar') {
+      marksman.legs.L.hip.rotation.set(-0.24, -0.15, -0.08);
+      marksman.legs.L.knee.rotation.set(0.28, 0, 0);
+      marksman.legs.R.hip.rotation.set(0.20, 0.18, 0.10);
+      marksman.legs.R.knee.rotation.set(0.22, 0, 0);
+
+      marksman.head.rotation.set(0, 0, 0);
+      shootCycle = (shootCycle + dt * uCfg.fireRate) % 1.0;
+      if (shootCycle < 0.05) shotTriggered = false;
+
+      if (state.unit === 'toxote') {
+        const draw = Math.min(1, shootCycle / 0.62);
+        // Postura clássica de arqueiro: tronco girado para a direita (-0.65 rad) enquanto mira para frente (+Z)
+        bodyPitch = 0.04;
+        torsoYaw = -0.65;
+        marksman.head.rotation.set(0, 0.62, 0);
+
+        // Braço esquerdo estendido para frente (+Z) segurando o arco perfeitamente vertical!
+        // Como armL.rotation.x = -Math.PI/2 aponta o braço para frente, compensamos bowToxote.rotation.x = +Math.PI/2 para deixá-lo em pé!
+        marksman.armL.rotation.set(-Math.PI / 2, 0.65, 0.0);
+        marksman.elbowL.rotation.set(0.0, 0.0, 0.0);
+        marksman.bowToxote.rotation.set(Math.PI / 2, 0.0, -0.08);
+
+        if (draw < 0.95) {
+          // Mão direita puxa a corda e a traseira da flecha em linha reta até o rosto
+          marksman.armR.rotation.set(-1.38, -0.28 + draw * 0.18, 0.35);
+          marksman.elbowR.rotation.set(-1.18 - draw * 0.42, 0, 0);
+          marksman.nockedArrow.visible = true;
+          marksman.nockedArrow.position.z = 0.18 - draw * 0.26;
+          marksman.bowString.position.z = -0.15 - draw * 0.24;
+        } else {
+          if (!shotTriggered) {
+            shotTriggered = true;
+            spawnProjectile('toxote');
+          }
+          marksman.nockedArrow.visible = false;
+          marksman.bowString.position.z = -0.15;
+          marksman.armR.rotation.set(-1.38, -0.10, 0.42);
+          marksman.elbowR.rotation.set(-1.55, 0, 0);
+        }
+      } else if (state.unit === 'gastraphetoros') {
+        if (shootCycle < 0.45) {
+          const cock = shootCycle / 0.45;
+          bodyPitch = 0.08;
+          torsoYaw = -0.18;
+          marksman.head.rotation.set(0.05, 0.16, 0);
+          marksman.armL.rotation.set(-0.92, 0.38, -0.14);
+          marksman.elbowL.rotation.set(-0.48, 0, 0);
+          marksman.armR.rotation.set(-0.75 - cock * 0.20, -0.32, 0.20);
+          marksman.elbowR.rotation.set(-0.85 - cock * 0.32, 0, 0);
+          marksman.gastraphetes.position.set(0.0, 0.12, 0.34);
+          marksman.gastraphetes.rotation.set(0, 0, 0);
+          marksman.heavyBolt.visible = true;
+          marksman.heavyBolt.position.z = 0.26 - cock * 0.06;
+        } else if (shootCycle < 0.72) {
+          bodyPitch = 0.05;
+          torsoYaw = -0.16;
+          marksman.head.rotation.set(0, 0.14, 0);
+          marksman.armL.rotation.set(-0.92, 0.38, -0.14);
+          marksman.elbowL.rotation.set(-0.48, 0, 0);
+          marksman.armR.rotation.set(-0.72, -0.34, 0.18);
+          marksman.elbowR.rotation.set(-0.80, 0, 0);
+          marksman.gastraphetes.position.set(0.0, 0.12, 0.34);
+          marksman.gastraphetes.rotation.set(0, 0, 0);
+          marksman.heavyBolt.visible = true;
+          marksman.heavyBolt.position.z = 0.20;
+        } else {
+          if (!shotTriggered) {
+            shotTriggered = true;
+            spawnProjectile('gastraphetoros');
+          }
+          const rec = Math.sin(((shootCycle - 0.72) / 0.28) * Math.PI);
+          bodyPitch = 0.05 - rec * 0.10;
+          torsoYaw = -0.16;
+          marksman.armL.rotation.set(-0.92 - rec * 0.12, 0.38, -0.14);
+          marksman.armR.rotation.set(-0.72 - rec * 0.12, -0.34, 0.18);
+          marksman.gastraphetes.position.set(0.0, 0.12 + rec * 0.025, 0.34 - rec * 0.06);
+          marksman.gastraphetes.rotation.set(-rec * 0.10, 0, 0);
+          marksman.heavyBolt.visible = false;
+        }
+      } else {
+        bodyPitch = 0.06;
+        torsoYaw = -0.35 + Math.sin(shootCycle * Math.PI) * 0.65;
+        marksman.head.rotation.set(0, 0.20, 0);
+        marksman.armL.rotation.set(-0.78, -0.45, -0.35);
+        marksman.elbowL.rotation.set(-0.95, -0.25, 0.22);
+
+        if (shootCycle < 0.55) {
+          const wind = shootCycle / 0.55;
+          marksman.armR.rotation.set(-2.25 * wind - 0.5, 0.18, 0.25);
+          marksman.elbowR.rotation.set(-0.65 * wind, 0, 0);
+          marksman.javelinHand.visible = true;
+        } else {
+          if (!shotTriggered) {
+            shotTriggered = true;
+            spawnProjectile('peltasta');
+          }
+          marksman.javelinHand.visible = false;
+          marksman.armR.rotation.set(-0.65, 0.18, 0.25);
+          marksman.elbowR.rotation.set(-0.15, 0, 0);
+        }
+      }
+    } else {
+      // Vigília: arco segurado confortavelmente na vertical ao lado do corpo
+      marksman.legs.L.hip.rotation.set(-0.24, -0.15, -0.08);
+      marksman.legs.L.knee.rotation.set(0.28, 0, 0);
+      marksman.legs.R.hip.rotation.set(0.20, 0.18, 0.10);
+      marksman.legs.R.knee.rotation.set(0.22, 0, 0);
+      torsoYaw = Math.sin(t * 0.5) * 0.12;
+      marksman.head.rotation.set(0, 0, 0);
+
+      marksman.armL.rotation.set(-0.55, 0.22, -0.18);
+      marksman.elbowL.rotation.set(-0.55, 0, 0);
+      marksman.bowToxote.rotation.set(1.10, -0.22, 0.18);
+      marksman.nockedArrow.visible = false;
+
+      marksman.armR.rotation.set(-0.55, -0.25, 0.20);
+      marksman.elbowR.rotation.set(-0.65, 0, 0);
+      marksman.gastraphetes.position.set(0.0, 0.12, 0.34);
+      marksman.gastraphetes.rotation.set(0, 0, 0);
+    }
+
+    marksman.body.position.y = 1.02 + bobY;
+    marksman.torso.rotation.set(bodyPitch, torsoYaw, bodyRoll);
+
+    // Atualiza projéteis (inclui ricochete de Flechas Predestinadas de Héstia!)
+    for (let i = projectiles.length - 1; i >= 0; i--) {
+      const pr = projectiles[i];
+      pr.progress += dt * pr.speed;
+      const p = Math.min(1, pr.progress);
+      const pos = new T.Vector3().lerpVectors(pr.start, pr.end, p);
+      pos.y += Math.sin(p * Math.PI) * pr.arc;
+      pr.mesh.position.copy(pos);
+
+      const nextP = Math.min(1, p + 0.04);
+      const nextPos = new T.Vector3().lerpVectors(pr.start, pr.end, nextP);
+      nextPos.y += Math.sin(nextP * Math.PI) * pr.arc;
+      pr.mesh.lookAt(nextPos);
+
+      if (p >= 1) {
+        targetHitKnock = 0.22;
+        if (pr.ricochetsLeft > 0) {
+          const nextTargetX = pr.ricochetsLeft === 2 ? -0.95 : 0.95;
+          pr.start = pr.end.clone();
+          pr.end = new T.Vector3(nextTargetX, 1.15, 4.70);
+          pr.progress = 0;
+          pr.speed = 3.2;
+          pr.arc = 0.16;
+          pr.ricochetsLeft -= 1;
+        } else {
+          scene.remove(pr.mesh);
+          projectiles.splice(i, 1);
+        }
+      }
+    }
+
+    if (targetHitKnock > 0) {
+      targetHitKnock = Math.max(0, targetHitKnock - dt);
+      targetDummy.root.rotation.x = Math.sin((targetHitKnock / 0.22) * Math.PI) * 0.18;
+    } else {
+      targetDummy.root.rotation.x = 0;
+    }
+
+    const wind = (state.action === 'correr') ? 2.4 : (state.action === 'andar' ? 1.6 : 1.0);
+    for (const cs of marksman.crestSegments) {
+      cs.mesh.position.x = Math.sin(t * 3.4 * wind - cs.phase) * 0.015 * cs.factor;
+    }
+
+    const cPos = marksman.cape.geometry.attributes.position;
+    for (let i = 0; i < cPos.count; i++) {
+      const px = marksman.capeBase[i * 3];
+      const py = marksman.capeBase[i * 3 + 1];
+      const pz = marksman.capeBase[i * 3 + 2];
+      const normY = Math.max(0, Math.min(1, (0.66 - py) / 1.32));
+      const wave = Math.sin(t * 3.2 * wind - normY * 4.5 + px * 3.0) * 0.10 * normY;
+      cPos.setXYZ(i, px, py, pz + wave);
+    }
+    cPos.needsUpdate = true;
+    marksman.cape.geometry.computeVertexNormals();
+
+    camDist = damp(camDist, targetCamDist, 6, dt);
+    if (!dragging && state.action === 'vigilia') camAngle += dt * 0.05;
+
+    const hDist = Math.cos(camPitch) * camDist;
+    const vDist = Math.sin(camPitch) * camDist;
+    camera.position.set(Math.sin(camAngle) * hDist, 1.35 + vDist, 1.2 + Math.cos(camAngle) * hDist);
+    camera.lookAt(0, 1.35, 1.2);
+
+    renderer.render(scene, camera);
+  }
+
+  animate();
+})();
+</script>
+</body>
+</html>
