@@ -198,21 +198,7 @@ function buildLotusColumn(height: number, mats: EgyptianMaterials): THREE.Group 
   return col;
 }
 
-function buildCrouchingSphinx(mats: EgyptianMaterials): THREE.Group {
-  const s = new THREE.Group();
-  // Lion body
-  const body = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.38, 0.95), mats.sandstone);
-  body.position.y = 0.2;
-  s.add(body);
-  // Human head with Nemes headdress
-  const head = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.38, 0.35), mats.sandstone);
-  head.position.set(0, 0.52, 0.38);
-  s.add(head);
-  const headdress = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.14, 0.42), mats.goldTrim);
-  headdress.position.set(0, 0.72, 0.36);
-  s.add(headdress);
-  return s;
-}
+
 
 function buildCanopicRelicShrine(mats: EgyptianMaterials): THREE.Group {
   const rel = new THREE.Group();
@@ -230,265 +216,8 @@ function buildCanopicRelicShrine(mats: EgyptianMaterials): THREE.Group {
   return rel;
 }
 
-// ─── 1. PHARAONIC PALACE / ZIGGURAT / TENOCHTITLAN (Town Center T1–T5 Metrópole Solar Divina) ──
+// ─── 1. TOWN CENTER: Delegado ao modelo procedural T1–T5 (egyptianTownCenterModel.ts) ───
 
-function buildEgyptianTownCenter(
-  group: THREE.Group,
-  mats: EgyptianMaterials,
-  age: number,
-  pantheon: PantheonId = 'egyptian'
-): { metropolisHalo?: THREE.Object3D; metropolisCrystal?: THREE.Object3D } {
-  const tier = Math.max(1, Math.min(5, Math.round(age)));
-  const isAztec = pantheon === 'aztec';
-  const isBabylon = pantheon === 'babylonian';
-
-  const wallMat = isBabylon ? mats.lapisRoof : isAztec ? mats.ivoryStone : mats.sandstone;
-  const trimMat = isAztec ? mats.turquoise : mats.goldTrim;
-  const accentMat = isBabylon ? mats.goldTrim : isAztec ? mats.turquoise : mats.hieroglyphTrim;
-
-  // 1. Stepped Desert/Limestone Plinth (expands T1 → T5)
-  const baseW = 4.0 + tier * 0.34;
-  const basePlinth = new THREE.Mesh(
-    new THREE.BoxGeometry(baseW, 0.38, baseW),
-    mats.sandstoneDark
-  );
-  basePlinth.position.y = 0.19;
-  group.add(basePlinth);
-
-  let deckY = 0.38;
-  if (tier >= 2) {
-    const innerW = baseW - 0.56;
-    const innerCourt = new THREE.Mesh(
-      new THREE.BoxGeometry(innerW, 0.22, innerW),
-      wallMat
-    );
-    innerCourt.position.y = deckY + 0.11;
-    group.add(innerCourt);
-    deckY += 0.22;
-  }
-  if (tier >= 4) {
-    const upperW = baseW - 1.15;
-    const upperDeck = new THREE.Mesh(
-      new THREE.BoxGeometry(upperW, 0.22, upperW),
-      isBabylon ? mats.turquoise : mats.sandstone
-    );
-    upperDeck.position.y = deckY + 0.11;
-    group.add(upperDeck);
-    deckY += 0.22;
-  }
-
-  // Grand ceremonial ramp/steps at front
-  for (let s = 0; s < Math.min(4, tier + 1); s++) {
-    const step = new THREE.Mesh(
-      new THREE.BoxGeometry(1.5 - s * 0.1, 0.12, 0.36),
-      mats.sandstoneDark
-    );
-    step.position.set(0, 0.06 + s * 0.12, baseW * 0.5 + 0.14 - s * 0.14);
-    group.add(step);
-  }
-
-  // 2. Central Sanctuary: Mudbrick Shrine (T1) → Twin Pylon Palace / Stepped Pyramid / Ishtar Ziggurat (T2–T5)
-  let topY = deckY;
-
-  if (isAztec) {
-    // Aztec Tenochtitlan Stepped Pyramid growing tier by tier
-    const levels = tier + 1;
-    for (let l = 0; l < levels; l++) {
-      const lw = (2.7 + tier * 0.18) - l * 0.44;
-      const lh = 0.52;
-      const tierMesh = new THREE.Mesh(
-        new THREE.BoxGeometry(lw, lh, lw),
-        l % 2 === 0 ? mats.ivoryStone : mats.sandstone
-      );
-      tierMesh.position.set(0, deckY + l * lh + lh * 0.5, -0.15);
-      group.add(tierMesh);
-
-      if (l > 0) {
-        const jadeBand = new THREE.Mesh(
-          new THREE.BoxGeometry(lw + 0.06, 0.09, lw + 0.06),
-          mats.turquoise
-        );
-        jadeBand.position.set(0, deckY + l * lh + 0.06, -0.15);
-        group.add(jadeBand);
-      }
-      topY = deckY + (l + 1) * lh;
-    }
-    // Summit Twin Shrines (Huitzilopochtli & Tlaloc) at T3+ or single shrine at T1-T2
-    if (tier >= 3) {
-      for (const side of [-0.42, 0.42]) {
-        const shrine = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.72, 0.72), mats.sandstone);
-        shrine.position.set(side, topY + 0.36, -0.15);
-        group.add(shrine);
-
-        const cap = new THREE.Mesh(
-          new THREE.BoxGeometry(0.7, 0.24, 0.8),
-          side < 0 ? mats.teamBanner : mats.turquoise
-        );
-        cap.position.set(side, topY + 0.84, -0.15);
-        group.add(cap);
-      }
-      topY += 0.96;
-    } else {
-      const shrine = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.65, 1.0), mats.sandstone);
-      shrine.position.set(0, topY + 0.325, -0.15);
-      group.add(shrine);
-      topY += 0.65;
-    }
-  } else {
-    // Egyptian Pharaonic Pylon Palace OR Babylonian Lapis Ziggurat Palace
-    const hallW = 2.0 + tier * 0.2;
-    const hallH = 1.25 + tier * 0.28;
-    const hallL = 2.25 + tier * 0.2;
-    const hall = new THREE.Mesh(new THREE.BoxGeometry(hallW, hallH, hallL), wallMat);
-    hall.position.set(0, deckY + hallH * 0.5, -0.2);
-    group.add(hall);
-    topY = deckY + hallH;
-
-    // Hieroglyph / Lapis Cornice Band (T2+)
-    if (tier >= 2) {
-      const frieze = new THREE.Mesh(
-        new THREE.BoxGeometry(hallW + 0.14, 0.24, hallL + 0.14),
-        accentMat
-      );
-      frieze.position.set(0, deckY + hallH - 0.12, -0.2);
-      group.add(frieze);
-    }
-
-    // Twin Battered Entrance Pylons (T2+)
-    if (tier >= 2) {
-      const pylonH = 1.65 + tier * 0.32;
-      for (const side of [-1, 1]) {
-        const pylon = new THREE.Mesh(
-          new THREE.BoxGeometry(1.05 + tier * 0.06, pylonH, 1.15),
-          wallMat
-        );
-        pylon.position.set(side * (1.28 + tier * 0.08), deckY + pylonH * 0.5, 1.15);
-        group.add(pylon);
-
-        const pylonCrown = new THREE.Mesh(
-          new THREE.BoxGeometry(1.14 + tier * 0.06, 0.18, 1.24),
-          trimMat
-        );
-        pylonCrown.position.set(side * (1.28 + tier * 0.08), deckY + pylonH + 0.09, 1.15);
-        group.add(pylonCrown);
-      }
-
-      // Lotus Columns framing portal
-      for (const side of [-0.52, 0.52]) {
-        const lotusCol = buildLotusColumn(1.55 + tier * 0.18, mats);
-        lotusCol.position.set(side, deckY, 1.25);
-        group.add(lotusCol);
-      }
-    } else {
-      // T1 Mudbrick awning porch
-      const porch = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.1, 0.75), mats.timberWood);
-      porch.position.set(0, deckY + 1.05, 1.05);
-      group.add(porch);
-    }
-
-    // Babylonian Hanging-Garden emerald terraces (T3+)
-    if (isBabylon && tier >= 3) {
-      for (const side of [-1, 1]) {
-        const terrace = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.9, 1.8), mats.lapisRoof);
-        terrace.position.set(side * (hallW * 0.5 + 0.62), deckY + 0.45, -0.2);
-        group.add(terrace);
-
-        const garden = new THREE.Mesh(new THREE.BoxGeometry(0.92, 0.22, 1.68), mats.turquoise);
-        garden.position.set(side * (hallW * 0.5 + 0.62), deckY + 1.01, -0.2);
-        group.add(garden);
-      }
-    }
-  }
-
-  // 3. T3+ Golden Obelisks & Flanking Side Wings
-  if (tier >= 3) {
-    const obeliskPositions =
-      tier >= 5
-        ? [[-1.75, 1.65], [1.75, 1.65], [-1.75, -1.65], [1.75, -1.65]]
-        : tier >= 4
-        ? [[-1.55, 1.55], [1.55, 1.55]]
-        : [[0, -0.2]];
-
-    for (const [ox, oz] of obeliskPositions) {
-      const obH = tier === 3 ? 2.4 : 2.1 + tier * 0.22;
-      const obBase = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.35, 0.46), mats.sandstoneDark);
-      obBase.position.set(ox, deckY + 0.175, oz);
-      group.add(obBase);
-
-      const obShaft = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.11, 0.22, obH, 4),
-        isAztec ? mats.turquoise : mats.sandstone
-      );
-      obShaft.rotation.y = Math.PI / 4;
-      obShaft.position.set(ox, deckY + 0.35 + obH * 0.5, oz);
-      group.add(obShaft);
-
-      const pyramidion = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.34, 4), mats.goldSolar);
-      pyramidion.rotation.y = Math.PI / 4;
-      pyramidion.position.set(ox, deckY + 0.35 + obH + 0.17, oz);
-      group.add(pyramidion);
-    }
-  }
-
-  // 4. T4+ Guardian Sphinxes & Canopic Relic Shrine
-  if (tier >= 4) {
-    for (const side of [-1, 1]) {
-      const sphinx = buildCrouchingSphinx(mats);
-      sphinx.scale.setScalar(0.85);
-      sphinx.position.set(side * 1.15, deckY, baseW * 0.44);
-      group.add(sphinx);
-    }
-
-    const relic = buildCanopicRelicShrine(mats);
-    relic.position.set(1.55, deckY, 0.25);
-    group.add(relic);
-  }
-
-  // 5. T5 DIVINE SOLAR METROPOLIS CROWN (Blazing Sun-Disc Crystal & Rotating Ra Solar Halo)
-  let metropolisHalo: THREE.Object3D | undefined;
-  let metropolisCrystal: THREE.Object3D | undefined;
-
-  if (tier >= 5) {
-    const sunPedestal = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.42, 0.65, 0.85, 8),
-      mats.goldTrim
-    );
-    sunPedestal.position.set(0, topY + 0.42, -0.2);
-    group.add(sunPedestal);
-
-    const haloY = topY + 1.55;
-    const halo = new THREE.Mesh(
-      new THREE.TorusGeometry(1.42, 0.085, 10, 32),
-      mats.goldSolar
-    );
-    halo.rotation.x = Math.PI / 2;
-    halo.position.set(0, haloY, -0.2);
-    halo.userData.baseY = haloY;
-    group.add(halo);
-    metropolisHalo = halo;
-
-    const crystalY = topY + 1.75;
-    const giantApex = new THREE.Mesh(new THREE.OctahedronGeometry(0.54, 1), mats.goldSolar);
-    giantApex.position.set(0, crystalY, -0.2);
-    giantApex.userData.baseY = crystalY;
-    group.add(giantApex);
-    metropolisCrystal = giantApex;
-  }
-
-  // Team Banner Standard
-  const pole = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.045, 0.045, 2.7 + tier * 0.25, 6),
-    mats.goldTrim
-  );
-  pole.position.set(-1.35, deckY + (2.7 + tier * 0.25) * 0.5, baseW * 0.42);
-  group.add(pole);
-
-  const banner = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.88, 0.04), mats.teamBanner);
-  banner.position.set(-1.35, deckY + 2.15 + tier * 0.22, baseW * 0.42 + 0.03);
-  group.add(banner);
-
-  return { metropolisHalo, metropolisCrystal };
-}
 
 // ─── 2. MIGDAL BARRACKS (Quartel Egípcio / Migdal Fortress) ──────────────────
 
@@ -772,28 +501,18 @@ export function createEgyptianBuildingMesh(
 
   switch (kind) {
     case 'town_center': {
-      if (pantheon === 'egyptian') {
-        const rawGod = (majorGod || 'ra').toLowerCase();
-        const effGod = rawGod.includes('isis') ? 'isis' : rawGod.includes('set') ? 'set' : 'ra';
-        const res = buildProceduralEgyptianTownCenter(group, age, effGod, enableShadows);
-        metropolisHalo = res.metropolisHalo;
-        metropolisCrystal = res.metropolisCrystal;
-        if (res.flames && res.flames.length > 0) {
-          group.userData.egyptArchFlames = res.flames;
-        }
-        group.scale.setScalar(1.0 + (age - 1) * 0.055);
-        markerRadius = 3.6 + (age - 1) * 0.22;
-        barHeight = 3.8 + (age - 1) * 0.55;
-        barWidth = 3.2 + (age - 1) * 0.15;
-      } else {
-        const res = buildEgyptianTownCenter(group, mats, age, pantheon);
-        metropolisHalo = res.metropolisHalo;
-        metropolisCrystal = res.metropolisCrystal;
-        group.scale.setScalar(1.0 + (age - 1) * 0.055);
-        markerRadius = 3.55 + (age - 1) * 0.22;
-        barHeight = 3.75 + (age - 1) * 0.58;
-        barWidth = 3.0 + (age - 1) * 0.15;
+      const effGod = resolveEgyptianArchGod(majorGod || String(pantheon || 'ra'));
+      const res = buildProceduralEgyptianTownCenter(group, age, effGod, enableShadows);
+      metropolisHalo = res.metropolisHalo;
+      metropolisCrystal = res.metropolisCrystal;
+      if (res.flames && res.flames.length > 0) {
+        group.userData.tcFlames = res.flames;
+        group.userData.egyptArchFlames = res.flames;
       }
+      group.scale.setScalar(1.0 + (age - 1) * 0.055);
+      markerRadius = 3.6 + (age - 1) * 0.22;
+      barHeight = 3.8 + (age - 1) * 0.55;
+      barWidth = 3.2 + (age - 1) * 0.15;
       break;
     }
     case 'barracks':
@@ -816,8 +535,7 @@ export function createEgyptianBuildingMesh(
       break;
     }
     case 'temple': {
-      const rawGod = (majorGod || String(pantheon || 'ra')).toLowerCase();
-      const effGod = rawGod.includes('isis') ? 'isis' : rawGod.includes('set') ? 'set' : 'ra';
+      const effGod = resolveEgyptianArchGod(majorGod || String(pantheon || 'ra'));
       const res = buildEgyptianTemple(group, mats, age, effGod);
       beaconCrystal = res.beaconCrystal;
       group.scale.setScalar(1.2 + (age - 1) * 0.08);

@@ -745,7 +745,9 @@ async function startServer() {
     app.use(vite.middlewares);
   } else {
     const distDir = path.resolve(__dirname, 'dist');
+    const publicDir = path.resolve(__dirname, 'public');
     app.use(express.static(distDir));
+    app.use(express.static(publicDir));
     app.get('*', (_req, res) => {
       res.sendFile(path.join(distDir, 'index.html'));
     });

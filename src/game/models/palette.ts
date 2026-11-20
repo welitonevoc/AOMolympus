@@ -264,7 +264,11 @@ export function getCivLook(pantheon: PantheonId, pal: MaterialPalette, majorGod?
   const style = PANTHEONS[pantheon].archStyle;
 
   if (majorGod) {
-    const mg = majorGod.toLowerCase();
+    const mg = majorGod
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .trim()
+      .toLowerCase();
     // GREGOS: Zeus, Poseidon, Hades
     if (mg.includes('zeus')) {
       return {
@@ -303,8 +307,8 @@ export function getCivLook(pantheon: PantheonId, pal: MaterialPalette, majorGod?
       };
     }
 
-    // EGÍPCIOS: Rá, Ísis, Set
-    if (mg.includes('rá') || mg.includes('ra')) {
+    // EGÍPCIOS: Rá, Ísis, Set (word boundaries so 'oranos'/'urano' never match 'ra')
+    if (/\bra\b/.test(mg)) {
       return {
         style: 'egyptian',
         wallMat: pal.sandstone,
@@ -316,7 +320,7 @@ export function getCivLook(pantheon: PantheonId, pal: MaterialPalette, majorGod?
         titanCoreMat: pal.goldOre,
       };
     }
-    if (mg.includes('ísis') || mg.includes('isis')) {
+    if (/\bisis\b/.test(mg)) {
       return {
         style: 'egyptian',
         wallMat: pal.sandstone,
@@ -328,7 +332,7 @@ export function getCivLook(pantheon: PantheonId, pal: MaterialPalette, majorGod?
         titanCoreMat: pal.crystalGlow,
       };
     }
-    if (mg.includes('set')) {
+    if (/\b(set|seth)\b/.test(mg)) {
       return {
         style: 'egyptian',
         wallMat: pal.sandstoneDark,
@@ -379,7 +383,20 @@ export function getCivLook(pantheon: PantheonId, pal: MaterialPalette, majorGod?
       };
     }
 
-    // ATLANTES: Cronos, Urano, Gaia
+    if (mg.includes('freyr') || mg.includes('frey')) {
+      return {
+        style: 'norse',
+        wallMat: pal.norseTimber,
+        trimMat: pal.gold,
+        roofMat: pal.foliagePine,
+        armorMat: pal.gold,
+        mountMat: pal.furBrown,
+        titanBodyMat: pal.gold,
+        titanCoreMat: pal.goldOre,
+      };
+    }
+
+    // ATLANTES: Cronos, Urano/Oranos, Gaia
     if (mg.includes('cronos') || mg.includes('kronos')) {
       return {
         style: 'atlantean',
@@ -392,7 +409,7 @@ export function getCivLook(pantheon: PantheonId, pal: MaterialPalette, majorGod?
         titanCoreMat: pal.crystalGlow,
       };
     }
-    if (mg.includes('urano') || mg.includes('ouranos')) {
+    if (mg.includes('urano') || mg.includes('oranos') || mg.includes('ouranos')) {
       return {
         style: 'atlantean',
         wallMat: pal.ivory,

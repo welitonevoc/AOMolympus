@@ -7,7 +7,16 @@ import { createAtlanteanBuildingMesh } from '../../civilizacao/atlantes/atlantea
 import { createChineseBuildingMesh } from '../../civilizacao/chineses/chineseModels';
 import { createExpandedBuildingMesh, isExpandedBuildingKind } from '../expandedBuildingModels';
 import { getCivLook, MaterialPalette } from './palette';
-import { attachGroundMarkers, attachHealthBar, buildSimpleTownCenter } from './shared';
+import { attachGroundMarkers, attachHealthBar } from './shared';
+
+function forwardBuildingAnimRefs(root: THREE.Group, builtGroup: THREE.Group): void {
+  const ud = builtGroup.userData;
+  if (ud.tcFlames) root.userData.tcFlames = ud.tcFlames;
+  if (ud.egyptArchFlames) root.userData.egyptArchFlames = ud.egyptArchFlames;
+  if (ud.atlanteanFlames) root.userData.atlanteanFlames = ud.atlanteanFlames;
+  if (ud.atlanteanRelics) root.userData.atlanteanRelics = ud.atlanteanRelics;
+  if (ud.atlanteanRelicRings) root.userData.atlanteanRelicRings = ud.atlanteanRelicRings;
+}
 
 export function createBuildingMesh(
   kind: BuildingKind,
@@ -43,6 +52,7 @@ export function createBuildingMesh(
     if (built.vortexRing) root.userData.vortexRing = built.vortexRing;
     if (built.metropolisHalo) root.userData.metropolisHalo = built.metropolisHalo;
     if (built.metropolisCrystal) root.userData.metropolisCrystal = built.metropolisCrystal;
+    forwardBuildingAnimRefs(root, built.group);
     attachGroundMarkers(root, built.markerRadius, pal, team);
     attachHealthBar(root, built.barHeight, built.barWidth);
     return root;
@@ -55,6 +65,7 @@ export function createBuildingMesh(
     if (built.vortexRing) root.userData.vortexRing = built.vortexRing;
     if (built.metropolisHalo) root.userData.metropolisHalo = built.metropolisHalo;
     if (built.metropolisCrystal) root.userData.metropolisCrystal = built.metropolisCrystal;
+    forwardBuildingAnimRefs(root, built.group);
     attachGroundMarkers(root, built.markerRadius, pal, team);
     attachHealthBar(root, built.barHeight, built.barWidth);
     return root;
@@ -67,6 +78,7 @@ export function createBuildingMesh(
     if (built.vortexRing) root.userData.vortexRing = built.vortexRing;
     if (built.metropolisHalo) root.userData.metropolisHalo = built.metropolisHalo;
     if (built.metropolisCrystal) root.userData.metropolisCrystal = built.metropolisCrystal;
+    forwardBuildingAnimRefs(root, built.group);
     attachGroundMarkers(root, built.markerRadius, pal, team);
     attachHealthBar(root, built.barHeight, built.barWidth);
     return root;
@@ -79,6 +91,7 @@ export function createBuildingMesh(
     if (built.vortexRing) root.userData.vortexRing = built.vortexRing;
     if (built.metropolisHalo) root.userData.metropolisHalo = built.metropolisHalo;
     if (built.metropolisCrystal) root.userData.metropolisCrystal = built.metropolisCrystal;
+    forwardBuildingAnimRefs(root, built.group);
     attachGroundMarkers(root, built.markerRadius, pal, team);
     attachHealthBar(root, built.barHeight, built.barWidth);
     return root;
@@ -89,13 +102,9 @@ export function createBuildingMesh(
     root.add(built.group);
     if (built.beaconCrystal) root.userData.beaconCrystal = built.beaconCrystal;
     if (built.vortexRing) root.userData.vortexRing = built.vortexRing;
+    forwardBuildingAnimRefs(root, built.group);
     attachGroundMarkers(root, built.markerRadius, pal, team);
     attachHealthBar(root, built.barHeight, built.barWidth);
-    return root;
-  }
-
-  if (kind === 'town_center') {
-    buildSimpleTownCenter(root, team, pal, look, enableShadows, age);
     return root;
   }
 
@@ -284,62 +293,6 @@ export function createBuildingMesh(
 
     attachGroundMarkers(root, 4.0, pal, team);
     attachHealthBar(root, 8.4, 3.5);
-    return root;
-  }
-
-  if (look.style === 'atlantean') {
-    if (kind === 'house') {
-      addPart(new THREE.Mesh(new THREE.BoxGeometry(1.90, 0.16, 1.65), pal.stoneDark), 0, 0.08, 0);
-      addPart(new THREE.Mesh(new THREE.BoxGeometry(1.66, 0.84, 1.40), look.wallMat), 0, 0.58, 0);
-      addPart(new THREE.Mesh(new THREE.BoxGeometry(1.74, 0.10, 1.48), look.trimMat), 0, 1.05, 0);
-      addPart(new THREE.Mesh(new THREE.SphereGeometry(0.76, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), look.roofMat), 0, 1.09, 0);
-      addPart(new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.24, 0.06), teamMat), 0.55, 0.78, 0.72);
-
-      attachGroundMarkers(root, 1.15, pal, team);
-      attachHealthBar(root, 2.05, 1.3);
-      return root;
-    }
-    if (kind === 'barracks') {
-      addPart(new THREE.Mesh(new THREE.BoxGeometry(4.6, 0.42, 4.2), pal.stoneDark), 0, 0.21, 0);
-      addPart(new THREE.Mesh(new THREE.BoxGeometry(3.9, 2.2, 3.5), look.wallMat), 0, 1.5, 0);
-      addPart(new THREE.Mesh(new THREE.BoxGeometry(4.2, 0.3, 3.8), look.trimMat), 0, 2.7, 0);
-      for (const sx of [-1.8, 1.8]) {
-        addPart(new THREE.Mesh(new THREE.CylinderGeometry(0.58, 0.68, 3.2, 8), look.wallMat), sx, 1.9, 1.6);
-        addPart(new THREE.Mesh(new THREE.SphereGeometry(0.72, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), look.roofMat), sx, 3.5, 1.6);
-      }
-      addPart(new THREE.Mesh(new THREE.OctahedronGeometry(0.5, 0), look.trimMat), 0, 2.1, 1.82);
-      addPart(new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.9, 0.1), teamMat), 0, 3.5, 0);
-
-      attachGroundMarkers(root, 2.7, pal, team);
-      attachHealthBar(root, 4.4, 2.6);
-      return root;
-    }
-    if (kind === 'temple') {
-      addPart(new THREE.Mesh(new THREE.CylinderGeometry(3.3, 3.6, 0.42, 8), pal.stoneDark), 0, 0.21, 0);
-      addPart(new THREE.Mesh(new THREE.CylinderGeometry(2.8, 3.1, 0.35, 8), look.wallMat), 0, 0.58, 0);
-      addPart(new THREE.Mesh(new THREE.CylinderGeometry(1.7, 1.9, 2.6, 8), look.wallMat), 0, 1.95, 0);
-      for (const [px, pz] of [[-2.0, 2.0], [2.0, 2.0], [-2.0, -2.0], [2.0, -2.0]]) {
-        addPart(new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.28, 3.4, 8), look.trimMat), px, 2.3, pz);
-        addPart(new THREE.Mesh(new THREE.ConeGeometry(0.28, 0.65, 6), look.roofMat), px, 4.3, pz);
-      }
-      addPart(new THREE.Mesh(new THREE.TorusGeometry(1.65, 0.14, 8, 20), look.trimMat), 0, 3.65, 0);
-      const crystal = addPart(new THREE.Mesh(new THREE.OctahedronGeometry(0.65, 0), pal.crystalGlow), 0, 5.8, 0);
-      root.userData.beaconCrystal = crystal;
-      addPart(new THREE.Mesh(new THREE.BoxGeometry(0.85, 1.35, 0.08), teamMat), 0, 1.75, 1.95);
-
-      attachGroundMarkers(root, 3.0, pal, team);
-      attachHealthBar(root, 6.4, 2.8);
-      return root;
-    }
-    addPart(new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.5, 0.55, 8), pal.stoneDark), 0, 0.275, 0);
-    addPart(new THREE.Mesh(new THREE.CylinderGeometry(0.88, 1.15, 4.2, 8), look.wallMat), 0, 2.65, 0);
-    addPart(new THREE.Mesh(new THREE.CylinderGeometry(1.22, 1.1, 0.45, 8), look.trimMat), 0, 4.9, 0);
-    addPart(new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.22, 2.1), teamMat), 0, 5.25, 0);
-    addPart(new THREE.Mesh(new THREE.SphereGeometry(1.1, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), look.roofMat), 0, 5.35, 0);
-    addPart(new THREE.Mesh(new THREE.OctahedronGeometry(0.38, 0), pal.crystalGlow), 0, 6.75, 0);
-
-    attachGroundMarkers(root, 1.6, pal, team);
-    attachHealthBar(root, 7.4, 1.9);
     return root;
   }
 

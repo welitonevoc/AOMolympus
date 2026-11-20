@@ -1,6 +1,18 @@
 import * as THREE from 'three';
 import { TeamId } from '../../game/types';
 import { MaterialPalette } from '../../game/models';
+import { buildAtlanteanCitizen, buildAtlanteanLlama } from './atlanteanVillagerModel';
+
+function resolveAtlanteanHumanGod(majorGod?: string): 'kronos' | 'oranos' | 'gaia' {
+  const g = (majorGod || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLowerCase();
+  if (g.includes('oranos') || g.includes('urano')) return 'oranos';
+  if (g.includes('gaia')) return 'gaia';
+  return 'kronos';
+}
 
 export type AtlanteanHumanUnitKind =
   | 'citizen'
@@ -366,63 +378,54 @@ function attachStandardBipedAnimation(
   };
 }
 
-function createLlamaCaravanMesh(team: TeamId, pal: MaterialPalette): THREE.Group {
-  const tex = getAtlanteanHumanTextures();
+function createLlamaCaravanMesh(
+  team: TeamId,
+  pal: MaterialPalette,
+  enableShadows: boolean,
+  majorGod?: string
+): THREE.Group {
+  const godKey = resolveAtlanteanHumanGod(majorGod);
   const root = new THREE.Group();
   const teamMat = team === 'player' ? pal.tunicPlayer : pal.tunicEnemy;
-  const woolMat = new THREE.MeshStandardMaterial({ color: 0xe7e5e4, roughness: 0.85 });
-  const saddleMat = new THREE.MeshStandardMaterial({ map: tex.oceanTunic, roughness: 0.65 });
 
-  // Llama body
-  const body = new THREE.Mesh(new THREE.BoxGeometry(0.68, 0.56, 1.2), woolMat);
-  body.position.set(0, 0.88, 0);
-  const pack = new THREE.Mesh(new THREE.BoxGeometry(0.84, 0.46, 0.78), saddleMat);
-  pack.position.set(0, 1.04, -0.05);
-  const goldChest = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.34, 0.48), pal.orichalcum);
-  goldChest.position.set(0, 1.32, -0.05);
-  const banner = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.5, 0.28), teamMat);
-  banner.position.set(0.32, 1.38, -0.25);
+  const llama = buildAtlanteanLlama(godKey, enableShadows);
+  llama.root.scale.setScalar(1.12);
+  root.add(llama.root);
 
-  const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.18, 0.68, 8), woolMat);
-  neck.position.set(0, 1.38, 0.48);
-  neck.rotation.x = 0.24;
-  const head = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.22, 0.36), woolMat);
-  head.position.set(0, 1.72, 0.62);
-  const earL = new THREE.Mesh(new THREE.ConeGeometry(0.045, 0.18, 5), woolMat);
-  earL.position.set(-0.08, 1.88, 0.56);
-  const earR = earL.clone();
-  earR.position.x = 0.08;
+  // Small team-colored caravan pennant mounted on the saddle frame
+  const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.56, 6), pal.orichalcum);
+  pole.position.set(0.24, 0.32, -0.18);
+  const banner = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.24, 0.3), teamMat);
+  banner.position.set(0.24, 0.48, -0.32);
+  llama.body.add(pole, banner);
 
-  const legs: THREE.Mesh[] = [];
-  const legOffsets = [
-    [-0.22, 0.42],
-    [0.22, 0.42],
-    [-0.22, -0.42],
-    [0.22, -0.42],
-  ];
-  for (const [lx, lz] of legOffsets) {
-    const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.06, 0.66, 7), woolMat);
-    leg.position.set(lx, 0.33, lz);
-    legs.push(leg);
-    root.add(leg);
-  }
-
-  root.add(body, pack, goldChest, banner, neck, head, earL, earR);
-
+  const baseBodyY = llama.baseBodyY ?? 0.82;
   let walkPhase = 0;
+  let idleTime = 0;
+
   root.userData.animatePose = (dt: number, moving: boolean, speed: number) => {
+    idleTime += dt;
+    if (llama.kBackRing) {
+      llama.kBackRing.rotation.z += dt * 1.6;
+    }
     if (moving) {
-      walkPhase += dt * Math.max(5, speed * 2.2);
-      legs[0].rotation.x = Math.sin(walkPhase) * 0.55;
-      legs[1].rotation.x = -Math.sin(walkPhase) * 0.55;
-      legs[2].rotation.x = -Math.sin(walkPhase) * 0.55;
-      legs[3].rotation.x = Math.sin(walkPhase) * 0.55;
-      body.position.y = 0.88 + Math.abs(Math.sin(walkPhase * 2)) * 0.04;
+      walkPhase += dt * Math.max(5.5, speed * 2.3);
+      for (const leg of llama.legs) {
+        leg.pivot.rotation.x = Math.sin(walkPhase + leg.phase) * 0.48;
+      }
+      llama.body.position.y = baseBodyY + Math.abs(Math.sin(walkPhase * 2)) * 0.04;
+      llama.neck.rotation.x = 0.08 + Math.sin(walkPhase * 2) * 0.06;
+      llama.head.rotation.y = Math.sin(walkPhase * 0.5) * 0.08;
     } else {
-      for (const l of legs) l.rotation.x = 0;
-      body.position.y = 0.88;
+      for (const leg of llama.legs) {
+        leg.pivot.rotation.x *= Math.max(0, 1 - dt * 10);
+      }
+      llama.body.position.y = baseBodyY + Math.sin(idleTime * 2.2) * 0.012;
+      llama.neck.rotation.x = Math.sin(idleTime * 1.4) * 0.04;
+      llama.head.rotation.y = Math.sin(idleTime * 0.9) * 0.14;
     }
   };
+
   return root;
 }
 
@@ -641,10 +644,45 @@ export function createAtlanteanHumanUnitMesh(
   kind: AtlanteanHumanUnitKind,
   team: TeamId,
   pal: MaterialPalette,
-  enableShadows: boolean
+  enableShadows: boolean,
+  majorGod?: string
 ): THREE.Group {
+  if (kind === 'citizen') {
+    const godKey = resolveAtlanteanHumanGod(majorGod);
+    const citizen = buildAtlanteanCitizen(false, godKey, enableShadows);
+    const root = new THREE.Group();
+    citizen.root.scale.setScalar(0.98);
+    root.add(citizen.root);
+    let heroEnabled = false;
+    let phase = 0;
+    root.userData.setHeroVisual = (isHero: boolean) => {
+      heroEnabled = isHero;
+      citizen.setHeroState(isHero);
+    };
+    root.userData.animatePose = (dt: number, moving: boolean, speed: number) => {
+      phase += dt * (moving ? Math.max(6, speed * 2.2) : 2.1);
+      if (citizen.kronosBackHalo) citizen.kronosBackHalo.rotation.z += dt * 1.4;
+      if (heroEnabled) {
+        citizen.heroGroundAura.rotation.z += dt * 1.6;
+      }
+      if (moving) {
+        const s = Math.sin(phase);
+        citizen.legs.L.hip.rotation.x = s * 0.52;
+        citizen.legs.R.hip.rotation.x = -s * 0.52;
+        citizen.rightArm.arm.rotation.x = -s * 0.35;
+        citizen.leftArm.arm.rotation.x = s * 0.35;
+      } else {
+        citizen.legs.L.hip.rotation.x = 0;
+        citizen.legs.R.hip.rotation.x = 0;
+        citizen.rightArm.arm.rotation.x = Math.sin(phase) * 0.05;
+        citizen.leftArm.arm.rotation.x = -Math.sin(phase) * 0.05;
+      }
+    };
+    enableShadowsRecursive(root, enableShadows);
+    return root;
+  }
   if (kind === 'llama_caravan') {
-    const g = createLlamaCaravanMesh(team, pal);
+    const g = createLlamaCaravanMesh(team, pal, enableShadows, majorGod);
     enableShadowsRecursive(g, enableShadows);
     return g;
   }
@@ -666,10 +704,9 @@ export function createAtlanteanHumanUnitMesh(
       : new THREE.MeshStandardMaterial({ map: tex.oceanTunic, roughness: 0.65 });
 
   const helmetMap: Record<
-    Exclude<AtlanteanHumanUnitKind, 'llama_caravan' | 'turma' | 'contarius' | 'cheiroballista' | 'fire_siphon' | 'onager'>,
-    'none' | 'oracle' | 'murmillo' | 'katapeltes' | 'arcus' | 'destroyer' | 'fanatic'
+    Exclude<AtlanteanHumanUnitKind, 'citizen' | 'llama_caravan' | 'turma' | 'contarius' | 'cheiroballista' | 'fire_siphon' | 'onager'>,
+    'oracle' | 'murmillo' | 'katapeltes' | 'arcus' | 'destroyer' | 'fanatic'
   > = {
-    citizen: 'none',
     oracle: 'oracle',
     murmillo: 'murmillo',
     katapeltes: 'katapeltes',
@@ -678,7 +715,7 @@ export function createAtlanteanHumanUnitMesh(
     fanatic: 'fanatic',
   };
 
-  const scale = kind === 'destroyer' ? 1.12 : kind === 'fanatic' ? 1.06 : kind === 'citizen' ? 1.02 : 1.0;
+  const scale = kind === 'destroyer' ? 1.12 : kind === 'fanatic' ? 1.06 : 1.0;
   const { root, leftLeg, rightLeg, torso, leftArm, rightArm } = buildHumanRig(
     team,
     pal,
@@ -689,14 +726,7 @@ export function createAtlanteanHumanUnitMesh(
 
   const shieldMat = new THREE.MeshStandardMaterial({ map: tex.atlanteanShield, roughness: 0.45 });
 
-  if (kind === 'citizen') {
-    const pickaxe = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.85, 6), pal.timber);
-    pickaxe.rotation.x = Math.PI / 2.2;
-    pickaxe.position.set(0, -0.35, 0.28);
-    const blade = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.06, 0.08), pal.orichalcum);
-    blade.position.set(0, -0.14, 0.62);
-    rightArm.add(pickaxe, blade);
-  } else if (kind === 'oracle') {
+  if (kind === 'oracle') {
     const staff = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.04, 1.55, 8), pal.orichalcum);
     staff.position.set(0, -0.05, 0.16);
     const crystal = new THREE.Mesh(new THREE.OctahedronGeometry(0.14, 0), pal.crystalGlow);

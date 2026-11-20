@@ -118,12 +118,13 @@ export function createAtlanteanUnitMesh(
   kind: string,
   team: TeamId,
   pal: MaterialPalette,
-  enableShadows: boolean
+  enableShadows: boolean,
+  majorGod?: string
 ): THREE.Group {
   const mythKind = ATLANTEAN_MYTH_MAP[kind];
   if (mythKind) {
     return createAtlanteanMythUnitMesh(mythKind, team, pal, enableShadows);
   }
   const humanKind = ATLANTEAN_HUMAN_MAP[kind] ?? 'murmillo';
-  return createAtlanteanHumanUnitMesh(humanKind, team, pal, enableShadows);
+  return createAtlanteanHumanUnitMesh(humanKind, team, pal, enableShadows, majorGod);
 }

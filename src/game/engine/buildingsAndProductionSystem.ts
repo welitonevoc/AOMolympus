@@ -558,6 +558,46 @@ export function updateBuildings(ctx: BuildingsAndProductionContext, dt: number):
         const baseY = (crystal.userData.baseY as number | undefined) ?? crystal.position.y;
         crystal.position.y = baseY + Math.sin(ctx.elapsedSeconds * 2.5 + 0.6) * 0.1;
       }
+      const tcFlames = b.mesh.userData.tcFlames as THREE.Object3D[] | undefined;
+      if (tcFlames && tcFlames.length > 0) {
+        for (let i = 0; i < tcFlames.length; i++) {
+          const fl = tcFlames[i];
+          fl.scale.set(
+            1 + Math.sin(ctx.elapsedSeconds * 13 + i) * 0.14,
+            1 + Math.cos(ctx.elapsedSeconds * 16 + i) * 0.22,
+            1 + Math.sin(ctx.elapsedSeconds * 12 + i) * 0.14
+          );
+        }
+      }
+      const atlRelics = b.mesh.userData.atlanteanRelics as THREE.Object3D[] | undefined;
+      if (atlRelics && atlRelics.length > 0) {
+        for (let i = 0; i < atlRelics.length; i++) {
+          const rel = atlRelics[i];
+          const baseY = (rel.userData.baseY as number | undefined) ?? rel.position.y;
+          if (rel.userData.baseY === undefined) rel.userData.baseY = baseY;
+          rel.position.y = baseY + Math.sin(ctx.elapsedSeconds * 2.3 + i * 1.1) * 0.12;
+          rel.rotation.y += dt * (1.1 + i * 0.25);
+        }
+      }
+      const atlRings = b.mesh.userData.atlanteanRelicRings as THREE.Object3D[] | undefined;
+      if (atlRings && atlRings.length > 0) {
+        for (let i = 0; i < atlRings.length; i++) {
+          atlRings[i].rotation.z += dt * (1.4 + i * 0.2);
+          atlRings[i].rotation.x += dt * 0.7;
+        }
+      }
+    }
+
+    if (b.isConstructed && b.mesh.userData.egyptArchFlames) {
+      const eFlames = b.mesh.userData.egyptArchFlames as THREE.Object3D[];
+      for (let i = 0; i < eFlames.length; i++) {
+        const fl = eFlames[i];
+        fl.scale.set(
+          1 + Math.sin(ctx.elapsedSeconds * 13 + i) * 0.14,
+          1 + Math.cos(ctx.elapsedSeconds * 16 + i) * 0.22,
+          1 + Math.sin(ctx.elapsedSeconds * 12 + i) * 0.14
+        );
+      }
     }
 
     if (b.kind === 'titan_gate' && b.mesh.userData.vortexRing) {

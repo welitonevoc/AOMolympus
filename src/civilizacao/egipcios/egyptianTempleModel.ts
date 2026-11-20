@@ -615,8 +615,12 @@ export function buildProceduralEgyptianTemple(
   age = 1,
   godKey = 'ra'
 ): { beaconCrystal: THREE.Object3D; allFlames?: THREE.Mesh[] } {
+  const rawGod = (godKey || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
   const normGod = (
-    godKey.includes('isis') ? 'isis' : godKey.includes('set') ? 'set' : 'ra'
+    rawGod.includes('isis') ? 'isis' : rawGod.includes('set') ? 'set' : 'ra'
   ) as EgyptianTempleGodKey;
 
   const effTier = Math.max(1, Math.min(5, age));

@@ -192,31 +192,47 @@ export function StudioCatalogDrawer(props: StudioCatalogDrawerProps) {
               ))}
             </div>
 
-            <div className="grid grid-cols-3 gap-1">
-              {(MAJOR_GODS_BY_CIV[selectedCiv] || MAJOR_GODS_BY_CIV.greek!).map((god) => {
-                const isSel = selectedMajorGod.toLowerCase() === god.id.toLowerCase();
-                return (
-                  <button
-                    key={god.id}
-                    type="button"
-                    onClick={() => handleSelectMajorGod(god.id)}
-                    style={{
-                      borderColor: isSel ? god.color : undefined,
-                      backgroundColor: isSel ? `${god.color}22` : undefined,
-                      color: isSel ? god.color : undefined,
-                    }}
-                    className={`rounded-md py-1 px-1.5 text-[11px] font-bold border transition cursor-pointer truncate ${
-                      isSel
-                        ? 'shadow'
-                        : 'border-white/10 bg-[#0c111b] text-[#9ca3af] hover:text-white'
-                    }`}
-                    title={god.title}
-                  >
-                    {god.name}
-                  </button>
-                );
-              })}
-            </div>
+            {(() => {
+              const godList = MAJOR_GODS_BY_CIV[selectedCiv] || MAJOR_GODS_BY_CIV.greek!;
+              const norm = (s: string) =>
+                s
+                  .normalize('NFD')
+                  .replace(/[\u0300-\u036f]/g, '')
+                  .trim()
+                  .toLowerCase();
+              const cur = norm(selectedMajorGod);
+              return (
+                <div className={`grid gap-1 ${godList.length === 4 ? 'grid-cols-4' : 'grid-cols-3'}`}>
+                  {godList.map((god) => {
+                    const id = norm(god.id);
+                    const isSel =
+                      cur === id ||
+                      (id === 'cronos' && cur === 'kronos') ||
+                      (id === 'urano' && cur === 'oranos');
+                    return (
+                      <button
+                        key={god.id}
+                        type="button"
+                        onClick={() => handleSelectMajorGod(god.id)}
+                        style={{
+                          borderColor: isSel ? god.color : undefined,
+                          backgroundColor: isSel ? `${god.color}22` : undefined,
+                          color: isSel ? god.color : undefined,
+                        }}
+                        className={`rounded-md py-1 px-1.5 text-[11px] font-bold border transition cursor-pointer truncate ${
+                          isSel
+                            ? 'shadow'
+                            : 'border-white/10 bg-[#0c111b] text-[#9ca3af] hover:text-white'
+                        }`}
+                        title={god.title}
+                      >
+                        {god.name}
+                      </button>
+                    );
+                  })}
+                </div>
+              );
+            })()}
 
             {galleryCategory === 'unit' && (
               <div className="flex items-center gap-1 overflow-x-auto pt-0.5">

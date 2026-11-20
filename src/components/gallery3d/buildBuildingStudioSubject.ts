@@ -698,7 +698,7 @@ export function buildBuildingStudioSubject(ctx: BuildingStudioBuildContext): THR
         lastGodApplied = currentGod;
         houseStudio.applyGod(currentGod);
         const newTheme = GREEK_BUILDINGS_THEMES[currentGod] || GREEK_BUILDINGS_THEMES.zeus;
-        scene.background.setHex(newTheme.bgHex);
+        if (scene.background instanceof THREE.Color) scene.background.setHex(newTheme.bgHex);
         if (scene.fog) (scene.fog as THREE.FogExp2).color.setHex(newTheme.bgHex);
       }
 
@@ -754,7 +754,7 @@ export function buildBuildingStudioSubject(ctx: BuildingStudioBuildContext): THR
         lastGodApplied = currentGod;
         tcStudio.applyGod(currentGod);
         const newTheme = GREEK_TOWN_CENTER_THEMES[currentGod] || GREEK_TOWN_CENTER_THEMES.zeus;
-        scene.background.setHex(newTheme.bgHex);
+        if (scene.background instanceof THREE.Color) scene.background.setHex(newTheme.bgHex);
         if (scene.fog) (scene.fog as THREE.FogExp2).color.setHex(newTheme.bgHex);
       }
 
@@ -817,7 +817,7 @@ export function buildBuildingStudioSubject(ctx: BuildingStudioBuildContext): THR
         lastGodApplied = currentGod;
         tcStudio.applyGod(currentGod);
         const newTheme = NORSE_TOWN_CENTER_THEMES[currentGod] || NORSE_TOWN_CENTER_THEMES.odin;
-        scene.background.setHex(newTheme.bgHex);
+        if (scene.background instanceof THREE.Color) scene.background.setHex(newTheme.bgHex);
         if (scene.fog) (scene.fog as THREE.FogExp2).color.setHex(newTheme.bgHex);
       }
 
@@ -837,7 +837,10 @@ export function buildBuildingStudioSubject(ctx: BuildingStudioBuildContext): THR
       });
     };
   } else if (selectedCiv === 'egyptian' && selectedBuilding === 'town_center') {
-    const rawGod = selectedMajorGod.toLowerCase();
+    const rawGod = selectedMajorGod
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase();
     const godKey = rawGod.includes('isis')
       ? 'isis'
       : rawGod.includes('set')
@@ -865,7 +868,10 @@ export function buildBuildingStudioSubject(ctx: BuildingStudioBuildContext): THR
         tcStudio.setTier(currentT);
       }
 
-      const nextRaw = selectedMajorGod.toLowerCase();
+      const nextRaw = selectedMajorGod
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase();
       const currentGod = nextRaw.includes('isis')
         ? 'isis'
         : nextRaw.includes('set')
@@ -876,7 +882,7 @@ export function buildBuildingStudioSubject(ctx: BuildingStudioBuildContext): THR
         lastGodApplied = currentGod;
         tcStudio.applyGod(currentGod);
         const newTheme = EGYPTIAN_TOWN_CENTER_THEMES[currentGod] || EGYPTIAN_TOWN_CENTER_THEMES.ra;
-        scene.background.setHex(newTheme.bgHex);
+        if (scene.background instanceof THREE.Color) scene.background.setHex(newTheme.bgHex);
         if (scene.fog) (scene.fog as THREE.FogExp2).color.setHex(newTheme.bgHex);
       }
 
@@ -937,7 +943,7 @@ export function buildBuildingStudioSubject(ctx: BuildingStudioBuildContext): THR
         lastGodApplied = currentGod;
         tcStudio.applyGod(currentGod);
         const newTheme = ATLANTEAN_TOWN_CENTER_THEMES[currentGod] || ATLANTEAN_TOWN_CENTER_THEMES.kronos;
-        scene.background.setHex(newTheme.bgHex);
+        if (scene.background instanceof THREE.Color) scene.background.setHex(newTheme.bgHex);
         if (scene.fog) (scene.fog as THREE.FogExp2).color.setHex(newTheme.bgHex);
       }
 

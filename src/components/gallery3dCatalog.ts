@@ -165,7 +165,22 @@ export const MAJOR_GODS_BY_CIV: Partial<Record<PantheonId, MajorGodOption[]>> = 
 
 export function getUnitsForCivAndGod(civ: PantheonId, majorGod: string): CivEntityOption[] {
   const godList = MAJOR_GODS_BY_CIV[civ] || MAJOR_GODS_BY_CIV.greek!;
-  const godInfo = godList.find((g) => g.id.toLowerCase() === (majorGod || '').toLowerCase()) || godList[0];
+  const norm = (s: string) =>
+    s
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .trim()
+      .toLowerCase();
+  const target = norm(majorGod || '');
+  const godInfo =
+    godList.find((g) => {
+      const id = norm(g.id);
+      return (
+        id === target ||
+        (id === 'cronos' && target === 'kronos') ||
+        (id === 'urano' && target === 'oranos')
+      );
+    }) || godList[0];
 
   if (civ === 'greek') {
     const isZeus = godInfo.id.toLowerCase() === 'zeus';
@@ -411,8 +426,14 @@ export function getUnitsForCivAndGod(civ: PantheonId, majorGod: string): CivEnti
     },
     {
       id: 'citizen',
-      name: isCronos ? 'Cidadão Croniano' : isUrano ? 'Cidadão dos Céus' : 'Cidadão de Gaia',
-      role: 'Trabalhador autossuficiente acompanhado de mula de carga',
+      name: isCronos ? 'Cidadão de Kronos' : isUrano ? 'Cidadão de Oranos' : 'Cidadão de Gaia',
+      role: 'Coletor autônomo acompanhado de Lhama de Carga com Transformação em Herói Atlante e aura radiante',
+      category: 'troop',
+    },
+    {
+      id: 'llama_caravan',
+      name: 'Lhama de Carga Atlante',
+      role: 'Lhama comercial e de suporte econômico com alforjes de oricalco e ornamentos divinos (Kronos/Oranos/Gaia)',
       category: 'troop',
     },
     {

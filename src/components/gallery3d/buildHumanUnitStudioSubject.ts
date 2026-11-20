@@ -849,6 +849,55 @@ export function buildHumanUnitStudioSubject(ctx: HumanUnitStudioBuildContext): T
     return atlanteanRoot;
   }
 
+  if (selectedCiv === 'atlantean' && selectedUnit === 'llama_caravan') {
+    const rawGod = selectedMajorGod
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase();
+    const godKey =
+      rawGod.includes('oranos') || rawGod.includes('urano')
+        ? 'oranos'
+        : rawGod.includes('gaia')
+        ? 'gaia'
+        : 'kronos';
+    const theme = ATLANTEAN_GOD_THEMES[godKey] || ATLANTEAN_GOD_THEMES.kronos;
+
+    scene.background = new THREE.Color(theme.bgHex);
+    scene.fog = new THREE.FogExp2(theme.bgHex, 0.015);
+    addPedestal(1.5, 1.72, theme.ringHex);
+
+    const llamaRoot = new THREE.Group();
+    const llama = buildAtlanteanLlama(godKey, !isSoftwareGl);
+    llama.root.scale.setScalar(1.22);
+    llamaRoot.add(llama.root);
+
+    const baseBodyY = llama.baseBodyY ?? 0.82;
+    llamaRoot.userData.animatePose = (dt: number, moving?: boolean) => {
+      const t = getSimTime();
+      if (llama.kBackRing) {
+        llama.kBackRing.rotation.z += dt * 1.65;
+      }
+      if (moving) {
+        const trot = t * 7.2;
+        llama.legs.forEach((l) => {
+          l.pivot.rotation.x = Math.sin(trot + l.phase) * 0.44;
+        });
+        llama.body.position.y = baseBodyY + Math.abs(Math.sin(trot)) * 0.045;
+        llama.neck.rotation.x = 0.06 + Math.sin(trot) * 0.05;
+        llama.head.rotation.y = Math.sin(t * 1.4) * 0.14;
+      } else {
+        llama.legs.forEach((l) => {
+          l.pivot.rotation.x *= Math.max(0, 1 - dt * 10);
+        });
+        llama.body.position.y = baseBodyY + Math.sin(t * 2.2) * 0.015;
+        llama.neck.rotation.x = Math.sin(t * 1.3) * 0.04;
+        llama.head.rotation.y = Math.sin(t * 0.9) * 0.18;
+      }
+    };
+
+    return llamaRoot;
+  }
+
   if (selectedCiv === 'greek' && (selectedUnit === 'hipaspist' || selectedUnit === 'myrmidon')) {
     scene.background = defaultBg.clone();
     scene.fog = new THREE.FogExp2(0x0b0e14, 0.015);

@@ -264,7 +264,7 @@ export function createUnitMesh(
     ((kind === 'automaton' || kind === 'satyr') && look.style === 'atlantean');
 
   if (isExplicitAtlanteanUnit || (look.style === 'atlantean' && !isGodKind && kind !== 'titan')) {
-    const atlMesh = createAtlanteanUnitMesh(kind, team, pal, enableShadows);
+    const atlMesh = createAtlanteanUnitMesh(kind, team, pal, enableShadows, majorGod);
     root.add(atlMesh);
     root.userData.atlMesh = atlMesh;
     root.userData.animatePose = atlMesh.userData.animatePose;

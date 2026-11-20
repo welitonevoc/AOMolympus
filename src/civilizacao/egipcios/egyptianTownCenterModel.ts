@@ -960,17 +960,23 @@ export interface EgyptianTownCenterBuildResult {
   metropolisCrystal?: THREE.Object3D;
 }
 
+function resolveEgyptianTownCenterGod(godKey: string): EgyptianTownCenterGodKey {
+  const norm = (godKey || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+  if (norm.includes('isis')) return 'isis';
+  if (norm.includes('set')) return 'set';
+  return 'ra';
+}
+
 export function buildProceduralEgyptianTownCenter(
   targetGroup: THREE.Group,
   age: number = 1,
   godKey: string = 'ra',
   enableShadows = true
 ): EgyptianTownCenterBuildResult {
-  const normGod: EgyptianTownCenterGodKey = godKey.toLowerCase().includes('isis')
-    ? 'isis'
-    : godKey.toLowerCase().includes('set')
-    ? 'set'
-    : 'ra';
+  const normGod = resolveEgyptianTownCenterGod(godKey);
   const theme = EGYPTIAN_TOWN_CENTER_THEMES[normGod] || EGYPTIAN_TOWN_CENTER_THEMES.ra;
   const materials = createEgyptianTownCenterMaterials(theme);
 
@@ -1046,11 +1052,7 @@ export function buildProceduralEgyptianTownCenter(
    6. STUDIO ADAPTER (STUDIO 3D GALLERY COM LIVE CONTROLS)
    ========================================================================== */
 export function buildEgyptianTownCenterStudio(godKey: string, initialTier: number, _isPbr = true) {
-  const normGod: EgyptianTownCenterGodKey = godKey.toLowerCase().includes('isis')
-    ? 'isis'
-    : godKey.toLowerCase().includes('set')
-    ? 'set'
-    : 'ra';
+  const normGod = resolveEgyptianTownCenterGod(godKey);
   const theme = EGYPTIAN_TOWN_CENTER_THEMES[normGod] || EGYPTIAN_TOWN_CENTER_THEMES.ra;
   const M = createEgyptianTownCenterMaterials(theme);
 
@@ -1095,11 +1097,7 @@ export function buildEgyptianTownCenterStudio(godKey: string, initialTier: numbe
   }
 
   function applyGod(newGodKey: string) {
-    const nextGod: EgyptianTownCenterGodKey = newGodKey.toLowerCase().includes('isis')
-      ? 'isis'
-      : newGodKey.toLowerCase().includes('set')
-      ? 'set'
-      : 'ra';
+    const nextGod = resolveEgyptianTownCenterGod(newGodKey);
     const nextTheme = EGYPTIAN_TOWN_CENTER_THEMES[nextGod] || EGYPTIAN_TOWN_CENTER_THEMES.ra;
 
     M.stoneBase.color.setHex(nextTheme.stoneBase);

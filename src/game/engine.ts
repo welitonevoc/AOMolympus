@@ -3139,7 +3139,7 @@ export class AoMEngine {
 
   private upgradeTeamTownCenters(team: TeamId, newAge: AgeLevel) {
     const pantheon = this.teamPantheon(team);
-    const majorGod = team === 'player' ? this.majorGodName : undefined;
+    const majorGod = team === 'player' ? this.majorGodName : PANTHEONS[this.enemyPantheon]?.deity;
     const suddenDeathMult = this.mapId === 'sudden_death' ? 1.5 : 1;
     const tierMaxHp = Math.round(this.getTownCenterTierMaxHp(team, newAge) * suddenDeathMult);
 
@@ -3207,7 +3207,7 @@ export class AoMEngine {
     const id = fixedId ?? `b_${this.nextId++}`;
     const pantheon = this.teamPantheon(team);
     const teamAge: AgeLevel = team === 'player' ? this.age : this.enemyAge;
-    const majorGod = team === 'player' ? this.majorGodName : undefined;
+    const majorGod = team === 'player' ? this.majorGodName : PANTHEONS[this.enemyPantheon]?.deity;
     const stats = getCivBuildingSpec(pantheon, kind, majorGod, teamAge);
     const maxHp = kind === 'town_center' ? this.getTownCenterTierMaxHp(team, teamAge) : stats.maxHp;
     const mesh = createBuildingMesh(

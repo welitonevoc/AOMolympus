@@ -259,12 +259,12 @@ export function StudioWorldBottomControls(props: StudioWorldBottomControlsProps)
       <>
         {(
           [
-            { id: 'Ra', label: '☀️ Rá', active: 'bg-gradient-to-r from-amber-300 to-amber-600 text-slate-950 font-black shadow-lg shadow-amber-500/30 ring-1 ring-amber-300' },
-            { id: 'Isis', label: '🪷 Ísis', active: 'bg-gradient-to-r from-teal-300 to-sky-600 text-slate-950 font-black shadow-lg shadow-teal-500/30 ring-1 ring-teal-300' },
+            { id: 'Rá', label: '☀️ Rá', active: 'bg-gradient-to-r from-amber-300 to-amber-600 text-slate-950 font-black shadow-lg shadow-amber-500/30 ring-1 ring-amber-300' },
+            { id: 'Ísis', label: '🪷 Ísis', active: 'bg-gradient-to-r from-teal-300 to-sky-600 text-slate-950 font-black shadow-lg shadow-teal-500/30 ring-1 ring-teal-300' },
             { id: 'Set', label: '🏜️ Set', active: 'bg-gradient-to-r from-red-600 to-orange-700 text-white font-black shadow-lg shadow-red-500/30 ring-1 ring-orange-400' },
           ] as const
         ).map((g) => {
-          const isSel = selectedMajorGod.toLowerCase() === g.id.toLowerCase();
+          const isSel = resolveEgyptianArchGod(selectedMajorGod) === resolveEgyptianArchGod(g.id);
           return (
             <button
               key={g.id}
@@ -802,6 +802,108 @@ export function StudioWorldBottomControls(props: StudioWorldBottomControlsProps)
         })}
 
         <div className="h-4 w-px bg-white/20 mx-1" />
+        <button
+          type="button"
+          onClick={() => setShowHumanScale((v) => !v)}
+          className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+            showHumanScale
+              ? 'bg-sky-500/20 text-sky-200 border border-sky-400/50'
+              : 'border border-white/12 text-[#9ca3af] hover:text-white'
+          }`}
+        >
+          <Users className="h-3.5 w-3.5" />
+          <span>Escala Aldeão</span>
+        </button>
+      </>
+    );
+  }
+
+  if (galleryCategory === 'building' && selectedBuilding === 'town_center' && (selectedCiv === 'norse' || selectedCiv === 'egyptian' || selectedCiv === 'atlantean' || selectedCiv === 'greek')) {
+    const normGod = (s: string) =>
+      s
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .trim()
+        .toLowerCase();
+    const curGod = normGod(selectedMajorGod);
+
+    const godButtons =
+      selectedCiv === 'norse'
+        ? ([
+            { id: 'Odin', match: ['odin'], label: '🐺 Odin', active: 'bg-gradient-to-r from-sky-400 to-blue-700 text-white font-black shadow-lg shadow-sky-500/30 ring-1 ring-sky-300' },
+            { id: 'Thor', match: ['thor'], label: '🔨 Thor', active: 'bg-gradient-to-r from-red-500 to-amber-500 text-slate-950 font-black shadow-lg shadow-red-500/30 ring-1 ring-amber-300' },
+            { id: 'Loki', match: ['loki'], label: '🔥 Loki', active: 'bg-gradient-to-r from-emerald-400 to-orange-700 text-white font-black shadow-lg shadow-emerald-500/30 ring-1 ring-emerald-300' },
+            { id: 'Freyr', match: ['freyr', 'frey'], label: '🌿 Freyr', active: 'bg-gradient-to-r from-amber-300 to-lime-600 text-slate-950 font-black shadow-lg shadow-amber-500/30 ring-1 ring-lime-400' },
+          ] as const)
+        : selectedCiv === 'egyptian'
+        ? ([
+            { id: 'Rá', match: ['ra'], label: '☀️ Rá', active: 'bg-gradient-to-r from-amber-300 to-amber-600 text-slate-950 font-black shadow-lg shadow-amber-500/30 ring-1 ring-amber-300' },
+            { id: 'Ísis', match: ['isis'], label: '🪷 Ísis', active: 'bg-gradient-to-r from-teal-300 to-sky-600 text-slate-950 font-black shadow-lg shadow-teal-500/30 ring-1 ring-teal-300' },
+            { id: 'Set', match: ['set', 'seth'], label: '🏜️ Set', active: 'bg-gradient-to-r from-red-600 to-orange-700 text-white font-black shadow-lg shadow-red-500/30 ring-1 ring-orange-400' },
+          ] as const)
+        : selectedCiv === 'atlantean'
+        ? ([
+            { id: 'Cronos', match: ['cronos', 'kronos'], label: '⏳ Kronos', active: 'bg-gradient-to-r from-sky-400 to-indigo-700 text-white font-black shadow-lg shadow-sky-500/30 ring-1 ring-sky-300' },
+            { id: 'Urano', match: ['urano', 'oranos'], label: '🌪️ Oranos', active: 'bg-gradient-to-r from-amber-300 to-sky-600 text-slate-950 font-black shadow-lg shadow-amber-500/30 ring-1 ring-amber-300' },
+            { id: 'Gaia', match: ['gaia'], label: '🌿 Gaia', active: 'bg-gradient-to-r from-emerald-400 to-emerald-800 text-white font-black shadow-lg shadow-emerald-500/30 ring-1 ring-emerald-300' },
+          ] as const)
+        : ([
+            { id: 'Zeus', match: ['zeus'], label: '⚡ Zeus', active: 'bg-gradient-to-r from-amber-300 to-blue-600 text-slate-950 font-black shadow-lg shadow-amber-500/30 ring-1 ring-amber-300' },
+            { id: 'Poseidon', match: ['poseidon'], label: '🔱 Poseidon', active: 'bg-gradient-to-r from-teal-300 to-sky-600 text-slate-950 font-black shadow-lg shadow-teal-500/30 ring-1 ring-teal-300' },
+            { id: 'Hades', match: ['hades'], label: '💀 Hades', active: 'bg-gradient-to-r from-orange-500 to-purple-800 text-white font-black shadow-lg shadow-orange-500/30 ring-1 ring-orange-400' },
+          ] as const);
+
+    const tierLabels: Record<AgeLevel, string> =
+      selectedCiv === 'norse'
+        ? { 1: 'T1 • Acampamento', 2: 'T2 • Salão Longo', 3: 'T3 • Jarl', 4: 'T4 • Fortaleza', 5: 'T5 • Valhalla' }
+        : selectedCiv === 'egyptian'
+        ? { 1: 'T1 • Aldeia', 2: 'T2 • Pátio', 3: 'T3 • Hipóstilo', 4: 'T4 • Obeliscos', 5: 'T5 • Pirâmide' }
+        : selectedCiv === 'atlantean'
+        ? { 1: 'T1 • Posto', 2: 'T2 • Ágora', 3: 'T3 • Cidadela', 4: 'T4 • Oricalco', 5: 'T5 • Metrópole' }
+        : { 1: 'T1 • Vila', 2: 'T2 • Pólis', 3: 'T3 • Ágora', 4: 'T4 • Acrópole', 5: 'T5 • Olímpico' };
+
+    return (
+      <>
+        {godButtons.map((g) => {
+          const isSel = (g.match as readonly string[]).includes(curGod);
+          return (
+            <button
+              key={g.id}
+              type="button"
+              onClick={() => setSelectedMajorGod(g.id)}
+              className={`rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                isSel ? g.active : 'border border-white/10 text-[#cbd5e1] hover:bg-white/10'
+              }`}
+            >
+              <span>{g.label}</span>
+            </button>
+          );
+        })}
+
+        <div className="h-4 w-px bg-white/20 mx-1" />
+
+        {([1, 2, 3, 4, 5] as AgeLevel[]).map((age) => (
+          <button
+            key={age}
+            type="button"
+            onClick={() => {
+              setBuildingAge(age);
+              if (age <= 4) onSelectTier(age as 1 | 2 | 3 | 4);
+            }}
+            className={`rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+              buildingAge === age
+                ? age === 5
+                  ? 'bg-gradient-to-r from-yellow-200 via-amber-400 to-amber-600 text-slate-950 shadow-lg font-black ring-1 ring-amber-200'
+                  : 'bg-gradient-to-r from-amber-300 to-amber-500 text-slate-950 shadow-md font-black'
+                : 'border border-white/10 text-[#cbd5e1] hover:bg-white/10'
+            }`}
+          >
+            <span>{tierLabels[age]}</span>
+          </button>
+        ))}
+
+        <div className="h-4 w-px bg-white/20 mx-1" />
+
         <button
           type="button"
           onClick={() => setShowHumanScale((v) => !v)}
