@@ -1,0 +1,6 @@
+---
+description: AgEnFK workflow rules
+globs: *
+alwaysApply: true
+---
+AGENFK_PORT=3100

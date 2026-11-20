@@ -1,0 +1,6 @@
+{
+  "name": "Age of Mythology: Olympus",
+  "description": "RTS game inspirada em Age of Mythology com suporte a Web e Godot 4",
+  "verifyCommand": "npm run lint && npm run build && npm test",
+  "setupCommand": "npm install"
+}

@@ -22,7 +22,7 @@ var target_position: Vector3 = Vector3.ZERO
 var has_target: bool = false
 var current_task: String = "idle" # idle, move, gather, attack, build
 
-@onready var selection_ring: Decal = $SelectionRing if has_node("SelectionRing") else null
+@onready var selection_ring: Node3D = $SelectionRing if has_node("SelectionRing") else null
 @onready var nav_agent: NavigationAgent3D = $NavigationAgent3D if has_node("NavigationAgent3D") else null
 
 func _ready() -> void:

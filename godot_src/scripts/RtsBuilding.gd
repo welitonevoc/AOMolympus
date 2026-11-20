@@ -20,7 +20,7 @@ var is_selected: bool = false:
 var garrisoned_units: Array[Node] = []
 var training_queue: Array[Dictionary] = []
 
-@onready var selection_ring: Decal = $SelectionRing if has_node("SelectionRing") else null
+@onready var selection_ring: Node3D = $SelectionRing if has_node("SelectionRing") else null
 
 func _ready() -> void:
 	current_hp = max_hp
