@@ -9,11 +9,11 @@ extends CanvasLayer
 ## - Zona do polegar direito (Central contextual: 7 construcoes, treino cultural, 5 formacoes, 3 posturas, Heroi)
 ## - Tela inicial com abas Escaramuca Livre e Campanha Mitologica (5 Capitulos)
 
-var _world: BattleWorld
-var _camera_rig: TouchRTSCamera
-var _fog_system: FogOfWarSystem
-var _power_system: DivinePowerSystem
-var _minimap: TacticalMinimap
+var _world: Node3D
+var _camera_rig: Node3D
+var _fog_system: Node3D
+var _power_system: Node3D
+var _minimap: Control
 
 var _food_lbl: Label
 var _wood_lbl: Label
@@ -65,10 +65,10 @@ var _hud_refresh_accum: float = 0.0
 
 func _ready() -> void:
 	layer = 10
-	_world = get_node_or_null("../BattleWorld") as BattleWorld
-	_camera_rig = get_node_or_null("../TouchRTSCamera") as TouchRTSCamera
-	_fog_system = get_node_or_null("../FogOfWarSystem") as FogOfWarSystem
-	_power_system = get_node_or_null("../DivinePowerSystem") as DivinePowerSystem
+	_world = get_node_or_null("../BattleWorld") as Node3D
+	_camera_rig = get_node_or_null("../TouchRTSCamera") as Node3D
+	_fog_system = get_node_or_null("../FogOfWarSystem") as Node3D
+	_power_system = get_node_or_null("../DivinePowerSystem") as Node3D
 
 	_build_top_bar()
 	_build_divine_power_bar()
@@ -778,8 +778,9 @@ func _rebuild_command_grid() -> void:
 	if first is UnitActor:
 		var has_military: bool = false
 		var has_promotable: bool = false
-		var player_units: Array[UnitActor] = []
+		var player_units: Array = []
 		for ent in sel:
+
 			if is_instance_valid(ent) and ent is UnitActor and ent.faction == "player" and not ent.is_dead():
 				player_units.append(ent)
 				if ent.unit_kind != "villager":
@@ -851,8 +852,9 @@ func _cycle_stance() -> void:
 	GameState.set_stance(PantheonCatalog.STANCE_ORDER[next_idx])
 
 
-func _promote_selected_units(units: Array[UnitActor]) -> void:
+func _promote_selected_units(units: Array) -> void:
 	var promoted: int = 0
+
 	for u in units:
 		if is_instance_valid(u) and u.can_promote_to_hero():
 			if u.promote_to_hero():

@@ -135,7 +135,8 @@ func start_new_match(
 	var ep: Dictionary = PantheonCatalog.get_pantheon(enemy_pantheon)
 	var bm: Dictionary = PantheonCatalog.get_biome(active_biome)
 	var diff: Dictionary = PantheonCatalog.get_ai_difficulty(ai_difficulty)
-	notify("%s vs %s · %s (%s)" % [p["name"], ep["name"], bm["name"], diff["name"]], false)
+	var p_current: Dictionary = PantheonCatalog.get_pantheon(active_pantheon)
+	notify("%s vs %s · %s (%s)" % [p_current["name"], ep["name"], bm["name"], diff["name"]], false)
 
 
 func start_campaign_chapter(chapter_id: String) -> void:

@@ -132,9 +132,9 @@ void fragment() {
 	
 	if (col.a < 0.1) {
 		float a = texture(TEXTURE, UV + vec2(0.0, -size.y)).a +
-				  texture(TEXTURE, UV + vec2(0.0, size.y)).a +
-				  texture(TEXTURE, UV + vec2(-size.x, 0.0)).a +
-				  texture(TEXTURE, UV + vec2(size.x, 0.0)).a;
+						texture(TEXTURE, UV + vec2(0.0, size.y)).a +
+						texture(TEXTURE, UV + vec2(-size.x, 0.0)).a +
+						texture(TEXTURE, UV + vec2(size.x, 0.0)).a;
 		if (a > 0.1) {
 			COLOR = outline_color;
 		} else {

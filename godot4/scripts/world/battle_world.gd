@@ -15,10 +15,10 @@ var _nav_region: NavigationRegion3D
 var _terrain_holder: Node3D
 var _entities_root: Node3D
 var _projectiles_root: Node3D
-var _camera_rig: TouchRTSCamera
-var _fog_system: FogOfWarSystem
-var _ai_controller: EnemyAIController
-var _power_system: DivinePowerSystem
+var _camera_rig: Node3D
+var _fog_system: Node3D
+var _ai_controller: Node
+var _power_system: Node3D
 
 
 func _ready() -> void:
@@ -46,12 +46,12 @@ func _ready() -> void:
 		GameState.map_seed
 	)
 
-	_camera_rig = get_node_or_null("../TouchRTSCamera") as TouchRTSCamera
-	_fog_system = get_node_or_null("../FogOfWarSystem") as FogOfWarSystem
-	_ai_controller = get_node_or_null("../EnemyAIController") as EnemyAIController
-	_power_system = get_node_or_null("../DivinePowerSystem") as DivinePowerSystem
+	_camera_rig = get_node_or_null("../TouchRTSCamera") as Node3D
+	_fog_system = get_node_or_null("../FogOfWarSystem") as Node3D
+	_ai_controller = get_node_or_null("../EnemyAIController") as Node
+	_power_system = get_node_or_null("../DivinePowerSystem") as Node3D
 
-	var selector := get_node_or_null("../SelectionController") as SelectionController
+	var selector = get_node_or_null("../SelectionController")
 	if selector != null and _camera_rig != null:
 		selector.bind(self, _camera_rig, _power_system)
 	if _ai_controller != null:

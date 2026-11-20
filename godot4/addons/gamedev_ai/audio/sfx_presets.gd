@@ -1,6 +1,7 @@
 @tool
 extends RefCounted
 
+
 static func get_preset_names() -> Array[String]:
 	return [
 		"coin", "laser", "laser_heavy", "explosion", "jump",
@@ -18,7 +19,7 @@ static func _get_raw_preset(name: String) -> Dictionary:
 	match name.to_lower():
 		"coin":
 			return {
-				"waveform": SFXSynthesizer.Waveform.SQUARE,
+				"waveform": 1,
 				"start_freq": 987.77, # B5
 				"end_freq": 1318.51,  # E6
 				"duration": 0.28,
@@ -32,7 +33,7 @@ static func _get_raw_preset(name: String) -> Dictionary:
 			}
 		"laser":
 			return {
-				"waveform": SFXSynthesizer.Waveform.SAWTOOTH,
+				"waveform": 2,
 				"start_freq": 1200.0,
 				"end_freq": 180.0,
 				"duration": 0.22,
@@ -44,7 +45,7 @@ static func _get_raw_preset(name: String) -> Dictionary:
 			}
 		"laser_heavy":
 			return {
-				"waveform": SFXSynthesizer.Waveform.SQUARE,
+				"waveform": 1,
 				"start_freq": 800.0,
 				"end_freq": 100.0,
 				"duration": 0.35,
@@ -57,7 +58,7 @@ static func _get_raw_preset(name: String) -> Dictionary:
 			}
 		"explosion":
 			return {
-				"waveform": SFXSynthesizer.Waveform.WHITE_NOISE,
+				"waveform": 4,
 				"start_freq": 300.0,
 				"end_freq": 60.0,
 				"duration": 0.7,
@@ -69,7 +70,7 @@ static func _get_raw_preset(name: String) -> Dictionary:
 			}
 		"jump":
 			return {
-				"waveform": SFXSynthesizer.Waveform.SQUARE,
+				"waveform": 1,
 				"start_freq": 160.0,
 				"end_freq": 620.0,
 				"duration": 0.22,
@@ -81,7 +82,7 @@ static func _get_raw_preset(name: String) -> Dictionary:
 			}
 		"hit":
 			return {
-				"waveform": SFXSynthesizer.Waveform.CHIPTUNE_NOISE,
+				"waveform": 5,
 				"start_freq": 400.0,
 				"end_freq": 120.0,
 				"duration": 0.15,
@@ -93,7 +94,7 @@ static func _get_raw_preset(name: String) -> Dictionary:
 			}
 		"hurt":
 			return {
-				"waveform": SFXSynthesizer.Waveform.SQUARE,
+				"waveform": 1,
 				"start_freq": 380.0,
 				"end_freq": 140.0,
 				"duration": 0.25,
@@ -105,7 +106,7 @@ static func _get_raw_preset(name: String) -> Dictionary:
 			}
 		"powerup":
 			return {
-				"waveform": SFXSynthesizer.Waveform.SQUARE,
+				"waveform": 1,
 				"start_freq": 330.0, # E4
 				"end_freq": 660.0,
 				"duration": 0.45,
@@ -119,7 +120,7 @@ static func _get_raw_preset(name: String) -> Dictionary:
 			}
 		"blip":
 			return {
-				"waveform": SFXSynthesizer.Waveform.SINE,
+				"waveform": 0,
 				"start_freq": 880.0,
 				"end_freq": 880.0,
 				"duration": 0.06,
@@ -130,7 +131,7 @@ static func _get_raw_preset(name: String) -> Dictionary:
 			}
 		"ui_click":
 			return {
-				"waveform": SFXSynthesizer.Waveform.TRIANGLE,
+				"waveform": 3,
 				"start_freq": 1200.0,
 				"end_freq": 400.0,
 				"duration": 0.035,
@@ -141,7 +142,7 @@ static func _get_raw_preset(name: String) -> Dictionary:
 			}
 		"ui_confirm":
 			return {
-				"waveform": SFXSynthesizer.Waveform.SQUARE,
+				"waveform": 1,
 				"start_freq": 523.25, # C5
 				"end_freq": 1046.50, # C6
 				"duration": 0.18,
@@ -155,7 +156,7 @@ static func _get_raw_preset(name: String) -> Dictionary:
 			}
 		"ui_cancel":
 			return {
-				"waveform": SFXSynthesizer.Waveform.SAWTOOTH,
+				"waveform": 2,
 				"start_freq": 400.0,
 				"end_freq": 180.0,
 				"duration": 0.16,
@@ -167,7 +168,7 @@ static func _get_raw_preset(name: String) -> Dictionary:
 			}
 		"dash":
 			return {
-				"waveform": SFXSynthesizer.Waveform.WHITE_NOISE,
+				"waveform": 4,
 				"start_freq": 800.0,
 				"end_freq": 300.0,
 				"duration": 0.25,
@@ -179,7 +180,7 @@ static func _get_raw_preset(name: String) -> Dictionary:
 			}
 		"game_over":
 			return {
-				"waveform": SFXSynthesizer.Waveform.SQUARE,
+				"waveform": 1,
 				"start_freq": 440.0,
 				"end_freq": 110.0,
 				"duration": 0.8,
@@ -193,7 +194,7 @@ static func _get_raw_preset(name: String) -> Dictionary:
 			}
 		"victory":
 			return {
-				"waveform": SFXSynthesizer.Waveform.SQUARE,
+				"waveform": 1,
 				"start_freq": 440.0,
 				"end_freq": 880.0,
 				"duration": 0.7,

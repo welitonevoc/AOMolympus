@@ -218,11 +218,11 @@ func rpc_start_match(biome_id: String, map_seed: int, players_data: Dictionary) 
 			opponent_pantheon = connected_players[pid].get("pantheon", "egyptian")
 			break
 	
-	GameState.start_match(local_player_info["pantheon"], opponent_pantheon)
+	GameState.start_new_match(local_player_info["pantheon"], biome_id, "normal", map_seed)
 	print_rich("[color=yellow]⚔️ MultiplayerManager: Partida iniciada contra panteão %s (Bioma: %s)![/color]" % [opponent_pantheon, biome_id])
 
 
-@rpc("any_peer", "reliable")
+@rpc("any_peer", "call_remote", "reliable")
 func rpc_register_player(info: Dictionary) -> void:
 	var sender_id: int = multiplayer.get_remote_sender_id()
 	connected_players[sender_id] = info
@@ -234,8 +234,9 @@ func rpc_register_player(info: Dictionary) -> void:
 		rpc("rpc_sync_lobby", connected_players)
 
 
-@rpc("authority", "reliable")
+@rpc("authority", "call_remote", "reliable")
 func rpc_sync_lobby(all_players: Dictionary) -> void:
+
 	connected_players = all_players
 	lobby_updated.emit(connected_players)
 
