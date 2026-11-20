@@ -14,28 +14,48 @@ func setup(node: Node):
 func _load_env_api_key():
 	if api_key != "":
 		return
-	var is_kilo = ("kilo.ai" in base_url.to_lower())
-	var env_vars = ["KILO_API_KEY", "OPENROUTER_API_KEY", "OPENAI_API_KEY"] if is_kilo else (["NVIDIA_API_KEY", "NVAPI_KEY", "OPENAI_API_KEY"] if "nvidia" in base_url.to_lower() else ["OPENROUTER_API_KEY", "KILO_API_KEY", "OPENAI_API_KEY", "NVIDIA_API_KEY", "NVAPI_KEY"])
+	var lower_url = base_url.to_lower()
+	var is_kilo = ("kilo.ai" in lower_url)
+	var is_opencode = ("opencode.ai" in lower_url)
+	var is_nvidia = ("nvidia.com" in lower_url)
+	
+	var env_vars = []
+	if is_kilo:
+		env_vars = ["KILO_API_KEY", "OPENAI_API_KEY"]
+	elif is_opencode:
+		env_vars = ["OPENCODE_API_KEY", "OPENAI_API_KEY"]
+	elif is_nvidia:
+		env_vars = ["NVIDIA_API_KEY", "NVAPI_KEY", "OPENAI_API_KEY"]
+	else:
+		env_vars = ["OPENROUTER_API_KEY", "KILO_API_KEY", "OPENCODE_API_KEY", "NVIDIA_API_KEY", "OPENAI_API_KEY"]
+	
 	for env in env_vars:
 		var val = OS.get_environment(env)
 		if val != "":
 			api_key = val
 			break
-	if api_key == "" and is_kilo and FileAccess.file_exists("res://addons/gamedev_ai/kilo_key.txt"):
-		var fk = FileAccess.open("res://addons/gamedev_ai/kilo_key.txt", FileAccess.READ)
-		if fk:
-			api_key = fk.get_as_text().strip_edges()
-			fk.close()
-	if api_key == "" and FileAccess.file_exists("res://addons/gamedev_ai/kilo_key.txt"):
-		var fk = FileAccess.open("res://addons/gamedev_ai/kilo_key.txt", FileAccess.READ)
-		if fk:
-			api_key = fk.get_as_text().strip_edges()
-			fk.close()
-	if api_key == "" and FileAccess.file_exists("res://addons/gamedev_ai/openrouter_key.txt"):
-		var f = FileAccess.open("res://addons/gamedev_ai/openrouter_key.txt", FileAccess.READ)
-		if f:
-			api_key = f.get_as_text().strip_edges()
-			f.close()
+	
+	if api_key == "":
+		if is_kilo and FileAccess.file_exists("res://addons/gamedev_ai/kilo_key.txt"):
+			var f = FileAccess.open("res://addons/gamedev_ai/kilo_key.txt", FileAccess.READ)
+			if f:
+				api_key = f.get_as_text().strip_edges()
+				f.close()
+		elif is_opencode and FileAccess.file_exists("res://addons/gamedev_ai/opencode_key.txt"):
+			var f = FileAccess.open("res://addons/gamedev_ai/opencode_key.txt", FileAccess.READ)
+			if f:
+				api_key = f.get_as_text().strip_edges()
+				f.close()
+		elif is_nvidia and FileAccess.file_exists("res://addons/gamedev_ai/nvidia_key.txt"):
+			var f = FileAccess.open("res://addons/gamedev_ai/nvidia_key.txt", FileAccess.READ)
+			if f:
+				api_key = f.get_as_text().strip_edges()
+				f.close()
+		elif FileAccess.file_exists("res://addons/gamedev_ai/openrouter_key.txt"):
+			var f = FileAccess.open("res://addons/gamedev_ai/openrouter_key.txt", FileAccess.READ)
+			if f:
+				api_key = f.get_as_text().strip_edges()
+				f.close()
 
 
 func send_prompt(prompt: String, context: String = "", tools: Array = [], files: Array = []):

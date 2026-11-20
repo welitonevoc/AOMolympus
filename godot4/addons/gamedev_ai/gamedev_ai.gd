@@ -63,9 +63,9 @@ func _enter_tree():
 		var default_key = OS.get_environment("KILO_API_KEY")
 		if default_key == "" and FileAccess.file_exists("res://addons/gamedev_ai/kilo_key.txt"):
 			var fk = FileAccess.open("res://addons/gamedev_ai/kilo_key.txt", FileAccess.READ)
-		if fk:
-			default_key = fk.get_as_text().strip_edges()
-			fk.close()
+			if fk:
+				default_key = fk.get_as_text().strip_edges()
+				fk.close()
 		if default_key != "":
 			config = {
 				"provider": 4,
