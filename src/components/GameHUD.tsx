@@ -172,6 +172,26 @@ export function GameHUD({
     }
   }, [hud.phase]);
 
+  // Auto-expand Command Center when a player entity (building or villager or troop) is selected
+  const prevSelectedEntityIdRef = useRef<string | undefined>(undefined);
+  useEffect(() => {
+    const currentId = hud.selection.entityId;
+    if (
+      currentId &&
+      currentId !== prevSelectedEntityIdRef.current &&
+      hud.selection.team === 'player' &&
+      hud.phase === 'playing'
+    ) {
+      // Uncollapse desktop dock
+      setDockCollapsed(false);
+      // Auto-open mobile command drawer if on smartphone / narrow viewport
+      if (typeof window !== 'undefined' && window.innerWidth < 768) {
+        setMobileSheetOpen(true);
+      }
+    }
+    prevSelectedEntityIdRef.current = currentId;
+  }, [hud.selection.entityId, hud.selection.team, hud.phase]);
+
   const nextAge = hud.age < 5 ? ((hud.age + 1) as AgeLevel) : null;
   const nextAgeCost = nextAge ? AGE_COSTS[nextAge] : null;
   const canAffordNextAge =
@@ -574,6 +594,24 @@ export function GameHUD({
         onActivateGodPower={onActivateGodPower}
         onResearchTech={onResearchTech}
         onAdvanceAge={onAdvanceAge}
+        onToggleRepeatTraining={onToggleRepeatTraining}
+        onOrderVillagerTask={onOrderVillagerTask}
+        onOrderPrayTemple={onOrderPrayTemple}
+        onPromoteToHero={onPromoteToHero}
+        onOrderVillagersToTarget={onOrderVillagersToTarget}
+        onSummonSetAnimal={onSummonSetAnimal}
+        onOrderEmpowerMonument={onOrderEmpowerMonument}
+        onTeleportSkyPassage={onTeleportSkyPassage}
+        onGarrisonSelected={onGarrisonSelected}
+        onUngarrisonBuilding={onUngarrisonBuilding}
+        onConvertWallToGate={onConvertWallToGate}
+        onExchangeTribute={onExchangeTribute}
+        onTriggerMythSpecial={onTriggerMythSpecial}
+        onToggleMythAutoCast={onToggleMythAutoCast}
+        onSetUnitStance={onSetUnitStance}
+        onToggleAutoScout={onToggleAutoScout}
+        onSetFormation={onSetFormation}
+        onConvertFauna={onConvertFauna}
       />
 
       <MinorGodAgeUpModal

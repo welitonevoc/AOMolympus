@@ -109,17 +109,42 @@ export const MobileTouchActionBar: React.FC<MobileTouchActionBarProps> = ({
             <X className="h-4 w-4" />
             <span className="whitespace-nowrap">Cancelar</span>
           </button>
-        ) : (
-          <button
-            type="button"
-            onClick={onToggleDock}
-            aria-label={dockCollapsed ? 'Abrir comandos' : 'Fechar comandos'}
-            className="flex min-h-[44px] min-w-[44px] flex-col items-center justify-center gap-0.5 rounded-lg border border-[#d4af37]/45 bg-[#1b2436] px-2 text-[10px] font-semibold text-[#f7e9c3] cursor-pointer"
-          >
-            {dockCollapsed ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-            <span className="whitespace-nowrap">{dockCollapsed ? 'Comandos' : 'Fechar'}</span>
-          </button>
-        )}
+        ) : (() => {
+          const hasSelection = hud.selection.primaryType !== 'none' && hud.selection.team === 'player';
+          const selectionLabel = !dockCollapsed
+            ? 'Fechar'
+            : hud.selection.hasVillagerSelected
+              ? 'Aldeão'
+              : hud.selection.primaryType === 'building'
+                ? hud.selection.kindLabel || 'Edifício'
+                : hud.selection.primaryType === 'unit'
+                  ? hud.selection.kindLabel || 'Tropa'
+                  : 'Comandos';
+
+          return (
+            <button
+              type="button"
+              onClick={onToggleDock}
+              aria-label={dockCollapsed ? 'Abrir comandos' : 'Fechar comandos'}
+              className={`flex min-h-[44px] min-w-[50px] flex-col items-center justify-center gap-0.5 rounded-lg border px-2 text-[10px] font-semibold cursor-pointer transition-all ${
+                !dockCollapsed
+                  ? 'border-white/20 bg-[#162030] text-slate-200'
+                  : hasSelection
+                    ? 'border-[#facc15] bg-[#2a200a] text-[#fef08a] shadow-[0_0_10px_rgba(250,204,21,0.3)]'
+                    : 'border-[#d4af37]/45 bg-[#1b2436] text-[#f7e9c3]'
+              }`}
+            >
+              {!dockCollapsed ? (
+                <ChevronDown className="h-4 w-4" />
+              ) : hasSelection ? (
+                <ChevronUp className="h-4 w-4 text-[#facc15] animate-bounce" />
+              ) : (
+                <ChevronUp className="h-4 w-4" />
+              )}
+              <span className="whitespace-nowrap truncate max-w-[65px]">{selectionLabel}</span>
+            </button>
+          );
+        })()}
       </div>
     </div>
   );
