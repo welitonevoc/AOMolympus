@@ -263,6 +263,26 @@ Após iniciar, acesse `http://localhost:3000` no navegador do computador, tablet
 | `npm run build` | Gera o bundle de produção otimizado em `dist/` via Vite |
 | `npm run start` | Executa o servidor Express + WebSocket em modo produção |
 | `npm run lint` | Executa checagem estrita de tipos (`tsc --noEmit`) |
+| `npm test` | Executa toda a suíte de testes automatizados (`vitest run`) |
+| `npm run agenfk:install` | Instala o framework **[AgEnFK](https://github.com/cglab-public/agenfk)** (CLI) para fluxo com agentes de IA |
+| `npm run agenfk:up` | Inicia o servidor e o painel Kanban do AgEnFK na porta `3100` (sem conflitar com a porta `3000` do jogo) |
+| `npm run agenfk:init` | Vincula o repositório local ao AgEnFK criando `.agenfk/local.json` (ignorado pelo Git) |
+| `npm run agenfk:verify` | Executa a validação completa (`npm run lint && npm run build && npm test`) |
+
+---
+
+## 🤖 Fluxo com Agentes de IA (AgEnFK)
+
+Este repositório já inclui integração pronta para o **[AgEnFK (Agentic Engineering Framework)](https://github.com/cglab-public/agenfk)** — incluindo configurações compartilhadas em `.agenfk/project.json` e regras de projeto para **Claude Code** (`.claude/CLAUDE.md`), **Codex / OpenCode** (`AGENTS.md`), **Gemini CLI** (`GEMINI.md`) e **Cursor** (`.cursor/rules/agenfk.mdc`).
+
+```bash
+# Instalar o AgEnFK, subir o painel na porta 3100 e vincular o projeto
+npm run agenfk:install
+npm run agenfk:up
+npm run agenfk:init
+```
+
+Consulte o guia completo em [`docs/AGENFK.md`](docs/AGENFK.md) para detalhes sobre portas, fluxo `TODO → IN_PROGRESS → REVIEW → TEST → DONE` e modo MCP opcional.
 
 ---
 
@@ -276,10 +296,9 @@ Todo Pull Request, sugestão de interface, protótipo no Figma, shader 3D, ícon
    ```bash
    git checkout -b feat/melhoria-hud-mobile
    ```
-3. Valide tipos e build antes de abrir o Pull Request:
+3. Valide tipos, build e testes antes de abrir o Pull Request:
    ```bash
-   npm run lint
-   npm run build
+   npm run agenfk:verify
    ```
 4. Abra seu **Pull Request** descrevendo claramente a mudança (e com capturas de tela caso envolva interface gráfica ou 3D!).
 

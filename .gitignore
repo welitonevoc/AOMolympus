@@ -7,3 +7,12 @@ coverage/
 .env*
 !.env.example
 .aistudio/
+
+# AgEnFK machine-local state (keep .agenfk/project.json committed)
+.agenfk/local.json
+.agenfk/db.json
+.agenfk/*.sqlite*
+.agenfk/*.log
+.agenfk/server-port
+.agenfk/backups/
+

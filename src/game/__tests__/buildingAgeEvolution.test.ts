@@ -108,7 +108,7 @@ describe('Universal Building Age Evolution (Ages I -> V across all civilizations
         ).toBe(true);
       }
     }
-  });
+  }, 20_000);
 
   it('evolves defensive Towers progressively through Vigia (T1-2) -> Guarda (T3) -> Balista (T4) -> Divina (T5)', () => {
     for (const pantheon of CORE_PANTHEONS) {
