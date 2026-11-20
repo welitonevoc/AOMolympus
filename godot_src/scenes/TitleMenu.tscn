@@ -30,7 +30,7 @@ albedo_color = Color(0.2, 0.32, 0.16, 1)
 roughness = 0.8
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_menu"]
-bg_color = Color(0.05, 0.08, 0.14, 0.92)
+bg_color = Color(0.05, 0.08, 0.14, 0.94)
 border_width_left = 2
 border_width_top = 2
 border_width_right = 2
@@ -40,8 +40,8 @@ corner_radius_top_left = 12
 corner_radius_top_right = 12
 corner_radius_bottom_right = 12
 corner_radius_bottom_left = 12
-shadow_color = Color(0, 0, 0, 0.6)
-shadow_size = 20
+shadow_color = Color(0, 0, 0, 0.7)
+shadow_size = 24
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_gold"]
 bg_color = Color(0.83, 0.69, 0.22, 1)
@@ -110,24 +110,24 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="MenuPanel" type="PanelContainer" parent="CanvasLayer/CenterContainer"]
-custom_minimum_size = Vector2(380, 440)
+custom_minimum_size = Vector2(440, 520)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_menu")
 
 [node name="Margin" type="MarginContainer" parent="CanvasLayer/CenterContainer/MenuPanel"]
 layout_mode = 2
 theme_override_constants/margin_left = 24
-theme_override_constants/margin_top = 24
+theme_override_constants/margin_top = 20
 theme_override_constants/margin_right = 24
-theme_override_constants/margin_bottom = 24
+theme_override_constants/margin_bottom = 20
 
 [node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer/CenterContainer/MenuPanel/Margin"]
 layout_mode = 2
-theme_override_constants/separation = 14
+theme_override_constants/separation = 12
 
 [node name="Header" type="VBoxContainer" parent="CanvasLayer/CenterContainer/MenuPanel/Margin/VBoxContainer"]
 layout_mode = 2
-theme_override_constants/separation = 4
+theme_override_constants/separation = 2
 
 [node name="GameTitle" type="Label" parent="CanvasLayer/CenterContainer/MenuPanel/Margin/VBoxContainer/Header"]
 layout_mode = 2
@@ -155,9 +155,9 @@ theme_override_constants/separation = 8
 custom_minimum_size = Vector2(0, 42)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.06, 0.08, 0.12, 1)
-theme_override_font_sizes/font_size = 15
+theme_override_font_sizes/font_size = 14
 theme_override_styles/normal = SubResource("StyleBoxFlat_btn_gold")
-text = "⚔️ Um Jogador (Batalha)"
+text = "⚔️ Um Jogador (Batalha Personalizada)"
 
 [node name="BtnCampaign" type="Button" parent="CanvasLayer/CenterContainer/MenuPanel/Margin/VBoxContainer/MainMenuButtons"]
 custom_minimum_size = Vector2(0, 38)
@@ -166,31 +166,218 @@ theme_override_colors/font_color = Color(0.9, 0.9, 0.9, 1)
 theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
 text = "📜 Campanha: Queda do Tridente"
 
+[node name="BtnLearn" type="Button" parent="CanvasLayer/CenterContainer/MenuPanel/Margin/VBoxContainer/MainMenuButtons"]
+custom_minimum_size = Vector2(0, 38)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.9, 0.9, 1)
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
+text = "📖 Aprender a Jogar & Guia"
+
 [node name="BtnOptions" type="Button" parent="CanvasLayer/CenterContainer/MenuPanel/Margin/VBoxContainer/MainMenuButtons"]
 custom_minimum_size = Vector2(0, 38)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.9, 0.9, 0.9, 1)
 theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
-text = "⚙️ Opções & Gráficos"
+text = "⚙️ Configurações & Gráficos"
 
 [node name="BtnExit" type="Button" parent="CanvasLayer/CenterContainer/MenuPanel/Margin/VBoxContainer/MainMenuButtons"]
 custom_minimum_size = Vector2(0, 38)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.5, 0.5, 1)
 theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
-text = "🚪 Sair"
+text = "🚪 Sair do Jogo"
 
-[node name="SkirmishOptions" type="VBoxContainer" parent="CanvasLayer/CenterContainer/MenuPanel/Margin/VBoxContainer"]
+[node name="SinglePlayerMenu" type="VBoxContainer" parent="CanvasLayer/CenterContainer/MenuPanel/Margin/VBoxContainer"]
 visible = false
 layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 6
+
+[node name="Title" type="Label" parent="CanvasLayer/CenterContainer/MenuPanel/Margin/VBoxContainer/SinglePlayerMenu"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.8, 0.4, 1)
+theme_override_font_sizes/font_size = 14
+text = "Configuração de Batalha (Skirmish)"
+horizontal_alignment = 1
+
+[node name="LabelGod" type="Label" parent="CanvasLayer/CenterContainer/MenuPanel/Margin/VBoxContainer/SinglePlayerMenu"]
+layout_mode = 2
+text = "Deus Principal Maior:"
+
+[node name="GodSelect" type="OptionButton" parent="CanvasLayer/CenterContainer/MenuPanel/Margin/VBoxContainer/SinglePlayerMenu"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+
+[node name="LabelMap" type="Label" parent="CanvasLayer/CenterContainer/MenuPanel/Margin/VBoxContainer/SinglePlayerMenu"]
+layout_mode = 2
+text = "Mapa do Campo de Batalha:"
+
+[node name="MapSelect" type="OptionButton" parent="CanvasLayer/CenterContainer/MenuPanel/Margin/VBoxContainer/SinglePlayerMenu"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+
+[node name="LabelDiff" type="Label" parent="CanvasLayer/CenterContainer/MenuPanel/Margin/VBoxContainer/SinglePlayerMenu"]
+layout_mode = 2
+text = "Dificuldade da Inteligência Artificial:"
+
+[node name="DifficultySelect" type="OptionButton" parent="CanvasLayer/CenterContainer/MenuPanel/Margin/VBoxContainer/SinglePlayerMenu"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+
+[node name="BtnStartGame" type="Button" parent="CanvasLayer/CenterContainer/MenuPanel/Margin/VBoxContainer/SinglePlayerMenu"]
+custom_minimum_size = Vector2(0, 42)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.06, 0.08, 0.12, 1)
+theme_override_font_sizes/font_size = 15
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_gold")
+text = "⚔️ Iniciar Batalha no Olimpo"
+
+[node name="BtnBackSP" type="Button" parent="CanvasLayer/CenterContainer/MenuPanel/Margin/VBoxContainer/SinglePlayerMenu"]
+custom_minimum_size = Vector2(0, 34)
+layout_mode = 2
+text = "‹ Voltar ao Menu Principal"
+
+[node name="CampaignMenu" type="VBoxContainer" parent="CanvasLayer/CenterContainer/MenuPanel/Margin/VBoxContainer"]
+visible = false
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 6
+
+[node name="Title" type="Label" parent="CanvasLayer/CenterContainer/MenuPanel/Margin/VBoxContainer/CampaignMenu"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.8, 0.4, 1)
+theme_override_font_sizes/font_size = 14
+text = "A Queda do Tridente (32 Cenários)"
+horizontal_alignment = 1
+
+[node name="ScrollScenarios" type="ScrollContainer" parent="CanvasLayer/CenterContainer/MenuPanel/Margin/VBoxContainer/CampaignMenu"]
+custom_minimum_size = Vector2(0, 190)
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="List" type="VBoxContainer" parent="CanvasLayer/CenterContainer/MenuPanel/Margin/VBoxContainer/CampaignMenu/ScrollScenarios"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 4
+
+[node name="Scn1" type="Button" parent="CanvasLayer/CenterContainer/MenuPanel/Margin/VBoxContainer/CampaignMenu/ScrollScenarios/List"]
+layout_mode = 2
+text = "1. Prólogo: Sono Perturbado (Atlântida)"
+
+[node name="Scn2" type="Button" parent="CanvasLayer/CenterContainer/MenuPanel/Margin/VBoxContainer/CampaignMenu/ScrollScenarios/List"]
+layout_mode = 2
+text = "2. Agouros (Omens): Invasão de Kamos"
+
+[node name="Scn3" type="Button" parent="CanvasLayer/CenterContainer/MenuPanel/Margin/VBoxContainer/CampaignMenu/ScrollScenarios/List"]
+layout_mode = 2
+text = "3. Consequências: Perseguição no Mar"
+
+[node name="Scn4" type="Button" parent="CanvasLayer/CenterContainer/MenuPanel/Margin/VBoxContainer/CampaignMenu/ScrollScenarios/List"]
+layout_mode = 2
+text = "4. Arranhando a Superfície (Troia)"
+
+[node name="Scn5" type="Button" parent="CanvasLayer/CenterContainer/MenuPanel/Margin/VBoxContainer/CampaignMenu/ScrollScenarios/List"]
+layout_mode = 2
+text = "5. Um Belo Plano: O Cerco"
+
+[node name="BtnBackCamp" type="Button" parent="CanvasLayer/CenterContainer/MenuPanel/Margin/VBoxContainer/CampaignMenu"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+text = "‹ Voltar ao Menu Principal"
 
 [node name="OptionsMenu" type="VBoxContainer" parent="CanvasLayer/CenterContainer/MenuPanel/Margin/VBoxContainer"]
 visible = false
 layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 10
+
+[node name="Title" type="Label" parent="CanvasLayer/CenterContainer/MenuPanel/Margin/VBoxContainer/OptionsMenu"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.8, 0.4, 1)
+theme_override_font_sizes/font_size = 14
+text = "Configurações Globais"
+horizontal_alignment = 1
+
+[node name="MusicCheck" type="CheckBox" parent="CanvasLayer/CenterContainer/MenuPanel/Margin/VBoxContainer/OptionsMenu"]
+layout_mode = 2
+button_pressed = true
+text = "Trilha Sonora Mitológica Ativada"
+
+[node name="SfxCheck" type="CheckBox" parent="CanvasLayer/CenterContainer/MenuPanel/Margin/VBoxContainer/OptionsMenu"]
+layout_mode = 2
+button_pressed = true
+text = "Efeitos Sonoros e Vozes das Unidades"
+
+[node name="FpsCheck" type="CheckBox" parent="CanvasLayer/CenterContainer/MenuPanel/Margin/VBoxContainer/OptionsMenu"]
+layout_mode = 2
+button_pressed = true
+text = "Exibir Contador de Quadros (FPS)"
+
+[node name="PinchCheck" type="CheckBox" parent="CanvasLayer/CenterContainer/MenuPanel/Margin/VBoxContainer/OptionsMenu"]
+layout_mode = 2
+button_pressed = true
+text = "Gesto Pinça Multitoque (Pinch Zoom)"
+
+[node name="BtnBackOpt" type="Button" parent="CanvasLayer/CenterContainer/MenuPanel/Margin/VBoxContainer/OptionsMenu"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+text = "‹ Voltar ao Menu Principal"
+
+[node name="LearnMenu" type="VBoxContainer" parent="CanvasLayer/CenterContainer/MenuPanel/Margin/VBoxContainer"]
+visible = false
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 8
+
+[node name="Title" type="Label" parent="CanvasLayer/CenterContainer/MenuPanel/Margin/VBoxContainer/LearnMenu"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.8, 0.4, 1)
+theme_override_font_sizes/font_size = 14
+text = "Guia Básico de Estratégia"
+horizontal_alignment = 1
+
+[node name="ScrollGuide" type="ScrollContainer" parent="CanvasLayer/CenterContainer/MenuPanel/Margin/VBoxContainer/LearnMenu"]
+custom_minimum_size = Vector2(0, 190)
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="GuideText" type="Label" parent="CanvasLayer/CenterContainer/MenuPanel/Margin/VBoxContainer/LearnMenu/ScrollGuide"]
+custom_minimum_size = Vector2(380, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "• Economia: Aldeões coletam Alimento, Madeira e Ouro. O Centro Urbano é o ponto de entrega.
+
+• Combate: Construa o Quartel Militar com seus aldeões para treinar Hoplitas (infantaria pesada com lança) e Hipaspistas (anti-infantaria veloz).
+
+• Poderes Divinos: Acumule Favor rezando no Templo para invocar o Raio de Zeus na Central de Comandos.
+
+• Câmera: No mobile, use pinça com 2 dedos para zoom in/out e deslize dois dedos para arrastar o mapa."
+autowrap_mode = 2
+
+[node name="BtnBackLearn" type="Button" parent="CanvasLayer/CenterContainer/MenuPanel/Margin/VBoxContainer/LearnMenu"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+text = "‹ Voltar ao Menu Principal"
 
 [node name="FooterLabel" type="Label" parent="CanvasLayer/CenterContainer/MenuPanel/Margin/VBoxContainer"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.5, 0.6, 0.7, 1)
 theme_override_font_sizes/font_size = 11
-text = "Godot 4 • Versão Nativa Android"
+text = "Godot 4 • Versão Completa Nativa Android"
 horizontal_alignment = 1
+
+[connection signal="pressed" from="CanvasLayer/CenterContainer/MenuPanel/Margin/VBoxContainer/MainMenuButtons/BtnSinglePlayer" to="." method="_on_single_player_btn_pressed"]
+[connection signal="pressed" from="CanvasLayer/CenterContainer/MenuPanel/Margin/VBoxContainer/MainMenuButtons/BtnCampaign" to="." method="_on_campaign_btn_pressed"]
+[connection signal="pressed" from="CanvasLayer/CenterContainer/MenuPanel/Margin/VBoxContainer/MainMenuButtons/BtnLearn" to="." method="_on_learn_btn_pressed"]
+[connection signal="pressed" from="CanvasLayer/CenterContainer/MenuPanel/Margin/VBoxContainer/MainMenuButtons/BtnOptions" to="." method="_on_options_btn_pressed"]
+[connection signal="pressed" from="CanvasLayer/CenterContainer/MenuPanel/Margin/VBoxContainer/MainMenuButtons/BtnExit" to="." method="_on_exit_pressed"]
+[connection signal="pressed" from="CanvasLayer/CenterContainer/MenuPanel/Margin/VBoxContainer/SinglePlayerMenu/BtnStartGame" to="." method="_on_start_match_pressed"]
+[connection signal="pressed" from="CanvasLayer/CenterContainer/MenuPanel/Margin/VBoxContainer/SinglePlayerMenu/BtnBackSP" to="." method="_on_back_pressed"]
+[connection signal="pressed" from="CanvasLayer/CenterContainer/MenuPanel/Margin/VBoxContainer/CampaignMenu/ScrollScenarios/List/Scn1" to="." method="_on_start_campaign_scenario" binds= [1]]
+[connection signal="pressed" from="CanvasLayer/CenterContainer/MenuPanel/Margin/VBoxContainer/CampaignMenu/ScrollScenarios/List/Scn2" to="." method="_on_start_campaign_scenario" binds= [2]]
+[connection signal="pressed" from="CanvasLayer/CenterContainer/MenuPanel/Margin/VBoxContainer/CampaignMenu/ScrollScenarios/List/Scn3" to="." method="_on_start_campaign_scenario" binds= [3]]
+[connection signal="pressed" from="CanvasLayer/CenterContainer/MenuPanel/Margin/VBoxContainer/CampaignMenu/ScrollScenarios/List/Scn4" to="." method="_on_start_campaign_scenario" binds= [4]]
+[connection signal="pressed" from="CanvasLayer/CenterContainer/MenuPanel/Margin/VBoxContainer/CampaignMenu/ScrollScenarios/List/Scn5" to="." method="_on_start_campaign_scenario" binds= [5]]
+[connection signal="pressed" from="CanvasLayer/CenterContainer/MenuPanel/Margin/VBoxContainer/CampaignMenu/BtnBackCamp" to="." method="_on_back_pressed"]
+[connection signal="pressed" from="CanvasLayer/CenterContainer/MenuPanel/Margin/VBoxContainer/OptionsMenu/BtnBackOpt" to="." method="_on_back_pressed"]
+[connection signal="pressed" from="CanvasLayer/CenterContainer/MenuPanel/Margin/VBoxContainer/LearnMenu/BtnBackLearn" to="." method="_on_back_pressed"]
