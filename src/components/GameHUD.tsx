@@ -455,15 +455,15 @@ export function GameHUD({
           <button
             type="button"
             onClick={() => setDockCollapsed((p) => !p)}
-            className="pointer-events-auto flex items-center gap-1.5 rounded-t border border-b-0 border-[#c8a962]/65 bg-[#0d111a]/96 px-3 py-0.5 text-[10px] font-semibold tracking-wide text-[#f3d27a] shadow hover:bg-[#161e2e] hover:text-white cursor-pointer whitespace-nowrap"
+            className="pointer-events-auto flex items-center gap-1 rounded-t border border-b-0 border-[#c8a962]/65 bg-[#0d111a]/96 px-2.5 py-0.5 text-[9.5px] font-semibold tracking-wide text-[#f3d27a] shadow hover:bg-[#161e2e] hover:text-white cursor-pointer whitespace-nowrap"
           >
             {dockCollapsed ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-            <span>{dockCollapsed ? 'Painel H — Expandir' : 'Ocultar Painel (H)'}</span>
+            <span>{dockCollapsed ? 'Painel (H)' : 'Ocultar (H)'}</span>
           </button>
         </div>
 
         {/* Main AoM: Retold Bottom Strip (Resource Ledger + Command Dock + Diamond Minimap) */}
-        <div className="pointer-events-auto flex flex-col md:flex-row items-stretch md:items-end justify-between gap-1.5 md:gap-2 px-1.5 pb-1.5">
+        <div className="pointer-events-auto flex flex-col md:flex-row items-stretch md:items-end justify-between gap-1.5 px-1.5 pb-1">
           <HudResourceLedger
             hud={hud}
             showFavorPanel={showFavorPanel}
@@ -474,7 +474,7 @@ export function GameHUD({
             onSelectCombat={onSelectCombat}
           />
 
-          <div className="flex-1 max-w-[990px] grid grid-cols-1 md:grid-cols-12 gap-1.5 md:gap-2 rounded-md border-2 border-[#c8a962]/70 bg-[#0d111a]/96 p-1.5 sm:p-2 shadow-[0_10px_28px_rgba(0,0,0,0.85)]">
+          <div className="flex-1 max-w-[960px] grid grid-cols-1 md:grid-cols-12 gap-1.5 rounded-md border-2 border-[#c8a962]/70 bg-[#0d111a]/96 p-1.5 shadow-[0_10px_28px_rgba(0,0,0,0.85)]">
             <HudCommandGrid
               hud={hud}
               buildingList={buildingList}
@@ -513,6 +513,7 @@ export function GameHUD({
               onStopUnits={onStopUnits}
               onSelectCombat={onSelectCombat}
               onFocusTownCenter={onFocusTownCenter}
+              onSelectIdleVillager={onSelectIdleVillager}
             />
 
             <HudSelectionPanel

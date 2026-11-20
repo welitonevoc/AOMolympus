@@ -3,22 +3,13 @@ import {
   BookOpen,
   Castle,
   Check,
-  ChevronDown,
-  ChevronUp,
   Crown,
   DoorOpen,
-  Eye,
-  GripHorizontal,
   Hammer,
-  HelpCircle,
-  Info,
-  Lock,
   LogOut,
   Repeat,
   Shield,
   Sparkles,
-  Square,
-  StretchHorizontal,
   Sun,
   Swords,
   Users,
@@ -31,6 +22,7 @@ import {
   CombatStance,
   FormationId,
   FORMATIONS,
+  FormationSpec,
   GameHudSnapshot,
   GodPowerId,
   ResourceType,
@@ -51,6 +43,7 @@ import { TechIcon } from '../TechIcon';
 import { UnitIcon } from '../UnitIcon';
 import {
   getBuildingCategory,
+  getBuildingCommandProfile,
   getBuildingExclusiveTechs,
   getBuildingExclusiveUnits,
   getVillagerCultureDetails,
@@ -115,11 +108,7 @@ function canAffordCost(
 
 /**
  * Mobile-first contextual Command Center Bottom Sheet (< md).
- * Personalizes content strictly per selected entity:
- * - Villager: Cultural trait banner, quick gather, categorized building tabs (Eco, Mil, Def, Div).
- * - Building (Fortress, Temple, Barracks, etc.): Only its exclusive units and techs, garrison bar for Fortress, prayer for Temple.
- * - Military Unit: Stances, formations, myth powers, promotion.
- * - None: Global build / god powers / techs.
+ * Strictly tailored to the selected villager/builder, building, or military unit.
  */
 export const MobileCommandSheet: React.FC<MobileCommandSheetProps> = ({
   open,
@@ -154,17 +143,8 @@ export const MobileCommandSheet: React.FC<MobileCommandSheetProps> = ({
   onTriggerMythSpecial,
   onToggleMythAutoCast,
   onSetUnitStance,
-  onToggleAutoScout,
   onSetFormation,
-  onConvertFauna,
 }) => {
-  // Villager categorization tab
-  const [villagerTab, setVillagerTab] = useState<VillagerBuildCategory>('all');
-  // Building sub-tab (all / units / techs)
-  const [buildingSubTab, setBuildingSubTab] = useState<'all' | 'units' | 'techs'>('all');
-  // Generic fallback tab (build / powers / tech)
-  const [genericTab, setGenericTab] = useState<'build' | 'powers' | 'tech'>('build');
-
   const selectedBuildingKind =
     hud.selection.primaryType === 'building' && hud.selection.team === 'player'
       ? hud.selection.buildingKind
@@ -176,23 +156,40 @@ export const MobileCommandSheet: React.FC<MobileCommandSheetProps> = ({
     hud.selection.team === 'player' &&
     !isVillagerSelected;
 
-  // Culture-specific details for villager selection
   const villagerCulture = getVillagerCultureDetails(
     hud.pantheon,
     hud.selection.unitKind,
     hud.selection.isHero
   );
 
-  // Sync default tab when villager culture changes
+  const [villagerTab, setVillagerTab] = useState<VillagerBuildCategory>(villagerCulture.defaultTab);
+  const [buildingSubTab, setBuildingSubTab] = useState<'all' | 'units' | 'techs'>('all');
+  const [genericTab, setGenericTab] = useState<'build' | 'powers' | 'tech'>('build');
+
+  // Sync default villager build tab when switching worker/builder types
   useEffect(() => {
-    if (isVillagerSelected && villagerCulture.defaultTab) {
+    if (isVillagerSelected) {
       setVillagerTab(villagerCulture.defaultTab);
     }
-  }, [isVillagerSelected, villagerCulture.defaultTab]);
+  }, [
+    isVillagerSelected,
+    hud.selection.entityId,
+    hud.selection.unitKind,
+    hud.selection.isHero,
+    villagerCulture.defaultTab,
+  ]);
+
+  // Reset building sub-tab whenever the player switches buildings
+  useEffect(() => {
+    setBuildingSubTab('all');
+  }, [selectedBuildingKind, hud.selection.entityId]);
 
   if (!open || hud.phase !== 'playing') return null;
 
-  // Calculate building exclusive units and techs
+  const buildingProfile = selectedBuildingKind
+    ? getBuildingCommandProfile(selectedBuildingKind, hud.pantheon, hud.majorGodName, hud.age)
+    : null;
+
   const buildingUnits = selectedBuildingKind
     ? getBuildingExclusiveUnits(
         selectedBuildingKind,
@@ -216,53 +213,45 @@ export const MobileCommandSheet: React.FC<MobileCommandSheetProps> = ({
   const isFortress =
     selectedBuildingKind === 'fortress' || selectedBuildingKind === 'asgard_hill_fort';
   const isTemple = selectedBuildingKind === 'temple';
+  const fortressCap = hud.selection.garrisonMaxCapacity ?? 20;
 
-  // Get sheet title
-  const getSheetTitle = () => {
-    if (isVillagerSelected) return villagerCulture.title;
-    if (selectedBuildingKind) {
-      if (isFortress) {
-        if (hud.pantheon === 'egyptian') return 'Fortaleza Migdol (Bastião Real)';
-        if (hud.pantheon === 'norse') return 'Forte da Colina (Hill Fort)';
-        if (hud.pantheon === 'atlantean') return 'Palácio Atlante (Cidadela)';
-        return 'Fortaleza Helênica (Bastião)';
-      }
-      if (isTemple) return `Templo Sagrado de ${hud.majorGodName}`;
-      if (selectedBuildingKind === 'barracks' || selectedBuildingKind === 'counter_barracks') {
-        if (selectedBuildingKind === 'counter_barracks') return 'Quartel de Contra-Ataque';
-        if (hud.pantheon === 'greek') return 'Academia Militar';
-        if (hud.pantheon === 'norse') return 'Quartel Nórdico';
-        return 'Quartel de Infantaria';
-      }
-      if (selectedBuildingKind === 'archery_range') {
-        if (hud.pantheon === 'egyptian') return 'Campo de Fundeiros & Arquearia';
-        return 'Campo de Arquearia';
-      }
-      if (selectedBuildingKind === 'stable') return 'Estábulo (Cavalaria)';
-      if (selectedBuildingKind === 'great_hall') return 'Grande Salão Nórdico';
-      if (selectedBuildingKind === 'siege_works') return 'Oficina de Cerco';
-      return getCivBuildingSpec(hud.pantheon, selectedBuildingKind, hud.majorGodName, hud.age).name;
-    }
-    if (isMilitaryUnit) return `${hud.selection.kindLabel || 'Tropa Militar'} · Comandos`;
-    return 'Central de Comandos';
-  };
+  const sheetTitle = isVillagerSelected
+    ? villagerCulture.title
+    : buildingProfile
+    ? buildingProfile.title
+    : isMilitaryUnit
+    ? `${hud.selection.kindLabel || 'Tropa Militar'} · Comandos`
+    : 'Central de Comandos';
 
-  const getSheetSubtitle = () => {
-    if (isVillagerSelected) return villagerCulture.subtitle;
-    if (selectedBuildingKind) {
-      if (isFortress) return 'Unidades de elite, armas de cerco e guarnição defensiva (AoM Retold)';
-      if (isTemple) return 'Unidades míticas e bênçãos sagradas dos deuses';
-      return `Edifício de Produção (${AGE_NAMES[hud.age]})`;
-    }
-    if (isMilitaryUnit) return 'Posturas táticas, formações e habilidades';
-    return `${AGE_NAMES[hud.age]} · ${hud.majorGodName}`;
-  };
+  const sheetSubtitle = isVillagerSelected
+    ? villagerCulture.subtitle
+    : buildingProfile
+    ? buildingProfile.subtitle
+    : isMilitaryUnit
+    ? 'Posturas táticas, formações e habilidades'
+    : `${AGE_NAMES[hud.age]} · ${hud.majorGodName}`;
 
-  // Filtered buildings for villager
+  const ecoCount = buildingList.filter((b) => getBuildingCategory(b.kind) === 'eco').length;
+  const milCount = buildingList.filter((b) => getBuildingCategory(b.kind) === 'military').length;
+  const defCount = buildingList.filter((b) => getBuildingCategory(b.kind) === 'defense').length;
+  const divCount = buildingList.filter((b) => getBuildingCategory(b.kind) === 'divine').length;
+
+  const villagerTabs = (
+    [
+      { id: 'eco' as const, label: 'Eco', count: ecoCount },
+      { id: 'military' as const, label: 'Militar', count: milCount },
+      { id: 'defense' as const, label: 'Defesa', count: defCount },
+      { id: 'divine' as const, label: 'Sagrado', count: divCount },
+      { id: 'all' as const, label: 'Todas', count: buildingList.length },
+    ] as const
+  ).filter((t) => t.id === 'all' || t.count > 0);
+
   const filteredBuildings = buildingList.filter((b) => {
     if (villagerTab === 'all') return true;
     return getBuildingCategory(b.kind) === villagerTab;
   });
+
+  const formationList = Object.values(FORMATIONS) as FormationSpec[];
 
   return (
     <div className="fixed inset-0 z-40 md:hidden flex flex-col justify-end">
@@ -298,20 +287,20 @@ export const MobileCommandSheet: React.FC<MobileCommandSheetProps> = ({
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5">
                   <h2 className="text-xs font-bold tracking-wide text-[#f7e9c3] truncate">
-                    {getSheetTitle()}
+                    {sheetTitle}
                   </h2>
                   {isVillagerSelected && (
-                    <span className="shrink-0 rounded border border-[#facc15]/40 bg-[#29200b] px-1 py-0.2 text-[8px] font-semibold text-[#fde68a]">
+                    <span className="shrink-0 font-mono-num text-[9px] font-semibold text-[#fde68a] border-l border-[#c8a962]/30 pl-1.5">
                       {villagerCulture.badge}
                     </span>
                   )}
-                  {isFortress && (
-                    <span className="shrink-0 rounded border border-[#f59e0b]/50 bg-[#261909] px-1 py-0.2 font-mono-num text-[8px] font-bold text-[#fde68a]">
-                      Era III+
+                  {buildingProfile?.eraTag && (
+                    <span className="shrink-0 font-mono-num text-[9px] font-bold text-[#fbbf24] border-l border-[#c8a962]/30 pl-1.5">
+                      {buildingProfile.eraTag}
                     </span>
                   )}
                 </div>
-                <p className="text-[10px] text-slate-400 truncate">{getSheetSubtitle()}</p>
+                <p className="text-[10px] text-slate-400 truncate">{sheetSubtitle}</p>
               </div>
             </div>
 
@@ -321,13 +310,13 @@ export const MobileCommandSheet: React.FC<MobileCommandSheetProps> = ({
                   type="button"
                   onClick={() => onToggleRepeatTraining(hud.selection.buildingId!)}
                   title="Repetir treinamento"
-                  className={`flex items-center gap-1 rounded-lg border px-2 py-1 text-[10px] font-semibold cursor-pointer ${
+                  className={`flex min-h-[38px] items-center gap-1 rounded-lg border px-2 text-[10px] font-semibold cursor-pointer ${
                     hud.selection.repeatTraining
                       ? 'border-emerald-400/60 bg-emerald-950/70 text-emerald-300'
                       : 'border-white/15 bg-[#141a27] text-slate-300'
                   }`}
                 >
-                  <Repeat className="h-3 w-3" />
+                  <Repeat className="h-3.5 w-3.5" />
                   <span>Repetir</span>
                 </button>
               )}
@@ -335,7 +324,7 @@ export const MobileCommandSheet: React.FC<MobileCommandSheetProps> = ({
                 type="button"
                 onClick={onClose}
                 aria-label="Fechar"
-                className="flex min-h-[38px] min-w-[38px] items-center justify-center rounded-xl border border-white/15 bg-[#151c2c] text-slate-200 active:bg-[#222d44] cursor-pointer"
+                className="flex min-h-[40px] min-w-[40px] items-center justify-center rounded-xl border border-white/15 bg-[#151c2c] text-slate-200 active:bg-[#222d44] cursor-pointer"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -360,7 +349,7 @@ export const MobileCommandSheet: React.FC<MobileCommandSheetProps> = ({
                 type="button"
                 onClick={onAdvanceAge}
                 disabled={!canAffordNextAge || isAdvancingAge}
-                className={`shrink-0 rounded-lg border px-3 py-1.5 text-xs font-bold cursor-pointer ${
+                className={`shrink-0 min-h-[38px] rounded-lg border px-3 text-xs font-bold cursor-pointer ${
                   isAdvancingAge
                     ? 'border-amber-400/40 bg-amber-950/60 text-amber-200'
                     : canAffordNextAge
@@ -368,84 +357,140 @@ export const MobileCommandSheet: React.FC<MobileCommandSheetProps> = ({
                       : 'border-white/10 bg-[#161c2b] text-slate-500'
                 }`}
               >
-                {isAdvancingAge ? `Avançando (${Math.round(ageAdvancePct * 100)}%)` : 'Avançar Era'}
+                {isAdvancingAge ? `Avançando (${Math.round(ageAdvancePct)}%)` : 'Avançar Era'}
               </button>
             </div>
           )}
         </div>
 
         {/* ========================================================================= */}
-        {/* CASE A: VILLAGER SELECTED -> TABS: TODAS | ECO | MILITAR | DEFESA | DIVINO */}
+        {/* CASE A: VILLAGER / BUILDER SELECTED -> CUSTOMIZED PER TYPE                */}
         {/* ========================================================================= */}
         {isVillagerSelected && (
           <div className="flex flex-col border-b border-white/10 bg-[#0a0f19]">
-            {/* Quick Gather Actions */}
-            {onOrderVillagerTask && (
-              <div className="grid grid-cols-4 gap-1 p-2 pb-1.5 border-b border-white/5">
-                <button
-                  type="button"
-                  onClick={() => onOrderVillagerTask('wood')}
-                  className="flex items-center justify-center gap-1.5 rounded-lg border border-[#c8a962]/20 bg-[#121927] py-1.5 text-[10px] font-semibold text-slate-200 active:bg-[#1a2538] cursor-pointer"
-                >
-                  <ResourceIcon kind="wood" size={14} />
-                  <span>Madeira</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onOrderVillagerTask('gold')}
-                  className="flex items-center justify-center gap-1.5 rounded-lg border border-[#c8a962]/20 bg-[#121927] py-1.5 text-[10px] font-semibold text-slate-200 active:bg-[#1a2538] cursor-pointer"
-                >
-                  <ResourceIcon kind="gold" size={14} />
-                  <span>Ouro</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onOrderVillagerTask('food')}
-                  className="flex items-center justify-center gap-1.5 rounded-lg border border-[#c8a962]/20 bg-[#121927] py-1.5 text-[10px] font-semibold text-slate-200 active:bg-[#1a2538] cursor-pointer"
-                >
-                  <ResourceIcon kind="food" size={14} />
-                  <span>Comida</span>
-                </button>
-                {hud.selection.canPrayAtTemple && onOrderPrayTemple ? (
+            {villagerCulture.isCombatBuilder ? (
+              <div className="flex items-center gap-1.5 p-2 pb-1.5 border-b border-white/5">
+                {onOrderVillagerTask && (
                   <button
                     type="button"
-                    onClick={() => onOrderPrayTemple()}
-                    className="flex items-center justify-center gap-1.5 rounded-lg border border-sky-400/40 bg-[#0f2438] py-1.5 text-[10px] font-semibold text-sky-200 active:bg-[#153450] cursor-pointer"
+                    onClick={() => onOrderVillagerTask('build')}
+                    className="flex min-h-[40px] items-center justify-center gap-1.5 rounded-lg border border-[#d4af37]/50 bg-[#1d2230] px-3 text-[11px] font-semibold text-[#fde68a] cursor-pointer"
                   >
-                    <Sun className="h-3.5 w-3.5 text-sky-300" />
-                    <span>Orar</span>
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => onOrderVillagerTask('hunt')}
-                    className="flex items-center justify-center gap-1.5 rounded-lg border border-[#c8a962]/20 bg-[#121927] py-1.5 text-[10px] font-semibold text-slate-200 active:bg-[#1a2538] cursor-pointer"
-                  >
-                    <ResourceIcon kind="favor" size={14} />
-                    <span>Caçar</span>
+                    <Hammer className="h-3.5 w-3.5 text-[#facc15]" />
+                    <span>Obra</span>
                   </button>
                 )}
+                {onSetUnitStance && (
+                  <div className="grid flex-1 grid-cols-3 gap-1">
+                    {(
+                      [
+                        { id: 'aggressive' as CombatStance, label: 'Agressivo' },
+                        { id: 'defensive' as CombatStance, label: 'Defensivo' },
+                        { id: 'stand_ground' as CombatStance, label: 'Manter' },
+                      ] as const
+                    ).map((st) => {
+                      const active = (hud.selection.stance ?? 'aggressive') === st.id;
+                      return (
+                        <button
+                          key={st.id}
+                          type="button"
+                          onClick={() => onSetUnitStance(st.id)}
+                          className={`min-h-[40px] rounded-lg border text-[10px] font-semibold cursor-pointer ${
+                            active
+                              ? 'border-[#f3d27a] bg-[#2a220e] text-[#fde68a]'
+                              : 'border-white/10 bg-[#121927] text-slate-300'
+                          }`}
+                        >
+                          {st.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            ) : (
+              onOrderVillagerTask && (
+                <div className="grid grid-cols-4 gap-1 p-2 pb-1.5 border-b border-white/5">
+                  <button
+                    type="button"
+                    onClick={() => onOrderVillagerTask('wood')}
+                    className="flex min-h-[40px] items-center justify-center gap-1.5 rounded-lg border border-[#c8a962]/20 bg-[#121927] text-[10px] font-semibold text-slate-200 active:bg-[#1a2538] cursor-pointer"
+                  >
+                    <ResourceIcon kind="wood" size={14} />
+                    <span>Madeira</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onOrderVillagerTask('gold')}
+                    className="flex min-h-[40px] items-center justify-center gap-1.5 rounded-lg border border-[#c8a962]/20 bg-[#121927] text-[10px] font-semibold text-slate-200 active:bg-[#1a2538] cursor-pointer"
+                  >
+                    <ResourceIcon kind="gold" size={14} />
+                    <span>Ouro</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onOrderVillagerTask('food')}
+                    className="flex min-h-[40px] items-center justify-center gap-1.5 rounded-lg border border-[#c8a962]/20 bg-[#121927] text-[10px] font-semibold text-slate-200 active:bg-[#1a2538] cursor-pointer"
+                  >
+                    <ResourceIcon kind="food" size={14} />
+                    <span>Comida</span>
+                  </button>
+                  {hud.selection.canPrayAtTemple && onOrderPrayTemple ? (
+                    <button
+                      type="button"
+                      onClick={() => onOrderPrayTemple()}
+                      className="flex min-h-[40px] items-center justify-center gap-1.5 rounded-lg border border-sky-400/40 bg-[#0f2438] text-[10px] font-semibold text-sky-200 active:bg-[#153450] cursor-pointer"
+                    >
+                      <Sun className="h-3.5 w-3.5 text-sky-300" />
+                      <span>Orar</span>
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => onOrderVillagerTask('hunt')}
+                      className="flex min-h-[40px] items-center justify-center gap-1.5 rounded-lg border border-[#c8a962]/20 bg-[#121927] text-[10px] font-semibold text-slate-200 active:bg-[#1a2538] cursor-pointer"
+                    >
+                      <ResourceIcon kind="hunt" size={14} />
+                      <span>Caçar</span>
+                    </button>
+                  )}
+                </div>
+              )
+            )}
+
+            {/* Contextual Atlantean Citizen Hero Promotion */}
+            {hud.selection.canPromoteToHero && onPromoteToHero && (
+              <div className="px-2 pt-1.5">
+                <button
+                  type="button"
+                  onClick={onPromoteToHero}
+                  className="flex min-h-[40px] w-full items-center justify-between gap-2 rounded-lg border border-[#facc15]/60 bg-[#281f0b] px-3 text-[11px] font-bold text-[#fde68a] cursor-pointer"
+                >
+                  <span className="flex items-center gap-1.5">
+                    <Crown className="h-3.5 w-3.5 text-[#facc15]" />
+                    <span>Promover a Herói ★</span>
+                  </span>
+                  <span className="font-mono-num text-[10px]">
+                    {hud.selection.heroPromoteIsFree
+                      ? 'GRÁTIS'
+                      : hud.selection.heroPromoteCost
+                      ? formatCost(hud.selection.heroPromoteCost)
+                      : ''}
+                  </span>
+                </button>
               </div>
             )}
 
             {/* Villager Category Tabs */}
-            <div className="grid grid-cols-5 gap-1 p-2">
-              {(
-                [
-                  { id: 'all', label: 'Todas' },
-                  { id: 'eco', label: 'Eco' },
-                  { id: 'military', label: 'Militar' },
-                  { id: 'defense', label: 'Defesa' },
-                  { id: 'divine', label: 'Divino' },
-                ] as const
-              ).map(({ id, label }) => {
+            <div className="flex items-center gap-1 p-2 overflow-x-auto">
+              {villagerTabs.map(({ id, label }) => {
                 const active = villagerTab === id;
                 return (
                   <button
                     key={id}
                     type="button"
                     onClick={() => setVillagerTab(id)}
-                    className={`flex min-h-[36px] items-center justify-center rounded-lg border text-[11px] font-semibold transition-colors cursor-pointer ${
+                    className={`flex flex-1 min-h-[38px] items-center justify-center rounded-lg border px-2 text-[11px] font-semibold transition-colors cursor-pointer whitespace-nowrap ${
                       active
                         ? 'border-[#d4af37]/75 bg-[#d4af37]/20 text-[#fef08a]'
                         : 'border-white/10 bg-[#141c2c] text-slate-300'
@@ -460,7 +505,7 @@ export const MobileCommandSheet: React.FC<MobileCommandSheetProps> = ({
         )}
 
         {/* ========================================================================= */}
-        {/* CASE B: BUILDING SELECTED -> SUB-TABS: TUDO | TREINAR | PESQUISAS         */}
+        {/* CASE B: BUILDING SELECTED -> SUB-TABS & CONTEXTUAL BARS                   */}
         {/* ========================================================================= */}
         {selectedBuildingKind && (
           <div className="flex flex-col border-b border-white/10 bg-[#0a0f19]">
@@ -470,10 +515,10 @@ export const MobileCommandSheet: React.FC<MobileCommandSheetProps> = ({
                 <div className="flex items-center justify-between text-xs">
                   <span className="flex items-center gap-1.5 font-semibold text-[#fde68a]">
                     <Castle className="h-4 w-4 text-[#facc15]" />
-                    <span>Bastião Defensivo (Retold)</span>
+                    <span>Guarnição do Bastião</span>
                   </span>
                   <span className="font-mono-num font-bold text-[#fde047]">
-                    {hud.selection.garrisonedCount ?? 0} / 20 tropas
+                    {hud.selection.garrisonedCount ?? 0} / {fortressCap} tropas
                     {(hud.selectedBuildingGarrison?.bonusArrows ?? 0) > 0 && (
                       <span className="ml-1 text-[#67e8f9]">
                         (+{hud.selectedBuildingGarrison!.bonusArrows} flechas)
@@ -486,17 +531,17 @@ export const MobileCommandSheet: React.FC<MobileCommandSheetProps> = ({
                     <button
                       type="button"
                       onClick={() => onGarrisonSelected(hud.selection.buildingId!)}
-                      className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-[#60a5fa]/60 bg-[#132948] py-1.5 text-[10px] font-bold text-[#dbeafe] active:bg-[#1a3760] cursor-pointer"
+                      className="flex flex-1 min-h-[40px] items-center justify-center gap-1.5 rounded-lg border border-[#60a5fa]/60 bg-[#132948] text-[11px] font-bold text-[#dbeafe] active:bg-[#1a3760] cursor-pointer"
                     >
                       <Shield className="h-3.5 w-3.5 text-[#60a5fa]" />
-                      <span>Guarnecer Tropas</span>
+                      <span>Guarnecer</span>
                     </button>
                   )}
                   {hud.selection.canUngarrison && hud.selection.buildingId && onUngarrisonBuilding && (
                     <button
                       type="button"
                       onClick={() => onUngarrisonBuilding(hud.selection.buildingId!)}
-                      className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-[#f59e0b]/70 bg-[#2d1b06] py-1.5 text-[10px] font-bold text-[#fef3c7] active:bg-[#452709] cursor-pointer"
+                      className="flex flex-1 min-h-[40px] items-center justify-center gap-1.5 rounded-lg border border-[#f59e0b]/70 bg-[#2d1b06] text-[11px] font-bold text-[#fef3c7] active:bg-[#452709] cursor-pointer"
                     >
                       <LogOut className="h-3.5 w-3.5 text-[#fbbf24]" />
                       <span>Liberar ({hud.selection.garrisonedCount})</span>
@@ -506,13 +551,13 @@ export const MobileCommandSheet: React.FC<MobileCommandSheetProps> = ({
               </div>
             )}
 
-            {/* Temple Divine Prayer Bar */}
+            {/* Temple Divine Prayer & Set Animals Bar */}
             {isTemple && (
               <div className="m-2 mb-1 flex flex-col gap-1.5 rounded-xl border border-sky-400/40 bg-[#0b1c2b] p-2">
                 <div className="flex items-center justify-between text-xs">
                   <span className="flex items-center gap-1.5 font-semibold text-sky-200">
                     <Sun className="h-4 w-4 text-sky-300" />
-                    <span>Favor Divino aos Deuses</span>
+                    <span>Favor Divino</span>
                   </span>
                   <span className="font-mono-num font-bold text-[#38bdf8]">
                     +{(hud.favorRatePerSec ?? 0).toFixed(2)}/s Favor
@@ -522,7 +567,7 @@ export const MobileCommandSheet: React.FC<MobileCommandSheetProps> = ({
                   <button
                     type="button"
                     onClick={() => onOrderPrayTemple(hud.selection.buildingId)}
-                    className="flex items-center justify-center gap-1.5 rounded-lg border border-sky-400/60 bg-[#11324d] py-1.5 text-[10px] font-bold text-sky-100 active:bg-[#184469] cursor-pointer"
+                    className="flex min-h-[40px] items-center justify-center gap-1.5 rounded-lg border border-sky-400/60 bg-[#11324d] text-[11px] font-bold text-sky-100 active:bg-[#184469] cursor-pointer"
                   >
                     <Users className="h-3.5 w-3.5 text-sky-300" />
                     <span>
@@ -530,26 +575,36 @@ export const MobileCommandSheet: React.FC<MobileCommandSheetProps> = ({
                     </span>
                   </button>
                 )}
-                {/* Set Animal Summoning */}
-                {hud.majorGodName === 'Set' && onSummonSetAnimal && (
-                  <div className="flex items-center gap-1 pt-1 border-t border-sky-400/20">
-                    <span className="text-[9px] font-semibold text-slate-300 mr-1">Feras:</span>
-                    {(['baboon', 'hyena', 'crocodile', 'hippo'] as const).map((animal) => (
-                      <button
-                        key={animal}
-                        type="button"
-                        onClick={() => onSummonSetAnimal(animal)}
-                        className="flex-1 rounded border border-sky-400/30 bg-[#0e2436] py-1 text-[9px] font-semibold text-sky-200 active:bg-[#163a56] capitalize cursor-pointer"
-                      >
-                        {animal === 'baboon'
-                          ? 'Babuíno'
-                          : animal === 'hyena'
-                            ? 'Hiena'
-                            : animal === 'crocodile'
-                              ? 'Crocodilo'
-                              : 'Hipopótamo'}
-                      </button>
-                    ))}
+                {hud.isSetPlayer && onSummonSetAnimal && (
+                  <div className="grid grid-cols-4 gap-1 pt-1 border-t border-sky-400/20">
+                    {(
+                      [
+                        { kind: 'baboon', label: 'Babuíno', cost: 8, minAge: 1 },
+                        { kind: 'hyena', label: 'Hiena', cost: 12, minAge: 1 },
+                        { kind: 'crocodile', label: 'Crocodilo', cost: 16, minAge: 2 },
+                        { kind: 'hippo', label: 'Hipopótamo', cost: 22, minAge: 3 },
+                      ] as const
+                    ).map((animal) => {
+                      const locked = hud.age < animal.minAge || hud.resources.favor < animal.cost;
+                      return (
+                        <button
+                          key={animal.kind}
+                          type="button"
+                          disabled={locked}
+                          onClick={() => onSummonSetAnimal(animal.kind)}
+                          className={`flex min-h-[38px] flex-col items-center justify-center rounded border py-1 text-[9.5px] font-semibold cursor-pointer ${
+                            locked
+                              ? 'border-white/10 bg-[#10131b] text-slate-500'
+                              : 'border-sky-400/35 bg-[#0e2436] text-sky-200 active:bg-[#163a56]'
+                          }`}
+                        >
+                          <span className="truncate max-w-full px-1">{animal.label}</span>
+                          <span className="font-mono-num text-[8.5px] text-amber-300">
+                            {hud.age < animal.minAge ? `E${animal.minAge}` : `${animal.cost}F`}
+                          </span>
+                        </button>
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -561,8 +616,8 @@ export const MobileCommandSheet: React.FC<MobileCommandSheetProps> = ({
                 {(
                   [
                     { id: 'all', label: 'Tudo' },
-                    { id: 'units', label: `Treinar (${buildingUnits.length})` },
-                    { id: 'techs', label: `Pesquisas (${buildingTechs.length})` },
+                    { id: 'units', label: `${buildingProfile?.unitTabLabel ?? 'Treinar'} (${buildingUnits.length})` },
+                    { id: 'techs', label: `${buildingProfile?.techTabLabel ?? 'Pesquisas'} (${buildingTechs.length})` },
                   ] as const
                 ).map(({ id, label }) => {
                   const active = buildingSubTab === id;
@@ -571,7 +626,7 @@ export const MobileCommandSheet: React.FC<MobileCommandSheetProps> = ({
                       key={id}
                       type="button"
                       onClick={() => setBuildingSubTab(id)}
-                      className={`flex min-h-[34px] items-center justify-center rounded-lg border text-[11px] font-semibold transition-colors cursor-pointer ${
+                      className={`flex min-h-[38px] items-center justify-center rounded-lg border text-[11px] font-semibold transition-colors cursor-pointer ${
                         active
                           ? 'border-[#d4af37]/75 bg-[#d4af37]/20 text-[#fef08a]'
                           : 'border-white/10 bg-[#141c2c] text-slate-300'
@@ -658,15 +713,13 @@ export const MobileCommandSheet: React.FC<MobileCommandSheetProps> = ({
             </div>
           )}
 
-          {/* CASE B BODY: BUILDING EXCLUSIVE UNITS & TECHS */}
+          {/* CASE B BODY: BUILDING EXCLUSIVE UNITS, TECHS & SPECIAL ACTIONS */}
           {selectedBuildingKind && (
             <div className="flex flex-col gap-3">
-              {/* Construction In Progress Warning */}
               {!hud.selection.isConstructed ? (
                 <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-amber-400/40 bg-[#1f180c] p-4 text-center">
                   <div className="text-xs font-bold text-amber-300">
-                    Estrutura em construção ({Math.round((hud.selection.buildProgress ?? 0) * 100)}
-                    %)
+                    Estrutura em construção ({Math.round((hud.selection.buildProgress ?? 0) * 100)}%)
                   </div>
                   {onOrderVillagersToTarget && (
                     <button
@@ -675,10 +728,10 @@ export const MobileCommandSheet: React.FC<MobileCommandSheetProps> = ({
                         onOrderVillagersToTarget();
                         onClose();
                       }}
-                      className="flex items-center gap-1.5 rounded-lg bg-[#d4af37] px-3 py-1.5 text-xs font-bold text-[#0b0e14] active:bg-[#e5c45e] cursor-pointer"
+                      className="flex min-h-[40px] items-center gap-1.5 rounded-lg bg-[#d4af37] px-3 text-xs font-bold text-[#0b0e14] active:bg-[#e5c45e] cursor-pointer"
                     >
                       <Hammer className="h-4 w-4" />
-                      <span>Enviar Aldeões para Concluir</span>
+                      <span>Enviar Construtores</span>
                     </button>
                   )}
                 </div>
@@ -758,7 +811,7 @@ export const MobileCommandSheet: React.FC<MobileCommandSheetProps> = ({
                                 }`}
                               >
                                 <div className="flex items-center gap-2.5 min-w-0">
-                                  <TechIcon id={t.id} size={28} />
+                                  <TechIcon techId={t.id} size={28} />
                                   <div className="min-w-0">
                                     <div className="text-xs font-bold truncate">{t.name}</div>
                                     <div className="text-[10px] text-slate-400 line-clamp-1">
@@ -784,11 +837,131 @@ export const MobileCommandSheet: React.FC<MobileCommandSheetProps> = ({
                       </div>
                     )}
 
-                  {buildingUnits.length === 0 && buildingTechs.length === 0 && (
-                    <div className="py-6 text-center text-xs text-slate-400">
-                      Nenhuma produção ou tecnologia disponível neste edifício no momento.
+                  {/* Market Tribute Exchanges */}
+                  {selectedBuildingKind === 'market' && onExchangeTribute && (
+                    <div className="grid grid-cols-2 gap-2">
+                      {(
+                        [
+                          { from: 'food' as ResourceType, to: 'gold' as ResourceType, label: 'Ouro' },
+                          { from: 'wood' as ResourceType, to: 'gold' as ResourceType, label: 'Ouro' },
+                          { from: 'gold' as ResourceType, to: 'food' as ResourceType, label: 'Alim' },
+                          { from: 'gold' as ResourceType, to: 'wood' as ResourceType, label: 'Mad' },
+                        ] as const
+                      ).map((ex) => (
+                        <button
+                          key={`${ex.from}-${ex.to}`}
+                          type="button"
+                          onClick={() => onExchangeTribute(ex.from, ex.to, 100)}
+                          className="flex min-h-[44px] items-center justify-between rounded-xl border border-[#c8a962]/30 bg-[#151c2c] px-3 text-xs font-semibold text-slate-100 active:bg-[#222d44] cursor-pointer"
+                        >
+                          <span className="flex items-center gap-1">
+                            <ResourceIcon kind={ex.from} size={15} />
+                            <span>100 →</span>
+                            <ResourceIcon kind={ex.to} size={15} />
+                          </span>
+                          <span className="text-[#fde68a]">{ex.label}</span>
+                        </button>
+                      ))}
                     </div>
                   )}
+
+                  {/* Sky Passage Teleport */}
+                  {selectedBuildingKind === 'sky_passage' && hud.selection.buildingId && onTeleportSkyPassage && (
+                    <button
+                      type="button"
+                      disabled={(hud.skyPassageCount ?? 0) < 2}
+                      onClick={() => {
+                        onTeleportSkyPassage(hud.selection.buildingId!);
+                        onClose();
+                      }}
+                      className={`flex min-h-[48px] items-center justify-between rounded-xl border px-3 text-xs font-bold cursor-pointer ${
+                        (hud.skyPassageCount ?? 0) >= 2
+                          ? 'border-[#22d3ee]/70 bg-[#0d2838] text-[#bae6fd]'
+                          : 'border-white/10 bg-[#121620] text-slate-500'
+                      }`}
+                    >
+                      <span>Teletransportar Tropas</span>
+                      <span className="font-mono-num text-[10px]">
+                        {(hud.skyPassageCount ?? 0) >= 2 ? 'Ativo' : 'Requer 2 Portais'}
+                      </span>
+                    </button>
+                  )}
+
+                  {/* Wall to Gate Conversion */}
+                  {selectedBuildingKind === 'wall' && onConvertWallToGate && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onConvertWallToGate();
+                        onClose();
+                      }}
+                      className="flex min-h-[48px] items-center justify-between rounded-xl border border-[#d4af37]/60 bg-[#241e0d] px-3 text-xs font-bold text-[#fde68a] cursor-pointer"
+                    >
+                      <span className="flex items-center gap-2">
+                        <DoorOpen className="h-4 w-4 text-[#facc15]" />
+                        <span>Converter em Portão</span>
+                      </span>
+                      <span className="font-mono-num text-[10px]">15M · 10O</span>
+                    </button>
+                  )}
+
+                  {/* Non-Fortress Garrison (TC / Tower) */}
+                  {!isFortress && hud.selection.canGarrison && hud.selection.buildingId && (
+                    <div className="flex items-center justify-between gap-2 rounded-xl border border-[#60a5fa]/40 bg-[#0f1d32] p-2.5">
+                      <span className="flex items-center gap-1.5 text-xs font-semibold text-[#93c5fd]">
+                        <Shield className="h-4 w-4 text-[#60a5fa]" />
+                        <span className="font-mono-num text-[#fde047]">
+                          {hud.selection.garrisonedCount ?? 0}/{hud.selection.garrisonMaxCapacity ?? 10}
+                        </span>
+                      </span>
+                      <div className="flex items-center gap-1.5">
+                        {onGarrisonSelected && (
+                          <button
+                            type="button"
+                            onClick={() => onGarrisonSelected(hud.selection.buildingId!)}
+                            className="min-h-[38px] rounded-lg border border-[#60a5fa]/60 bg-[#132948] px-3 text-xs font-bold text-[#dbeafe] cursor-pointer"
+                          >
+                            Guarnecer
+                          </button>
+                        )}
+                        {hud.selection.canUngarrison && onUngarrisonBuilding && (
+                          <button
+                            type="button"
+                            onClick={() => onUngarrisonBuilding(hud.selection.buildingId!)}
+                            className="min-h-[38px] rounded-lg border border-[#f59e0b]/70 bg-[#2d1b06] px-3 text-xs font-bold text-[#fef3c7] cursor-pointer"
+                          >
+                            Liberar ({hud.selection.garrisonedCount})
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Monument Empower */}
+                  {selectedBuildingKind === 'monument' && hud.selection.canEmpowerMonument && onOrderEmpowerMonument && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onOrderEmpowerMonument(hud.selection.buildingId);
+                        onClose();
+                      }}
+                      className="flex min-h-[48px] items-center justify-center gap-2 rounded-xl border border-[#facc15]/65 bg-[#2d230c] px-3 text-xs font-bold text-[#fef08a] cursor-pointer"
+                    >
+                      <Sun className="h-4 w-4 text-[#facc15]" />
+                      <span>Energizar Monumento (Faraó / Sacerdote)</span>
+                    </button>
+                  )}
+
+                  {buildingUnits.length === 0 &&
+                    buildingTechs.length === 0 &&
+                    selectedBuildingKind !== 'market' &&
+                    selectedBuildingKind !== 'sky_passage' &&
+                    selectedBuildingKind !== 'wall' &&
+                    selectedBuildingKind !== 'monument' && (
+                      <div className="py-6 text-center text-xs text-slate-400">
+                        {buildingProfile?.subtitle ?? 'Estrutura de apoio e defesa territorial.'}
+                      </div>
+                    )}
                 </>
               )}
             </div>
@@ -817,7 +990,7 @@ export const MobileCommandSheet: React.FC<MobileCommandSheetProps> = ({
                           key={s.id}
                           type="button"
                           onClick={() => onSetUnitStance(s.id)}
-                          className={`flex flex-col items-center justify-center rounded-xl border p-2 text-center transition-colors cursor-pointer ${
+                          className={`flex min-h-[52px] flex-col items-center justify-center rounded-xl border p-2 text-center transition-colors cursor-pointer ${
                             active
                               ? 'border-amber-400/80 bg-amber-950/60 text-amber-200'
                               : 'border-white/10 bg-[#141b2a] text-slate-300'
@@ -839,21 +1012,21 @@ export const MobileCommandSheet: React.FC<MobileCommandSheetProps> = ({
                     Formação Tática
                   </span>
                   <div className="grid grid-cols-2 gap-2">
-                    {FORMATIONS.map((f) => {
+                    {formationList.map((f) => {
                       const active = hud.formation === f.id;
                       return (
                         <button
                           key={f.id}
                           type="button"
                           onClick={() => onSetFormation(f.id)}
-                          className={`flex items-center justify-between rounded-xl border p-2.5 transition-colors cursor-pointer ${
+                          className={`flex min-h-[48px] flex-col items-start justify-center rounded-xl border p-2.5 text-left transition-colors cursor-pointer ${
                             active
                               ? 'border-[#d4af37]/80 bg-[#d4af37]/20 text-[#fef08a]'
                               : 'border-white/10 bg-[#141b2a] text-slate-300'
                           }`}
                         >
-                          <span className="text-xs font-bold">{f.label}</span>
-                          <span className="text-[10px] text-slate-400">{f.description}</span>
+                          <span className="text-xs font-bold">{f.name}</span>
+                          <span className="text-[10px] text-slate-400 line-clamp-1">{f.description}</span>
                         </button>
                       );
                     })}
@@ -867,7 +1040,7 @@ export const MobileCommandSheet: React.FC<MobileCommandSheetProps> = ({
                   <button
                     type="button"
                     onClick={onTriggerMythSpecial}
-                    className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-purple-600 px-3 py-2 text-xs font-bold text-white active:bg-purple-700 cursor-pointer"
+                    className="flex flex-1 min-h-[44px] items-center justify-center gap-1.5 rounded-lg bg-purple-600 px-3 text-xs font-bold text-white active:bg-purple-700 cursor-pointer"
                   >
                     <Sparkles className="h-4 w-4" />
                     <span>Habilidade Mítica Especial</span>
@@ -876,7 +1049,7 @@ export const MobileCommandSheet: React.FC<MobileCommandSheetProps> = ({
                     <button
                       type="button"
                       onClick={onToggleMythAutoCast}
-                      className="rounded-lg border border-purple-400/40 bg-[#150d24] px-3 py-2 text-xs font-bold text-purple-200 cursor-pointer"
+                      className="min-h-[44px] rounded-lg border border-purple-400/40 bg-[#150d24] px-3 text-xs font-bold text-purple-200 cursor-pointer"
                     >
                       Auto-Cast
                     </button>
@@ -1008,7 +1181,7 @@ export const MobileCommandSheet: React.FC<MobileCommandSheetProps> = ({
                         }`}
                       >
                         <div className="flex items-center gap-2.5 min-w-0">
-                          <TechIcon id={t.id} size={28} />
+                          <TechIcon techId={t.id} size={28} />
                           <div className="min-w-0">
                             <div className="text-xs font-bold truncate">{t.name}</div>
                             <div className="text-[10px] text-slate-400 line-clamp-1">{t.description}</div>

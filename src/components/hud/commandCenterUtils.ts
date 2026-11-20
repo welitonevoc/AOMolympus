@@ -1,3 +1,4 @@
+import { getCivBuildingSpec } from '../../game/divineData';
 import {
   AgeLevel,
   BuildingKind,
@@ -15,10 +16,27 @@ export interface VillagerCultureDetails {
   badge: string;
   defaultTab: VillagerBuildCategory;
   isHero?: boolean;
+  /** True for Norse infantry combat builders (Ulfsark, Hersir, Throwing Axeman, Huskarl) */
+  isCombatBuilder?: boolean;
 }
 
+export interface BuildingCommandProfile {
+  title: string;
+  subtitle: string;
+  eraTag?: string;
+  unitTabLabel: string;
+  techTabLabel: string;
+}
+
+const NORSE_COMBAT_BUILDERS: ReadonlySet<UnitKind> = new Set<UnitKind>([
+  'ulfsark',
+  'hersir',
+  'throwing_axeman',
+  'huskarl',
+]);
+
 /**
- * Returns customized identity, cultural trait badge, and default tab for any selected villager.
+ * Returns customized identity, cultural trait badge, and default tab for any selected villager/builder.
  */
 export function getVillagerCultureDetails(
   pantheon: PantheonId,
@@ -28,25 +46,40 @@ export function getVillagerCultureDetails(
   if (pantheon === 'egyptian') {
     return {
       title: 'Operário Egípcio',
-      subtitle: 'Mão de obra sagrada do Nilo • Construção acelerada com bênção do Faraó',
-      badge: 'Bênção do Faraó (+Eficiência)',
+      subtitle: 'Obras sagradas do Nilo · Construção acelerada pela bênção do Faraó',
+      badge: 'Bênção do Faraó',
       defaultTab: 'eco',
     };
   }
 
-  if (pantheon === 'norse') {
-    if (unitKind === 'dwarf') {
+  if (pantheon === 'norse' || pantheon === 'jotunn') {
+    if (unitKind === 'norse_dwarf') {
       return {
         title: 'Anão Minerador Nórdico',
-        subtitle: 'Forjado em Nidavellir • Minera jazidas de ouro 20% mais rápido',
-        badge: '+20% Mineração de Ouro',
+        subtitle: 'Forjado em Nidavellir · Minera ouro 20% mais rápido',
+        badge: '+20% Ouro',
         defaultTab: 'eco',
+      };
+    }
+    if (unitKind && NORSE_COMBAT_BUILDERS.has(unitKind)) {
+      const unitNames: Partial<Record<UnitKind, string>> = {
+        ulfsark: 'Ulfsark Construtor',
+        hersir: 'Hersir Construtor',
+        throwing_axeman: 'Machadeiro Construtor',
+        huskarl: 'Huskarl Construtor',
+      };
+      return {
+        title: unitNames[unitKind] ?? 'Guerreiro Construtor Nórdico',
+        subtitle: 'Infantaria nórdica · Ergue quartéis, torres, templos e o Forte da Colina',
+        badge: 'Construtor Militar',
+        defaultTab: 'military',
+        isCombatBuilder: true,
       };
     }
     return {
       title: 'Coletor Nórdico',
-      subtitle: 'Colheita e depósitos móveis • Estruturas militares são erguidas pela Infantaria (Ulfsark)',
-      badge: 'Infantaria ergue Quartéis',
+      subtitle: 'Colheita com Carro de Boi · Infantaria ergue quartéis e fortificações',
+      badge: 'Depósito Móvel',
       defaultTab: 'eco',
     };
   }
@@ -55,16 +88,33 @@ export function getVillagerCultureDetails(
     if (isHero) {
       return {
         title: 'Cidadão Herói Atlante ★',
-        subtitle: 'Elevado com essência de Oricalco • Coleta ultra-rápida, defesa heroica e bônus vs Míticas',
-        badge: 'Herói ★ • Coleta 2.5x',
+        subtitle: 'Essência de Oricalco · Coleta 2.5x sem depósito e bônus contra Míticas',
+        badge: 'Herói ★ · 2.5x',
         defaultTab: 'eco',
         isHero: true,
       };
     }
     return {
       title: 'Cidadão Atlante & Lhama',
-      subtitle: 'Coleta 2.5x mais rápida sem necessidade de depósitos • Promovível a Herói ★',
-      badge: 'Lhama Integrada (Sem Depósito)',
+      subtitle: 'Coleta autônoma 2.5x sem depósitos · Promovível a Herói ★',
+      badge: 'Lhama Integrada',
+      defaultTab: 'eco',
+    };
+  }
+
+  if (pantheon === 'chinese') {
+    if (unitKind === 'kuafu') {
+      return {
+        title: 'Kuafu Construtor',
+        subtitle: 'Gigante trabalhador · Coleta e ergue monumentos em velocidade superior',
+        badge: 'Gigante · +Construção',
+        defaultTab: 'eco',
+      };
+    }
+    return {
+      title: 'Camponês Chinês',
+      subtitle: 'Cultivo imperial, coleta equilibrada e expansão de Jardins & Bastiões',
+      badge: 'Trabalho Imperial',
       defaultTab: 'eco',
     };
   }
@@ -72,17 +122,188 @@ export function getVillagerCultureDetails(
   // Default: Grego
   return {
     title: 'Aldeão Helênico',
-    subtitle: 'Cultiva fazendas, colhe recursos e edifica templos e monumentos do Olimpo',
-    badge: 'Oração no Templo (+Favor)',
-    defaultTab: 'all',
+    subtitle: 'Colhe recursos, ergue a pólis e ora no Templo para gerar Favor',
+    badge: 'Oração (+Favor)',
+    defaultTab: 'eco',
+  };
+}
+
+/**
+ * Unified contextual Command Center header & subtab labels per building (shared by desktop & mobile).
+ */
+export function getBuildingCommandProfile(
+  kind: BuildingKind,
+  pantheon: PantheonId,
+  majorGodName: string,
+  age: AgeLevel
+): BuildingCommandProfile {
+  if (kind === 'fortress' || kind === 'asgard_hill_fort') {
+    if (pantheon === 'egyptian') {
+      return {
+        title: 'Fortaleza Migdol',
+        subtitle: 'Carros de guerra, elefantes, cerco e guarnição real',
+        eraTag: 'Era III+',
+        unitTabLabel: 'Elite & Cerco',
+        techTabLabel: 'Bastião',
+      };
+    }
+    if (pantheon === 'norse' || pantheon === 'jotunn') {
+      return {
+        title: kind === 'asgard_hill_fort' ? 'Forte de Asgard' : 'Forte da Colina',
+        subtitle: 'Huskarls, Jarls, armas de cerco e guarnição nórdica',
+        eraTag: 'Era III+',
+        unitTabLabel: 'Elite & Cerco',
+        techTabLabel: 'Bastião',
+      };
+    }
+    if (pantheon === 'atlantean') {
+      return {
+        title: 'Palácio Atlante',
+        subtitle: 'Destruidores, Fanáticos, cerco de oricalco e cidadela',
+        eraTag: 'Era III+',
+        unitTabLabel: 'Elite & Cerco',
+        techTabLabel: 'Cidadela',
+      };
+    }
+    if (pantheon === 'chinese') {
+      return {
+        title: 'Bastião Imperial',
+        subtitle: 'Tropas de elite, lanças de fogo, cerco e defesa',
+        eraTag: 'Era III+',
+        unitTabLabel: 'Elite & Cerco',
+        techTabLabel: 'Bastião',
+      };
+    }
+    return {
+      title: 'Fortaleza Helênica',
+      subtitle: `Tropa exclusiva de ${majorGodName || 'Olimpo'}, heróis, cerco e guarnição`,
+      eraTag: 'Era III+',
+      unitTabLabel: 'Elite & Cerco',
+      techTabLabel: 'Bastião',
+    };
+  }
+
+  if (kind === 'temple') {
+    return {
+      title: `Templo de ${majorGodName || 'Olimpo'}`,
+      subtitle: 'Unidades míticas, bênçãos sagradas e Era dos Deuses',
+      unitTabLabel: 'Míticas',
+      techTabLabel: 'Sagradas',
+    };
+  }
+
+  if (kind === 'barracks') {
+    const title =
+      pantheon === 'greek'
+        ? 'Academia Militar'
+        : pantheon === 'norse' || pantheon === 'jotunn'
+        ? 'Casa Longa (Quartel)'
+        : pantheon === 'atlantean'
+        ? 'Quartel Militar Atlante'
+        : 'Quartel de Infantaria';
+    return {
+      title,
+      subtitle: 'Treinamento de infantaria e melhorias de combate',
+      unitTabLabel: 'Tropas',
+      techTabLabel: 'Melhorias',
+    };
+  }
+
+  if (kind === 'counter_barracks') {
+    return {
+      title: 'Contra-Quartel Atlante',
+      subtitle: 'Unidades anti-cavalaria, anti-arqueiro e balistas',
+      unitTabLabel: 'Contra-Tropas',
+      techTabLabel: 'Melhorias',
+    };
+  }
+
+  if (kind === 'archery_range') {
+    return {
+      title: 'Campo de Arquearia',
+      subtitle: 'Arqueiros, peltastas e pesquisas de precisão',
+      unitTabLabel: 'Atiradores',
+      techTabLabel: 'Melhorias',
+    };
+  }
+
+  if (kind === 'stable') {
+    return {
+      title: 'Estábulo',
+      subtitle: 'Cavalaria pesada, batedores e melhorias montadas',
+      unitTabLabel: 'Cavalaria',
+      techTabLabel: 'Melhorias',
+    };
+  }
+
+  if (kind === 'great_hall') {
+    return {
+      title: 'Grande Salão',
+      subtitle: 'Cavalaria nórdica, Jarls e heróis Hersir / Godi',
+      unitTabLabel: 'Guerreiros',
+      techTabLabel: 'Melhorias',
+    };
+  }
+
+  if (kind === 'siege_works') {
+    return {
+      title: 'Oficina de Cerco',
+      subtitle: 'Aríetes, catapultas e engenharia de demolição',
+      unitTabLabel: 'Cerco',
+      techTabLabel: 'Engenharia',
+    };
+  }
+
+  if (kind === 'armory') {
+    return {
+      title: 'Arsenal',
+      subtitle: 'Forja de armas, armaduras, escudos e tecnologias míticas',
+      unitTabLabel: 'Unidades',
+      techTabLabel: 'Forja',
+    };
+  }
+
+  if (kind === 'town_center' || kind === 'village_center') {
+    return {
+      title: kind === 'village_center' ? 'Centro de Vila' : 'Centro da Cidade',
+      subtitle: 'Aldeões, heróis, economia e avanço de Era',
+      unitTabLabel: 'Civis & Heróis',
+      techTabLabel: 'Economia',
+    };
+  }
+
+  if (kind === 'market') {
+    return {
+      title: 'Mercado',
+      subtitle: 'Caravanas comerciais e câmbio imediato de recursos',
+      unitTabLabel: 'Comércio',
+      techTabLabel: 'Pesquisas',
+    };
+  }
+
+  if (kind === 'dock') {
+    return {
+      title: 'Doca Naval',
+      subtitle: 'Barcos de pesca, trirremes de guerra e transportes',
+      unitTabLabel: 'Navios',
+      techTabLabel: 'Naval',
+    };
+  }
+
+  const spec = getCivBuildingSpec(pantheon, kind, majorGodName, age);
+  return {
+    title: spec.name,
+    subtitle: spec.role,
+    unitTabLabel: 'Treinar',
+    techTabLabel: 'Pesquisas',
   };
 }
 
 /**
  * Classifies a building into one of 4 intuitive Retold command categories:
- * - eco: Houses, Granary, Storehouse, Farm, Market, Camps
- * - military: Barracks, Archery, Stable, Fortress, Hill Fort, Siege Works, Armory
- * - defense: Towers, Walls, Gate, Sky Passage, Obelisk
+ * - eco: Houses, Granary, Storehouse, Economic Guild, Farm, Market, Camps, Dock, Town/Village Center
+ * - military: Barracks, Counter-Barracks, Archery, Stable, Great Hall, Fortress, Hill Fort, Siege Works, Armory
+ * - defense: Towers, Mirror Tower, Walls, Gate, Sky Passage, Obelisk
  * - divine: Temple, Monuments, Wonder, Titan Gate, Lighthouse
  */
 export function getBuildingCategory(kind: BuildingKind): 'eco' | 'military' | 'defense' | 'divine' {
@@ -90,11 +311,14 @@ export function getBuildingCategory(kind: BuildingKind): 'eco' | 'military' | 'd
     case 'house':
     case 'granary':
     case 'storehouse':
+    case 'economic_guild':
     case 'farm':
     case 'market':
     case 'lumber_camp':
     case 'mining_camp':
     case 'dock':
+    case 'town_center':
+    case 'village_center':
       return 'eco';
 
     case 'barracks':
@@ -128,7 +352,7 @@ export function getBuildingCategory(kind: BuildingKind): 'eco' | 'military' | 'd
 
 /**
  * Filters units strictly belonging to the currently selected building.
- * Ensures the Command Center is tightly focused without leaking units into wrong buildings.
+ * Every returned unit is guaranteed to be trainable at `buildingKind` via `matchesUnitProducer`.
  */
 export function getBuildingExclusiveUnits(
   buildingKind: BuildingKind,
@@ -144,15 +368,20 @@ export function getBuildingExclusiveUnits(
     if (buildingKind === 'town_center' || buildingKind === 'village_center') {
       if (
         u.kind === 'villager' ||
-        u.kind === 'dwarf' ||
         u.kind === 'norse_dwarf' ||
+        u.kind === 'ox_cart' ||
         u.kind === 'citizen' ||
-        u.kind === 'chinese_peasant'
+        u.kind === 'chinese_peasant' ||
+        u.kind === 'kuafu'
       ) {
+        return true;
+      }
+      if (u.kind === 'oracle' && pantheon === 'atlantean') {
         return true;
       }
       if (
         u.isHero &&
+        u.producedAt === 'town_center' &&
         u.kind !== 'priest' &&
         u.kind !== 'oracle' &&
         u.kind !== 'hersir' &&
@@ -163,7 +392,7 @@ export function getBuildingExclusiveUnits(
       return false;
     }
 
-    // 2. Temple: Myth units and dedicated divine casters only
+    // 2. Temple: Myth units, Era V Gods, and dedicated divine casters only
     if (buildingKind === 'temple') {
       if (u.isMythic) {
         if (u.requiresMinorGod && u.requiresMinorGod.length > 0) {
@@ -171,18 +400,20 @@ export function getBuildingExclusiveUnits(
         }
         return true;
       }
-      if (u.isMajorGod) return true;
+      if (u.isMajorGod || u.isGod) return true;
       if (u.kind === 'priest' && pantheon === 'egyptian') return true;
       if (u.kind === 'oracle' && pantheon === 'atlantean') return true;
-      if (u.kind === 'hersir' && pantheon === 'norse') return true;
+      if ((u.kind === 'hersir' || u.kind === 'godi') && (pantheon === 'norse' || pantheon === 'jotunn')) {
+        return true;
+      }
       return false;
     }
 
-    // 3. Fortress / Asgard Hill Fort (AoM Retold / Titans & Fandom standard)
+    // 3. Fortress / Asgard Hill Fort (AoM Retold / The Titans standard)
     if (buildingKind === 'fortress' || buildingKind === 'asgard_hill_fort') {
-      // Greeks: Petrobolos & Helepolis (siege), Unique unit per god (Zeus: Myrmidon, Poseidon: Hetairoi, Hades: Gastraphetes), or heroes in Heroic/Mythic
+      // Greeks: Unique unit per Major God (Zeus: Myrmidon, Poseidon: Hetairoi/cavalry, Hades: Gastraphetes), Heroic+ Heroes, Siege
       if (pantheon === 'greek') {
-        if (u.kind === 'myrmidon' && godLower.includes('zeus')) return true;
+        if (u.kind === 'myrmidon' && (godLower.includes('zeus') || !godLower)) return true;
         if (u.kind === 'cavalry' && godLower.includes('poseidon')) return true;
         if (u.kind === 'gastraphetes' && godLower.includes('hades')) return true;
         if (u.kind === 'ram' || u.kind === 'siege') return true;
@@ -190,76 +421,98 @@ export function getBuildingExclusiveUnits(
         return false;
       }
 
-      // Egyptians: Migdol Stronghold (War Elephant, Camel Rider, Chariot Archer, Siege Tower, Catapult)
+      // Egyptians: Migdol Stronghold (Chariot Archer, Camel Rider, War Elephant, Siege Tower, Catapult)
       if (pantheon === 'egyptian') {
-        if (u.kind === 'war_elephant' || u.kind === 'camel_rider' || u.kind === 'chariot_archer') return true;
-        if (u.kind === 'siege_tower' || u.kind === 'egypt_catapult' || u.kind === 'siege') return true;
+        if (u.kind === 'chariot_archer' || u.kind === 'camel_rider' || u.kind === 'war_elephant') return true;
+        if (u.kind === 'siege_tower' || u.kind === 'egypt_catapult') return true;
         return false;
       }
 
-      // Norse: Hill Fort (Huskarl, Jarl, Portable Ram, Ballista, Hersir)
+      // Norse: Hill Fort / Asgard Hill Fort (Huskarl, Jarl, Portable Ram, Ballista, Hersir, Godi)
       if (pantheon === 'norse' || pantheon === 'jotunn') {
         if (u.kind === 'huskarl' || u.kind === 'jarl') return true;
-        if (u.kind === 'portable_ram' || u.kind === 'norse_ballista' || u.kind === 'ram' || u.kind === 'siege') return true;
-        if (u.kind === 'hersir') return true;
+        if (u.kind === 'portable_ram' || u.kind === 'norse_ballista') return true;
+        if (u.kind === 'hersir' || u.kind === 'godi') return true;
         return false;
       }
 
-      // Atlanteans: Palace (Fanatic, Destroyer/Katapeltes, Fire Siphon, Onager, Cheiroballista)
+      // Atlanteans: Palace (Destroyer, Fanatic, Fire Siphon, Onager, Cheiroballista)
       if (pantheon === 'atlantean') {
-        if (u.kind === 'fanatic' || u.kind === 'katapeltes') return true;
+        if (u.kind === 'destroyer' || u.kind === 'fanatic') return true;
         if (u.kind === 'fire_siphon' || u.kind === 'onager' || u.kind === 'cheiroballista') return true;
         return false;
       }
 
-      // Chinese: Bastion
+      // Chinese: Imperial Bastion (Jiang Ziya, Fire Lance, Tiger Cavalry, Ram, Siege)
       if (pantheon === 'chinese') {
-        if (u.kind === 'myrmidon' || u.kind === 'fire_lance' || u.kind === 'tiger_cavalry') return true;
+        if (
+          u.kind === 'jiang_ziya' ||
+          u.kind === 'fire_lance' ||
+          u.kind === 'tiger_cavalry' ||
+          u.kind === 'ram' ||
+          u.kind === 'siege'
+        ) {
+          return true;
+        }
         return false;
       }
 
       return false;
     }
 
-    // 4. Barracks / Counter-Barracks
-    if (buildingKind === 'barracks' || buildingKind === 'counter_barracks') {
-      if (buildingKind === 'counter_barracks') {
-        return (
-          u.kind === 'katapeltes' ||
-          u.kind === 'turma' ||
-          u.kind === 'cheiroballista' ||
-          u.producedAt === 'counter_barracks'
-        );
+    // 4. Counter-Barracks (Atlantean)
+    if (buildingKind === 'counter_barracks') {
+      return (
+        u.kind === 'katapeltes' ||
+        u.kind === 'turma' ||
+        u.kind === 'cheiroballista' ||
+        u.producedAt === 'counter_barracks'
+      );
+    }
+
+    // 5. Barracks (Pantheon-specific)
+    if (buildingKind === 'barracks') {
+      if (pantheon === 'greek') {
+        return u.kind === 'hoplite' || u.kind === 'hipaspist';
       }
-      if (u.kind === 'hoplite' || u.kind === 'hipaspist') return true;
-      if (u.kind === 'spearman' || u.kind === 'axeman') return true;
-      if (u.kind === 'ulfsark' || u.kind === 'throwing_axeman') return true;
-      if (u.kind === 'murmillo' || u.kind === 'katapeltes') return true;
-      if (u.kind === 'halberdier') return true;
-      return false;
+      if (pantheon === 'egyptian') {
+        return u.kind === 'egypt_spearman' || u.kind === 'slinger' || u.kind === 'axeman';
+      }
+      if (pantheon === 'norse' || pantheon === 'jotunn') {
+        return u.kind === 'ulfsark' || u.kind === 'throwing_axeman' || u.kind === 'hersir';
+      }
+      if (pantheon === 'atlantean') {
+        return u.kind === 'murmillo' || u.kind === 'arcus' || u.kind === 'contarius';
+      }
+      if (pantheon === 'chinese') {
+        return u.kind === 'halberdier';
+      }
+      return u.producedAt === 'barracks';
     }
 
-    // 5. Archery Range
+    // 6. Archery Range
     if (buildingKind === 'archery_range') {
-      if (u.kind === 'archer' || u.kind === 'peltast') return true;
-      if (u.kind === 'gastraphetes') return true;
-      if (u.kind === 'slinger' || u.kind === 'chariot_archer') return true;
-      if (u.kind === 'arcus' || u.kind === 'turma') return true;
-      if (u.kind === 'chu_ko_nu') return true;
-      return false;
+      if (pantheon === 'greek') {
+        return u.kind === 'archer' || u.kind === 'peltast' || u.kind === 'gastraphetes';
+      }
+      if (pantheon === 'chinese') {
+        return u.kind === 'chu_ko_nu';
+      }
+      return u.producedAt === 'archery_range';
     }
 
-    // 6. Stable
+    // 7. Stable
     if (buildingKind === 'stable') {
-      if (u.kind === 'cavalry' || u.kind === 'prodromos') return true;
-      if (u.kind === 'camel_rider') return true;
-      if (u.kind === 'raiding_cavalry' || u.kind === 'jarl') return true;
-      if (u.kind === 'contarius') return true;
-      if (u.kind === 'tiger_cavalry') return true;
-      return false;
+      if (pantheon === 'greek') {
+        return u.kind === 'cavalry' || u.kind === 'prodromos';
+      }
+      if (pantheon === 'chinese') {
+        return u.kind === 'tiger_cavalry';
+      }
+      return u.producedAt === 'stable';
     }
 
-    // 7. Great Hall (Norse Retold)
+    // 8. Great Hall (Norse Retold)
     if (buildingKind === 'great_hall') {
       return (
         u.kind === 'raiding_cavalry' ||
@@ -269,7 +522,7 @@ export function getBuildingExclusiveUnits(
       );
     }
 
-    // 8. Siege Works
+    // 9. Siege Works
     if (buildingKind === 'siege_works') {
       return (
         u.kind === 'ram' ||
@@ -284,7 +537,7 @@ export function getBuildingExclusiveUnits(
       );
     }
 
-    // 9. Dock
+    // 10. Dock
     if (buildingKind === 'dock') {
       return (
         u.kind === 'fishing_ship' ||
@@ -294,9 +547,9 @@ export function getBuildingExclusiveUnits(
       );
     }
 
-    // 10. Market
+    // 11. Market
     if (buildingKind === 'market') {
-      return u.kind === 'caravan' || u.producedAt === 'market';
+      return u.kind === 'llama_caravan' || u.producedAt === 'market';
     }
 
     // Default fallback: direct match on producedAt
@@ -306,7 +559,7 @@ export function getBuildingExclusiveUnits(
 
 /**
  * Filters technologies strictly belonging to the currently selected building.
- * Ensures the Command Center research list contains only relevant upgrades.
+ * Every returned tech is guaranteed to be accepted by `researchTech` at `buildingKind`.
  */
 export function getBuildingExclusiveTechs(
   buildingKind: BuildingKind,
@@ -346,24 +599,16 @@ export function getBuildingExclusiveTechs(
       );
     }
 
-    // 2. Temple: Divine researches, favor techs, and Age V Awakening
+    // 2. Temple: Divine researches, favor techs, Sun Ray (Apollo), and Age V Awakening
     if (buildingKind === 'temple') {
       return (
-        t.category === 'temple' ||
         t.building === 'temple' ||
-        t.id === 'omniscience' ||
-        t.id === 'mythic_rejuvenation' ||
-        t.id === 'secrets_of_titans' ||
-        t.id === 'golden_apples' ||
-        t.id === 'necropolis' ||
-        t.id === 'hammer_of_the_gods' ||
-        t.id === 'perception' ||
-        t.id === 'horns_of_consecration'
+        Boolean(t.secondaryBuildings?.includes('temple'))
       );
     }
 
-    // 3. Barracks / Counter-Barracks: Infantry upgrades only
-    if (buildingKind === 'barracks' || buildingKind === 'counter_barracks') {
+    // 3. Barracks: Infantry upgrades + Ares/Athena infantry mythic techs
+    if (buildingKind === 'barracks') {
       return (
         t.id === 'medium_soldiers' ||
         t.id === 'heavy_soldiers' ||
@@ -375,7 +620,16 @@ export function getBuildingExclusiveTechs(
       );
     }
 
-    // 4. Archery Range: Ranged upgrades only
+    // 4. Counter-Barracks: Soldier line upgrades
+    if (buildingKind === 'counter_barracks') {
+      return (
+        t.id === 'medium_soldiers' ||
+        t.id === 'heavy_soldiers' ||
+        t.id === 'champion_soldiers'
+      );
+    }
+
+    // 5. Archery Range: Ranged upgrades + Ballistics + soldier line
     if (buildingKind === 'archery_range') {
       return (
         t.id === 'enyo_bow_of_horror' ||
@@ -388,8 +642,17 @@ export function getBuildingExclusiveTechs(
       );
     }
 
-    // 5. Stable: Mounted upgrades
-    if (buildingKind === 'stable' || buildingKind === 'great_hall') {
+    // 6. Stable: Soldier line upgrades
+    if (buildingKind === 'stable') {
+      return (
+        t.id === 'medium_soldiers' ||
+        t.id === 'heavy_soldiers' ||
+        t.id === 'champion_soldiers'
+      );
+    }
+
+    // 7. Great Hall (Norse): Soldier line + Hammer of the Gods (Thor)
+    if (buildingKind === 'great_hall') {
       return (
         t.id === 'medium_soldiers' ||
         t.id === 'heavy_soldiers' ||
@@ -398,12 +661,12 @@ export function getBuildingExclusiveTechs(
       );
     }
 
-    // 6. Siege Works: Siege upgrades
+    // 8. Siege Works: Siege upgrades
     if (buildingKind === 'siege_works') {
       return t.id === 'engineers' || t.id === 'burning_pitch';
     }
 
-    // 7. Town Center: Economic gather techs and watch tower
+    // 9. Town Center / Village Center: Economic gather techs + Watch Tower (+ Hammer of the Gods on TC)
     if (buildingKind === 'town_center' || buildingKind === 'village_center') {
       return (
         t.id === 'hand_axe' ||
@@ -411,44 +674,45 @@ export function getBuildingExclusiveTechs(
         t.id === 'plow' ||
         t.id === 'hunting_dogs' ||
         t.id === 'husbandry' ||
-        t.id === 'watch_tower'
+        t.id === 'watch_tower' ||
+        (buildingKind === 'town_center' && t.id === 'hammer_of_the_gods')
       );
     }
 
-    // 8. Granary / Storehouse / Camps
+    // 10. Economic drop-off & guild buildings (strictly their own domain)
     if (buildingKind === 'granary') {
       return t.id === 'hunting_dogs' || t.id === 'husbandry' || t.id === 'plow';
     }
-    if (buildingKind === 'storehouse' || buildingKind === 'lumber_camp' || buildingKind === 'mining_camp') {
+    if (buildingKind === 'storehouse') {
       return t.id === 'hand_axe' || t.id === 'pickaxe';
     }
-
-    // 9. Armory: Core metallurgical upgrades
-    if (buildingKind === 'armory') {
+    if (buildingKind === 'lumber_camp') {
+      return t.id === 'hand_axe';
+    }
+    if (buildingKind === 'mining_camp') {
+      return t.id === 'pickaxe';
+    }
+    if (buildingKind === 'economic_guild') {
       return (
-        t.building === 'armory' ||
-        t.id === 'copper_weapons' ||
-        t.id === 'bronze_weapons' ||
-        t.id === 'iron_weapons' ||
-        t.id === 'copper_mail' ||
-        t.id === 'bronze_mail' ||
-        t.id === 'iron_mail' ||
-        t.id === 'copper_shields' ||
-        t.id === 'bronze_shields' ||
-        t.id === 'iron_shields' ||
-        t.id === 'ballistics' ||
-        t.id === 'burning_pitch' ||
-        t.id === 'forge_of_olympus' ||
-        t.id === 'olympian_weapons'
+        t.id === 'hand_axe' ||
+        t.id === 'pickaxe' ||
+        t.id === 'plow' ||
+        t.id === 'hunting_dogs' ||
+        t.id === 'husbandry'
       );
     }
 
-    // 10. Tower / Mirror Tower
-    if (buildingKind === 'tower' || buildingKind === 'mirror_tower') {
-      return t.id === 'watch_tower' || t.id === 'burning_pitch';
+    // 11. Armory: All metallurgical & forge upgrades
+    if (buildingKind === 'armory') {
+      return t.building === 'armory';
     }
 
-    // Fallback: strict match on primary building
-    return t.building === buildingKind || t.secondaryBuildings?.includes(buildingKind);
+    // 12. Tower / Mirror Tower: Fortification upgrades
+    if (buildingKind === 'tower' || buildingKind === 'mirror_tower') {
+      return t.id === 'watch_tower' || t.id === 'ballistics' || t.id === 'burning_pitch';
+    }
+
+    // Fallback: strict match on primary or secondary building
+    return t.building === buildingKind || Boolean(t.secondaryBuildings?.includes(buildingKind));
   });
 }
