@@ -102,13 +102,14 @@ interface MobileCommandSheetProps {
 
 function canAffordCost(
   res: GameHudSnapshot['resources'],
-  cost: { food?: number; wood?: number; gold?: number; favor?: number }
+  cost?: { food?: number; wood?: number; gold?: number; favor?: number } | null
 ): boolean {
+  if (!cost) return false;
   return (
-    res.food >= (cost.food ?? 0) &&
-    res.wood >= (cost.wood ?? 0) &&
-    res.gold >= (cost.gold ?? 0) &&
-    res.favor >= (cost.favor ?? 0)
+    (res?.food ?? 0) >= (cost.food ?? 0) &&
+    (res?.wood ?? 0) >= (cost.wood ?? 0) &&
+    (res?.gold ?? 0) >= (cost.gold ?? 0) &&
+    (res?.favor ?? 0) >= (cost.favor ?? 0)
   );
 }
 
@@ -345,7 +346,7 @@ export const MobileCommandSheet: React.FC<MobileCommandSheetProps> = ({
           {selectedBuildingKind === 'town_center' && nextAge && nextAgeCost && (
             <div className="mt-2 flex w-full items-center justify-between gap-2 rounded-xl border border-[#d4af37]/60 bg-gradient-to-r from-[#211a0c] via-[#141d2d] to-[#121824] p-2">
               <div className="flex items-center gap-2 min-w-0">
-                <EraIcon era={nextAge} size={24} />
+                <EraIcon age={nextAge} pantheon={hud.pantheon} size={24} />
                 <div className="min-w-0">
                   <div className="text-[11px] font-bold text-[#fef08a] truncate">
                     Avançar para {AGE_NAMES[nextAge]}
@@ -737,7 +738,7 @@ export const MobileCommandSheet: React.FC<MobileCommandSheetProps> = ({
                           {buildingTechs.map((t) => {
                             const locked = hud.age < t.minAge;
                             const researched = hud.researchedTechs.includes(t.id);
-                            const effectiveCost = getEffectiveTechCost(t.cost, hud.pantheon, hud.majorGodName);
+                            const effectiveCost = getEffectiveTechCost(t, hud.researchedTechs);
                             const affordable = !locked && !researched && canAffordCost(hud.resources, effectiveCost);
 
                             return (
@@ -987,7 +988,7 @@ export const MobileCommandSheet: React.FC<MobileCommandSheetProps> = ({
                   {techList.slice(0, 30).map((t) => {
                     const locked = hud.age < t.minAge;
                     const researched = hud.researchedTechs.includes(t.id);
-                    const effectiveCost = getEffectiveTechCost(t.cost, hud.pantheon, hud.majorGodName);
+                    const effectiveCost = getEffectiveTechCost(t, hud.researchedTechs);
                     const affordable = !locked && !researched && canAffordCost(hud.resources, effectiveCost);
 
                     return (

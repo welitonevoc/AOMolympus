@@ -175,7 +175,8 @@ export function formatClock(totalSeconds: number): string {
   return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
 }
 
-export function formatCost(cost: { food?: number; wood?: number; gold?: number; favor?: number }): string {
+export function formatCost(cost?: { food?: number; wood?: number; gold?: number; favor?: number } | null): string {
+  if (!cost) return '';
   const parts: string[] = [];
   if (cost.food) parts.push(`${cost.food} Alim`);
   if (cost.wood) parts.push(`${cost.wood} Mad`);

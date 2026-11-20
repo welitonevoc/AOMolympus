@@ -142,7 +142,15 @@ export function getBuildingExclusiveUnits(
   return unitList.filter((u) => {
     // 1. Town Center & Village Center
     if (buildingKind === 'town_center' || buildingKind === 'village_center') {
-      if (u.kind === 'villager' || u.kind === 'dwarf' || u.kind === 'chinese_peasant') return true;
+      if (
+        u.kind === 'villager' ||
+        u.kind === 'dwarf' ||
+        u.kind === 'norse_dwarf' ||
+        u.kind === 'citizen' ||
+        u.kind === 'chinese_peasant'
+      ) {
+        return true;
+      }
       if (
         u.isHero &&
         u.kind !== 'priest' &&
