@@ -283,10 +283,10 @@ export class VisualEffectsManager {
     this.slashGeo = new THREE.RingGeometry(0.55, 1.18, 12, 1, -Math.PI * 0.42, Math.PI * 0.84);
     this.slashGeo.rotateX(-Math.PI / 2);
 
-    // 5. Night building warm PointLights (max 4 active around camera)
+    // 5. Night building warm PointLights (up to 6 active around camera for warm town illumination)
     if (!isSoftwareGl) {
-      for (let i = 0; i < 4; i++) {
-        const pl = new THREE.PointLight(0xff9b3d, 0, 14, 1.8);
+      for (let i = 0; i < 6; i++) {
+        const pl = new THREE.PointLight(0xffb45c, 0, 28, 1.35);
         pl.visible = false;
         this.scene.add(pl);
         this.nightLights.push(pl);
@@ -722,7 +722,7 @@ export class VisualEffectsManager {
       const dx = b.mesh.position.x - camTarget.x;
       const dz = b.mesh.position.z - camTarget.z;
       const dSq = dx * dx + dz * dz;
-      if (dSq <= 48 * 48) {
+      if (dSq <= 64 * 64) {
         candidates.push({ distSq: dSq, pos: b.mesh.position });
       }
     }
@@ -736,9 +736,9 @@ export class VisualEffectsManager {
         continue;
       }
       pl.visible = true;
-      pl.position.set(cand.pos.x, cand.pos.y + 3.2, cand.pos.z);
-      const flicker = 0.88 + Math.sin(elapsed * 8.5 + i * 2.1) * 0.12 + Math.cos(elapsed * 13.2 + i) * 0.06;
-      pl.intensity = 4.2 * flicker;
+      pl.position.set(cand.pos.x, cand.pos.y + 3.8, cand.pos.z);
+      const flicker = 0.92 + Math.sin(elapsed * 7.5 + i * 2.1) * 0.08 + Math.cos(elapsed * 11.8 + i) * 0.04;
+      pl.intensity = 5.8 * flicker;
     }
   }
 

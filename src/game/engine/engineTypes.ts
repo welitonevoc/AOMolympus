@@ -331,10 +331,12 @@ export interface DayNightKeyframe {
   sunIntensity: number;
   sunPos: [number, number, number];
   skyColor: number;
+  hemiSkyColor?: number;
   groundColor: number;
   hemiIntensity: number;
   rimColor: number;
   rimIntensity: number;
+  exposure?: number;
 }
 
 export interface UnitModifiers {
@@ -415,50 +417,58 @@ export const DAY_NIGHT_KEYFRAMES: DayNightKeyframe[] = [
   {
     time: 0.56,
     label: 'Entardecer',
-    sunColor: 0xf57c2d,
-    sunIntensity: 1.1,
-    sunPos: [-68, 22, 36],
-    skyColor: 0xd97d42,
-    groundColor: 0x362115,
-    hemiIntensity: 0.42,
-    rimColor: 0xa855f7,
-    rimIntensity: 0.26,
+    sunColor: 0xff8d47,
+    sunIntensity: 1.18,
+    sunPos: [-64, 26, 36],
+    skyColor: 0xc97449,
+    hemiSkyColor: 0xf0ab80,
+    groundColor: 0x4f3629,
+    hemiIntensity: 0.54,
+    rimColor: 0xb784f7,
+    rimIntensity: 0.3,
+    exposure: 0.91,
   },
   {
     time: 0.65,
     label: 'Crepúsculo',
-    sunColor: 0x9d68e8,
-    sunIntensity: 0.58,
-    sunPos: [-48, 18, -12],
-    skyColor: 0x2c2973,
-    groundColor: 0x1a1742,
-    hemiIntensity: 0.32,
-    rimColor: 0x38bdf8,
-    rimIntensity: 0.2,
+    sunColor: 0xbda4ff,
+    sunIntensity: 0.96,
+    sunPos: [-46, 36, -12],
+    skyColor: 0x2e3769,
+    hemiSkyColor: 0x8ea6e6,
+    groundColor: 0x3b4269,
+    hemiIntensity: 0.64,
+    rimColor: 0x7dd3fc,
+    rimIntensity: 0.36,
+    exposure: 0.95,
   },
   {
     time: 0.76,
     label: 'Noite',
-    sunColor: 0x8cbcf7,
-    sunIntensity: 0.46,
-    sunPos: [42, 62, -35],
-    skyColor: 0x0f172a,
-    groundColor: 0x090d16,
-    hemiIntensity: 0.26,
-    rimColor: 0x6366f1,
-    rimIntensity: 0.18,
+    sunColor: 0xc8e1ff,
+    sunIntensity: 1.06,
+    sunPos: [44, 68, -32],
+    skyColor: 0x1b2b4a,
+    hemiSkyColor: 0x7ea8de,
+    groundColor: 0x384e70,
+    hemiIntensity: 0.68,
+    rimColor: 0x93c5fd,
+    rimIntensity: 0.42,
+    exposure: 0.98,
   },
   {
     time: 0.9,
     label: 'Madrugada',
-    sunColor: 0x818cf8,
-    sunIntensity: 0.5,
-    sunPos: [62, 36, -18],
-    skyColor: 0x1b1945,
-    groundColor: 0x131428,
-    hemiIntensity: 0.28,
-    rimColor: 0xf472b6,
-    rimIntensity: 0.18,
+    sunColor: 0xbed0ff,
+    sunIntensity: 1.02,
+    sunPos: [58, 44, -18],
+    skyColor: 0x283564,
+    hemiSkyColor: 0x8aa8e0,
+    groundColor: 0x3c496b,
+    hemiIntensity: 0.64,
+    rimColor: 0xf9a8d4,
+    rimIntensity: 0.36,
+    exposure: 0.95,
   },
 ];
 

@@ -260,12 +260,15 @@ const _sunColorA = new THREE.Color();
 const _sunColorB = new THREE.Color();
 const _hemiSkyA = new THREE.Color();
 const _hemiSkyB = new THREE.Color();
+const _hemiLightSkyA = new THREE.Color();
+const _hemiLightSkyB = new THREE.Color();
 const _hemiGndA = new THREE.Color();
 const _hemiGndB = new THREE.Color();
 const _rimColorA = new THREE.Color();
 const _rimColorB = new THREE.Color();
 const _targetSunColor = new THREE.Color();
 const _targetSkyColor = new THREE.Color();
+const _targetHemiSkyColor = new THREE.Color();
 const _targetGndColor = new THREE.Color();
 const _targetRimColor = new THREE.Color();
 const _targetFogColor = new THREE.Color();
@@ -4034,6 +4037,9 @@ export class AoMEngine {
       const cycle = DARKEST_NIGHT_CYCLES[this.darkestNightStep % DARKEST_NIGHT_CYCLES.length];
       this.darkestNightStep++;
       this.dayNightCycle = false;
+      const isNightPreset = cycle.label.toLowerCase().includes('noite');
+      const isDuskPreset = cycle.label.toLowerCase().includes('entardecer') || cycle.label.toLowerCase().includes('submundo');
+      this.dayTimeLabel = isNightPreset ? 'Noite' : isDuskPreset ? 'Entardecer' : 'Dia';
       if (this.sunLight) {
         this.sunLight.color.setHex(cycle.sunColor);
         this.sunLight.intensity = cycle.sunIntensity;
@@ -4042,9 +4048,13 @@ export class AoMEngine {
       if (this.hemiLight) {
         this.hemiLight.color.setHex(cycle.hemiSky);
         this.hemiLight.groundColor.setHex(cycle.hemiGround);
-        this.hemiLight.intensity = cycle.hemiIntensity * 0.78;
+        this.hemiLight.intensity = cycle.hemiIntensity;
       }
-      this.scene.environmentIntensity = THREE.MathUtils.clamp(0.08 + cycle.sunIntensity * 0.12, 0.09, 0.26);
+      this.scene.environmentIntensity = THREE.MathUtils.clamp(0.14 + cycle.sunIntensity * 0.1, 0.22, 0.29);
+      this.renderer.toneMappingExposure = isNightPreset ? 0.98 : isDuskPreset ? 0.93 : 0.88;
+      if (this.scene.background instanceof THREE.Color) {
+        this.scene.background.setHex(cycle.fogHex);
+      }
       this.scene.fog = this.createAtmosphericFog(cycle.fogHex);
       soundEngine.playSelect();
       this.notifyStatus(`🌙 IN DARKEST NIGHT: Iluminação alterada para ${cycle.label}!`);
@@ -9466,24 +9476,26 @@ export class AoMEngine {
         const mapCfg = MAPS[this.mapId];
         if (this.eclipseTimer > 0) {
           this.dayTimeLabel = 'Eclipse';
-          _targetSunPos.set(-45, 45, 10);
-          _targetSunColor.setHex(0x9333ea);
-          _targetSkyColor.setHex(0x180a2a);
-          _targetGndColor.setHex(0x280e3d);
-          _targetRimColor.setHex(0xc084fc);
+          _targetSunPos.set(-42, 54, 14);
+          _targetSunColor.setHex(0xc084fc);
+          _targetSkyColor.setHex(0x23143c);
+          _targetHemiSkyColor.setHex(0x8868cf);
+          _targetGndColor.setHex(0x3f2d5e);
+          _targetRimColor.setHex(0xe879f9);
 
           const eclipseDamp = Math.min(1, simDt * 3.5);
           this.sunLight.position.lerp(_targetSunPos, eclipseDamp);
           this.sunLight.color.lerp(_targetSunColor, eclipseDamp);
-          this.sunLight.intensity = THREE.MathUtils.lerp(this.sunLight.intensity, 0.48, eclipseDamp);
+          this.sunLight.intensity = THREE.MathUtils.lerp(this.sunLight.intensity, 0.96, eclipseDamp);
 
-          this.hemiLight.color.lerp(_targetSkyColor, eclipseDamp);
+          this.hemiLight.color.lerp(_targetHemiSkyColor, eclipseDamp);
           this.hemiLight.groundColor.lerp(_targetGndColor, eclipseDamp);
-          this.hemiLight.intensity = THREE.MathUtils.lerp(this.hemiLight.intensity, 0.35, eclipseDamp);
+          this.hemiLight.intensity = THREE.MathUtils.lerp(this.hemiLight.intensity, 0.62, eclipseDamp);
 
           this.rimLight.color.lerp(_targetRimColor, eclipseDamp);
-          this.rimLight.intensity = THREE.MathUtils.lerp(this.rimLight.intensity, 0.34, eclipseDamp);
-          this.scene.environmentIntensity = THREE.MathUtils.lerp(this.scene.environmentIntensity, 0.1, eclipseDamp);
+          this.rimLight.intensity = THREE.MathUtils.lerp(this.rimLight.intensity, 0.46, eclipseDamp);
+          this.scene.environmentIntensity = THREE.MathUtils.lerp(this.scene.environmentIntensity, 0.22, eclipseDamp);
+          this.renderer.toneMappingExposure = THREE.MathUtils.lerp(this.renderer.toneMappingExposure, 0.96, eclipseDamp);
 
           if (this.scene.background instanceof THREE.Color) {
             this.scene.background.lerp(_targetSkyColor, eclipseDamp);
@@ -9538,6 +9550,11 @@ export class AoMEngine {
           _hemiSkyB.setHex(k1.skyColor);
           _targetSkyColor.lerpColors(_hemiSkyA, _hemiSkyB, s);
 
+          // Separate luminous HemisphereLight sky fill from dark night sky backdrop so terrain/units never go black
+          _hemiLightSkyA.setHex(k0.hemiSkyColor ?? k0.skyColor);
+          _hemiLightSkyB.setHex(k1.hemiSkyColor ?? k1.skyColor);
+          _targetHemiSkyColor.lerpColors(_hemiLightSkyA, _hemiLightSkyB, s);
+
           _hemiGndA.setHex(k0.groundColor);
           _hemiGndB.setHex(k1.groundColor);
           _targetGndColor.lerpColors(_hemiGndA, _hemiGndB, s);
@@ -9547,18 +9564,22 @@ export class AoMEngine {
           _rimColorB.setHex(k1.rimColor);
           _targetRimColor.lerpColors(_rimColorA, _rimColorB, s);
           const targetRimIntensity = THREE.MathUtils.lerp(k0.rimIntensity, k1.rimIntensity, s);
+          const targetExposure = THREE.MathUtils.lerp(k0.exposure ?? 0.88, k1.exposure ?? 0.88, s);
 
           // Blend with map-specific sky tone during daytime
           const isDaytime = cycle < 0.62;
           if (mapCfg) {
             _mapSkyColor.setHex(mapCfg.skyColorHex);
-            const mapBlend = isDaytime ? 0.3 : 0.08;
+            const mapBlend = isDaytime ? 0.3 : 0.1;
             _targetSkyColor.lerp(_mapSkyColor, mapBlend);
+            if (isDaytime) {
+              _targetHemiSkyColor.lerp(_mapSkyColor, 0.22);
+            }
           }
 
           // Slightly ground-muted horizon fog color so bright skies never create chalky white smog
-          _targetFogColor.copy(_targetSkyColor).lerp(_targetGndColor, isDaytime ? 0.14 : 0.06);
-          const targetEnvIntensity = THREE.MathUtils.clamp(0.08 + targetSunIntensity * 0.13, 0.09, 0.27);
+          _targetFogColor.copy(_targetSkyColor).lerp(_targetGndColor, isDaytime ? 0.14 : 0.1);
+          const targetEnvIntensity = THREE.MathUtils.clamp(0.14 + targetSunIntensity * 0.095, 0.21, 0.29);
 
           // Apply smoothly
           const stepDamp = Math.min(1, simDt * 8.0);
@@ -9566,7 +9587,7 @@ export class AoMEngine {
           this.sunLight.color.lerp(_targetSunColor, stepDamp);
           this.sunLight.intensity = THREE.MathUtils.lerp(this.sunLight.intensity, targetSunIntensity, stepDamp);
 
-          this.hemiLight.color.lerp(_targetSkyColor, stepDamp);
+          this.hemiLight.color.lerp(_targetHemiSkyColor, stepDamp);
           this.hemiLight.groundColor.lerp(_targetGndColor, stepDamp);
           this.hemiLight.intensity = THREE.MathUtils.lerp(this.hemiLight.intensity, targetHemiIntensity, stepDamp);
 
@@ -9575,6 +9596,11 @@ export class AoMEngine {
           this.scene.environmentIntensity = THREE.MathUtils.lerp(
             this.scene.environmentIntensity,
             targetEnvIntensity,
+            stepDamp
+          );
+          this.renderer.toneMappingExposure = THREE.MathUtils.lerp(
+            this.renderer.toneMappingExposure,
+            targetExposure,
             stepDamp
           );
 
@@ -9605,6 +9631,7 @@ export class AoMEngine {
           this.rimLight.color.lerp(_targetRimColor, staticDamp);
           this.rimLight.intensity = THREE.MathUtils.lerp(this.rimLight.intensity, 0.26, staticDamp);
           this.scene.environmentIntensity = THREE.MathUtils.lerp(this.scene.environmentIntensity, 0.26, staticDamp);
+          this.renderer.toneMappingExposure = THREE.MathUtils.lerp(this.renderer.toneMappingExposure, 0.88, staticDamp);
 
           if (this.scene.background instanceof THREE.Color) {
             this.scene.background.lerp(_targetSkyColor, staticDamp);
@@ -9639,7 +9666,12 @@ export class AoMEngine {
     if (this.sunLight) {
       this.vfxManager?.updateShadowFrustumFollow(this.sunLight, this.camTarget, this.currentSunOffset);
     }
-    const isNightOrDusk = this.eclipseTimer > 0 || this.dayTimeLabel === 'Entardecer' || this.dayTimeLabel === 'Noite';
+    const isNightOrDusk =
+      this.eclipseTimer > 0 ||
+      this.dayTimeLabel === 'Entardecer' ||
+      this.dayTimeLabel === 'Crepúsculo' ||
+      this.dayTimeLabel === 'Noite' ||
+      this.dayTimeLabel === 'Madrugada';
     this.vfxManager?.updateNightLights(this.buildings.values(), this.camTarget, isNightOrDusk, this.elapsedSeconds);
     this.vfxManager?.update(dt, this.elapsedSeconds);
 
