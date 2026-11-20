@@ -311,39 +311,85 @@ export function createExpandedBuildingMesh(
     barHeight = 7.6;
     barWidth = 2.5;
   } else if (kind === 'wall') {
-    // Evolving Wall: Wood palisade -> Stone -> Fortified / Citadel / Orichalcum
-    const wallHeight = age >= 4 ? 2.55 : age >= 3 ? 2.2 : 1.75;
+    // Evolving Wall across all 5 Ages:
+    // Age 1: Rough wood palisade -> Age 2: Braced timber/bronze -> Age 3: Stone masonry
+    // Age 4: Fortified Citadel / Orichalcum -> Age 5: Era dos Deuses gilded battlements & glowing beacons
+    const wallHeight = age >= 5 ? 2.85 : age >= 4 ? 2.55 : age >= 3 ? 2.2 : age >= 2 ? 1.92 : 1.65;
     const isWood = age <= 2 && pantheon !== 'atlantean';
-    const bodyMat = isWood ? pal.timber : age >= 4 && pantheon === 'atlantean' ? pal.orichalcum : cm.wall;
+    const bodyMat = isWood
+      ? pal.timber
+      : age >= 4 && pantheon === 'atlantean'
+        ? pal.orichalcum
+        : cm.wall;
     addPart(new THREE.BoxGeometry(2.85, 0.26, 1.05), cm.base, 0, 0.13, 0);
     addPart(new THREE.BoxGeometry(2.7, wallHeight, 0.82), bodyMat, 0, 0.26 + wallHeight / 2, 0);
-    // Battlements / Crenellations
-    for (const cx of [-0.95, 0, 0.95]) {
+    if (age >= 2) {
+      // Horizontal reinforcement cross-band / stone stringcourse
       addPart(
-        isWood ? new THREE.ConeGeometry(0.24, 0.55, 5) : new THREE.BoxGeometry(0.55, 0.36, 0.9),
-        age >= 4 ? cm.trim : cm.base,
-        cx,
-        0.26 + wallHeight + 0.18,
+        new THREE.BoxGeometry(2.78, 0.18, 0.92),
+        age >= 4 ? pal.gold : cm.trim,
+        0,
+        0.26 + wallHeight * 0.74,
         0
       );
     }
-    addPart(new THREE.BoxGeometry(0.6, 0.4, 0.08), teamMat, 0, 0.26 + wallHeight * 0.55, 0.45);
+    // Battlements / Crenellations
+    for (const cx of [-0.95, 0, 0.95]) {
+      addPart(
+        isWood ? new THREE.ConeGeometry(0.24, 0.55, 5) : new THREE.BoxGeometry(0.55, 0.38, 0.92),
+        age >= 5 ? pal.gold : age >= 4 ? cm.trim : cm.base,
+        cx,
+        0.26 + wallHeight + 0.19,
+        0
+      );
+    }
+    if (age >= 4) {
+      // Flanking reinforced end-buttresses
+      addPart(new THREE.BoxGeometry(0.42, wallHeight + 0.28, 1.04), cm.trim, -1.28, 0.26 + wallHeight * 0.5, 0);
+      addPart(new THREE.BoxGeometry(0.42, wallHeight + 0.28, 1.04), cm.trim, 1.28, 0.26 + wallHeight * 0.5, 0);
+    }
+    if (age >= 5) {
+      // Era V gilded corner finials
+      addPart(new THREE.OctahedronGeometry(0.22, 0), cm.accent, -1.28, 0.26 + wallHeight + 0.56, 0);
+      addPart(new THREE.OctahedronGeometry(0.22, 0), cm.accent, 1.28, 0.26 + wallHeight + 0.56, 0);
+    }
+    addPart(new THREE.BoxGeometry(0.6, 0.4, 0.08), teamMat, 0, 0.26 + wallHeight * 0.55, 0.46);
     markerRadius = 1.45;
-    barHeight = wallHeight + 1.0;
+    barHeight = wallHeight + (age >= 5 ? 1.35 : 1.0);
     barWidth = 1.8;
   } else if (kind === 'gate') {
-    // Fortified arched gatehouse with flanking towers & open passage arch
-    const gateH = age >= 4 ? 2.85 : age >= 3 ? 2.45 : 2.0;
-    addPart(new THREE.BoxGeometry(1.05, gateH, 1.25), cm.base, -1.25, gateH / 2, 0);
-    addPart(new THREE.BoxGeometry(1.05, gateH, 1.25), cm.base, 1.25, gateH / 2, 0);
-    addPart(new THREE.BoxGeometry(3.45, 0.68, 1.1), cm.wall, 0, gateH + 0.2, 0);
-    addPart(new THREE.ConeGeometry(0.72, 0.72, 4), cm.roof, -1.25, gateH + 0.72, 0, 0, Math.PI / 4, 0);
-    addPart(new THREE.ConeGeometry(0.72, 0.72, 4), cm.roof, 1.25, gateH + 0.72, 0, 0, Math.PI / 4, 0);
+    // Fortified arched gatehouse evolving cleanly from Age 1 -> Age 5
+    const gateH = age >= 5 ? 3.2 : age >= 4 ? 2.85 : age >= 3 ? 2.45 : age >= 2 ? 2.18 : 1.92;
+    const isWood = age <= 2 && pantheon !== 'atlantean';
+    const pillarMat = isWood ? pal.timber : age >= 4 && pantheon === 'atlantean' ? pal.orichalcum : cm.base;
+    addPart(new THREE.BoxGeometry(1.05, gateH, 1.25), pillarMat, -1.25, gateH / 2, 0);
+    addPart(new THREE.BoxGeometry(1.05, gateH, 1.25), pillarMat, 1.25, gateH / 2, 0);
+    addPart(new THREE.BoxGeometry(3.45, 0.68, 1.12), isWood ? pal.timber : cm.wall, 0, gateH + 0.2, 0);
+    addPart(new THREE.ConeGeometry(0.74, 0.74, 4), age >= 5 ? pal.gold : cm.roof, -1.25, gateH + 0.74, 0, 0, Math.PI / 4, 0);
+    addPart(new THREE.ConeGeometry(0.74, 0.74, 4), age >= 5 ? pal.gold : cm.roof, 1.25, gateH + 0.74, 0, 0, Math.PI / 4, 0);
+    if (age >= 2) {
+      addPart(new THREE.BoxGeometry(3.55, 0.18, 1.22), age >= 4 ? pal.gold : cm.trim, 0, gateH + 0.56, 0);
+    }
+    if (age >= 3) {
+      // Flanking watch parapet shields on towers
+      addPart(new THREE.CylinderGeometry(0.28, 0.28, 0.08, 10), cm.trim, -1.25, gateH * 0.65, 0.65, Math.PI / 2, 0, 0);
+      addPart(new THREE.CylinderGeometry(0.28, 0.28, 0.08, 10), cm.trim, 1.25, gateH * 0.65, 0.65, Math.PI / 2, 0, 0);
+    }
+    if (age >= 4) {
+      // Fortified crest & glowing tower lanterns
+      addPart(new THREE.BoxGeometry(1.15, 0.42, 0.9), cm.trim, 0, gateH + 0.8, 0);
+      addPart(new THREE.OctahedronGeometry(0.22, 0), pal.ember, -1.25, gateH + 1.25, 0);
+      addPart(new THREE.OctahedronGeometry(0.22, 0), pal.ember, 1.25, gateH + 1.25, 0);
+    }
+    if (age >= 5) {
+      // Era V Divine Gatehouse Crown
+      beaconCrystal = addPart(new THREE.OctahedronGeometry(0.32, 0), cm.accent, 0, gateH + 1.48, 0);
+    }
     // Portcullis bars overhead
-    addPart(new THREE.BoxGeometry(1.5, 0.38, 0.16), pal.steel, 0, gateH - 0.35, 0);
-    addPart(new THREE.BoxGeometry(0.85, 0.52, 0.08), teamMat, 0, gateH + 0.25, 0.6);
+    addPart(new THREE.BoxGeometry(1.5, 0.38, 0.16), age >= 4 ? pal.gold : pal.steel, 0, gateH - 0.35, 0);
+    addPart(new THREE.BoxGeometry(0.85, 0.52, 0.08), teamMat, 0, gateH + 0.25, 0.62);
     markerRadius = 1.65;
-    barHeight = gateH + 1.5;
+    barHeight = gateH + (age >= 5 ? 1.95 : 1.5);
     barWidth = 2.2;
   } else if (kind === 'mirror_tower') {
     // Atlantean Helios Mirror Tower: slender orichalcum spire with golden parabolic sun mirror & radiant crystal

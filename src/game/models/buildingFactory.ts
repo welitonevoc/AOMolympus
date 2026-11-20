@@ -8,6 +8,7 @@ import { createChineseBuildingMesh } from '../../civilizacao/chineses/chineseMod
 import { createExpandedBuildingMesh, isExpandedBuildingKind } from '../expandedBuildingModels';
 import { getCivLook, MaterialPalette } from './palette';
 import { attachGroundMarkers, attachHealthBar } from './shared';
+import { applyBuildingAgeEvolution } from './buildingAgeEvolution';
 
 function forwardBuildingAnimRefs(root: THREE.Group, builtGroup: THREE.Group): void {
   const ud = builtGroup.userData;
@@ -16,6 +17,66 @@ function forwardBuildingAnimRefs(root: THREE.Group, builtGroup: THREE.Group): vo
   if (ud.atlanteanFlames) root.userData.atlanteanFlames = ud.atlanteanFlames;
   if (ud.atlanteanRelics) root.userData.atlanteanRelics = ud.atlanteanRelics;
   if (ud.atlanteanRelicRings) root.userData.atlanteanRelicRings = ud.atlanteanRelicRings;
+}
+
+function finalizeBuiltBuilding(
+  root: THREE.Group,
+  built: {
+    group: THREE.Group;
+    markerRadius: number;
+    barHeight: number;
+    barWidth: number;
+    beaconCrystal?: THREE.Object3D;
+    vortexRing?: THREE.Object3D;
+    metropolisHalo?: THREE.Object3D;
+    metropolisCrystal?: THREE.Object3D;
+  },
+  kind: BuildingKind,
+  team: TeamId,
+  pal: MaterialPalette,
+  enableShadows: boolean,
+  pantheon: PantheonId,
+  majorGod: string | undefined,
+  age: AgeLevel
+): THREE.Group {
+  root.add(built.group);
+  root.userData.ageTier = age;
+  if (built.beaconCrystal) root.userData.beaconCrystal = built.beaconCrystal;
+  if (built.vortexRing) root.userData.vortexRing = built.vortexRing;
+  if (built.metropolisHalo) root.userData.metropolisHalo = built.metropolisHalo;
+  if (built.metropolisCrystal) root.userData.metropolisCrystal = built.metropolisCrystal;
+  forwardBuildingAnimRefs(root, built.group);
+
+  const evo = applyBuildingAgeEvolution(
+    root,
+    built.group,
+    kind,
+    team,
+    pal,
+    pantheon,
+    age,
+    enableShadows,
+    majorGod
+  );
+  if (evo.addedFlames.length > 0) {
+    const existing = Array.isArray(root.userData.tcFlames)
+      ? (root.userData.tcFlames as THREE.Object3D[])
+      : [];
+    root.userData.tcFlames = [...existing, ...evo.addedFlames];
+  }
+  if (!root.userData.beaconCrystal && evo.beaconCrystal) {
+    root.userData.beaconCrystal = evo.beaconCrystal;
+  }
+  if (!root.userData.metropolisHalo && evo.metropolisHalo) {
+    root.userData.metropolisHalo = evo.metropolisHalo;
+  }
+  if (!root.userData.metropolisCrystal && evo.metropolisCrystal) {
+    root.userData.metropolisCrystal = evo.metropolisCrystal;
+  }
+
+  attachGroundMarkers(root, built.markerRadius + evo.markerRadiusDelta, pal, team);
+  attachHealthBar(root, built.barHeight + evo.barHeightDelta, built.barWidth);
+  return root;
 }
 
 export function createBuildingMesh(
@@ -28,84 +89,38 @@ export function createBuildingMesh(
   age: AgeLevel = 1
 ): THREE.Group {
   const root = new THREE.Group();
+  root.userData.ageTier = age;
   const teamMat = team === 'player' ? pal.tunicPlayer : pal.tunicEnemy;
   const look = getCivLook(pantheon, pal, majorGod);
 
   if (isExpandedBuildingKind(kind)) {
     const built = createExpandedBuildingMesh(kind, team, pal, enableShadows, pantheon, majorGod, age);
-    root.add(built.group);
-    if (built.beaconCrystal) {
-      root.userData.beaconCrystal = built.beaconCrystal;
-    }
-    if (built.vortexRing) {
-      root.userData.vortexRing = built.vortexRing;
-    }
-    attachGroundMarkers(root, built.markerRadius, pal, team);
-    attachHealthBar(root, built.barHeight, built.barWidth);
-    return root;
+    return finalizeBuiltBuilding(root, built, kind, team, pal, enableShadows, pantheon, majorGod, age);
   }
 
   if (look.style === 'norse') {
     const built = createNorseBuildingMesh(kind, team, pal, enableShadows, age, pantheon, majorGod);
-    root.add(built.group);
-    if (built.beaconCrystal) root.userData.beaconCrystal = built.beaconCrystal;
-    if (built.vortexRing) root.userData.vortexRing = built.vortexRing;
-    if (built.metropolisHalo) root.userData.metropolisHalo = built.metropolisHalo;
-    if (built.metropolisCrystal) root.userData.metropolisCrystal = built.metropolisCrystal;
-    forwardBuildingAnimRefs(root, built.group);
-    attachGroundMarkers(root, built.markerRadius, pal, team);
-    attachHealthBar(root, built.barHeight, built.barWidth);
-    return root;
+    return finalizeBuiltBuilding(root, built, kind, team, pal, enableShadows, pantheon, majorGod, age);
   }
 
   if (look.style === 'egyptian') {
     const built = createEgyptianBuildingMesh(kind, team, pal, enableShadows, age, pantheon, majorGod);
-    root.add(built.group);
-    if (built.beaconCrystal) root.userData.beaconCrystal = built.beaconCrystal;
-    if (built.vortexRing) root.userData.vortexRing = built.vortexRing;
-    if (built.metropolisHalo) root.userData.metropolisHalo = built.metropolisHalo;
-    if (built.metropolisCrystal) root.userData.metropolisCrystal = built.metropolisCrystal;
-    forwardBuildingAnimRefs(root, built.group);
-    attachGroundMarkers(root, built.markerRadius, pal, team);
-    attachHealthBar(root, built.barHeight, built.barWidth);
-    return root;
+    return finalizeBuiltBuilding(root, built, kind, team, pal, enableShadows, pantheon, majorGod, age);
   }
 
   if (look.style === 'greek') {
     const built = createGreekBuildingMesh(kind, team, pal, enableShadows, age, pantheon, majorGod);
-    root.add(built.group);
-    if (built.beaconCrystal) root.userData.beaconCrystal = built.beaconCrystal;
-    if (built.vortexRing) root.userData.vortexRing = built.vortexRing;
-    if (built.metropolisHalo) root.userData.metropolisHalo = built.metropolisHalo;
-    if (built.metropolisCrystal) root.userData.metropolisCrystal = built.metropolisCrystal;
-    forwardBuildingAnimRefs(root, built.group);
-    attachGroundMarkers(root, built.markerRadius, pal, team);
-    attachHealthBar(root, built.barHeight, built.barWidth);
-    return root;
+    return finalizeBuiltBuilding(root, built, kind, team, pal, enableShadows, pantheon, majorGod, age);
   }
 
   if (look.style === 'atlantean') {
     const built = createAtlanteanBuildingMesh(kind, team, pal, enableShadows, age, pantheon, majorGod);
-    root.add(built.group);
-    if (built.beaconCrystal) root.userData.beaconCrystal = built.beaconCrystal;
-    if (built.vortexRing) root.userData.vortexRing = built.vortexRing;
-    if (built.metropolisHalo) root.userData.metropolisHalo = built.metropolisHalo;
-    if (built.metropolisCrystal) root.userData.metropolisCrystal = built.metropolisCrystal;
-    forwardBuildingAnimRefs(root, built.group);
-    attachGroundMarkers(root, built.markerRadius, pal, team);
-    attachHealthBar(root, built.barHeight, built.barWidth);
-    return root;
+    return finalizeBuiltBuilding(root, built, kind, team, pal, enableShadows, pantheon, majorGod, age);
   }
 
   if (look.style === 'chinese') {
     const built = createChineseBuildingMesh(kind, team, pal, enableShadows, age, pantheon, majorGod);
-    root.add(built.group);
-    if (built.beaconCrystal) root.userData.beaconCrystal = built.beaconCrystal;
-    if (built.vortexRing) root.userData.vortexRing = built.vortexRing;
-    forwardBuildingAnimRefs(root, built.group);
-    attachGroundMarkers(root, built.markerRadius, pal, team);
-    attachHealthBar(root, built.barHeight, built.barWidth);
-    return root;
+    return finalizeBuiltBuilding(root, built, kind, team, pal, enableShadows, pantheon, majorGod, age);
   }
 
   const addPart = (mesh: THREE.Mesh, x: number, y: number, z: number) => {

@@ -3142,18 +3142,18 @@ export class AoMEngine {
     const majorGod = team === 'player' ? this.majorGodName : PANTHEONS[this.enemyPantheon]?.deity;
     const suddenDeathMult = this.mapId === 'sudden_death' ? 1.5 : 1;
     const tierMaxHp = Math.round(this.getTownCenterTierMaxHp(team, newAge) * suddenDeathMult);
+    const teamTechs = team === 'player' ? this.researchedTechs : this.enemyResearchedTechs;
+    const hasWatchTower = teamTechs.includes('watch_tower');
 
     for (const b of this.buildings.values()) {
-      const isAgeEvolving =
-        b.kind === 'town_center' || b.kind === 'tower' || b.kind === 'wall' || b.kind === 'gate';
-      if (b.team !== team || !isAgeEvolving) continue;
+      if (b.team !== team) continue;
 
       const prevMax = b.maxHp;
       if (b.kind === 'town_center') {
         b.maxHp = tierMaxHp;
       } else {
         const evolvedSpec = getCivBuildingSpec(pantheon, b.kind, majorGod, newAge);
-        const towerTechBonus = b.kind === 'tower' && (team === 'player' ? this.researchedTechs : this.enemyResearchedTechs).includes('watch_tower') ? 1.35 : 1;
+        const towerTechBonus = b.kind === 'tower' && hasWatchTower ? 1.35 : 1;
         b.maxHp = Math.round(evolvedSpec.maxHp * towerTechBonus);
       }
       if (b.isConstructed) {
@@ -3180,6 +3180,9 @@ export class AoMEngine {
       if (newMesh.userData.selectionRing) {
         newMesh.userData.selectionRing.visible = b.selected;
       }
+      if (!b.isConstructed) {
+        this.vfxManager?.syncBuildingScaffolding(newMesh, b.radius, b.buildProgress, false);
+      }
 
       this.scene.remove(oldMesh);
       this.disposeBuildingVisualMeshes(oldMesh);
@@ -3187,10 +3190,19 @@ export class AoMEngine {
       b.mesh = newMesh;
       this.updateHealthBarVisual(b.mesh, b.hp, b.maxHp, b.selected);
 
-      if (b.isConstructed && b.kind === 'town_center') {
+      if (b.isConstructed) {
         const ringColor = newAge >= 5 ? 0xfacc15 : team === 'player' ? 0x38bdf8 : 0xf97316;
-        this.spawnRingVfx(b.mesh.position, 9.5 + newAge * 0.8, ringColor, 1.25);
-        this.spawnPillarVfx(b.mesh.position, newAge >= 5 ? 0xfde047 : ringColor, newAge >= 5 ? 2.1 : 1.35);
+        if (b.kind === 'town_center') {
+          this.spawnRingVfx(b.mesh.position, 9.5 + newAge * 0.8, ringColor, 1.25);
+          this.spawnPillarVfx(b.mesh.position, newAge >= 5 ? 0xfde047 : ringColor, newAge >= 5 ? 2.1 : 1.35);
+        } else if (
+          b.kind === 'temple' ||
+          b.kind === 'fortress' ||
+          b.kind === 'asgard_hill_fort' ||
+          b.kind === 'wonder'
+        ) {
+          this.spawnRingVfx(b.mesh.position, 6.2 + newAge * 0.45, ringColor, 0.9);
+        }
       }
     }
   }
@@ -9392,7 +9404,7 @@ export class AoMEngine {
               }
             }
           } else {
-            this.notifyStatus(`🏛️ Avançou para a ${AGE_NAMES[this.age]}! Centros evoluíram para T${this.age} · ♪ ${themeInfo.title}`);
+            this.notifyStatus(`🏛️ Avançou para a ${AGE_NAMES[this.age]}! Todas as construções evoluíram para T${this.age} · ♪ ${themeInfo.title}`);
           }
         }
       }

@@ -530,6 +530,8 @@ export function createChineseBuildingMesh(
   const group = new THREE.Group();
   let beaconCrystal: THREE.Object3D | undefined;
   let vortexRing: THREE.Object3D | undefined;
+  let metropolisHalo: THREE.Object3D | undefined;
+  let metropolisCrystal: THREE.Object3D | undefined;
   let markerRadius = 2.4;
   let barHeight = 4.2;
   let barWidth = 2.4;
@@ -584,21 +586,57 @@ export function createChineseBuildingMesh(
   };
 
   if (kind === 'town_center') {
-    const roofLevels = age >= 3 ? 3 : 2;
-    add(new THREE.BoxGeometry(6.8, 0.55, 6.2), cm.ivory, 0, 0.28, 0);
-    add(new THREE.BoxGeometry(5.6, 2.0, 5.0), cm.vermilion, 0, 1.55, 0);
-    // Vermilion lacquered columns around porch
-    for (const cx of [-2.95, -1.5, 1.5, 2.95]) {
+    const flames: THREE.Object3D[] = [];
+    const roofLevels = age >= 5 ? 4 : age >= 3 ? 3 : age >= 2 ? 2 : 1;
+    const roofMat = age >= 5 ? cm.gold : age >= 3 ? cm.jade : age >= 2 ? cm.vermilion : cm.slateRoof;
+    const baseW = 6.2 + (age - 1) * 0.38;
+    const baseD = 5.6 + (age - 1) * 0.34;
+    add(new THREE.BoxGeometry(baseW, 0.55, baseD), cm.ivory, 0, 0.28, 0);
+    if (age >= 3) {
+      add(new THREE.BoxGeometry(baseW + 0.65, 0.24, baseD + 0.65), age >= 5 ? cm.gold : cm.ivory, 0, 0.12, 0);
+    }
+    const hallH = 1.85 + (age - 1) * 0.14;
+    add(new THREE.BoxGeometry(5.2 + (age - 1) * 0.25, hallH, 4.6 + (age - 1) * 0.22), cm.vermilion, 0, 0.55 + hallH * 0.5, 0);
+    // Vermilion lacquered columns around porch (more columns in higher ages)
+    const colXs = age >= 3 ? [-2.95, -1.5, 0, 1.5, 2.95] : [-2.65, 2.65];
+    for (const cx of colXs) {
       for (const cz of [-2.65, 2.65]) {
-        add(new THREE.CylinderGeometry(0.14, 0.16, 2.1, 8), cm.vermilion, cx, 1.55, cz);
+        if (cx === 0 && cz > 0) continue;
+        add(new THREE.CylinderGeometry(0.14, 0.16, hallH + 0.1, 8), age >= 4 ? cm.gold : cm.vermilion, cx, 0.55 + hallH * 0.5, cz);
       }
     }
-    addPagodaRoof(6.2, 5.6, 2.65, cm.jade, roofLevels);
-    add(new THREE.BoxGeometry(1.15, 1.35, 0.14), cm.teamMat, 0, 1.55, 2.55);
-    beaconCrystal = add(new THREE.OctahedronGeometry(0.45, 0), cm.gold, 0, 2.65 + roofLevels * 1.25 + 0.35, 0);
-    markerRadius = 3.9;
-    barHeight = 6.8;
-    barWidth = 3.2;
+    addPagodaRoof(5.8 + (age - 1) * 0.24, 5.2 + (age - 1) * 0.22, 0.65 + hallH, roofMat, roofLevels);
+    add(new THREE.BoxGeometry(1.15, 1.35, 0.14), cm.teamMat, 0, 1.45, 2.55 + (age - 1) * 0.1);
+    if (age >= 2) {
+      // Flanking imperial banner poles
+      for (const sx of [-1, 1]) {
+        add(new THREE.CylinderGeometry(0.06, 0.07, 3.2 + age * 0.2, 6), cm.gold, sx * (baseW * 0.48), 1.8, baseD * 0.48);
+        add(new THREE.BoxGeometry(0.85, 0.52, 0.06), cm.teamMat, sx * (baseW * 0.48 + 0.42), 2.9 + age * 0.15, baseD * 0.48);
+      }
+    }
+    if (age >= 4) {
+      // Twin imperial corner lanterns / braziers
+      for (const sx of [-1, 1]) {
+        const lx = sx * (baseW * 0.36);
+        const lz = baseD * 0.54;
+        add(new THREE.CylinderGeometry(0.16, 0.22, 0.7, 8), cm.gold, lx, 0.65, lz);
+        const lantern = add(new THREE.OctahedronGeometry(0.24, 0), pal.ember, lx, 1.15, lz);
+        flames.push(lantern);
+      }
+    }
+    const peakY = 0.65 + hallH + roofLevels * 1.25 + 0.35;
+    beaconCrystal = add(new THREE.OctahedronGeometry(0.45, 0), age >= 4 ? cm.celestialCyan : cm.gold, 0, peakY, 0);
+    if (age >= 4) {
+      metropolisHalo = add(new THREE.TorusGeometry(age >= 5 ? 1.35 : 0.95, 0.08, 8, 24), cm.gold, 0, peakY + 0.25, 0, Math.PI / 2, 0, 0);
+      metropolisCrystal = add(new THREE.OctahedronGeometry(age >= 5 ? 0.52 : 0.38, 0), cm.celestialCyan, 0, peakY + 0.72, 0);
+    }
+    if (flames.length > 0) {
+      group.userData.tcFlames = flames;
+    }
+    group.scale.setScalar(1.0 + (age - 1) * 0.045);
+    markerRadius = 3.7 + (age - 1) * 0.2;
+    barHeight = 5.4 + (age - 1) * 0.72;
+    barWidth = 3.1 + (age - 1) * 0.15;
   } else if (kind === 'house') {
     add(new THREE.BoxGeometry(2.7, 0.25, 2.5), cm.ivory, 0, 0.12, 0);
     add(new THREE.BoxGeometry(2.2, 1.25, 2.0), cm.ivory, 0, 0.85, 0);
@@ -684,5 +722,7 @@ export function createChineseBuildingMesh(
     barWidth,
     beaconCrystal,
     vortexRing,
+    metropolisHalo,
+    metropolisCrystal,
   };
 }
