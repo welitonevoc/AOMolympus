@@ -80,24 +80,35 @@ static func build_biome_environment(
 	# 4. Destaque cartografico central conforme o bioma (Oasis no Nilo, Cratera de Magma no Erebo, Colinas)
 	_build_biome_centerpiece(terrain_root, biome_id, biome, rng)
 
-	# 5. Borda rochosa natural ao redor da ilha/arena
+	# 5. Borda rochosa natural instanciada em lote via MultiMeshInstance3D (1 unico draw call)
 	var rock_mat := StandardMaterial3D.new()
 	rock_mat.albedo_color = biome["rock_color"]
 	rock_mat.roughness = 0.9
+
+	var base_box := BoxMesh.new()
+	base_box.size = Vector3(4.5, 3.2, 4.0)
+
+	var multimesh := MultiMesh.new()
+	multimesh.transform_format = MultiMesh.TRANSFORM_3D
+	multimesh.mesh = base_box
+	multimesh.instance_count = 32
+
 	var ring_radius: float = arena_size * 0.5 + 1.5
 	for i in range(32):
 		var ang: float = TAU * float(i) / 32.0 + rng.randf_range(-0.04, 0.04)
 		var rx: float = cos(ang) * ring_radius
 		var rz: float = sin(ang) * ring_radius
-		var rock := MeshInstance3D.new()
-		var box := BoxMesh.new()
-		var s: float = rng.randf_range(3.0, 6.2)
-		box.size = Vector3(s, s * rng.randf_range(0.55, 0.95), s * rng.randf_range(0.75, 1.1))
-		rock.mesh = box
-		rock.material_override = rock_mat
-		rock.position = Vector3(rx, box.size.y * 0.35 - 0.35, rz)
-		rock.rotation = Vector3(0.0, ang + rng.randf_range(-0.3, 0.3), 0.0)
-		terrain_root.add_child(rock)
+		var s: float = rng.randf_range(0.75, 1.35)
+		var basis_t := Basis(Vector3.UP, ang + rng.randf_range(-0.3, 0.3)).scaled(Vector3(s, s * rng.randf_range(0.6, 1.1), s))
+		var trans := Transform3D(basis_t, Vector3(rx, 0.8, rz))
+		multimesh.set_instance_transform(i, trans)
+
+	var multi_inst := MultiMeshInstance3D.new()
+	multi_inst.name = "PerimeterRocksMultiMesh"
+	multi_inst.multimesh = multimesh
+	multi_inst.material_override = rock_mat
+	terrain_root.add_child(multi_inst)
+
 
 	# 6. Plano procedural balanceado de recursos (Food / Wood / Gold)
 	var resource_plan: Array[Dictionary] = _generate_resource_plan(player_base, enemy_base, rng)

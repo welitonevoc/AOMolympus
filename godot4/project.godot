@@ -8,12 +8,16 @@
 
 config_version=5
 
+[animation]
+
+compatibility/default_parent_skeleton_in_mesh_instance_3d=true
+
 [application]
 
 config/name="Age of Mythology: Olympus (Android)"
 config/description="RTS mitologico 3D nativo em Godot 4 para celulares e tablets Android (Fases 1 a 4)."
 run/main_scene="res://scenes/main.tscn"
-config/features=PackedStringArray("4.3", "Mobile")
+config/features=PackedStringArray("4.7", "Mobile")
 config/icon="res://icon.svg"
 
 [autoload]
@@ -22,6 +26,8 @@ PantheonCatalog="*res://scripts/autoload/pantheon_catalog.gd"
 GameState="*res://scripts/autoload/game_state.gd"
 ModelLibrary="*res://scripts/autoload/model_library.gd"
 AudioDirector="*res://scripts/audio/audio_director.gd"
+MultiplayerManager="*res://scripts/network/multiplayer_manager.gd"
+
 
 [display]
 
@@ -38,8 +44,6 @@ enabled=PackedStringArray("res://addons/gamedev_ai/plugin.cfg")
 [input_devices]
 
 pointing/emulate_touch_from_mouse=true
-pointing/emulate_mouse_from_touch=true
-
 
 [layer_names]
 
@@ -50,6 +54,5 @@ pointing/emulate_mouse_from_touch=true
 [rendering]
 
 renderer/rendering_method="mobile"
-renderer/rendering_method.mobile="mobile"
 textures/vram_compression/import_etc2_astc=true
 anti_aliasing/quality/msaa_3d=1

@@ -138,6 +138,14 @@ func _physics_process(delta: float) -> void:
 	_anim_time += delta
 	_attack_timer = maxf(0.0, _attack_timer - delta)
 
+	# Atualização de LOD Mobile (calculado a cada ~0.3s)
+	if Engine.get_physics_frames() % 18 == 0:
+		var cam: Camera3D = get_viewport().get_camera_3d() if get_viewport() != null else null
+		if cam != null:
+			var lod: LODController.LODLevel = LODController.calculate_lod_level(cam.global_position, global_position, false)
+			LODController.apply_lod_to_node(_visual_holder, lod)
+
+
 	match state:
 		State.IDLE:
 			velocity = Vector3.ZERO
