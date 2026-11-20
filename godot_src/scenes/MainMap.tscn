@@ -1,0 +1,93 @@
+[gd_scene load_steps=5 format=3 uid="uid://c6rtsmainmap01"]
+
+[ext_resource type="Script" path="res://godot_src/scripts/RtsCameraController.gd" id="1_cam"]
+[ext_resource type="Script" path="res://godot_src/scripts/RtsHudCommandCenter.gd" id="2_cm"]
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_ground"]
+size = Vector2(100, 100)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ground"]
+albedo_color = Color(0.24, 0.38, 0.18, 1)
+roughness = 0.85
+
+[node name="MainMap" type="Node3D"]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.866025, -0.353553, 0.353553, 0, 0.707107, 0.707107, -0.5, -0.612372, 0.612372, 0, 30, 0)
+shadow_enabled = true
+
+[node name="Ground" type="StaticBody3D" parent="."]
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Ground"]
+mesh = SubResource("PlaneMesh_ground")
+surface_material_override/0 = SubResource("StandardMaterial3D_ground")
+
+[node name="RtsCameraRig" type="Node3D" parent="."]
+transform = Transform3D(0.707107, 0, 0.707107, 0, 1, 0, -0.707107, 0, 0.707107, 0, 0, 0)
+script = ExtResource("1_cam")
+
+[node name="ElevationPivot" type="Node3D" parent="RtsCameraRig"]
+transform = Transform3D(1, 0, 0, 0, 0.707107, 0.707107, 0, -0.707107, 0.707107, 0, 0, 0)
+
+[node name="Camera3D" type="Camera3D" parent="RtsCameraRig/ElevationPivot"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 28)
+current = true
+fov = 42.0
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+
+[node name="CommandCenter" type="PanelContainer" parent="CanvasLayer"]
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -280.0
+offset_top = -140.0
+offset_right = 280.0
+offset_bottom = -10.0
+grow_horizontal = 2
+grow_vertical = 0
+script = ExtResource("2_cm")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer/CommandCenter"]
+layout_mode = 2
+
+[node name="Header" type="HBoxContainer" parent="CanvasLayer/CommandCenter/VBoxContainer"]
+layout_mode = 2
+
+[node name="TitleLabel" type="Label" parent="CanvasLayer/CommandCenter/VBoxContainer/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Central de Comandos"
+
+[node name="SubtitleLabel" type="Label" parent="CanvasLayer/CommandCenter/VBoxContainer/Header"]
+layout_mode = 2
+text = "AoM Olympus"
+
+[node name="FortressBar" type="PanelContainer" parent="CanvasLayer/CommandCenter/VBoxContainer"]
+visible = false
+layout_mode = 2
+
+[node name="Label" type="Label" parent="CanvasLayer/CommandCenter/VBoxContainer/FortressBar"]
+layout_mode = 2
+text = "🏰 Fortaleza: Guarnição [0/20] • Bônus de Flechas Ativo"
+
+[node name="TempleBar" type="PanelContainer" parent="CanvasLayer/CommandCenter/VBoxContainer"]
+visible = false
+layout_mode = 2
+
+[node name="Label" type="Label" parent="CanvasLayer/CommandCenter/VBoxContainer/TempleBar"]
+layout_mode = 2
+text = "🏛️ Templo Sagrado: Oração Ativa (+1.2 favor/s)"
+
+[node name="Scroll" type="ScrollContainer" parent="CanvasLayer/CommandCenter/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ActionsGrid" type="GridContainer" parent="CanvasLayer/CommandCenter/VBoxContainer/Scroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+columns = 3
