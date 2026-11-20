@@ -1,0 +1,69 @@
+[gd_scene load_steps=10 format=3 uid="uid://c6buildingbarracks01"]
+
+[ext_resource type="Script" path="res://godot_src/scripts/RtsBuilding.gd" id="1_script"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_collision"]
+size = Vector3(6, 5, 6)
+
+[sub_resource type="BoxMesh" id="BoxMesh_base"]
+size = Vector3(5.8, 0.6, 5.8)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_stone"]
+albedo_color = Color(0.65, 0.62, 0.58, 1)
+roughness = 0.9
+
+[sub_resource type="BoxMesh" id="BoxMesh_walls"]
+size = Vector3(4.8, 3.2, 4.8)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_wall"]
+albedo_color = Color(0.8, 0.76, 0.7, 1)
+
+[sub_resource type="PrismMesh" id="PrismMesh_roof"]
+left_to_right = 0.5
+size = Vector3(5.2, 1.8, 5.2)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_roof"]
+albedo_color = Color(0.6, 0.22, 0.15, 1)
+
+[sub_resource type="TorusMesh" id="TorusMesh_ring"]
+inner_radius = 4.0
+outer_radius = 4.4
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ring"]
+shading_mode = 0
+albedo_color = Color(0.2, 0.6, 1, 1)
+
+[node name="BuildingBarracks" type="StaticBody3D" groups=["rts_building", "rts_selectable"]]
+collision_layer = 4
+collision_mask = 3
+script = ExtResource("1_script")
+building_name = "Quartel Militar Grego"
+building_kind = "barracks"
+max_hp = 1800.0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+shape = SubResource("BoxShape3D_collision")
+
+[node name="VisualModel" type="Node3D" parent="."]
+
+[node name="Base" type="MeshInstance3D" parent="VisualModel"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.3, 0)
+mesh = SubResource("BoxMesh_base")
+surface_material_override/0 = SubResource("StandardMaterial3D_stone")
+
+[node name="Walls" type="MeshInstance3D" parent="VisualModel"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.2, 0)
+mesh = SubResource("BoxMesh_walls")
+surface_material_override/0 = SubResource("StandardMaterial3D_wall")
+
+[node name="Roof" type="MeshInstance3D" parent="VisualModel"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.4, 0)
+mesh = SubResource("PrismMesh_roof")
+surface_material_override/0 = SubResource("StandardMaterial3D_roof")
+
+[node name="SelectionRing" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.08, 0)
+visible = false
+mesh = SubResource("TorusMesh_ring")
+surface_material_override/0 = SubResource("StandardMaterial3D_ring")

@@ -1,13 +1,16 @@
-[gd_scene load_steps=13 format=3 uid="uid://c6rtsmainmap01"]
+[gd_scene load_steps=16 format=3 uid="uid://c6rtsmainmap01"]
 
 [ext_resource type="Script" path="res://godot_src/scripts/MainMapController.gd" id="1_main"]
 [ext_resource type="Script" path="res://godot_src/scripts/GameManager.gd" id="2_gm"]
 [ext_resource type="Script" path="res://godot_src/scripts/RtsCameraController.gd" id="3_cam"]
 [ext_resource type="Script" path="res://godot_src/scripts/RtsHudCommandCenter.gd" id="4_cm"]
-[ext_resource type="PackedScene" path="res://godot_src/entities/BuildingTownCenter.tscn" id="5_tc"]
-[ext_resource type="PackedScene" path="res://godot_src/entities/UnitVillager.tscn" id="6_vil"]
-[ext_resource type="PackedScene" path="res://godot_src/entities/ResourceTree.tscn" id="7_tree"]
-[ext_resource type="PackedScene" path="res://godot_src/entities/ResourceGold.tscn" id="8_gold"]
+[ext_resource type="Script" path="res://godot_src/scripts/RtsMinimap.gd" id="5_minimap"]
+[ext_resource type="PackedScene" path="res://godot_src/entities/BuildingTownCenter.tscn" id="6_tc"]
+[ext_resource type="PackedScene" path="res://godot_src/entities/BuildingBarracks.tscn" id="7_barracks"]
+[ext_resource type="PackedScene" path="res://godot_src/entities/UnitVillager.tscn" id="8_vil"]
+[ext_resource type="PackedScene" path="res://godot_src/entities/UnitHoplite.tscn" id="9_hop"]
+[ext_resource type="PackedScene" path="res://godot_src/entities/ResourceTree.tscn" id="10_tree"]
+[ext_resource type="PackedScene" path="res://godot_src/entities/ResourceGold.tscn" id="11_gold"]
 
 [sub_resource type="NavigationMesh" id="NavigationMesh_map"]
 vertices = PackedVector3Array(-49, 0.1, -49, -49, 0.1, 49, 49, 0.1, 49, 49, 0.1, -49)
@@ -64,33 +67,44 @@ fov = 42.0
 
 [node name="Entities" type="Node3D" parent="."]
 
-[node name="TownCenter" parent="Entities" instance=ExtResource("5_tc")]
+[node name="TownCenter" parent="Entities" instance=ExtResource("6_tc")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
 
-[node name="Villager1" parent="Entities" instance=ExtResource("6_vil")]
+[node name="Barracks" parent="Entities" instance=ExtResource("7_barracks")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, 4)
+
+[node name="Villager1" parent="Entities" instance=ExtResource("8_vil")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0, 2)
 unit_name = "Aldeão Aquiles"
 
-[node name="Villager2" parent="Entities" instance=ExtResource("6_vil")]
+[node name="Villager2" parent="Entities" instance=ExtResource("8_vil")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0, -2)
 unit_name = "Aldeão Heitor"
 
-[node name="Villager3" parent="Entities" instance=ExtResource("6_vil")]
+[node name="Villager3" parent="Entities" instance=ExtResource("8_vil")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, -4)
 unit_name = "Aldeão Perseu"
 
+[node name="Hoplite1" parent="Entities" instance=ExtResource("9_hop")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 0, 2)
+
+[node name="EnemyHoplite" parent="Entities" instance=ExtResource("9_hop")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 18, 0, 8)
+team = "enemy"
+unit_name = "Invasor de Tróia"
+
 [node name="EnvironmentResources" type="Node3D" parent="."]
 
-[node name="Tree1" parent="EnvironmentResources" instance=ExtResource("7_tree")]
+[node name="Tree1" parent="EnvironmentResources" instance=ExtResource("10_tree")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12, 0, 6)
 
-[node name="Tree2" parent="EnvironmentResources" instance=ExtResource("7_tree")]
+[node name="Tree2" parent="EnvironmentResources" instance=ExtResource("10_tree")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15, 0, 4)
 
-[node name="Tree3" parent="EnvironmentResources" instance=ExtResource("7_tree")]
+[node name="Tree3" parent="EnvironmentResources" instance=ExtResource("10_tree")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -13, 0, 8)
 
-[node name="GoldMine1" parent="EnvironmentResources" instance=ExtResource("8_gold")]
+[node name="GoldMine1" parent="EnvironmentResources" instance=ExtResource("11_gold")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 0, -10)
 
 [node name="CanvasLayer" type="CanvasLayer" parent="."]
@@ -110,8 +124,23 @@ theme_override_constants/margin_bottom = 8
 
 [node name="ResourceText" type="Label" parent="CanvasLayer/TopResourceBar/Margin"]
 layout_mode = 2
-text = "🌾 200  |  🌲 150  |  ⛏️ 100  |  ⚡ 10.0  |  👥 3/20"
+text = "🌾 200  |  🌲 150  |  ⛏️ 100  |  ⚡ 15.0  |  👥 4/20"
 horizontal_alignment = 1
+
+[node name="Minimap" type="Panel" parent="CanvasLayer" node_paths=PackedStringArray("camera_rig")]
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -160.0
+offset_top = -160.0
+offset_right = -10.0
+offset_bottom = -10.0
+grow_horizontal = 0
+grow_vertical = 0
+script = ExtResource("5_minimap")
+camera_rig = NodePath("../../RtsCameraRig")
 
 [node name="CommandCenter" type="PanelContainer" parent="CanvasLayer" node_paths=PackedStringArray("resource_label")]
 anchors_preset = 7

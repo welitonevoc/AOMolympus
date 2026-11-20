@@ -14,6 +14,9 @@ signal unit_trained(unit_node: Node)
 
 # Produção de Unidades
 @export var villager_scene: PackedScene = preload("res://godot_src/entities/UnitVillager.tscn")
+@export var hoplite_scene: PackedScene = preload("res://godot_src/entities/UnitHoplite.tscn")
+@export var hypaspist_scene: PackedScene = preload("res://godot_src/entities/UnitHypaspist.tscn")
+
 var training_queue: Array[Dictionary] = []
 var training_progress: float = 0.0
 
@@ -45,24 +48,47 @@ func _process(delta: float) -> void:
 
 func queue_training(unit_type: String) -> bool:
 	var gm := _get_game_manager()
-	if unit_type == "villager":
-		if gm and not gm.spend_cost(50, 0, 0):
-			print("[Building] Alimento insuficiente para treinar Aldeão (requer 50)!")
-			return false
-		training_queue.append({"type": "villager", "time": 4.0})
-		print("[Building] Treinando Aldeão... Fila: ", training_queue.size())
-		return true
+	match unit_type:
+		"villager":
+			if gm and not gm.spend_cost(50, 0, 0):
+				print("[Building] Alimento insuficiente para Aldeão (requer 50)!")
+				return false
+			training_queue.append({"type": "villager", "time": 4.0})
+			print("[Building] Treinando Aldeão... Fila: ", training_queue.size())
+			return true
+		
+		"hoplite":
+			if gm and not gm.spend_cost(60, 0, 40):
+				print("[Building] Recursos insuficientes para Hoplita (requer 60 Alim, 40 Ouro)!")
+				return false
+			training_queue.append({"type": "hoplite", "time": 5.0})
+			print("[Building] Treinando Hoplita... Fila: ", training_queue.size())
+			return true
+			
+		"hypaspist":
+			if gm and not gm.spend_cost(50, 35, 0):
+				print("[Building] Recursos insuficientes para Hipaspista (requer 50 Alim, 35 Mad)!")
+				return false
+			training_queue.append({"type": "hypaspist", "time": 4.5})
+			print("[Building] Treinando Hipaspista... Fila: ", training_queue.size())
+			return true
+			
 	return false
 
 func _complete_training(unit_type: String) -> void:
-	if unit_type == "villager" and villager_scene:
-		var new_unit: Node3D = villager_scene.instantiate() as Node3D
-		var spawn_pos := global_position + Vector3(5.0, 0.0, 0.0)
+	var scene_to_spawn: PackedScene = null
+	match unit_type:
+		"villager": scene_to_spawn = villager_scene
+		"hoplite": scene_to_spawn = hoplite_scene
+		"hypaspist": scene_to_spawn = hypaspist_scene
+
+	if scene_to_spawn:
+		var new_unit: Node3D = scene_to_spawn.instantiate() as Node3D
+		var spawn_pos := global_position + Vector3(4.5, 0.0, 0.0)
 		if spawn_point:
 			spawn_pos = spawn_point.global_position
 		new_unit.global_position = spawn_pos
 		
-		# Adicionar ao grupo Entities da cena principal
 		var entities_parent := get_parent()
 		if entities_parent:
 			entities_parent.add_child(new_unit)
@@ -70,7 +96,13 @@ func _complete_training(unit_type: String) -> void:
 			get_tree().current_scene.add_child(new_unit)
 			
 		emit_signal("unit_trained", new_unit)
-		print("[Building] Aldeão treinado e gerado com sucesso!")
+		print("[Building] %s treinado e gerado com sucesso!" % unit_type)
+
+func take_damage(amount: float) -> void:
+	current_hp -= amount
+	if current_hp <= 0:
+		print("[Building] Edifício destruído: ", building_name)
+		queue_free()
 
 func _update_selection_visual() -> void:
 	if selection_ring:

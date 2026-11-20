@@ -3,8 +3,7 @@ class_name MainMapController
 
 @onready var camera: Camera3D = $RtsCameraRig/ElevationPivot/Camera3D
 @onready var hud: RtsHudCommandCenter = $CanvasLayer/CommandCenter
-@onready var ground: StaticBody3D = $Ground
-@onready var nav_region: NavigationRegion3D = $NavigationRegion3D if has_node("NavigationRegion3D") else null
+@onready var ground: StaticBody3D = $NavigationRegion3D/Ground if has_node("NavigationRegion3D/Ground") else null
 
 var selected_entities: Array[Node] = []
 
@@ -65,25 +64,34 @@ func _handle_order(screen_pos: Vector2) -> void:
 		ray_origin,
 		ray_origin + ray_dir * ray_length
 	)
-	# Checar se clicou em um recurso (layer 8) ou no chão (layer 1)
-	query.collision_mask = 1 | 8
+	# Checar alvos de ataque (layer 2/4), recursos (layer 8) ou chão (layer 1)
+	query.collision_mask = 1 | 2 | 4 | 8
 	
 	var result := space_state.intersect_ray(query)
 	if result.is_empty():
 		return
 
 	var collider: Node = result.collider
-	var resource := _find_resource_in_ancestors(collider)
 	
+	# 1. Alvo de Ataque (Unidade ou Edifício de time oposto ou neutro)
+	var target_enemy := _find_selectable_in_ancestors(collider)
+	if target_enemy and target_enemy.has_method("take_damage") and not selected_entities.has(target_enemy):
+		for entity in selected_entities:
+			if entity is RtsUnit:
+				(entity as RtsUnit).order_attack(target_enemy)
+		print("[MainMap] Ordem de ataque emitida contra: ", target_enemy.name)
+		return
+
+	# 2. Recurso (layer 8)
+	var resource := _find_resource_in_ancestors(collider)
 	if resource:
-		# Ordem de Coleta para aldeões selecionados
 		for entity in selected_entities:
 			if entity is RtsUnit and (entity as RtsUnit).unit_type == "villager":
 				(entity as RtsUnit).order_gather(resource)
 		print("[MainMap] Ordem de coleta no recurso: ", resource.resource_name)
 		return
 
-	# Caso contrário, ordem de movimentação no chão
+	# 3. Ordem de movimentação no chão
 	var click_pos: Vector3 = result.position
 	var unit_count := 0
 	for entity in selected_entities:
