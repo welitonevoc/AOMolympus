@@ -177,6 +177,7 @@ func _populate_provider_selector():
 	provider_selector.add_item("OpenRouter (Claude/DeepSeek/GPT)", 1)
 	provider_selector.add_item("Local (Ollama/LM Studio)", 2)
 	provider_selector.add_item("NVIDIA NIM (Llama 3.3/Nemotron)", 3)
+	provider_selector.add_item("Kilo Code (Free Models Gateway)", 4)
 
 func _load_presets():
 	var settings = EditorInterface.get_editor_settings()
@@ -185,12 +186,29 @@ func _load_presets():
 	if settings.has_setting("gamedev_ai/active_preset"):
 		active_preset_name = settings.get_setting("gamedev_ai/active_preset")
 		
+	var kilo_key = OS.get_environment("KILO_API_KEY")
+	if kilo_key == "" and FileAccess.file_exists("res://addons/gamedev_ai/kilo_key.txt"):
+		var fk = FileAccess.open("res://addons/gamedev_ai/kilo_key.txt", FileAccess.READ)
+		if fk:
+			kilo_key = fk.get_as_text().strip_edges()
+			fk.close()
+
 	var openrouter_key = OS.get_environment("OPENROUTER_API_KEY")
 	if openrouter_key == "" and FileAccess.file_exists("res://addons/gamedev_ai/openrouter_key.txt"):
 		var f = FileAccess.open("res://addons/gamedev_ai/openrouter_key.txt", FileAccess.READ)
 		if f:
 			openrouter_key = f.get_as_text().strip_edges()
 			f.close()
+
+	var kilo_free_models = {
+		"Kilo: Auto Free": "kilo-auto/free",
+		"Kilo: Nemotron 3.5 Super VL (Free)": "nvidia/nemotron-3.5-super-vl:free",
+		"Kilo: Nemotron 3 Ultra 550B (Free)": "nvidia/nemotron-3-ultra-550b-a55b:free",
+		"Kilo: Ernie 5.5 Flash (Free)": "baidu/ernie-5.5-flash-preview:free",
+		"Kilo: LFM 3 1.7B (Free)": "liquid/lfm-3-1.7b:free",
+		"Kilo: Ling 3.2 Flash (Free)": "inclusionai/ling-3.2-flash:free",
+		"Kilo: Beam 1.0 (Free)": "reflection/beam-free"
+	}
 
 	var openrouter_free_models = {
 		"OpenRouter: Auto Free": "openrouter/free",
@@ -203,6 +221,13 @@ func _load_presets():
 
 
 	if presets.is_empty():
+		for preset_title in kilo_free_models.keys():
+			presets[preset_title] = {
+				"provider": 4,
+				"api_key": kilo_key,
+				"base_url": "https://ai-gateway.kilo.ai/api/v1",
+				"model_name": kilo_free_models[preset_title]
+			}
 		for preset_title in openrouter_free_models.keys():
 			presets[preset_title] = {
 				"provider": 1,
@@ -213,10 +238,19 @@ func _load_presets():
 		presets["Google Gemini"] = {"provider": 0, "api_key": "", "base_url": "", "model_name": "gemini-3.1-pro-preview"}
 		presets["Local (Ollama/LM Studio)"] = {"provider": 2, "api_key": "", "base_url": "http://localhost:11434/v1", "model_name": "llama3"}
 		presets["NVIDIA NIM (Llama 3.3 70B)"] = {"provider": 3, "api_key": "", "base_url": "https://integrate.api.nvidia.com/v1", "model_name": "meta/llama-3.3-70b-instruct"}
-		active_preset_name = "OpenRouter: Auto Free"
+		active_preset_name = "Kilo: Auto Free"
 		_save_presets()
 	else:
 		var updated_presets = false
+		for preset_title in kilo_free_models.keys():
+			if not presets.has(preset_title) or presets[preset_title].get("api_key", "") == "":
+				presets[preset_title] = {
+					"provider": 4,
+					"api_key": kilo_key,
+					"base_url": "https://ai-gateway.kilo.ai/api/v1",
+					"model_name": kilo_free_models[preset_title]
+				}
+				updated_presets = true
 		for preset_title in openrouter_free_models.keys():
 			if not presets.has(preset_title) or presets[preset_title].get("api_key", "") == "":
 				presets[preset_title] = {
@@ -292,6 +326,7 @@ func base_url_supported(prov: int) -> bool:
 func _update_field_visibilities(prov: int):
 	var is_local = (prov == 2)
 	var is_nvidia = (prov == 3)
+	var is_kilo = (prov == 4)
 	if settings_bar:
 		settings_bar.visible = (prov != 0)
 	if api_input:
@@ -299,6 +334,8 @@ func _update_field_visibilities(prov: int):
 			api_input.placeholder_text = "Not required for Local models"
 		elif is_nvidia:
 			api_input.placeholder_text = "Enter NVIDIA API Key (nvapi-...)"
+		elif is_kilo:
+			api_input.placeholder_text = "Enter Kilo API Key (eyJhbGci...)"
 		else:
 			api_input.placeholder_text = "Enter API Key"
 	if url_input:
@@ -306,6 +343,8 @@ func _update_field_visibilities(prov: int):
 			url_input.placeholder_text = "Default: http://localhost:11434/v1"
 		elif is_nvidia:
 			url_input.placeholder_text = "Default: https://integrate.api.nvidia.com/v1"
+		elif is_kilo:
+			url_input.placeholder_text = "Default: https://ai-gateway.kilo.ai/api/v1"
 		else:
 			url_input.placeholder_text = "Default: https://openrouter.ai/api/v1"
 
@@ -379,6 +418,10 @@ func _on_provider_type_changed(index: int):
 			presets[active_preset_name]["base_url"] = "https://integrate.api.nvidia.com/v1"
 			if presets[active_preset_name].get("model_name", "") == "":
 				presets[active_preset_name]["model_name"] = "deepseek-ai/deepseek-v4-flash"
+		elif index == 4:
+			presets[active_preset_name]["base_url"] = "https://ai-gateway.kilo.ai/api/v1"
+			if presets[active_preset_name].get("model_name", "") == "":
+				presets[active_preset_name]["model_name"] = "kilo-auto/free"
 		_save_presets()
 		_apply_active_preset()
 

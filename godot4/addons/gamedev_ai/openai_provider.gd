@@ -14,12 +14,23 @@ func setup(node: Node):
 func _load_env_api_key():
 	if api_key != "":
 		return
-	var env_vars = ["NVIDIA_API_KEY", "NVAPI_KEY", "OPENAI_API_KEY"] if "nvidia" in base_url.to_lower() else ["OPENROUTER_API_KEY", "OPENAI_API_KEY", "NVIDIA_API_KEY", "NVAPI_KEY"]
+	var is_kilo = ("kilo.ai" in base_url.to_lower())
+	var env_vars = ["KILO_API_KEY", "OPENROUTER_API_KEY", "OPENAI_API_KEY"] if is_kilo else (["NVIDIA_API_KEY", "NVAPI_KEY", "OPENAI_API_KEY"] if "nvidia" in base_url.to_lower() else ["OPENROUTER_API_KEY", "KILO_API_KEY", "OPENAI_API_KEY", "NVIDIA_API_KEY", "NVAPI_KEY"])
 	for env in env_vars:
 		var val = OS.get_environment(env)
 		if val != "":
 			api_key = val
 			break
+	if api_key == "" and is_kilo and FileAccess.file_exists("res://addons/gamedev_ai/kilo_key.txt"):
+		var fk = FileAccess.open("res://addons/gamedev_ai/kilo_key.txt", FileAccess.READ)
+		if fk:
+			api_key = fk.get_as_text().strip_edges()
+			fk.close()
+	if api_key == "" and FileAccess.file_exists("res://addons/gamedev_ai/kilo_key.txt"):
+		var fk = FileAccess.open("res://addons/gamedev_ai/kilo_key.txt", FileAccess.READ)
+		if fk:
+			api_key = fk.get_as_text().strip_edges()
+			fk.close()
 	if api_key == "" and FileAccess.file_exists("res://addons/gamedev_ai/openrouter_key.txt"):
 		var f = FileAccess.open("res://addons/gamedev_ai/openrouter_key.txt", FileAccess.READ)
 		if f:

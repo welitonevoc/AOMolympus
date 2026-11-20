@@ -60,18 +60,32 @@ func _enter_tree():
 		config = presets.values()[0]
 	else:
 		# Fallback se nenhum preset foi gravado no EditorSettings
-		var default_key = OS.get_environment("OPENROUTER_API_KEY")
-		if default_key == "" and FileAccess.file_exists("res://addons/gamedev_ai/openrouter_key.txt"):
-			var fk = FileAccess.open("res://addons/gamedev_ai/openrouter_key.txt", FileAccess.READ)
-			if fk:
-				default_key = fk.get_as_text().strip_edges()
-				fk.close()
-		config = {
-			"provider": 1,
-			"api_key": default_key,
-			"base_url": "https://openrouter.ai/api/v1",
-			"model_name": "openrouter/free"
-		}
+		var default_key = OS.get_environment("KILO_API_KEY")
+		if default_key == "" and FileAccess.file_exists("res://addons/gamedev_ai/kilo_key.txt"):
+			var fk = FileAccess.open("res://addons/gamedev_ai/kilo_key.txt", FileAccess.READ)
+		if fk:
+			default_key = fk.get_as_text().strip_edges()
+			fk.close()
+		if default_key != "":
+			config = {
+				"provider": 4,
+				"api_key": default_key,
+				"base_url": "https://ai-gateway.kilo.ai/api/v1",
+				"model_name": "kilo-auto/free"
+			}
+		else:
+			var openrouter_key = OS.get_environment("OPENROUTER_API_KEY")
+			if openrouter_key == "" and FileAccess.file_exists("res://addons/gamedev_ai/openrouter_key.txt"):
+				var for_f = FileAccess.open("res://addons/gamedev_ai/openrouter_key.txt", FileAccess.READ)
+				if for_f:
+					openrouter_key = for_f.get_as_text().strip_edges()
+					for_f.close()
+			config = {
+				"provider": 1,
+				"api_key": openrouter_key,
+				"base_url": "https://openrouter.ai/api/v1",
+				"model_name": "openrouter/free"
+			}
 
 	
 	_set_provider(config)
