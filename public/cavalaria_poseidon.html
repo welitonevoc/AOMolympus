@@ -1,0 +1,1232 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Cavalaria de Poseidon 3D • Age of Mythology: Retold</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --teal: #2dd4bf;
+      --ocean: #0284c7;
+      --gold: #facc15;
+      --crimson: #ef4444;
+      --glass: rgba(4, 15, 26, 0.86);
+      --border: rgba(45, 212, 191, 0.45);
+    }
+    * { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #04101c;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      color: #f8fafc;
+    }
+    #canvas-wrap {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+      cursor: grab;
+    }
+    canvas:active { cursor: grabbing; }
+
+    /* Barra Superior Compacta e Organizada */
+    #top-bar {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      right: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      z-index: 10;
+      pointer-events: none;
+    }
+    .bar-row {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .pill-group {
+      display: flex;
+      gap: 4px;
+      background: var(--glass);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--border);
+      padding: 4px;
+      border-radius: 10px;
+      pointer-events: auto;
+    }
+    button {
+      padding: 6px 10px;
+      border: 1px solid transparent;
+      border-radius: 7px;
+      background: transparent;
+      color: #e0f2fe;
+      font-weight: 600;
+      font-size: 11.5px;
+      cursor: pointer;
+      transition: all 0.16s ease;
+    }
+    button:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.1);
+    }
+    button:disabled {
+      opacity: 0.32;
+      cursor: not-allowed;
+    }
+    button.on {
+      background: linear-gradient(135deg, #2dd4bf 0%, #0284c7 100%);
+      color: #031521;
+      font-weight: 700;
+      box-shadow: 0 2px 12px rgba(45, 212, 191, 0.55);
+    }
+    button.gold-btn.on {
+      background: linear-gradient(135deg, #fde047 0%, #d97706 100%);
+      color: #140c02;
+    }
+    button.ares-btn.on {
+      background: linear-gradient(135deg, #ef4444 0%, #991b1b 100%);
+      color: #ffffff;
+    }
+    button.dio-btn.on {
+      background: linear-gradient(135deg, #a855f7 0%, #6b21a8 100%);
+      color: #ffffff;
+    }
+
+    /* Barra de Vida Dinâmica (Demonstra Regen Senhor dos Cavalos + Lifesteal Cavalos da Trácia!) */
+    #hp-hud {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--glass);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--border);
+      padding: 5px 12px;
+      border-radius: 10px;
+      pointer-events: auto;
+      font-size: 11.5px;
+      font-weight: 700;
+    }
+    #hp-bar-bg {
+      width: 110px;
+      height: 8px;
+      background: rgba(15, 23, 42, 0.95);
+      border-radius: 999px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+    }
+    #hp-bar-fill {
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, #10b981, #2dd4bf);
+      transition: width 0.1s linear;
+    }
+
+    /* Rodapé Discreto de Uma Linha */
+    #bottom-pill {
+      position: fixed;
+      bottom: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--glass);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--border);
+      padding: 6px 16px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #5eead4;
+      white-space: nowrap;
+      pointer-events: none;
+      z-index: 10;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+    }
+    #bottom-pill span {
+      color: #cbd5e1;
+      font-weight: 500;
+    }
+
+    /* Modal Enciclopédico */
+    #guide-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(3, 10, 18, 0.90);
+      backdrop-filter: blur(12px);
+      z-index: 30;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    #guide-modal.open { display: flex; }
+    #guide-box {
+      background: #071929;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      max-width: 880px;
+      width: 100%;
+      max-height: 85vh;
+      overflow-y: auto;
+      padding: 20px 24px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.85);
+      user-select: text;
+      -webkit-user-select: text;
+    }
+    #guide-box h2 { margin: 0 0 10px; color: #5eead4; font-size: 17px; }
+    #guide-box h3 { margin: 14px 0 6px; color: #fde047; font-size: 13.5px; border-bottom: 1px solid rgba(255,255,255,0.12); padding-bottom: 4px; }
+    #guide-box p, #guide-box li { font-size: 12.5px; color: #cbd5e1; line-height: 1.5; }
+    #guide-box table { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 12px; }
+    #guide-box th, #guide-box td { border: 1px solid rgba(255,255,255,0.14); padding: 7px 9px; text-align: left; }
+    #guide-box th { background: rgba(13, 148, 136, 0.35); color: #fde047; }
+  </style>
+</head>
+<body>
+
+<div id="canvas-wrap"></div>
+
+<!-- Barra Superior Organizada -->
+<div id="top-bar">
+  <div class="bar-row">
+    <!-- 3 Unidades com Identidade Visual & Tática Distinta -->
+    <div class="pill-group">
+      <button data-unit="hippeus" class="unit-btn on">🛡️ Hippeus (Padrão)</button>
+      <button data-unit="prodromos" class="unit-btn">⚡ Prodromos (Anticavalaria ×3)</button>
+      <button data-unit="hetairos" class="unit-btn gold-btn">👑 Hetairos (Elite Área)</button>
+    </div>
+
+    <!-- Ações e Alvos -->
+    <div class="pill-group">
+      <button data-act="vigilia" class="act-btn on">🔱 Vigília</button>
+      <button data-act="raid" class="act-btn">⚔️ Investida & Combate</button>
+      <button data-act="empinar" class="act-btn">🌊 Chamado dos Mares</button>
+      <button id="btn-damage" title="Simular dano de torres para testar Regen e Lifesteal">🩸 Simular Dano</button>
+    </div>
+  </div>
+
+  <div class="bar-row">
+    <!-- Evolução de Linha Acumulativa no Estábulo -->
+    <div class="pill-group">
+      <button data-line="base" class="line-btn">Base</button>
+      <button data-line="media" class="line-btn">Média (+10%)</button>
+      <button data-line="pesada" class="line-btn">Pesada (+25%)</button>
+      <button data-line="campea" class="line-btn on">⭐ Campeã (+45%)</button>
+    </div>
+
+    <!-- Tecnologias Exclusivas e Deuses Menores -->
+    <div class="pill-group">
+      <button id="btn-lord" class="on">👁️ Senhor dos Cavalos (+4 LoS / +0.5 PV/s)</button>
+      <button id="btn-hermes" class="on">🪽 Ataque Espirituoso (Hermes)</button>
+      <button id="btn-ares" class="ares-btn on">🔥 Lança de Fobos (Ares)</button>
+      <button id="btn-dionysus" class="dio-btn on">🍇 Cavalos da Trácia (30% Lifesteal)</button>
+      <button id="btn-guide">📖 Guia</button>
+    </div>
+
+    <!-- Barra de Vida Viva (Regen & Roubo de Vida) -->
+    <div id="hp-hud">
+      <span>PV:</span>
+      <div id="hp-bar-bg"><div id="hp-bar-fill"></div></div>
+      <span id="hp-text" style="color:#5eead4;">218 / 218</span>
+    </div>
+  </div>
+</div>
+
+<!-- Linha Única de Atributos Calculados -->
+<div id="bottom-pill">
+  Poseidon • Hippeus Campeão <span>| Atq: 19 (×1.5 Arqueiros) • Arm. Perf: 40% • Vel: 6.38 • Custo -10%</span>
+</div>
+
+<!-- Modal Enciclopédico Completo -->
+<div id="guide-modal">
+  <div id="guide-box">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <h2>🔱 Cavalaria Suprema de Poseidon (Age of Mythology: Retold)</h2>
+      <button id="btn-close-guide" style="background:#dc2626; color:#fff; padding:6px 12px;">Fechar ✕</button>
+    </div>
+    <p>Em <strong>Age of Mythology: Retold</strong>, a cavalaria de Poseidon combina bônus passivos de custo e velocidade, evoluções acumulativas do Estábulo e tecnologias míticas dos deuses menores (<em>Nota: "Segredo de Poseidon" pertence aos Atlantes via Téia; sob Poseidon, a tecnologia exclusiva é <strong>Senhor dos Cavalos</strong></em>).</p>
+
+    <h3>1. Bônus Passivos e Evoluções de Linha no Estábulo (Acumulativas)</h3>
+    <ul>
+      <li><strong>Bônus Passivos de Poseidon:</strong> Todas as unidades de cavalaria custam <strong>10% menos</strong>, movem-se mais rápido e seus Estábulos custam <strong>15% menos</strong>.</li>
+      <li><strong>Senhor dos Cavalos (Estábulo — Era Arcaica/Clássica):</strong> Concede <strong>+4 de Campo de Visão (LoS)</strong> e regeneração passiva de <strong>+0,5 PV/segundo</strong> para toda a cavalaria.</li>
+      <li><strong>Cavalaria Média (Era Clássica):</strong> +10% PV, +10% de ataque e +1 de campo de visão.</li>
+      <li><strong>Cavalaria Pesada (Era Heroica):</strong> +15% PV adicionais, +20% de ataque e +1 de campo de visão.</li>
+      <li><strong>Cavalaria Campeã (Era Mítica):</strong> +20% PV adicionais, +30% de ataque e +1 de campo de visão.</li>
+    </ul>
+
+    <h3>2. Tecnologias Míticas (Deuses Menores)</h3>
+    <ul>
+      <li><strong>Ataque Espirituoso (Hermes — Era Clássica):</strong> Aumenta a velocidade de movimento e o dano de ataque da cavalaria.</li>
+      <li><strong>Lança do Pânico de Fobos (Ares — Era Clássica):</strong> Aumenta o dano de ataque do Hippeus, tornando-o letal em trocas curtas logo no início.</li>
+      <li><strong>Cavalos da Trácia (Dionísio — Era Heroica):</strong> Concede <strong>roubo de vida (lifesteal) de 20% a 30%</strong> do dano causado contra unidades inimigas. No <strong>Hetairos</strong>, aplica-se a todos os alvos atingidos pelo dano em área simultaneamente!</li>
+    </ul>
+
+    <h3>3. O que muda na prática em cada unidade</h3>
+    <table>
+      <tr><th>Unidade</th><th>Papel Base</th><th>Impacto das Melhorias em Retold</th></tr>
+      <tr><td><strong>Hippeus</strong></td><td>Cavalaria pesada padrão; forte contra arqueiros (<strong>×1,5</strong>) e aldeões.</td><td>Com <strong>40% de armadura perfurante base</strong> e evoluções de linha, ignora flechas de centros urbanos e arqueiros. Com <em>Senhor dos Cavalos</em>, invade, recua por 20s e volta com vida cheia.</td></tr>
+      <tr><td><strong>Prodromos</strong></td><td>Cavalaria rápida especializada em destruir outras cavalarias (<strong>×3,0</strong>).</td><td>Barata (-10% custo sob Poseidon) e veloz com Hermes + Poseidon, intercepta qualquer cavalaria inimiga antes que ela fuja.</td></tr>
+      <tr><td><strong>Hetairos</strong></td><td>Cavalaria exclusiva da Fortaleza com <strong>dano em área (splash)</strong> e bônus contra construções.</td><td>Com <em>Cavalos da Trácia</em> (Dionísio), o roubo de vida aplica-se a todos os alvos atingidos pelo dano em área simultaneamente, recuperando PV massivos a cada golpe!</td></tr>
+    </table>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function () {
+  const T = window.THREE;
+  const wrap = document.getElementById('canvas-wrap');
+
+  function damp(a, b, l, dt) { return a + (b - a) * (1 - Math.exp(-l * dt)); }
+  function grp(p, x = 0, y = 0, z = 0) { const g = new T.Group(); g.position.set(x, y, z); if (p) p.add(g); return g; }
+  function sculpt(p, geo, mat, pos = [0, 0, 0], rot = [0, 0, 0], scl = [1, 1, 1]) {
+    const m = new T.Mesh(geo, mat);
+    m.position.set(pos[0], pos[1], pos[2]);
+    m.rotation.set(rot[0], rot[1], rot[2]);
+    m.scale.set(scl[0], scl[1], scl[2]);
+    m.castShadow = true; m.receiveShadow = true;
+    if (p) p.add(m);
+    return m;
+  }
+
+  /* ========================================================================
+     1. TEXTURAS PROCEDURAIS PBR (ARMADURA ESCAMADA, MEANDRO & ESCUDO TRIDENTE)
+     ======================================================================== */
+  function createPoseidonTextures() {
+    const scaleC = document.createElement('canvas');
+    scaleC.width = scaleC.height = 512;
+    const scCtx = scaleC.getContext('2d');
+    scCtx.fillStyle = '#d97706';
+    scCtx.fillRect(0, 0, 512, 512);
+    const rows = 20, cols = 18;
+    const rH = 512 / rows, cW = 512 / cols;
+    for (let r = 0; r < rows; r++) {
+      const y = r * rH;
+      const off = (r % 2 === 0) ? 0 : cW * 0.5;
+      for (let c = -1; c <= cols; c++) {
+        const x = c * cW + off;
+        const g = scCtx.createRadialGradient(x + cW * 0.5, y + rH * 0.35, 1, x + cW * 0.5, y + rH * 0.5, cW * 0.62);
+        g.addColorStop(0, '#fef08a');
+        g.addColorStop(0.55, '#eab308');
+        g.addColorStop(1, '#78350f');
+        scCtx.fillStyle = g;
+        scCtx.beginPath();
+        scCtx.arc(x + cW * 0.5, y + rH * 0.5, cW * 0.48, 0, Math.PI * 2);
+        scCtx.fill();
+      }
+    }
+    const scaleTex = new T.CanvasTexture(scaleC);
+    scaleTex.wrapS = scaleTex.wrapT = T.RepeatWrapping;
+
+    const clothC = document.createElement('canvas');
+    clothC.width = 512; clothC.height = 256;
+    const cCtx = clothC.getContext('2d');
+    cCtx.fillStyle = '#0f766e';
+    cCtx.fillRect(0, 0, 512, 256);
+    cCtx.fillStyle = '#f0fdfa';
+    cCtx.fillRect(0, 182, 512, 62);
+    cCtx.fillStyle = '#facc15';
+    cCtx.fillRect(0, 176, 512, 6);
+    cCtx.fillRect(0, 244, 512, 6);
+
+    cCtx.strokeStyle = '#042f2e';
+    cCtx.lineWidth = 4;
+    for (let x = 0; x < 512; x += 32) {
+      cCtx.beginPath();
+      cCtx.moveTo(x + 4, 234);
+      cCtx.lineTo(x + 4, 192);
+      cCtx.lineTo(x + 26, 192);
+      cCtx.lineTo(x + 26, 224);
+      cCtx.lineTo(x + 12, 224);
+      cCtx.lineTo(x + 12, 204);
+      cCtx.lineTo(x + 20, 204);
+      cCtx.stroke();
+    }
+    const clothTex = new T.CanvasTexture(clothC);
+    clothTex.wrapS = clothTex.wrapT = T.RepeatWrapping;
+
+    const shC = document.createElement('canvas');
+    shC.width = shC.height = 512;
+    const sCtx = shC.getContext('2d');
+    const g = sCtx.createRadialGradient(256, 256, 20, 256, 256, 248);
+    g.addColorStop(0, '#0284c7');
+    g.addColorStop(0.72, '#042f2e');
+    g.addColorStop(0.82, '#facc15');
+    g.addColorStop(0.93, '#0f766e');
+    g.addColorStop(1, '#facc15');
+    sCtx.fillStyle = g;
+    sCtx.fillRect(0, 0, 512, 512);
+
+    sCtx.strokeStyle = '#fef08a';
+    sCtx.fillStyle = '#fef08a';
+    sCtx.lineCap = 'round';
+    sCtx.lineWidth = 14;
+    sCtx.beginPath(); sCtx.moveTo(256, 395); sCtx.lineTo(256, 125); sCtx.stroke();
+    sCtx.lineWidth = 12;
+    sCtx.beginPath();
+    sCtx.moveTo(190, 175);
+    sCtx.quadraticCurveTo(190, 228, 256, 228);
+    sCtx.quadraticCurveTo(322, 228, 322, 175);
+    sCtx.stroke();
+    for (const px of [190, 256, 322]) {
+      sCtx.beginPath();
+      sCtx.moveTo(px, px === 256 ? 102 : 132);
+      sCtx.lineTo(px - 15, px === 256 ? 148 : 176);
+      sCtx.lineTo(px + 15, px === 256 ? 148 : 176);
+      sCtx.closePath();
+      sCtx.fill();
+    }
+    const shieldTex = new T.CanvasTexture(shC);
+
+    const flC = document.createElement('canvas');
+    flC.width = flC.height = 1024;
+    const fCtx = flC.getContext('2d');
+    fCtx.fillStyle = '#cbd5e1';
+    fCtx.fillRect(0, 0, 1024, 1024);
+    for (let i = 0; i < 3600; i++) {
+      fCtx.fillStyle = i % 2 === 0 ? 'rgba(255,255,255,0.2)' : 'rgba(13,148,136,0.16)';
+      fCtx.fillRect(Math.random() * 1024, Math.random() * 1024, 8, 8);
+    }
+    fCtx.strokeStyle = '#0d9488';
+    fCtx.lineWidth = 20;
+    fCtx.beginPath(); fCtx.arc(512, 512, 430, 0, Math.PI * 2); fCtx.stroke();
+    fCtx.strokeStyle = '#facc15';
+    fCtx.lineWidth = 8;
+    fCtx.beginPath(); fCtx.arc(512, 512, 448, 0, Math.PI * 2); fCtx.stroke();
+    const floorTex = new T.CanvasTexture(flC);
+
+    return { scaleTex, clothTex, shieldTex, floorTex };
+  }
+
+  /* ========================================================================
+     2. DADOS REAIS DO AGE OF MYTHOLOGY: RETOLD (POSEIDON)
+     ======================================================================== */
+  const UNITS_DATA = {
+    hippeus: {
+      name: 'Hippeus',
+      hp: 150,
+      atk: 10,
+      spd: 5.3,
+      los: 16,
+      pierceArmor: '40%',
+      bonusStr: '×1.5 vs Arqueiros',
+      costFood: 36, // -10% de 40
+      costGold: 72, // -10% de 80
+      horseColor: 0xf8fafc,
+      maneColor: 0xe2e8f0,
+      crestColor: 0x0d9488,
+      scaleFactor: 1.0
+    },
+    prodromos: {
+      name: 'Prodromos',
+      hp: 135,
+      atk: 9,
+      spd: 5.8,
+      los: 16,
+      pierceArmor: '20%',
+      bonusStr: '×3.0 vs Cavalaria',
+      costFood: 63, // -10% de 70
+      costGold: 36, // -10% de 40
+      horseColor: 0xd97706, // Corcel alazão-dourado ágil
+      maneColor: 0xfef08a,
+      crestColor: 0x38bdf8,
+      scaleFactor: 0.96
+    },
+    hetairos: {
+      name: 'Hetairos',
+      hp: 210,
+      atk: 16,
+      spd: 5.5,
+      los: 18,
+      pierceArmor: '35%',
+      bonusStr: 'Dano em Área + ×2.0 Construções',
+      costFood: 72, // -10% de 80
+      costGold: 90, // -10% de 100
+      horseColor: 0x1e293b, // Corcel negro-oceânico colossal com armadura dourada
+      maneColor: 0xfacc15,
+      crestColor: 0xef4444,
+      scaleFactor: 1.12
+    }
+  };
+
+  // Evoluções de Linha Acumulativas do Estábulo
+  const LINE_UPGRADES = {
+    base:   { label: 'Padrão',  hpBonus: 0.00, atkBonus: 0.00, losBonus: 0 },
+    media:  { label: 'Média',   hpBonus: 0.10, atkBonus: 0.10, losBonus: 1 },
+    pesada: { label: 'Pesada',  hpBonus: 0.25, atkBonus: 0.30, losBonus: 2 },
+    campea: { label: 'Campeã',  hpBonus: 0.45, atkBonus: 0.60, losBonus: 3 }
+  };
+
+  /* ========================================================================
+     3. CONSTRUÇÃO ESCULTURAL DE POSEIDON (3 SILHUETAS & ARMAS ÚNICAS)
+     ======================================================================== */
+  function buildPoseidonCavalry(textures) {
+    const M = {
+      horseCoat: new T.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.38, metalness: 0.16 }),
+      horseShading: new T.MeshStandardMaterial({ color: 0xdbeafe, roughness: 0.46 }),
+      horseMane: new T.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.65 }),
+      hoof: new T.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.35, metalness: 0.3 }),
+      skin: new T.MeshStandardMaterial({ color: 0xc98a5b, roughness: 0.42 }),
+      scaleArmor: new T.MeshStandardMaterial({
+        map: textures.scaleTex,
+        color: 0xfacc15,
+        metalness: 0.88,
+        roughness: 0.22
+      }),
+      lightArmor: new T.MeshStandardMaterial({
+        color: 0xe2e8f0,
+        metalness: 0.85,
+        roughness: 0.24
+      }),
+      goldTrim: new T.MeshStandardMaterial({
+        color: 0xfacc15,
+        emissive: 0x451a03,
+        emissiveIntensity: 0.28,
+        metalness: 0.94,
+        roughness: 0.16
+      }),
+      steel: new T.MeshStandardMaterial({ color: 0xf8fafc, metalness: 0.95, roughness: 0.14 }),
+      cloth: new T.MeshStandardMaterial({ map: textures.clothTex, roughness: 0.50, side: T.DoubleSide }),
+      shield: new T.MeshStandardMaterial({ map: textures.shieldTex, metalness: 0.82, roughness: 0.24, side: T.DoubleSide }),
+      crest: new T.MeshStandardMaterial({ color: 0x0d9488, emissive: 0x042f2e, emissiveIntensity: 0.3, roughness: 0.38 }),
+      leather: new T.MeshStandardMaterial({ color: 0x451a03, roughness: 0.68 }),
+      wood: new T.MeshStandardMaterial({ color: 0x1e3a5f, roughness: 0.58 })
+    };
+
+    const root = new T.Group();
+    const horse = grp(root, 0, 0, 0);
+
+    // Tronco equino em 3 massas musculares
+    sculpt(horse, new T.SphereGeometry(0.37, 24, 20), M.horseCoat, [0, 1.02, 0.48], [0, 0, 0], [0.84, 1.06, 1.18]);
+    sculpt(horse, new T.CylinderGeometry(0.31, 0.34, 0.88, 24), M.horseCoat, [0, 1.00, 0.0], [Math.PI / 2, 0, 0], [0.92, 1.0, 0.98]);
+    sculpt(horse, new T.SphereGeometry(0.36, 24, 20), M.horseCoat, [0, 1.03, -0.48], [0, 0, 0], [0.88, 1.06, 1.15]);
+
+    // Manta de Sela Turquesa com Meandro Grego
+    sculpt(horse, new T.CylinderGeometry(0.345, 0.355, 0.78, 24, 1, true, -Math.PI * 0.74, Math.PI * 1.48), M.cloth, [0, 1.03, -0.04], [0, 0, Math.PI / 2]);
+    sculpt(horse, new T.BoxGeometry(0.46, 0.11, 0.48), M.leather, [0, 1.35, -0.02]);
+    sculpt(horse, new T.BoxGeometry(0.44, 0.16, 0.10), M.goldTrim, [0, 1.40, -0.25], [-0.25, 0, 0]);
+
+    // Peitoral com Medalhão de Tridente + Tiras Douradas
+    const breastBand = new T.TorusGeometry(0.36, 0.026, 10, 26, Math.PI);
+    breastBand.rotateY(Math.PI / 2);
+    sculpt(horse, breastBand, M.crest, [0, 1.03, 0.58], [0.34, 0, 0]);
+    sculpt(horse, new T.CylinderGeometry(0.095, 0.095, 0.03, 16), M.goldTrim, [0, 0.97, 0.90], [Math.PI / 2, 0, 0]);
+    for (let t = -2; t <= 2; t++) {
+      sculpt(horse, new T.BoxGeometry(0.032, 0.16, 0.015), M.goldTrim, [t * 0.09, 0.86, 0.83], [0.25, t * 0.24, 0]);
+    }
+
+    // Estandarte Imperial do Tridente na garupa (Exclusivo do Hetairos / Elite)
+    const rearBanner = grp(horse, 0, 1.24, -0.70);
+    sculpt(rearBanner, new T.CylinderGeometry(0.016, 0.020, 1.48, 10), M.goldTrim, [0, 0.55, 0], [-0.14, 0, 0]);
+    sculpt(rearBanner, new T.BoxGeometry(0.48, 0.04, 0.04), M.goldTrim, [0, 1.18, -0.09]);
+    sculpt(rearBanner, new T.PlaneGeometry(0.40, 0.60), M.cloth, [0, 0.86, -0.10]);
+    sculpt(rearBanner, new T.ConeGeometry(0.05, 0.26, 4), M.goldTrim, [0, 1.34, -0.09]);
+    for (const sx of [-1, 1]) {
+      sculpt(rearBanner, new T.ConeGeometry(0.035, 0.18, 4), M.goldTrim, [sx * 0.09, 1.30, -0.09]);
+    }
+
+    // Barding Pesado (Armadura Completa no Peito, Flancos e Garupa do Cavalo — Hetairos!)
+    const hetairosBarding = grp(horse, 0, 0, 0);
+    sculpt(hetairosBarding, new T.SphereGeometry(0.395, 22, 18, 0, Math.PI * 2, 0, Math.PI * 0.56), M.scaleArmor, [0, 1.04, 0.50], [Math.PI * 0.42, 0, 0], [0.90, 1.08, 1.24]);
+    sculpt(hetairosBarding, new T.SphereGeometry(0.385, 22, 18, 0, Math.PI * 2, 0, Math.PI * 0.52), M.scaleArmor, [0, 1.05, -0.50], [-Math.PI * 0.42, 0, 0], [0.94, 1.08, 1.20]);
+
+    // Pescoço, Crina Trançada & Chanfro
+    const hNeck = grp(horse, 0, 1.15, 0.66);
+    hNeck.rotation.x = 0.55;
+    sculpt(hNeck, new T.CylinderGeometry(0.135, 0.22, 0.70, 18), M.horseCoat, [0, 0.32, 0], [0, 0, 0], [0.84, 1, 1.18]);
+    for (let m = 0; m < 7; m++) {
+      const my = 0.06 + m * 0.095;
+      sculpt(hNeck, new T.SphereGeometry(0.065, 10, 10), M.horseMane, [0, my, -0.15], [0, 0, 0], [0.8, 1.1, 1.3]);
+      sculpt(hNeck, new T.SphereGeometry(0.022, 8, 8), M.goldTrim, [0.055, my, -0.14]);
+      sculpt(hNeck, new T.SphereGeometry(0.022, 8, 8), M.goldTrim, [-0.055, my, -0.14]);
+    }
+
+    const hHead = grp(hNeck, 0, 0.66, 0.04);
+    hHead.rotation.x = -1.10;
+    sculpt(hHead, new T.BoxGeometry(0.17, 0.20, 0.34), M.horseCoat, [0, 0, 0.12]);
+    sculpt(hHead, new T.BoxGeometry(0.12, 0.14, 0.25), M.horseCoat, [0, -0.02, 0.36]);
+    sculpt(hHead, new T.SphereGeometry(0.065, 12, 12), M.horseShading, [0, -0.03, 0.48], [0, 0, 0], [0.95, 0.85, 0.9]);
+    sculpt(hHead, new T.BoxGeometry(0.095, 0.032, 0.45), M.goldTrim, [0, 0.095, 0.23], [0.06, 0, 0]);
+
+    const horsePlume = grp(hHead, 0, 0.16, 0.02);
+    for (let p = 0; p < 8; p++) {
+      const ang = -0.3 + (p / 7) * 1.4;
+      sculpt(horsePlume, new T.BoxGeometry(0.038, 0.16, 0.042), M.crest, [0, Math.cos(ang) * 0.12, Math.sin(ang) * 0.12], [ang, 0, 0]);
+    }
+
+    for (const sx of [-1, 1]) {
+      sculpt(hHead, new T.ConeGeometry(0.026, 0.12, 6), M.horseCoat, [sx * 0.065, 0.15, -0.02], [-0.15, 0, sx * -0.14]);
+      sculpt(hHead, new T.SphereGeometry(0.022, 10, 10), M.hoof, [sx * 0.086, 0.04, 0.14]);
+    }
+    sculpt(hHead, new T.TorusGeometry(0.095, 0.012, 6, 16), M.leather, [0, -0.02, 0.36]);
+    for (const sx of [-1, 1]) {
+      sculpt(hHead, new T.CylinderGeometry(0.008, 0.008, 0.72, 6), M.leather, [sx * 0.10, -0.24, 0.04], [0.88, 0, sx * -0.12]);
+    }
+
+    const tailPivot = grp(horse, 0, 1.14, -0.80);
+    sculpt(tailPivot, new T.ConeGeometry(0.095, 0.84, 14), M.horseMane, [0, -0.38, -0.14], [0.32, 0, 0]);
+
+    // 4 Pernas Articuladas
+    const hLegs = [];
+    [
+      { x: -0.20, z:  0.48, front: true,  ph: 0 },
+      { x:  0.20, z:  0.48, front: true,  ph: Math.PI },
+      { x: -0.21, z: -0.48, front: false, ph: Math.PI * 0.7 },
+      { x:  0.21, z: -0.48, front: false, ph: Math.PI * 1.7 }
+    ].forEach(ls => {
+      const hip = grp(horse, ls.x, 0.90, ls.z);
+      sculpt(hip, new T.SphereGeometry(0.115, 14, 14), M.horseCoat, [0, 0, 0]);
+      sculpt(hip, new T.CylinderGeometry(0.098, 0.064, 0.44, 14), M.horseCoat, [0, -0.21, 0], [ls.front ? 0.06 : -0.14, 0, 0]);
+
+      const knee = grp(hip, 0, -0.42, ls.front ? -0.02 : 0.06);
+      sculpt(knee, new T.SphereGeometry(0.056, 12, 12), M.horseCoat, [0, 0, 0]);
+      sculpt(knee, new T.CylinderGeometry(0.056, 0.042, 0.40, 14), M.horseCoat, [0, -0.20, 0], [ls.front ? -0.06 : 0.14, 0, 0]);
+      sculpt(knee, new T.CylinderGeometry(0.048, 0.060, 0.08, 12), M.hoof, [0, -0.42, 0.018]);
+      sculpt(knee, new T.CylinderGeometry(0.062, 0.062, 0.018, 12), M.steel, [0, -0.455, 0.018]);
+
+      hLegs.push({ hip, knee, front: ls.front, ph: ls.ph });
+    });
+
+    // ======================================================================
+    // CAVALEIRO DE POSEIDON (COM SILHUETAS E ARMAS BEM DIFERENCIADAS!)
+    // ======================================================================
+    const rider = grp(horse, 0, 1.38, -0.02);
+
+    for (const s of [-1, 1]) {
+      const rHip = grp(rider, s * 0.22, 0.02, 0.02);
+      rHip.rotation.set(-0.42, s * 0.15, s * 0.28);
+      sculpt(rHip, new T.CylinderGeometry(0.085, 0.065, 0.36, 12), M.skin, [0, -0.18, 0]);
+      const rKnee = grp(rHip, 0, -0.35, 0);
+      rKnee.rotation.set(0.58, 0, s * -0.18);
+      sculpt(rKnee, new T.CylinderGeometry(0.068, 0.048, 0.36, 12), M.goldTrim, [0, -0.18, 0]);
+      sculpt(rKnee, new T.BoxGeometry(0.075, 0.04, 0.16), M.leather, [0, -0.37, 0.03]);
+    }
+
+    const torso = grp(rider, 0, 0.04, 0);
+    const chestMesh = sculpt(torso, new T.CylinderGeometry(0.22, 0.16, 0.48, 20), M.scaleArmor, [0, 0.24, 0], [0, 0, 0], [1.18, 1.0, 0.78]);
+    for (const sx of [-1, 1]) {
+      sculpt(torso, new T.SphereGeometry(0.115, 16, 16), M.goldTrim, [sx * 0.09, 0.33, 0.11], [0, 0, 0], [1.02, 0.86, 0.55]);
+    }
+
+    const belt = new T.TorusGeometry(0.195, 0.022, 8, 26);
+    belt.rotateX(Math.PI / 2);
+    sculpt(torso, belt, M.leather, [0, 0.02, 0], [0, 0, 0], [1.16, 1, 0.82]);
+    for (let i = 0; i < 14; i++) {
+      const a = (i / 14) * Math.PI * 2;
+      sculpt(torso, new T.BoxGeometry(0.074, 0.26, 0.018), M.steel, [Math.sin(a) * 0.20, -0.12, Math.cos(a) * 0.17], [Math.cos(a) * 0.28, a, -Math.sin(a) * 0.28]);
+      sculpt(torso, new T.BoxGeometry(0.078, 0.14, 0.022), M.goldTrim, [Math.sin(a) * 0.205, -0.06, Math.cos(a) * 0.175], [Math.cos(a) * 0.30, a, -Math.sin(a) * 0.30]);
+    }
+
+    // Ombreiras: Prodromos usa ombreiras leves; Hippeus/Hetairos usam ombreiras pesadas de ouro
+    const pauldrons = [];
+    for (const sx of [-1, 1]) {
+      const p = sculpt(torso, new T.SphereGeometry(0.13, 14, 12, 0, Math.PI * 2, 0, Math.PI * 0.48), M.scaleArmor, [sx * 0.23, 0.44, 0], [0, 0, sx * -0.35], [1.14, 0.78, 1.18]);
+      sculpt(p, new T.ConeGeometry(0.04, 0.16, 4), M.goldTrim, [sx * 0.06, 0.05, -0.04], [-0.4, 0, sx * -0.5], [0.4, 1, 1]);
+      pauldrons.push(p);
+    }
+
+    const capeGeo = new T.PlaneGeometry(0.84, 1.12, 16, 20);
+    const cPos = capeGeo.attributes.position;
+    const capeBase = new Float32Array(cPos.array.length);
+    for (let i = 0; i < cPos.count; i++) {
+      const x = cPos.getX(i), y = cPos.getY(i);
+      const normY = Math.max(0, Math.min(1, (0.56 - y) / 1.12));
+      const z = -0.14 - normY * 0.34;
+      const fx = x * (0.60 + normY * 0.68);
+      cPos.setXYZ(i, fx, y, z);
+      capeBase[i * 3] = fx;
+      capeBase[i * 3 + 1] = y;
+      capeBase[i * 3 + 2] = z;
+    }
+    capeGeo.computeVertexNormals();
+    const cape = sculpt(torso, capeGeo, M.cloth, [0, -0.06, -0.02]);
+
+    // Cabeça & Elmo Coríntio + Coroa de Louros + Crista Dupla no Hetairos!
+    const head = grp(torso, 0, 0.56, 0.01);
+    sculpt(head, new T.SphereGeometry(0.115, 18, 18), M.skin, [0, 0, 0], [0, 0, 0], [0.94, 1.12, 0.98]);
+    sculpt(head, new T.SphereGeometry(0.130, 20, 16, 0, Math.PI * 2, 0, Math.PI * 0.58), M.goldTrim, [0, 0.02, 0], [-0.06, 0, 0], [0.98, 1.1, 1.05]);
+    sculpt(head, new T.BoxGeometry(0.022, 0.085, 0.026), M.goldTrim, [0, 0.015, 0.128]);
+    for (const sx of [-1, 1]) {
+      sculpt(head, new T.BoxGeometry(0.02, 0.105, 0.088), M.goldTrim, [sx * 0.094, -0.035, 0.065], [0.06, sx * 0.42, sx * -0.1]);
+    }
+    const laurelWreath = new T.TorusGeometry(0.134, 0.013, 8, 24);
+    laurelWreath.rotateX(Math.PI / 2);
+    sculpt(head, laurelWreath, M.goldTrim, [0, 0.055, 0], [0.12, 0, 0]);
+
+    const crestSegments = [];
+    const crestMount = grp(head, 0, 0.15, -0.01);
+    sculpt(crestMount, new T.BoxGeometry(0.030, 0.07, 0.24), M.goldTrim, [0, 0, 0]);
+    for (let i = 0; i < 18; i++) {
+      const t = i / 17;
+      const ang = -0.58 + t * 2.65;
+      const r = 0.20;
+      const seg = sculpt(
+        crestMount,
+        new T.BoxGeometry(0.024, 0.14 + Math.sin(t * Math.PI) * 0.045, 0.028),
+        M.crest,
+        [0, Math.cos(ang) * r * 0.92, Math.sin(ang) * r * 1.18 - 0.02],
+        [ang, 0, 0]
+      );
+      crestSegments.push({ mesh: seg, phase: i * 0.38, factor: 0.3 + t * 0.9 });
+    }
+
+    // Braços Articulados
+    const armR = grp(torso, 0.25, 0.40, 0);
+    sculpt(armR, new T.CylinderGeometry(0.05, 0.05, 0.22, 12), M.skin, [0.01, -0.11, 0]);
+    sculpt(armR, new T.SphereGeometry(0.05, 10, 10), M.skin, [0.01, 0, 0]);
+    sculpt(armR, new T.SphereGeometry(0.05, 10, 10), M.skin, [0.01, -0.22, 0]);
+
+    const elbowR = grp(armR, 0.02, -0.22, 0);
+    sculpt(elbowR, new T.CylinderGeometry(0.046, 0.038, 0.22, 12), M.skin, [0, -0.11, 0]);
+    sculpt(elbowR, new T.CylinderGeometry(0.044, 0.040, 0.10, 14), M.goldTrim, [0, -0.16, 0]);
+
+    const armL = grp(torso, -0.25, 0.40, 0);
+    sculpt(armL, new T.CylinderGeometry(0.05, 0.05, 0.22, 12), M.skin, [-0.01, -0.11, 0]);
+    sculpt(armL, new T.SphereGeometry(0.05, 10, 10), M.skin, [-0.01, 0, 0]);
+    sculpt(armL, new T.SphereGeometry(0.05, 10, 10), M.skin, [-0.01, -0.22, 0]);
+
+    const elbowL = grp(armL, -0.02, -0.22, 0);
+    sculpt(elbowL, new T.CylinderGeometry(0.046, 0.038, 0.22, 12), M.skin, [0, -0.11, 0]);
+    sculpt(elbowL, new T.CylinderGeometry(0.044, 0.040, 0.10, 14), M.goldTrim, [0, -0.16, 0]);
+
+    // Escudo Hoplon Redondo com Tridente (Hippeus e Hetairos usam; Prodromos usa lança longa de 2 mãos!)
+    const shield = grp(elbowL, -0.06, -0.14, 0.06);
+    shield.rotation.set(0, -Math.PI / 2, 0);
+    const shieldDome = new T.SphereGeometry(0.42, 24, 18, 0, Math.PI * 2, 0, Math.PI * 0.28);
+    shieldDome.rotateX(Math.PI / 2);
+    sculpt(shield, shieldDome, M.shield, [0, 0, -0.32]);
+    sculpt(shield, new T.TorusGeometry(0.40, 0.026, 10, 32), M.goldTrim, [0, 0, 0.02]);
+
+    const weaponGlowMat = new T.MeshStandardMaterial({
+      color: 0xffffff,
+      emissive: 0x2dd4bf,
+      emissiveIntensity: 2.2,
+      roughness: 0.1
+    });
+    const slashTrailMat = new T.MeshBasicMaterial({
+      color: 0x2dd4bf,
+      transparent: true,
+      opacity: 0.0,
+      blending: T.AdditiveBlending,
+      side: T.DoubleSide,
+      depthWrite: false
+    });
+
+    // ======================================================================
+    // 1. HIPPEUS: Espada Kopis/Spatha + Lança de Pânico de Fobos (Ares!)
+    // ======================================================================
+    const weaponHippeus = grp(elbowR, 0, -0.22, 0.04);
+    const hipSword = grp(weaponHippeus, 0, 0, 0);
+    hipSword.rotation.set(Math.PI / 2, 0, 0);
+    sculpt(hipSword, new T.SphereGeometry(0.036, 12, 12), M.goldTrim, [0, -0.22, 0]);
+    sculpt(hipSword, new T.CylinderGeometry(0.018, 0.022, 0.24, 12), M.leather, [0, -0.08, 0]);
+    sculpt(hipSword, new T.BoxGeometry(0.28, 0.042, 0.065), M.goldTrim, [0, 0.05, 0]);
+    sculpt(hipSword, new T.BoxGeometry(0.085, 0.90, 0.018), M.steel, [0, 0.52, 0]);
+    const hipPhobosGlow = sculpt(hipSword, new T.BoxGeometry(0.026, 0.82, 0.026), weaponGlowMat, [0, 0.50, 0]);
+    sculpt(hipSword, new T.ConeGeometry(0.060, 0.24, 4), M.steel, [0, 1.09, 0], [0, Math.PI / 4, 0], [1.0, 1.0, 0.22]);
+
+    // ======================================================================
+    // 2. PRODROMOS: Lança Anticavalaria Colossal (Sarissa de 3.6m com Banderola!)
+    // ======================================================================
+    const weaponProdromos = grp(elbowR, 0, -0.22, 0.04);
+    sculpt(weaponProdromos, new T.CylinderGeometry(0.018, 0.022, 3.65, 12), M.wood, [0, 0, 0.45], [Math.PI / 2, 0, 0]);
+    sculpt(weaponProdromos, new T.ConeGeometry(0.034, 0.20, 6), M.goldTrim, [0, 0, -1.40], [-Math.PI / 2, 0, 0]);
+    // Banderola azul-celeste esvoaçando perto da ponta da lança anticavalaria!
+    sculpt(weaponProdromos, new T.PlaneGeometry(0.04, 0.45), M.crest, [0, -0.22, 1.85], [0, Math.PI / 2, 0]);
+    sculpt(weaponProdromos, new T.ConeGeometry(0.065, 0.58, 4), M.steel, [0, 0, 2.52], [Math.PI / 2, 0, 0], [1, 1, 0.28]);
+    sculpt(weaponProdromos, new T.BoxGeometry(0.020, 0.026, 0.44), weaponGlowMat, [0, 0, 2.46]);
+
+    // ======================================================================
+    // 3. HETAIROS (ELITE DE POSEIDON): Grande Montante Tridente de Onda de Área!
+    // ======================================================================
+    const weaponHetairos = grp(elbowR, 0, -0.22, 0.04);
+    const hetSword = grp(weaponHetairos, 0, 0, 0);
+    hetSword.rotation.set(Math.PI / 2, 0, 0);
+    sculpt(hetSword, new T.SphereGeometry(0.050, 12, 12), M.goldTrim, [0, -0.30, 0]);
+    sculpt(hetSword, new T.CylinderGeometry(0.024, 0.028, 0.34, 12), M.leather, [0, -0.10, 0]);
+    // Guarda em formato de Tridente Dourado
+    sculpt(hetSword, new T.BoxGeometry(0.44, 0.062, 0.085), M.goldTrim, [0, 0.09, 0]);
+    for (const sx of [-1, 1]) {
+      sculpt(hetSword, new T.ConeGeometry(0.038, 0.22, 4), M.goldTrim, [sx * 0.20, 0.19, 0]);
+    }
+    // Lâmina Larga Imperial de Dano em Área
+    sculpt(hetSword, new T.BoxGeometry(0.145, 1.32, 0.028), M.steel, [0, 0.76, 0]);
+    sculpt(hetSword, new T.BoxGeometry(0.042, 1.22, 0.034), weaponGlowMat, [0, 0.74, 0]);
+    sculpt(hetSword, new T.ConeGeometry(0.102, 0.34, 4), M.steel, [0, 1.58, 0], [0, Math.PI / 4, 0], [1.0, 1.0, 0.22]);
+
+    const slashTrail = new T.Mesh(new T.RingGeometry(0.68, 1.65, 28, 1, -0.45, 1.6), slashTrailMat);
+    slashTrail.position.set(0, -0.25, 0.68);
+    elbowR.add(slashTrail);
+
+    // Aura Verde-Turquesa de Regeneração ("Senhor dos Cavalos" +0.5 PV/s)
+    const regenRing = new T.Mesh(
+      new T.RingGeometry(0.95, 1.28, 48),
+      new T.MeshBasicMaterial({
+        color: 0x10b981,
+        transparent: true,
+        opacity: 0.55,
+        blending: T.AdditiveBlending,
+        side: T.DoubleSide,
+        depthWrite: false
+      })
+    );
+    regenRing.rotation.x = -Math.PI / 2;
+    regenRing.position.y = 0.03;
+    root.add(regenRing);
+
+    function syncVisuals(st) {
+      const uCfg = UNITS_DATA[st.unit];
+      const isHetairos = (st.unit === 'hetairos');
+      const isProdromos = (st.unit === 'prodromos');
+
+      // Muda cor da pelagem, crina e escala da montaria conforme a unidade!
+      M.horseCoat.color.setHex(uCfg.horseColor);
+      M.horseMane.color.setHex(uCfg.maneColor);
+      M.crest.color.setHex(uCfg.crestColor);
+      root.scale.setScalar(uCfg.scaleFactor);
+
+      // Armadura do cavaleiro e do cavalo
+      chestMesh.material = isProdromos ? M.lightArmor : M.scaleArmor;
+      pauldrons.forEach(p => { p.visible = !isProdromos; });
+      hetairosBarding.visible = isHetairos;
+      rearBanner.visible = isHetairos;
+      horsePlume.visible = isHetairos || (st.line === 'campea');
+
+      // Arma exclusiva de cada unidade
+      weaponHippeus.visible = (st.unit === 'hippeus');
+      weaponProdromos.visible = isProdromos;
+      weaponHetairos.visible = isHetairos;
+      shield.visible = !isProdromos;
+
+      // Brilho elemental: Lança de Fobos (Ares = vermelho-fogo) ou Poseidon (turquesa)
+      const glowHex = (st.unit === 'hippeus' && st.ares) ? 0xef4444 : (isHetairos ? 0xfacc15 : 0x2dd4bf);
+      weaponGlowMat.emissive.setHex(glowHex);
+      slashTrailMat.color.setHex(glowHex);
+      hipPhobosGlow.visible = st.ares || (st.line === 'campea');
+
+      regenRing.visible = st.lordOfHorses;
+    }
+
+    return {
+      root, horse, hLegs, hNeck, tailPivot, rider, torso,
+      armR, elbowR, armL, elbowL, crestSegments, cape, capeBase,
+      slashTrail, regenRing, syncVisuals
+    };
+  }
+
+  /* ========================================================================
+     4. CENA MARINHA DE POSEIDON, FORMAÇÃO INIMIGA & EFEITOS DE COMBATE
+     ======================================================================== */
+  const renderer = new T.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = T.PCFSoftShadowMap;
+  wrap.appendChild(renderer.domElement);
+
+  const scene = new T.Scene();
+  scene.background = new T.Color(0x041424);
+  scene.fog = new T.FogExp2(0x041424, 0.015);
+
+  const camera = new T.PerspectiveCamera(35, 1, 0.1, 140);
+  scene.add(new T.HemisphereLight(0xccfbf1, 0x0c4a6e, 1.28));
+
+  const sun = new T.DirectionalLight(0xfffbeb, 2.35);
+  sun.position.set(6, 10, 6);
+  sun.castShadow = true;
+  sun.shadow.mapSize.set(1024, 1024);
+  scene.add(sun);
+
+  const rim = new T.DirectionalLight(0x2dd4bf, 1.5);
+  rim.position.set(-5, 5, -5);
+  scene.add(rim);
+
+  const textures = createPoseidonTextures();
+  sculpt(scene, new T.CylinderGeometry(8.5, 8.8, 0.34, 64), new T.MeshStandardMaterial({ map: textures.floorTex, roughness: 0.45 }), [0, -0.17, 0]);
+
+  const colMat = new T.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.42 });
+  const tealMat = new T.MeshStandardMaterial({ color: 0x0d9488, metalness: 0.75, roughness: 0.25 });
+  for (let i = 0; i < 6; i++) {
+    const ca = Math.PI + ((i - 2.5) / 5) * Math.PI * 0.85;
+    const cx = Math.cos(ca) * 6.8, cz = Math.sin(ca) * 6.8;
+    sculpt(scene, new T.CylinderGeometry(0.22, 0.26, 2.8, 16), colMat, [cx, 1.4, cz]);
+    sculpt(scene, new T.BoxGeometry(0.58, 0.12, 0.58), tealMat, [cx, 2.86, cz]);
+  }
+
+  // Grupo de Inimigos na pista para demonstrar Investida, Splash e Lifesteal!
+  const raidTargets = [];
+  const enemyArmorMat = new T.MeshStandardMaterial({ color: 0xb91c1c, roughness: 0.45 });
+  const enemySkinMat = new T.MeshStandardMaterial({ color: 0xc98a5b, roughness: 0.5 });
+  [
+    { x: 0, z: -3.2 },
+    { x: -0.72, z: -3.45 },
+    { x: 0.72, z: -3.45 },
+    { x: -3.2, z: 0 },
+    { x: 3.2, z: 0 }
+  ].forEach(pos => {
+    const eg = grp(scene, pos.x, 0, pos.z);
+    sculpt(eg, new T.CylinderGeometry(0.16, 0.22, 0.95, 12), enemyArmorMat, [0, 0.48, 0]);
+    sculpt(eg, new T.SphereGeometry(0.14, 12, 12), enemySkinMat, [0, 1.12, 0]);
+    raidTargets.push({ group: eg, x: pos.x, z: pos.z, knock: 0 });
+  });
+
+  // Ondas de Dano em Área do Hetairos & Aura Roxa de Roubo de Vida (Cavalos da Trácia!)
+  const effectWaves = [];
+  function spawnWave(x, z, colorHex, maxScale = 3.8) {
+    const ring = new T.Mesh(
+      new T.RingGeometry(0.35, 0.75, 36),
+      new T.MeshBasicMaterial({ color: colorHex, transparent: true, opacity: 0.92, side: T.DoubleSide, blending: T.AdditiveBlending, depthWrite: false })
+    );
+    ring.rotation.x = -Math.PI / 2;
+    ring.position.set(x, 0.04, z);
+    scene.add(ring);
+    effectWaves.push({ mesh: ring, life: 0.65, max: 0.65, maxScale });
+  }
+
+  const cavalry = buildPoseidonCavalry(textures);
+  scene.add(cavalry.root);
+
+  // Estado Completo da Cavalaria de Poseidon
+  const state = {
+    unit: 'hippeus',
+    line: 'campea',
+    action: 'vigilia',
+    lordOfHorses: true,
+    hermes: true,
+    ares: true,
+    dionysus: true,
+    currentHp: 218,
+    maxHp: 218
+  };
+
+  const bottomPill = document.getElementById('bottom-pill');
+  const hpBarFill = document.getElementById('hp-bar-fill');
+  const hpText = document.getElementById('hp-text');
+
+  function updateHpBar() {
+    const pct = Math.max(0, Math.min(100, (state.currentHp / state.maxHp) * 100));
+    hpBarFill.style.width = `${pct}%`;
+    hpText.textContent = `${Math.round(state.currentHp)} / ${state.maxHp}`;
+  }
+
+  function refreshState(resetFullHp = false) {
+    const uCfg = UNITS_DATA[state.unit];
+    const lCfg = LINE_UPGRADES[state.line];
+
+    const newMaxHp = Math.round(uCfg.hp * (1 + lCfg.hpBonus));
+    if (resetFullHp || state.currentHp > newMaxHp) {
+      state.currentHp = newMaxHp;
+    } else {
+      state.currentHp = Math.round((state.currentHp / state.maxHp) * newMaxHp);
+    }
+    state.maxHp = newMaxHp;
+
+    // Ataque com Evolução de Linha + Hermes (Ataque Espirituoso) + Ares (Lança de Fobos no Hippeus)
+    let atk = uCfg.atk * (1 + lCfg.atkBonus);
+    if (state.hermes) atk *= 1.15;
+    if (state.unit === 'hippeus' && state.ares) atk *= 1.20;
+    const finalAtk = Math.round(atk);
+
+    // Velocidade com Bônus Passivo Poseidon (+8%) + Hermes (+10%)
+    const finalSpd = (uCfg.spd * 1.08 * (state.hermes ? 1.10 : 1.0)).toFixed(2);
+
+    // Campo de Visão (LoS) com Evolução de Linha + Senhor dos Cavalos (+4 LoS)
+    const finalLos = uCfg.los + lCfg.losBonus + (state.lordOfHorses ? 4 : 0);
+
+    const dioTag = state.dionysus ? ' • 30% Lifesteal' : '';
+    const regTag = state.lordOfHorses ? ' • +0.5 PV/s' : '';
+
+    bottomPill.innerHTML = `Poseidon • ${uCfg.name} ${lCfg.label} <span>| Atq: ${finalAtk} (${uCfg.bonusStr}) • Vel: ${finalSpd} • LoS: ${finalLos}${regTag}${dioTag}</span>`;
+
+    updateHpBar();
+    cavalry.syncVisuals(state);
+  }
+
+  document.querySelectorAll('.unit-btn').forEach(b => b.addEventListener('click', () => {
+    state.unit = b.dataset.unit;
+    document.querySelectorAll('.unit-btn').forEach(x => x.classList.toggle('on', x === b));
+    refreshState(true);
+  }));
+
+  document.querySelectorAll('.line-btn').forEach(b => b.addEventListener('click', () => {
+    state.line = b.dataset.line;
+    document.querySelectorAll('.line-btn').forEach(x => x.classList.toggle('on', x === b));
+    refreshState(false);
+  }));
+
+  document.querySelectorAll('.act-btn').forEach(b => b.addEventListener('click', () => {
+    state.action = b.dataset.act;
+    document.querySelectorAll('.act-btn').forEach(x => x.classList.toggle('on', x === b));
+  }));
+
+  document.getElementById('btn-damage').addEventListener('click', () => {
+    state.currentHp = Math.max(25, Math.round(state.maxHp * 0.42));
+    updateHpBar();
+  });
+
+  document.getElementById('btn-lord').addEventListener('click', e => {
+    state.lordOfHorses = !state.lordOfHorses;
+    e.target.classList.toggle('on', state.lordOfHorses);
+    refreshState(false);
+  });
+
+  document.getElementById('btn-hermes').addEventListener('click', e => {
+    state.hermes = !state.hermes;
+    e.target.classList.toggle('on', state.hermes);
+    refreshState(false);
+  });
+
+  document.getElementById('btn-ares').addEventListener('click', e => {
+    state.ares = !state.ares;
+    e.target.classList.toggle('on', state.ares);
+    refreshState(false);
+  });
+
+  document.getElementById('btn-dionysus').addEventListener('click', e => {
+    state.dionysus = !state.dionysus;
+    e.target.classList.toggle('on', state.dionysus);
+    refreshState(false);
+  });
+
+  const modal = document.getElementById('guide-modal');
+  document.getElementById('btn-guide').addEventListener('click', () => modal.classList.add('open'));
+  document.getElementById('btn-close-guide').addEventListener('click', () => modal.classList.remove('open'));
+  modal.addEventListener('click', e => { if (e.target === modal) modal.classList.remove('open'); });
+
+  // Câmera 360°
+  let camAngle = 0.65, camPitch = 0.24, camDist = 7.6, targetCamDist = 7.6;
+  let dragging = false, lastX = 0, lastY = 0, pinchDist = 0;
+
+  renderer.domElement.addEventListener('pointerdown', e => { dragging = true; lastX = e.clientX; lastY = e.clientY; });
+  window.addEventListener('pointerup', () => dragging = false);
+  window.addEventListener('pointermove', e => {
+    if (!dragging) return;
+    camAngle -= (e.clientX - lastX) * 0.009;
+    camPitch = Math.max(0.05, Math.min(0.95, camPitch + (e.clientY - lastY) * 0.006));
+    lastX = e.clientX; lastY = e.clientY;
+  });
+  renderer.domElement.addEventListener('wheel', e => {
+    e.preventDefault();
+    targetCamDist = Math.max(3.2, Math.min(14.5, targetCamDist + e.deltaY * 0.006));
+  }, { passive: false });
+
+  renderer.domElement.addEventListener('touchstart', e => {
+    if (e.touches.length === 2) {
+      pinchDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+    }
+  }, { passive: true });
+  renderer.domElement.addEventListener('touchmove', e => {
+    if (e.touches.length === 2) {
+      const d = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+      targetCamDist = Math.max(3.2, Math.min(14.5, targetCamDist + (pinchDist - d) * 0.016));
+      pinchDist = d;
+    }
+  }, { passive: true });
+
+  function handleResize() {
+    const w = wrap.clientWidth || window.innerWidth || 800;
+    const h = wrap.clientHeight || window.innerHeight || 600;
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+    renderer.setSize(w, h, false);
+  }
+  window.addEventListener('resize', handleResize);
+  handleResize();
+
+  refreshState(true);
+
+  // Loop de Animação
+  const clock = new T.Clock();
+  let hitCooldown = 0;
+
+  function animate() {
+    requestAnimationFrame(animate);
+    const dt = Math.min(clock.getDelta(), 0.05);
+    const t = clock.getElapsedTime();
+
+    hitCooldown = Math.max(0, hitCooldown - dt);
+
+    // Regeneração Passiva de "Senhor dos Cavalos" (+0.5 PV/s escalado para visualização fluida)
+    if (state.lordOfHorses && state.currentHp < state.maxHp) {
+      state.currentHp = Math.min(state.maxHp, state.currentHp + 4.5 * dt);
+      updateHpBar();
+    }
+
+    const isRaid = state.action === 'raid';
+    const isRear = state.action === 'empinar';
+    raidTargets.forEach(rt => { rt.group.visible = isRaid; });
+    cavalry.slashTrail.material.opacity = 0;
+
+    if (isRaid) {
+      const baseUnitSpd = state.unit === 'prodromos' ? 1.55 : (state.unit === 'hetairos' ? 1.35 : 1.30);
+      const spdMult = baseUnitSpd * (state.hermes ? 1.15 : 1.0);
+      const a = t * spdMult;
+      const R = 3.2;
+      const gallop = t * (state.hermes ? 16.5 : 13.8);
+      const cx = Math.cos(a) * R;
+      const cz = Math.sin(a) * R;
+
+      const suspension = Math.max(0, Math.sin(gallop)) * 0.16;
+      cavalry.root.position.set(cx, suspension, cz);
+      cavalry.root.rotation.y = -a;
+      cavalry.horse.rotation.z = -0.14;
+      cavalry.horse.rotation.x = Math.cos(gallop) * 0.11;
+      cavalry.hNeck.rotation.x = 0.62 + Math.sin(gallop) * 0.08;
+
+      cavalry.hLegs.forEach(lg => {
+        const phase = gallop + lg.ph;
+        const s = Math.sin(phase);
+        const c = Math.cos(phase);
+        if (lg.front) {
+          lg.hip.rotation.x = s * 0.65;
+          lg.knee.rotation.x = Math.max(0, -c) * 0.85;
+        } else {
+          lg.hip.rotation.x = s * 0.62;
+          lg.knee.rotation.x = -Math.max(0, -c) * 0.68;
+        }
+      });
+
+      let hitTargetsCount = 0;
+      let minDist = 99;
+      raidTargets.forEach(rt => {
+        const d = Math.hypot(cx - rt.x, cz - rt.z);
+        if (d < minDist) minDist = d;
+        const hitRadius = state.unit === 'hetairos' ? 1.95 : 1.15;
+        if (d < hitRadius) {
+          rt.knock = 0.25;
+          hitTargetsCount += 1;
+        }
+      });
+
+      if (minDist < 1.65) {
+        const strikeWave = Math.sin(((1.65 - minDist) / 1.65) * Math.PI);
+        cavalry.torso.rotation.set(0.18, -0.35 + strikeWave * 0.65, 0);
+        cavalry.armR.rotation.set(-2.1 + strikeWave * 1.45, 0.15, 0.22);
+        cavalry.elbowR.rotation.set(-0.35 + strikeWave * 0.25, 0, 0);
+        cavalry.slashTrail.material.opacity = strikeWave * 0.94;
+
+        if (hitTargetsCount > 0 && hitCooldown <= 0) {
+          hitCooldown = 0.55;
+          // Dano em Área do Hetairos!
+          if (state.unit === 'hetairos') {
+            spawnWave(cx, cz, 0x2dd4bf, 4.2);
+          }
+          // Roubo de Vida de "Cavalos da Trácia" (Dionísio): recupera PV por cada alvo atingido!
+          if (state.dionysus && state.currentHp < state.maxHp) {
+            const healAmount = (state.unit === 'hetairos' ? 14 : 9) * hitTargetsCount;
+            state.currentHp = Math.min(state.maxHp, state.currentHp + healAmount);
+            updateHpBar();
+            spawnWave(cx, cz, 0xa855f7, 2.4);
+          }
+        }
+      } else {
+        cavalry.torso.rotation.set(0.08, 0, 0);
+        cavalry.armR.rotation.set(-0.95 + Math.sin(gallop) * 0.08, 0.20, 0.32);
+        cavalry.elbowR.rotation.set(-0.48, 0, 0);
+      }
+      cavalry.armL.rotation.set(-0.65, -0.35, -0.25);
+      cavalry.elbowL.rotation.set(-0.75, 0, 0);
+    } else if (isRear) {
+      const cycle = (t * 0.68) % 1.0;
+      const rear = Math.sin(cycle * Math.PI);
+      cavalry.root.position.set(0, 0.42 * rear, 0);
+      cavalry.horse.rotation.set(-0.68 * rear, 0, 0);
+      cavalry.rider.rotation.set(0.45 * rear, 0, 0);
+
+      cavalry.hLegs.forEach(lg => {
+        if (lg.front) {
+          lg.hip.rotation.x = -1.15 * rear;
+          lg.knee.rotation.x = 1.25 * rear;
+        } else {
+          lg.hip.rotation.x = 0.45 * rear;
+          lg.knee.rotation.x = 0.35 * rear;
+        }
+      });
+      cavalry.armR.rotation.set(-2.45 * rear - 0.3 * (1 - rear), 0.15, 0.25);
+    } else {
+      cavalry.root.position.set(0, 0, 0);
+      cavalry.root.rotation.y = Math.sin(t * 0.4) * 0.16;
+      cavalry.horse.rotation.set(0, 0, 0);
+      cavalry.rider.rotation.set(0, 0, 0);
+      cavalry.torso.rotation.set(0, 0, 0);
+
+      cavalry.hLegs.forEach(lg => {
+        lg.hip.rotation.x = 0;
+        lg.knee.rotation.x = 0;
+      });
+      cavalry.hNeck.rotation.x = 0.55 + Math.sin(t * 1.6) * 0.04;
+      cavalry.tailPivot.rotation.z = Math.sin(t * 2.4) * 0.14;
+      cavalry.armR.rotation.x = -0.45 + Math.sin(t * 2.0) * 0.04;
+      cavalry.elbowR.rotation.x = -0.45;
+      cavalry.armL.rotation.x = -0.55;
+      cavalry.elbowL.rotation.x = -0.75;
+    }
+
+    raidTargets.forEach(rt => {
+      if (rt.knock > 0) {
+        rt.knock = Math.max(0, rt.knock - dt);
+        rt.group.rotation.x = -Math.sin((rt.knock / 0.25) * Math.PI) * 0.55;
+      } else {
+        rt.group.rotation.x = 0;
+      }
+    });
+
+    for (let i = effectWaves.length - 1; i >= 0; i--) {
+      const sw = effectWaves[i];
+      sw.life -= dt;
+      const k = Math.max(0, sw.life / sw.max);
+      sw.mesh.scale.setScalar(1 + (1 - k) * sw.maxScale);
+      sw.mesh.material.opacity = 0.9 * k;
+      if (sw.life <= 0) {
+        scene.remove(sw.mesh);
+        effectWaves.splice(i, 1);
+      }
+    }
+
+    if (cavalry.regenRing.visible) {
+      cavalry.regenRing.rotation.z += dt * 1.2;
+      cavalry.regenRing.scale.setScalar(1 + Math.sin(t * 4.5) * 0.06);
+    }
+
+    const wind = isRaid ? 3.2 : 1.0;
+    for (const cs of cavalry.crestSegments) {
+      cs.mesh.position.x = Math.sin(t * 3.4 * wind - cs.phase) * 0.014 * cs.factor;
+    }
+    const cPos = cavalry.cape.geometry.attributes.position;
+    for (let i = 0; i < cPos.count; i++) {
+      const px = cavalry.capeBase[i * 3];
+      const py = cavalry.capeBase[i * 3 + 1];
+      const pz = cavalry.capeBase[i * 3 + 2];
+      const normY = Math.max(0, Math.min(1, (0.56 - py) / 1.12));
+      const wave = Math.sin(t * 3.6 * wind - normY * 4.5 + px * 3.0) * 0.10 * normY;
+      cPos.setXYZ(i, px, py, pz + wave - (isRaid ? normY * 0.35 : 0));
+    }
+    cPos.needsUpdate = true;
+    cavalry.cape.geometry.computeVertexNormals();
+
+    camDist = damp(camDist, targetCamDist, 6, dt);
+    if (!dragging && !isRaid) camAngle += dt * 0.05;
+
+    const hDist = Math.cos(camPitch) * camDist;
+    const vDist = Math.sin(camPitch) * camDist;
+    camera.position.set(Math.sin(camAngle) * hDist, 1.45 + vDist, Math.cos(camAngle) * hDist);
+    camera.lookAt(0, 1.45, 0);
+
+    renderer.render(scene, camera);
+  }
+
+  animate();
+})();
+</script>
+</body>
+</html>
