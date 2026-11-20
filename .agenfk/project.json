@@ -1,6 +1,9 @@
 {
   "name": "Age of Mythology: Olympus",
-  "description": "RTS game inspirada em Age of Mythology com suporte a Web e Godot 4",
+  "description": "RTS mitológico 3D/2.5D em React 19, Three.js, TypeScript e WebSocket",
+  "flow": "Default Flow",
   "verifyCommand": "npm run lint && npm run build && npm test",
-  "setupCommand": "npm install"
+  "setupCommand": "npm install",
+  "autoWorktree": false,
+  "askBeforeCommit": true
 }

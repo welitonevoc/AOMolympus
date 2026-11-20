@@ -16,3 +16,8 @@ coverage/
 .agenfk/server-port
 .agenfk/backups/
 
+# Godot 4 local import cache & Android build output
+godot4/.godot/
+dist-android/
+
+

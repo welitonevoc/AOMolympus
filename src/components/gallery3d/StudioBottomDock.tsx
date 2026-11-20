@@ -1,4 +1,4 @@
-import { Eye, RotateCw } from 'lucide-react';
+import { Download, Eye, RotateCw } from 'lucide-react';
 import { GalleryCategory } from './studioTypes';
 import {
   StudioUnitBottomControls,
@@ -18,6 +18,9 @@ export interface StudioBottomDockProps {
   setAutoRotate3D: React.Dispatch<React.SetStateAction<boolean>>;
   zoomPercent: number;
   adjustZoom: (factor: number) => void;
+  onExportGodotGlb?: () => void;
+  isExportingGlb?: boolean;
+  glbExportLabel?: string | null;
   unitControlsProps: StudioUnitBottomControlsProps;
   worldControlsProps: Omit<StudioWorldBottomControlsProps, 'galleryCategory'>;
 }
@@ -31,6 +34,9 @@ export function StudioBottomDock({
   setAutoRotate3D,
   zoomPercent,
   adjustZoom,
+  onExportGodotGlb,
+  isExportingGlb = false,
+  glbExportLabel = null,
   unitControlsProps,
   worldControlsProps,
 }: StudioBottomDockProps) {
@@ -71,6 +77,23 @@ export function StudioBottomDock({
         <RotateCw className="h-3.5 w-3.5" />
         <span>Girar 360°</span>
       </button>
+
+      {onExportGodotGlb && (
+        <button
+          type="button"
+          disabled={isExportingGlb}
+          onClick={onExportGodotGlb}
+          title="Exportar modelo 3D atual em formato .glb pronto para Godot 4 (godot4/models/)"
+          className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition cursor-pointer whitespace-nowrap shrink-0 ${
+            isExportingGlb
+              ? 'border border-amber-400/30 bg-amber-500/10 text-amber-200 opacity-70 cursor-wait'
+              : 'border border-amber-400/45 bg-amber-500/15 text-[#f6e08b] hover:bg-amber-500/25'
+          }`}
+        >
+          <Download className="h-3.5 w-3.5" />
+          <span>{isExportingGlb ? 'Exportando...' : glbExportLabel ?? 'Exportar GLB'}</span>
+        </button>
+      )}
 
       <div className="flex items-center gap-1">
         <button

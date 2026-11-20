@@ -48,6 +48,7 @@ import {
   UnitCategoryFilter,
   UtensilCategoryFilter,
 } from './gallery3d/studioTypes';
+import { buildGodotGlbFilename, exportObjectToGlb } from './gallery3d/exportGlbForGodot';
 
 const LazyStudioSceneCanvas = lazy(() =>
   import('./gallery3d/StudioSceneCanvas').then((m) => ({ default: m.StudioSceneCanvas }))
@@ -105,6 +106,8 @@ export function HopliteUvBuilderModal({
   const [specDrawerOpen, setSpecDrawerOpen] = useState<boolean>(true);
   const [zoomPercent, setZoomPercent] = useState<number>(100);
   const [showHumanScale, setShowHumanScale] = useState<boolean>(false);
+  const [isExportingGlb, setIsExportingGlb] = useState<boolean>(false);
+  const [glbExportLabel, setGlbExportLabel] = useState<string | null>(null);
 
   // Units & Buildings state
   const [selectedCiv, setSelectedCiv] = useState<PantheonId>('greek');
@@ -440,6 +443,59 @@ export function HopliteUvBuilderModal({
     setFocusDivine(false);
   }, [galleryCategory, selectedUnit, selectedBuilding, selectedCiv, selectedMajorGod]);
 
+  const handleExportGodotGlb = useCallback(async () => {
+    const subject = entityMeshRef.current;
+    if (!subject || isExportingGlb) return;
+    setIsExportingGlb(true);
+    setGlbExportLabel(null);
+    try {
+      const extraId =
+        galleryCategory === 'map'
+          ? selectedMap
+          : galleryCategory === 'fauna'
+            ? selectedFauna
+            : galleryCategory === 'flora'
+              ? selectedFloraId
+              : galleryCategory === 'utensil'
+                ? selectedUtensilId
+                : galleryCategory === 'relic'
+                  ? selectedRelicId
+                  : selectedTerrainId;
+      const filename = buildGodotGlbFilename({
+        galleryCategory,
+        pantheon: selectedCiv,
+        majorGod: selectedMajorGod,
+        unitId: selectedUnit,
+        buildingKind: selectedBuilding,
+        buildingAge,
+        extraId,
+      });
+      await exportObjectToGlb(subject, filename);
+      setGlbExportLabel('GLB salvo!');
+      window.setTimeout(() => setGlbExportLabel(null), 2400);
+    } catch (err) {
+      console.error('Erro ao exportar GLB para Godot 4:', err);
+      setGlbExportLabel('Erro GLB');
+      window.setTimeout(() => setGlbExportLabel(null), 2400);
+    } finally {
+      setIsExportingGlb(false);
+    }
+  }, [
+    buildingAge,
+    galleryCategory,
+    isExportingGlb,
+    selectedBuilding,
+    selectedCiv,
+    selectedFauna,
+    selectedFloraId,
+    selectedMajorGod,
+    selectedMap,
+    selectedRelicId,
+    selectedTerrainId,
+    selectedUnit,
+    selectedUtensilId,
+  ]);
+
   if (!isOpen) return null;
 
   const activeUnitInfo = currentCivUnits.find((u) => u.id === selectedUnit) || currentCivUnits[0];
@@ -683,6 +739,9 @@ export function HopliteUvBuilderModal({
               setAutoRotate3D={setAutoRotate3D}
               zoomPercent={zoomPercent}
               adjustZoom={adjustZoom}
+              onExportGodotGlb={handleExportGodotGlb}
+              isExportingGlb={isExportingGlb}
+              glbExportLabel={glbExportLabel}
               unitControlsProps={{
                 selectedUnit,
                 selectedCiv,
