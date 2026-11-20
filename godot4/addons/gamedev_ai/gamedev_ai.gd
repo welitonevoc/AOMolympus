@@ -59,8 +59,20 @@ func _enter_tree():
 	elif not presets.is_empty():
 		config = presets.values()[0]
 	else:
-		# Fallback if no presets exist yet (dock will create default)
-		config = {"provider": 0, "api_key": "", "base_url": "", "model_name": ""}
+		# Fallback se nenhum preset foi gravado no EditorSettings
+		var default_key = OS.get_environment("OPENROUTER_API_KEY")
+		if default_key == "" and FileAccess.file_exists("res://addons/gamedev_ai/openrouter_key.txt"):
+			var fk = FileAccess.open("res://addons/gamedev_ai/openrouter_key.txt", FileAccess.READ)
+			if fk:
+				default_key = fk.get_as_text().strip_edges()
+				fk.close()
+		config = {
+			"provider": 1,
+			"api_key": default_key,
+			"base_url": "https://openrouter.ai/api/v1",
+			"model_name": "openrouter/free"
+		}
+
 	
 	_set_provider(config)
 	

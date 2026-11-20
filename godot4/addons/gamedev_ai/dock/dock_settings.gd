@@ -185,14 +185,48 @@ func _load_presets():
 	if settings.has_setting("gamedev_ai/active_preset"):
 		active_preset_name = settings.get_setting("gamedev_ai/active_preset")
 		
+	var openrouter_key = OS.get_environment("OPENROUTER_API_KEY")
+	if openrouter_key == "" and FileAccess.file_exists("res://addons/gamedev_ai/openrouter_key.txt"):
+		var f = FileAccess.open("res://addons/gamedev_ai/openrouter_key.txt", FileAccess.READ)
+		if f:
+			openrouter_key = f.get_as_text().strip_edges()
+			f.close()
+
+	var openrouter_free_models = {
+		"OpenRouter: Auto Free": "openrouter/free",
+		"OpenRouter: Gemma 4 31B (Free)": "google/gemma-4-31b-it:free",
+		"OpenRouter: Nemotron 3.5 Super VL (Free)": "nvidia/nemotron-3.5-super-vl:free",
+		"OpenRouter: Nemotron Ultra 550B (Free)": "nvidia/nemotron-3-ultra-550b-a55b:free",
+		"OpenRouter: Ernie 5.5 Flash (Free)": "baidu/ernie-5.5-flash-preview:free",
+		"OpenRouter: LFM 3 1.7B (Free)": "liquid/lfm-3-1.7b:free"
+	}
+
+
 	if presets.is_empty():
+		for preset_title in openrouter_free_models.keys():
+			presets[preset_title] = {
+				"provider": 1,
+				"api_key": openrouter_key,
+				"base_url": "https://openrouter.ai/api/v1",
+				"model_name": openrouter_free_models[preset_title]
+			}
 		presets["Google Gemini"] = {"provider": 0, "api_key": "", "base_url": "", "model_name": "gemini-3.1-pro-preview"}
-		presets["OpenRouter (Claude/DeepSeek)"] = {"provider": 1, "api_key": "", "base_url": "https://openrouter.ai/api/v1", "model_name": "anthropic/claude-3.7-sonnet"}
 		presets["Local (Ollama/LM Studio)"] = {"provider": 2, "api_key": "", "base_url": "http://localhost:11434/v1", "model_name": "llama3"}
 		presets["NVIDIA NIM (Llama 3.3 70B)"] = {"provider": 3, "api_key": "", "base_url": "https://integrate.api.nvidia.com/v1", "model_name": "meta/llama-3.3-70b-instruct"}
-		active_preset_name = "Google Gemini"
+		active_preset_name = "OpenRouter: Auto Free"
 		_save_presets()
 	else:
+		var updated_presets = false
+		for preset_title in openrouter_free_models.keys():
+			if not presets.has(preset_title) or presets[preset_title].get("api_key", "") == "":
+				presets[preset_title] = {
+					"provider": 1,
+					"api_key": openrouter_key,
+					"base_url": "https://openrouter.ai/api/v1",
+					"model_name": openrouter_free_models[preset_title]
+				}
+				updated_presets = true
+		
 		# Ensure NVIDIA preset exists if user already has other presets
 		var has_nvidia = false
 		for p_val in presets.values():
@@ -201,7 +235,11 @@ func _load_presets():
 				break
 		if not has_nvidia:
 			presets["NVIDIA NIM (Llama 3.3 70B)"] = {"provider": 3, "api_key": "", "base_url": "https://integrate.api.nvidia.com/v1", "model_name": "meta/llama-3.3-70b-instruct"}
+			updated_presets = true
+
+		if updated_presets:
 			_save_presets()
+
 		
 	if not presets.has(active_preset_name):
 		active_preset_name = presets.keys()[0]

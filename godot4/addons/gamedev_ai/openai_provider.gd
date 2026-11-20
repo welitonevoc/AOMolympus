@@ -14,12 +14,18 @@ func setup(node: Node):
 func _load_env_api_key():
 	if api_key != "":
 		return
-	var env_vars = ["NVIDIA_API_KEY", "NVAPI_KEY", "OPENAI_API_KEY"] if "nvidia" in base_url.to_lower() else ["OPENAI_API_KEY", "NVIDIA_API_KEY", "NVAPI_KEY"]
+	var env_vars = ["NVIDIA_API_KEY", "NVAPI_KEY", "OPENAI_API_KEY"] if "nvidia" in base_url.to_lower() else ["OPENROUTER_API_KEY", "OPENAI_API_KEY", "NVIDIA_API_KEY", "NVAPI_KEY"]
 	for env in env_vars:
 		var val = OS.get_environment(env)
 		if val != "":
 			api_key = val
 			break
+	if api_key == "" and FileAccess.file_exists("res://addons/gamedev_ai/openrouter_key.txt"):
+		var f = FileAccess.open("res://addons/gamedev_ai/openrouter_key.txt", FileAccess.READ)
+		if f:
+			api_key = f.get_as_text().strip_edges()
+			f.close()
+
 
 func send_prompt(prompt: String, context: String = "", tools: Array = [], files: Array = []):
 	var is_local = ("localhost" in base_url or "127.0.0.1" in base_url or "11434" in base_url)

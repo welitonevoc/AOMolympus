@@ -19,5 +19,8 @@ coverage/
 # Godot 4 local import cache & Android build output
 godot4/.godot/
 dist-android/
+.gamedev_ai/
+godot4/.gamedev_ai/
+godot4/addons/gamedev_ai/openrouter_key.txt
 
 
