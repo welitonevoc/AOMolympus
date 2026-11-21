@@ -61,6 +61,7 @@ func _ready() -> void:
 
 	GameState.match_started_signal.connect(_on_match_started)
 	GameState.lighting_changed.connect(_apply_day_night_lighting)
+	GameState.divine_summoned_signal.connect(_on_divine_summoned)
 	_apply_day_night_lighting(GameState.is_night)
 
 	if SaveLoadSystem != null and SaveLoadSystem.is_loading_from_save:
@@ -214,6 +215,23 @@ func _on_divine_altar_finished(building: BuildingActor) -> void:
 	if building.faction == "player":
 		GameState.record_divine_altar_built()
 		GameState.notify("Altar Divino construido! Invocacoes de deuses disponiveis na Era dos Deuses.", false)
+
+
+func _on_divine_summoned(god_kind: String, tier: String) -> void:
+	"""Spawn o deus invocado no mundo do jogador."""
+	var spawn_pos: Vector3 = PLAYER_BASE_POS + Vector3(8.0, 0.0, 0.0)
+	var u: UnitActor = spawn_unit(god_kind, spawn_pos, "player", GameState.active_pantheon)
+	GameState.notify("Deus %s invocado no campo de batalha!" % _divine_display_name(god_kind), false)
+
+
+func _divine_display_name(god_kind: String) -> String:
+	var base: String = god_kind.replace("_major", "").replace("_minor", "")
+	var parts: Array[String] = base.split("_")
+	var result: String = ""
+	for p in parts:
+		if p != "":
+			result += p[0].to_upper() + p[1:] + " "
+	return result.strip()
 
 
 func _on_projectile_requested(
