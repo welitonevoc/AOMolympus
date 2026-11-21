@@ -708,6 +708,174 @@ func _build_end_match_overlay() -> void:
 	btn_row.add_child(menu_btn)
 
 
+func _build_divine_invocation_ui() -> void:
+	# Painel modal central (overlay) da Era dos Deuses
+	_divine_panel = PanelContainer.new()
+	_divine_panel.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_divine_panel.color = Color(0.04, 0.06, 0.1, 0.85)
+	_divine_panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	_divine_panel.visible = false
+	add_child(_divine_panel)
+
+	var center := CenterContainer.new()
+	center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_divine_panel.add_child(center)
+
+	var card := PanelContainer.new()
+	card.custom_minimum_size = Vector2(700.0, 520.0)
+	card.add_theme_stylebox_override("panel", _make_panel_style(Color(0.07, 0.1, 0.16, 0.96), 14))
+	center.add_child(card)
+
+	var margin := MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 20)
+	margin.add_theme_constant_override("margin_right", 20)
+	margin.add_theme_constant_override("margin_top", 16)
+	margin.add_theme_constant_override("margin_bottom", 16)
+	card.add_child(margin)
+
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 10)
+	margin.add_child(vbox)
+
+	var title := Label.new()
+	title.text = "Era dos Deuses — Invocacao Divina"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_color_override("font_color", Color("#f6e08b"))
+	title.add_theme_font_size_override("font_size", 20)
+	vbox.add_child(title)
+
+	var subtitle := Label.new()
+	subtitle.text = "Escolha um deus do seu panteao para invocar como unidade epica."
+	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	subtitle.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	subtitle.add_theme_color_override("font_color", Color("#cbd5e1"))
+	subtitle.add_theme_font_size_override("font_size", 12)
+	vbox.add_child(subtitle)
+
+	var limits_lbl := Label.new()
+	limits_lbl.text = "Limites: 1 Maior por panteao · 2 Menores por panteao · Max 3 divindades no campo"
+	limits_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	limits_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	limits_lbl.add_theme_color_override("font_color", Color("#94a3b8"))
+	limits_lbl.add_theme_font_size_override("font_size", 11)
+	vbox.add_child(limits_lbl)
+
+	var scroll := ScrollContainer.new()
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	vbox.add_child(scroll)
+
+	_divine_grid = GridContainer.new()
+	_divine_grid.columns = 2
+	_divine_grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_divine_grid.add_theme_constant_override("h_separation", 8)
+	_divine_grid.add_theme_constant_override("v_separation", 8)
+	scroll.add_child(_divine_grid)
+
+	var close_btn := _make_action_button("Fechar", true, 160.0, 44.0)
+	close_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	close_btn.pressed.connect(func() -> void: _toggle_divine_panel())
+	vbox.add_child(close_btn)
+
+
+func _toggle_divine_panel() -> void:
+	_divine_panel_visible = not _divine_panel_visible
+	_divine_panel.visible = _divine_panel_visible
+	if _divine_panel_visible:
+		_rebuild_divine_panel()
+
+
+func _rebuild_divine_panel() -> void:
+	for child in _divine_grid.get_children():
+		child.queue_free()
+	_divine_god_buttons.clear()
+
+	var pantheon_id: String = GameState.active_pantheon
+	var gods: Dictionary = PantheonCatalog.get_divine_gods(pantheon_id)
+
+	# Ordena: Maiores primeiro, depois Menores
+	var ordered: Array[String] = []
+	for g in gods.get("majors", []):
+		ordered.append(g)
+	for g in gods.get("minors", []):
+		ordered.append(g)
+
+	for god_kind in ordered:
+		var profile: Dictionary = ModelLibrary.DIVINE_PROFILES.get(god_kind, {})
+		if profile.is_empty():
+			continue
+		var tier: String = profile.get("tier", "minor")
+		var tier_label: String = "MAIOR" if tier == "major" else "menor"
+		var pop_cost: int = int(profile.get("pop_cost", 6))
+		var favor_cost: int = int(profile.get("favor_cost", 0))
+		var rc: Dictionary = profile.get("resource_cost", {"food": 0, "wood": 0, "gold": 0})
+		var cost_txt: String = PantheonCatalog.format_cost(rc) + " / %d Fav" % favor_cost
+
+		# Verifica se pode invocar
+		var check: Dictionary = GameState.can_summon_divine(god_kind)
+		var already: bool = god_kind in GameState.divine_gods_summoned
+		var blocked_reason: String = "" if check["allowed"] else check["reason"]
+
+		var label_txt: String = "%s\n[%s] %s\n%s\nPop %d" % [
+			_divine_god_display_name(god_kind),
+			tier_label.upper(),
+			cost_txt,
+			profile.get("power_name", "—"),
+			pop_cost,
+		]
+
+		var btn := _make_action_button(label_txt, check["allowed"] and not already, 320.0, 72.0)
+		btn.disabled = not check["allowed"] or already
+		if already:
+			btn.text = "%s\n[JA INVOCADO]" % label_txt.split("\n")[0]
+		elif blocked_reason != "":
+			btn.text = "%s\n[%s]" % [label_txt, blocked_reason]
+
+		btn.pressed.connect(func(gk: String = god_kind) -> void:
+			_on_attempt_summon(gk)
+		)
+		_divine_grid.add_child(btn)
+		_divine_god_buttons[god_kind] = btn
+
+		# Destaque visual por tier
+		if tier == "major":
+			btn.add_theme_color_override("font_color", Color("#fbbf24"))
+		else:
+			btn.add_theme_color_override("font_color", Color("#a855f7"))
+
+
+func _on_attempt_summon(god_kind: String) -> void:
+	var check: Dictionary = GameState.can_summon_divine(god_kind)
+	if not check["allowed"]:
+		GameState.notify(check["reason"], true)
+		return
+	var ok: bool = GameState.summon_divine_god(god_kind)
+	if ok:
+		_toggle_divine_panel()
+		_rebuild_command_grid()
+
+
+func _on_divine_summoned(god_kind: String, tier: String) -> void:
+	GameState.notify("Deus %s invocado com sucesso!" % god_kind, false)
+	_rebuild_divine_panel()
+	_rebuild_command_grid()
+
+
+func _on_divine_summon_blocked(reason: String) -> void:
+	GameState.notify(reason, true)
+
+
+func _divine_god_display_name(god_kind: String) -> String:
+	var base: String = god_kind.replace("_major", "").replace("_minor", "")
+	var parts: Array[String] = base.split("_")
+	var result: String = ""
+	for p in parts:
+		if p != "":
+			result += p[0].to_upper() + p[1:] + " "
+	return result.strip()
+
+
 func _select_start_pantheon(pid: String) -> void:
 	_chosen_pantheon = pid
 	var p: Dictionary = PantheonCatalog.get_pantheon(pid)
@@ -998,6 +1166,9 @@ func _on_age_changed(new_age: int) -> void:
 	_age_lbl.text = PantheonCatalog.get_age_name(new_age)
 	_refresh_power_buttons_state()
 	_rebuild_command_grid()
+	if new_age >= 5:
+		_divine_btn.visible = true
+		_divine_btn.text = "Deuses (T5)"
 
 
 func _on_age_advance_progress(active: bool, _target_age: int, ratio: float) -> void:
