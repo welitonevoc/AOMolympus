@@ -1,0 +1,30 @@
+[gd_scene format=3 uid="uid://dhl80e0mchpjr"]
+
+[node name="CampaignObjectivesPanel" type="PanelContainer" unique_id=318763751]
+custom_minimum_size = Vector2(300, 140)
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -150.0
+offset_top = -140.0
+offset_right = 150.0
+grow_horizontal = 2
+grow_vertical = 0
+
+[node name="MarginContainer" type="MarginContainer" parent="." unique_id=1768433419]
+layout_mode = 2
+
+[node name="MainVBox" type="VBoxContainer" parent="MarginContainer" unique_id=2014784419]
+layout_mode = 2
+
+[node name="TitleLabel" type="Label" parent="MarginContainer/MainVBox" unique_id=465340724]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.96, 0.88, 0.55, 1)
+theme_override_font_sizes/font_size = 14
+text = "Objetivos da Campanha"
+horizontal_alignment = 2
+
+[node name="ObjectivesVBox" type="VBoxContainer" parent="MarginContainer/MainVBox" unique_id=755191001]
+layout_mode = 2
