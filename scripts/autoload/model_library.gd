@@ -202,75 +202,166 @@ static func _build_procedural_building(p: Dictionary, kind: String, tier: int, f
 	return root
 
 
+static const UNIT_PROFILES: Dictionary = {
+	"villager": {
+		"scale": 0.95,
+		"skin_color": Color("#e6bc98"),
+		"armor_color": Color("#94a3b8"),
+		"wood_color": Color("#6b4423"),
+		"has_weapon": true,
+		"weapon_type": "tool",
+	},
+	"infantry": {
+		"scale": 1.0,
+		"skin_color": Color("#e6bc98"),
+		"armor_color": Color("#94a3b8"),
+		"wood_color": Color("#6b4423"),
+		"has_weapon": true,
+		"weapon_type": "spear",
+	},
+	"archer": {
+		"scale": 1.0,
+		"skin_color": Color("#e6bc98"),
+		"armor_color": Color("#94a3b8"),
+		"wood_color": Color("#6b4423"),
+		"has_weapon": true,
+		"weapon_type": "bow",
+	},
+	"cavalry": {
+		"scale": 1.1,
+		"skin_color": Color("#e6bc98"),
+		"armor_color": Color("#94a3b8"),
+		"wood_color": Color("#6b4423"),
+		"has_weapon": true,
+		"weapon_type": "lance",
+	},
+	"hero": {
+		"scale": 1.15,
+		"skin_color": Color("#e6bc98"),
+		"armor_color": Color("#94a3b8"),
+		"wood_color": Color("#6b4423"),
+		"has_weapon": true,
+		"weapon_type": "sword",
+		"aura_color": Color("#38bdf8"),
+	},
+	"myth": {
+		"scale": 1.3,
+		"skin_color": Color("#e6bc98"),
+		"armor_color": Color("#94a3b8"),
+		"wood_color": Color("#6b4423"),
+		"has_weapon": true,
+		"weapon_type": "claws",
+		"aura_color": Color("#38bdf8"),
+	},
+	"siege": {
+		"scale": 1.4,
+		"skin_color": Color("#e6bc98"),
+		"armor_color": Color("#94a3b8"),
+		"wood_color": Color("#6b4423"),
+		"has_weapon": false,
+		"weapon_type": "none",
+	},
+}
+
+static func _unit_profile(p: Dictionary, kind: String) -> Dictionary:
+	var base := UNIT_PROFILES.get(kind, UNIT_PROFILES["villager"])
+	# Cores do panteão têm prioridade sobre cores padrão
+	var profile: Dictionary = base.duplicate(true)
+	profile["tunic_color"] = p.get("primary_color", Color("#2563eb"))
+	profile["accent_color"] = p.get("accent_color", Color("#d4af37"))
+	profile["stone_color"] = p.get("stone_color", Color("#e5dfd3"))
+	profile["roof_color"] = p.get("roof_color", Color("#b45334"))
+	return profile
+
 static func _build_procedural_unit(p: Dictionary, kind: String, faction: String, is_promoted_hero: bool) -> Node3D:
 	var root := Node3D.new()
-	var tunic_col: Color = Color("#b91c1c") if faction == "enemy" else p["primary_color"]
-	var accent_col: Color = p["accent_color"]
-	var skin_mat := _make_mat(Color("#e6bc98"), 0.75, 0.0)
+	var profile: Dictionary = _unit_profile(p, kind)
+	
+	var scale: float = profile["scale"]
+	
+	var tunic_col: Color = Color("#b91c1c") if faction == "enemy" else profile["tunic_color"]
+	var accent_col: Color = profile["accent_color"]
+	var skin_col: Color = profile["skin_color"]
+	var armor_col: Color = profile["armor_color"]
+	var wood_col: Color = profile["wood_color"]
+	
+	var skin_mat := _make_mat(skin_col, 0.75, 0.0)
 	var tunic_mat := _make_mat(tunic_col, 0.65, 0.1)
-	var armor_mat := _make_mat(Color("#94a3b8"), 0.32, 0.72)
+	var armor_mat := _make_mat(armor_col, 0.32, 0.72)
 	var gold_mat := _make_mat(accent_col, 0.25, 0.82)
-	var wood_mat := _make_mat(Color("#6b4423"), 0.85, 0.0)
+	var wood_mat := _make_mat(wood_col, 0.85, 0.0)
+	var aura_col: Color = profile.get("aura_color", Color("#38bdf8"))
+	
+	var has_weapon: bool = profile["has_weapon"]
+	var weapon_type: String = profile["weapon_type"]
+	
+	# Aplica escala nas dimensões base
+	func sc(v: Vector3) -> Vector3:
+		return v * scale
+	func sf(f: float) -> float:
+		return f * scale
 
 	match kind:
 		"cavalry":
 			# Montaria (cavalo / carro estilizado)
 			var horse_mat := _make_mat(Color("#6d4628"), 0.8, 0.0)
-			_add_box(root, Vector3(0.58, 0.62, 1.38), Vector3(0.0, 0.78, 0.0), horse_mat)
-			_add_box(root, Vector3(0.32, 0.56, 0.36), Vector3(0.0, 1.22, 0.58), horse_mat)
+			_add_box(root, sc(Vector3(0.58, 0.62, 1.38)), sc(Vector3(0.0, 0.78, 0.0)), horse_mat)
+			_add_box(root, sc(Vector3(0.32, 0.56, 0.36)), sc(Vector3(0.0, 1.22, 0.58)), horse_mat)
 			for lx in [-0.2, 0.2]:
 				for lz in [-0.46, 0.46]:
-					_add_box(root, Vector3(0.14, 0.55, 0.14), Vector3(lx, 0.28, lz), horse_mat)
-			# Cavaleiro + lanca
-			_add_cylinder(root, 0.22, 0.28, 0.72, Vector3(0.0, 1.42, -0.05), tunic_mat)
-			_add_sphere(root, 0.2, Vector3(0.0, 1.92, -0.05), skin_mat)
-			_add_cylinder(root, 0.04, 0.04, 1.85, Vector3(0.36, 1.45, 0.35), wood_mat, Vector3(PI * 0.35, 0.0, 0.0))
+					_add_box(root, sc(Vector3(0.14, 0.55, 0.14)), sc(Vector3(lx, 0.28, lz)), horse_mat)
+			# Cavaleiro + lança
+			_add_cylinder(root, sf(0.22), sf(0.28), sf(0.72), sc(Vector3(0.0, 1.42, -0.05)), tunic_mat)
+			_add_sphere(root, sf(0.2), sc(Vector3(0.0, 1.92, -0.05)), skin_mat)
+			if has_weapon:
+				_add_cylinder(root, sf(0.04), sf(0.04), sf(1.85), sc(Vector3(0.36, 1.45, 0.35)), wood_mat, Vector3(PI * 0.35, 0.0, 0.0))
 		"myth":
 			# Criatura mitica imponente com chifres/asas e brilho divino
 			var myth_mat := _make_mat(tunic_col.darkened(0.2), 0.55, 0.25)
 			var glow_mat := _make_mat(accent_col, 0.2, 0.7, true, accent_col, 1.6)
-			_add_box(root, Vector3(0.95, 1.25, 0.72), Vector3(0.0, 1.2, 0.0), myth_mat)
-			_add_sphere(root, 0.38, Vector3(0.0, 2.05, 0.08), myth_mat)
-			_add_cylinder(root, 0.05, 0.12, 0.65, Vector3(-0.34, 2.38, 0.05), gold_mat, Vector3(0.0, 0.0, 0.45))
-			_add_cylinder(root, 0.05, 0.12, 0.65, Vector3(0.34, 2.38, 0.05), gold_mat, Vector3(0.0, 0.0, -0.45))
-			_add_box(root, Vector3(0.28, 0.75, 0.28), Vector3(-0.28, 0.38, 0.0), myth_mat)
-			_add_box(root, Vector3(0.28, 0.75, 0.28), Vector3(0.28, 0.38, 0.0), myth_mat)
-			_add_sphere(root, 0.22, Vector3(0.0, 1.48, 0.42), glow_mat)
+			_add_box(root, sc(Vector3(0.95, 1.25, 0.72)), sc(Vector3(0.0, 1.2, 0.0)), myth_mat)
+			_add_sphere(root, sf(0.38), sc(Vector3(0.0, 2.05, 0.08)), myth_mat)
+			_add_cylinder(root, sf(0.05), sf(0.12), sf(0.65), sc(Vector3(-0.34, 2.38, 0.05)), gold_mat, Vector3(0.0, 0.0, 0.45))
+			_add_cylinder(root, sf(0.05), sf(0.12), sf(0.65), sc(Vector3(0.34, 2.38, 0.05)), gold_mat, Vector3(0.0, 0.0, -0.45))
+			_add_box(root, sc(Vector3(0.28, 0.75, 0.28)), sc(Vector3(-0.28, 0.38, 0.0)), myth_mat)
+			_add_box(root, sc(Vector3(0.28, 0.75, 0.28)), sc(Vector3(0.28, 0.38, 0.0)), myth_mat)
+			_add_sphere(root, sf(0.22), sc(Vector3(0.0, 1.48, 0.42)), glow_mat)
 		"siege":
 			# Ariete / Torre de Cerco blindada sobre rodas
-			_add_box(root, Vector3(1.15, 0.95, 1.65), Vector3(0.0, 0.72, 0.0), wood_mat)
-			_add_prism_roof(root, 1.28, 0.52, 1.72, Vector3(0.0, 1.42, 0.0), armor_mat)
-			_add_cylinder(root, 0.16, 0.2, 1.45, Vector3(0.0, 0.65, 0.75), gold_mat, Vector3(PI * 0.5, 0.0, 0.0))
+			_add_box(root, sc(Vector3(1.15, 0.95, 1.65)), sc(Vector3(0.0, 0.72, 0.0)), wood_mat)
+			_add_prism_roof(root, sf(1.28), sf(0.52), sf(1.72), sc(Vector3(0.0, 1.42, 0.0)), armor_mat)
+			_add_cylinder(root, sf(0.16), sf(0.2), sf(1.45), sc(Vector3(0.0, 0.65, 0.75)), gold_mat, Vector3(PI * 0.5, 0.0, 0.0))
 			for wx in [-0.62, 0.62]:
 				for wz in [-0.52, 0.52]:
-					_add_cylinder(root, 0.26, 0.26, 0.14, Vector3(wx, 0.26, wz), armor_mat, Vector3(0.0, 0.0, PI * 0.5))
+					_add_cylinder(root, sf(0.26), sf(0.26), sf(0.14), sc(Vector3(wx, 0.26, wz)), armor_mat, Vector3(0.0, 0.0, PI * 0.5))
 		"hero":
-			_add_cylinder(root, 0.26, 0.34, 1.05, Vector3(0.0, 0.85, 0.0), gold_mat)
-			_add_sphere(root, 0.23, Vector3(0.0, 1.56, 0.0), skin_mat)
-			_add_box(root, Vector3(0.14, 0.45, 0.35), Vector3(0.0, 1.85, -0.02), tunic_mat)
-			_add_cylinder(root, 0.34, 0.34, 0.09, Vector3(-0.38, 0.98, 0.2), gold_mat, Vector3(PI * 0.5, 0.0, 0.0))
-			_add_box(root, Vector3(0.09, 1.05, 0.12), Vector3(0.42, 1.1, 0.24), armor_mat)
-			_attach_hero_aura(root, accent_col)
+			_add_cylinder(root, sf(0.26), sf(0.34), sf(1.05), sc(Vector3(0.0, 0.85, 0.0)), gold_mat)
+			_add_sphere(root, sf(0.23), sc(Vector3(0.0, 1.56, 0.0)), skin_mat)
+			_add_box(root, sc(Vector3(0.14, 0.45, 0.35)), sc(Vector3(0.0, 1.85, -0.02)), tunic_mat)
+			_add_cylinder(root, sf(0.34), sf(0.34), sf(0.09), sc(Vector3(-0.38, 0.98, 0.2)), gold_mat, Vector3(PI * 0.5, 0.0, 0.0))
+			_add_box(root, sc(Vector3(0.09, 1.05, 0.12)), sc(Vector3(0.42, 1.1, 0.24)), armor_mat)
+			_attach_hero_aura(root, aura_col)
 		"archer":
-			_add_cylinder(root, 0.2, 0.27, 0.9, Vector3(0.0, 0.72, 0.0), tunic_mat)
-			_add_sphere(root, 0.2, Vector3(0.0, 1.35, 0.0), skin_mat)
-			# Arco curvo frontal
-			_add_torus(root, 0.36, 0.41, Vector3(0.28, 0.98, 0.32), wood_mat, Vector3(0.0, 0.0, PI * 0.5))
+			_add_cylinder(root, sf(0.2), sf(0.27), sf(0.9), sc(Vector3(0.0, 0.72, 0.0)), tunic_mat)
+			_add_sphere(root, sf(0.2), sc(Vector3(0.0, 1.35, 0.0)), skin_mat)
+			if has_weapon:
+				_add_torus(root, sf(0.36), sf(0.41), sc(Vector3(0.28, 0.98, 0.32)), wood_mat, Vector3(0.0, 0.0, PI * 0.5))
 		"infantry":
-			_add_cylinder(root, 0.23, 0.3, 0.95, Vector3(0.0, 0.78, 0.0), tunic_mat)
-			_add_sphere(root, 0.21, Vector3(0.0, 1.44, 0.0), skin_mat)
-			_add_sphere(root, 0.23, Vector3(0.0, 1.52, 0.0), armor_mat)
-			# Escudo e lanca
-			_add_cylinder(root, 0.34, 0.34, 0.08, Vector3(-0.34, 0.88, 0.22), gold_mat, Vector3(PI * 0.5, 0.0, 0.0))
-			_add_cylinder(root, 0.035, 0.035, 1.75, Vector3(0.34, 1.05, 0.14), wood_mat)
+			_add_cylinder(root, sf(0.23), sf(0.3), sf(0.95), sc(Vector3(0.0, 0.78, 0.0)), tunic_mat)
+			_add_sphere(root, sf(0.21), sc(Vector3(0.0, 1.44, 0.0)), skin_mat)
+			_add_sphere(root, sf(0.23), sc(Vector3(0.0, 1.52, 0.0)), armor_mat)
+			if has_weapon:
+				_add_cylinder(root, sf(0.34), sf(0.34), sf(0.08), sc(Vector3(-0.34, 0.88, 0.22)), gold_mat, Vector3(PI * 0.5, 0.0, 0.0))
+				_add_cylinder(root, sf(0.035), sf(0.035), sf(1.75), sc(Vector3(0.34, 1.05, 0.14)), wood_mat)
 		_:
 			# Aldeao / Cidadao
-			_add_cylinder(root, 0.2, 0.28, 0.88, Vector3(0.0, 0.68, 0.0), tunic_mat)
-			_add_sphere(root, 0.21, Vector3(0.0, 1.32, 0.0), skin_mat)
-			_add_cylinder(root, 0.035, 0.035, 0.95, Vector3(0.32, 0.82, 0.15), wood_mat, Vector3(0.35, 0.0, 0.0))
+			_add_cylinder(root, sf(0.2), sf(0.28), sf(0.88), sc(Vector3(0.0, 0.68, 0.0)), tunic_mat)
+			_add_sphere(root, sf(0.21), sc(Vector3(0.0, 1.32, 0.0)), skin_mat)
+			if has_weapon:
+				_add_cylinder(root, sf(0.035), sf(0.035), sf(0.95), sc(Vector3(0.32, 0.82, 0.15)), wood_mat, Vector3(0.35, 0.0, 0.0))
 
 	if is_promoted_hero:
-		_attach_hero_aura(root, Color("#38bdf8"))
+		_attach_hero_aura(root, aura_col)
 	return root
 
 

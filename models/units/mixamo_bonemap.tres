@@ -1,0 +1,29 @@
+[gd_resource type="BoneMap" load_steps=2 format=3]
+
+[sub_resource type="SkeletonProfileHumanoid" id="SkeletonProfileHumanoid_standard"]
+
+[resource]
+profile = SubResource("SkeletonProfileHumanoid_standard")
+bonemap/Root = &""
+bonemap/Hips = &"mixamorig:Hips"
+bonemap/Spine = &"mixamorig:Spine"
+bonemap/Chest = &"mixamorig:Spine1"
+bonemap/UpperChest = &"mixamorig:Spine2"
+bonemap/Neck = &"mixamorig:Neck"
+bonemap/Head = &"mixamorig:Head"
+bonemap/LeftShoulder = &"mixamorig:LeftShoulder"
+bonemap/LeftUpperArm = &"mixamorig:LeftArm"
+bonemap/LeftLowerArm = &"mixamorig:LeftForeArm"
+bonemap/LeftHand = &"mixamorig:LeftHand"
+bonemap/RightShoulder = &"mixamorig:RightShoulder"
+bonemap/RightUpperArm = &"mixamorig:RightArm"
+bonemap/RightLowerArm = &"mixamorig:RightForeArm"
+bonemap/RightHand = &"mixamorig:RightHand"
+bonemap/LeftUpperLeg = &"mixamorig:LeftUpLeg"
+bonemap/LeftLowerLeg = &"mixamorig:LeftLeg"
+bonemap/LeftFoot = &"mixamorig:LeftFoot"
+bonemap/LeftToes = &"mixamorig:LeftToeBase"
+bonemap/RightUpperLeg = &"mixamorig:RightUpLeg"
+bonemap/RightLowerLeg = &"mixamorig:RightLeg"
+bonemap/RightFoot = &"mixamorig:RightFoot"
+bonemap/RightToes = &"mixamorig:RightToeBase"
