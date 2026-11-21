@@ -17,6 +17,10 @@ static func create_building_visual(
 	var deity_slug: String = String(p.get("deity_slug", "zeus"))
 	var tier: int = clampi(age_tier, 1, 5)
 	var candidates: Array[String] = [
+		# Camps paths in civilization folders (cidade/*)
+		"res://models/civilizations/%s/%s/cidade/%s/%s.glb" % [pantheon_id, deity_slug, building_kind, building_kind],
+		"res://models/civilizations/%s/%s/cidade/%s/divine_altar.glb" % [pantheon_id, deity_slug, building_kind],
+		# Standard models folders
 		"res://models/buildings/%s_%s_%s_t%d.glb" % [pantheon_id, deity_slug, building_kind, tier],
 		"res://models/buildings/%s_%s_t%d.glb" % [pantheon_id, building_kind, tier],
 		"res://models/buildings/%s_%s.glb" % [pantheon_id, building_kind],
@@ -37,6 +41,11 @@ static func create_unit_visual(
 	var p: Dictionary = PantheonCatalog.get_pantheon(pantheon_id)
 	var deity_slug: String = String(p.get("deity_slug", "zeus"))
 	var candidates: Array[String] = [
+		# Camps paths in civilization folders
+		"res://models/civilizations/%s/%s/unidade_militar/%s.glb" % [pantheon_id, deity_slug, unit_kind],
+		"res://models/civilizations/%s/%s/unidade_mitica/%s.glb" % [pantheon_id, deity_slug, unit_kind],
+		"res://models/civilizations/%s/%s/aldeao/%s.glb" % [pantheon_id, deity_slug, unit_kind],
+		# Standard models folders
 		"res://models/units/%s_%s_%s.glb" % [pantheon_id, deity_slug, unit_kind],
 		"res://models/units/%s_%s.glb" % [pantheon_id, unit_kind],
 		"res://models/units/%s.glb" % unit_kind,
@@ -48,6 +57,52 @@ static func create_unit_visual(
 				_attach_hero_aura(loaded, Color("#38bdf8"))
 			return loaded
 	return _build_procedural_unit(p, unit_kind, faction, is_promoted_hero)
+
+
+static func create_divine_unit_visual(
+	god_kind: String,
+	faction: String = "player"
+) -> Node3D:
+	"""Cria visual de um deus da Era T5, buscando GLB na pasta da civilização.
+
+	god_kind deve ser uma chave de DIVINE_PROFILES (ex: "zeus_major", "athena_minor").
+	"""
+	var profile: Dictionary = get_divine_profile(god_kind)
+	var pantheon_id: String = String(profile.get("pantheon", "greek"))
+	var p: Dictionary = PantheonCatalog.get_pantheon(pantheon_id)
+	var deity_slug: String = String(p.get("deity_slug", "zeus"))
+
+	# Extrair o nome base do deus sem o sufixo _major / _minor
+	var god_base: String = god_kind
+	if god_base.ends_with("_major"):
+		god_base = god_base[0:-6]
+	elif god_base.ends_with("_minor"):
+		god_base = god_base[0:-6]
+
+	var candidates: Array[String] = [
+		# Pasta unidade_mitica (deuses são unidades míticas)
+		"res://models/civilizations/%s/%s/unidade_mitica/%s.glb" % [pantheon_id, deity_slug, god_base],
+		"res://models/civilizations/%s/%s/unidade_mitica/%s.glb" % [pantheon_id, deity_slug, god_kind],
+		"res://models/civilizations/%s/%s/deuses/%s.glb" % [pantheon_id, deity_slug, god_base],
+		"res://models/civilizations/%s/%s/deuses/%s.glb" % [pantheon_id, deity_slug, god_kind],
+		"res://models/civilizations/%s/%s/unidade_mitica/deus.glb" % [pantheon_id, deity_slug],
+		"res://models/civilizations/%s/%s/unidade_mitica/deidade.glb" % [pantheon_id, deity_slug],
+		# Standard models folders as fallback
+		"res://models/units/%s_%s.glb" % [pantheon_id, god_kind],
+		"res://models/units/%s.glb" % god_kind,
+		"res://models/buildings/%s_%s.glb" % [pantheon_id, god_kind],
+	]
+	for path in candidates:
+		var loaded: Node3D = _try_instantiate_glb(path)
+		if loaded != null:
+			# Aplica escala divina
+			var scale: float = profile.get("scale", 2.0)
+			loaded.scale = Vector3.ONE * scale
+			# Aura divina
+			var aura_col: Color = profile.get("aura_color", Color("#fbbf24"))
+			_attach_hero_aura(loaded, aura_col.blend(Color.WHITE, 0.5))
+			return loaded
+	return _build_procedural_divine_unit(p, god_kind, faction)
 
 
 static func _try_instantiate_glb(res_path: String) -> Node3D:

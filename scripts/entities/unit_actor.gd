@@ -61,9 +61,34 @@ func setup(p_pantheon: String, p_kind: String = "villager", p_faction: String = 
 	faction = p_faction
 	pantheon_id = p_pantheon
 	unit_kind = p_kind
-	var spec: Dictionary = PantheonCatalog.get_unit_spec(pantheon_id, unit_kind)
+
+	# Deuses da Era T5 usam DIVINE_PROFILES em vez de UNITS
+	var is_divine: bool = unit_kind.ends_with("_major") or unit_kind.ends_with("_minor")
+	var spec: Dictionary
+	var display_name: String
+
+	if is_divine:
+		var dprof: Dictionary = ModelLibrary.get_divine_profile(unit_kind)
+		spec = {
+			"role": "divine",
+			"display_name": _divine_display_name(unit_kind),
+			"hp": dprof.get("base_hp", 5000),
+			"attack": dprof.get("base_attack", 100.0),
+			"armor": dprof.get("armor_h", 0.6),
+			"range": dprof.get("range", 5.0),
+			"cooldown": dprof.get("power_cooldown", 300.0),
+			"speed": dprof.get("speed", 4.0),
+			"ranged": dprof.get("range", 5.0) > 2.0,
+			"projectile": "divine_bolt",
+			"pop": dprof.get("pop_cost", 6),
+			"vision_radius": 15.0,
+		}
+		display_name = spec["display_name"]
+	else:
+		spec = PantheonCatalog.get_unit_spec(pantheon_id, unit_kind)
+		display_name = String(spec["display_name"])
+
 	role = String(spec["role"])
-	display_name = String(spec["display_name"])
 	max_hp = int(spec["hp"])
 	current_hp = max_hp
 	base_attack = float(spec["attack"])
@@ -553,8 +578,28 @@ func _rebuild_visual() -> void:
 		return
 	for c in _visual_holder.get_children():
 		c.queue_free()
-	var mesh_root: Node3D = ModelLibrary.create_unit_visual(pantheon_id, unit_kind, faction, is_promoted_hero)
+	var mesh_root: Node3D
+	# Deuses da Era T5 usam visual divino com escala e aura especiais
+	if unit_kind.begins_with("zeus_") or unit_kind.begins_with("poseidon_") or unit_kind.begins_with("hades_") or \
+	   unit_kind.begins_with("ra_") or unit_kind.begins_with("isis_") or unit_kind.begins_with("set_") or \
+	   unit_kind.begins_with("thor_") or unit_kind.begins_with("odin_") or unit_kind.begins_with("loki_") or \
+	   unit_kind.begins_with("freyr_") or unit_kind.begins_with("kronos_") or unit_kind.begins_with("oranos_") or \
+	   unit_kind.begins_with("gaia_") or unit_kind.begins_with("fuxi_") or unit_kind.begins_with("nuwa_") or \
+	   unit_kind.begins_with("shennong_") or unit_kind.ends_with("_major") or unit_kind.ends_with("_minor"):
+		mesh_root = ModelLibrary.create_divine_unit_visual(unit_kind, faction)
+	else:
+		mesh_root = ModelLibrary.create_unit_visual(pantheon_id, unit_kind, faction, is_promoted_hero)
 	_visual_holder.add_child(mesh_root)
+
+
+func _divine_display_name(god_kind: String) -> String:
+	var base: String = god_kind.replace("_major", "").replace("_minor", "")
+	var parts: Array[String] = base.split("_")
+	var result: String = ""
+	for p in parts:
+		if p != "":
+			result += p[0].to_upper() + p[1:] + " "
+	return result.strip()
 
 
 func _die() -> void:
