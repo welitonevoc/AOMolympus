@@ -573,20 +573,174 @@ A estrutura segue o modelo de *Age of Mythology: Retold*:
 
 ---
 
-## 🎨 Checklist de Padrão Visual (Humanoid 3D Pipeline)
+## 🌌 6️⃣ ERA DOS DEUSES (Era T5 / Mythic / Era Divina)
 
-> Requisitos obrigatórios para cada modelo 3D de unidade/prédio, integrado ao `model_library.gd`.
+> Nova era de fim de jogo disponível para todos os 5 panteões. Nesta era, **todos os deuses maiores e menores** se tornam invocáveis como **Unidades Divinas Épicas** no campo de batalha.
 
-- [ ] Modelo exportado em **pose T ou A limpa**
-- [ ] Nomes de ossos respeitam prefixo `mixamorig:` ou têm mapeamento no `BoneMap`
-- [ ] Pesos de vértice preservados (não recalculados proceduralmente) — **proibido** recalcular
-- [ ] Máximo **4 pesos por vértice** (Godot 4 skeleton limit)
-- [ ] Texturas PBR completas: albedo, normal, roughness, metallic
-- [ ] Testado no visualizador Kimodo 3D Studio com animação de marcha mocap
-- [ ] Retargeting configurado no Godot 4 com `SkeletonProfileHumanoid`
-- [ ] Cores de facção aplicadas via `material_override` (não baked na textura)
-- [ ] Aura do herói (`#38bdf8`) via `_attach_hero_aura()` no `model_library.gd`
-- [ ] Escala base por tipo: villager 0.95, infantry 1.0, archer 1.0, cavalry 1.1, hero 1.15, myth 1.3, siege 1.4
+### Visão Geral
+
+A Era T5 (Mythic / Era Divina) é o desfecho estratégico de *Age of Mythology: Olympus*. Quando o jogador avança para esta era, ele desbloqueia o **Altar Divino** (construção única por panteão), através do qual pode invocar qualquer deus do seu panteão como uma unidade de campo épica. Cada deus possui:
+
+- **Estatísticas de unidade épica** (HP, ataque, armadura, alcance, velocidade, população)
+- **Poder Divino Ativo** — habilidade única com cooldown longo (300–600s para Maiores, 120–240s para Menores)
+- **Passiva Divina** — bônus permanente enquanto o deus está vivo no campo
+- **Custo de invocação** — Favor elevado + recursos (food/wood/gold)
+
+### Regras de Invocação
+
+| Regra | Valor |
+|-------|-------|
+| Era necessária | Era V (Mythic / Era Divina) |
+| Pré-requisito | Templo ou Fortaleza nível máximo + Altar Divino construído |
+| Limite de Deuses Maiores | **1 por panteão por partida** |
+| Limite de Deuses Menores | **2 por panteão por partida** |
+| Limite total no campo | **3 divindades por jogador** |
+| Re-invocar após morte | Não (uma única invocação por deus por partida) |
+| População consumida | 4–10 por deus |
+| Treinamento instantâneo | Não — tempo de canalização 15–30s |
+
+### Fórmula de Balanceamento de Custo
+
+```
+Custo Base = 100 Favor + (Tier × 50 Favor)
+Custo Recursos = 450–1000 de cada (food/wood/gold)
+População = 4 (Menores menores) até 10 (Maiores)
+HP Base = 2500 (Menor fraco) até 8800 (Maior forte)
+Dano Base = 55 (Menor fraco) até 210 (Maior forte)
+Cooldown Poder Divino = 120s (Menor) até 600s (Maior)
+```
+
+---
+
+## ⚡ 7️⃣ DEUSES MAIORES COMO UNIDADES ÉPICAS (Era T5)
+
+| Deus | Panteão | Custo (F/W/G/Fav) | Tempo (s) | Pop | HP | Ataque | Armadura H/P/C | Alcance | Vel. | Poder Divino Ativo | Passiva Divina |
+|------|---------|-------------------|-----------|-----|-----|--------|----------------|---------|------|---------------------|----------------|
+| **Zeus** | Grego | 1000/1000/1000/250 | 25 | 10 | 8000 | 200 | 0.70/0.70/0.90 | 6.0 | 4.5 | **Raio Divino** — Raio maciço em área, 500 dano verdadeiro, stun 3s | **Rei dos Deuses** — Aliados +20% dano, +15% velocidade |
+| **Poseidon** | Grego | 1000/1000/1000/250 | 25 | 10 | 7500 | 180 | 0.65/0.65/0.85 | 5.0 | 4.0 | **Maremoto** — Derruba paredes em área, inimigos afogados recebem dano contínuo | **Senhor dos Mares** — Navios aliados +50% HP, +20% velocidade |
+| **Hades** | Grego | 1000/1000/1000/250 | 25 | 10 | 7000 | 160 | 0.60/0.60/0.80 | 4.0 | 3.8 | **Exército dos Mortos** — Invoca 8 Shades de Hades por 60s | **Senhor do Submundo** — Unidades aliadas regeneram 2 HP/s; inimigos mortos viram sombras |
+| **Ra** | Egípcio | 1000/1000/1000/250 | 25 | 10 | 7800 | 190 | 0.68/0.68/0.88 | 6.0 | 4.2 | **Raio Solar** — Dano verdadeiro em área circular (raio 8), 400 dmg | **Deus do Sol** — Visão +50%, geração de favor +25% |
+| **Ísis** | Egípcio | 1000/1000/1000/250 | 25 | 10 | 7200 | 150 | 0.62/0.62/0.82 | 5.0 | 4.0 | **Restauração Divina** — Cura área (raio 10) 300 HP, revive unidades caídas com 50% HP | **Mãe Faraó** — Prédios aliados curam 1 HP/s automaticamente |
+| **Set** | Egípcio | 1000/1000/1000/250 | 25 | 10 | 7600 | 175 | 0.66/0.66/0.86 | 5.5 | 4.3 | **Invoca Animais** — Desaparece 6 leões/hienas/crocodilos aliados por 90s | **Deus do Caos** — Unidades inimigas em área têm 30% chance de atacar aliados |
+| **Thor** | Nórdico | 1000/1000/1000/250 | 25 | 10 | 8200 | 210 | 0.72/0.72/0.92 | 5.0 | 4.0 | **Trovão de Mjolnir** — Relâmpago em cadeia, 350 dmg salta até 5 alvos | **Deus da Tempestade** — Cavalaria aliada +30% ataque, +20% velocidade |
+| **Odin** | Nórdico | 1000/1000/1000/250 | 25 | 10 | 7900 | 195 | 0.70/0.70/0.90 | 6.0 | 3.5 | **Olho de Odin** — Visão total do mapa por 60s, revela unidades invisíveis | **Pai de Todos** — Dano causado por aliados gera +50% favor |
+| **Loki** | Nórdico | 1000/1000/1000/250 | 25 | 10 | 7400 | 170 | 0.64/0.64/0.84 | 4.5 | 4.2 | **Engano de Loki** — Inimigos em área viram ovelhas por 10s (sem atacar) | **Deus da Trapaça** — Unidades aliadas ficam invisíveis por 15s após sair do combate |
+| **Freyr** | Nórdico | 1000/1000/1000/250 | 25 | 10 | 7700 | 185 | 0.68/0.68/0.88 | 5.0 | 4.1 | **Chuva de Fertilidade** — Área recebe +500 food/wood/gold instantâneo | **Deus da Fertilidade** — Vilãos aliados +25% taxa de coleta |
+| **Kronos** | Atlante | 1000/1000/1000/250 | 25 | 10 | 8500 | 190 | 0.75/0.75/0.95 | 5.0 | 3.8 | **Reversão do Tempo** — Prédios e unidades em área voltam 10s no estado anterior (HP/posição) | **Senhor do Tempo** — Velocidade de construção e treino +50% |
+| **Oranos** | Atlante | 1000/1000/1000/250 | 25 | 10 | 8000 | 175 | 0.70/0.70/0.90 | 7.0 | 4.5 (voo) | **Tempestade Celestial** — 5 raios caem em área, 250 dmg cada, +visão aérea | **Deus do Céu** — Unidades voadoras aliadas +50% HP, +20% dano |
+| **Gaia** | Atlante | 1000/1000/1000/250 | 25 | 10 | 8800 | 160 | 0.78/0.78/0.98 | 4.0 | 3.6 | **Despertar da Terra** — Árvores em área atacam inimigos automaticamente, terreno sobe bloqueando passagem | **Mãe Terra** — Prédios aliados regeneram 3 HP/s |
+| **Fu Xi** | Chinês | 1000/1000/1000/250 | 25 | 10 | 8100 | 185 | 0.70/0.70/0.90 | 5.5 | 4.0 | **Criação do Mundo** — Invoca 1 unidade mítica aleatória por 120s | **Primeiro Soberano** — Todas as unidades custam -15% população |
+| **Nüwa** | Chinês | 1000/1000/1000/250 | 25 | 10 | 8300 | 170 | 0.72/0.72/0.92 | 5.0 | 3.9 | **Reparação dos Céus** — Escudo área (absorve 1000 dmg), predios restaurados | **Deusa Criadora** — Unidades aliadas caídas renascem uma vez com 50% HP |
+| **Shennong** | Chinês | 1000/1000/1000/250 | 25 | 10 | 7900 | 160 | 0.68/0.68/0.88 | 4.5 | 3.7 | **Agricultura Divina** — Fazendas em área produzem comida ilimitada por 60s | **Deus da Agricultura** — Fazendas aliados +100% produção de comida |
+
+---
+
+## 🗡️ 8️⃣ DEUSES MENORES COMO UNIDADES ÉPICAS (Era T5)
+
+### Gregos — Menores
+
+| Deus | Custo (F/W/G/Fav) | Tempo (s) | Pop | HP | Ataque | Poder Divino Ativo | Passiva Divina |
+|------|-------------------|-----------|-----|-----|--------|---------------------|----------------|
+| **Athena** | 600/600/600/150 | 15 | 6 | 3500 | 90 | **Escudo de Ágide** — Aliados em área +40% armadura por 30s | Deusa da Sabedoria — Unidades +10% ataque vs prédios |
+| **Hermes** | 500/500/500/120 | 15 | 5 | 2800 | 70 | **Mensageiro Veloz** — Aliados +50% velocidade por 45s | Deus do Comércio — Caravanas +50% ouro por entrega |
+| **Apollo** | 600/600/600/150 | 15 | 6 | 3200 | 85 | **Luz Solar** — Revela área grande, inimigos invisíveis revelados, +visão | Deus do Sol — Arqueiros aliados +20% alcance |
+| **Dionysus** | 550/550/550/130 | 15 | 5 | 3000 | 80 | **Frenesia de Baco** — Aliados +60% ataque, -30% armadura por 40s | Deus do Vinho — Unidades regeneram 3 HP/s em combate |
+| **Hephaestus** | 650/650/650/160 | 15 | 6 | 3800 | 95 | **Forja Divina** — Prédios aliados +ataque, siege weapons +dano por 60s | Deus do Fogo — Siege weapons aliados +30% dano |
+| **Hera** | 600/600/600/150 | 15 | 6 | 3400 | 88 | **Proteção Real** — Aliados imunes a efeitos negativos por 30s | Rainha dos Deuses — Heróis aliados +25% HP |
+| **Ares** | 650/650/650/160 | 15 | 6 | 4000 | 100 | **Ira de Ares** — Aliados em área entram em berserk (+80% dano, recebe dano) por 30s | Deus da Guerra — Unidades ganham +1 favor por baixo inimigo |
+| **Aphrodite** | 500/500/500/120 | 15 | 5 | 2600 | 60 | **Encanto Divino** — Inimigos em área lutam entre si por 15s | Deusa do Amor — Vilãos aliados coletam +20% mais rápido |
+| **Artemis** | 550/550/550/130 | 15 | 5 | 2900 | 82 | **Caçada Eterna** — Unidades à distância aliados +35% dano, +3 alcance por 45s | Deusa da Caça — Unidades à distância +15% dano base |
+
+### Egípcios — Menores
+
+| Deus | Custo (F/W/G/Fav) | Tempo (s) | Pop | HP | Ataque | Poder Divino Ativo | Passiva Divina |
+|------|-------------------|-----------|-----|-----|--------|---------------------|----------------|
+| **Bast** | 500/500/500/120 | 15 | 5 | 2800 | 75 | **Gatos Sagrados** — Invoca 5 gatos sagrados que atacam inimigos próximos | Deusa Gato — Unidades +15% velocidade de ataque |
+| **Ptah** | 600/600/600/150 | 15 | 6 | 3200 | 80 | **Construtor Divino** — Prédios constroem 100% mais rápido, +30% HP por 60s | Deus Artesão — Prédios custam -15% madeira |
+| **Hathor** | 550/550/550/130 | 15 | 5 | 3000 | 70 | **Música Divina** — Aliados regeneram 5 HP/s, inimigos em área lentos 50% por 30s | Deusa da Alegria — Vilãos +20% coleta |
+| **Sekhmet** | 650/650/650/160 | 15 | 6 | 3600 | 95 | **Ira da Leoa** — Dano verdadeiro em área, inimigos queimam por 15s | Deusa da Guerra Egípcia — Unidades +dano vs prédios |
+| **Nephthys** | 500/500/500/120 | 15 | 5 | 2700 | 65 | **Lamento dos Mortos** — Inimigos fracos perdem 20% HP, aliados curam 100 HP | Deusa do Luto — Unidades caídas dão +25 ouro |
+| **Osiris** | 600/600/600/150 | 15 | 6 | 3400 | 85 | **Juízo Final** — Inimigos abaixo de 20% HP morrem instantaneamente | Deus dos Mortos — Unidades aliadas revivem uma vez com 50% HP |
+| **Anubis** | 550/550/550/130 | 15 | 5 | 2900 | 72 | **Pragas do Submundo** — Inimigos em área perdem 5 HP/s por 30s | Deus da Mumificação — Unidades inimigas mortas dão +5 favor |
+| **Thoth** | 500/500/500/120 | 15 | 5 | 2600 | 60 | **Sabedoria Oculta** — Pesquisa de tecnologia instantânea, +100 favor grátis | Deus da Escrita — Tecnologias pesquisam 25% mais rápido |
+
+### Nórdicos — Menores
+
+| Deus | Custo (F/W/G/Fav) | Tempo (s) | Pop | HP | Ataque | Poder Divino Ativo | Passiva Divina |
+|------|-------------------|-----------|-----|-----|--------|---------------------|----------------|
+| **Freyja** | 550/550/550/130 | 15 | 5 | 3000 | 80 | **Valquírias Celestes** — Invoca 3 Valquírias que atacam do ar por 90s | Deusa do Amor e Guerra — Heróis regeneram 2 HP/s |
+| **Heimdall** | 500/500/500/120 | 15 | 5 | 2800 | 70 | **Olho Sentinela** — Visão total do mapa por 45s | Deus Guardião — Torres aliadas +50% alcance |
+| **Forseti** | 450/450/450/100 | 15 | 4 | 2400 | 60 | **Julgamento Justo** — Inimigos em área ficam paralisados por 8s | Deus da Justiça — Prédios imunes a dano de siege por 20s |
+| **Njord** | 500/500/500/120 | 15 | 5 | 2900 | 75 | **Vento Favorável** — Navios aliados +40% velocidade, +dano por 60s | Deus do Mar — Pesca +30% |
+| **Skadi** | 550/550/550/130 | 15 | 5 | 3100 | 85 | **Inverno Eterno** — Área congelada, inimigos lentos 60%, dano gelo contínuo | Deusa do Inverno — Unidades +dano em terreno de neve |
+| **Baldr** | 500/500/500/120 | 15 | 5 | 2700 | 68 | **Luz de Baldr** — Inimigos cegados (visão 0) por 12s, aliados +defesa | Deus da Luz — Unidades não podem morrer em 1 golpe |
+| **Bragi** | 450/450/450/100 | 15 | 4 | 2300 | 55 | **Poesia Épica** — Aliados +ataque, gera +2 favor/s por 60s | Deus da Poesia — Gera +1 favor/s passivo |
+| **Tyr** | 600/600/600/150 | 15 | 6 | 3500 | 95 | **Mão de Tyr** — Inimigo alvo recebe 300 dano verdadeiro imediato | Deus da Justiça Guerreira — Unidades +dano vs heróis |
+| **Hel** | 550/550/550/130 | 15 | 5 | 2900 | 78 | **Reino dos Mortos** — 3 inimigos caídos viram zumbis aliados por 60s | Deusa do Submundo — Unidades inimigas dão +5 favor ao morrer |
+
+### Atlantes — Menores
+
+| Deus | Custo (F/W/G/Fav) | Tempo (s) | Pop | HP | Ataque | Poder Divino Ativo | Passiva Divina |
+|------|-------------------|-----------|-----|-----|--------|---------------------|----------------|
+| **Prometheus** | 550/550/550/130 | 15 | 5 | 3000 | 80 | **Fogo de Prometheus** — Prédios inimigos em área queimam, dano contínuo por 30s | Titã do Fogo — Unidades +dano vs prédios |
+| **Leto** | 450/450/450/100 | 15 | 4 | 2400 | 60 | **Maternidade Divina** — Invoca 2 unidades de suporte que curam aliados | Titã Mãe — Unidades aliadas curam 2 HP/s |
+| **Hyperion** | 500/500/500/120 | 15 | 5 | 2700 | 70 | **Luz Titânica** — Visão área grande, dano de luz em área por 20s | Titã da Luz — Unidades +20% visão |
+| **Helios** | 500/500/500/120 | 15 | 5 | 2600 | 65 | **Carro do Sol** — Dano de fogo em linha reta, 300 dmg | Titã do Sol — Unidades +dano vs mortos-vivos |
+| **Atlas** | 650/650/650/160 | 15 | 6 | 3800 | 100 | **Sustento do Céu** — Aliados em área +60% armadura por 40s | Titã da Força — Prédios aliados +50% HP |
+| **Hekate** | 550/550/550/130 | 15 | 5 | 3100 | 85 | **Magia das Encruzilhadas** — Inimigos em área transformados em galinhas por 20s | Titã da Magia — Unidades +dano divino |
+| **Oceanus** | 500/500/500/120 | 15 | 5 | 2800 | 72 | **Maré Titânica** — Inimigos empurrados para trás, dano área 200 | Titã dos Oceanos — Unidades são anfíbias |
+| **Theia** | 450/450/450/100 | 15 | 4 | 2300 | 58 | **Visão Profética** — Revela mapa inteiro, unidades invisíveis reveladas por 90s | Titã da Visão — Revela unidades invisíveis próximas |
+| **Rheia** | 500/500/500/120 | 15 | 5 | 2900 | 75 | **Fluxo de Vida** — Aliados em área regeneram 5 HP/s por 60s | Titã do Fluxo — Unidades regeneram 3 HP/s em combate |
+
+### Chineses — Menores
+
+| Deus | Custo (F/W/G/Fav) | Tempo (s) | Pop | HP | Ataque | Poder Divino Ativo | Passiva Divina |
+|------|-------------------|-----------|-----|-----|--------|---------------------|----------------|
+| **Chiyou** | 600/600/600/150 | 15 | 6 | 3400 | 90 | **Demônio da Guerra** — Unidades em área berserk, +dano por 40s | Deus da Guerra Chinês — Unidades +dano vs prédios |
+| **Gonggong** | 550/550/550/130 | 15 | 5 | 3100 | 85 | **Inundação** — Área alagada, inimigos lentos 50%, dano contínuo água | Deus da Água — Unidades são anfíbias |
+| **Goumang** | 500/500/500/120 | 15 | 5 | 2800 | 70 | **Primavera Eterna** — Árvores crescem instantaneamente, comida grátis em área | Deus da Madeira — Madeira coleta +30% |
+| **Houtu** | 500/500/500/120 | 15 | 5 | 2900 | 72 | **Deusa da Terra** — Prédios aliados +40% HP, terreno fortificado | Deusa da Terra — Prédios +25% HP base |
+| **Huangdi** | 600/600/600/150 | 15 | 6 | 3500 | 92 | **Imperador Amarelo** — Todos os aliados +15% dano, +15% armadura por 60s | Imperador — Todas as unidades +10% stats |
+| **Nuba** | 500/500/500/120 | 15 | 5 | 2700 | 68 | **Deusa da Seca** — Área seca, inimigos lentos 40%, prédios queimam lentamente | Deusa da Seca — Prédios inimigos perdem HP lentamente |
+| **Rushou** | 450/450/450/100 | 15 | 4 | 2400 | 62 | **Deus do Oeste** — Vento cortante em área, 180 dmg físico | Deus do Oeste — Arqueiros +15% alcance |
+| **Xuannu** | 500/500/500/120 | 15 | 5 | 2800 | 70 | **Deusa da Guerra** — Invoca 4 tropas espectrais que atacam inimigos | Deusa da Guerra — Heróis +dano vs unidades mitológicas |
+| **Zhurong** | 600/600/600/150 | 15 | 6 | 3600 | 95 | **Deus do Fogo** — Chuva de meteoros em área, 400 dmg área | Deus do Fogo — Unidades causam dano de fogo ao atacar |
+
+---
+
+## ⚖️ 9️⃣ BALANCEAMENTO — CUSTO vs PODER
+
+### Hierarquia de Poder
+
+| Tier | Exemplo | HP Médio | Ataque Médio | Custo Favor | Pop | Cooldown Poder | Uso Recomendado |
+|------|---------|----------|--------------|-------------|-----|----------------|-----------------|
+| **Maior** | Zeus, Ra, Thor, Kronos, Fu Xi | ~7900 | ~185 | 250 | 10 | 300–600s | Virar o jogo em batalha decisiva |
+| **Menor Forte** | Athena, Ares, Osiris, Tyr, Atlas, Zhurong | ~3400 | ~90 | 150–160 | 6 | 180–240s | Suporte tático em combate |
+| **Menor Médio** | Hermes, Bast, Freyja, Hekate, Houtu, Nuba | ~2800 | ~70 | 120–130 | 5 | 150–200s | Utilidade e economia |
+| **Menor Fraco** | Forseti, Bragi, Theia, Rushou, Ptah | ~2400 | ~60 | 100 | 4 | 120–180s | Defesa e visão |
+
+### Regras de Balanceamento
+
+1. **Favor como gatekeeper**: Deuses custam muito Favor (100–250), forçando o jogador a escolher entre invocar um deus ou usar melhorias mitológicas e poder divino do major god.
+2. **População alta**: Um deus maior consome 10 pop — equivalente a 3–5 unidades myth. Invocar um deus significa abrir mão de exército myth.
+3. **Única invocação**: Cada deus só pode ser invocado uma vez por partida. Se morrer, não volta (exceto passiva de Nüwa que permite renascer uma vez para unidades normais, não para o próprio deus).
+4. **Canalização vulnerável**: O tempo de 15–30s para invocar deixa o jogador vulnerável — inimigo pode atacar o Altar Divino para cancelar.
+5. **Contra-divindade**: Deuses maiores são fortes contra unidades myth e prédios, mas vulneráveis a ataques concentrados de heróis (que têm multiplicador vs myth/divino).
+
+### Sinergias por Panteão
+
+| Panteão | Deus Maior + Menor Recomendado | Efeito Sinérgico |
+|---------|-------------------------------|------------------|
+| Grego | Zeus + Athena | Dano de área + armadura de aliados |
+| Grego | Hades + Ares | Exército de mortos + berserk aliados |
+| Egípcio | Ra + Thoth | Favor rápido + pesquisa instantânea |
+| Egípcio | Set + Anubis | Caos + drenagem de HP inimiga |
+| Nórdico | Thor + Tyr | Cavalaria forte + eliminação de heróis inimigos |
+| Nórdico | Odin + Heimdall | Visão total + favor por dano |
+| Atlante | Kronos + Leto | Reversão de tempo + cura contínua |
+| Atlante | Gaia + Atlas | Prédios regeneram + armadura massiva |
+| Chinês | Fu Xi + Huangdi | Pop reduzida + stats globais +10% |
+| Chinês | Shennong + Zhurong | Comida infinita + chuva de meteoros |
 
 ---
 
@@ -599,12 +753,144 @@ O catálogo acima está integrado ao pipeline de modelos:
 - **`_build_procedural_unit`** — consome o profile, aplica escala, cores de facção (player = cor panteão, enemy = `#b91c1c`), armas por tipo e aura para hero/myth.
 - **Fallback GLB** — se não houver GLB exportado, gera malha procedural PBR com tintura de facção.
 
+## 🔟 10️⃣ INTEGRAÇÃO TÉCNICA — `model_library.gd` (Era dos Deuses)
+
+Para suportar a invocação de deuses como unidades no campo, o `model_library.gd` deve ser expandido com:
+
+### `DIVINE_PROFILES` — Perfis de deuses
+
+```gdscript
+static const DIVINE_PROFILES: Dictionary = {
+	"zeus_major": {
+		"tier": "major",
+		"scale": 2.5,
+		"pop_cost": 10,
+		"base_hp": 8000,
+		"base_attack": 200.0,
+		"armor_h": 0.70,
+		"armor_p": 0.70,
+		"armor_c": 0.90,
+		"range": 6.0,
+		"speed": 4.5,
+		"favor_cost": 250,
+		"resource_cost": {"food": 1000, "wood": 1000, "gold": 1000},
+		"train_time": 25.0,
+		"aura_color": Color("#fbbf24"),  # dourado divino
+		"has_passive": true,
+		"has_active_power": true,
+		"power_cooldown": 360.0,
+		"can_be_promoted": false,
+		"is_titan": false,
+	},
+	"poseidon_major": {
+		"tier": "major",
+		"scale": 2.4,
+		"pop_cost": 10,
+		"base_hp": 7500,
+		"base_attack": 180.0,
+		"armor_h": 0.65,
+		"armor_p": 0.65,
+		"armor_c": 0.85,
+		"range": 5.0,
+		"speed": 4.0,
+		"favor_cost": 250,
+		"resource_cost": {"food": 1000, "wood": 1000, "gold": 1000},
+		"train_time": 25.0,
+		"aura_color": Color("#3b82f6"),
+		"has_passive": true,
+		"has_active_power": true,
+		"power_cooldown": 300.0,
+	},
+	"athena_minor": {
+		"tier": "minor",
+		"scale": 1.8,
+		"pop_cost": 6,
+		"base_hp": 3500,
+		"base_attack": 90.0,
+		"armor_h": 0.55,
+		"armor_p": 0.55,
+		"armor_c": 0.80,
+		"range": 4.0,
+		"speed": 4.2,
+		"favor_cost": 150,
+		"resource_cost": {"food": 600, "wood": 600, "gold": 600},
+		"train_time": 15.0,
+		"aura_color": Color("#a855f7"),
+		"has_passive": true,
+		"has_active_power": true,
+		"power_cooldown": 180.0,
+	},
+	# ... repetir para todos os deuses menores
+}
+```
+
+### `DIVINE_POWERS` — Catálogo de Poderes Divinos
+
+```gdscript
+static const DIVINE_POWERS: Dictionary = {
+	"zeus_lightning": {
+		"name": "Raio Divino",
+		"type": "damage_area",
+		"damage": 500.0,
+		"damage_type": "divine",
+		"radius": 8.0,
+		"stun_duration": 3.0,
+		"cooldown": 360.0,
+		"favor_cost": 0,  # já pago na invocação
+	},
+	"athena_aegis": {
+		"name": "Escudo de Ágide",
+		"type": "buff_area",
+		"armor_bonus": 0.40,
+		"duration": 30.0,
+		"radius": 10.0,
+		"cooldown": 180.0,
+	},
+	# ... todos os poderes
+}
+```
+
+### `_divine_profile(p, god_kind)` — Resolver perfil divino
+
+```gdscript
+static func _divine_profile(p: Dictionary, god_kind: String) -> Dictionary:
+	var base := DIVINE_PROFILES.get(god_kind, DIVINE_PROFILES["athena_minor"])
+	var profile: Dictionary = base.duplicate(true)
+	# Aplica cores do panteão
+	profile["tunic_color"] = p.get("primary_color", Color("#2563eb"))
+	profile["accent_color"] = p.get("accent_color", Color("#d4af37"))
+	profile["divine_glow"] = true  # ativa brilho procedural
+	return profile
+```
+
+### `_build_procedural_divine_unit(p, kind, faction)` — Renderização procedural
+
+Diferente das unidades normais, unidades divinas:
+- Usam escala maior (1.8x – 2.5x)
+- Têm **aura divina brilhante** (torus emissivo grande em volta da base)
+- Texturas PBR com emissivo divino (glow) nas bordas
+- Barra de vida acima da cabeça visível em toda a tela (estilo boss)
+- Sombra circular grande projetada no chão
+
+### Mudanças necessárias no `pantheon_catalog.gd`
+
+Adicionar dicionário `DIVINE_GODS` mapeando panteão → lista de deuses disponíveis na Era T5, com custos e requisitos.
+
+### Mudanças no `game_state.gd`
+
+- Adicionar flag `era_divine_unlocked: bool`
+- Adicionar `divine_gods_summoned: Array[String]` (deuses já invocados, para não repetir)
+- Função `can_summon_divine(god_kind: String) -> bool` verificando era, pop disponível, favor, prédio pré-requisito
+- Função `summon_divine_god(god_kind: String)` que consome recursos e spawn a unidade
+
+---
+
 ### Arquivos relacionados
 - `models/README_DEITIES_UNITS_BUILDINGS.md` — este catálogo completo
 - `models/README_UNITS_CATALOG.md` — catálogo resumido de tipos de unidade
-- `scripts/autoload/model_library.gd` — pipeline de modelos + `UNIT_PROFILES` + `_unit_profile`
-- `scripts/autoload/pantheon_catalog.gd` — definições de panteão, deuses, unidades, prédios
-- `scripts/autoload/game_state.gd` — população, idade, recursos, progressão de era
+- `scripts/autoload/model_library.gd` — pipeline de modelos + `UNIT_PROFILES` + `DIVINE_PROFILES` + `_unit_profile` + `_divine_profile`
+- `scripts/autoload/pantheon_catalog.gd` — definições de panteão, deuses, unidades, prédios, `DIVINE_GODS`
+- `scripts/autoload/game_state.gd` — população, idade, recursos, progressão de era, `can_summon_divine`, `summon_divine_god`
 
 ---
 
