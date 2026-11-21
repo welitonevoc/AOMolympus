@@ -165,6 +165,12 @@ func _build_top_bar() -> void:
 	_day_night_btn.pressed.connect(func() -> void: GameState.toggle_day_night())
 	hbox.add_child(_day_night_btn)
 
+	var menu_btn := _make_action_button("Menu", false, 60.0, 38.0)
+	menu_btn.pressed.connect(func() -> void:
+		get_tree().change_scene_to_file("res://scenes/title_screen.tscn")
+	)
+	hbox.add_child(menu_btn)
+
 
 func _build_divine_power_bar() -> void:
 	var panel := PanelContainer.new()
@@ -633,12 +639,19 @@ func _build_end_match_overlay() -> void:
 	)
 	btn_row.add_child(rematch_btn)
 
-	var change_btn := _make_action_button("Configurar Partida", false, 188.0, 52.0)
+	var change_btn := _make_action_button("Configurar Partida", false, 160.0, 52.0)
 	change_btn.pressed.connect(func() -> void:
 		_end_overlay.visible = false
 		_start_overlay.visible = true
 	)
 	btn_row.add_child(change_btn)
+
+	var menu_btn := _make_action_button("Menu Principal", false, 160.0, 52.0)
+	menu_btn.pressed.connect(func() -> void:
+		_end_overlay.visible = false
+		get_tree().change_scene_to_file("res://scenes/title_screen.tscn")
+	)
+	btn_row.add_child(menu_btn)
 
 
 func _select_start_pantheon(pid: String) -> void:
