@@ -141,6 +141,8 @@ func spawn_building(
 	b.training_completed.connect(_on_building_training_completed)
 	b.projectile_requested.connect(_on_projectile_requested)
 	b.building_destroyed.connect(_on_building_destroyed)
+	if kind == "divine_altar":
+		b.construction_finished.connect(_on_divine_altar_finished)
 	_entities_root.add_child(b)
 	return b
 
@@ -206,6 +208,14 @@ func _on_building_training_completed(building: BuildingActor, unit_kind: String,
 		GameState.notify("%s pronto para combate!" % u_name, false)
 
 
+func _on_divine_altar_finished(building: BuildingActor) -> void:
+	if building.building_kind != "divine_altar":
+		return
+	if building.faction == "player":
+		GameState.record_divine_altar_built()
+		GameState.notify("Altar Divino construido! Invocacoes de deuses disponiveis na Era dos Deuses.", false)
+
+
 func _on_projectile_requested(
 	start_pos: Vector3,
 	target: Node3D,
@@ -220,6 +230,11 @@ func _on_projectile_requested(
 
 
 func _on_building_destroyed(building: BuildingActor) -> void:
+	if building.building_kind == "divine_altar":
+		if building.faction == "player":
+			GameState.record_divine_altar_destroyed()
+			GameState.notify("Altar Divino destruido! Nao eh possivel invocar deuses ate reconstruir.", true)
+		return
 	if building.building_kind != "town_center":
 		return
 	if building.faction == "enemy":

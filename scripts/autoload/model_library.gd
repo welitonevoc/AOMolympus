@@ -196,6 +196,27 @@ static func _build_procedural_building(p: Dictionary, kind: String, tier: int, f
 					_add_prism_roof(root, 1.05, 0.72, 1.05, Vector3(sx * fp * 0.48, 0.32 + f_h + 1.28, sz * fp * 0.48), roof_mat)
 			_add_cylinder(root, 0.25, 0.35, 1.5, Vector3(0.0, 0.32 + f_h + 0.75, 0.0), gold_mat)
 			_add_box(root, Vector3(0.38, 1.5, 0.08), Vector3(0.0, 0.32 + f_h + 0.95, fp * 0.6), primary_mat)
+		"divine_altar":
+			var da_h: float = 2.6 * tier_scale
+			# Plinto circular elevado (pedra sagrada)
+			_add_box(root, Vector3(fp * 1.55, 0.5, fp * 1.55), Vector3(0.0, 0.25, 0.0), stone_mat)
+			# Colunas laterais em volta do altar
+			for cx in [-1.35, 1.35]:
+				for cz in [-1.35, 1.35]:
+					_add_cylinder(root, 0.2, 0.24, da_h * 0.85, Vector3(cx * 0.62, 0.25 + da_h * 0.42, cz * 0.62), gold_mat)
+			# Pedestal central onde o deus se manifesta
+			_add_box(root, Vector3(fp * 0.75, da_h, fp * 0.75), Vector3(0.0, 0.25 + da_h * 0.5, 0.0), stone_mat)
+			# Orbe divino flutuante no topo (emissivo)
+			var orb_mat := _make_mat(accent_col, 0.12, 0.95, true, accent_col, 3.0)
+			_add_sphere(root, 0.75 * tier_scale, Vector3(0.0, 0.25 + da_h + 1.0 * tier_scale, 0.0), orb_mat)
+			# Anel de poder giratório ao redor da base do orbe
+			var ring_mat := _make_mat(accent_col, 0.05, 0.88, true, accent_col, 2.2)
+			_add_torus(root, 1.1 * tier_scale, 1.28 * tier_scale, Vector3(0.0, 0.25 + da_h + 0.95 * tier_scale, 0.0), ring_mat)
+			# Tochas cerimoniais nos cantos
+			for tx in [-1.1, 1.1]:
+				for tz in [-1.1, 1.1]:
+					_add_cylinder(root, 0.07, 0.07, 0.45, Vector3(tx * fp * 0.55, 0.25 + da_h * 0.35, tz * fp * 0.55), primary_mat)
+					_add_box(root, Vector3(0.18, 0.12, 0.18), Vector3(tx * fp * 0.55, 0.25 + da_h * 0.35 + 0.48, tz * fp * 0.55), gold_mat)
 		_:
 			_add_box(root, Vector3(fp, 1.4, fp), Vector3(0.0, 0.9, 0.0), stone_mat)
 
@@ -1691,6 +1712,13 @@ static func _divine_profile(p: Dictionary, god_kind: String) -> Dictionary:
 	profile["roof_color"] = p.get("roof_color", Color("#b45334"))
 	profile["divine_glow"] = true  # ativa brilho procedural divino
 	return profile
+
+
+# Getter publico para consultar o perfil de um deus sem precisar do dicionario do panteao.
+# Usado pelo game_state.gd para validar invocacoes na Era T5.
+static func get_divine_profile(god_kind: String) -> Dictionary:
+	var empty_pantheon: Dictionary = {}
+	return _divine_profile(empty_pantheon, god_kind)
 
 
 static func _build_procedural_divine_unit(p: Dictionary, god_kind: String, faction: String) -> Node3D:

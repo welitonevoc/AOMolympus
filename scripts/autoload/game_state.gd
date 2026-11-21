@@ -21,6 +21,8 @@ signal campaign_objectives_changed(chapter_id: String, title: String, objectives
 signal formation_changed(formation_id: String)
 signal stance_changed(stance_id: String)
 signal notification_emitted(message: String, is_warning: bool)
+signal divine_summoned_signal(god_kind: String, tier: String)
+signal divine_summon_blocked(reason: String)
 
 var active_pantheon: String = "greek"
 var enemy_pantheon: String = "norse"
@@ -62,6 +64,11 @@ var box_select_mode: bool = false
 var flaming_weapons_timer: float = 0.0
 var eclipse_timer: float = 0.0
 var powers_cast_count: int = 0
+
+# --- Era dos Deuses (T5) — Estado de invocacao divina ---
+var era_divine_unlocked: bool = false
+var divine_gods_summoned: Array[String] = []  # IDs de deuses ja invocados (nao podem repetir)
+var divine_altars_built: int = 0  # Altares Divinos construidos pelo jogador
 
 
 func _process(delta: float) -> void:
@@ -117,6 +124,9 @@ func start_new_match(
 	flaming_weapons_timer = 0.0
 	eclipse_timer = 0.0
 	powers_cast_count = 0
+	era_divine_unlocked = false
+	divine_gods_summoned.clear()
+	divine_altars_built = 0
 	match_result = ""
 	match_started = true
 
@@ -283,6 +293,9 @@ func _complete_age_advance() -> void:
 		PantheonCatalog.get_age_name(current_age),
 		current_age,
 	], false)
+	if current_age >= 5:
+		era_divine_unlocked = true
+		notify("Era dos Deuses desbloqueada! Invocacoes divinas disponiveis no Altar Divino.", false)
 
 
 func set_formation(formation_id: String) -> void:
@@ -295,6 +308,126 @@ func set_formation(formation_id: String) -> void:
 	formation_changed.emit(active_formation)
 	var f: Dictionary = PantheonCatalog.get_formation(formation_id)
 	notify("Formacao %s: %s" % [f["name"], f["description"]], false)
+
+
+func record_divine_altar_built() -> void:
+	divine_altars_built += 1
+
+
+func record_divine_altar_destroyed() -> void:
+	divine_altars_built = maxi(0, divine_altars_built - 1)
+
+
+func has_divine_altar() -> bool:
+	return divine_altars_built > 0
+
+
+func get_divine_summoned_count() -> int:
+	return divine_gods_summoned.size()
+
+
+func get_divine_summoned_by_tier(tier: String) -> int:
+	var count: int = 0
+	for god_kind in divine_gods_summoned:
+		var profile: Dictionary = ModelLibrary.get_divine_profile(god_kind)
+		if profile.get("tier", "") == tier:
+			count += 1
+	return count
+
+
+func can_summon_divine(god_kind: String) -> Dictionary:
+	"""Retorna um dicionario com 'allowed: bool' e 'reason: String' explicando o bloqueio, se houver."""
+	if not era_divine_unlocked:
+		return {"allowed": false, "reason": "Era dos Deuses (T5) nao desbloqueada."}
+
+	if not ModelLibrary.DIVINE_PROFILES.has(god_kind):
+		return {"allowed": false, "reason": "Deus nao cadastrado: %s" % god_kind}
+
+	var profile: Dictionary = ModelLibrary.DIVINE_PROFILES[god_kind]
+	var tier: String = profile.get("tier", "minor")
+
+	# Unica invocacao por deus por partida
+	if god_kind in divine_gods_summoned:
+		return {"allowed": false, "reason": "%s ja foi invocado nesta partida." % god_kind}
+
+	# Limite de maiores por panteao
+	if tier == "major" and get_divine_summoned_by_tier("major") >= PantheonCatalog.DIVINE_MAX_MAJORS_PER_PANTHEON:
+		return {"allowed": false, "reason": "Limite de deuses maiores atingido (1 por panteao)."}
+
+	# Limite de menores por panteao
+	if tier == "minor" and get_divine_summoned_by_tier("minor") >= PantheonCatalog.DIVINE_MAX_MINORS_PER_PANTHEON:
+		return {"allowed": false, "reason": "Limite de deuses menores atingido (2 por panteao)."}
+
+	# Limite total no campo
+	if get_divine_summoned_count() >= PantheonCatalog.DIVINE_MAX_TOTAL_PER_PLAYER:
+		return {"allowed": false, "reason": "Limite total de divindades no campo (3 por jogador)."}
+
+	# Pre-requisito: Altar Divino construido
+	if not has_divine_altar():
+		return {"allowed": false, "reason": "Altar Divino nao construido."}
+
+	# Idade minima
+	if current_age < PantheonCatalog.DIVINE_MIN_AGE:
+		return {"allowed": false, "reason": "Idade minima para invocacao: Era V."}
+
+	# Custo de recursos
+	var cost: Dictionary = _divine_total_cost(god_kind)
+	if not can_afford(cost):
+		return {"allowed": false, "reason": "Recursos insuficientes: %s" % PantheonCatalog.format_cost(cost)}
+
+	# Populacao disponivel
+	if not has_population_room(profile.get("pop_cost", 6)):
+		return {"allowed": false, "reason": "Populacao insuficiente (%d necessarias)." % profile.get("pop_cost", 6)}
+
+	return {"allowed": true, "reason": ""}
+
+
+func _divine_total_cost(god_kind: String) -> Dictionary:
+	var profile: Dictionary = ModelLibrary.DIVINE_PROFILES[god_kind]
+	var resource_cost: Dictionary = profile.get("resource_cost", {"food": 0, "wood": 0, "gold": 0})
+	var total: Dictionary = resource_cost.duplicate(true)
+	total["favor"] = profile.get("favor_cost", 0)
+	return total
+
+
+func summon_divine_god(god_kind: String) -> bool:
+	"""Tenta invocar um deus como unidade epica. Retorna true se sucesso."""
+	var check: Dictionary = can_summon_divine(god_kind)
+	if not check["allowed"]:
+		divine_summon_blocked.emit(check["reason"])
+		notify(check["reason"], true)
+		return false
+
+	var profile: Dictionary = ModelLibrary.DIVINE_PROFILES[god_kind]
+	var cost: Dictionary = _divine_total_cost(god_kind)
+
+	# Consome recursos
+	if not spend_resources(cost):
+		divine_summon_blocked.emit("Falha ao gastar recursos para invocacao.")
+		return false
+
+	# Consome populacao
+	add_population_used(profile.get("pop_cost", 6))
+
+	# Registra deus invocado (nao pode repetir)
+	divine_gods_summoned.append(god_kind)
+
+	divine_summoned_signal.emit(god_kind, profile.get("tier", "minor"))
+	notify("Deus invocado: %s (%s)" % [god_kind, profile.get("tier", "minor")], false)
+	return true
+
+
+func get_divine_pantheon_for_god(god_kind: String) -> String:
+	"""Retorna o panteao ao qual o deus pertence, baseado em DIVINE_PROFILES e DIVINE_GODS."""
+	var profile: Dictionary = ModelLibrary.DIVINE_PROFILES.get(god_kind, {})
+	if not profile.is_empty() and profile.has("pantheon"):
+		return profile["pantheon"]
+	# Fallback: busca em DIVINE_GODS
+	for pantheon_id in PantheonCatalog.DIVINE_GODS.keys():
+		for tier_key in ["majors", "minors"]:
+			if god_kind in PantheonCatalog.DIVINE_GODS[pantheon_id][tier_key]:
+				return pantheon_id
+	return active_pantheon
 
 
 func set_stance(stance_id: String) -> void:

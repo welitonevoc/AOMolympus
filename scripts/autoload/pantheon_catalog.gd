@@ -428,6 +428,22 @@ const BUILDINGS: Dictionary = {
 		"attack_range": 16.5,
 		"attack_cooldown": 1.05,
 	},
+	"divine_altar": {
+		"kind": "divine_altar",
+		"name": "Altar Divino",
+		"min_age": 5,
+		"cost": {"wood": 400, "gold": 400, "favor": 100},
+		"base_hp": 3000,
+		"hp_per_age": 0,
+		"pop_bonus": 0,
+		"build_time": 30.0,
+		"footprint": 4.0,
+		"vision_radius": 15.0,
+		"favor_rate": 0.0,
+		"attack_damage": 0.0,
+		"attack_range": 0.0,
+		"attack_cooldown": 0.0,
+	},
 }
 
 const VILLAGER_BUILD_ORDER: Array[String] = ["house", "temple", "barracks", "archery", "stable", "tower", "fortress"]
@@ -605,6 +621,86 @@ const PANTHEON_UNIT_NAMES: Dictionary = {
 const HERO_PROMOTION_COST: Dictionary = {"food": 50, "gold": 50, "favor": 5}
 const VILLAGER_COST: Dictionary = {"food": 50}
 const VILLAGER_TRAIN_TIME: float = 5.5
+
+# --- Era dos Deuses (T5) — Deuses invocaveis como unidades epicas ---
+# Mapeia cada panteao aos deuses maiores e menores disponiveis para invocacao na Era V.
+const DIVINE_GODS: Dictionary = {
+	"greek": {
+		"majors": ["zeus_major", "poseidon_major", "hades_major"],
+		"minors": ["athena_minor", "hermes_minor", "apollo_minor", "dionysus_minor",
+		           "hephaestus_minor", "hera_minor", "ares_minor", "aphrodite_minor", "artemis_minor"],
+	},
+	"egyptian": {
+		"majors": ["ra_major", "isis_major", "set_major"],
+		"minors": ["bast_minor", "ptah_minor", "hathor_minor", "sekhmet_minor",
+		           "nephthys_minor", "osiris_minor", "anubis_minor", "thoth_minor"],
+	},
+	"norse": {
+		"majors": ["thor_major", "odin_major", "loki_major", "freyr_major"],
+		"minors": ["freyja_minor", "heimdall_minor", "forseti_minor", "njord_minor",
+		           "skadi_minor", "baldr_minor", "bragi_minor", "tyr_minor", "hel_minor"],
+	},
+	"atlantean": {
+		"majors": ["kronos_major", "oranos_major", "gaia_major"],
+		"minors": ["prometheus_minor", "leto_minor", "hyperion_minor", "helios_minor",
+		           "atlas_minor", "hekate_minor", "oceanus_minor", "theia_minor", "rheia_minor"],
+	},
+	"chinese": {
+		"majors": ["fuxi_major", "nuwa_major", "shennong_major"],
+		"minors": ["chiyou_minor", "gonggong_minor", "goumang_minor", "houtu_minor",
+		           "huangdi_minor", "nuba_minor", "rushou_minor", "xuannu_minor", "zhurong_minor"],
+	},
+}
+
+# Limites de invocacao por partida
+const DIVINE_MAX_MAJORS_PER_PANTHEON: int = 1
+const DIVINE_MAX_MINORS_PER_PANTHEON: int = 2
+const DIVINE_MAX_TOTAL_PER_PLAYER: int = 3
+const DIVINE_MIN_AGE: int = 5  # Era V / Era dos Deuses
+
+# Predio pre-requisito para invocacao divina (Altar Divino)
+const DIVINE_BUILDING: Dictionary = {
+	"kind": "divine_altar",
+	"name": "Altar Divino",
+	"min_age": 5,
+	"cost": {"wood": 400, "gold": 400, "favor": 100},
+	"base_hp": 3000,
+	"hp_per_age": 0,
+	"pop_bonus": 0,
+	"build_time": 30.0,
+	"footprint": 4.0,
+	"vision_radius": 15.0,
+	"favor_rate": 0.0,
+	"attack_damage": 0.0,
+	"attack_range": 0.0,
+	"attack_cooldown": 0.0,
+	"one_per_player": true,  # so pode haver um altar por jogador
+}
+
+
+static func get_divine_gods(pantheon_id: String) -> Dictionary:
+	return DIVINE_GODS.get(pantheon_id, DIVINE_GODS["greek"])
+
+
+static func get_divine_major_gods(pantheon_id: String) -> Array[String]:
+	return get_divine_gods(pantheon_id).get("majors", [])
+
+
+static func get_divine_minor_gods(pantheon_id: String) -> Array[String]:
+	return get_divine_gods(pantheon_id).get("minors", [])
+
+
+static func get_divine_building_spec() -> Dictionary:
+	return DIVINE_BUILDING.duplicate(true)
+
+
+static func get_divine_limits() -> Dictionary:
+	return {
+		"max_majors_per_pantheon": DIVINE_MAX_MAJORS_PER_PANTHEON,
+		"max_minors_per_pantheon": DIVINE_MAX_MINORS_PER_PANTHEON,
+		"max_total_per_player": DIVINE_MAX_TOTAL_PER_PLAYER,
+		"min_age": DIVINE_MIN_AGE,
+	}
 
 
 static func get_pantheon(pantheon_id: String) -> Dictionary:

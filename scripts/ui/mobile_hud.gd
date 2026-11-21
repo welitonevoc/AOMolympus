@@ -31,6 +31,14 @@ var _campaign_panel: PanelContainer
 var _campaign_title_lbl: Label
 var _campaign_obj_vbox: VBoxContainer
 
+# --- Era dos Deuses (T5) — Painel de invocacao divina ---
+var _divine_panel: PanelContainer
+var _divine_panel_visible: bool = false
+var _divine_scroll: ScrollContainer
+var _divine_grid: GridContainer
+var _divine_btn: Button  # Botao "Era dos Deuses" na top bar
+var _divine_god_buttons: Dictionary = {}  # god_kind -> Button
+
 var _box_btn: Button
 var _selection_title: Label
 var _selection_status: Label
@@ -79,6 +87,7 @@ func _ready() -> void:
 	_build_toast_banner()
 	_build_pantheon_start_overlay()
 	_build_end_match_overlay()
+	_build_divine_invocation_ui()
 
 	GameState.match_started_signal.connect(_on_match_started)
 	GameState.match_ended.connect(_on_match_ended)
@@ -96,6 +105,8 @@ func _ready() -> void:
 	GameState.formation_changed.connect(_on_tactics_changed)
 	GameState.stance_changed.connect(_on_tactics_changed)
 	GameState.notification_emitted.connect(_on_notification)
+	GameState.divine_summoned_signal.connect(_on_divine_summoned)
+	GameState.divine_summon_blocked.connect(_on_divine_summon_blocked)
 
 	if SaveLoadSystem != null:
 		SaveLoadSystem.load_completed.connect(func(_ok: bool) -> void:
@@ -200,6 +211,13 @@ func _build_top_bar() -> void:
 		SaveLoadSystem.load_game()
 	)
 	hbox.add_child(load_btn)
+
+	_divine_btn = _make_action_button("Deuses", true, 74.0, 38.0)
+	_divine_btn.visible = false
+	_divine_btn.pressed.connect(func() -> void:
+		_toggle_divine_panel()
+	)
+	hbox.add_child(_divine_btn)
 
 	var menu_btn := _make_action_button("Menu", false, 60.0, 38.0)
 	menu_btn.pressed.connect(func() -> void:
