@@ -63,6 +63,9 @@ func _ready() -> void:
 	GameState.lighting_changed.connect(_apply_day_night_lighting)
 	_apply_day_night_lighting(GameState.is_night)
 
+	if SaveLoadSystem != null and SaveLoadSystem.is_loading_from_save:
+		SaveLoadSystem.apply_pending_to_world(self, _camera_rig)
+
 
 func get_fog_system() -> FogOfWarSystem:
 	return _fog_system
@@ -320,3 +323,163 @@ func _setup_navigation_mesh() -> void:
 	])
 	nav_mesh.add_polygon(PackedInt32Array([0, 1, 2, 3]))
 	_nav_region.navigation_mesh = nav_mesh
+
+
+func serialize_entities() -> Dictionary:
+	var b_list: Array = []
+	var u_list: Array = []
+	var r_list: Array = []
+
+	if _entities_root == null:
+		return {"buildings": b_list, "units": u_list, "resources": r_list}
+
+	for child in _entities_root.get_children():
+		if child is BuildingActor and not child.is_dead():
+			b_list.append({
+				"kind": child.building_kind,
+				"pos": [child.position.x, child.position.y, child.position.z],
+				"faction": child.faction,
+				"pantheon_id": child.pantheon_id,
+				"age_tier": child.age_tier,
+				"is_constructed": child.is_constructed,
+				"build_progress": child.build_progress,
+				"current_hp": child.current_hp,
+				"max_hp": child.max_hp,
+				"training_queue": Array(child.training_queue)
+			})
+		elif child is UnitActor and not child._dead:
+			u_list.append({
+				"kind": child.unit_kind,
+				"pos": [child.position.x, child.position.y, child.position.z],
+				"faction": child.faction,
+				"pantheon_id": child.pantheon_id,
+				"current_hp": child.current_hp,
+				"max_hp": child.max_hp,
+				"is_promoted_hero": child.is_promoted_hero,
+				"carried_kind": child.carried_kind,
+				"carried_amount": child.carried_amount,
+				"role": child.role
+			})
+		elif child is ResourceNode and child.remaining > 0.01:
+			r_list.append({
+				"kind": child.resource_kind,
+				"pos": [child.position.x, child.position.y, child.position.z],
+				"remaining": child.remaining,
+				"max_amount": child.max_amount
+			})
+
+	return {
+		"buildings": b_list,
+		"units": u_list,
+		"resources": r_list
+	}
+
+
+func restore_entities(data: Dictionary) -> void:
+	for child in _entities_root.get_children():
+		child.queue_free()
+	for proj in _projectiles_root.get_children():
+		proj.queue_free()
+
+	# Salva contagem esperada de população para restaurar após instanciacao
+	var target_pop_cap: int = int(GameState.population_cap)
+	var target_pop_used: int = int(GameState.population_used)
+	GameState.population_cap = 0
+	GameState.population_used = 0
+
+	# 1. Re-cria o terreno procedural do bioma com a semente exata salva
+	BiomeMapGenerator.build_biome_environment(
+		_terrain_holder,
+		GameState.active_biome,
+		ARENA_SIZE,
+		PLAYER_BASE_POS,
+		ENEMY_BASE_POS,
+		GameState.map_seed
+	)
+	_apply_day_night_lighting(GameState.is_night)
+
+	# 2. Restaura Recursos
+	var res_arr: Array = data.get("resources", [])
+	for r_item in res_arr:
+		if not (r_item is Dictionary):
+			continue
+		var p_pos := _parse_pos_safe(r_item.get("pos"))
+		var r_node: ResourceNode = _spawn_resource(String(r_item.get("kind", "wood")), p_pos, float(r_item.get("max_amount", 450.0)))
+		r_node.remaining = float(r_item.get("remaining", 450.0))
+		var ratio: float = clampf(r_node.remaining / maxf(1.0, r_node.max_amount), 0.35, 1.0)
+		if r_node._visual_root != null:
+			r_node._visual_root.scale = Vector3.ONE * ratio
+
+	# 3. Restaura Construções
+	var b_arr: Array = data.get("buildings", [])
+	var first_player_tc: BuildingActor = null
+	for b_item in b_arr:
+		if not (b_item is Dictionary):
+			continue
+		var p_pos := _parse_pos_safe(b_item.get("pos"))
+		var is_const: bool = bool(b_item.get("is_constructed", true))
+		var b_actor: BuildingActor = spawn_building(
+			String(b_item.get("kind", "town_center")),
+			p_pos,
+			is_const,
+			String(b_item.get("faction", "player")),
+			String(b_item.get("pantheon_id", GameState.active_pantheon)),
+			int(b_item.get("age_tier", 1))
+		)
+		b_actor.current_hp = int(b_item.get("current_hp", b_actor.max_hp))
+		b_actor.max_hp = int(b_item.get("max_hp", b_actor.max_hp))
+		b_actor.build_progress = float(b_item.get("build_progress", 1.0))
+		b_actor._update_hp_bar()
+		b_actor._apply_construction_visual()
+		if b_item.has("training_queue") and b_item["training_queue"] is Array:
+			for u_train in b_item["training_queue"]:
+				b_actor.training_queue.append(String(u_train))
+		if b_actor.faction == "player" and b_actor.building_kind == "town_center" and first_player_tc == null:
+			first_player_tc = b_actor
+
+	# 4. Restaura Unidades
+	var u_arr: Array = data.get("units", [])
+	for u_item in u_arr:
+		if not (u_item is Dictionary):
+			continue
+		var p_pos := _parse_pos_safe(u_item.get("pos"))
+		var u_actor: UnitActor = spawn_unit(
+			String(u_item.get("kind", "villager")),
+			p_pos,
+			String(u_item.get("faction", "player")),
+			String(u_item.get("pantheon_id", GameState.active_pantheon))
+		)
+		u_actor.current_hp = int(u_item.get("current_hp", u_actor.max_hp))
+		u_actor.max_hp = int(u_item.get("max_hp", u_actor.max_hp))
+		var is_hero: bool = bool(u_item.get("is_promoted_hero", false))
+		if is_hero:
+			u_actor.is_promoted_hero = true
+			u_actor.role = "hero"
+			u_actor.display_name = "%s (Heroi)" % u_actor.display_name
+			u_actor._rebuild_visual()
+		u_actor.carried_kind = String(u_item.get("carried_kind", ""))
+		u_actor.carried_amount = float(u_item.get("carried_amount", 0.0))
+		if u_actor.carried_amount > 0.0:
+			u_actor._update_carry_visual(true)
+		u_actor._update_hp_bar()
+
+	# Garante contagem exata da população conforme o save
+	GameState.population_cap = target_pop_cap
+	GameState.population_used = target_pop_used
+	GameState.population_changed.emit(GameState.population_used, GameState.population_cap)
+
+	if _fog_system != null:
+		_fog_system.reset_fog()
+
+	if first_player_tc != null:
+		GameState.set_selection([first_player_tc])
+		if _camera_rig != null:
+			_camera_rig.focus_on(first_player_tc.global_position)
+
+
+func _parse_pos_safe(raw_pos: Variant) -> Vector3:
+	if raw_pos is Array and raw_pos.size() >= 3:
+		return Vector3(float(raw_pos[0]), float(raw_pos[1]), float(raw_pos[2]))
+	return Vector3.ZERO
+
+

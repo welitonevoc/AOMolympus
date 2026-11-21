@@ -11,6 +11,7 @@ const MAIN_SCENE_PATH: String = "res://scenes/main.tscn"
 
 # Painéis principais
 var _main_menu_panel: VBoxContainer
+var _continue_btn: Button
 var _skirmish_modal: PanelContainer
 var _campaign_modal: PanelContainer
 var _multiplayer_modal: PanelContainer
@@ -112,8 +113,19 @@ func _build_main_menu_hub() -> void:
 	spacer.custom_minimum_size = Vector2(0, 16)
 	_main_menu_panel.add_child(spacer)
 
+	# Botão de Continuar Partida Salva
+	_continue_btn = _make_menu_button("💾  CONTINUAR PARTIDA", true)
+	_continue_btn.pressed.connect(_on_continue_pressed)
+	_main_menu_panel.add_child(_continue_btn)
+	_update_continue_button()
+
+	if SaveLoadSystem != null:
+		SaveLoadSystem.save_state_changed.connect(func(_has_save: bool) -> void:
+			_update_continue_button()
+		)
+
 	# Botões do Menu Principal
-	var skirmish_btn := _make_menu_button("⚔️  BATALHA RÁPIDA (SKIRMISH)", true)
+	var skirmish_btn := _make_menu_button("⚔️  BATALHA RÁPIDA (SKIRMISH)", false)
 	skirmish_btn.pressed.connect(_open_skirmish_modal)
 	_main_menu_panel.add_child(skirmish_btn)
 
@@ -128,6 +140,33 @@ func _build_main_menu_hub() -> void:
 	var settings_btn := _make_menu_button("⚙️  CONFIGURAÇÕES & VÍDEO", false)
 	settings_btn.pressed.connect(_open_settings_modal)
 	_main_menu_panel.add_child(settings_btn)
+
+
+func _update_continue_button() -> void:
+	if _continue_btn == null:
+		return
+	if SaveLoadSystem != null and SaveLoadSystem.has_save():
+		var meta: Dictionary = SaveLoadSystem.get_save_metadata()
+		if meta.is_empty():
+			_continue_btn.text = "💾  CONTINUAR (SAVE CORROMPIDO)"
+			_continue_btn.disabled = true
+			return
+		var summary: String = String(meta.get("summary", ""))
+		if summary.is_empty():
+			_continue_btn.text = "💾  CONTINUAR PARTIDA SALVA"
+		else:
+			_continue_btn.text = "💾  CONTINUAR: %s" % summary
+		_continue_btn.disabled = false
+	else:
+		_continue_btn.text = "💾  CONTINUAR (SEM SAVE)"
+		_continue_btn.disabled = true
+
+
+func _on_continue_pressed() -> void:
+	if SaveLoadSystem != null and SaveLoadSystem.has_save():
+		var ok: bool = SaveLoadSystem.load_game()
+		if not ok:
+			_update_continue_button()
 
 
 # ── Modal de Batalha Rápida (Skirmish) ──────────────────────────────────────
@@ -225,7 +264,7 @@ func _build_campaign_modal() -> void:
 	c_row.add_theme_constant_override("separation", 6)
 	content.add_child(c_row)
 
-	var chapter_order: Array = ["olympus_dawn", "nile_eclipse", "midgard_frost", "atlantis_rise", "mandate_heaven"]
+	var chapter_order: Array = ["olympus_dawn", "nile_eclipse", "midgard_frost", "atlantis_rise", "erebus_reckoning"]
 	for cid in chapter_order:
 		var c_data: Dictionary = CampaignManager.CHAPTERS.get(cid, {})
 		var btn := Button.new()
@@ -234,7 +273,7 @@ func _build_campaign_modal() -> void:
 		elif cid == "nile_eclipse": btn.text = "Cap. II\n(Nilo)"
 		elif cid == "midgard_frost": btn.text = "Cap. III\n(Midgard)"
 		elif cid == "atlantis_rise": btn.text = "Cap. IV\n(Atlântida)"
-		elif cid == "mandate_heaven": btn.text = "Cap. V\n(China)"
+		elif cid == "erebus_reckoning": btn.text = "Cap. V\n(Érebo)"
 		btn.custom_minimum_size = Vector2(136, 50)
 		btn.add_theme_font_size_override("font_size", 11)
 		btn.pressed.connect(func() -> void: _select_chapter(cid))
@@ -558,7 +597,7 @@ func _on_connection_failed() -> void:
 
 
 func _toggle_audio() -> void:
-	GameState.toggle_audio_mute()
+	GameState.toggle_audio_muted()
 	_audio_status_lbl.text = "Áudio: Mudo" if GameState.audio_muted else "Áudio: Ativo"
 	_audio_status_lbl.add_theme_color_override("font_color", Color("#f87171") if GameState.audio_muted else Color("#4ade80"))
 

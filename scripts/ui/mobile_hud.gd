@@ -97,6 +97,30 @@ func _ready() -> void:
 	GameState.stance_changed.connect(_on_tactics_changed)
 	GameState.notification_emitted.connect(_on_notification)
 
+	if SaveLoadSystem != null:
+		SaveLoadSystem.load_completed.connect(func(_ok: bool) -> void:
+			_sync_all_hud_state()
+		)
+
+	# Se a partida já estiver em andamento (ou veio de savegame), sincroniza o HUD imediatamente
+	if GameState.match_started:
+		_sync_all_hud_state()
+
+
+func _sync_all_hud_state() -> void:
+	if _start_overlay != null:
+		_start_overlay.visible = false
+	if _end_overlay != null:
+		_end_overlay.visible = false
+	_on_resources_changed(GameState.resources)
+	_on_population_changed(GameState.population_used, GameState.population_cap)
+	_on_age_changed(GameState.current_age)
+	_rebuild_divine_power_bar()
+	_rebuild_command_grid()
+	_on_tactics_changed("")
+	if _minimap != null:
+		_minimap.queue_redraw()
+
 
 func _process(delta: float) -> void:
 	if not GameState.match_started:
@@ -164,6 +188,18 @@ func _build_top_bar() -> void:
 	_day_night_btn = _make_action_button("Noite", false, 66.0, 38.0)
 	_day_night_btn.pressed.connect(func() -> void: GameState.toggle_day_night())
 	hbox.add_child(_day_night_btn)
+
+	var save_btn := _make_action_button("Salvar", false, 66.0, 38.0)
+	save_btn.pressed.connect(func() -> void:
+		SaveLoadSystem.save_game(_world, _camera_rig)
+	)
+	hbox.add_child(save_btn)
+
+	var load_btn := _make_action_button("Carregar", false, 74.0, 38.0)
+	load_btn.pressed.connect(func() -> void:
+		SaveLoadSystem.load_game()
+	)
+	hbox.add_child(load_btn)
 
 	var menu_btn := _make_action_button("Menu", false, 60.0, 38.0)
 	menu_btn.pressed.connect(func() -> void:
