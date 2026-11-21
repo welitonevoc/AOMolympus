@@ -34,7 +34,6 @@ var _campaign_obj_vbox: VBoxContainer
 # --- Era dos Deuses (T5) — Painel de invocacao divina ---
 var _divine_panel: PanelContainer
 var _divine_panel_visible: bool = false
-var _divine_scroll: ScrollContainer
 var _divine_grid: GridContainer
 var _divine_btn: Button  # Botao "Era dos Deuses" na top bar
 var _divine_god_buttons: Dictionary = {}  # god_kind -> Button
