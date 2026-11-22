@@ -66,6 +66,9 @@ func _ready() -> void:
 
 	if SaveLoadSystem != null and SaveLoadSystem.is_loading_from_save:
 		SaveLoadSystem.apply_pending_to_world(self, _camera_rig)
+	elif not GameState.match_started:
+		# Auto-inicia partida padrao de teste com mapa completo
+		GameState.start_new_match(GameState.active_pantheon, GameState.enemy_pantheon, GameState.active_biome)
 
 
 func get_fog_system() -> FogOfWarSystem:
@@ -98,8 +101,13 @@ func _on_match_started(pantheon_id: String, enemy_pantheon_id: String) -> void:
 	var tc: BuildingActor = spawn_building("town_center", PLAYER_BASE_POS, true, "player", pantheon_id, 1)
 	spawn_building("barracks", PLAYER_BASE_POS + Vector3(7.5, 0.0, 3.0), true, "player", pantheon_id, 1)
 
+	var starting_villagers: Array[UnitActor] = []
 	for offset in [Vector3(-3.5, 0.0, 4.5), Vector3(0.0, 0.0, 5.2), Vector3(3.5, 0.0, 4.5)]:
-		spawn_unit("villager", PLAYER_BASE_POS + offset, "player", pantheon_id)
+		var v: UnitActor = spawn_unit("villager", PLAYER_BASE_POS + offset, "player", pantheon_id)
+		starting_villagers.append(v)
+
+	if not starting_villagers.is_empty():
+		call_deferred("_start_villager_demo_action", starting_villagers[0])
 
 	spawn_unit("infantry", PLAYER_BASE_POS + Vector3(5.5, 0.0, -3.5), "player", pantheon_id)
 	spawn_unit("infantry", PLAYER_BASE_POS + Vector3(7.2, 0.0, -2.5), "player", pantheon_id)
@@ -186,6 +194,23 @@ func focus_idle_villager() -> void:
 			GameState.set_selection([v])
 			return
 	GameState.notify("Nenhum aldeao ocioso no momento.", false)
+
+
+func _start_villager_demo_action(v: UnitActor) -> void:
+	if not is_instance_valid(v) or v.is_dead():
+		return
+	var nearest_tree: ResourceNode = null
+	var min_dist_sq: float = 999999.0
+	for r in get_tree().get_nodes_in_group("resources"):
+		if r is ResourceNode and r.resource_kind == "wood" and not r.is_depleted():
+			var d2: float = v.global_position.distance_squared_to(r.global_position)
+			if d2 < min_dist_sq:
+				min_dist_sq = d2
+				nearest_tree = r
+	if nearest_tree != null:
+		v.command_gather(nearest_tree)
+	else:
+		v.command_move(PLAYER_BASE_POS + Vector3(-6.0, 0.0, 7.0))
 
 
 func select_all_military() -> void:

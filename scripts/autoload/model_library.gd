@@ -54,14 +54,81 @@ static func create_unit_visual(
 		"res://models/units/%s_%s_%s.glb" % [pantheon_id, deity_slug, unit_kind],
 		"res://models/units/%s_%s.glb" % [pantheon_id, unit_kind],
 		"res://models/units/%s.glb" % unit_kind,
+		"res://models/units/aldeao.glb",
+		"res://models/units/villager.glb",
 	]
 	for path in candidates:
 		var loaded: Node3D = _try_instantiate_glb(path)
 		if loaded != null:
+			if unit_kind in ["villager", "aldeao"]:
+				# Aplica escala calibrada no Kimodo Studio (1.45x) e equipa machado heróico
+				loaded.scale = Vector3.ONE * 1.45
+				attach_villager_tools(loaded, "axe")
 			if is_promoted_hero:
 				_attach_hero_aura(loaded, Color("#38bdf8"))
 			return loaded
 	return _build_procedural_unit(p, unit_kind, faction, is_promoted_hero)
+
+
+## Anexa o machado heróico calibrado ao osso da mão direita do aldeão no Godot
+static func attach_villager_tools(model_node: Node3D, _tool_kind: String = "axe") -> void:
+	var skeleton: Skeleton3D = null
+	var queue: Array[Node] = [model_node]
+	while not queue.is_empty():
+		var cur: Node = queue.pop_front()
+		if cur is Skeleton3D:
+			skeleton = cur
+			break
+		for child in cur.get_children():
+			queue.append(child)
+
+	if skeleton == null:
+		return
+
+	var bone_idx: int = -1
+	for i in range(skeleton.get_bone_count()):
+		var bname: String = skeleton.get_bone_name(i).to_lower()
+		if "righthand" in bname and not "end" in bname:
+			bone_idx = i
+			break
+
+	if bone_idx == -1:
+		return
+
+	var socket := BoneAttachment3D.new()
+	socket.name = "RightHand_Socket"
+	skeleton.add_child(socket)
+	socket.bone_name = skeleton.get_bone_name(bone_idx)
+	socket.bone_idx = bone_idx
+
+	var axe_root := Node3D.new()
+	axe_root.name = "Tool_Axe"
+	axe_root.position = Vector3(0.016, 0.088, 0.035)
+	axe_root.scale = Vector3.ONE * 1.50
+
+	var wood_mat := _make_mat(Color("#78350f"), 0.75, 0.0)
+	var leather_mat := _make_mat(Color("#3e2723"), 0.7, 0.0)
+	var bronze_mat := _make_mat(Color("#d4af37"), 0.3, 0.85)
+	var iron_mat := _make_mat(Color("#475569"), 0.35, 0.85)
+	var steel_mat := _make_mat(Color("#e2e8f0"), 0.2, 0.9)
+
+	# Cabo de freixo robusto
+	_add_cylinder(axe_root, 0.018, 0.022, 0.74, Vector3(0.0, 0.23, 0.0), wood_mat)
+	# Empunhadura de couro
+	_add_cylinder(axe_root, 0.023, 0.023, 0.16, Vector3(0.0, 0.04, 0.0), leather_mat)
+	# Pomo de bronze protetor na extremidade inferior
+	_add_sphere(axe_root, 0.026, Vector3(0.0, -0.14, 0.0), bronze_mat)
+	# Colar de reforço de bronze
+	_add_cylinder(axe_root, 0.025, 0.023, 0.05, Vector3(0.0, 0.56, 0.0), bronze_mat)
+
+	# Cabeça do machado no topo (y = 0.60)
+	_add_box(axe_root, Vector3(0.052, 0.07, 0.058), Vector3(0.0, 0.60, 0.0), iron_mat)
+	# Martelo / Contra-peso traseiro
+	_add_box(axe_root, Vector3(0.055, 0.05, 0.048), Vector3(-0.045, 0.60, 0.0), iron_mat)
+	# Lâmina de corte em meia-lua imponente
+	_add_box(axe_root, Vector3(0.18, 0.20, 0.018), Vector3(0.09, 0.60, 0.0), steel_mat)
+
+	socket.add_child(axe_root)
 
 
 ## Cria visual de um deus da Era T5, buscando GLB na pasta da civilização.

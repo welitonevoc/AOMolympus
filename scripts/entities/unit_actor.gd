@@ -55,6 +55,7 @@ var _selection_ring: MeshInstance3D
 var _carry_crate: MeshInstance3D
 var _hp_bar_bg: MeshInstance3D
 var _hp_bar_fill: MeshInstance3D
+var _anim_player: AnimationPlayer = null
 
 
 func setup(p_pantheon: String, p_kind: String = "villager", p_faction: String = "player") -> void:
@@ -372,7 +373,7 @@ func _process_attacking(delta: float) -> void:
 
 	velocity = Vector3.ZERO
 	_face_towards(combat_target.global_position, delta)
-	_animate_work()
+	_animate_attack()
 
 	if _attack_timer <= 0.0:
 		_attack_timer = attack_cooldown
@@ -551,8 +552,11 @@ func _step_navigation(delta: float) -> void:
 	global_position.y = 0.0
 	_face_towards(global_position + dir, delta)
 	if _visual_holder != null:
-		_visual_holder.position.y = absf(sin(_anim_time * 10.5)) * 0.09
-		_visual_holder.rotation.x = 0.0
+		if _anim_player != null:
+			_play_named_anim("andar")
+		else:
+			_visual_holder.position.y = absf(sin(_anim_time * 10.5)) * 0.09
+			_visual_holder.rotation.x = 0.0
 
 
 func _face_towards(target_pos: Vector3, delta: float) -> void:
@@ -563,14 +567,30 @@ func _face_towards(target_pos: Vector3, delta: float) -> void:
 
 
 func _animate_idle() -> void:
-	if _visual_holder != null:
+	if _anim_player != null:
+		_play_named_anim("base")
+	elif _visual_holder != null:
 		_visual_holder.position.y = lerpf(_visual_holder.position.y, 0.0, 0.15)
 		_visual_holder.rotation.x = lerpf(_visual_holder.rotation.x, 0.0, 0.15)
 
 
 func _animate_work() -> void:
-	if _visual_holder != null:
+	if _anim_player != null:
+		if carried_kind == "gold" or (target_resource != null and target_resource.resource_kind == "gold"):
+			_play_named_anim("ouro")
+		elif carried_kind == "fish" or (target_resource != null and target_resource.resource_kind == "fish"):
+			_play_named_anim("pesca")
+		else:
+			_play_named_anim("madeira")
+	elif _visual_holder != null:
 		_visual_holder.rotation.x = sin(_anim_time * 9.5) * 0.18
+
+
+func _animate_attack() -> void:
+	if _anim_player != null:
+		_play_named_anim("atacar")
+	else:
+		_animate_work()
 
 
 func _rebuild_visual() -> void:
@@ -578,6 +598,7 @@ func _rebuild_visual() -> void:
 		return
 	for c in _visual_holder.get_children():
 		c.queue_free()
+	_anim_player = null
 	var mesh_root: Node3D
 	# Deuses da Era T5 usam visual divino com escala e aura especiais
 	if unit_kind.begins_with("zeus_") or unit_kind.begins_with("poseidon_") or unit_kind.begins_with("hades_") or \
@@ -590,6 +611,33 @@ func _rebuild_visual() -> void:
 	else:
 		mesh_root = ModelLibrary.create_unit_visual(pantheon_id, unit_kind, faction, is_promoted_hero)
 	_visual_holder.add_child(mesh_root)
+	_anim_player = _find_anim_player(mesh_root)
+	if _anim_player != null:
+		_play_named_anim("base")
+
+
+func _find_anim_player(node: Node) -> AnimationPlayer:
+	if node is AnimationPlayer:
+		return node
+	for child in node.get_children():
+		var found := _find_anim_player(child)
+		if found != null:
+			return found
+	return null
+
+
+func _play_named_anim(keyword: String) -> void:
+	if _anim_player == null:
+		return
+	var kw := keyword.to_lower()
+	for anim_name in _anim_player.get_animation_list():
+		if kw in anim_name.to_lower():
+			if _anim_player.current_animation != anim_name:
+				var anim: Animation = _anim_player.get_animation(anim_name)
+				if anim != null and anim.loop_mode == Animation.LOOP_NONE:
+					anim.loop_mode = Animation.LOOP_LINEAR
+				_anim_player.play(anim_name)
+			return
 
 
 func _divine_display_name(god_kind: String) -> String:
