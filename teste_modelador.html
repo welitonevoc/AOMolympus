@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>🏛️ Teste da Skill AoM Olympus Modelador</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+    body {
+      background: radial-gradient(circle at center, #0f172a 0%, #020617 100%);
+      color: #e2e8f0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+    }
+    #canvas-container { width: 100%; height: 100%; position: absolute; }
+    
+    .panel {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      background: rgba(15, 23, 42, 0.88);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      border-radius: 12px;
+      padding: 12px;
+      max-width: 320px;
+      z-index: 10;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    }
+    h1 { font-size: 14px; font-weight: 700; color: #38bdf8; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+    .section-title { font-size: 11px; text-transform: uppercase; color: #94a3b8; font-weight: 600; margin: 8px 0 4px 0; }
+    
+    .btn-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 5px;
+      margin-bottom: 6px;
+    }
+    button {
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: #e2e8f0;
+      padding: 6px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      text-align: left;
+    }
+    button:active, button.active {
+      background: #0284c7;
+      border-color: #38bdf8;
+      color: #ffffff;
+      font-weight: 600;
+    }
+    
+    .stats-card {
+      background: rgba(30, 41, 59, 0.7);
+      border: 1px solid #334155;
+      border-radius: 6px;
+      padding: 8px;
+      font-size: 11px;
+      line-height: 1.4;
+      margin-top: 8px;
+    }
+    .badge {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 700;
+      background: #0369a1;
+      color: #bae6fd;
+    }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="assets/js/common.js"></script>
+  <script src="assets/js/props.js"></script>
+  <script src="assets/js/buildings.js"></script>
+</head>
+<body>
+  <div id="canvas-container"></div>
+
+  <div class="panel">
+    <h1>⚡ AoM Olympus Modelador</h1>
+    <div style="font-size: 11px; color: #cbd5e1; margin-bottom: 6px;">Validação interativa dos módulos Three.js procedurais.</div>
+
+    <div class="section-title">🏛️ Edifícios (buildings.js)</div>
+    <div class="btn-grid">
+      <button onclick="loadAsset('temple')" id="btn-temple" class="active">🏛️ Templo</button>
+      <button onclick="loadAsset('house')" id="btn-house">🏠 Casa</button>
+      <button onclick="loadAsset('fortress')" id="btn-fortress">🏰 Fortaleza</button>
+      <button onclick="loadAsset('column')" id="btn-column">🏛️ Coluna</button>
+    </div>
+
+    <div class="section-title">🔱 Armas & Props (props.js)</div>
+    <div class="btn-grid">
+      <button onclick="loadAsset('dory')" id="btn-dory">🔱 Lança Dory</button>
+      <button onclick="loadAsset('aspis')" id="btn-aspis">🛡️ Hóplon Aspis</button>
+      <button onclick="loadAsset('helmet')" id="btn-helmet">🪖 Capacete</button>
+      <button onclick="loadAsset('xiphos')" id="btn-xiphos">⚔️ Espada Xiphos</button>
+      <button onclick="loadAsset('keraunos')" id="btn-keraunos" style="grid-column: span 2;">⚡ Raio de Zeus (Keraunos)</button>
+    </div>
+
+    <div class="stats-card" id="stats-panel">
+      <div><b>Asset:</b> <span id="stat-name">Templo Grego</span></div>
+      <div><b>Triângulos:</b> <span id="stat-tris" class="badge">0</span></div>
+      <div><b>Pegada (Tiles 4m):</b> <span id="stat-tiles">-</span></div>
+      <div><b>Orçamento Mobile:</b> <span id="stat-budget" style="color: #4ade80;">✅ OK</span></div>
+    </div>
+  </div>
+
+  <script>
+    let scene, camera, renderer, controls;
+    let currentObject = null;
+
+    function init() {
+      const container = document.getElementById('canvas-container');
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x0a0f1d);
+
+      camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+      camera.position.set(20, 16, 26);
+
+      renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      container.appendChild(renderer.domElement);
+
+      controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.05;
+      controls.target.set(0, 3, 0);
+
+      // Iluminação ambiente e direcional
+      const hemiLight = new THREE.HemisphereLight(0xffffff, 0x334155, 0.7);
+      scene.add(hemiLight);
+
+      const dirLight = new THREE.DirectionalLight(0xfffbeb, 1.2);
+      dirLight.position.set(25, 40, 20);
+      dirLight.castShadow = true;
+      scene.add(dirLight);
+
+      // Chão com grid
+      const grid = new THREE.GridHelper(60, 15, 0x38bdf8, 0x1e293b);
+      grid.position.y = -0.01;
+      scene.add(grid);
+
+      window.addEventListener('resize', onWindowResize);
+      loadAsset('temple');
+      animate();
+    }
+
+    function onWindowResize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    function loadAsset(type) {
+      document.querySelectorAll('.btn-grid button').forEach(b => b.classList.remove('active'));
+      const activeBtn = document.getElementById('btn-' + type);
+      if (activeBtn) activeBtn.classList.add('active');
+
+      if (currentObject) {
+        scene.remove(currentObject);
+        currentObject = null;
+      }
+
+      let name = '';
+      let budgetMax = 30000;
+
+      if (type === 'temple') {
+        currentObject = AOMB.createTemple({ w: 14, d: 22, h: 6.5 });
+        name = 'Templo Grego Dórico';
+        budgetMax = 25000;
+        camera.position.set(22, 16, 28);
+        controls.target.set(0, 4, 0);
+      } else if (type === 'house') {
+        currentObject = AOMB.createHouse({ w: 6, d: 6, h: 3.2 });
+        name = 'Casa Grega';
+        budgetMax = 6000;
+        camera.position.set(10, 8, 12);
+        controls.target.set(0, 2, 0);
+      } else if (type === 'fortress') {
+        currentObject = AOMB.createFortress({ w: 20, d: 20, wallH: 5, towerH: 8 });
+        name = 'Fortaleza Militar';
+        budgetMax = 40000;
+        camera.position.set(30, 22, 34);
+        controls.target.set(0, 4, 0);
+      } else if (type === 'column') {
+        currentObject = AOMB.createColumn(6, 0.5);
+        name = 'Coluna Dórica';
+        budgetMax = 2000;
+        camera.position.set(6, 5, 8);
+        controls.target.set(0, 3, 0);
+      } else if (type === 'dory') {
+        currentObject = AOMP.createDory();
+        name = 'Lança Hoplita (Dory ~2.4m)';
+        budgetMax = 1500;
+        camera.position.set(1.5, 1.2, 2.5);
+        controls.target.set(0, 0.6, 0);
+      } else if (type === 'aspis') {
+        currentObject = AOMP.createAspis();
+        name = 'Escudo Redondo (Hóplon/Aspis ~90cm)';
+        budgetMax = 2000;
+        camera.position.set(0.8, 0.6, 1.6);
+        controls.target.set(0, 0, 0);
+      } else if (type === 'helmet') {
+        currentObject = AOMP.createCorinthianHelmet();
+        name = 'Capacete Coríntio com Penacho';
+        budgetMax = 2500;
+        camera.position.set(0.4, 0.3, 0.6);
+        controls.target.set(0, 0.05, 0);
+      } else if (type === 'xiphos') {
+        currentObject = AOMP.createXiphos();
+        name = 'Espada Curta (Xiphos ~60cm)';
+        budgetMax = 1500;
+        camera.position.set(0.6, 0.4, 0.8);
+        controls.target.set(0, 0.25, 0);
+      } else if (type === 'keraunos') {
+        currentObject = AOMP.createKeraunos();
+        name = 'Raio Divino de Zeus (Keraunos)';
+        budgetMax = 2000;
+        camera.position.set(0.8, 0.5, 1.2);
+        controls.target.set(0, 0.35, 0);
+      }
+
+      if (currentObject) {
+        scene.add(currentObject);
+        const tris = AOM.triCount(currentObject);
+        document.getElementById('stat-name').textContent = name;
+        document.getElementById('stat-tris').textContent = tris.toLocaleString() + ' tris';
+        
+        const fp = currentObject.userData && currentObject.userData.footprint ? `${currentObject.userData.footprint[0]}x${currentObject.userData.footprint[1]} tiles` : 'Unitário';
+        document.getElementById('stat-tiles').textContent = fp;
+
+        const isOk = tris <= budgetMax;
+        const budgetEl = document.getElementById('stat-budget');
+        budgetEl.textContent = isOk ? `✅ Dentro da cota (máx ${budgetMax})` : `⚠️ Acima da cota (${tris} > ${budgetMax})`;
+        budgetEl.style.color = isOk ? '#4ade80' : '#f87171';
+      }
+      controls.update();
+    }
+
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+      renderer.render(scene, camera);
+    }
+
+    init();
+  </script>
+</body>
+</html>
