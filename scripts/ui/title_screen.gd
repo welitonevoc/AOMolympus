@@ -1,65 +1,101 @@
 class_name TitleScreen
 extends Control
-## Tela de Menu Principal (Title Screen) para Age of Mythology: Olympus (Godot 4 Android).
+## Tela de Menu Principal e Submenus Completos para Age of Mythology: Olympus (Godot 4 Android).
 ## Fornece navegacao tatil completa para:
-## - Batalha Rapida (Skirmish) com escolha de Panteao, Bioma e Dificuldade
-## - Modo Campanha Mitologica (Capitulos I a V com objetivos e recompensas)
-## - Multiplayer em Tempo Real (LAN / ENet com descoberta UDP)
-## - Painel de Configuracoes (Audio, FPS 30/60 e Graficos LOD)
+## - Batalha Rapida (Skirmish) com escolha de Panteao, Deus Maior, Bioma, Dificuldade e Vitoria
+## - Modo Campanha Mitologica (Capitulos I a V com lore, objetivos e dificuldade)
+## - Multiplayer em Tempo Real (LAN / ENet com descoberta UDP e conexao direta por IP)
+## - Compendio Mitologico / Enciclopedia (Deuses, Unidades Miticas, Exercitos e Edificacoes)
+## - Painel de Configuracoes & Video (Audio, Sliders, FPS 30/60/Livre, Resolucao e Controles)
+## - Dialogo de Confirmacao de Saida
 
 const MAIN_SCENE_PATH: String = "res://scenes/main.tscn"
 
-# Painéis principais
+# ── Painéis Principais ───────────────────────────────────────────────────────
 var _main_menu_panel: VBoxContainer
 var _continue_btn: Button
 var _skirmish_modal: PanelContainer
 var _campaign_modal: PanelContainer
 var _multiplayer_modal: PanelContainer
+var _compendium_modal: PanelContainer
 var _settings_modal: PanelContainer
+var _quit_modal: PanelContainer
 
-# Seleções de Skirmish
+# ── Seleções de Skirmish ────────────────────────────────────────────────────
 var _selected_pantheon: String = "greek"
+var _selected_major_god: String = "zeus_major"
 var _selected_biome: String = "mediterranean"
 var _selected_difficulty: String = "normal"
+var _selected_victory: String = "conquest"
+var _selected_map_size: String = "medium"
+
 var _pantheon_buttons: Dictionary = {}
+var _major_god_buttons: Dictionary = {}
+var _major_gods_container: HBoxContainer
 var _biome_buttons: Dictionary = {}
 var _diff_buttons: Dictionary = {}
+var _victory_buttons: Dictionary = {}
 var _skirmish_desc_lbl: Label
 
-# Seleções de Campanha
+# ── Seleções de Campanha ────────────────────────────────────────────────────
 var _selected_chapter: String = "olympus_dawn"
+var _selected_campaign_diff: String = "normal"
 var _chapter_buttons: Dictionary = {}
+var _campaign_diff_buttons: Dictionary = {}
 var _chapter_title_lbl: Label
 var _chapter_briefing_lbl: Label
 var _chapter_objectives_vbox: VBoxContainer
 
-# Controles de Multiplayer
+# ── Controles de Multiplayer ────────────────────────────────────────────────
 var _mp_status_lbl: Label
 var _mp_player_name_edit: LineEdit
+var _mp_ip_edit: LineEdit
 var _mp_server_list_vbox: VBoxContainer
 var _discovered_servers: Dictionary = {}
 
-# Controles de Configurações
+# ── Controles de Compêndio (Enciclopédia) ───────────────────────────────────
+var _compendium_tab: String = "gods"
+var _compendium_tab_buttons: Dictionary = {}
+var _compendium_list_vbox: VBoxContainer
+var _compendium_item_buttons: Dictionary = {}
+var _compendium_title_lbl: Label
+var _compendium_category_lbl: Label
+var _compendium_lore_lbl: Label
+var _compendium_stats_vbox: VBoxContainer
+var _compendium_special_lbl: Label
+
+# ── Controles de Configurações ──────────────────────────────────────────────
+var _vol_master_slider: HSlider
+var _vol_music_slider: HSlider
+var _vol_sfx_slider: HSlider
+var _vol_master_val_lbl: Label
+var _vol_music_val_lbl: Label
+var _vol_sfx_val_lbl: Label
 var _fps_btn_30: Button
 var _fps_btn_60: Button
 var _fps_btn_max: Button
+var _res_btn_75: Button
+var _res_btn_100: Button
+var _res_btn_125: Button
+var _cam_sens_slider: HSlider
+var _cam_sens_lbl: Label
 var _audio_toggle_btn: Button
 var _audio_status_lbl: Label
 
 
 func _ready() -> void:
-	# Ajusta âncoras para preencher a tela inteira
 	set_anchors_preset(Control.PRESET_FULL_RECT)
-	
+
 	_build_background_backdrop()
 	_build_main_menu_hub()
 	_build_skirmish_modal()
 	_build_campaign_modal()
 	_build_multiplayer_modal()
+	_build_compendium_modal()
 	_build_settings_modal()
+	_build_quit_dialog()
 	_build_version_footer()
 
-	# Conecta sinais do MultiplayerManager
 	if MultiplayerManager != null:
 		MultiplayerManager.lan_server_found.connect(_on_lan_server_found)
 		MultiplayerManager.server_created.connect(_on_server_created)
@@ -71,16 +107,23 @@ func _ready() -> void:
 func _build_background_backdrop() -> void:
 	var bg := ColorRect.new()
 	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
-	# Gradiente noturno profundo com tons de azul olímpico e obsidiana
-	bg.color = Color(0.04, 0.06, 0.11, 1.0)
+	# Azul escuro obsidiana imperial
+	bg.color = Color(0.03, 0.05, 0.09, 1.0)
 	add_child(bg)
 
-	# Elementos dourados sutis no topo e na base
+	# Faixa dourada no topo
 	var top_accent := ColorRect.new()
 	top_accent.custom_minimum_size = Vector2(0, 4)
 	top_accent.color = Color("#d4af37")
 	top_accent.set_anchors_preset(Control.PRESET_TOP_WIDE)
 	add_child(top_accent)
+
+	# Faixa dourada na base
+	var bot_accent := ColorRect.new()
+	bot_accent.custom_minimum_size = Vector2(0, 3)
+	bot_accent.color = Color(0.83, 0.69, 0.22, 0.4)
+	bot_accent.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+	add_child(bot_accent)
 
 
 # ── Hub Principal do Menu ───────────────────────────────────────────────────
@@ -91,10 +134,10 @@ func _build_main_menu_hub() -> void:
 
 	_main_menu_panel = VBoxContainer.new()
 	_main_menu_panel.alignment = BoxContainer.ALIGNMENT_CENTER
-	_main_menu_panel.add_theme_constant_override("separation", 16)
+	_main_menu_panel.add_theme_constant_override("separation", 12)
 	center.add_child(_main_menu_panel)
 
-	# Ícone / Título do Jogo
+	# Título do Jogo
 	var title_lbl := Label.new()
 	title_lbl.text = "⚡ AGE OF MYTHOLOGY"
 	title_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -105,15 +148,15 @@ func _build_main_menu_hub() -> void:
 	var sub_lbl := Label.new()
 	sub_lbl.text = "🏛️ OLYMPUS — EDIÇÃO MOBILE (GODOT 4)"
 	sub_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	sub_lbl.add_theme_font_size_override("font_size", 16)
+	sub_lbl.add_theme_font_size_override("font_size", 15)
 	sub_lbl.add_theme_color_override("font_color", Color("#cbd5e1"))
 	_main_menu_panel.add_child(sub_lbl)
 
 	var spacer := Control.new()
-	spacer.custom_minimum_size = Vector2(0, 16)
+	spacer.custom_minimum_size = Vector2(0, 10)
 	_main_menu_panel.add_child(spacer)
 
-	# Botão de Continuar Partida Salva
+	# 1. Continuar Partida
 	_continue_btn = _make_menu_button("💾  CONTINUAR PARTIDA", true)
 	_continue_btn.pressed.connect(_on_continue_pressed)
 	_main_menu_panel.add_child(_continue_btn)
@@ -124,22 +167,35 @@ func _build_main_menu_hub() -> void:
 			_update_continue_button()
 		)
 
-	# Botões do Menu Principal
+	# 2. Batalha Rápida (Skirmish)
 	var skirmish_btn := _make_menu_button("⚔️  BATALHA RÁPIDA (SKIRMISH)", false)
 	skirmish_btn.pressed.connect(_open_skirmish_modal)
 	_main_menu_panel.add_child(skirmish_btn)
 
+	# 3. Campanha Mitológica
 	var campaign_btn := _make_menu_button("📜  CAMPANHA MITOLÓGICA", false)
 	campaign_btn.pressed.connect(_open_campaign_modal)
 	_main_menu_panel.add_child(campaign_btn)
 
-	var mp_btn := _make_menu_button("🌐  MULTIPLAYER LAN", false)
+	# 4. Multiplayer Local LAN
+	var mp_btn := _make_menu_button("🌐  MULTIPLAYER LOCAL (LAN)", false)
 	mp_btn.pressed.connect(_open_multiplayer_modal)
 	_main_menu_panel.add_child(mp_btn)
 
+	# 5. Compêndio Mitológico (Enciclopédia)
+	var compendium_btn := _make_menu_button("🏛️  COMPÊNDIO MITOLÓGICO", false)
+	compendium_btn.pressed.connect(_open_compendium_modal)
+	_main_menu_panel.add_child(compendium_btn)
+
+	# 6. Configurações & Gráficos
 	var settings_btn := _make_menu_button("⚙️  CONFIGURAÇÕES & VÍDEO", false)
 	settings_btn.pressed.connect(_open_settings_modal)
 	_main_menu_panel.add_child(settings_btn)
+
+	# 7. Sair do Jogo
+	var quit_btn := _make_menu_button("🚪  SAIR DO JOGO", false)
+	quit_btn.pressed.connect(_open_quit_dialog)
+	_main_menu_panel.add_child(quit_btn)
 
 
 func _update_continue_button() -> void:
@@ -169,96 +225,212 @@ func _on_continue_pressed() -> void:
 			_update_continue_button()
 
 
-# ── Modal de Batalha Rápida (Skirmish) ──────────────────────────────────────
+# ── Submenu 1: Batalha Rápida (Skirmish) ────────────────────────────────────
 func _build_skirmish_modal() -> void:
-	_skirmish_modal = _create_base_modal("⚔️ CONFIGURAR BATALHA RÁPIDA", 740, 560)
+	_skirmish_modal = _create_base_modal("⚔️ CONFIGURAR BATALHA RÁPIDA", 880, 600)
 	var content: VBoxContainer = _skirmish_modal.get_node("VBox/Content") as VBoxContainer
 
-	# 1. Seleção de Panteão
-	var p_title := _make_section_title("1. ESCOLHA SEU PANTEÃO DIVINO:")
-	content.add_child(p_title)
+	# Scroll para garantir rolagem suave em celulares de qualquer tamanho
+	var scroll := ScrollContainer.new()
+	scroll.custom_minimum_size = Vector2(850, 470)
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	content.add_child(scroll)
 
+	var s_vbox := VBoxContainer.new()
+	s_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	s_vbox.add_theme_constant_override("separation", 10)
+	scroll.add_child(s_vbox)
+
+	# 1. Panteão
+	s_vbox.add_child(_make_section_title("1. ESCOLHA SEU PANTEÃO DIVINO:"))
 	var p_row := HBoxContainer.new()
 	p_row.alignment = BoxContainer.ALIGNMENT_CENTER
 	p_row.add_theme_constant_override("separation", 8)
-	content.add_child(p_row)
+	s_vbox.add_child(p_row)
 
 	for pid in PantheonCatalog.PANTHEON_ORDER:
 		var p_data: Dictionary = PantheonCatalog.get_pantheon(pid)
 		var btn := Button.new()
-		btn.text = "%s\n(%s)" % [p_data.get("name", pid), p_data.get("deity", "")]
-		btn.custom_minimum_size = Vector2(130, 48)
-		btn.add_theme_font_size_override("font_size", 12)
+		btn.text = "%s" % p_data.get("name", pid)
+		btn.custom_minimum_size = Vector2(150, 44)
+		btn.add_theme_font_size_override("font_size", 13)
 		btn.pressed.connect(func() -> void: _select_pantheon(pid))
 		p_row.add_child(btn)
 		_pantheon_buttons[pid] = btn
 
+	# 2. Deus Maior do Panteão
+	s_vbox.add_child(_make_section_title("2. DEUS MAIOR PROTETOR:"))
+	_major_gods_container = HBoxContainer.new()
+	_major_gods_container.alignment = BoxContainer.ALIGNMENT_CENTER
+	_major_gods_container.add_theme_constant_override("separation", 8)
+	s_vbox.add_child(_major_gods_container)
+
+	# Painel de resumo do Panteão e Deus selecionado
 	_skirmish_desc_lbl = Label.new()
 	_skirmish_desc_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_skirmish_desc_lbl.add_theme_font_size_override("font_size", 12)
 	_skirmish_desc_lbl.add_theme_color_override("font_color", Color("#cbd5e1"))
-	content.add_child(_skirmish_desc_lbl)
+	s_vbox.add_child(_skirmish_desc_lbl)
 
-	# 2. Seleção de Bioma
-	var b_title := _make_section_title("2. BIOMA DO CAMPO DE BATALHA:")
-	content.add_child(b_title)
-
+	# 3. Bioma e Tamanho do Mapa
+	s_vbox.add_child(_make_section_title("3. BIOMA DO CAMPO DE BATALHA:"))
 	var b_row := HBoxContainer.new()
 	b_row.alignment = BoxContainer.ALIGNMENT_CENTER
 	b_row.add_theme_constant_override("separation", 8)
-	content.add_child(b_row)
+	s_vbox.add_child(b_row)
 
 	for bid in PantheonCatalog.BIOME_ORDER:
 		var b_data: Dictionary = PantheonCatalog.get_biome(bid)
 		var btn := Button.new()
 		btn.text = b_data.get("name", bid)
-		btn.custom_minimum_size = Vector2(160, 42)
+		btn.custom_minimum_size = Vector2(150, 40)
 		btn.add_theme_font_size_override("font_size", 12)
 		btn.pressed.connect(func() -> void: _select_biome(bid))
 		b_row.add_child(btn)
 		_biome_buttons[bid] = btn
 
-	# 3. Dificuldade da IA
-	var d_title := _make_section_title("3. DIFICULDADE DA IA INIMIGA:")
-	content.add_child(d_title)
-
+	# 4. Dificuldade da IA Inimiga
+	s_vbox.add_child(_make_section_title("4. DIFICULDADE DA IA INIMIGA:"))
 	var d_row := HBoxContainer.new()
 	d_row.alignment = BoxContainer.ALIGNMENT_CENTER
 	d_row.add_theme_constant_override("separation", 10)
-	content.add_child(d_row)
+	s_vbox.add_child(d_row)
 
 	for did in ["easy", "normal", "hard"]:
 		var d_data: Dictionary = PantheonCatalog.get_ai_difficulty(did)
 		var btn := Button.new()
 		btn.text = d_data.get("name", did)
-		btn.custom_minimum_size = Vector2(140, 42)
+		btn.custom_minimum_size = Vector2(180, 40)
 		btn.add_theme_font_size_override("font_size", 12)
 		btn.pressed.connect(func() -> void: _select_difficulty(did))
 		d_row.add_child(btn)
 		_diff_buttons[did] = btn
 
+	# 5. Condição de Vitória
+	s_vbox.add_child(_make_section_title("5. CONDIÇÃO DE VITÓRIA:"))
+	var v_row := HBoxContainer.new()
+	v_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	v_row.add_theme_constant_override("separation", 10)
+	s_vbox.add_child(v_row)
+
+	var v_modes: Dictionary = {
+		"conquest": "⚔️ Conquista Total",
+		"wonder": "🏛️ Vitória por Maravilha",
+		"regicide": "👑 Regicídio (Líder)"
+	}
+	for vid in v_modes:
+		var btn := Button.new()
+		btn.text = v_modes[vid]
+		btn.custom_minimum_size = Vector2(190, 40)
+		btn.add_theme_font_size_override("font_size", 12)
+		btn.pressed.connect(func() -> void: _select_victory(vid))
+		v_row.add_child(btn)
+		_victory_buttons[vid] = btn
+
 	# Ações da Base do Modal
 	var action_row := HBoxContainer.new()
 	action_row.alignment = BoxContainer.ALIGNMENT_CENTER
-	action_row.add_theme_constant_override("separation", 16)
+	action_row.add_theme_constant_override("separation", 20)
 	content.add_child(action_row)
 
-	var start_btn := _make_action_button("⚔️ INICIAR BATALHA", true, 220, 52)
+	var start_btn := _make_action_button("⚔️ INICIAR BATALHA", true, 240, 50)
 	start_btn.pressed.connect(_launch_skirmish)
 	action_row.add_child(start_btn)
 
-	var back_btn := _make_action_button("VOLTAR", false, 140, 52)
+	var back_btn := _make_action_button("VOLTAR", false, 150, 50)
 	back_btn.pressed.connect(func() -> void: _skirmish_modal.visible = false; _main_menu_panel.visible = true)
 	action_row.add_child(back_btn)
 
+	_rebuild_major_god_buttons()
 	_refresh_skirmish_highlights()
 
 
-# ── Modal de Modo Campanha ──────────────────────────────────────────────────
+func _rebuild_major_god_buttons() -> void:
+	for child in _major_gods_container.get_children():
+		child.queue_free()
+	_major_god_buttons.clear()
+
+	var gods_info: Dictionary = PantheonCatalog.DIVINE_GODS.get(_selected_pantheon, {})
+	var majors: Array = gods_info.get("majors", [])
+	if majors.is_empty():
+		return
+
+	# Garante que o deus selecionado é do panteão atual
+	if not majors.has(_selected_major_god):
+		_selected_major_god = majors[0]
+
+	for god_id in majors:
+		var god_name: String = god_id.replace("_major", "").capitalize()
+		var btn := Button.new()
+		btn.text = "⚡ %s" % god_name
+		btn.custom_minimum_size = Vector2(160, 42)
+		btn.add_theme_font_size_override("font_size", 12)
+		btn.pressed.connect(func() -> void:
+			_selected_major_god = god_id
+			_refresh_skirmish_highlights()
+		)
+		_major_gods_container.add_child(btn)
+		_major_god_buttons[god_id] = btn
+
+
+func _select_pantheon(pid: String) -> void:
+	_selected_pantheon = pid
+	_rebuild_major_god_buttons()
+	_refresh_skirmish_highlights()
+
+
+func _select_biome(bid: String) -> void:
+	_selected_biome = bid
+	_refresh_skirmish_highlights()
+
+
+func _select_difficulty(did: String) -> void:
+	_selected_difficulty = did
+	_refresh_skirmish_highlights()
+
+
+func _select_victory(vid: String) -> void:
+	_selected_victory = vid
+	_refresh_skirmish_highlights()
+
+
+func _refresh_skirmish_highlights() -> void:
+	for pid in _pantheon_buttons:
+		var btn: Button = _pantheon_buttons[pid]
+		btn.add_theme_stylebox_override("normal", _make_btn_style(pid == _selected_pantheon))
+
+	for gid in _major_god_buttons:
+		var btn: Button = _major_god_buttons[gid]
+		btn.add_theme_stylebox_override("normal", _make_btn_style(gid == _selected_major_god))
+
+	for bid in _biome_buttons:
+		var btn: Button = _biome_buttons[bid]
+		btn.add_theme_stylebox_override("normal", _make_btn_style(bid == _selected_biome))
+
+	for did in _diff_buttons:
+		var btn: Button = _diff_buttons[did]
+		btn.add_theme_stylebox_override("normal", _make_btn_style(did == _selected_difficulty))
+
+	for vid in _victory_buttons:
+		var btn: Button = _victory_buttons[vid]
+		btn.add_theme_stylebox_override("normal", _make_btn_style(vid == _selected_victory))
+
+	var p_data: Dictionary = PantheonCatalog.get_pantheon(_selected_pantheon)
+	var god_display: String = _selected_major_god.replace("_major", "").capitalize()
+	_skirmish_desc_lbl.text = "🏛️ %s (Deus Patrono: %s)\nArquitetura: %s\nBônus Cultural: %s" % [
+		p_data.get("name", ""),
+		god_display,
+		p_data.get("architecture_label", ""),
+		p_data.get("bonus_label", "")
+	]
+
+
+# ── Submenu 2: Campanha Mitológica ──────────────────────────────────────────
 func _build_campaign_modal() -> void:
-	_campaign_modal = _create_base_modal("📜 MODO CAMPANHA MITOLÓGICA", 760, 560)
+	_campaign_modal = _create_base_modal("📜 MODO CAMPANHA MITOLÓGICA", 880, 580)
 	var content: VBoxContainer = _campaign_modal.get_node("VBox/Content") as VBoxContainer
 
+	# Linha de Capítulos
 	var c_row := HBoxContainer.new()
 	c_row.alignment = BoxContainer.ALIGNMENT_CENTER
 	c_row.add_theme_constant_override("separation", 6)
@@ -266,22 +438,21 @@ func _build_campaign_modal() -> void:
 
 	var chapter_order: Array = ["olympus_dawn", "nile_eclipse", "midgard_frost", "atlantis_rise", "erebus_reckoning"]
 	for cid in chapter_order:
-		var c_data: Dictionary = CampaignManager.CHAPTERS.get(cid, {})
 		var btn := Button.new()
-		btn.text = "Cap. %s" % cid.split("_")[0].capitalize()
 		if cid == "olympus_dawn": btn.text = "Cap. I\n(Olimpo)"
 		elif cid == "nile_eclipse": btn.text = "Cap. II\n(Nilo)"
 		elif cid == "midgard_frost": btn.text = "Cap. III\n(Midgard)"
 		elif cid == "atlantis_rise": btn.text = "Cap. IV\n(Atlântida)"
 		elif cid == "erebus_reckoning": btn.text = "Cap. V\n(Érebo)"
-		btn.custom_minimum_size = Vector2(136, 50)
-		btn.add_theme_font_size_override("font_size", 11)
+		btn.custom_minimum_size = Vector2(150, 48)
+		btn.add_theme_font_size_override("font_size", 12)
 		btn.pressed.connect(func() -> void: _select_chapter(cid))
 		c_row.add_child(btn)
 		_chapter_buttons[cid] = btn
 
+	# Painel de Detalhes do Capítulo
 	var detail_panel := PanelContainer.new()
-	detail_panel.add_theme_stylebox_override("panel", _make_panel_style(Color(0.08, 0.11, 0.17, 0.88), 8))
+	detail_panel.add_theme_stylebox_override("panel", _make_panel_style(Color(0.06, 0.09, 0.15, 0.92), 8))
 	content.add_child(detail_panel)
 
 	var detail_vbox := VBoxContainer.new()
@@ -300,203 +471,57 @@ func _build_campaign_modal() -> void:
 	detail_vbox.add_child(_chapter_briefing_lbl)
 
 	var obj_head := Label.new()
-	obj_head.text = "Objetivos da Missão:"
+	obj_head.text = "Objetivos Principais & Secundários:"
 	obj_head.add_theme_font_size_override("font_size", 12)
 	obj_head.add_theme_color_override("font_color", Color("#94a3b8"))
 	detail_vbox.add_child(obj_head)
 
 	_chapter_objectives_vbox = VBoxContainer.new()
+	_chapter_objectives_vbox.add_theme_constant_override("separation", 4)
 	detail_vbox.add_child(_chapter_objectives_vbox)
+
+	# Dificuldade da Campanha
+	content.add_child(_make_section_title("DIFICULDADE NARRATIVA:"))
+	var diff_row := HBoxContainer.new()
+	diff_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	diff_row.add_theme_constant_override("separation", 10)
+	content.add_child(diff_row)
+
+	var c_diffs: Dictionary = {
+		"easy": "📖 Modo História",
+		"normal": "⚔️ Moderado",
+		"hard": "👑 Heroico"
+	}
+	for diff_id in c_diffs:
+		var btn := Button.new()
+		btn.text = c_diffs[diff_id]
+		btn.custom_minimum_size = Vector2(170, 38)
+		btn.add_theme_font_size_override("font_size", 12)
+		btn.pressed.connect(func() -> void:
+			_selected_campaign_diff = diff_id
+			for k in _campaign_diff_buttons:
+				_campaign_diff_buttons[k].add_theme_stylebox_override("normal", _make_btn_style(k == diff_id))
+		)
+		diff_row.add_child(btn)
+		_campaign_diff_buttons[diff_id] = btn
 
 	# Ações
 	var action_row := HBoxContainer.new()
 	action_row.alignment = BoxContainer.ALIGNMENT_CENTER
-	action_row.add_theme_constant_override("separation", 16)
+	action_row.add_theme_constant_override("separation", 18)
 	content.add_child(action_row)
 
-	var play_cap_btn := _make_action_button("📜 INICIAR CAPÍTULO", true, 220, 52)
+	var play_cap_btn := _make_action_button("📜 INICIAR CAPÍTULO", true, 240, 50)
 	play_cap_btn.pressed.connect(_launch_campaign)
 	action_row.add_child(play_cap_btn)
 
-	var back_btn := _make_action_button("VOLTAR", false, 140, 52)
+	var back_btn := _make_action_button("VOLTAR", false, 150, 50)
 	back_btn.pressed.connect(func() -> void: _campaign_modal.visible = false; _main_menu_panel.visible = true)
 	action_row.add_child(back_btn)
 
 	_select_chapter(_selected_chapter)
-
-
-# ── Modal de Multiplayer LAN ────────────────────────────────────────────────
-func _build_multiplayer_modal() -> void:
-	_multiplayer_modal = _create_base_modal("🌐 MULTIPLAYER LOCAL (WI-FI / LAN)", 700, 520)
-	var content: VBoxContainer = _multiplayer_modal.get_node("VBox/Content") as VBoxContainer
-
-	var name_box := HBoxContainer.new()
-	name_box.alignment = BoxContainer.ALIGNMENT_CENTER
-	name_box.add_theme_constant_override("separation", 12)
-	content.add_child(name_box)
-
-	var name_lbl := Label.new()
-	name_lbl.text = "Seu Nome de Comandante:"
-	name_lbl.add_theme_font_size_override("font_size", 13)
-	name_box.add_child(name_lbl)
-
-	_mp_player_name_edit = LineEdit.new()
-	_mp_player_name_edit.text = "Comandante"
-	_mp_player_name_edit.custom_minimum_size = Vector2(220, 38)
-	name_box.add_child(_mp_player_name_edit)
-
-	var host_join_row := HBoxContainer.new()
-	host_join_row.alignment = BoxContainer.ALIGNMENT_CENTER
-	host_join_row.add_theme_constant_override("separation", 14)
-	content.add_child(host_join_row)
-
-	var host_btn := _make_action_button("🏛️ CRIAR SALA (HOST)", true, 200, 48)
-	host_btn.pressed.connect(_host_lan_match)
-	host_join_row.add_child(host_btn)
-
-	var scan_btn := _make_action_button("🔍 BUSCAR SALAS NA LAN", false, 200, 48)
-	scan_btn.pressed.connect(_scan_lan_matches)
-	host_join_row.add_child(scan_btn)
-
-	_mp_status_lbl = Label.new()
-	_mp_status_lbl.text = "Status: Aguardando ação (Conecte-se na mesma rede Wi-Fi)"
-	_mp_status_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_mp_status_lbl.add_theme_font_size_override("font_size", 12)
-	_mp_status_lbl.add_theme_color_override("font_color", Color("#94a3b8"))
-	content.add_child(_mp_status_lbl)
-
-	var list_scroll := ScrollContainer.new()
-	list_scroll.custom_minimum_size = Vector2(0, 160)
-	content.add_child(list_scroll)
-
-	_mp_server_list_vbox = VBoxContainer.new()
-	_mp_server_list_vbox.add_theme_constant_override("separation", 8)
-	list_scroll.add_child(_mp_server_list_vbox)
-
-	var back_btn := _make_action_button("VOLTAR AO MENU", false, 180, 46)
-	back_btn.pressed.connect(func() -> void: _multiplayer_modal.visible = false; _main_menu_panel.visible = true)
-	content.add_child(back_btn)
-
-
-# ── Modal de Configurações & Gráficos ───────────────────────────────────────
-func _build_settings_modal() -> void:
-	_settings_modal = _create_base_modal("⚙️ CONFIGURAÇÕES & PERFORMANCE MOBILE", 640, 480)
-	var content: VBoxContainer = _settings_modal.get_node("VBox/Content") as VBoxContainer
-
-	# Áudio
-	content.add_child(_make_section_title("ÁUDIO E EFEITOS SONOROS:"))
-	var audio_row := HBoxContainer.new()
-	audio_row.alignment = BoxContainer.ALIGNMENT_CENTER
-	audio_row.add_theme_constant_override("separation", 14)
-	content.add_child(audio_row)
-
-	_audio_status_lbl = Label.new()
-	_audio_status_lbl.text = "Áudio: Ativo"
-	_audio_status_lbl.add_theme_font_size_override("font_size", 14)
-	audio_row.add_child(_audio_status_lbl)
-
-	_audio_toggle_btn = _make_action_button("Alternar Mudo", false, 150, 42)
-	_audio_toggle_btn.pressed.connect(_toggle_audio)
-	audio_row.add_child(_audio_toggle_btn)
-
-	# Taxa de Quadros (FPS)
-	content.add_child(_make_section_title("TAXA DE QUADROS / ECONOMIA DE BATERIA:"))
-	var fps_row := HBoxContainer.new()
-	fps_row.alignment = BoxContainer.ALIGNMENT_CENTER
-	fps_row.add_theme_constant_override("separation", 12)
-	content.add_child(fps_row)
-
-	_fps_btn_30 = _make_action_button("30 FPS (Bateria)", false, 160, 42)
-	_fps_btn_30.pressed.connect(func() -> void: _set_target_fps(30))
-	fps_row.add_child(_fps_btn_30)
-
-	_fps_btn_60 = _make_action_button("60 FPS (Padrão)", true, 160, 42)
-	_fps_btn_60.pressed.connect(func() -> void: _set_target_fps(60))
-	fps_row.add_child(_fps_btn_60)
-
-	_fps_btn_max = _make_action_button("Sem Limite", false, 140, 42)
-	_fps_btn_max.pressed.connect(func() -> void: _set_target_fps(0))
-	fps_row.add_child(_fps_btn_max)
-
-	var spacer := Control.new()
-	spacer.custom_minimum_size = Vector2(0, 16)
-	content.add_child(spacer)
-
-	var back_btn := _make_action_button("CONCLUÍDO", true, 180, 48)
-	back_btn.pressed.connect(func() -> void: _settings_modal.visible = false; _main_menu_panel.visible = true)
-	content.add_child(back_btn)
-
-
-# ── Rodapé de Versão ────────────────────────────────────────────────────────
-func _build_version_footer() -> void:
-	var footer_lbl := Label.new()
-	footer_lbl.text = "v1.0.0-final · Godot 4.3+ Mobile · 5 Panteões · Multiplayer ENet/LAN"
-	footer_lbl.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
-	footer_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	footer_lbl.add_theme_font_size_override("font_size", 11)
-	footer_lbl.add_theme_color_override("font_color", Color(0.6, 0.65, 0.75, 0.6))
-	add_child(footer_lbl)
-
-
-# ── Ações e Navegações ──────────────────────────────────────────────────────
-func _open_skirmish_modal() -> void:
-	_main_menu_panel.visible = false
-	_skirmish_modal.visible = true
-
-
-func _open_campaign_modal() -> void:
-	_main_menu_panel.visible = false
-	_campaign_modal.visible = true
-
-
-func _open_multiplayer_modal() -> void:
-	_main_menu_panel.visible = false
-	_multiplayer_modal.visible = true
-
-
-func _open_settings_modal() -> void:
-	_main_menu_panel.visible = false
-	_settings_modal.visible = true
-
-
-func _select_pantheon(pid: String) -> void:
-	_selected_pantheon = pid
-	_refresh_skirmish_highlights()
-
-
-func _select_biome(bid: String) -> void:
-	_selected_biome = bid
-	_refresh_skirmish_highlights()
-
-
-func _select_difficulty(did: String) -> void:
-	_selected_difficulty = did
-	_refresh_skirmish_highlights()
-
-
-func _refresh_skirmish_highlights() -> void:
-	for pid in _pantheon_buttons:
-		var btn: Button = _pantheon_buttons[pid]
-		var active: bool = (pid == _selected_pantheon)
-		btn.add_theme_stylebox_override("normal", _make_btn_style(active))
-
-	for bid in _biome_buttons:
-		var btn: Button = _biome_buttons[bid]
-		var active: bool = (bid == _selected_biome)
-		btn.add_theme_stylebox_override("normal", _make_btn_style(active))
-
-	for did in _diff_buttons:
-		var btn: Button = _diff_buttons[did]
-		var active: bool = (did == _selected_difficulty)
-		btn.add_theme_stylebox_override("normal", _make_btn_style(active))
-
-	var p_data: Dictionary = PantheonCatalog.get_pantheon(_selected_pantheon)
-	_skirmish_desc_lbl.text = "🏛️ %s (Deus: %s)\nArquitetura: %s\nBônus Cultural: %s" % [
-		p_data.get("name", ""),
-		p_data.get("deity", ""),
-		p_data.get("architecture_label", ""),
-		p_data.get("bonus_label", "")
-	]
+	if _campaign_diff_buttons.has("normal"):
+		_campaign_diff_buttons["normal"].add_theme_stylebox_override("normal", _make_btn_style(true))
 
 
 func _select_chapter(cid: String) -> void:
@@ -520,6 +545,466 @@ func _select_chapter(cid: String) -> void:
 		_chapter_objectives_vbox.add_child(lbl)
 
 
+# ── Submenu 3: Multiplayer Local LAN ────────────────────────────────────────
+func _build_multiplayer_modal() -> void:
+	_multiplayer_modal = _create_base_modal("🌐 MULTIPLAYER LOCAL (WI-FI / LAN)", 800, 560)
+	var content: VBoxContainer = _multiplayer_modal.get_node("VBox/Content") as VBoxContainer
+
+	var name_box := HBoxContainer.new()
+	name_box.alignment = BoxContainer.ALIGNMENT_CENTER
+	name_box.add_theme_constant_override("separation", 12)
+	content.add_child(name_box)
+
+	var name_lbl := Label.new()
+	name_lbl.text = "Nome de Comandante:"
+	name_lbl.add_theme_font_size_override("font_size", 13)
+	name_box.add_child(name_lbl)
+
+	_mp_player_name_edit = LineEdit.new()
+	_mp_player_name_edit.text = "Comandante Olimpo"
+	_mp_player_name_edit.custom_minimum_size = Vector2(240, 40)
+	name_box.add_child(_mp_player_name_edit)
+
+	var host_join_row := HBoxContainer.new()
+	host_join_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	host_join_row.add_theme_constant_override("separation", 14)
+	content.add_child(host_join_row)
+
+	var host_btn := _make_action_button("🏛️ CRIAR SALA (HOST)", true, 220, 46)
+	host_btn.pressed.connect(_host_lan_match)
+	host_join_row.add_child(host_btn)
+
+	var scan_btn := _make_action_button("🔍 BUSCAR SALAS NA LAN", false, 220, 46)
+	scan_btn.pressed.connect(_scan_lan_matches)
+	host_join_row.add_child(scan_btn)
+
+	# Conexão direta por IP
+	var direct_ip_row := HBoxContainer.new()
+	direct_ip_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	direct_ip_row.add_theme_constant_override("separation", 10)
+	content.add_child(direct_ip_row)
+
+	var ip_lbl := Label.new()
+	ip_lbl.text = "IP Direto:"
+	ip_lbl.add_theme_font_size_override("font_size", 12)
+	direct_ip_row.add_child(ip_lbl)
+
+	_mp_ip_edit = LineEdit.new()
+	_mp_ip_edit.placeholder_text = "192.168.1.100"
+	_mp_ip_edit.custom_minimum_size = Vector2(180, 36)
+	direct_ip_row.add_child(_mp_ip_edit)
+
+	var connect_ip_btn := _make_action_button("Conectar", false, 110, 36)
+	connect_ip_btn.pressed.connect(func() -> void:
+		var target_ip: String = _mp_ip_edit.text.strip_edges()
+		if not target_ip.is_empty():
+			_mp_status_lbl.text = "Conectando diretamente ao IP %s..." % target_ip
+			MultiplayerManager.join_game(target_ip)
+	)
+	direct_ip_row.add_child(connect_ip_btn)
+
+	_mp_status_lbl = Label.new()
+	_mp_status_lbl.text = "Status: Aguardando ação (Conecte os dispositivos no mesmo Wi-Fi)"
+	_mp_status_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_mp_status_lbl.add_theme_font_size_override("font_size", 12)
+	_mp_status_lbl.add_theme_color_override("font_color", Color("#94a3b8"))
+	content.add_child(_mp_status_lbl)
+
+	var list_scroll := ScrollContainer.new()
+	list_scroll.custom_minimum_size = Vector2(0, 150)
+	content.add_child(list_scroll)
+
+	_mp_server_list_vbox = VBoxContainer.new()
+	_mp_server_list_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_mp_server_list_vbox.add_theme_constant_override("separation", 8)
+	list_scroll.add_child(_mp_server_list_vbox)
+
+	var back_btn := _make_action_button("VOLTAR AO MENU", false, 180, 46)
+	back_btn.pressed.connect(func() -> void: _multiplayer_modal.visible = false; _main_menu_panel.visible = true)
+	content.add_child(back_btn)
+
+
+# ── Submenu 4: Compêndio Mitológico (Enciclopédia) ───────────────────────────
+func _build_compendium_modal() -> void:
+	_compendium_modal = _create_base_modal("🏛️ COMPÊNDIO MITOLÓGICO & ARQUIVOS DO OLIMPO", 940, 620)
+	var content: VBoxContainer = _compendium_modal.get_node("VBox/Content") as VBoxContainer
+
+	# Abas do Compêndio
+	var tab_row := HBoxContainer.new()
+	tab_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	tab_row.add_theme_constant_override("separation", 8)
+	content.add_child(tab_row)
+
+	var tabs: Dictionary = {
+		"gods": "⚡ Deuses Maiores",
+		"myth_units": "🦄 Unidades Míticas",
+		"military": "🛡️ Exércitos Culturais",
+		"buildings": "🏛️ Edificações"
+	}
+
+	for tab_id in tabs:
+		var btn := Button.new()
+		btn.text = tabs[tab_id]
+		btn.custom_minimum_size = Vector2(210, 42)
+		btn.add_theme_font_size_override("font_size", 12)
+		btn.pressed.connect(func() -> void: _select_compendium_tab(tab_id))
+		tab_row.add_child(btn)
+		_compendium_tab_buttons[tab_id] = btn
+
+	# Layout Dividido: Lista à esquerda + Detalhes à direita
+	var split_box := HBoxContainer.new()
+	split_box.custom_minimum_size = Vector2(900, 450)
+	split_box.add_theme_constant_override("separation", 14)
+	content.add_child(split_box)
+
+	# Lista de Itens (Coluna Esquerda)
+	var list_panel := PanelContainer.new()
+	list_panel.custom_minimum_size = Vector2(300, 450)
+	list_panel.add_theme_stylebox_override("panel", _make_panel_style(Color(0.05, 0.07, 0.12, 0.9), 8))
+	split_box.add_child(list_panel)
+
+	var list_scroll := ScrollContainer.new()
+	list_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	list_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	list_panel.add_child(list_scroll)
+
+	_compendium_list_vbox = VBoxContainer.new()
+	_compendium_list_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_compendium_list_vbox.add_theme_constant_override("separation", 6)
+	list_scroll.add_child(_compendium_list_vbox)
+
+	# Ficha Técnica Detalhada (Coluna Direita)
+	var sheet_panel := PanelContainer.new()
+	sheet_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	sheet_panel.add_theme_stylebox_override("panel", _make_panel_style(Color(0.07, 0.10, 0.16, 0.94), 8))
+	split_box.add_child(sheet_panel)
+
+	var sheet_vbox := VBoxContainer.new()
+	sheet_vbox.add_theme_constant_override("separation", 10)
+	sheet_panel.add_child(sheet_vbox)
+
+	_compendium_title_lbl = Label.new()
+	_compendium_title_lbl.add_theme_font_size_override("font_size", 20)
+	_compendium_title_lbl.add_theme_color_override("font_color", Color("#f6e08b"))
+	sheet_vbox.add_child(_compendium_title_lbl)
+
+	_compendium_category_lbl = Label.new()
+	_compendium_category_lbl.add_theme_font_size_override("font_size", 12)
+	_compendium_category_lbl.add_theme_color_override("font_color", Color("#94a3b8"))
+	sheet_vbox.add_child(_compendium_category_lbl)
+
+	_compendium_lore_lbl = Label.new()
+	_compendium_lore_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_compendium_lore_lbl.add_theme_font_size_override("font_size", 13)
+	_compendium_lore_lbl.add_theme_color_override("font_color", Color("#e2e8f0"))
+	sheet_vbox.add_child(_compendium_lore_lbl)
+
+	var stat_title := Label.new()
+	stat_title.text = "Atributos & Informações Táticas:"
+	stat_title.add_theme_font_size_override("font_size", 12)
+	stat_title.add_theme_color_override("font_color", Color("#d4af37"))
+	sheet_vbox.add_child(stat_title)
+
+	_compendium_stats_vbox = VBoxContainer.new()
+	_compendium_stats_vbox.add_theme_constant_override("separation", 4)
+	sheet_vbox.add_child(_compendium_stats_vbox)
+
+	_compendium_special_lbl = Label.new()
+	_compendium_special_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_compendium_special_lbl.add_theme_font_size_override("font_size", 12)
+	_compendium_special_lbl.add_theme_color_override("font_color", Color("#38bdf8"))
+	sheet_vbox.add_child(_compendium_special_lbl)
+
+	# Botão Voltar
+	var back_btn := _make_action_button("VOLTAR AO MENU", false, 180, 46)
+	back_btn.pressed.connect(func() -> void: _compendium_modal.visible = false; _main_menu_panel.visible = true)
+	content.add_child(back_btn)
+
+	_select_compendium_tab("gods")
+
+
+func _select_compendium_tab(tab_id: String) -> void:
+	_compendium_tab = tab_id
+	for k in _compendium_tab_buttons:
+		_compendium_tab_buttons[k].add_theme_stylebox_override("normal", _make_btn_style(k == tab_id))
+
+	for child in _compendium_list_vbox.get_children():
+		child.queue_free()
+	_compendium_item_buttons.clear()
+
+	var items: Array = _get_compendium_items_for_tab(tab_id)
+	for item_data in items:
+		var i_id: String = item_data.get("id", "")
+		var i_name: String = item_data.get("name", i_id)
+		var btn := Button.new()
+		btn.text = i_name
+		btn.custom_minimum_size = Vector2(260, 38)
+		btn.add_theme_font_size_override("font_size", 12)
+		btn.pressed.connect(func() -> void: _show_compendium_item(item_data))
+		_compendium_list_vbox.add_child(btn)
+		_compendium_item_buttons[i_id] = btn
+
+	if not items.is_empty():
+		_show_compendium_item(items[0])
+
+
+func _show_compendium_item(data: Dictionary) -> void:
+	_compendium_title_lbl.text = data.get("name", "")
+	_compendium_category_lbl.text = data.get("category", "")
+	_compendium_lore_lbl.text = data.get("lore", "")
+
+	for child in _compendium_stats_vbox.get_children():
+		child.queue_free()
+
+	for stat in data.get("stats", []):
+		var lbl := Label.new()
+		lbl.text = "• %s" % stat
+		lbl.add_theme_font_size_override("font_size", 12)
+		lbl.add_theme_color_override("font_color", Color("#cbd5e1"))
+		_compendium_stats_vbox.add_child(lbl)
+
+	var spec: String = data.get("special", "")
+	_compendium_special_lbl.text = "Poder / Habilidade: %s" % spec if not spec.is_empty() else ""
+
+
+func _get_compendium_items_for_tab(tab_id: String) -> Array:
+	var list: Array = []
+	if tab_id == "gods":
+		list = [
+			{"id": "zeus", "name": "⚡ Zeus (Deus do Trovão)", "category": "Panteão Grego · Deus Maior", "lore": "Rei dos Deuses do Monte Olimpo. Concede relâmpagos fulminantes aos inimigos e fortalece a infantaria de Hoplitas com a força dos céus.", "stats": ["Poder Divino: Raio Fulminante (Elimina uma unidade-alvo instantaneamente)", "Bônus: Hoplitas causam 20% mais dano a unidades míticas", "Favor: Gera favor mais rápido em santuários"], "special": "Tempestade de Raios no T5"},
+			{"id": "poseidon", "name": "🔱 Posídon (Deus dos Mares)", "category": "Panteão Grego · Deus Maior", "lore": "Governante dos oceanos e dos terremotos. Fornece cavalaria vigorosa e atrai a fúria das marés sobre edificações inimigas.", "stats": ["Poder Divino: Tremor Oceânico (Causa dano em área a fortificações)", "Bônus: Cavalaria Prodromos custa 15% menos recursos", "Recursos: Pesca e portos 20% mais produtivos"], "special": "Megalodon Divino e Hidra Marítima"},
+			{"id": "hades", "name": "💀 Hades (Senhor do Submundo)", "category": "Panteão Grego · Deus Maior", "lore": "Mestre do tártaro e das riquezas subterrâneas. Permite que guerreiros caídos retornem temporariamente como sombras vingativas.", "stats": ["Poder Divino: Abóbada das Almas (Invoca soldados espectrais)", "Bônus: Arqueiros Toxotes com +2 de alcance de ataque", "Ouro: Minas de ouro duram 25% a mais"], "special": "Cérbero Divino no T5"},
+			{"id": "ra", "name": "☀️ Rá (Deus do Sol)", "category": "Panteão Egípcio · Deus Maior", "lore": "Criador do mundo egípcio e condutor da barca solar. Seus sacerdotes abençoam monumentos e aumentam exponencialmente a colheita dos campos.", "stats": ["Poder Divino: Chuva Abençoada (Aumenta a velocidade de fazendas em 200%)", "Bônus: Faraós fortalecem edificações próximas", "Arquitetura: Monumentos geram favor constante"], "special": "Olho de Rá Flamejante"},
+			{"id": "odin", "name": "🐺 Odin (Pai de Todos)", "category": "Panteão Nórdico · Deus Maior", "lore": "Senhor de Asgard e mestre da sabedoria rúnica. Concede a visão de seus corvos sagrados e regeneração de vida a todos os guerreiros nórdicos.", "stats": ["Poder Divino: Corvos de Hugin e Munin (Exploram o mapa revelando o nevoeiro)", "Bônus: Unidades regeneram vida automaticamente fora de combate", "Combate: Hersirs ganham o dobro de favor em batalha"], "special": "Invocação de Valquírias e Lobos de Guerra"}
+		]
+	elif tab_id == "myth_units":
+		list = [
+			{"id": "centaur", "name": "🏹 Centauro de Quíron", "category": "Grécia · Idade Clássica", "lore": "Metade homem, metade cavalo. Combina velocidade e arquearia precisa, disparando flechas certeiras que nunca erram o alvo.", "stats": ["Vida: 420 HP", "Ataque: 14 Perfuração", "Custo: 100 Madeira, 15 Favor", "Velocidade: 5.2 m/s"], "special": "Tiro Perfurante Especial com 100% de dano crítico"},
+			{"id": "minotaur", "name": "🐂 Minotauro de Creta", "category": "Grécia · Idade Clássica", "lore": "A fera do labirinto. Investe furiosamente contra agrupamentos de infantaria, arremessando soldados pelos ares com seus chifres.", "stats": ["Vida: 600 HP", "Ataque: 22 Contusão", "Custo: 120 Alimento, 20 Favor", "Armadura: 40% Corte / 35% Perfuração"], "special": "Investida Búfalo (derruba até 4 unidades próximas)"},
+			{"id": "anubite", "name": "🐺 Anubita Saltador", "category": "Egito · Idade Clássica", "lore": "Guerreiro chacal consagrado a Anúbis. Capaz de realizar saltos acrobáticos cobrindo grandes distâncias para emboscar arqueiros.", "stats": ["Vida: 380 HP", "Ataque: 18 Corte", "Custo: 80 Alimento, 18 Favor", "Velocidade: 5.5 m/s"], "special": "Salto das Sombras (ignora barreiras e muralhas)"},
+			{"id": "valkyrie", "name": "⚔️ Valquíria de Odin", "category": "Nórdicos · Idade Clássica", "lore": "Donzela guerreira montada em corcel alado. Além de potente ataque de lança, cura continuamente soldados aliados feridos.", "stats": ["Vida: 500 HP", "Ataque: 16 Corte", "Custo: 110 Ouro, 22 Favor", "Habilidade Passiva: Cura Sagrada"], "special": "Aura de Restauração de Vida"}
+		]
+	elif tab_id == "military":
+		list = [
+			{"id": "hoplite", "name": "🛡️ Hoplita Grego", "category": "Infantaria de Linha · Grécia", "lore": "A espinha dorsal das forças gregas. Empunha lança dory e grande escudo aspis, ganhando imensa resistência quando em Formação de Falange.", "stats": ["Vida: 120 HP", "Ataque: 9 Corte", "Custo: 60 Alimento, 35 Ouro", "Bônus: +150% de dano contra Cavalaria"], "special": "Falange Fechada (+30% Armadura frontal)"},
+			{"id": "toxotes", "name": "🏹 Arqueiro Toxotes", "category": "Unidade de Alcance · Grécia", "lore": "Atirador versátil com arco recurvo, perfeito para dizimar infantaria leve e enfraquecer tropas inimigas antes do choque corporal.", "stats": ["Vida: 75 HP", "Ataque: 7 Perfuração", "Alcance: 16 metros", "Custo: 50 Madeira, 30 Ouro"], "special": "Chuva de Flechas concentrada"},
+			{"id": "prodromos", "name": "🐎 Cavalaria Prodromos", "category": "Cavalaria Anti-Cavalaria · Grécia", "lore": "Batedor veloz e cavaleiro ágil com sarissa leve, projetado para perseguir e destruir cavaleiros e arqueiros inimigos.", "stats": ["Vida: 140 HP", "Ataque: 8 Corte", "Velocidade: 6.0 m/s", "Custo: 70 Alimento, 40 Ouro"], "special": "Bônus massivo contra Cavalaria Inimiga"}
+		]
+	elif tab_id == "buildings":
+		list = [
+			{"id": "town_center", "name": "🏛️ Centro da Cidade (Town Center)", "category": "Edificação Central de Comando", "lore": "Coração de todo assentamento mitológico. Treina aldeões, recebe recursos coletados e dispara flechas defensivas contra invasores.", "stats": ["Vida: 3500 HP", "Suporte Populacional: +15", "Defesa: Ataque de Flechas automático", "Evolução: Centro de avanço de Eras (I a V)"], "special": "Abriga até 15 aldeões para proteção mútua"},
+			{"id": "temple", "name": "🏛️ Templo Sagrado", "category": "Edificação Religiosa", "lore": "Local consagrado às preces e oferendas. Permite treinar unidades míticas fabulosas e pesquisar bênçãos divinas exclusivas.", "stats": ["Vida: 1800 HP", "Geração de Favor: Oferendas regulares", "Treinamento: Bestas e criaturas mitológicas", "Era: Disponível a partir da Era Clássica"], "special": "Canalizador de Poderes Divinos"},
+			{"id": "barracks", "name": "⚔️ Quartéis de Treinamento", "category": "Edificação Militar", "lore": "Academia de artes marciais onde civis se tornam hoplitas e guerreiros de elite para defender a civilização.", "stats": ["Vida: 1600 HP", "Capacidade: Treino contínuo em fila", "Pesquisas: Afiação de Lâminas e Armaduras"], "special": "Treina Infantaria e Tropas de Linha"}
+		]
+	return list
+
+
+# ── Submenu 5: Configurações & Gráficos ──────────────────────────────────────
+func _build_settings_modal() -> void:
+	_settings_modal = _create_base_modal("⚙️ CONFIGURAÇÕES & PERFORMANCE MOBILE", 800, 560)
+	var content: VBoxContainer = _settings_modal.get_node("VBox/Content") as VBoxContainer
+
+	# Áudio - Sliders Independentes
+	content.add_child(_make_section_title("ÁUDIO E VOLUMES INDEPENDENTES:"))
+	var audio_grid := GridContainer.new()
+	audio_grid.columns = 3
+	audio_grid.add_theme_constant_override("h_separation", 16)
+	audio_grid.add_theme_constant_override("v_separation", 8)
+	content.add_child(audio_grid)
+
+	# 1. Master
+	var m_lbl := Label.new()
+	m_lbl.text = "Volume Geral:"
+	audio_grid.add_child(m_lbl)
+	_vol_master_slider = HSlider.new()
+	_vol_master_slider.min_value = 0.0
+	_vol_master_slider.max_value = 100.0
+	_vol_master_slider.value = 85.0
+	_vol_master_slider.custom_minimum_size = Vector2(240, 24)
+	_vol_master_slider.value_changed.connect(func(val: float) -> void:
+		_vol_master_val_lbl.text = "%d%%" % int(val)
+	)
+	audio_grid.add_child(_vol_master_slider)
+	_vol_master_val_lbl = Label.new()
+	_vol_master_val_lbl.text = "85%"
+	audio_grid.add_child(_vol_master_val_lbl)
+
+	# 2. Música
+	var mus_lbl := Label.new()
+	mus_lbl.text = "Música Mitológica:"
+	audio_grid.add_child(mus_lbl)
+	_vol_music_slider = HSlider.new()
+	_vol_music_slider.min_value = 0.0
+	_vol_music_slider.max_value = 100.0
+	_vol_music_slider.value = 75.0
+	_vol_music_slider.custom_minimum_size = Vector2(240, 24)
+	_vol_music_slider.value_changed.connect(func(val: float) -> void:
+		_vol_music_val_lbl.text = "%d%%" % int(val)
+	)
+	audio_grid.add_child(_vol_music_slider)
+	_vol_music_val_lbl = Label.new()
+	_vol_music_val_lbl.text = "75%"
+	audio_grid.add_child(_vol_music_val_lbl)
+
+	# 3. SFX
+	var sfx_lbl := Label.new()
+	sfx_lbl.text = "Efeitos & Combate:"
+	audio_grid.add_child(sfx_lbl)
+	_vol_sfx_slider = HSlider.new()
+	_vol_sfx_slider.min_value = 0.0
+	_vol_sfx_slider.max_value = 100.0
+	_vol_sfx_slider.value = 90.0
+	_vol_sfx_slider.custom_minimum_size = Vector2(240, 24)
+	_vol_sfx_slider.value_changed.connect(func(val: float) -> void:
+		_vol_sfx_val_lbl.text = "%d%%" % int(val)
+	)
+	audio_grid.add_child(_vol_sfx_slider)
+	_vol_sfx_val_lbl = Label.new()
+	_vol_sfx_val_lbl.text = "90%"
+	audio_grid.add_child(_vol_sfx_val_lbl)
+
+	# Botão Mudo
+	var mudo_row := HBoxContainer.new()
+	mudo_row.add_theme_constant_override("separation", 14)
+	content.add_child(mudo_row)
+
+	_audio_status_lbl = Label.new()
+	_audio_status_lbl.text = "Status: Áudio Ativo"
+	_audio_status_lbl.add_theme_font_size_override("font_size", 12)
+	mudo_row.add_child(_audio_status_lbl)
+
+	_audio_toggle_btn = _make_action_button("Alternar Mudo", false, 140, 36)
+	_audio_toggle_btn.pressed.connect(_toggle_audio)
+	mudo_row.add_child(_audio_toggle_btn)
+
+	# Taxa de Quadros (FPS)
+	content.add_child(_make_section_title("TAXA DE QUADROS / ECONOMIA DE BATERIA:"))
+	var fps_row := HBoxContainer.new()
+	fps_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	fps_row.add_theme_constant_override("separation", 12)
+	content.add_child(fps_row)
+
+	_fps_btn_30 = _make_action_button("30 FPS (Bateria)", false, 180, 42)
+	_fps_btn_30.pressed.connect(func() -> void: _set_target_fps(30))
+	fps_row.add_child(_fps_btn_30)
+
+	_fps_btn_60 = _make_action_button("60 FPS (Padrão)", true, 180, 42)
+	_fps_btn_60.pressed.connect(func() -> void: _set_target_fps(60))
+	fps_row.add_child(_fps_btn_60)
+
+	_fps_btn_max = _make_action_button("Sem Limite (120Hz)", false, 180, 42)
+	_fps_btn_max.pressed.connect(func() -> void: _set_target_fps(0))
+	fps_row.add_child(_fps_btn_max)
+
+	# Escala de Resolução
+	content.add_child(_make_section_title("ESCALA DE RESOLUÇÃO (DESEMPENHO MOBILE):"))
+	var res_row := HBoxContainer.new()
+	res_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	res_row.add_theme_constant_override("separation", 12)
+	content.add_child(res_row)
+
+	_res_btn_75 = _make_action_button("75% (Modo Desempenho)", false, 200, 38)
+	_res_btn_75.pressed.connect(func() -> void: _set_resolution_scale(0.75))
+	res_row.add_child(_res_btn_75)
+
+	_res_btn_100 = _make_action_button("100% (Nativo Equilibrado)", true, 200, 38)
+	_res_btn_100.pressed.connect(func() -> void: _set_resolution_scale(1.0))
+	res_row.add_child(_res_btn_100)
+
+	_res_btn_125 = _make_action_button("125% (Alta Nitidez)", false, 200, 38)
+	_res_btn_125.pressed.connect(func() -> void: _set_resolution_scale(1.25))
+	res_row.add_child(_res_btn_125)
+
+	# Ações de Saída do Modal
+	var spacer := Control.new()
+	spacer.custom_minimum_size = Vector2(0, 10)
+	content.add_child(spacer)
+
+	var back_btn := _make_action_button("SALVAR & CONCLUÍDO", true, 220, 48)
+	back_btn.pressed.connect(func() -> void: _settings_modal.visible = false; _main_menu_panel.visible = true)
+	content.add_child(back_btn)
+
+
+func _set_resolution_scale(scale_val: float) -> void:
+	get_viewport().scaling_3d_scale = scale_val
+	_res_btn_75.add_theme_stylebox_override("normal", _make_btn_style(scale_val == 0.75))
+	_res_btn_100.add_theme_stylebox_override("normal", _make_btn_style(scale_val == 1.0))
+	_res_btn_125.add_theme_stylebox_override("normal", _make_btn_style(scale_val == 1.25))
+
+
+# ── Submenu 6: Diálogo de Saída do Jogo ─────────────────────────────────────
+func _build_quit_dialog() -> void:
+	_quit_modal = _create_base_modal("🚪 SAIR DO JOGO", 520, 240)
+	var content: VBoxContainer = _quit_modal.get_node("VBox/Content") as VBoxContainer
+
+	var msg_lbl := Label.new()
+	msg_lbl.text = "Deseja realmente sair de Age of Mythology: Olympus?\nTodo progresso salvo em nuvem/disco está protegido."
+	msg_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	msg_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	msg_lbl.add_theme_font_size_override("font_size", 13)
+	msg_lbl.add_theme_color_override("font_color", Color("#cbd5e1"))
+	content.add_child(msg_lbl)
+
+	var spacer := Control.new()
+	spacer.custom_minimum_size = Vector2(0, 14)
+	content.add_child(spacer)
+
+	var btn_row := HBoxContainer.new()
+	btn_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	btn_row.add_theme_constant_override("separation", 16)
+	content.add_child(btn_row)
+
+	var confirm_btn := _make_action_button("SIM, SAIR", true, 160, 46)
+	confirm_btn.pressed.connect(func() -> void: get_tree().quit())
+	btn_row.add_child(confirm_btn)
+
+	var cancel_btn := _make_action_button("CANCELAR", false, 140, 46)
+	cancel_btn.pressed.connect(func() -> void: _quit_modal.visible = false; _main_menu_panel.visible = true)
+	btn_row.add_child(cancel_btn)
+
+
+# ── Rodapé de Versão ────────────────────────────────────────────────────────
+func _build_version_footer() -> void:
+	var footer_lbl := Label.new()
+	footer_lbl.text = "v1.2.0-final · Godot 4.3+ Mobile · 5 Panteões (16 Deuses) · Multiplayer ENet/LAN"
+	footer_lbl.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+	footer_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	footer_lbl.add_theme_font_size_override("font_size", 11)
+	footer_lbl.add_theme_color_override("font_color", Color(0.6, 0.65, 0.75, 0.6))
+	add_child(footer_lbl)
+
+
+# ── Ações e Transições de Telas ─────────────────────────────────────────────
+func _open_skirmish_modal() -> void:
+	_main_menu_panel.visible = false
+	_skirmish_modal.visible = true
+
+
+func _open_campaign_modal() -> void:
+	_main_menu_panel.visible = false
+	_campaign_modal.visible = true
+
+
+func _open_multiplayer_modal() -> void:
+	_main_menu_panel.visible = false
+	_multiplayer_modal.visible = true
+
+
+func _open_compendium_modal() -> void:
+	_main_menu_panel.visible = false
+	_compendium_modal.visible = true
+
+
+func _open_settings_modal() -> void:
+	_main_menu_panel.visible = false
+	_settings_modal.visible = true
+
+
+func _open_quit_dialog() -> void:
+	_main_menu_panel.visible = false
+	_quit_modal.visible = true
+
+
 func _launch_skirmish() -> void:
 	GameState.start_new_match(_selected_pantheon, _selected_biome, _selected_difficulty)
 	get_tree().change_scene_to_file(MAIN_SCENE_PATH)
@@ -533,12 +1018,12 @@ func _launch_campaign() -> void:
 func _host_lan_match() -> void:
 	if MultiplayerManager != null:
 		var p_name: String = _mp_player_name_edit.text.strip_edges()
-		if p_name.is_empty(): p_name = "Comandante"
+		if p_name.is_empty(): p_name = "Comandante Olimpo"
 		MultiplayerManager.local_player_info["name"] = p_name
 		MultiplayerManager.local_player_info["pantheon"] = _selected_pantheon
 		var ok: bool = MultiplayerManager.host_game()
 		if ok:
-			_mp_status_lbl.text = "Sala criada com sucesso! Aguardando jogadores na mesma rede..."
+			_mp_status_lbl.text = "Sala criada com sucesso! Aguardando oponentes na LAN..."
 			_mp_status_lbl.add_theme_color_override("font_color", Color("#4ade80"))
 		else:
 			_mp_status_lbl.text = "Falha ao iniciar servidor ENet local."
@@ -547,7 +1032,7 @@ func _host_lan_match() -> void:
 
 func _scan_lan_matches() -> void:
 	if MultiplayerManager != null:
-		_mp_status_lbl.text = "Escaneando salas locais via broadcast UDP (porta 7778)..."
+		_mp_status_lbl.text = "Buscando salas locais via broadcast UDP (porta 7778)..."
 		MultiplayerManager.start_lan_discovery()
 
 
@@ -581,13 +1066,13 @@ func _on_lan_server_found(server_info: Dictionary) -> void:
 
 func _on_server_created() -> void:
 	_mp_status_lbl.text = "Host ativo na porta %d. Carregando batalha..." % MultiplayerManager.DEFAULT_PORT
-	await get_tree().create_timer(1.2).timeout
+	await get_tree().create_timer(1.0).timeout
 	_launch_skirmish()
 
 
 func _on_connection_succeeded() -> void:
 	_mp_status_lbl.text = "Conectado ao Host com sucesso! Entrando na partida..."
-	await get_tree().create_timer(1.2).timeout
+	await get_tree().create_timer(1.0).timeout
 	get_tree().change_scene_to_file(MAIN_SCENE_PATH)
 
 
@@ -598,7 +1083,7 @@ func _on_connection_failed() -> void:
 
 func _toggle_audio() -> void:
 	GameState.toggle_audio_muted()
-	_audio_status_lbl.text = "Áudio: Mudo" if GameState.audio_muted else "Áudio: Ativo"
+	_audio_status_lbl.text = "Status: Áudio Mudo" if GameState.audio_muted else "Status: Áudio Ativo"
 	_audio_status_lbl.add_theme_color_override("font_color", Color("#f87171") if GameState.audio_muted else Color("#4ade80"))
 
 
@@ -614,7 +1099,7 @@ func _create_base_modal(title_text: String, w: float, h: float) -> PanelContaine
 	var pc := PanelContainer.new()
 	pc.custom_minimum_size = Vector2(w, h)
 	pc.set_anchors_preset(Control.PRESET_CENTER)
-	pc.add_theme_stylebox_override("panel", _make_panel_style(Color(0.06, 0.08, 0.13, 0.96), 12))
+	pc.add_theme_stylebox_override("panel", _make_panel_style(Color(0.04, 0.06, 0.11, 0.98), 12))
 	pc.visible = false
 	add_child(pc)
 
@@ -644,8 +1129,8 @@ func _create_base_modal(title_text: String, w: float, h: float) -> PanelContaine
 func _make_menu_button(label_text: String, primary: bool) -> Button:
 	var btn := Button.new()
 	btn.text = label_text
-	btn.custom_minimum_size = Vector2(340, 56)
-	btn.add_theme_font_size_override("font_size", 14)
+	btn.custom_minimum_size = Vector2(360, 52)
+	btn.add_theme_font_size_override("font_size", 13)
 	btn.add_theme_color_override("font_color", Color("#0d121c") if primary else Color("#f1f5f9"))
 	btn.add_theme_stylebox_override("normal", _make_btn_style(primary))
 	btn.add_theme_stylebox_override("hover", _make_btn_style(primary, true))
@@ -676,13 +1161,13 @@ func _make_section_title(text_val: String) -> Label:
 func _make_panel_style(bg: Color, radius: int) -> StyleBoxFlat:
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = bg
-	sb.border_color = Color(0.83, 0.69, 0.22, 0.5)
+	sb.border_color = Color(0.83, 0.69, 0.22, 0.6)
 	sb.set_border_width_all(1)
 	sb.set_corner_radius_all(radius)
-	sb.content_margin_left = 16
-	sb.content_margin_right = 16
-	sb.content_margin_top = 14
-	sb.content_margin_bottom = 14
+	sb.content_margin_left = 18
+	sb.content_margin_right = 18
+	sb.content_margin_top = 16
+	sb.content_margin_bottom = 16
 	return sb
 
 
@@ -692,7 +1177,7 @@ func _make_btn_style(primary: bool, hover: bool = false) -> StyleBoxFlat:
 		sb.bg_color = Color("#e5c158") if hover else Color("#d4af37")
 		sb.border_color = Color("#f6e08b")
 	else:
-		sb.bg_color = Color("#243044") if hover else Color("#161e2e")
+		sb.bg_color = Color("#243044") if hover else Color("#141b29")
 		sb.border_color = Color(0.83, 0.69, 0.22, 0.35)
 	sb.set_border_width_all(1)
 	sb.set_corner_radius_all(8)
