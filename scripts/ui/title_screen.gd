@@ -24,18 +24,35 @@ var _quit_modal: PanelContainer
 # ── Seleções de Skirmish ────────────────────────────────────────────────────
 var _selected_pantheon: String = "greek"
 var _selected_major_god: String = "zeus_major"
+var _selected_rival_pantheon: String = "random"
 var _selected_biome: String = "mediterranean"
 var _selected_difficulty: String = "normal"
 var _selected_victory: String = "conquest"
+var _selected_resources: String = "standard"
+var _selected_starting_age: int = 1
 var _selected_map_size: String = "medium"
 
 var _pantheon_buttons: Dictionary = {}
 var _major_god_buttons: Dictionary = {}
 var _major_gods_container: HBoxContainer
+var _rival_buttons: Dictionary = {}
 var _biome_buttons: Dictionary = {}
 var _diff_buttons: Dictionary = {}
 var _victory_buttons: Dictionary = {}
+var _resource_buttons: Dictionary = {}
+var _starting_age_buttons: Dictionary = {}
 var _skirmish_desc_lbl: Label
+
+# Elementos do Card de Visualização do Deus Maior (Coluna Direita do Skirmish)
+var _preview_pantheon_tag_lbl: Label
+var _preview_god_name_lbl: Label
+var _preview_god_title_lbl: Label
+var _preview_god_lore_lbl: Label
+var _preview_god_bonus_vbox: VBoxContainer
+var _preview_god_power_lbl: Label
+var _preview_biome_desc_lbl: Label
+var _preview_summary_lbl: Label
+
 
 # ── Seleções de Campanha ────────────────────────────────────────────────────
 var _selected_chapter: String = "olympus_dawn"
@@ -225,119 +242,440 @@ func _on_continue_pressed() -> void:
 			_update_continue_button()
 
 
-# ── Submenu 1: Batalha Rápida (Skirmish) ────────────────────────────────────
+# Perfis Detalhados dos Deuses Maiores para o Card de Visualização (Coluna Direita do Skirmish)
+const MAJOR_GOD_PROFILES: Dictionary = {
+	"zeus_major": {
+		"name": "⚡ Zeus (Rei dos Deuses)",
+		"title": "Senhor do Monte Olimpo & Mestre dos Céus",
+		"lore": "Soberano dos deuses olímpicos. Despeja a fúria dos relâmpagos sobre as fileiras inimigas e fortalece a infantaria de hoplitas com poder sagrado.",
+		"bonuses": [
+			"+100 Ouro no início da partida",
+			"Hoplitas causam +25% de dano a criaturas míticas",
+			"Santuários geram favor divino mais rapidamente"
+		],
+		"power": "⚡ Raio Fulminante (Elimina uma unidade-alvo instantaneamente)"
+	},
+	"poseidon_major": {
+		"name": "🔱 Posídon (Deus dos Mares)",
+		"title": "Abalador da Terra & Senhor dos Oceanos",
+		"lore": "Mestre das marés profundas e dos terremotos. Fornece aos generais uma cavalaria veloz e a força dos abalos sísmicos contra fortalezas.",
+		"bonuses": [
+			"Cavalaria Prodromos 15% mais barata e veloz",
+			"Cavalos de guerra geram recursos adicionais",
+			"Portos e pesca produzem 25% a mais"
+		],
+		"power": "🌊 Tremor Oceânico (Abalo sísmico que desmorona muralhas e torres)"
+	},
+	"hades_major": {
+		"name": "💀 Hades (Mestre do Submundo)",
+		"title": "Senhor do Tártaro & Guardião das Almas",
+		"lore": "Guardião das riquezas subterrâneas e do submundo. Concede arqueiros de longo alcance e faz com que guerreiros mortos retornem como sombras vingativas.",
+		"bonuses": [
+			"Arqueiros Toxotes com +2 de alcance de disparo",
+			"Minas de ouro contêm +20% de reserva mineral",
+			"Guerreiros caídos têm chance de virar Sombra Defensora"
+		],
+		"power": "👻 Abóbada das Almas (Invoca guerreiros espectrais das sombras)"
+	},
+	"ra_major": {
+		"name": "☀️ Rá (Deus do Sol)",
+		"title": "Soberano de Heliópolis & Luz da Criação",
+		"lore": "O grande deus sol egípcio. Seus sacerdotes e faraós abençoam a terra fértil do Nilo, gerando colheitas abundantes e crescimento célere.",
+		"bonuses": [
+			"Faraós abençoam monumentos gerando favor duplo",
+			"Fazendas e celeiros produzem 20% mais rápido",
+			"Carros de guerra com velocidade ampliada"
+		],
+		"power": "☀️ Chuva Abençoada (Aumenta a velocidade de coleta em 200% por 30s)"
+	},
+	"isis_major": {
+		"name": "🪽 Ísis (Rainha da Magia)",
+		"title": "Protetora Universal & Senhora dos Feitiços",
+		"lore": "Deusa da maternidade, da cura e da proteção sagrada. Seus monumentos criam auras sagradas que bloqueiam poderes divinos rivais.",
+		"bonuses": [
+			"Monumentos criam aura protetora contra poderes inimigos",
+			"Melhorias econômicas 20% mais baratas",
+			"Sacerdotes curam soldados à distância"
+		],
+		"power": "🛡️ Escudo de Ísis (Protege o assentamento contra dano sagrado)"
+	},
+	"set_major": {
+		"name": "🌪️ Set (Senhor do Caos)",
+		"title": "Deus das Tempestades de Areia & Feras do Deserto",
+		"lore": "O soberano do deserto vermelho e das tempestades causticantes. Seus sacerdotes conseguem converter animais selvagens em ferozes bestas de combate.",
+		"bonuses": [
+			"Sacerdotes podem converter animais do mapa para seu exército",
+			"Arqueiros e infantaria no deserto têm bônus de velocidade",
+			"Unidades míticas custam 15% menos favor"
+		],
+		"power": "🐺 Feras do Deserto (Invoca uma matilha de hienas e serpentes)"
+	},
+	"thor_major": {
+		"name": "⚡ Thor (Campeão do Trovão)",
+		"title": "Portador de Mjolnir & Protetor de Midgard",
+		"lore": "O mais valente dos guerreiros divinos. Seus armeiros anões forjam as armas e proteções mais resistentes de toda a mitologia nórdica.",
+		"bonuses": [
+			"Pode recrutar Anões no Centro da Cidade desde a 1ª Era",
+			"Forja de Thor tem melhorias de ataque e defesa exclusivas",
+			"Armeiros custam metade da madeira"
+		],
+		"power": "🔨 Mina de Ouro Anã (Faz brotar uma rica mina de ouro no local)"
+	},
+	"odin_major": {
+		"name": "👁️ Odin (Pai de Todos)",
+		"title": "Mestre de Asgard & Soberano das Runas",
+		"lore": "O rei de Asgard que tudo enxerga através dos corvos Hugin e Munin. Concede regeneração passiva de vida e fervor marcial a seus exércitos.",
+		"bonuses": [
+			"Todas as unidades nórdicas regeneram vida continuamente",
+			"Hersirs e guerreiros causam +20% de dano quando agrupados",
+			"Cavalaria Jarl com +15% de vida máxima"
+		],
+		"power": "🦅 Corvos Espiões (Revelam partes estratégicas do mapa)"
+	},
+	"loki_major": {
+		"name": "🔥 Loki (O Trapaceiro)",
+		"title": "Mestre das Chamas & Deus da Astúcia",
+		"lore": "O ardiloso metamorfo nórdico. Concede aos guerreiros em fúria a capacidade de invocar monstros míticos diretamente no campo de batalha.",
+		"bonuses": [
+			"Unidades míticas custam 20% menos favor nos templos",
+			"Hersirs em combate invocam criaturas míticas aleatórias",
+			"Carroças de bois movem-se 25% mais rápido"
+		],
+		"power": "👁️ Visão Arcana (Revela a base inimiga e enfraquece sentinelas)"
+	},
+	"freyr_major": {
+		"name": "🌾 Freyr (Senhor da Fartura)",
+		"title": "Deus da Primavera & da Paz Fértil",
+		"lore": "Deus Vanir da fertilidade, da colheita e do sol poente. Garante estruturas vigorosas e estoques abundantes de comida para o exército nórdico.",
+		"bonuses": [
+			"+120 de Alimento inicial",
+			"Todas as edificações têm +15% de pontos de vida",
+			"Colheita e caça com velocidade ampliada"
+		],
+		"power": "🌾 Bênção da Fartura (Multiplica a colheita dos aldeões)"
+	},
+	"kronos_major": {
+		"name": "⏳ Cronos (Senhor do Tempo)",
+		"title": "Rei dos Titãs & Mestre das Eras",
+		"lore": "O líder dos titãs originais. Capaz de desconstruir o tempo para teletransportar edifícios e acelerar a construção de toda a Atlântida.",
+		"bonuses": [
+			"Pode desconstruir edificações inimigas revertendo os custos",
+			"Pode teletransportar seus prédios para novas posições no mapa",
+			"Armas de cerco e autômatos 20% mais rápidos"
+		],
+		"power": "⏳ Desconstrução (Desmonta uma edificação inimiga instantaneamente)"
+	},
+	"oranos_major": {
+		"name": "🌌 Urano (O Firmamento)",
+		"title": "Titã do Céu Primordial & das Alturas",
+		"lore": "A personificação do cosmos. Concede aos atlantes portais celestiais para mover exércitos inteiros através do mapa num piscar de olhos.",
+		"bonuses": [
+			"Pode construir Passagens Celestiais para transporte imediato",
+			"Linha de visão de todas as unidades ampliada em +30%",
+			"Infantaria Murmillo e Arqueiros Contarii mais velozes"
+		],
+		"power": "🌀 Onda de Choque (Arremessa todas as tropas inimigas pelos ares)"
+	},
+	"gaia_major": {
+		"name": "🌿 Gaia (Mãe Terra)",
+		"title": "Criadora Primordial & Protetora da Vida",
+		"lore": "A deusa criadora de toda a terra. Espalha florestas sagradas e uma vegetação vivificante que cura aliados e impede os inimigos de construírem perto.",
+		"bonuses": [
+			"Vegetação Sagrada regenera edifícios e tropas atlantes",
+			"Inimigos não podem construir sobre a vegetação de Gaia",
+			"Melhorias econômicas custam 25% menos recursos"
+		],
+		"power": "🌳 Floresta de Gaia (Faz crescer um denso bosque de madeira e proteção)"
+	},
+	"fuxi_major": {
+		"name": "☯️ Fu Xi (Mestre dos Trigramas)",
+		"title": "Patrono da Filosofia & Primeiro Imperador",
+		"lore": "Criador do I Ching e dos métodos de engenharia chineses. Concede edificações rápidas, baratas e uma infantaria imperial disciplinada.",
+		"bonuses": [
+			"Custo de madeira para todas as edificações reduzido em 20%",
+			"Construção de prédios 25% mais veloz",
+			"Alabardeiros e Chu-Ko-Nu com bônus de formação"
+		],
+		"power": "☯️ Visão dos Trigramas (Prevê os movimentos do exército rival)"
+	},
+	"nuwa_major": {
+		"name": "🏺 Nü Wa (Criadora da Humanidade)",
+		"title": "Senhora da Argila & Restauradora dos Céus",
+		"lore": "A deusa benevolente que moldou os seres humanos a partir da argila amarela. Garante aldeões incansáveis e grande bônus de população.",
+		"bonuses": [
+			"Aldeões movem-se e coletam recursos 15% mais rápido",
+			"Cada Centro da Cidade suporta +5 de população extra",
+			"Gera favor adicional ao construir casas e muralhas"
+		],
+		"power": "🏺 Barro Sagrado (Reconverte solo e acelera a criação de aldeões)"
+	},
+	"shennong_major": {
+		"name": "🌱 Shennong (Imperador dos Grãos)",
+		"title": "Pai da Agricultura & Mestre das Ervas",
+		"lore": "O imperador agricultor que catalogou centenas de plantas medicinais e ensinou o arado à humanidade. Suas fazendas são as mais produtivas do mundo.",
+		"bonuses": [
+			"Fazendas fornecem tanto Alimento quanto Madeira ao serem colhidas",
+			"Melhorias agrícolas disponíveis uma Era mais cedo",
+			"Soldados curam ferimentos leves ao consumir rações"
+		],
+		"power": "🌾 Grande Safra (Preenche instantaneamente os celeiros da cidade)"
+	}
+}
+
+
+# ── Submenu 1: Batalha Rápida (Skirmish) — Layout em 2 Colunas RTS ──────────
 func _build_skirmish_modal() -> void:
-	_skirmish_modal = _create_base_modal("⚔️ CONFIGURAR BATALHA RÁPIDA", 880, 600)
+	_skirmish_modal = _create_base_modal("⚔️ CONFIGURAR BATALHA RÁPIDA (LOBBY RTS)", 1080, 620)
 	var content: VBoxContainer = _skirmish_modal.get_node("VBox/Content") as VBoxContainer
 
-	# Scroll para garantir rolagem suave em celulares de qualquer tamanho
-	var scroll := ScrollContainer.new()
-	scroll.custom_minimum_size = Vector2(850, 470)
-	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	content.add_child(scroll)
+	# Divisão Principal em 2 Colunas: Configurações (Esquerda) + Preview Card (Direita)
+	var split_row := HBoxContainer.new()
+	split_row.custom_minimum_size = Vector2(1040, 480)
+	split_row.add_theme_constant_override("separation", 16)
+	content.add_child(split_row)
+
+	# ── COLUNA ESQUERDA: Seletores de Batalha (Scroll) ──────────────────────
+	var left_scroll := ScrollContainer.new()
+	left_scroll.custom_minimum_size = Vector2(610, 480)
+	left_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	split_row.add_child(left_scroll)
 
 	var s_vbox := VBoxContainer.new()
 	s_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	s_vbox.add_theme_constant_override("separation", 10)
-	scroll.add_child(s_vbox)
+	left_scroll.add_child(s_vbox)
 
-	# 1. Panteão
-	s_vbox.add_child(_make_section_title("1. ESCOLHA SEU PANTEÃO DIVINO:"))
+	# 1. Escolha do Panteão do Jogador
+	s_vbox.add_child(_make_section_title("1. ESCOLHA SEU PANTEÃO (CIVILIZAÇÃO):"))
 	var p_row := HBoxContainer.new()
-	p_row.alignment = BoxContainer.ALIGNMENT_CENTER
-	p_row.add_theme_constant_override("separation", 8)
+	p_row.alignment = BoxContainer.ALIGNMENT_BEGIN
+	p_row.add_theme_constant_override("separation", 6)
 	s_vbox.add_child(p_row)
 
 	for pid in PantheonCatalog.PANTHEON_ORDER:
 		var p_data: Dictionary = PantheonCatalog.get_pantheon(pid)
 		var btn := Button.new()
 		btn.text = "%s" % p_data.get("name", pid)
-		btn.custom_minimum_size = Vector2(150, 44)
-		btn.add_theme_font_size_override("font_size", 13)
+		btn.custom_minimum_size = Vector2(116, 40)
+		btn.add_theme_font_size_override("font_size", 12)
 		btn.pressed.connect(func() -> void: _select_pantheon(pid))
 		p_row.add_child(btn)
 		_pantheon_buttons[pid] = btn
 
-	# 2. Deus Maior do Panteão
-	s_vbox.add_child(_make_section_title("2. DEUS MAIOR PROTETOR:"))
+	# 2. Deus Maior do Panteão (Patrono)
+	s_vbox.add_child(_make_section_title("2. DEUS MAIOR PROTETOR (PATRONO):"))
 	_major_gods_container = HBoxContainer.new()
-	_major_gods_container.alignment = BoxContainer.ALIGNMENT_CENTER
-	_major_gods_container.add_theme_constant_override("separation", 8)
+	_major_gods_container.alignment = BoxContainer.ALIGNMENT_BEGIN
+	_major_gods_container.add_theme_constant_override("separation", 6)
 	s_vbox.add_child(_major_gods_container)
 
-	# Painel de resumo do Panteão e Deus selecionado
-	_skirmish_desc_lbl = Label.new()
-	_skirmish_desc_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_skirmish_desc_lbl.add_theme_font_size_override("font_size", 12)
-	_skirmish_desc_lbl.add_theme_color_override("font_color", Color("#cbd5e1"))
-	s_vbox.add_child(_skirmish_desc_lbl)
+	# 3. Civilização Rival (IA Oponente)
+	s_vbox.add_child(_make_section_title("3. CIVILIZAÇÃO RIVAL (IA OPONENTE):"))
+	var r_row := HBoxContainer.new()
+	r_row.alignment = BoxContainer.ALIGNMENT_BEGIN
+	r_row.add_theme_constant_override("separation", 6)
+	s_vbox.add_child(r_row)
 
-	# 3. Bioma e Tamanho do Mapa
-	s_vbox.add_child(_make_section_title("3. BIOMA DO CAMPO DE BATALHA:"))
-	var b_row := HBoxContainer.new()
-	b_row.alignment = BoxContainer.ALIGNMENT_CENTER
-	b_row.add_theme_constant_override("separation", 8)
-	s_vbox.add_child(b_row)
-
-	for bid in PantheonCatalog.BIOME_ORDER:
-		var b_data: Dictionary = PantheonCatalog.get_biome(bid)
+	var rival_options: Array = [
+		{"id": "random", "label": "🎲 Aleatório"},
+		{"id": "greek", "label": "⚡ Grego"},
+		{"id": "egyptian", "label": "☀️ Egípcio"},
+		{"id": "norse", "label": "❄️ Nórdico"},
+		{"id": "atlantean", "label": "🌊 Atlante"},
+		{"id": "chinese", "label": "☯️ Chinês"}
+	]
+	for r_opt in rival_options:
+		var rid: String = String(r_opt["id"])
 		var btn := Button.new()
-		btn.text = b_data.get("name", bid)
-		btn.custom_minimum_size = Vector2(150, 40)
-		btn.add_theme_font_size_override("font_size", 12)
-		btn.pressed.connect(func() -> void: _select_biome(bid))
-		b_row.add_child(btn)
-		_biome_buttons[bid] = btn
+		btn.text = String(r_opt["label"])
+		btn.custom_minimum_size = Vector2(95, 36)
+		btn.add_theme_font_size_override("font_size", 11)
+		btn.pressed.connect(func() -> void: _select_rival_pantheon(rid))
+		r_row.add_child(btn)
+		_rival_buttons[rid] = btn
 
 	# 4. Dificuldade da IA Inimiga
 	s_vbox.add_child(_make_section_title("4. DIFICULDADE DA IA INIMIGA:"))
 	var d_row := HBoxContainer.new()
-	d_row.alignment = BoxContainer.ALIGNMENT_CENTER
-	d_row.add_theme_constant_override("separation", 10)
+	d_row.alignment = BoxContainer.ALIGNMENT_BEGIN
+	d_row.add_theme_constant_override("separation", 8)
 	s_vbox.add_child(d_row)
 
 	for did in ["easy", "normal", "hard"]:
 		var d_data: Dictionary = PantheonCatalog.get_ai_difficulty(did)
 		var btn := Button.new()
-		btn.text = d_data.get("name", did)
-		btn.custom_minimum_size = Vector2(180, 40)
+		var d_name: String = String(d_data.get("name", did))
+		var d_lbl: String = String(d_data.get("label", ""))
+		btn.text = "%s (%s)" % [d_name, d_lbl]
+		btn.custom_minimum_size = Vector2(195, 38)
 		btn.add_theme_font_size_override("font_size", 12)
 		btn.pressed.connect(func() -> void: _select_difficulty(did))
 		d_row.add_child(btn)
 		_diff_buttons[did] = btn
 
-	# 5. Condição de Vitória
-	s_vbox.add_child(_make_section_title("5. CONDIÇÃO DE VITÓRIA:"))
+	# 5. Bioma e Cenário
+	s_vbox.add_child(_make_section_title("5. BIOMA DO CAMPO DE BATALHA:"))
+	var b_grid := GridContainer.new()
+	b_grid.columns = 2
+	b_grid.add_theme_constant_override("h_separation", 8)
+	b_grid.add_theme_constant_override("v_separation", 6)
+	s_vbox.add_child(b_grid)
+
+	for bid in PantheonCatalog.BIOME_ORDER:
+		var b_data: Dictionary = PantheonCatalog.get_biome(bid)
+		var btn := Button.new()
+		btn.text = "🗺️ %s" % b_data.get("name", bid)
+		btn.custom_minimum_size = Vector2(295, 38)
+		btn.add_theme_font_size_override("font_size", 12)
+		btn.pressed.connect(func() -> void: _select_biome(bid))
+		b_grid.add_child(btn)
+		_biome_buttons[bid] = btn
+
+	# 6. Recursos Iniciais & Era de Partida
+	s_vbox.add_child(_make_section_title("6. RECURSOS INICIAIS & ERA DE PARTIDA:"))
+	var res_row := HBoxContainer.new()
+	res_row.alignment = BoxContainer.ALIGNMENT_BEGIN
+	res_row.add_theme_constant_override("separation", 8)
+	s_vbox.add_child(res_row)
+
+	var res_modes: Dictionary = {
+		"standard": "🌾 Recursos Padrão",
+		"abundant": "💰 Abundante (+800)",
+		"deathmatch": "⚡ Deathmatch (10.000)"
+	}
+	for rmode in res_modes:
+		var btn := Button.new()
+		btn.text = res_modes[rmode]
+		btn.custom_minimum_size = Vector2(195, 36)
+		btn.add_theme_font_size_override("font_size", 11)
+		btn.pressed.connect(func() -> void: _select_resources(rmode))
+		res_row.add_child(btn)
+		_resource_buttons[rmode] = btn
+
+	var age_row := HBoxContainer.new()
+	age_row.alignment = BoxContainer.ALIGNMENT_BEGIN
+	age_row.add_theme_constant_override("separation", 6)
+	s_vbox.add_child(age_row)
+
+	var age_modes: Dictionary = {
+		1: "I • Arcaica (T1)",
+		2: "II • Clássica (T2)",
+		3: "III • Heroica (T3)",
+		5: "V • Divina (T5)"
+	}
+	for age_val in age_modes:
+		var btn := Button.new()
+		btn.text = age_modes[age_val]
+		btn.custom_minimum_size = Vector2(145, 36)
+		btn.add_theme_font_size_override("font_size", 11)
+		btn.pressed.connect(func() -> void: _select_starting_age(age_val))
+		age_row.add_child(btn)
+		_starting_age_buttons[age_val] = btn
+
+	# 7. Condição de Vitória
+	s_vbox.add_child(_make_section_title("7. CONDIÇÃO DE VITÓRIA DA PARTIDA:"))
 	var v_row := HBoxContainer.new()
-	v_row.alignment = BoxContainer.ALIGNMENT_CENTER
-	v_row.add_theme_constant_override("separation", 10)
+	v_row.alignment = BoxContainer.ALIGNMENT_BEGIN
+	v_row.add_theme_constant_override("separation", 8)
 	s_vbox.add_child(v_row)
 
 	var v_modes: Dictionary = {
 		"conquest": "⚔️ Conquista Total",
-		"wonder": "🏛️ Vitória por Maravilha",
+		"wonder": "🏛️ Maravilha Sagrada",
 		"regicide": "👑 Regicídio (Líder)"
 	}
 	for vid in v_modes:
 		var btn := Button.new()
 		btn.text = v_modes[vid]
-		btn.custom_minimum_size = Vector2(190, 40)
+		btn.custom_minimum_size = Vector2(195, 38)
 		btn.add_theme_font_size_override("font_size", 12)
 		btn.pressed.connect(func() -> void: _select_victory(vid))
 		v_row.add_child(btn)
 		_victory_buttons[vid] = btn
 
-	# Ações da Base do Modal
+	# ── COLUNA DIREITA: Card de Visualização do Deus Maior ───────────────────
+	var right_panel := PanelContainer.new()
+	right_panel.custom_minimum_size = Vector2(410, 480)
+	right_panel.add_theme_stylebox_override("panel", _make_panel_style(Color(0.06, 0.09, 0.15, 0.96), 10))
+	split_row.add_child(right_panel)
+
+	var right_vbox := VBoxContainer.new()
+	right_vbox.add_theme_constant_override("separation", 6)
+	right_panel.add_child(right_vbox)
+
+	_preview_pantheon_tag_lbl = Label.new()
+	_preview_pantheon_tag_lbl.text = "[ CIVILIZAÇÃO GREGA ]"
+	_preview_pantheon_tag_lbl.add_theme_font_size_override("font_size", 11)
+	_preview_pantheon_tag_lbl.add_theme_color_override("font_color", Color("#d4af37"))
+	right_vbox.add_child(_preview_pantheon_tag_lbl)
+
+	_preview_god_name_lbl = Label.new()
+	_preview_god_name_lbl.add_theme_font_size_override("font_size", 17)
+	_preview_god_name_lbl.add_theme_color_override("font_color", Color("#f6e08b"))
+	right_vbox.add_child(_preview_god_name_lbl)
+
+	_preview_god_title_lbl = Label.new()
+	_preview_god_title_lbl.add_theme_font_size_override("font_size", 11)
+	_preview_god_title_lbl.add_theme_color_override("font_color", Color("#94a3b8"))
+	right_vbox.add_child(_preview_god_title_lbl)
+
+	_preview_god_lore_lbl = Label.new()
+	_preview_god_lore_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_preview_god_lore_lbl.add_theme_font_size_override("font_size", 11)
+	_preview_god_lore_lbl.add_theme_color_override("font_color", Color("#cbd5e1"))
+	right_vbox.add_child(_preview_god_lore_lbl)
+
+	var bonus_title := Label.new()
+	bonus_title.text = "✦ Bênçãos & Vantagens Divinas:"
+	bonus_title.add_theme_font_size_override("font_size", 11)
+	bonus_title.add_theme_color_override("font_color", Color("#e5c158"))
+	right_vbox.add_child(bonus_title)
+
+	_preview_god_bonus_vbox = VBoxContainer.new()
+	_preview_god_bonus_vbox.add_theme_constant_override("separation", 2)
+	right_vbox.add_child(_preview_god_bonus_vbox)
+
+	var power_title := Label.new()
+	power_title.text = "⚡ Poder Divino Primordial:"
+	power_title.add_theme_font_size_override("font_size", 11)
+	power_title.add_theme_color_override("font_color", Color("#38bdf8"))
+	right_vbox.add_child(power_title)
+
+	_preview_god_power_lbl = Label.new()
+	_preview_god_power_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_preview_god_power_lbl.add_theme_font_size_override("font_size", 11)
+	_preview_god_power_lbl.add_theme_color_override("font_color", Color("#7dd3fc"))
+	right_vbox.add_child(_preview_god_power_lbl)
+
+	var biome_box_title := Label.new()
+	biome_box_title.text = "🗺️ Cenário de Batalha:"
+	biome_box_title.add_theme_font_size_override("font_size", 11)
+	biome_box_title.add_theme_color_override("font_color", Color("#4ade80"))
+	right_vbox.add_child(biome_box_title)
+
+	_preview_biome_desc_lbl = Label.new()
+	_preview_biome_desc_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_preview_biome_desc_lbl.add_theme_font_size_override("font_size", 11)
+	_preview_biome_desc_lbl.add_theme_color_override("font_color", Color("#cbd5e1"))
+	right_vbox.add_child(_preview_biome_desc_lbl)
+
+	_preview_summary_lbl = Label.new()
+	_preview_summary_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_preview_summary_lbl.add_theme_font_size_override("font_size", 10)
+	_preview_summary_lbl.add_theme_color_override("font_color", Color("#38bdf8"))
+	right_vbox.add_child(_preview_summary_lbl)
+
+	# ── AÇÕES DA BASE DO MODAL ──────────────────────────────────────────────
 	var action_row := HBoxContainer.new()
 	action_row.alignment = BoxContainer.ALIGNMENT_CENTER
-	action_row.add_theme_constant_override("separation", 20)
+	action_row.add_theme_constant_override("separation", 24)
 	content.add_child(action_row)
 
-	var start_btn := _make_action_button("⚔️ INICIAR BATALHA", true, 240, 50)
+	var start_btn := _make_action_button("⚔️ INICIAR BATALHA", true, 260, 48)
 	start_btn.pressed.connect(_launch_skirmish)
 	action_row.add_child(start_btn)
 
-	var back_btn := _make_action_button("VOLTAR", false, 150, 50)
+	var back_btn := _make_action_button("VOLTAR AO MENU", false, 160, 48)
 	back_btn.pressed.connect(func() -> void: _skirmish_modal.visible = false; _main_menu_panel.visible = true)
 	action_row.add_child(back_btn)
 
@@ -359,11 +697,14 @@ func _rebuild_major_god_buttons() -> void:
 	if not majors.has(_selected_major_god):
 		_selected_major_god = majors[0]
 
+	var count: int = majors.size()
+	var god_btn_width: float = clampf(floorf((595.0 - float(count - 1) * 6.0) / float(count)), 120.0, 195.0)
+
 	for god_id in majors:
 		var god_name: String = god_id.replace("_major", "").capitalize()
 		var btn := Button.new()
 		btn.text = "⚡ %s" % god_name
-		btn.custom_minimum_size = Vector2(160, 42)
+		btn.custom_minimum_size = Vector2(god_btn_width, 40)
 		btn.add_theme_font_size_override("font_size", 12)
 		btn.pressed.connect(func() -> void:
 			_selected_major_god = god_id
@@ -379,6 +720,11 @@ func _select_pantheon(pid: String) -> void:
 	_refresh_skirmish_highlights()
 
 
+func _select_rival_pantheon(rid: String) -> void:
+	_selected_rival_pantheon = rid
+	_refresh_skirmish_highlights()
+
+
 func _select_biome(bid: String) -> void:
 	_selected_biome = bid
 	_refresh_skirmish_highlights()
@@ -386,6 +732,16 @@ func _select_biome(bid: String) -> void:
 
 func _select_difficulty(did: String) -> void:
 	_selected_difficulty = did
+	_refresh_skirmish_highlights()
+
+
+func _select_resources(res_mode: String) -> void:
+	_selected_resources = res_mode
+	_refresh_skirmish_highlights()
+
+
+func _select_starting_age(age_val: int) -> void:
+	_selected_starting_age = age_val
 	_refresh_skirmish_highlights()
 
 
@@ -403,6 +759,10 @@ func _refresh_skirmish_highlights() -> void:
 		var btn: Button = _major_god_buttons[gid]
 		btn.add_theme_stylebox_override("normal", _make_btn_style(gid == _selected_major_god))
 
+	for rid in _rival_buttons:
+		var btn: Button = _rival_buttons[rid]
+		btn.add_theme_stylebox_override("normal", _make_btn_style(rid == _selected_rival_pantheon))
+
 	for bid in _biome_buttons:
 		var btn: Button = _biome_buttons[bid]
 		btn.add_theme_stylebox_override("normal", _make_btn_style(bid == _selected_biome))
@@ -411,18 +771,75 @@ func _refresh_skirmish_highlights() -> void:
 		var btn: Button = _diff_buttons[did]
 		btn.add_theme_stylebox_override("normal", _make_btn_style(did == _selected_difficulty))
 
+	for rmode in _resource_buttons:
+		var btn: Button = _resource_buttons[rmode]
+		btn.add_theme_stylebox_override("normal", _make_btn_style(rmode == _selected_resources))
+
+	for age_val in _starting_age_buttons:
+		var btn: Button = _starting_age_buttons[age_val]
+		btn.add_theme_stylebox_override("normal", _make_btn_style(age_val == _selected_starting_age))
+
 	for vid in _victory_buttons:
 		var btn: Button = _victory_buttons[vid]
 		btn.add_theme_stylebox_override("normal", _make_btn_style(vid == _selected_victory))
 
+	# Atualiza o Card de Visualização do Deus Maior (Coluna Direita)
 	var p_data: Dictionary = PantheonCatalog.get_pantheon(_selected_pantheon)
-	var god_display: String = _selected_major_god.replace("_major", "").capitalize()
-	_skirmish_desc_lbl.text = "🏛️ %s (Deus Patrono: %s)\nArquitetura: %s\nBônus Cultural: %s" % [
-		p_data.get("name", ""),
-		god_display,
-		p_data.get("architecture_label", ""),
-		p_data.get("bonus_label", "")
+	var p_name_str: String = String(p_data.get("name", _selected_pantheon)).to_upper()
+	_preview_pantheon_tag_lbl.text = "[ CIVILIZAÇÃO %s ]" % p_name_str
+
+	var god_profile: Dictionary = MAJOR_GOD_PROFILES.get(_selected_major_god, {})
+	if god_profile.is_empty():
+		var god_display: String = _selected_major_god.replace("_major", "").capitalize()
+		_preview_god_name_lbl.text = "⚡ %s" % god_display
+		_preview_god_title_lbl.text = "Divindade Patrona"
+		_preview_god_lore_lbl.text = "Deus maior consagrado a guiar sua civilização rumo à glória."
+		_preview_god_power_lbl.text = "Poder Divino Primordial"
+	else:
+		_preview_god_name_lbl.text = god_profile.get("name", "")
+		_preview_god_title_lbl.text = god_profile.get("title", "")
+		_preview_god_lore_lbl.text = god_profile.get("lore", "")
+		_preview_god_power_lbl.text = god_profile.get("power", "")
+
+		for child in _preview_god_bonus_vbox.get_children():
+			child.queue_free()
+
+		for bonus in god_profile.get("bonuses", []):
+			var b_lbl := Label.new()
+			b_lbl.text = "• %s" % bonus
+			b_lbl.add_theme_font_size_override("font_size", 11)
+			b_lbl.add_theme_color_override("font_color", Color("#cbd5e1"))
+			_preview_god_bonus_vbox.add_child(b_lbl)
+
+	# Atualiza o preview do bioma
+	var b_data: Dictionary = PantheonCatalog.get_biome(_selected_biome)
+	_preview_biome_desc_lbl.text = "%s — %s" % [
+		b_data.get("name", _selected_biome),
+		b_data.get("subtitle", "Terreno de combate aberto")
 	]
+
+	# Resumo da configuração selecionada
+	var rival_str: String = "Aleatório"
+	if _selected_rival_pantheon != "random":
+		var rp_data: Dictionary = PantheonCatalog.get_pantheon(_selected_rival_pantheon)
+		rival_str = String(rp_data.get("name", _selected_rival_pantheon))
+
+	var res_str: String = "Padrão"
+	if _selected_resources == "abundant": res_str = "Abundante"
+	elif _selected_resources == "deathmatch": res_str = "Deathmatch"
+
+	var vic_str: String = "Conquista"
+	if _selected_victory == "wonder": vic_str = "Maravilha"
+	elif _selected_victory == "regicide": vic_str = "Regicídio"
+
+	_preview_summary_lbl.text = "🎯 IA: %s | Rival: %s | Recursos: %s | Era: T%d | Vitória: %s" % [
+		_selected_difficulty.capitalize(),
+		rival_str,
+		res_str,
+		_selected_starting_age,
+		vic_str
+	]
+
 
 
 # ── Submenu 2: Campanha Mitológica ──────────────────────────────────────────
@@ -1006,7 +1423,19 @@ func _open_quit_dialog() -> void:
 
 
 func _launch_skirmish() -> void:
-	GameState.start_new_match(_selected_pantheon, _selected_biome, _selected_difficulty)
+	var chosen_rival: String = _selected_rival_pantheon if _selected_rival_pantheon != "random" else ""
+	GameState.start_new_match(
+		_selected_pantheon,
+		_selected_biome,
+		_selected_difficulty,
+		-1,
+		"",
+		chosen_rival,
+		_selected_major_god,
+		_selected_victory,
+		_selected_resources,
+		_selected_starting_age
+	)
 	get_tree().change_scene_to_file(MAIN_SCENE_PATH)
 
 
@@ -1099,6 +1528,8 @@ func _create_base_modal(title_text: String, w: float, h: float) -> PanelContaine
 	var pc := PanelContainer.new()
 	pc.custom_minimum_size = Vector2(w, h)
 	pc.set_anchors_preset(Control.PRESET_CENTER)
+	pc.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	pc.grow_vertical = Control.GROW_DIRECTION_BOTH
 	pc.add_theme_stylebox_override("panel", _make_panel_style(Color(0.04, 0.06, 0.11, 0.98), 12))
 	pc.visible = false
 	add_child(pc)
@@ -1117,6 +1548,15 @@ func _create_base_modal(title_text: String, w: float, h: float) -> PanelContaine
 	title_lbl.add_theme_font_size_override("font_size", 16)
 	title_lbl.add_theme_color_override("font_color", Color("#f6e08b"))
 	top.add_child(title_lbl)
+
+	var close_btn := Button.new()
+	close_btn.text = "✖"
+	close_btn.custom_minimum_size = Vector2(36, 30)
+	close_btn.add_theme_font_size_override("font_size", 12)
+	close_btn.add_theme_color_override("font_color", Color("#ef4444"))
+	close_btn.add_theme_stylebox_override("normal", _make_btn_style(false))
+	close_btn.pressed.connect(func() -> void: pc.visible = false; _main_menu_panel.visible = true)
+	top.add_child(close_btn)
 
 	var content := VBoxContainer.new()
 	content.name = "Content"

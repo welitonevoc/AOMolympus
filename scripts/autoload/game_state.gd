@@ -26,6 +26,9 @@ signal divine_summon_blocked(reason: String)
 
 var active_pantheon: String = "greek"
 var enemy_pantheon: String = "norse"
+var active_major_god: String = "zeus_major"
+var victory_condition: String = "conquest"
+var starting_resources_mode: String = "standard"
 var active_biome: String = "mediterranean"
 var ai_difficulty: String = "normal"
 var active_campaign_id: String = ""
@@ -91,26 +94,56 @@ func start_new_match(
 	biome_id: String = "mediterranean",
 	difficulty_id: String = "normal",
 	p_seed: int = -1,
-	campaign_id: String = ""
+	campaign_id: String = "",
+	chosen_enemy_pantheon: String = "",
+	major_god_id: String = "",
+	victory_mode: String = "conquest",
+	start_res_mode: String = "standard",
+	start_age: int = 1
 ) -> void:
 	active_pantheon = pantheon_id if PantheonCatalog.PANTHEONS.has(pantheon_id) else "greek"
-	enemy_pantheon = _pick_rival_pantheon(active_pantheon)
+	if chosen_enemy_pantheon != "" and PantheonCatalog.PANTHEONS.has(chosen_enemy_pantheon):
+		enemy_pantheon = chosen_enemy_pantheon
+	else:
+		enemy_pantheon = _pick_rival_pantheon(active_pantheon)
+
 	active_biome = biome_id if PantheonCatalog.BIOMES.has(biome_id) else "mediterranean"
 	ai_difficulty = difficulty_id if PantheonCatalog.AI_DIFFICULTIES.has(difficulty_id) else "normal"
 	active_campaign_id = campaign_id
+	active_major_god = major_god_id if major_god_id != "" else "%s_major" % active_pantheon
+	victory_condition = victory_mode
+	starting_resources_mode = start_res_mode
 	map_seed = int(Time.get_ticks_msec() % 999983) + 17 if p_seed < 0 else p_seed
 
 	var p: Dictionary = PantheonCatalog.get_pantheon(active_pantheon)
 	var bonus: Dictionary = p.get("starting_bonus", {})
 
+	var base_food := 350.0
+	var base_wood := 300.0
+	var base_gold := 250.0
+	var base_favor := 20.0
+
+	if start_res_mode == "abundant":
+		base_food = 800.0
+		base_wood = 750.0
+		base_gold = 600.0
+		base_favor = 60.0
+	elif start_res_mode == "deathmatch":
+		base_food = 10000.0
+		base_wood = 10000.0
+		base_gold = 10000.0
+		base_favor = 500.0
+
 	resources = {
-		"food": 350.0 + float(bonus.get("food", 0)),
-		"wood": 300.0 + float(bonus.get("wood", 0)),
-		"gold": 250.0 + float(bonus.get("gold", 0)),
-		"favor": 20.0 + float(bonus.get("favor", 0)),
+		"food": base_food + float(bonus.get("food", 0)),
+		"wood": base_wood + float(bonus.get("wood", 0)),
+		"gold": base_gold + float(bonus.get("gold", 0)),
+		"favor": base_favor + float(bonus.get("favor", 0)),
 	}
-	current_age = 1
-	enemy_age = 1
+	current_age = clampi(start_age, 1, 5)
+	enemy_age = clampi(start_age, 1, 5)
+	if current_age >= 5:
+		era_divine_unlocked = true
 	is_advancing_age = false
 	_age_elapsed = 0.0
 	population_used = 0
