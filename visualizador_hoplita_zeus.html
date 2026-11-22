@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>⚡ Hoplita de Zeus 3D & Armaria Grega — Synty Ancient Empire</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+    body {
+      background: radial-gradient(circle at center, #0a1128 0%, #020617 100%);
+      color: #f1f5f9;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+    }
+    #canvas-container { width: 100%; height: 100%; position: absolute; }
+
+    /* Top Bar */
+    .top-bar {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      padding: 10px 14px;
+      background: linear-gradient(180deg, rgba(15,23,42,0.95) 0%, rgba(15,23,42,0.7) 70%, transparent 100%);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 20;
+    }
+    .title-box { display: flex; flex-direction: column; }
+    .title-box h1 { font-size: 15px; font-weight: 800; color: #38bdf8; display: flex; align-items: center; gap: 6px; }
+    .title-box span { font-size: 11px; color: #94a3b8; }
+    .badge-god {
+      background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+      color: #e0f2fe;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 999px;
+      border: 1px solid #38bdf8;
+      box-shadow: 0 0 10px rgba(56,189,248,0.4);
+    }
+
+    /* Floating Control Panel */
+    .panel {
+      position: absolute;
+      bottom: 12px;
+      left: 12px;
+      right: 12px;
+      max-height: 48vh;
+      background: rgba(15, 23, 42, 0.92);
+      backdrop-filter: blur(14px);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      border-radius: 14px;
+      padding: 12px;
+      z-index: 20;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+      overflow-y: auto;
+      transition: all 0.3s ease;
+    }
+    @media (min-width: 600px) {
+      .panel {
+        left: 12px;
+        right: auto;
+        bottom: 12px;
+        width: 360px;
+        max-height: 82vh;
+      }
+    }
+
+    /* Tabs */
+    .tab-row {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 10px;
+      border-bottom: 1px solid #334155;
+      padding-bottom: 8px;
+    }
+    .tab-btn {
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: #cbd5e1;
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      flex: 1;
+      text-align: center;
+    }
+    .tab-btn.active {
+      background: #0284c7;
+      border-color: #38bdf8;
+      color: #ffffff;
+    }
+
+    .section-title {
+      font-size: 11px;
+      text-transform: uppercase;
+      color: #94a3b8;
+      font-weight: 700;
+      margin: 8px 0 5px 0;
+      display: flex;
+      justify-content: space-between;
+    }
+    .btn-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+      gap: 5px;
+      margin-bottom: 8px;
+    }
+    button.opt-btn {
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: #e2e8f0;
+      padding: 6px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s ease;
+    }
+    button.opt-btn:active, button.opt-btn.active {
+      background: #0284c7;
+      border-color: #38bdf8;
+      color: #ffffff;
+      font-weight: 700;
+    }
+
+    .stats-card {
+      background: rgba(30, 41, 59, 0.6);
+      border: 1px solid #334155;
+      border-radius: 6px;
+      padding: 8px;
+      font-size: 11px;
+      line-height: 1.5;
+      margin-top: 6px;
+    }
+
+    .action-btn {
+      width: 100%;
+      background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+      border: 1px solid #38bdf8;
+      color: white;
+      padding: 9px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      margin-top: 8px;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(2, 132, 199, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    /* Loading Overlay */
+    #loading-overlay {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(2, 6, 23, 0.85);
+      backdrop-filter: blur(8px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 50;
+      transition: opacity 0.3s ease;
+    }
+    .spinner {
+      width: 44px; height: 44px;
+      border: 4px solid #1e293b;
+      border-top-color: #38bdf8;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-bottom: 12px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/fflate@0.7.4/umd/index.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/FBXLoader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/GLTFExporter.js"></script>
+</head>
+<body>
+  <div id="loading-overlay">
+    <div class="spinner"></div>
+    <div style="font-size: 13px; font-weight: 600; color: #38bdf8;" id="loading-text">Carregando Synty Ancient Empire...</div>
+  </div>
+
+  <div class="top-bar">
+    <div class="title-box">
+      <h1>⚡ Hoplita de Zeus 3D</h1>
+      <span>Age of Mythology: Olympus • Synty Low-Poly Studio</span>
+    </div>
+    <div class="badge-god">🏛️ Zeus (Era Clássica)</div>
+  </div>
+
+  <div id="canvas-container"></div>
+
+  <div class="panel">
+    <div class="tab-row">
+      <div class="tab-btn active" onclick="switchTab('warrior')" id="tab-warrior">⚔️ Hoplita</div>
+      <div class="tab-btn" onclick="switchTab('buildings')" id="tab-buildings">🏛️ Construções</div>
+      <div class="tab-btn" onclick="switchTab('stats')" id="tab-stats">📊 Atributos</div>
+    </div>
+
+    <!-- ABA 1: HOPLITA -->
+    <div id="section-warrior">
+      <div class="section-title">Personagem Base</div>
+      <div class="btn-grid">
+        <button class="opt-btn active" onclick="setMesh('SM_Chr_Solider_Male_01')" id="chr-soldier">🛡️ Hoplita (Soldado)</button>
+        <button class="opt-btn" onclick="setMesh('SM_Chr_Captain_Male_01')" id="chr-captain">🗡️ Capitão (Herói)</button>
+        <button class="opt-btn" onclick="setMesh('SM_Chr_Leader_Male_01')" id="chr-leader">👑 Líder (Zeus)</button>
+        <button class="opt-btn" onclick="setMesh('SM_Chr_Worker_Male_01')" id="chr-worker">🌾 Aldeão</button>
+      </div>
+
+      <div class="section-title">Elmo Coríntio (Cabeça)</div>
+      <div class="btn-grid">
+        <button class="opt-btn active" onclick="setHelmet('SM_Chr_Attach_Helmet_01')" id="helm-1">Crista Alta 01</button>
+        <button class="opt-btn" onclick="setHelmet('SM_Chr_Attach_Helmet_02')" id="helm-2">Coríntio 02</button>
+        <button class="opt-btn" onclick="setHelmet('SM_Chr_Attach_Helmet_03')" id="helm-3">Espartano 03</button>
+        <button class="opt-btn" onclick="setHelmet('SM_Chr_Attach_Helmet_06')" id="helm-6">Centurião 06</button>
+        <button class="opt-btn" onclick="setHelmet('none')" id="helm-none">Sem Elmo</button>
+      </div>
+
+      <div class="section-title">Arma (Mão Direita)</div>
+      <div class="btn-grid">
+        <button class="opt-btn active" onclick="setRightWeapon('SM_Wep_Spear_01')" id="wep-spear-1">Lança Dory 01</button>
+        <button class="opt-btn" onclick="setRightWeapon('SM_Wep_Spear_02')" id="wep-spear-2">Sarissa 02</button>
+        <button class="opt-btn" onclick="setRightWeapon('SM_Wep_Sword_01')" id="wep-sword-1">Xiphos 01</button>
+        <button class="opt-btn" onclick="setRightWeapon('SM_Wep_Axe_01')" id="wep-axe-1">Machado 01</button>
+      </div>
+
+      <div class="section-title">Escudo (Mão Esquerda)</div>
+      <div class="btn-grid">
+        <button class="opt-btn active" onclick="setLeftWeapon('SM_Wep_Shield_01')" id="shld-1">Hóplon 01</button>
+        <button class="opt-btn" onclick="setLeftWeapon('SM_Wep_Shield_02')" id="shld-2">Hóplon 02</button>
+        <button class="opt-btn" onclick="setLeftWeapon('SM_Wep_Shield_03')" id="shld-3">Égide 03</button>
+        <button class="opt-btn" onclick="setLeftWeapon('none')" id="shld-none">Sem Escudo</button>
+      </div>
+
+      <div class="section-title">Bênção do Deus Maior (Cores)</div>
+      <div class="btn-grid">
+        <button class="opt-btn active" onclick="setTexture('A_Grey')" id="tex-zeus">⚡ Zeus (Azul/Cinza)</button>
+        <button class="opt-btn" onclick="setTexture('B')" id="tex-ares">🔥 Ares (Bronze/Vermelho)</button>
+        <button class="opt-btn" onclick="setTexture('C')" id="tex-athena">🦉 Atena (Ouro/Verde)</button>
+      </div>
+
+      <button class="action-btn" onclick="exportToGLB()">💾 Exportar Hoplita em .GLB para Godot 4</button>
+    </div>
+
+    <!-- ABA 2: CONSTRUÇÕES -->
+    <div id="section-buildings" style="display: none;">
+      <div class="section-title">Construções da Cidade Grega</div>
+      <div class="btn-grid">
+        <button class="opt-btn" onclick="loadBuilding('temple')">🏛️ Templo Dórico</button>
+        <button class="opt-btn" onclick="loadBuilding('town_center')">🏛️ Centro Urbano</button>
+        <button class="opt-btn" onclick="loadBuilding('barracks')">⚔️ Quartel Militar</button>
+        <button class="opt-btn" onclick="loadBuilding('tower')">🏹 Torre de Vigia</button>
+        <button class="opt-btn" onclick="loadBuilding('house')">🏠 Casa Grega</button>
+        <button class="opt-btn" onclick="loadBuilding('altar')">⚡ Altar dos Deuses</button>
+      </div>
+      <div class="stats-card">
+        Modelos modulares low-poly extraídos do pacote Synty Ancient Empire. Otimizados para rodar a 60 FPS no Godot 4 Android.
+      </div>
+    </div>
+
+    <!-- ABA 3: ATRIBUTOS -->
+    <div id="section-stats" style="display: none;">
+      <div class="stats-card">
+        <strong>⚡ Hoplita de Zeus (Atributos Base):</strong><br>
+        • <strong>Vida (HP):</strong> 115<br>
+        • <strong>Ataque de Corte:</strong> 8 (+10% com Sarissa de Atena)<br>
+        • <strong>Velocidade:</strong> 4.95 m/s (+15% passivo de Zeus!)<br>
+        • <strong>Bônus Predial:</strong> +60% dano vs construções inimigas<br>
+        • <strong>Armaduras:</strong> 40% Corte / 10% Perfuração / 99% Cerco<br>
+        • <strong>Custo:</strong> 50 Alimento, 40 Ouro • <strong>Pop:</strong> 2
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let scene, camera, renderer, controls;
+    let characterGroup, currentCharacterFbx;
+    let currentHelmet = null, currentRightWeapon = null, currentLeftWeapon = null;
+    let headBone = null, handRBone = null, handLBone = null;
+    let activeTextureVariant = 'A_Grey';
+    let textureCache = {};
+    const fbxLoader = new THREE.FBXLoader();
+    const textureLoader = new THREE.TextureLoader();
+
+    // Paths
+    const BASE_PATH = 'models/synty_ancient_empire/';
+
+    init();
+    animate();
+
+    function init() {
+      const container = document.getElementById('canvas-container');
+
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x0a1128);
+      scene.fog = new THREE.FogExp2(0x0a1128, 0.04);
+
+      camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+      camera.position.set(0, 1.8, 4.2);
+
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.shadowMap.enabled = true;
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.25;
+      container.appendChild(renderer.domElement);
+
+      controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.target.set(0, 1.1, 0);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.08;
+      controls.maxPolarAngle = Math.PI / 2 + 0.05;
+      controls.minDistance = 1.0;
+      controls.maxDistance = 15.0;
+
+      // Iluminação Mítica
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.85);
+      scene.add(ambientLight);
+
+      const sunLight = new THREE.DirectionalLight(0xfff7ed, 1.4);
+      sunLight.position.set(5, 10, 6);
+      sunLight.castShadow = true;
+      scene.add(sunLight);
+
+      const blueRimLight = new THREE.DirectionalLight(0x38bdf8, 0.9);
+      blueRimLight.position.set(-5, 4, -4);
+      scene.add(blueRimLight);
+
+      // Chão de mármore grego estilizado
+      const groundGeo = new THREE.CircleGeometry(8, 48);
+      const groundMat = new THREE.MeshStandardMaterial({
+        color: 0x1e293b,
+        roughness: 0.8,
+        metalness: 0.1
+      });
+      const ground = new THREE.Mesh(groundGeo, groundMat);
+      ground.rotation.x = -Math.PI / 2;
+      ground.receiveShadow = true;
+      scene.add(ground);
+
+      // Grid sutil
+      const grid = new THREE.GridHelper(16, 16, 0x38bdf8, 0x1e293b);
+      grid.position.y = 0.005;
+      scene.add(grid);
+
+      characterGroup = new THREE.Group();
+      scene.add(characterGroup);
+
+      loadMainCharacter();
+
+      window.addEventListener('resize', onWindowResize);
+    }
+
+    function getTexture(variant) {
+      if (!textureCache[variant]) {
+        let path = `${BASE_PATH}textures/PolygonAncientWorlds_Texture_01_${variant}.png`;
+        if (variant === 'A_Grey') path = `${BASE_PATH}textures/PolygonAncientWorlds_Texture_01_A_Grey.png`;
+        const tex = textureLoader.load(path);
+        tex.flipY = true;
+        textureCache[variant] = tex;
+      }
+      return textureCache[variant];
+    }
+
+    function setTexture(variant) {
+      activeTextureVariant = variant;
+      document.querySelectorAll('[id^="tex-"]').forEach(b => b.classList.remove('active'));
+      if (document.getElementById(`tex-${variant.toLowerCase()}`)) {
+        document.getElementById(`tex-${variant.toLowerCase()}`).classList.add('active');
+      }
+      const newTex = getTexture(variant);
+      characterGroup.traverse(child => {
+        if (child.isMesh && child.material) {
+          child.material.map = newTex;
+          child.material.needsUpdate = true;
+        }
+      });
+    }
+
+    function loadMainCharacter() {
+      updateLoading(true, 'Carregando esqueleto e malhas Synty...');
+      fbxLoader.load(`${BASE_PATH}characters/characters.fbx`, (fbx) => {
+        currentCharacterFbx = fbx;
+        fbx.scale.set(0.01, 0.01, 0.01); // Synty FBX scale
+        characterGroup.add(fbx);
+
+        const tex = getTexture(activeTextureVariant);
+
+        // Identificar ossos e malhas
+        fbx.traverse(child => {
+          if (child.isBone) {
+            if (child.name.toLowerCase().includes('head')) headBone = child;
+            if (child.name.toLowerCase() === 'hand_r') handRBone = child;
+            if (child.name.toLowerCase() === 'hand_l') handLBone = child;
+          }
+          if (child.isMesh) {
+            child.castShadow = true;
+            child.material = new THREE.MeshStandardMaterial({
+              map: tex,
+              roughness: 0.7,
+              metalness: 0.15
+            });
+          }
+        });
+
+        // Configuração inicial: Soldado (Hoplita)
+        setMesh('SM_Chr_Solider_Male_01');
+
+        // Anexar Elmo Coríntio, Lança e Escudo
+        setHelmet('SM_Chr_Attach_Helmet_01');
+        setRightWeapon('SM_Wep_Spear_01');
+        setLeftWeapon('SM_Wep_Shield_01');
+
+        updateLoading(false);
+      }, undefined, (err) => {
+        console.error(err);
+        updateLoading(true, 'Erro ao carregar characters.fbx: ' + err.message);
+      });
+    }
+
+    function setMesh(meshName) {
+      if (!currentCharacterFbx) return;
+      document.querySelectorAll('[id^="chr-"]').forEach(b => b.classList.remove('active'));
+      const activeBtn = Array.from(document.querySelectorAll('[id^="chr-"]')).find(b => b.getAttribute('onclick')?.includes(meshName));
+      if (activeBtn) activeBtn.classList.add('active');
+
+      currentCharacterFbx.traverse(child => {
+        if (child.isSkinnedMesh) {
+          child.visible = (child.name === meshName);
+        }
+      });
+    }
+
+    function setHelmet(helmetFile) {
+      if (currentHelmet && headBone) headBone.remove(currentHelmet);
+      currentHelmet = null;
+
+      document.querySelectorAll('[id^="helm-"]').forEach(b => b.classList.remove('active'));
+      const btn = Array.from(document.querySelectorAll('[id^="helm-"]')).find(b => b.getAttribute('onclick')?.includes(helmetFile));
+      if (btn) btn.classList.add('active');
+
+      if (helmetFile === 'none' || !headBone) return;
+
+      fbxLoader.load(`${BASE_PATH}characters/${helmetFile}.fbx`, (fbx) => {
+        currentHelmet = fbx;
+        const tex = getTexture(activeTextureVariant);
+        fbx.traverse(c => {
+          if (c.isMesh) {
+            c.castShadow = true;
+            c.material = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.4, metalness: 0.4 });
+          }
+        });
+        // Posicionamento ajustado no topo da cabeça
+        fbx.position.set(0, 0, 0);
+        fbx.rotation.set(0, 0, 0);
+        headBone.add(fbx);
+      });
+    }
+
+    function setRightWeapon(wepFile) {
+      if (currentRightWeapon && handRBone) handRBone.remove(currentRightWeapon);
+      currentRightWeapon = null;
+
+      document.querySelectorAll('[id^="wep-"]').forEach(b => b.classList.remove('active'));
+      const btn = Array.from(document.querySelectorAll('[id^="wep-"]')).find(b => b.getAttribute('onclick')?.includes(wepFile));
+      if (btn) btn.classList.add('active');
+
+      if (wepFile === 'none' || !handRBone) return;
+
+      fbxLoader.load(`${BASE_PATH}weapons/${wepFile}.fbx`, (fbx) => {
+        currentRightWeapon = fbx;
+        const tex = getTexture(activeTextureVariant);
+        fbx.traverse(c => {
+          if (c.isMesh) {
+            c.castShadow = true;
+            c.material = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.5, metalness: 0.3 });
+          }
+        });
+        // Ajuste de empunhadura para lança ou espada
+        if (wepFile.includes('Spear')) {
+          fbx.position.set(0, -20, 0);
+          fbx.rotation.set(-Math.PI / 2, 0, 0);
+        } else {
+          fbx.position.set(0, 0, 0);
+          fbx.rotation.set(-Math.PI / 2, 0, 0);
+        }
+        handRBone.add(fbx);
+      });
+    }
+
+    function setLeftWeapon(shldFile) {
+      if (currentLeftWeapon && handLBone) handLBone.remove(currentLeftWeapon);
+      currentLeftWeapon = null;
+
+      document.querySelectorAll('[id^="shld-"]').forEach(b => b.classList.remove('active'));
+      const btn = Array.from(document.querySelectorAll('[id^="shld-"]')).find(b => b.getAttribute('onclick')?.includes(shldFile));
+      if (btn) btn.classList.add('active');
+
+      if (shldFile === 'none' || !handLBone) return;
+
+      fbxLoader.load(`${BASE_PATH}weapons/${shldFile}.fbx`, (fbx) => {
+        currentLeftWeapon = fbx;
+        const tex = getTexture(activeTextureVariant);
+        fbx.traverse(c => {
+          if (c.isMesh) {
+            c.castShadow = true;
+            c.material = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.4, metalness: 0.4 });
+          }
+        });
+        // Empunhadura de escudo lateral
+        fbx.position.set(10, 0, 0);
+        fbx.rotation.set(0, Math.PI / 2, 0);
+        handLBone.add(fbx);
+      });
+    }
+
+    let buildingObject = null;
+    function loadBuilding(type) {
+      if (characterGroup) characterGroup.visible = false;
+      if (buildingObject) scene.remove(buildingObject);
+
+      updateLoading(true, 'Carregando estrutura modular...');
+
+      const group = new THREE.Group();
+      buildingObject = group;
+      scene.add(group);
+
+      const tex = getTexture(activeTextureVariant);
+
+      // Carregar peças de arquitetura grega
+      let fbxName = 'SM_Bld_Door_Monument_01.fbx';
+      if (type === 'altar') fbxName = 'SM_Bld_Pillar_Monument_01.fbx';
+      if (type === 'temple') fbxName = 'SM_Bld_Pillar_Large_01.fbx';
+      if (type === 'house') fbxName = 'SM_Bld_Amphitheatre_01.fbx';
+
+      fbxLoader.load(`${BASE_PATH}buildings/${fbxName}`, (fbx) => {
+        fbx.scale.set(0.01, 0.01, 0.01);
+        fbx.traverse(c => {
+          if (c.isMesh) {
+            c.castShadow = true;
+            c.material = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.9, metalness: 0.05 });
+          }
+        });
+        group.add(fbx);
+        updateLoading(false);
+      });
+    }
+
+    function switchTab(tab) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById(`tab-${tab}`).classList.add('active');
+
+      document.getElementById('section-warrior').style.display = (tab === 'warrior') ? 'block' : 'none';
+      document.getElementById('section-buildings').style.display = (tab === 'buildings') ? 'block' : 'none';
+      document.getElementById('section-stats').style.display = (tab === 'stats') ? 'block' : 'none';
+
+      if (tab === 'warrior') {
+        if (buildingObject) scene.remove(buildingObject);
+        if (characterGroup) characterGroup.visible = true;
+        controls.target.set(0, 1.1, 0);
+        camera.position.set(0, 1.8, 4.2);
+      }
+    }
+
+    function exportToGLB() {
+      updateLoading(true, 'Exportando Hoplita para GLB...');
+      const exporter = new THREE.GLTFExporter();
+      exporter.parse(characterGroup, (gltf) => {
+        const blob = new Blob([gltf], { type: 'model/gltf-binary' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'hoplita_zeus_synty.glb';
+        link.click();
+        updateLoading(false);
+      }, { binary: true });
+    }
+
+    function updateLoading(show, text) {
+      const overlay = document.getElementById('loading-overlay');
+      if (show) {
+        overlay.style.display = 'flex';
+        overlay.style.opacity = '1';
+        if (text) document.getElementById('loading-text').textContent = text;
+      } else {
+        overlay.style.opacity = '0';
+        setTimeout(() => overlay.style.display = 'none', 300);
+      }
+    }
+
+    function onWindowResize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+      renderer.render(scene, camera);
+    }
+  </script>
+</body>
+</html>
