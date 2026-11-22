@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>🏛️ Catálogo Geral 3D — Age of Mythology: Olympus</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+    body {
+      background: radial-gradient(circle at center, #0f172a 0%, #020617 100%);
+      color: #f8fafc;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+    }
+    #canvas-container { width: 100%; height: 100%; position: absolute; }
+
+    /* Top Bar */
+    .top-bar {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      padding: 10px 14px;
+      background: linear-gradient(180deg, rgba(15,23,42,0.96) 0%, rgba(15,23,42,0.75) 75%, transparent 100%);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 20;
+    }
+    .title-box h1 { font-size: 15px; font-weight: 800; color: #38bdf8; display: flex; align-items: center; gap: 6px; }
+    .title-box span { font-size: 11px; color: #94a3b8; }
+
+    /* Civ Selector Tabs */
+    .civ-tabs {
+      display: flex;
+      gap: 4px;
+      background: rgba(30,41,59,0.8);
+      padding: 3px;
+      border-radius: 8px;
+      border: 1px solid #334155;
+    }
+    .civ-btn {
+      padding: 5px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      color: #94a3b8;
+      transition: all 0.15s ease;
+    }
+    .civ-btn.active {
+      background: #0284c7;
+      color: #ffffff;
+      box-shadow: 0 0 10px rgba(56,189,248,0.4);
+    }
+
+    /* Floating Panel */
+    .panel {
+      position: absolute;
+      bottom: 12px; left: 12px; right: 12px;
+      max-height: 48vh;
+      background: rgba(15, 23, 42, 0.94);
+      backdrop-filter: blur(14px);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      border-radius: 14px;
+      padding: 12px;
+      z-index: 20;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.65);
+      overflow-y: auto;
+    }
+    @media (min-width: 650px) {
+      .panel {
+        left: 14px; right: auto; bottom: 14px;
+        width: 380px; max-height: 82vh;
+      }
+    }
+
+    /* Sub Tabs */
+    .sub-tabs {
+      display: flex;
+      gap: 5px;
+      margin-bottom: 10px;
+      border-bottom: 1px solid #334155;
+      padding-bottom: 8px;
+    }
+    .sub-btn {
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: #cbd5e1;
+      padding: 6px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      flex: 1;
+      text-align: center;
+    }
+    .sub-btn.active {
+      background: #0284c7;
+      border-color: #38bdf8;
+      color: #ffffff;
+      font-weight: 700;
+    }
+
+    .section-title {
+      font-size: 11px;
+      text-transform: uppercase;
+      color: #94a3b8;
+      font-weight: 700;
+      margin: 8px 0 5px 0;
+      display: flex;
+      justify-content: space-between;
+    }
+    .btn-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(105px, 1fr));
+      gap: 5px;
+      margin-bottom: 8px;
+    }
+    button.item-btn {
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: #e2e8f0;
+      padding: 6px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    button.item-btn:active, button.item-btn.active {
+      background: #0284c7;
+      border-color: #38bdf8;
+      color: #ffffff;
+      font-weight: 700;
+    }
+
+    .stats-card {
+      background: rgba(30, 41, 59, 0.65);
+      border: 1px solid #334155;
+      border-radius: 6px;
+      padding: 8px;
+      font-size: 11px;
+      line-height: 1.5;
+      margin-top: 6px;
+    }
+
+    .export-btn {
+      width: 100%;
+      background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+      border: 1px solid #38bdf8;
+      color: white;
+      padding: 9px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      margin-top: 10px;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(2, 132, 199, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    /* Loading Overlay */
+    #loading-overlay {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(2, 6, 23, 0.85);
+      backdrop-filter: blur(8px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 50;
+      transition: opacity 0.3s ease;
+    }
+    .spinner {
+      width: 44px; height: 44px;
+      border: 4px solid #1e293b;
+      border-top-color: #38bdf8;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-bottom: 12px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/fflate@0.7.4/umd/index.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/FBXLoader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/GLTFExporter.js"></script>
+</head>
+<body>
+  <div id="loading-overlay">
+    <div class="spinner"></div>
+    <div style="font-size: 13px; font-weight: 600; color: #38bdf8;" id="loading-text">Carregando Catálogo Mitológico...</div>
+  </div>
+
+  <div class="top-bar">
+    <div class="title-box">
+      <h1>🏛️ Catálogo Mitológico 3D</h1>
+      <span>Age of Mythology: Olympus • Biblioteca Oficial de Modelos</span>
+    </div>
+    <div class="civ-tabs">
+      <button class="civ-btn active" onclick="setCiv('greek')" id="civ-greek">🇬🇷 Grécia</button>
+      <button class="civ-btn" onclick="setCiv('egypt')" id="civ-egypt">🇪🇬 Egito</button>
+      <button class="civ-btn" onclick="setCiv('norse')" id="civ-norse">🇳🇴 Nórdicos</button>
+      <button class="civ-btn" onclick="setCiv('mocap')" id="civ-mocap">🌾 Aldeão Mocap</button>
+    </div>
+  </div>
+
+  <div id="canvas-container"></div>
+
+  <div class="panel">
+    <div class="sub-tabs">
+      <button class="sub-btn active" onclick="setCategory('units')" id="sub-units">🛡️ Unidades</button>
+      <button class="sub-btn" onclick="setCategory('weapons')" id="sub-weapons">⚔️ Armas & Escudos</button>
+      <button class="sub-btn" onclick="setCategory('buildings')" id="sub-buildings">🏛️ Construções</button>
+      <button class="sub-btn" onclick="setCategory('props')" id="sub-props">🏺 Props & Veículos</button>
+    </div>
+
+    <!-- ÁREA DINÂMICA DE ITENS -->
+    <div id="catalog-content"></div>
+
+    <!-- CARD DE INFORMAÇÕES -->
+    <div class="stats-card" id="info-card">
+      Selecione um elemento para inspecionar malha, texturas e atributos.
+    </div>
+
+    <button class="export-btn" onclick="exportCurrentGLB()">💾 Exportar Modelo Atual para Godot 4 (.GLB)</button>
+  </div>
+
+  <script>
+    let scene, camera, renderer, controls;
+    let activeCiv = 'greek';
+    let activeCategory = 'units';
+    let currentMainObject = null;
+    let currentAttachedHelmet = null, currentAttachedWeaponR = null, currentAttachedWeaponL = null;
+    let headBone = null, handRBone = null, handLBone = null;
+    let textureCache = {};
+    let mixer = null, clock = new THREE.Clock();
+
+    const fbxLoader = new THREE.FBXLoader();
+    const gltfLoader = new THREE.GLTFLoader();
+    const textureLoader = new THREE.TextureLoader();
+
+    // Catálogo Estruturado de Dados
+    const CATALOG = {
+      greek: {
+        units: [
+          { id: 'SM_Chr_Solider_Male_01', name: '🛡️ Hoplita (Soldado)', file: 'characters.fbx', bone_helm: 'SM_Chr_Attach_Helmet_01', bone_wep_r: 'SM_Wep_Spear_01', bone_wep_l: 'SM_Wep_Shield_01', desc: 'Infantaria pesada generalista. Bônus de +15% vel e +60% dano vs prédios com Zeus.' },
+          { id: 'SM_Chr_Captain_Male_01', name: '🗡️ Capitão (Herói)', file: 'characters.fbx', bone_helm: 'SM_Chr_Attach_Helmet_02', bone_wep_r: 'SM_Wep_Sword_01', bone_wep_l: 'SM_Wep_Shield_02', desc: 'Comandante heróico grego eficaz contra monstros e unidades míticas.' },
+          { id: 'SM_Chr_Leader_Male_01', name: '👑 Líder (Rei/Zeus)', file: 'characters.fbx', bone_helm: 'SM_Chr_Attach_Crown_Leaf_01', bone_wep_r: 'SM_Wep_Sword_03', bone_wep_l: 'none', desc: 'Líder grego e patrono com toga majestosa e coroa de louros.' },
+          { id: 'SM_Chr_Worker_Male_01', name: '🌾 Aldeão Grego', file: 'characters.fbx', bone_helm: 'none', bone_wep_r: 'SM_Wep_Axe_01', bone_wep_l: 'none', desc: 'Unidade de coleta de recursos e construção da civilização grega.' },
+          { id: 'SM_Chr_Farmer_Male_01', name: '🚜 Fazendeiro', file: 'characters.fbx', bone_helm: 'none', bone_wep_r: 'none', bone_wep_l: 'none', desc: 'Aldeão com trajes de agricultura e cultivo de alimentos.' },
+          { id: 'SM_Chr_Politician_Male_01', name: '📜 Filósofo / Sacerdote', file: 'characters.fbx', bone_helm: 'none', bone_wep_r: 'none', bone_wep_l: 'none', desc: 'Sacerdote que reza nos templos para gerar Favor divino.' }
+        ],
+        weapons: [
+          { id: 'SM_Wep_Spear_01', name: 'Lança Dory 01', folder: 'weapons', desc: 'Lança de infantaria grega pesada para perfuração de cavalaria.' },
+          { id: 'SM_Wep_Spear_02', name: 'Sarissa de Atena 02', folder: 'weapons', desc: 'Lança longa de falange com alcance ampliado e dano bônus.' },
+          { id: 'SM_Wep_Shield_01', name: 'Escudo Hóplon 01', folder: 'weapons', desc: 'Grande escudo circular de madeira e bronze com brasão grego.' },
+          { id: 'SM_Wep_Shield_02', name: 'Escudo Hóplon 02', folder: 'weapons', desc: 'Variante com reforço de rebites metálicos.' },
+          { id: 'SM_Wep_Shield_03', name: 'Escudo Égide 03', folder: 'weapons', desc: 'Escudo mítico com proteção extrema contra projéteis e flechas.' },
+          { id: 'SM_Wep_Sword_01', name: 'Espada Xiphos 01', folder: 'weapons', desc: 'Espada curta de lâmina foliar para combate corpo a corpo.' },
+          { id: 'SM_Wep_Axe_01', name: 'Machado Grego 01', folder: 'weapons', desc: 'Ferramenta e arma versátil para coleta e dano cortante.' },
+          { id: 'SM_Chr_Attach_Helmet_01', name: 'Elmo Crista Alta 01', folder: 'characters', desc: 'Elmo coríntio com crista alta transversal de oficial.' },
+          { id: 'SM_Chr_Attach_Helmet_02', name: 'Elmo Coríntio 02', folder: 'characters', desc: 'Proteção clássica com abertura em T para máxima visibilidade.' },
+          { id: 'SM_Chr_Attach_Helmet_06', name: 'Elmo de Centurião 06', folder: 'characters', desc: 'Armadura pesada de cabeça para combatentes de vanguarda.' }
+        ],
+        buildings: [
+          { id: 'SM_Bld_Door_Monument_01', name: '🏛️ Centro Urbano (TC)', folder: 'buildings', desc: 'Coração da cidade grega onde são treinados aldeões e avançadas as Eras.' },
+          { id: 'SM_Bld_Pillar_Monument_01', name: '⚡ Templo de Zeus', folder: 'buildings', desc: 'Templo imponente dedicado aos deuses olímpicos para obter favores.' },
+          { id: 'SM_Bld_Pillar_Large_01', name: '⚔️ Quartel Militar', folder: 'buildings', desc: 'Centro de treinamento militar para Hoplitas, Hipaspistas e Arqueiros.' },
+          { id: 'SM_Bld_Amphitheatre_01', name: '🎭 Anfiteatro Grego', folder: 'buildings', desc: 'Construção cívica clássica de mármore para celebrações da pólis.' },
+          { id: 'SM_Bld_Wall_Large_01', name: '🏰 Muralha de Pedra', folder: 'buildings', desc: 'Defesa perimetral reforçada contra cercos inimigos.' }
+        ],
+        props: [
+          { id: 'SM_Prop_Statue_01', name: '🗿 Estátua Grega 01', folder: 'props', fallback: 'SM_Bld_Pillar_Trim_01', desc: 'Monumento de mármore aos deuses do Olimpo.' },
+          { id: 'SM_Prop_Banner_01_G', name: '🚩 Estandarte de Zeus', folder: 'props', desc: 'Bandeira cerimonial com insígnia sagrada.' }
+        ]
+      },
+
+      egypt: {
+        units: [
+          { id: 'SM_Chr_Pharaoh_01', name: '👑 Faraó (Herói de Rá)', file: 'Characters.fbx', bone_wep_r: 'SM_Wep_Staff_01', desc: 'Herói exclusivo egípcio. Abençoa edifícios aumentando produção e gera Favor.' },
+          { id: 'SM_Chr_Queen_01', name: '👸 Rainha (Ísis)', file: 'Characters.fbx', desc: 'Figura divina com coroa cerimonial e bênção de proteção.' },
+          { id: 'SM_Chr_Guard_Male_01', name: '🛡️ Soldado Egípcio', file: 'Characters.fbx', bone_wep_r: 'SM_Wep_Spear_01', bone_wep_l: 'SM_Wep_Shield_01', desc: 'Infantaria do Nilo com lança e escudo de madeira com couro.' },
+          { id: 'SM_Chr_Priest_01', name: '✨ Sacerdote do Nilo', file: 'Characters.fbx', bone_wep_r: 'SM_Wep_Staff_01', desc: 'Conjurador que ataca à distância com raios solares e cura aliados.' },
+          { id: 'SM_Chr_Mummy_01', name: '🧟 Múmia (Unidade Mítica)', file: 'Characters.fbx', desc: 'Criatura mítica de Anúbis/Osíris que amaldiçoa inimigos e gera servos.' },
+          { id: 'SM_Chr_Villager_Male_01', name: '🌾 Aldeão do Nilo', file: 'Characters.fbx', desc: 'Trabalhador egípcio que constrói edifícios gratuitamente (sem custo de madeira).' }
+        ],
+        weapons: [
+          { id: 'SM_Wep_Sword_01', name: 'Espada Khopesh 01', folder: 'weapons', desc: 'Espada foice tradicional egípcia curvada para desarmar o oponente.' },
+          { id: 'SM_Wep_Bow_01', name: 'Arco Composto 01', folder: 'weapons', desc: 'Arma de longo alcance para os arqueiros egípcios.' },
+          { id: 'SM_Wep_Spear_01', name: 'Lança do Nilo 01', folder: 'weapons', desc: 'Lança com ponta de bronze afiada.' },
+          { id: 'SM_Wep_Shield_01', name: 'Escudo Egípcio 01', folder: 'weapons', desc: 'Escudo com topo curvo e base reta decorado com hieróglifos.' },
+          { id: 'SM_Wep_Staff_01', name: 'Cajado de Rá 01', folder: 'weapons', desc: 'Bastão cerimonial dourado com o símbolo solar de Rá.' },
+          { id: 'SM_Wep_Axe_01', name: 'Machado de Batalha 01', folder: 'weapons', desc: 'Machado leve com lâmina em meia-lua.' }
+        ],
+        buildings: [
+          { id: 'SM_Bld_Temple_01', name: '☀️ Templo do Sol de Rá', folder: 'buildings', fallback: 'SM_Bld_Base_Wall_01', desc: 'Grande templo com pilonos e colunas com capitel de lótus.' },
+          { id: 'SM_Bld_Pyramid_01', name: '🔺 Pirâmide / Mastaba', folder: 'buildings', fallback: 'SM_Bld_Base_Floor_01', desc: 'Tumba sagrada e monumento eterno aos faraós.' },
+          { id: 'SM_Bld_Obelisk_01', name: '⚡ Obelisco Monumental', folder: 'buildings', fallback: 'SM_Bld_Base_Pillar_01', desc: 'Pilar de granito monolítico erguido em homenagem aos deuses.' }
+        ],
+        props: [
+          { id: 'SM_Veh_Chariot_01', name: '🛷 Carruagem de Guerra', folder: 'buildings', fallback: 'SM_Bld_Base_Door_01', desc: 'Veículo leve de ataque rápido conduzido por arqueiros egípcios.' }
+        ]
+      },
+
+      norse: {
+        units: [
+          { id: 'Character_Viking_Warrior_01', name: '🪓 Guerreiro Nórdico (Ulfsark)', file: 'Characters.fbx', bone_wep_r: 'SM_Wep_Axe_01', bone_wep_l: 'SM_Wep_Shield_01', desc: 'Infantaria que constrói edifícios militares direto no campo de batalha!' },
+          { id: 'Character_Viking_Chief_01', name: '👑 Jarl (Chefe Nórdico)', file: 'Characters.fbx', bone_wep_r: 'SM_Wep_Hammer_02', bone_wep_l: 'SM_Wep_Shield_05', desc: 'Herói a cavalo ou a pé com machado e força dos deuses de Asgard.' },
+          { id: 'Character_Viking_Warrior_02', name: '🛡️ Huskarl Pesado', file: 'Characters.fbx', bone_wep_r: 'SM_Wep_Spear_01', bone_wep_l: 'SM_Wep_Shield_03', desc: 'Guerreiro de armadura com resistência altíssima contra flechas.' },
+          { id: 'Character_Viking_Grunt_01', name: '⛏️ Coletor / Peão Nórdico', file: 'Characters.fbx', bone_wep_r: 'SM_Wep_Pickaxe_01', desc: 'Aldeão com boi de carga para entrega ágil de recursos.' }
+        ],
+        weapons: [
+          { id: 'SM_Wep_Axe_01', name: 'Machado Nórdico 01', folder: 'models', desc: 'Machado de corte afiado consagrado a Thor.' },
+          { id: 'SM_Wep_Hammer_02', name: 'Martelo de Guerra (Mjolnir)', folder: 'models', desc: 'Martelo pesado capaz de esmagar armaduras e fortificações.' },
+          { id: 'SM_Wep_Shield_01', name: 'Escudo Redondo Rúnico 01', folder: 'models', desc: 'Escudo viking de ripas de carvalho com borda reforçada.' },
+          { id: 'SM_Wep_Shield_05', name: 'Escudo com Símbolo de Odin 05', folder: 'models', desc: 'Emblema sagrado dos corvos Hugin e Munin.' },
+          { id: 'SM_Wep_Spear_01', name: 'Lança de Caça 01', folder: 'models', desc: 'Arma pontiaguda de alcance para frear investidas.' }
+        ],
+        buildings: [
+          { id: 'SM_Bld_Guard_Tower_01', name: '🏹 Torre de Vigia Nórdica', folder: 'models', desc: 'Torre fortificada de toras de pinho com arqueiros defensivos.' },
+          { id: 'SM_Bld_BoatHouse_02', name: '⚓ Estaleiro / Casa de Barcos', folder: 'models', desc: 'Oficina náutica às margens da água para construção de Dracares.' },
+          { id: 'SM_Bld_Base_Long_01', name: '🏠 Casa Longa de Valhala', folder: 'models', desc: 'Salão comunal dos guerreiros de clã com telhado de palha nórdica.' }
+        ],
+        props: [
+          { id: 'SM_Veh_Boat_01', name: '⛵ Drakkar Viking', folder: 'models', desc: 'Navio lendário de navegação oceânica e incursões costeiras.' },
+          { id: 'SM_Veh_FishingBoat_01', name: '🛶 Barco de Pesca', folder: 'models', desc: 'Embarcação para coleta rápida de alimento aquático.' }
+        ]
+      },
+
+      mocap: {
+        units: [
+          { id: 'aldeao_mocap', name: '🌾 Aldeão Mocap Mixamo', file: 'models/units/aldeao.glb', isGltf: true, desc: 'Aldeão grego nativo com esqueleto Mixamo calibrado a 1.45x e animações mocap.' }
+        ],
+        weapons: [
+          { id: 'axe_procedural', name: '🪓 Machado Heróico PBR', desc: 'Machado calibrado no socket da mão direita.' }
+        ],
+        buildings: [],
+        props: []
+      }
+    };
+
+    init();
+    animate();
+
+    function init() {
+      const container = document.getElementById('canvas-container');
+
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x0a1128);
+      scene.fog = new THREE.FogExp2(0x0a1128, 0.035);
+
+      camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 150);
+      camera.position.set(0, 1.8, 4.5);
+
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.shadowMap.enabled = true;
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.25;
+      container.appendChild(renderer.domElement);
+
+      controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.target.set(0, 1.1, 0);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.08;
+      controls.maxPolarAngle = Math.PI / 2 + 0.05;
+
+      // Luzes
+      scene.add(new THREE.AmbientLight(0xffffff, 0.9));
+      const sun = new THREE.DirectionalLight(0xfff7ed, 1.35);
+      sun.position.set(6, 12, 7);
+      sun.castShadow = true;
+      scene.add(sun);
+
+      const rim = new THREE.DirectionalLight(0x38bdf8, 0.85);
+      rim.position.set(-6, 5, -5);
+      scene.add(rim);
+
+      // Chão
+      const ground = new THREE.Mesh(
+        new THREE.CircleGeometry(10, 48),
+        new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.85, metalness: 0.1 })
+      );
+      ground.rotation.x = -Math.PI / 2;
+      ground.receiveShadow = true;
+      scene.add(ground);
+
+      const grid = new THREE.GridHelper(20, 20, 0x38bdf8, 0x1e293b);
+      grid.position.y = 0.005;
+      scene.add(grid);
+
+      window.addEventListener('resize', onWindowResize);
+
+      renderCatalogMenu();
+      loadDefaultAsset();
+    }
+
+    function setCiv(civ) {
+      activeCiv = civ;
+      document.querySelectorAll('.civ-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById(`civ-${civ}`).classList.add('active');
+      renderCatalogMenu();
+      loadDefaultAsset();
+    }
+
+    function setCategory(cat) {
+      activeCategory = cat;
+      document.querySelectorAll('.sub-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById(`sub-${cat}`).classList.add('active');
+      renderCatalogMenu();
+    }
+
+    function renderCatalogMenu() {
+      const container = document.getElementById('catalog-content');
+      container.innerHTML = '';
+
+      const items = (CATALOG[activeCiv] && CATALOG[activeCiv][activeCategory]) || [];
+      if (items.length === 0) {
+        container.innerHTML = '<div style="font-size: 11px; color: #94a3b8; padding: 12px 0;">Nenhum item nesta categoria.</div>';
+        return;
+      }
+
+      const grid = document.createElement('div');
+      grid.className = 'btn-grid';
+
+      items.forEach((it, idx) => {
+        const btn = document.createElement('button');
+        btn.className = `item-btn ${idx === 0 ? 'active' : ''}`;
+        btn.textContent = it.name;
+        btn.onclick = () => {
+          document.querySelectorAll('.item-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          loadItem(it);
+        };
+        grid.appendChild(btn);
+      });
+
+      container.appendChild(grid);
+    }
+
+    function loadDefaultAsset() {
+      const items = (CATALOG[activeCiv] && CATALOG[activeCiv][activeCategory]) || [];
+      if (items.length > 0) loadItem(items[0]);
+    }
+
+    function getCivTexture(civ) {
+      if (!textureCache[civ]) {
+        let p = 'models/synty_ancient_empire/textures/PolygonAncientWorlds_Texture_01_A_Grey.png';
+        if (civ === 'egypt') p = 'models/synty_egypt/textures/PolygonAncientEgypt_Texture_01_A.png';
+        if (civ === 'norse') p = 'models/synty_vikings/textures/Texture_01.png';
+        const tex = textureLoader.load(p);
+        tex.flipY = true;
+        textureCache[civ] = tex;
+      }
+      return textureCache[civ];
+    }
+
+    function clearSceneCurrent() {
+      if (currentMainObject) {
+        scene.remove(currentMainObject);
+        currentMainObject = null;
+      }
+      currentAttachedHelmet = null;
+      currentAttachedWeaponR = null;
+      currentAttachedWeaponL = null;
+      headBone = null; handRBone = null; handLBone = null;
+      mixer = null;
+    }
+
+    function loadItem(item) {
+      clearSceneCurrent();
+      updateLoading(true, `Carregando ${item.name}...`);
+
+      document.getElementById('info-card').innerHTML = `
+        <strong>${item.name}</strong><br>
+        • <strong>Civilização:</strong> ${activeCiv.toUpperCase()}<br>
+        • <strong>Descrição:</strong> ${item.desc || 'Modelo modular oficial Synty 3D.'}<br>
+        • <strong>Formato:</strong> ${item.isGltf ? 'GLTF/GLB' : 'FBX 7.x (Low-Poly)'}
+      `;
+
+      // Se for Aldeão Mocap GLTF nativo
+      if (item.isGltf) {
+        gltfLoader.load(item.file, (gltf) => {
+          currentMainObject = gltf.scene;
+          currentMainObject.scale.set(1.45, 1.45, 1.45);
+          scene.add(currentMainObject);
+
+          if (gltf.animations && gltf.animations.length > 0) {
+            mixer = new THREE.AnimationMixer(currentMainObject);
+            const action = mixer.clipAction(gltf.animations[0]);
+            action.play();
+          }
+          controls.target.set(0, 1.2, 0);
+          camera.position.set(0, 1.8, 3.8);
+          updateLoading(false);
+        }, undefined, (err) => {
+          updateLoading(true, 'Erro ao carregar GLB: ' + err.message);
+        });
+        return;
+      }
+
+      // Se for personagem com esqueleto compartilhado
+      if (activeCategory === 'units' && item.file) {
+        let fbxPath = `models/synty_ancient_empire/characters/${item.file}`;
+        if (activeCiv === 'egypt') fbxPath = `models/synty_egypt/characters/${item.file}`;
+        if (activeCiv === 'norse') fbxPath = `models/synty_vikings/models/${item.file}`;
+
+        fbxLoader.load(fbxPath, (fbx) => {
+          currentMainObject = fbx;
+          fbx.scale.set(0.01, 0.01, 0.01);
+          scene.add(fbx);
+
+          const tex = getCivTexture(activeCiv);
+
+          fbx.traverse(c => {
+            if (c.isBone) {
+              const bName = c.name.toLowerCase();
+              if (bName.includes('head')) headBone = c;
+              if (bName === 'hand_r') handRBone = c;
+              if (bName === 'hand_l') handLBone = c;
+            }
+            if (c.isSkinnedMesh) {
+              c.castShadow = true;
+              c.material = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.7, metalness: 0.15 });
+              c.visible = (c.name === item.id);
+            }
+          });
+
+          // Equipamentos automáticos se especificados
+          if (item.bone_helm && headBone) attachAccessory(headBone, item.bone_helm, 'head');
+          if (item.bone_wep_r && handRBone) attachAccessory(handRBone, item.bone_wep_r, 'hand_r');
+          if (item.bone_wep_l && handLBone) attachAccessory(handLBone, item.bone_wep_l, 'hand_l');
+
+          controls.target.set(0, 1.1, 0);
+          camera.position.set(0, 1.8, 4.2);
+          updateLoading(false);
+        }, undefined, (err) => {
+          updateLoading(true, 'Erro no FBX: ' + err.message);
+        });
+        return;
+      }
+
+      // Se for arma, construção ou prop isolado
+      let fbxRelPath = '';
+      if (activeCiv === 'greek') {
+        const fld = item.folder || 'buildings';
+        fbxRelPath = `models/synty_ancient_empire/${fld}/${item.id}.fbx`;
+      } else if (activeCiv === 'egypt') {
+        const fld = item.folder || 'buildings';
+        fbxRelPath = `models/synty_egypt/${fld}/${item.id}.fbx`;
+      } else if (activeCiv === 'norse') {
+        fbxRelPath = `models/synty_vikings/models/${item.id}.fbx`;
+      }
+
+      fbxLoader.load(fbxRelPath, (fbx) => {
+        currentMainObject = fbx;
+        fbx.scale.set(0.01, 0.01, 0.01);
+        scene.add(fbx);
+
+        const tex = getCivTexture(activeCiv);
+        fbx.traverse(c => {
+          if (c.isMesh) {
+            c.castShadow = true;
+            c.material = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.8, metalness: 0.1 });
+          }
+        });
+
+        // Enquadrar câmera no objeto
+        const bbox = new THREE.Box3().setFromObject(fbx);
+        const center = bbox.getCenter(new THREE.Vector3());
+        const size = bbox.getSize(new THREE.Vector3());
+        controls.target.copy(center);
+        const maxDim = Math.max(size.x, size.y, size.z);
+        camera.position.set(center.x, center.y + maxDim * 0.8, center.z + maxDim * 1.8);
+
+        updateLoading(false);
+      }, undefined, (err) => {
+        // Tentar fallback se houver
+        if (item.fallback) {
+          item.id = item.fallback;
+          delete item.fallback;
+          loadItem(item);
+        } else {
+          updateLoading(true, 'Arquivo 3D: ' + item.name);
+          setTimeout(() => updateLoading(false), 1200);
+        }
+      });
+    }
+
+    function attachAccessory(bone, fileId, type) {
+      if (!fileId || fileId === 'none') return;
+      let path = `models/synty_ancient_empire/weapons/${fileId}.fbx`;
+      if (type === 'head') path = `models/synty_ancient_empire/characters/${fileId}.fbx`;
+      if (activeCiv === 'egypt') path = `models/synty_egypt/weapons/${fileId}.fbx`;
+      if (activeCiv === 'norse') path = `models/synty_vikings/models/${fileId}.fbx`;
+
+      fbxLoader.load(path, (fbx) => {
+        const tex = getCivTexture(activeCiv);
+        fbx.traverse(c => {
+          if (c.isMesh) {
+            c.castShadow = true;
+            c.material = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.5, metalness: 0.3 });
+          }
+        });
+        if (type === 'hand_r') {
+          fbx.position.set(0, -20, 0);
+          fbx.rotation.set(-Math.PI / 2, 0, 0);
+        } else if (type === 'hand_l') {
+          fbx.position.set(10, 0, 0);
+          fbx.rotation.set(0, Math.PI / 2, 0);
+        }
+        bone.add(fbx);
+      });
+    }
+
+    function exportCurrentGLB() {
+      if (!currentMainObject) {
+        alert('Nenhum modelo carregado na cena para exportar!');
+        return;
+      }
+      updateLoading(true, 'Exportando para GLB...');
+      const exporter = new THREE.GLTFExporter();
+      exporter.parse(currentMainObject, (gltf) => {
+        const blob = new Blob([gltf], { type: 'model/gltf-binary' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `${activeCiv}_${activeCategory}_export.glb`;
+        link.click();
+        updateLoading(false);
+      }, { binary: true });
+    }
+
+    function updateLoading(show, text) {
+      const overlay = document.getElementById('loading-overlay');
+      if (show) {
+        overlay.style.display = 'flex';
+        overlay.style.opacity = '1';
+        if (text) document.getElementById('loading-text').textContent = text;
+      } else {
+        overlay.style.opacity = '0';
+        setTimeout(() => overlay.style.display = 'none', 300);
+      }
+    }
+
+    function onWindowResize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    function animate() {
+      requestAnimationFrame(animate);
+      const delta = clock.getDelta();
+      if (mixer) mixer.update(delta);
+      controls.update();
+      renderer.render(scene, camera);
+    }
+  </script>
+</body>
+</html>
