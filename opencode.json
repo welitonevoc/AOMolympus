@@ -1,0 +1,177 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "nvidia/deepseek-ai/deepseek-v4.1-flash",
+  "mcp": {
+    "agenfk": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "github:cglab-public/agenfk",
+        "mcp"
+      ]
+    },
+    "n8n-mcp": {
+      "type": "remote",
+      "url": "http://localhost:5678/mcp-server/http",
+      "headers": {
+        "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIzYmIyNmUyOS1iMTI1LTRhN2YtYmZhZS0yYWM3NDJjZTAwZjUiLCJpc3MiOiJuOG4iLCJqdGkiOiI4YTUxMGYzNy02YzgxLTQwMmMtOTE4YS0yMTVlZTkzMGY0NTEiLCJpYXQiOjE3OTUzMjAyOTUsImF1ZCI6Im1jcC1zZXJ2ZXItYXBpIn0.1gXuq_H010lplZNArprFIBDSqKFjEAq_tFDTad6rDAY"
+      }
+    }
+  },
+  "agent": {
+    "gameplay-programmer": {
+      "model": "openrouter/qwen/qwen-2.5-coder-32b-instruct:free"
+    },
+    "ui-programmer": {
+      "model": "kilo/~deepseek/deepseek-v4-flash-latest"
+    },
+    "engine-programmer": {
+      "model": "openrouter/qwen/qwen-2.5-coder-32b-instruct:free"
+    },
+    "godot-specialist": {
+      "model": "kilo/~deepseek/deepseek-v4-flash-latest"
+    },
+    "godot-gdscript-specialist": {
+      "model": "kilo/~deepseek/deepseek-v4-flash-latest"
+    },
+    "godot-csharp-specialist": {
+      "model": "openrouter/qwen/qwen-2.5-coder-32b-instruct:free"
+    },
+    "game-designer": {
+      "model": "openrouter/qwen/qwen-2.5-coder-32b-instruct:free"
+    },
+    "systems-designer": {
+      "model": "kilo/~deepseek/deepseek-v4-flash-latest"
+    },
+    "level-designer": {
+      "model": "kilo/~deepseek/deepseek-v4-flash-latest"
+    },
+    "world-builder": {
+      "model": "openrouter/qwen/qwen-2.5-coder-32b-instruct:free"
+    },
+    "narrative-director": {
+      "model": "kilo/~deepseek/deepseek-v4-flash-latest"
+    },
+    "writer": {
+      "model": "kilo/~deepseek/deepseek-v4-flash-latest"
+    },
+    "ui-designer": {
+      "model": "kilo/~deepseek/deepseek-v4-flash-latest"
+    },
+    "ux-designer": {
+      "model": "kilo/~deepseek/deepseek-v4-flash-latest"
+    },
+    "unity-ui-specialist": {
+      "model": "kilo/~deepseek/deepseek-v4-flash-latest"
+    },
+    "technical-artist": {
+      "model": "openrouter/qwen/qwen-2.5-coder-32b-instruct:free"
+    },
+    "godot-shader-specialist": {
+      "model": "openrouter/qwen/qwen-2.5-coder-32b-instruct:free"
+    },
+    "sound-designer": {
+      "model": "kilo/~deepseek/deepseek-v4-flash-latest"
+    },
+    "audio-director": {
+      "model": "kilo/~deepseek/deepseek-v4-flash-latest"
+    },
+    "qa-lead": {
+      "model": "openrouter/qwen/qwen-2.5-coder-32b-instruct:free"
+    },
+    "qa-tester": {
+      "model": "kilo/~deepseek/deepseek-v4-flash-latest"
+    },
+    "devops-engineer": {
+      "model": "openrouter/qwen/qwen-2.5-coder-32b-instruct:free"
+    },
+    "release-manager": {
+      "model": "openrouter/qwen/qwen-2.5-coder-32b-instruct:free"
+    },
+    "producer": {
+      "model": "nvidia/deepseek-ai/deepseek-v4.1-flash"
+    },
+    "economy-designer": {
+      "model": "kilo/~deepseek/deepseek-v4-flash-latest"
+    },
+    "live-ops-designer": {
+      "model": "kilo/~deepseek/deepseek-v4-flash-latest"
+    },
+    "community-manager": {
+      "model": "kilo/~deepseek/deepseek-v4-flash-latest"
+    },
+    "performance-analyst": {
+      "model": "openrouter/qwen/qwen-2.5-coder-32b-instruct:free"
+    },
+    "security-engineer": {
+      "model": "openrouter/qwen/qwen-2.5-coder-32b-instruct:free"
+    },
+    "localization-lead": {
+      "model": "kilo/~deepseek/deepseek-v4-flash-latest"
+    },
+    "accessibility-specialist": {
+      "model": "kilo/~deepseek/deepseek-v4-flash-latest"
+    },
+    "tools-programmer": {
+      "model": "openrouter/qwen/qwen-2.5-coder-32b-instruct:free"
+    },
+    "ai-programmer": {
+      "model": "openrouter/qwen/qwen-2.5-coder-32b-instruct:free"
+    },
+    "analytics-engineer": {
+      "model": "kilo/~deepseek/deepseek-v4-flash-latest"
+    },
+    "network-programmer": {
+      "model": "openrouter/qwen/qwen-2.5-coder-32b-instruct:free"
+    },
+    "creative-director": {
+      "model": "nvidia/deepseek-ai/deepseek-v4.1-flash"
+    },
+    "art-director": {
+      "model": "openrouter/qwen/qwen-2.5-coder-32b-instruct:free"
+    },
+    "technical-director": {
+      "model": "nvidia/deepseek-ai/deepseek-v4.1-flash"
+    },
+    "unreal-specialist": {
+      "model": "kilo/~deepseek/deepseek-v4-flash-latest"
+    },
+    "ue-blueprint-specialist": {
+      "model": "kilo/~deepseek/deepseek-v4-flash-latest"
+    },
+    "ue-gas-specialist": {
+      "model": "kilo/~deepseek/deepseek-v4-flash-latest"
+    },
+    "ue-replication-specialist": {
+      "model": "kilo/~deepseek/deepseek-v4-flash-latest"
+    },
+    "ue-umg-specialist": {
+      "model": "kilo/~deepseek/deepseek-v4-flash-latest"
+    },
+    "unity-specialist": {
+      "model": "kilo/~deepseek/deepseek-v4-flash-latest"
+    },
+    "unity-addressables-specialist": {
+      "model": "kilo/~deepseek/deepseek-v4-flash-latest"
+    },
+    "unity-dots-specialist": {
+      "model": "kilo/~deepseek/deepseek-v4-flash-latest"
+    },
+    "unity-shader-specialist": {
+      "model": "kilo/~deepseek/deepseek-v4-flash-latest"
+    },
+    "godot-gdextension-specialist": {
+      "model": "openrouter/qwen/qwen-2.5-coder-32b-instruct:free"
+    },
+    "prototyper": {
+      "model": "kilo/~deepseek/deepseek-v4-flash-latest"
+    },
+    "explore": {
+      "model": "kilo/~deepseek/deepseek-v4-flash-latest"
+    },
+    "general": {
+      "model": "openrouter/qwen/qwen-2.5-coder-32b-instruct:free"
+    }
+  }
+}

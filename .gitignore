@@ -17,13 +17,20 @@ coverage/
 .agenfk/backups/
 
 # Godot 4 local import cache & Android build output
+.godot/
 godot4/.godot/
+*.import
+.local/
 dist-android/
 .gamedev_ai/
 godot4/.gamedev_ai/
 godot4/addons/gamedev_ai/openrouter_key.txt
-
-
 godot4/addons/gamedev_ai/kilo_key.txt
 godot4/addons/gamedev_ai/opencode_key.txt
 godot4/addons/gamedev_ai/nvidia_key.txt
+models/civilizations/
+models/referencias_cidade/*.glb
+models/referencias_cidade/*.png
+workflow_triposr.json
+n8n-orquestrador-aom.json
+
