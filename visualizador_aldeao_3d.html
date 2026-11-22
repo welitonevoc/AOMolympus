@@ -278,12 +278,6 @@
         <label>Modelo 3D</label>
         <select id="model-select">
           <option value="aldeao.glb" selected>🌾 Aldeão Grego (Mocap & 8 Funções)</option>
-          <option value="soldier.glb">🪖 Guerreiro Espartano (Mixamo)</option>
-          <option value="hoplita_pro_animado.glb">🏛️ Hoplita Grego HQ</option>
-          <option value="guerreiro_espartano_completo.glb">⚔️ Guerreiro (TripoSR)</option>
-          <option value="talos_clean_hq_animado_completo.glb">🤖 Talos Autômato</option>
-          <option value="centauro_rigged.glb">🐴 Centauro Sagrado</option>
-          <option value="agape_walking.glb">🚶 Ágape em Marcha</option>
         </select>
       </div>
 
@@ -1070,41 +1064,37 @@
             }
           }
 
-          // Se for o Aldeão (ou legado Ágape), inicializar socket e as 8 funções de forma imediata
-          const isAldeao = filename.includes('aldeao') || filename.includes('agape');
-          if (isAldeao) {
-            // Escala ampliada do Aldeão (+45%) para melhor visibilidade e destaque
-            currentModel.scale.set(1.45, 1.45, 1.45);
-            statusText.textContent = 'Aldeão Grego pronto (Tamanho Ampliado: 145%)';
-            
-            let rightHandBone = null;
-            let targetMesh = null;
-            currentModel.traverse((c) => {
-              if (c.isSkinnedMesh && !targetMesh) targetMesh = c;
-              if (c.name && c.name.includes('RightHand') && !c.name.includes('end')) {
-                rightHandBone = c;
-              }
-            });
-
-            // Criar socket da mão e ferramentas 3D com ancoragem anatômica no centro da cavidade da palma
-            if (rightHandBone) {
-              const socket = new THREE.Group();
-              socket.name = 'RightHand_Socket';
-              socket.position.set(1.6, 8.8, 3.5); // Exato centro do punho fechado anatômico do aldeão
-              rightHandBone.add(socket);
-              aldeaoTools = createAldeaoTools();
-              for (const k in aldeaoTools) {
-                socket.add(aldeaoTools[k]);
-                aldeaoTools[k].visible = false;
-              }
+          // Inicializar socket do Aldeão Grego (Mocap & 8 Funções)
+          currentModel.scale.set(1.45, 1.45, 1.45);
+          statusText.textContent = '🌾 Aldeão Grego pronto (Mocap & 8 Funções - Tamanho 145%)';
+          
+          let rightHandBone = null;
+          let targetMesh = null;
+          currentModel.traverse((c) => {
+            if (c.isSkinnedMesh && !targetMesh) targetMesh = c;
+            if (c.name && c.name.includes('RightHand') && !c.name.includes('end')) {
+              rightHandBone = c;
             }
+          });
 
-            // Coletar animações embutidas no aldeao.glb (todas as 7 ações bakeadas com node-index nativo)
-            const embeddedAnims = gltf.animations || [];
-            buildAnimationControls(embeddedAnims);
-          } else {
-            buildAnimationControls(gltf.animations || []);
+          // Criar socket da mão e ferramentas 3D com ancoragem anatômica no centro da cavidade da palma
+          if (rightHandBone) {
+            const socket = new THREE.Group();
+            socket.name = 'RightHand_Socket';
+            socket.position.set(1.6, 8.8, 3.5); // Exato centro do punho fechado anatômico do aldeão
+            rightHandBone.add(socket);
+            aldeaoTools = createAldeaoTools();
+            for (const k in aldeaoTools) {
+              socket.add(aldeaoTools[k]);
+              aldeaoTools[k].visible = false;
+            }
           }
+
+          if (typeof switchEditorTab === 'function') switchEditorTab('aldeao');
+
+          // Coletar animações embutidas no aldeao.glb (todas as 7 ações bakeadas com node-index nativo)
+          const embeddedAnims = gltf.animations || [];
+          buildAnimationControls(embeddedAnims);
         },
         (xhr) => {
           const pct = Math.round((xhr.loaded / (xhr.total || 1)) * 100);
