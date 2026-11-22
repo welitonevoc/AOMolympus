@@ -217,8 +217,8 @@ func _on_divine_altar_finished(building: BuildingActor) -> void:
 		GameState.notify("Altar Divino construido! Invocacoes de deuses disponiveis na Era dos Deuses.", false)
 
 
+## Spawn o deus invocado no mundo do jogador.
 func _on_divine_summoned(god_kind: String, tier: String) -> void:
-	"""Spawn o deus invocado no mundo do jogador."""
 	var spawn_pos: Vector3 = PLAYER_BASE_POS + Vector3(8.0, 0.0, 0.0)
 	var u: UnitActor = spawn_unit(god_kind, spawn_pos, "player", GameState.active_pantheon)
 	GameState.notify("Deus %s invocado no campo de batalha!" % _divine_display_name(god_kind), false)
@@ -226,12 +226,12 @@ func _on_divine_summoned(god_kind: String, tier: String) -> void:
 
 func _divine_display_name(god_kind: String) -> String:
 	var base: String = god_kind.replace("_major", "").replace("_minor", "")
-	var parts: Array[String] = base.split("_")
+	var parts: PackedStringArray = base.split("_")
 	var result: String = ""
 	for p in parts:
 		if p != "":
-			result += p[0].to_upper() + p[1:] + " "
-	return result.strip()
+			result += p.substr(0, 1).to_upper() + p.substr(1) + " "
+	return result.strip_edges()
 
 
 func _on_projectile_requested(

@@ -55,7 +55,7 @@ func _process(delta: float) -> void:
 
 
 func _run_strategic_tick(diff: Dictionary) -> void:
-	var tc: BuildingActor = _get_enemy_town_center()
+	var tc: Node = _get_enemy_town_center()
 	if tc == null:
 		return
 
@@ -77,7 +77,7 @@ func _run_strategic_tick(diff: Dictionary) -> void:
 		return
 
 	# 4. Recrutamento counter-adaptativo ate atingir limite de exercito da dificuldade
-	var enemy_army: Array[UnitActor] = _get_enemy_military()
+	var enemy_army: Array = _get_enemy_military()
 	if enemy_army.size() < int(diff["max_army"]):
 		_recruit_counter_unit(tc.global_position, float(diff["counter_smartness"]))
 
@@ -155,22 +155,22 @@ func _choose_unit_kind(smartness: float) -> String:
 
 
 func _defend_citadel_if_threatened(tc_pos: Vector3) -> bool:
-	var threat: UnitActor = null
+	var threat: Node = null
 	for node in get_tree().get_nodes_in_group("faction_player"):
-		if node is UnitActor and not node.is_dead():
+		if is_instance_valid(node) and not bool(node.call("is_dead") if node.has_method("is_dead") else false):
 			if node.global_position.distance_to(tc_pos) <= 18.0:
 				threat = node
 				break
 	if threat == null:
 		return false
 	for defender in _get_enemy_military():
-		if defender.state != UnitActor.State.ATTACKING:
+		if int(defender.get("state")) != 5: # 5 == ATTACKING
 			defender.command_attack(threat)
 	return true
 
 
 func _launch_attack_wave(diff: Dictionary) -> void:
-	var army: Array[UnitActor] = _get_enemy_military()
+	var army: Array = _get_enemy_military()
 	var needed: int = int(diff["wave_size"])
 	if army.size() < maxi(3, needed - 1):
 		return
@@ -184,8 +184,9 @@ func _launch_attack_wave(diff: Dictionary) -> void:
 	for i in range(army.size()):
 		if i < 2:
 			continue
-		var u: UnitActor = army[i]
-		if u.state == UnitActor.State.IDLE or u.state == UnitActor.State.MOVING:
+		var u: Node = army[i]
+		var st: int = int(u.get("state"))
+		if st == 0 or st == 1: # IDLE or MOVING
 			u.set_stance("aggressive")
 			u.command_attack(target)
 			sent += 1
@@ -196,26 +197,27 @@ func _launch_attack_wave(diff: Dictionary) -> void:
 
 func _pick_player_target() -> Node3D:
 	for tc in get_tree().get_nodes_in_group("player_town_centers"):
-		if tc is BuildingActor and not tc.is_dead():
+		if is_instance_valid(tc) and not bool(tc.call("is_dead") if tc.has_method("is_dead") else false):
 			return tc
 	for b in get_tree().get_nodes_in_group("faction_player"):
-		if b is BuildingActor and not b.is_dead():
+		if is_instance_valid(b) and not bool(b.call("is_dead") if b.has_method("is_dead") else false):
 			return b
 	return null
 
 
-func _get_enemy_town_center() -> BuildingActor:
+func _get_enemy_town_center() -> Node:
 	for tc in get_tree().get_nodes_in_group("enemy_town_centers"):
-		if tc is BuildingActor and not tc.is_dead():
+		if is_instance_valid(tc) and not bool(tc.call("is_dead") if tc.has_method("is_dead") else false):
 			return tc
 	return null
 
 
-func _get_enemy_military() -> Array[UnitActor]:
-	var out: Array[UnitActor] = []
+func _get_enemy_military() -> Array:
+	var out: Array = []
 	for node in get_tree().get_nodes_in_group("faction_enemy"):
-		if node is UnitActor and not node.is_dead() and node.unit_kind != "villager":
-			out.append(node)
+		if is_instance_valid(node) and not bool(node.call("is_dead") if node.has_method("is_dead") else false):
+			if String(node.get("unit_kind")) != "villager":
+				out.append(node)
 	return out
 
 

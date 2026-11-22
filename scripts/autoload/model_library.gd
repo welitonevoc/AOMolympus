@@ -19,7 +19,9 @@ static func create_building_visual(
 	var candidates: Array[String] = [
 		# Camps paths in civilization folders (cidade/*)
 		"res://models/civilizations/%s/%s/cidade/%s/%s.glb" % [pantheon_id, deity_slug, building_kind, building_kind],
+		"res://models/civilizations/%s/%s_major/cidade/%s/%s.glb" % [pantheon_id, deity_slug, building_kind, building_kind],
 		"res://models/civilizations/%s/%s/cidade/%s/divine_altar.glb" % [pantheon_id, deity_slug, building_kind],
+		"res://models/civilizations/%s/%s_major/cidade/%s/divine_altar.glb" % [pantheon_id, deity_slug, building_kind],
 		# Standard models folders
 		"res://models/buildings/%s_%s_%s_t%d.glb" % [pantheon_id, deity_slug, building_kind, tier],
 		"res://models/buildings/%s_%s_t%d.glb" % [pantheon_id, building_kind, tier],
@@ -43,8 +45,11 @@ static func create_unit_visual(
 	var candidates: Array[String] = [
 		# Camps paths in civilization folders
 		"res://models/civilizations/%s/%s/unidade_militar/%s.glb" % [pantheon_id, deity_slug, unit_kind],
+		"res://models/civilizations/%s/%s_major/unidade_militar/%s.glb" % [pantheon_id, deity_slug, unit_kind],
 		"res://models/civilizations/%s/%s/unidade_mitica/%s.glb" % [pantheon_id, deity_slug, unit_kind],
+		"res://models/civilizations/%s/%s_major/unidade_mitica/%s.glb" % [pantheon_id, deity_slug, unit_kind],
 		"res://models/civilizations/%s/%s/aldeao/%s.glb" % [pantheon_id, deity_slug, unit_kind],
+		"res://models/civilizations/%s/%s_major/aldeao/%s.glb" % [pantheon_id, deity_slug, unit_kind],
 		# Standard models folders
 		"res://models/units/%s_%s_%s.glb" % [pantheon_id, deity_slug, unit_kind],
 		"res://models/units/%s_%s.glb" % [pantheon_id, unit_kind],
@@ -59,14 +64,12 @@ static func create_unit_visual(
 	return _build_procedural_unit(p, unit_kind, faction, is_promoted_hero)
 
 
+## Cria visual de um deus da Era T5, buscando GLB na pasta da civilização.
+## god_kind deve ser uma chave de DIVINE_PROFILES (ex: "zeus_major", "athena_minor").
 static func create_divine_unit_visual(
 	god_kind: String,
 	faction: String = "player"
 ) -> Node3D:
-	"""Cria visual de um deus da Era T5, buscando GLB na pasta da civilização.
-
-	god_kind deve ser uma chave de DIVINE_PROFILES (ex: "zeus_major", "athena_minor").
-	"""
 	var profile: Dictionary = get_divine_profile(god_kind)
 	var pantheon_id: String = String(profile.get("pantheon", "greek"))
 	var p: Dictionary = PantheonCatalog.get_pantheon(pantheon_id)
@@ -75,9 +78,9 @@ static func create_divine_unit_visual(
 	# Extrair o nome base do deus sem o sufixo _major / _minor
 	var god_base: String = god_kind
 	if god_base.ends_with("_major"):
-		god_base = god_base[0:-6]
+		god_base = god_base.left(-6)
 	elif god_base.ends_with("_minor"):
-		god_base = god_base[0:-6]
+		god_base = god_base.left(-6)
 
 	var candidates: Array[String] = [
 		# Pasta unidade_mitica (deuses são unidades míticas)
@@ -100,7 +103,7 @@ static func create_divine_unit_visual(
 			loaded.scale = Vector3.ONE * scale
 			# Aura divina
 			var aura_col: Color = profile.get("aura_color", Color("#fbbf24"))
-			_attach_hero_aura(loaded, aura_col.blend(Color.WHITE, 0.5))
+			_attach_hero_aura(loaded, aura_col.lerp(Color.WHITE, 0.5))
 			return loaded
 	return _build_procedural_divine_unit(p, god_kind, faction)
 
@@ -278,7 +281,7 @@ static func _build_procedural_building(p: Dictionary, kind: String, tier: int, f
 	return root
 
 
-static const UNIT_PROFILES: Dictionary = {
+static var UNIT_PROFILES = {
 	"villager": {
 		"scale": 0.95,
 		"skin_color": Color("#e6bc98"),
@@ -340,7 +343,7 @@ static const UNIT_PROFILES: Dictionary = {
 }
 
 static func _unit_profile(p: Dictionary, kind: String) -> Dictionary:
-	var base := UNIT_PROFILES.get(kind, UNIT_PROFILES["villager"])
+	var base: Dictionary = UNIT_PROFILES.get(kind, UNIT_PROFILES["villager"])
 	# Cores do panteão têm prioridade sobre cores padrão
 	var profile: Dictionary = base.duplicate(true)
 	profile["tunic_color"] = p.get("primary_color", Color("#2563eb"))
@@ -352,7 +355,7 @@ static func _unit_profile(p: Dictionary, kind: String) -> Dictionary:
 
 # Perfis de deuses para a Era T5 (Era dos Deuses / Era Divina)
 # Cada deus é uma unidade épica invocável com poder divino ativo e passiva.
-static const DIVINE_PROFILES: Dictionary = {
+static var DIVINE_PROFILES = {
 	# --- Deuses Maiores (Tier major) ---
 	"zeus_major": {
 		"tier": "major",
@@ -1758,7 +1761,7 @@ static const DIVINE_PROFILES: Dictionary = {
 
 
 static func _divine_profile(p: Dictionary, god_kind: String) -> Dictionary:
-	var base := DIVINE_PROFILES.get(god_kind, DIVINE_PROFILES["athena_minor"])
+	var base: Dictionary = DIVINE_PROFILES.get(god_kind, DIVINE_PROFILES["athena_minor"])
 	var profile: Dictionary = base.duplicate(true)
 	# Cores do panteão têm prioridade sobre cores padrão
 	profile["tunic_color"] = p.get("primary_color", Color("#2563eb"))
@@ -1795,7 +1798,7 @@ static func _build_procedural_divine_unit(p: Dictionary, god_kind: String, facti
 
 	# Aura divina grande ao redor do deus (emissivo)
 	var aura_col: Color = profile.get("aura_color", Color("#fbbf24"))
-	_attach_hero_aura(root, aura_col.blend(Color.WHITE, 0.5))
+	_attach_hero_aura(root, aura_col.lerp(Color.WHITE, 0.5))
 
 	# Corpo base do deus (maior que unidade normal)
 	_add_box(root, Vector3(0.7, 1.4, 0.7) * scale, Vector3(0.0, 1.2, 0.0), tunic_mat)
@@ -1809,11 +1812,20 @@ static func _build_procedural_divine_unit(p: Dictionary, god_kind: String, facti
 	return root
 
 
+static func sc(v: Vector3) -> Vector3:
+	return v
+
+
+static func sf(f: float) -> float:
+	return f
+
+
 static func _build_procedural_unit(p: Dictionary, kind: String, faction: String, is_promoted_hero: bool) -> Node3D:
 	var root := Node3D.new()
 	var profile: Dictionary = _unit_profile(p, kind)
 	
-	var scale: float = profile["scale"]
+	var scale: float = float(profile.get("scale", 1.0))
+	root.scale = Vector3(scale, scale, scale)
 	
 	var tunic_col: Color = Color("#b91c1c") if faction == "enemy" else profile["tunic_color"]
 	var accent_col: Color = profile["accent_color"]
@@ -1830,12 +1842,6 @@ static func _build_procedural_unit(p: Dictionary, kind: String, faction: String,
 	
 	var has_weapon: bool = profile["has_weapon"]
 	var weapon_type: String = profile["weapon_type"]
-	
-	# Aplica escala nas dimensões base
-	func sc(v: Vector3) -> Vector3:
-		return v * scale
-	func sf(f: float) -> float:
-		return f * scale
 
 	match kind:
 		"cavalry":

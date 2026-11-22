@@ -23,11 +23,12 @@ config/icon="res://icon.svg"
 [autoload]
 
 PantheonCatalog="*res://scripts/autoload/pantheon_catalog.gd"
+ModelLibrary="*res://scripts/autoload/model_library.gd"
 GameState="*res://scripts/autoload/game_state.gd"
 SaveLoadSystem="*res://scripts/autoload/save_load_system.gd"
-ModelLibrary="*res://scripts/autoload/model_library.gd"
 AudioDirector="*res://scripts/audio/audio_director.gd"
 MultiplayerManager="*res://scripts/network/multiplayer_manager.gd"
+MCPRuntimeServer="*res://addons/godot_mcp_toolkit/runtime/mcp_runtime_server.gd"
 
 [display]
 
@@ -53,6 +54,7 @@ pointing/emulate_touch_from_mouse=true
 
 [rendering]
 
+renderer/rendering_driver="opengl3"
 renderer/rendering_method="mobile"
 textures/vram_compression/import_etc2_astc=true
 anti_aliasing/quality/msaa_3d=1

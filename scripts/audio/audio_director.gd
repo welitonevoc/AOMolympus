@@ -1,7 +1,5 @@
-## AudioDirector (Autoload — instancia única registrada em project.godot)
-## Sem class_name para evitar conflito de resolução com o nome do autoload.
 extends Node
-## Diretor de Audio Adaptativo e Efeitos Espaciais 3D (Autoload AudioDirector — Fase 4).
+## Diretor de Audio Adaptativo e Efeitos Espaciais 3D (Autoload AudioDirector - Fase 4).
 ## - Carrega arquivos externos em res://audio/ quando disponiveis
 ## - Sintetiza musica adaptativa (paz / combate / vitoria) e SFX espaciais 3D nativos via
 ##   AudioStreamGenerator para funcionar 100% no Android mesmo sem arquivos .ogg externos.
@@ -121,7 +119,7 @@ func play_sfx_3d(kind: String, world_pos: Vector3, pantheon_id: String = "greek"
 			dur = 0.11
 
 	_play_synth_tone_3d(player, freq, dur, 0.24)
-	var tw := player.create_tween()
+	var tw: Tween = create_tween()
 	tw.tween_interval(dur + 0.12)
 	tw.tween_callback(func() -> void:
 		_active_3d_voices = maxi(0, _active_3d_voices - 1)
@@ -164,7 +162,10 @@ func _on_muted_changed(muted: bool) -> void:
 func _update_adaptive_music_state() -> void:
 	var in_combat: bool = false
 	for u in get_tree().get_nodes_in_group("units"):
-		if is_instance_valid(u) and u is UnitActor and not u.is_dead() and u.state == UnitActor.State.ATTACKING:
+		if not is_instance_valid(u):
+			continue
+		var dead: bool = bool(u.call("is_dead")) if u.has_method("is_dead") else false
+		if not dead and int(u.get("state")) == 5:
 			in_combat = true
 			break
 	_music_state = "combat" if in_combat else "peace"
@@ -205,7 +206,7 @@ func _play_synth_tone(player: AudioStreamPlayer, freq: float, dur: float, amp: f
 	gen.buffer_length = dur + 0.05
 	player.stream = gen
 	player.play()
-	var pb := player.get_stream_playback() as AudioStreamGeneratorPlayback
+	var pb: AudioStreamGeneratorPlayback = player.get_stream_playback() as AudioStreamGeneratorPlayback
 	if pb == null:
 		return
 	var total: int = mini(pb.get_frames_available(), int(dur * MIX_RATE))
@@ -222,7 +223,7 @@ func _play_synth_tone_3d(player: AudioStreamPlayer3D, freq: float, dur: float, a
 	gen.buffer_length = dur + 0.05
 	player.stream = gen
 	player.play()
-	var pb := player.get_stream_playback() as AudioStreamGeneratorPlayback
+	var pb: AudioStreamGeneratorPlayback = player.get_stream_playback() as AudioStreamGeneratorPlayback
 	if pb == null:
 		return
 	var total: int = mini(pb.get_frames_available(), int(dur * MIX_RATE))

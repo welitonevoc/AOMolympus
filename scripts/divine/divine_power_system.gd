@@ -207,18 +207,18 @@ func _pull_and_damage_enemies(center: Vector3, radius: float, unit_dmg: float, b
 
 
 func _convert_nearest_enemy(center: Vector3, radius: float) -> void:
-	var best: UnitActor = null
+	var best: Node = null
 	var best_d: float = radius
 	for node in get_tree().get_nodes_in_group("faction_enemy"):
-		if is_instance_valid(node) and node is UnitActor and not node.is_dead():
+		if is_instance_valid(node) and not bool(node.call("is_dead") if node.has_method("is_dead") else false):
 			var d: float = node.global_position.distance_to(center)
 			if d < best_d:
 				best_d = d
 				best = node
 	if best != null and world != null and world.has_method("spawn_unit"):
 		var pos: Vector3 = best.global_position
-		var kind: String = best.unit_kind
-		best.take_damage(99999.0, "player", GameState.active_pantheon)
+		var kind: String = String(best.get("unit_kind"))
+		best.call("take_damage", 99999.0, "player", GameState.active_pantheon)
 		world.spawn_unit(kind, pos, "player", GameState.active_pantheon)
 
 

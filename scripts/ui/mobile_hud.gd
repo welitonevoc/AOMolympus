@@ -711,7 +711,7 @@ func _build_divine_invocation_ui() -> void:
 	# Painel modal central (overlay) da Era dos Deuses
 	_divine_panel = PanelContainer.new()
 	_divine_panel.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_divine_panel.color = Color(0.04, 0.06, 0.1, 0.85)
+	_divine_panel.add_theme_stylebox_override("panel", _make_panel_style(Color(0.04, 0.06, 0.1, 0.85), 0))
 	_divine_panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	_divine_panel.visible = false
 	add_child(_divine_panel)
@@ -818,7 +818,7 @@ func _rebuild_divine_panel() -> void:
 
 		var label_txt: String = "%s\n[%s] %s\n%s\nPop %d" % [
 			_divine_god_display_name(god_kind),
-			tier_label.upper(),
+			tier_label.to_upper(),
 			cost_txt,
 			profile.get("power_name", "—"),
 			pop_cost,
@@ -867,12 +867,12 @@ func _on_divine_summon_blocked(reason: String) -> void:
 
 func _divine_god_display_name(god_kind: String) -> String:
 	var base: String = god_kind.replace("_major", "").replace("_minor", "")
-	var parts: Array[String] = base.split("_")
+	var parts: PackedStringArray = base.split("_")
 	var result: String = ""
 	for p in parts:
 		if p != "":
-			result += p[0].to_upper() + p[1:] + " "
-	return result.strip()
+			result += p.substr(0, 1).to_upper() + p.substr(1) + " "
+	return result.strip_edges()
 
 
 func _select_start_pantheon(pid: String) -> void:

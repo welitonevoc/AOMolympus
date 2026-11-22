@@ -2,7 +2,7 @@ class_name ResourceNode
 extends StaticBody3D
 ## Deposito de recurso coletavel no mapa (food, wood ou gold).
 
-signal depleted(node: ResourceNode)
+signal depleted(node: Node)
 
 @export var resource_kind: String = "wood"
 @export var max_amount: float = 450.0

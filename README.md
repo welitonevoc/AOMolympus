@@ -39,4 +39,3 @@ Motor completo do **Age of Mythology: Olympus** para o **Godot 4.3+** com foco e
   - **Sistema de LOD (`LODController`):** Níveis Alto, Médio e Baixo com corte de sombras e culling dinâmico de geometrias distantes.
 - **Pipeline de Exportação Android (APK & AAB):**
   - Presets configurados com permissões de rede (`INTERNET`, `ACCESS_NETWORK_STATE`, `ACCESS_WIFI_STATE`) para multiplayer e arquiteturas ARM64 (`arm64-v8a`) e ARMv7 (`armeabi-v7a`).
-

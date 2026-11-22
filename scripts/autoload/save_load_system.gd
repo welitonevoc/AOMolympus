@@ -2,7 +2,7 @@ extends Node
 ## Autoload SaveLoadSystem para Age of Mythology: Olympus (Godot 4 Android).
 ## Gerencia a persistencia de partidas em andamento em user://savegame.json:
 ## - Serializacao e desserializacao atomica de GameState (recursos, era, panteao, populacao)
-## - Serializacao de entidades em campo (construcoes, unidades, aldeões e recursos remanescentes)
+## - Serializacao de entidades em campo (construcoes, unidades, aldeoes e recursos remanescentes)
 ## - Serializacao da posicao e foco da camera tatil
 ## - Carregamento direto no menu ou em tempo real durante a batalha
 
@@ -29,11 +29,11 @@ func has_save() -> bool:
 func get_save_metadata() -> Dictionary:
 	if not has_save():
 		return {}
-	var file := FileAccess.open(SAVE_PATH, FileAccess.READ)
+	var file = FileAccess.open(SAVE_PATH, FileAccess.READ)
 	if file == null:
 		return {}
 	var content: String = file.get_as_text()
-	var json := JSON.new()
+	var json = JSON.new()
 	if json.parse(content) != OK or not (json.data is Dictionary):
 		return {}
 	var root: Dictionary = json.data
@@ -44,7 +44,8 @@ func get_save_metadata() -> Dictionary:
 func delete_save() -> bool:
 	if not has_save():
 		return true
-	var err: Error = DirAccess.remove_absolute(SAVE_PATH)
+	var da = DirAccess.open("")
+	var err = da.remove(SAVE_PATH)
 	var success: bool = (err == OK)
 	save_state_changed.emit(has_save())
 	return success
@@ -56,7 +57,7 @@ func save_game(world: BattleWorld = null, camera_rig: TouchRTSCamera = null) -> 
 		GameState.notify("Nao e possivel salvar com a partida finalizada ou inativa.", true)
 		return false
 
-	var tree := get_tree()
+	var tree = get_tree()
 	if world == null and tree != null and tree.current_scene != null:
 		world = tree.current_scene.get_node_or_null("BattleWorld") as BattleWorld
 	if camera_rig == null and tree != null and tree.current_scene != null:
@@ -133,9 +134,9 @@ func save_game(world: BattleWorld = null, camera_rig: TouchRTSCamera = null) -> 
 		"entities": entities_data
 	}
 
-	var file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
+	var file = FileAccess.open(SAVE_PATH, FileAccess.WRITE)
 	if file == null:
-		var err := FileAccess.get_open_error()
+		var err = FileAccess.get_open_error()
 		GameState.notify("Erro ao abrir arquivo para salvar: %s" % error_string(err), true)
 		save_completed.emit(false, SAVE_PATH)
 		return false
@@ -146,7 +147,7 @@ func save_game(world: BattleWorld = null, camera_rig: TouchRTSCamera = null) -> 
 
 	save_completed.emit(true, SAVE_PATH)
 	save_state_changed.emit(true)
-	GameState.notify("💾 Partida salva com sucesso em user://savegame.json", false)
+	GameState.notify("Partida salva com sucesso em user://savegame.json", false)
 	return true
 
 
@@ -156,7 +157,7 @@ func load_game() -> bool:
 		GameState.notify("Nenhum arquivo de savegame encontrado.", true)
 		return false
 
-	var file := FileAccess.open(SAVE_PATH, FileAccess.READ)
+	var file = FileAccess.open(SAVE_PATH, FileAccess.READ)
 	if file == null:
 		GameState.notify("Falha ao abrir savegame para leitura.", true)
 		return false
@@ -164,7 +165,7 @@ func load_game() -> bool:
 	var content: String = file.get_as_text()
 	file.close()
 
-	var json := JSON.new()
+	var json = JSON.new()
 	if json.parse(content) != OK or not (json.data is Dictionary):
 		GameState.notify("Arquivo de save corrompido ou invalido.", true)
 		return false
@@ -172,11 +173,11 @@ func load_game() -> bool:
 	pending_load_data = json.data
 	is_loading_from_save = true
 
-	var tree := get_tree()
+	var tree = get_tree()
 	if tree == null:
 		return false
 
-	var cur_scene := tree.current_scene
+	var cur_scene = tree.current_scene
 	if cur_scene != null and cur_scene.name == "Main" and cur_scene.has_node("BattleWorld"):
 		# Ja esta na cena de batalha — aplica diretamente
 		var world: BattleWorld = cur_scene.get_node("BattleWorld") as BattleWorld
@@ -188,7 +189,7 @@ func load_game() -> bool:
 		return success
 	else:
 		# Esta no TitleScreen ou outra cena: transiciona para Main
-		var err: Error = tree.change_scene_to_file("res://scenes/main.tscn")
+		var err = tree.change_scene_to_file("res://scenes/main.tscn")
 		if err != OK:
 			is_loading_from_save = false
 			pending_load_data.clear()
@@ -260,10 +261,10 @@ func apply_save_data(world: BattleWorld, camera_rig: TouchRTSCamera = null) -> b
 		var ent_dict: Dictionary = pending_load_data.get("entities", {})
 		world.restore_entities(ent_dict)
 
-	# 4. Restaura Câmera
+	# 4. Restaura Camera
 	if camera_rig != null and pending_load_data.has("camera"):
 		var c_data: Dictionary = pending_load_data["camera"]
-		var focus := Vector3(
+		var focus = Vector3(
 			float(c_data.get("focus_x", 0.0)),
 			float(c_data.get("focus_y", 0.0)),
 			float(c_data.get("focus_z", 0.0))
@@ -277,5 +278,5 @@ func apply_save_data(world: BattleWorld, camera_rig: TouchRTSCamera = null) -> b
 			camera_rig._target_yaw = float(c_data["yaw"])
 			camera_rig._current_yaw = float(c_data["yaw"])
 
-	GameState.notify("⚔️ Partida carregada com sucesso! Bem-vindo de volta ao campo de batalha.", false)
+	GameState.notify("Partida carregada com sucesso! Bem-vindo de volta ao campo de batalha.", false)
 	return true

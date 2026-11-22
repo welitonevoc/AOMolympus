@@ -41,7 +41,7 @@ var resources: Dictionary = {
 	"food": 350.0,
 	"wood": 300.0,
 	"gold": 250.0,
-	"favor": 20.0,
+	"favor": 20.0
 }
 
 var population_used: int = 0
@@ -67,7 +67,7 @@ var powers_cast_count: int = 0
 
 # --- Era dos Deuses (T5) — Estado de invocacao divina ---
 var era_divine_unlocked: bool = false
-var divine_gods_summoned: Array[String] = []  # IDs de deuses ja invocados (nao podem repetir)
+var divine_gods_summoned: Array = []  # IDs de deuses ja invocados (nao podem repetir)
 var divine_altars_built: int = 0  # Altares Divinos construidos pelo jogador
 
 
@@ -335,8 +335,8 @@ func get_divine_summoned_by_tier(tier: String) -> int:
 	return count
 
 
+## Retorna um dicionario com 'allowed: bool' e 'reason: String' explicando o bloqueio, se houver.
 func can_summon_divine(god_kind: String) -> Dictionary:
-	"""Retorna um dicionario com 'allowed: bool' e 'reason: String' explicando o bloqueio, se houver."""
 	if not era_divine_unlocked:
 		return {"allowed": false, "reason": "Era dos Deuses (T5) nao desbloqueada."}
 
@@ -390,8 +390,8 @@ func _divine_total_cost(god_kind: String) -> Dictionary:
 	return total
 
 
+## Tenta invocar um deus como unidade epica. Retorna true se sucesso.
 func summon_divine_god(god_kind: String) -> bool:
-	"""Tenta invocar um deus como unidade epica. Retorna true se sucesso."""
 	var check: Dictionary = can_summon_divine(god_kind)
 	if not check["allowed"]:
 		divine_summon_blocked.emit(check["reason"])
@@ -417,8 +417,8 @@ func summon_divine_god(god_kind: String) -> bool:
 	return true
 
 
+## Retorna o panteao ao qual o deus pertence, baseado em DIVINE_PROFILES e DIVINE_GODS.
 func get_divine_pantheon_for_god(god_kind: String) -> String:
-	"""Retorna o panteao ao qual o deus pertence, baseado em DIVINE_PROFILES e DIVINE_GODS."""
 	var profile: Dictionary = ModelLibrary.DIVINE_PROFILES.get(god_kind, {})
 	if not profile.is_empty() and profile.has("pantheon"):
 		return profile["pantheon"]

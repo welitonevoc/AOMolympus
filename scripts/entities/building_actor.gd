@@ -4,10 +4,10 @@ extends StaticBody3D
 ## defesa autonoma de flechas (Centro Urbano, Torre e Fortaleza), raio de visao (Fog of War),
 ## dano/vida e tochas noturnas.
 
-signal training_completed(building: BuildingActor, unit_kind: String, spawn_pos: Vector3)
-signal construction_finished(building: BuildingActor)
+signal training_completed(building: Node, unit_kind: String, spawn_pos: Vector3)
+signal construction_finished(building: Node)
 signal projectile_requested(start_pos: Vector3, target: Node3D, damage: float, faction: String, pantheon: String, kind: String)
-signal building_destroyed(building: BuildingActor)
+signal building_destroyed(building: Node)
 
 var faction: String = "player"
 var pantheon_id: String = "greek"
