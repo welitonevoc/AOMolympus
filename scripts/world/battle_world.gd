@@ -36,15 +36,6 @@ func _ready() -> void:
 
 	_setup_lighting_and_sky()
 	_setup_navigation_mesh()
-	# Terreno inicial padrao antes da primeira partida
-	BiomeMapGenerator.build_biome_environment(
-		_terrain_holder,
-		GameState.active_biome,
-		ARENA_SIZE,
-		PLAYER_BASE_POS,
-		ENEMY_BASE_POS,
-		GameState.map_seed
-	)
 
 	_camera_rig = get_node_or_null("../TouchRTSCamera") as Node3D
 	_fog_system = get_node_or_null("../FogOfWarSystem") as Node3D
@@ -64,11 +55,28 @@ func _ready() -> void:
 	GameState.divine_summoned_signal.connect(_on_divine_summoned)
 	_apply_day_night_lighting(GameState.is_night)
 
+	call_deferred("_setup_match_initialization")
+
+
+func _setup_match_initialization() -> void:
 	if SaveLoadSystem != null and SaveLoadSystem.is_loading_from_save:
 		SaveLoadSystem.apply_pending_to_world(self, _camera_rig)
-	elif not GameState.match_started:
-		# Auto-inicia partida padrao de teste com mapa completo
-		GameState.start_new_match(GameState.active_pantheon, GameState.enemy_pantheon, GameState.active_biome)
+	elif GameState.match_started:
+		# Partida ja iniciada (ex: vindo da TitleScreen com start_new_match chamado antes da troca de cena).
+		# Re-emite o sinal para que todos os subsistemas da cena (BattleWorld, EnemyAIController, FogOfWarSystem,
+		# DivinePowerSystem, MobileHUD, AudioDirector, CampaignManager) recebam a notificacao sincronizada
+		# apos todos os nos estarem totalmente prontos na arvore da cena.
+		GameState.match_started_signal.emit(GameState.active_pantheon, GameState.enemy_pantheon)
+	else:
+		# Auto-inicia partida padrao de teste caso a cena seja aberta diretamente com parametros na ordem correta
+		GameState.start_new_match(
+			GameState.active_pantheon,
+			GameState.active_biome,
+			GameState.ai_difficulty,
+			-1,
+			"",
+			GameState.enemy_pantheon
+		)
 
 
 func get_fog_system() -> FogOfWarSystem:
@@ -131,8 +139,8 @@ func _on_match_started(pantheon_id: String, enemy_pantheon_id: String) -> void:
 	if _fog_system != null:
 		_fog_system.reset_fog()
 
-	if _camera_rig != null:
-		_camera_rig.focus_on(tc.global_position)
+	if _camera_rig != null and _camera_rig.has_method("focus_on"):
+		_camera_rig.focus_on(tc.global_position, true)
 	GameState.set_selection([tc])
 
 
@@ -185,6 +193,7 @@ func focus_town_center() -> void:
 			_camera_rig.focus_on(tc.global_position)
 			GameState.set_selection([tc])
 			return
+	_camera_rig.focus_on(PLAYER_BASE_POS)
 
 
 func focus_idle_villager() -> void:

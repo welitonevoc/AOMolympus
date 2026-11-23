@@ -11,7 +11,7 @@ extends Node3D
 
 var camera: Camera3D
 
-var _target_focus: Vector3 = Vector3.ZERO
+var _target_focus: Vector3 = Vector3(-18.0, 0.0, 16.0)
 var _target_distance: float = 24.0
 var _target_yaw: float = 0.0
 
@@ -25,6 +25,7 @@ var _mouse_dragging: bool = false
 
 
 func _ready() -> void:
+	global_position = _target_focus
 	camera = Camera3D.new()
 	camera.name = "Camera3D"
 	camera.fov = 46.0
@@ -97,12 +98,15 @@ func _unhandled_input(event: InputEvent) -> void:
 		_pan_by_local(Vector2(-event.relative.x * pan_scale, -event.relative.y * pan_scale))
 
 
-func focus_on(world_pos: Vector3) -> void:
+func focus_on(world_pos: Vector3, snap_immediate: bool = false) -> void:
 	_target_focus = Vector3(
 		clampf(world_pos.x, -map_limit, map_limit),
 		0.0,
 		clampf(world_pos.z, -map_limit, map_limit)
 	)
+	if snap_immediate:
+		global_position = _target_focus
+		_apply_camera_transform()
 
 
 func get_active_touch_count() -> int:
