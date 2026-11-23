@@ -98,13 +98,16 @@ func _draw() -> void:
 				elif st == 1:
 					draw_rect(Rect2(map_rect.position + Vector2(gx * cw, gz * ch), Vector2(cw + 0.5, ch + 0.5)), dark_explored, true)
 
+	var p := Vector2.ZERO
+	var col := Color.WHITE
+
 	# Recursos explorados
 	for r in get_tree().get_nodes_in_group("resources"):
 		if r is ResourceNode and is_instance_valid(r):
 			if _fog != null and not _fog.is_world_pos_explored(r.global_position):
 				continue
-			var p: Vector2 = _world_to_minimap(r.global_position, map_rect)
-			var col := Color("#fde047") if r.resource_kind == "gold" else (Color("#4ade80") if r.resource_kind == "wood" else Color("#fb7185"))
+			p = _world_to_minimap(r.global_position, map_rect)
+			col = Color("#fde047") if r.resource_kind == "gold" else (Color("#4ade80") if r.resource_kind == "wood" else Color("#fb7185"))
 			draw_circle(p, 2.0, col)
 
 	# Construcoes (aliadas sempre; inimigas se exploradas)
@@ -112,8 +115,8 @@ func _draw() -> void:
 		if b is BuildingActor and is_instance_valid(b) and not b.is_dead():
 			if b.faction == "enemy" and _fog != null and not _fog.is_world_pos_explored(b.global_position):
 				continue
-			var p: Vector2 = _world_to_minimap(b.global_position, map_rect)
-			var col := Color("#38bdf8") if b.faction == "player" else Color("#ef4444")
+			p = _world_to_minimap(b.global_position, map_rect)
+			col = Color("#38bdf8") if b.faction == "player" else Color("#ef4444")
 			var sz: float = 5.5 if b.building_kind == "town_center" else 3.8
 			draw_rect(Rect2(p - Vector2(sz * 0.5, sz * 0.5), Vector2(sz, sz)), col, true)
 
@@ -122,8 +125,8 @@ func _draw() -> void:
 		if u is UnitActor and is_instance_valid(u) and not u.is_dead():
 			if u.faction == "enemy" and _fog != null and not _fog.is_world_pos_visible(u.global_position):
 				continue
-			var p: Vector2 = _world_to_minimap(u.global_position, map_rect)
-			var col := Color("#7dd3fc") if u.faction == "player" else Color("#fca5a5")
+			p = _world_to_minimap(u.global_position, map_rect)
+			col = Color("#7dd3fc") if u.faction == "player" else Color("#fca5a5")
 			draw_circle(p, 2.2, col)
 
 	# Indicador da camera atual

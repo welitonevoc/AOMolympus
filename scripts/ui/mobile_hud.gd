@@ -542,10 +542,10 @@ func _build_pantheon_start_overlay() -> void:
 	_skirmish_box.add_child(p_row)
 	for pid in PantheonCatalog.PANTHEON_ORDER:
 		var p: Dictionary = PantheonCatalog.get_pantheon(pid)
-		var btn := _make_action_button("%s\n(%s)" % [p["name"], p["deity"]], pid == _chosen_pantheon, 128.0, 52.0)
-		btn.pressed.connect(func() -> void: _select_start_pantheon(pid))
-		p_row.add_child(btn)
-		_pantheon_buttons[pid] = btn
+		var p_btn := _make_action_button("%s\n(%s)" % [p["name"], p["deity"]], pid == _chosen_pantheon, 128.0, 52.0)
+		p_btn.pressed.connect(func() -> void: _select_start_pantheon(pid))
+		p_row.add_child(p_btn)
+		_pantheon_buttons[pid] = p_btn
 
 	_pantheon_desc_label = Label.new()
 	_pantheon_desc_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -564,10 +564,10 @@ func _build_pantheon_start_overlay() -> void:
 	_skirmish_box.add_child(b_row)
 	for bid in PantheonCatalog.BIOME_ORDER:
 		var bm: Dictionary = PantheonCatalog.get_biome(bid)
-		var btn := _make_action_button(String(bm["name"]), bid == _chosen_biome, 160.0, 42.0)
-		btn.pressed.connect(func() -> void: _select_start_biome(bid))
-		b_row.add_child(btn)
-		_biome_buttons[bid] = btn
+		var b_btn := _make_action_button(String(bm["name"]), bid == _chosen_biome, 160.0, 42.0)
+		b_btn.pressed.connect(func() -> void: _select_start_biome(bid))
+		b_row.add_child(b_btn)
+		_biome_buttons[bid] = b_btn
 
 	var d_lbl := _make_metric_label("Dificuldade da IA Oponente:", Color("#f6e08b"))
 	d_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -579,10 +579,10 @@ func _build_pantheon_start_overlay() -> void:
 	_skirmish_box.add_child(d_row)
 	for did in PantheonCatalog.DIFFICULTY_ORDER:
 		var d_spec: Dictionary = PantheonCatalog.get_ai_difficulty(did)
-		var btn := _make_action_button("%s (%s)" % [d_spec["name"], d_spec["label"]], did == _chosen_difficulty, 188.0, 42.0)
-		btn.pressed.connect(func() -> void: _select_start_difficulty(did))
-		d_row.add_child(btn)
-		_diff_buttons[did] = btn
+		var d_btn := _make_action_button("%s (%s)" % [d_spec["name"], d_spec["label"]], did == _chosen_difficulty, 188.0, 42.0)
+		d_btn.pressed.connect(func() -> void: _select_start_difficulty(did))
+		d_row.add_child(d_btn)
+		_diff_buttons[did] = d_btn
 
 	# === PAINEL CAMPANHA ===
 	_campaign_box = VBoxContainer.new()
@@ -599,10 +599,10 @@ func _build_pantheon_start_overlay() -> void:
 
 	for cid in CampaignManager.CHAPTER_ORDER:
 		var ch: Dictionary = CampaignManager.get_chapter(cid)
-		var btn := _make_action_button(String(ch["title"]), cid == _chosen_chapter, 330.0, 48.0)
-		btn.pressed.connect(func() -> void: _select_start_chapter(cid))
-		c_grid.add_child(btn)
-		_chapter_buttons[cid] = btn
+		var c_btn := _make_action_button(String(ch["title"]), cid == _chosen_chapter, 330.0, 48.0)
+		c_btn.pressed.connect(func() -> void: _select_start_chapter(cid))
+		c_grid.add_child(c_btn)
+		_chapter_buttons[cid] = c_btn
 
 	_chapter_desc_label = Label.new()
 	_chapter_desc_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -1038,14 +1038,14 @@ func _rebuild_command_grid() -> void:
 
 			for b_kind in PantheonCatalog.VILLAGER_BUILD_ORDER:
 				var spec: Dictionary = PantheonCatalog.get_building_spec(b_kind)
-				var req_age: int = int(spec.get("min_age", 1))
-				var locked: bool = GameState.current_age < req_age
-				var btn_txt: String = "%s\n[Era %d]" % [spec["name"], req_age] if locked else "%s\n(%s)" % [
+				var b_req_age: int = int(spec.get("min_age", 1))
+				var b_locked: bool = GameState.current_age < b_req_age
+				var btn_txt: String = "%s\n[Era %d]" % [spec["name"], b_req_age] if b_locked else "%s\n(%s)" % [
 					spec["name"],
 					PantheonCatalog.format_cost(spec["cost"]),
 				]
 				var btn := _make_action_button(btn_txt, false, 174.0, 48.0)
-				btn.disabled = locked
+				btn.disabled = b_locked
 				btn.pressed.connect(func() -> void: GameState.enter_build_mode(b_kind))
 				_command_grid.add_child(btn)
 		else:

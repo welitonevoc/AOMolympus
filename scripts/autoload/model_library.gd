@@ -384,8 +384,8 @@ static func _build_procedural_building(p: Dictionary, kind: String, tier: int, f
 			# Pedestal central onde o deus se manifesta
 			_add_box(root, Vector3(fp * 0.75, da_h, fp * 0.75), Vector3(0.0, 0.25 + da_h * 0.5, 0.0), stone_mat)
 			# Orbe divino flutuante no topo (emissivo)
-			var orb_mat := _make_mat(accent_col, 0.12, 0.95, true, accent_col, 3.0)
-			_add_sphere(root, 0.75 * tier_scale, Vector3(0.0, 0.25 + da_h + 1.0 * tier_scale, 0.0), orb_mat)
+			var altar_orb_mat := _make_mat(accent_col, 0.12, 0.95, true, accent_col, 3.0)
+			_add_sphere(root, 0.75 * tier_scale, Vector3(0.0, 0.25 + da_h + 1.0 * tier_scale, 0.0), altar_orb_mat)
 			# Anel de poder giratório ao redor da base do orbe
 			var ring_mat := _make_mat(accent_col, 0.05, 0.88, true, accent_col, 2.2)
 			_add_torus(root, 1.1 * tier_scale, 1.28 * tier_scale, Vector3(0.0, 0.25 + da_h + 0.95 * tier_scale, 0.0), ring_mat)

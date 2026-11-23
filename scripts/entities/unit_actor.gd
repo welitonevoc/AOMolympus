@@ -441,9 +441,10 @@ func _find_nearest_enemy(radius: float) -> Node3D:
 	var enemy_group: String = "faction_enemy" if faction == "player" else "faction_player"
 	var best: Node3D = null
 	var best_d2: float = radius * radius
+	var d2: float = 0.0
 	for node in get_tree().get_nodes_in_group(enemy_group):
 		if node is UnitActor and not node.is_dead():
-			var d2: float = global_position.distance_squared_to(node.global_position)
+			d2 = global_position.distance_squared_to(node.global_position)
 			if d2 < best_d2:
 				best_d2 = d2
 				best = node
@@ -451,7 +452,7 @@ func _find_nearest_enemy(radius: float) -> Node3D:
 		return best
 	for node in get_tree().get_nodes_in_group(enemy_group):
 		if node is BuildingActor:
-			var d2: float = global_position.distance_squared_to(node.global_position)
+			d2 = global_position.distance_squared_to(node.global_position)
 			if d2 < best_d2:
 				best_d2 = d2
 				best = node

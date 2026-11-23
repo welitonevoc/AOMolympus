@@ -79,8 +79,8 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventScreenDrag:
 		_touches[event.index] = event.position
 		if _touches.size() == 1 and not GameState.box_select_mode and GameState.pending_build_kind.is_empty():
-			var pan_scale: float = _current_distance * 0.0022
-			_pan_by_local(Vector2(-event.relative.x * pan_scale, -event.relative.y * pan_scale))
+			var drag_pan_scale: float = _current_distance * 0.0022
+			_pan_by_local(Vector2(-event.relative.x * drag_pan_scale, -event.relative.y * drag_pan_scale))
 		elif _touches.size() >= 2:
 			_handle_two_finger_gesture()
 		return
@@ -94,8 +94,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		elif event.button_index == MOUSE_BUTTON_MIDDLE:
 			_mouse_dragging = event.pressed
 	elif event is InputEventMouseMotion and _mouse_dragging:
-		var pan_scale: float = _current_distance * 0.0022
-		_pan_by_local(Vector2(-event.relative.x * pan_scale, -event.relative.y * pan_scale))
+		var mouse_pan_scale: float = _current_distance * 0.0022
+		_pan_by_local(Vector2(-event.relative.x * mouse_pan_scale, -event.relative.y * mouse_pan_scale))
 
 
 func focus_on(world_pos: Vector3, snap_immediate: bool = false) -> void:

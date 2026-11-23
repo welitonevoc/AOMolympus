@@ -173,7 +173,7 @@ func _handle_single_tap(screen_pos: Vector2) -> void:
 			return
 
 		if collider is ResourceNode:
-			var selected_villagers := _get_selected_villagers()
+			selected_villagers = _get_selected_villagers()
 			if selected_villagers.size() > 0:
 				collider.flash_target()
 				for v in selected_villagers:
@@ -205,15 +205,14 @@ func _issue_context_order(screen_pos: Vector2) -> void:
 		if collider is BuildingActor and collider.faction == "enemy" and collider.visible:
 			_command_units_attack(selected_units, collider)
 			return
+		var villagers := _get_selected_villagers()
 		if collider is ResourceNode:
-			var villagers := _get_selected_villagers()
 			if villagers.size() > 0:
 				collider.flash_target()
 				for v in villagers:
 					v.command_gather(collider)
 				return
 		if collider is BuildingActor and collider.faction == "player" and not collider.is_constructed:
-			var villagers := _get_selected_villagers()
 			if villagers.size() > 0:
 				for v in villagers:
 					v.command_build(collider)

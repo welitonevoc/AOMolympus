@@ -453,15 +453,17 @@ func _build_skirmish_modal() -> void:
 	p_row.add_theme_constant_override("separation", 6)
 	s_vbox.add_child(p_row)
 
+	var opt_btn: Button = null
+
 	for pid in PantheonCatalog.PANTHEON_ORDER:
 		var p_data: Dictionary = PantheonCatalog.get_pantheon(pid)
-		var btn := Button.new()
-		btn.text = "%s" % p_data.get("name", pid)
-		btn.custom_minimum_size = Vector2(116, 40)
-		btn.add_theme_font_size_override("font_size", 12)
-		btn.pressed.connect(func() -> void: _select_pantheon(pid))
-		p_row.add_child(btn)
-		_pantheon_buttons[pid] = btn
+		opt_btn = Button.new()
+		opt_btn.text = "%s" % p_data.get("name", pid)
+		opt_btn.custom_minimum_size = Vector2(116, 40)
+		opt_btn.add_theme_font_size_override("font_size", 12)
+		opt_btn.pressed.connect(func() -> void: _select_pantheon(pid))
+		p_row.add_child(opt_btn)
+		_pantheon_buttons[pid] = opt_btn
 
 	# 2. Deus Maior do Panteão (Patrono)
 	s_vbox.add_child(_make_section_title("2. DEUS MAIOR PROTETOR (PATRONO):"))
@@ -487,13 +489,13 @@ func _build_skirmish_modal() -> void:
 	]
 	for r_opt in rival_options:
 		var rid: String = String(r_opt["id"])
-		var btn := Button.new()
-		btn.text = String(r_opt["label"])
-		btn.custom_minimum_size = Vector2(95, 36)
-		btn.add_theme_font_size_override("font_size", 11)
-		btn.pressed.connect(func() -> void: _select_rival_pantheon(rid))
-		r_row.add_child(btn)
-		_rival_buttons[rid] = btn
+		opt_btn = Button.new()
+		opt_btn.text = String(r_opt["label"])
+		opt_btn.custom_minimum_size = Vector2(95, 36)
+		opt_btn.add_theme_font_size_override("font_size", 11)
+		opt_btn.pressed.connect(func() -> void: _select_rival_pantheon(rid))
+		r_row.add_child(opt_btn)
+		_rival_buttons[rid] = opt_btn
 
 	# 4. Dificuldade da IA Inimiga
 	s_vbox.add_child(_make_section_title("4. DIFICULDADE DA IA INIMIGA:"))
@@ -504,15 +506,15 @@ func _build_skirmish_modal() -> void:
 
 	for did in ["easy", "normal", "hard"]:
 		var d_data: Dictionary = PantheonCatalog.get_ai_difficulty(did)
-		var btn := Button.new()
+		opt_btn = Button.new()
 		var d_name: String = String(d_data.get("name", did))
 		var d_lbl: String = String(d_data.get("label", ""))
-		btn.text = "%s (%s)" % [d_name, d_lbl]
-		btn.custom_minimum_size = Vector2(195, 38)
-		btn.add_theme_font_size_override("font_size", 12)
-		btn.pressed.connect(func() -> void: _select_difficulty(did))
-		d_row.add_child(btn)
-		_diff_buttons[did] = btn
+		opt_btn.text = "%s (%s)" % [d_name, d_lbl]
+		opt_btn.custom_minimum_size = Vector2(195, 38)
+		opt_btn.add_theme_font_size_override("font_size", 12)
+		opt_btn.pressed.connect(func() -> void: _select_difficulty(did))
+		d_row.add_child(opt_btn)
+		_diff_buttons[did] = opt_btn
 
 	# 5. Bioma e Cenário
 	s_vbox.add_child(_make_section_title("5. BIOMA DO CAMPO DE BATALHA:"))
@@ -524,13 +526,13 @@ func _build_skirmish_modal() -> void:
 
 	for bid in PantheonCatalog.BIOME_ORDER:
 		var b_data: Dictionary = PantheonCatalog.get_biome(bid)
-		var btn := Button.new()
-		btn.text = "🗺️ %s" % b_data.get("name", bid)
-		btn.custom_minimum_size = Vector2(295, 38)
-		btn.add_theme_font_size_override("font_size", 12)
-		btn.pressed.connect(func() -> void: _select_biome(bid))
-		b_grid.add_child(btn)
-		_biome_buttons[bid] = btn
+		opt_btn = Button.new()
+		opt_btn.text = "🗺️ %s" % b_data.get("name", bid)
+		opt_btn.custom_minimum_size = Vector2(295, 38)
+		opt_btn.add_theme_font_size_override("font_size", 12)
+		opt_btn.pressed.connect(func() -> void: _select_biome(bid))
+		b_grid.add_child(opt_btn)
+		_biome_buttons[bid] = opt_btn
 
 	# 6. Recursos Iniciais & Era de Partida
 	s_vbox.add_child(_make_section_title("6. RECURSOS INICIAIS & ERA DE PARTIDA:"))
@@ -545,13 +547,13 @@ func _build_skirmish_modal() -> void:
 		"deathmatch": "⚡ Deathmatch (10.000)"
 	}
 	for rmode in res_modes:
-		var btn := Button.new()
-		btn.text = res_modes[rmode]
-		btn.custom_minimum_size = Vector2(195, 36)
-		btn.add_theme_font_size_override("font_size", 11)
-		btn.pressed.connect(func() -> void: _select_resources(rmode))
-		res_row.add_child(btn)
-		_resource_buttons[rmode] = btn
+		opt_btn = Button.new()
+		opt_btn.text = res_modes[rmode]
+		opt_btn.custom_minimum_size = Vector2(195, 36)
+		opt_btn.add_theme_font_size_override("font_size", 11)
+		opt_btn.pressed.connect(func() -> void: _select_resources(rmode))
+		res_row.add_child(opt_btn)
+		_resource_buttons[rmode] = opt_btn
 
 	var age_row := HBoxContainer.new()
 	age_row.alignment = BoxContainer.ALIGNMENT_BEGIN
@@ -565,13 +567,13 @@ func _build_skirmish_modal() -> void:
 		5: "V • Divina (T5)"
 	}
 	for age_val in age_modes:
-		var btn := Button.new()
-		btn.text = age_modes[age_val]
-		btn.custom_minimum_size = Vector2(145, 36)
-		btn.add_theme_font_size_override("font_size", 11)
-		btn.pressed.connect(func() -> void: _select_starting_age(age_val))
-		age_row.add_child(btn)
-		_starting_age_buttons[age_val] = btn
+		opt_btn = Button.new()
+		opt_btn.text = age_modes[age_val]
+		opt_btn.custom_minimum_size = Vector2(145, 36)
+		opt_btn.add_theme_font_size_override("font_size", 11)
+		opt_btn.pressed.connect(func() -> void: _select_starting_age(age_val))
+		age_row.add_child(opt_btn)
+		_starting_age_buttons[age_val] = opt_btn
 
 	# 7. Condição de Vitória
 	s_vbox.add_child(_make_section_title("7. CONDIÇÃO DE VITÓRIA DA PARTIDA:"))
@@ -586,13 +588,13 @@ func _build_skirmish_modal() -> void:
 		"regicide": "👑 Regicídio (Líder)"
 	}
 	for vid in v_modes:
-		var btn := Button.new()
-		btn.text = v_modes[vid]
-		btn.custom_minimum_size = Vector2(195, 38)
-		btn.add_theme_font_size_override("font_size", 12)
-		btn.pressed.connect(func() -> void: _select_victory(vid))
-		v_row.add_child(btn)
-		_victory_buttons[vid] = btn
+		opt_btn = Button.new()
+		opt_btn.text = v_modes[vid]
+		opt_btn.custom_minimum_size = Vector2(195, 38)
+		opt_btn.add_theme_font_size_override("font_size", 12)
+		opt_btn.pressed.connect(func() -> void: _select_victory(vid))
+		v_row.add_child(opt_btn)
+		_victory_buttons[vid] = opt_btn
 
 	# 8. Dimensão da Arena (Tamanho do Mapa)
 	s_vbox.add_child(_make_section_title("8. DIMENSÃO DA ARENA & RECURSOS (TAMANHO DO MAPA):"))
@@ -603,13 +605,13 @@ func _build_skirmish_modal() -> void:
 
 	for ms_id in PantheonCatalog.MAP_SIZE_ORDER:
 		var ms_data: Dictionary = PantheonCatalog.get_map_size(ms_id)
-		var btn := Button.new()
-		btn.text = "📐 %s" % ms_data.get("name", ms_id)
-		btn.custom_minimum_size = Vector2(195, 38)
-		btn.add_theme_font_size_override("font_size", 12)
-		btn.pressed.connect(func() -> void: _select_map_size(ms_id))
-		size_row.add_child(btn)
-		_map_size_buttons[ms_id] = btn
+		opt_btn = Button.new()
+		opt_btn.text = "📐 %s" % ms_data.get("name", ms_id)
+		opt_btn.custom_minimum_size = Vector2(195, 38)
+		opt_btn.add_theme_font_size_override("font_size", 12)
+		opt_btn.pressed.connect(func() -> void: _select_map_size(ms_id))
+		size_row.add_child(opt_btn)
+		_map_size_buttons[ms_id] = opt_btn
 
 	# ── COLUNA DIREITA: Card de Visualização do Deus Maior ───────────────────
 	var right_panel := PanelContainer.new()
@@ -774,40 +776,41 @@ func _select_map_size(ms_id: String) -> void:
 
 
 func _refresh_skirmish_highlights() -> void:
+	var btn: Button = null
 	for pid in _pantheon_buttons:
-		var btn: Button = _pantheon_buttons[pid]
+		btn = _pantheon_buttons[pid]
 		btn.add_theme_stylebox_override("normal", _make_btn_style(pid == _selected_pantheon))
 
 	for gid in _major_god_buttons:
-		var btn: Button = _major_god_buttons[gid]
+		btn = _major_god_buttons[gid]
 		btn.add_theme_stylebox_override("normal", _make_btn_style(gid == _selected_major_god))
 
 	for rid in _rival_buttons:
-		var btn: Button = _rival_buttons[rid]
+		btn = _rival_buttons[rid]
 		btn.add_theme_stylebox_override("normal", _make_btn_style(rid == _selected_rival_pantheon))
 
 	for bid in _biome_buttons:
-		var btn: Button = _biome_buttons[bid]
+		btn = _biome_buttons[bid]
 		btn.add_theme_stylebox_override("normal", _make_btn_style(bid == _selected_biome))
 
 	for did in _diff_buttons:
-		var btn: Button = _diff_buttons[did]
+		btn = _diff_buttons[did]
 		btn.add_theme_stylebox_override("normal", _make_btn_style(did == _selected_difficulty))
 
 	for rmode in _resource_buttons:
-		var btn: Button = _resource_buttons[rmode]
+		btn = _resource_buttons[rmode]
 		btn.add_theme_stylebox_override("normal", _make_btn_style(rmode == _selected_resources))
 
 	for age_val in _starting_age_buttons:
-		var btn: Button = _starting_age_buttons[age_val]
+		btn = _starting_age_buttons[age_val]
 		btn.add_theme_stylebox_override("normal", _make_btn_style(age_val == _selected_starting_age))
 
 	for vid in _victory_buttons:
-		var btn: Button = _victory_buttons[vid]
+		btn = _victory_buttons[vid]
 		btn.add_theme_stylebox_override("normal", _make_btn_style(vid == _selected_victory))
 
 	for sid in _map_size_buttons:
-		var btn: Button = _map_size_buttons[sid]
+		btn = _map_size_buttons[sid]
 		btn.add_theme_stylebox_override("normal", _make_btn_style(sid == _selected_map_size))
 
 	# Atualiza o Card de Visualização do Deus Maior (Coluna Direita)
@@ -886,17 +889,17 @@ func _build_campaign_modal() -> void:
 
 	var chapter_order: Array = ["olympus_dawn", "nile_eclipse", "midgard_frost", "atlantis_rise", "erebus_reckoning"]
 	for cid in chapter_order:
-		var btn := Button.new()
-		if cid == "olympus_dawn": btn.text = "Cap. I\n(Olimpo)"
-		elif cid == "nile_eclipse": btn.text = "Cap. II\n(Nilo)"
-		elif cid == "midgard_frost": btn.text = "Cap. III\n(Midgard)"
-		elif cid == "atlantis_rise": btn.text = "Cap. IV\n(Atlântida)"
-		elif cid == "erebus_reckoning": btn.text = "Cap. V\n(Érebo)"
-		btn.custom_minimum_size = Vector2(150, 48)
-		btn.add_theme_font_size_override("font_size", 12)
-		btn.pressed.connect(func() -> void: _select_chapter(cid))
-		c_row.add_child(btn)
-		_chapter_buttons[cid] = btn
+		var ch_btn := Button.new()
+		if cid == "olympus_dawn": ch_btn.text = "Cap. I\n(Olimpo)"
+		elif cid == "nile_eclipse": ch_btn.text = "Cap. II\n(Nilo)"
+		elif cid == "midgard_frost": ch_btn.text = "Cap. III\n(Midgard)"
+		elif cid == "atlantis_rise": ch_btn.text = "Cap. IV\n(Atlântida)"
+		elif cid == "erebus_reckoning": ch_btn.text = "Cap. V\n(Érebo)"
+		ch_btn.custom_minimum_size = Vector2(150, 48)
+		ch_btn.add_theme_font_size_override("font_size", 12)
+		ch_btn.pressed.connect(func() -> void: _select_chapter(cid))
+		c_row.add_child(ch_btn)
+		_chapter_buttons[cid] = ch_btn
 
 	# Painel de Detalhes do Capítulo
 	var detail_panel := PanelContainer.new()
@@ -941,17 +944,17 @@ func _build_campaign_modal() -> void:
 		"hard": "👑 Heroico"
 	}
 	for diff_id in c_diffs:
-		var btn := Button.new()
-		btn.text = c_diffs[diff_id]
-		btn.custom_minimum_size = Vector2(170, 38)
-		btn.add_theme_font_size_override("font_size", 12)
-		btn.pressed.connect(func() -> void:
+		var diff_btn := Button.new()
+		diff_btn.text = c_diffs[diff_id]
+		diff_btn.custom_minimum_size = Vector2(170, 38)
+		diff_btn.add_theme_font_size_override("font_size", 12)
+		diff_btn.pressed.connect(func() -> void:
 			_selected_campaign_diff = diff_id
 			for k in _campaign_diff_buttons:
 				_campaign_diff_buttons[k].add_theme_stylebox_override("normal", _make_btn_style(k == diff_id))
 		)
-		diff_row.add_child(btn)
-		_campaign_diff_buttons[diff_id] = btn
+		diff_row.add_child(diff_btn)
+		_campaign_diff_buttons[diff_id] = diff_btn
 
 	# Ações
 	var action_row := HBoxContainer.new()

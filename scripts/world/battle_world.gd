@@ -530,9 +530,9 @@ func restore_entities(data: Dictionary) -> void:
 
 	# 1. Re-cria o terreno procedural do bioma com a semente exata salva
 	arena_size = GameState.get_active_arena_size()
-	var ratio: float = float(PantheonCatalog.get_map_size(GameState.active_map_size).get("player_base_ratio", 0.32))
-	player_base_pos = Vector3(-arena_size * ratio, 0.0, arena_size * (ratio * 0.90))
-	enemy_base_pos = Vector3(arena_size * ratio, 0.0, -arena_size * (ratio * 0.90))
+	var base_ratio: float = float(PantheonCatalog.get_map_size(GameState.active_map_size).get("player_base_ratio", 0.32))
+	player_base_pos = Vector3(-arena_size * base_ratio, 0.0, arena_size * (base_ratio * 0.90))
+	enemy_base_pos = Vector3(arena_size * base_ratio, 0.0, -arena_size * (base_ratio * 0.90))
 	_setup_navigation_mesh()
 
 	BiomeMapGenerator.build_biome_environment(
@@ -550,12 +550,12 @@ func restore_entities(data: Dictionary) -> void:
 	for r_item in res_arr:
 		if not (r_item is Dictionary):
 			continue
-		var p_pos := _parse_pos_safe(r_item.get("pos"))
-		var r_node: ResourceNode = _spawn_resource(String(r_item.get("kind", "wood")), p_pos, float(r_item.get("max_amount", 450.0)))
+		var res_pos := _parse_pos_safe(r_item.get("pos"))
+		var r_node: ResourceNode = _spawn_resource(String(r_item.get("kind", "wood")), res_pos, float(r_item.get("max_amount", 450.0)))
 		r_node.remaining = float(r_item.get("remaining", 450.0))
-		var ratio: float = clampf(r_node.remaining / maxf(1.0, r_node.max_amount), 0.35, 1.0)
+		var res_ratio: float = clampf(r_node.remaining / maxf(1.0, r_node.max_amount), 0.35, 1.0)
 		if r_node._visual_root != null:
-			r_node._visual_root.scale = Vector3.ONE * ratio
+			r_node._visual_root.scale = Vector3.ONE * res_ratio
 
 	# 3. Restaura Construções
 	var b_arr: Array = data.get("buildings", [])
@@ -563,11 +563,11 @@ func restore_entities(data: Dictionary) -> void:
 	for b_item in b_arr:
 		if not (b_item is Dictionary):
 			continue
-		var p_pos := _parse_pos_safe(b_item.get("pos"))
+		var b_pos := _parse_pos_safe(b_item.get("pos"))
 		var is_const: bool = bool(b_item.get("is_constructed", true))
 		var b_actor: BuildingActor = spawn_building(
 			String(b_item.get("kind", "town_center")),
-			p_pos,
+			b_pos,
 			is_const,
 			String(b_item.get("faction", "player")),
 			String(b_item.get("pantheon_id", GameState.active_pantheon)),
@@ -589,10 +589,10 @@ func restore_entities(data: Dictionary) -> void:
 	for u_item in u_arr:
 		if not (u_item is Dictionary):
 			continue
-		var p_pos := _parse_pos_safe(u_item.get("pos"))
+		var u_pos := _parse_pos_safe(u_item.get("pos"))
 		var u_actor: UnitActor = spawn_unit(
 			String(u_item.get("kind", "villager")),
-			p_pos,
+			u_pos,
 			String(u_item.get("faction", "player")),
 			String(u_item.get("pantheon_id", GameState.active_pantheon))
 		)
