@@ -234,7 +234,7 @@ func _convert_nearest_enemy(center: Vector3, radius: float) -> void:
 				best = node
 	if best != null and world != null and world.has_method("spawn_unit"):
 		var pos: Vector3 = best.global_position
-		var kind: String = str(best.get("unit_kind", "hoplite"))
+		var kind: String = (best as UnitActor).unit_kind if best is UnitActor else "hoplite"
 		best.call("take_damage", 99999.0, "player", GameState.active_pantheon)
 		world.spawn_unit(kind, pos, "player", GameState.active_pantheon)
 
