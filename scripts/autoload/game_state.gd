@@ -23,6 +23,7 @@ signal stance_changed(stance_id: String)
 signal notification_emitted(message: String, is_warning: bool)
 signal divine_summoned_signal(god_kind: String, tier: String)
 signal divine_summon_blocked(reason: String)
+signal villager_priority_changed(preset: String)
 
 var active_pantheon: String = "greek"
 var enemy_pantheon: String = "norse"
@@ -63,6 +64,7 @@ var selected_entities: Array = []
 var pending_build_kind: String = ""
 var pending_power_id: String = ""
 var box_select_mode: bool = false
+var villager_priority_preset: String = "balanced"
 
 var flaming_weapons_timer: float = 0.0
 var eclipse_timer: float = 0.0
@@ -532,3 +534,48 @@ func _pick_rival_pantheon(player_pid: String) -> String:
 	var idx: int = PantheonCatalog.PANTHEON_ORDER.find(player_pid)
 	var rival_idx: int = (idx + 2) % PantheonCatalog.PANTHEON_ORDER.size()
 	return PantheonCatalog.PANTHEON_ORDER[rival_idx]
+
+
+const VILLAGER_PRESETS := {
+	"balanced": {"name": "Equilibrado", "desc": "40% Comida, 30% Madeira, 30% Ouro", "food": 0.40, "wood": 0.30, "gold": 0.30},
+	"age_rush": {"name": "Rush de Era", "desc": "60% Comida, 10% Madeira, 30% Ouro", "food": 0.60, "wood": 0.10, "gold": 0.30},
+	"military": {"name": "Militar", "desc": "20% Comida, 40% Madeira, 40% Ouro", "food": 0.20, "wood": 0.40, "gold": 0.40},
+	"off": {"name": "Manual", "desc": "Sem distribuição automática", "food": 0.0, "wood": 0.0, "gold": 0.0}
+}
+
+
+func set_villager_priority_preset(preset: String) -> void:
+	if preset in VILLAGER_PRESETS:
+		villager_priority_preset = preset
+		villager_priority_changed.emit(villager_priority_preset)
+		var p_info: Dictionary = VILLAGER_PRESETS[preset]
+		notify("Prioridade de Aldeões: %s (%s)" % [p_info["name"], p_info["desc"]], false)
+
+
+func cycle_villager_priority() -> String:
+	var keys := ["balanced", "age_rush", "military", "off"]
+	var idx := keys.find(villager_priority_preset)
+	var next_idx := (idx + 1) % keys.size() if idx != -1 else 0
+	set_villager_priority_preset(keys[next_idx])
+	return villager_priority_preset
+
+
+func get_target_resource_for_automation(counts: Dictionary) -> String:
+	if villager_priority_preset == "off":
+		return "food"
+	var ratios: Dictionary = VILLAGER_PRESETS.get(villager_priority_preset, VILLAGER_PRESETS["balanced"])
+	var total_gatherers: float = maxf(1.0, float(counts.get("food", 0) + counts.get("wood", 0) + counts.get("gold", 0)))
+	var food_pct: float = float(counts.get("food", 0)) / total_gatherers
+	var wood_pct: float = float(counts.get("wood", 0)) / total_gatherers
+	var gold_pct: float = float(counts.get("gold", 0)) / total_gatherers
+
+	var food_deficit: float = float(ratios.get("food", 0.33)) - food_pct
+	var wood_deficit: float = float(ratios.get("wood", 0.33)) - wood_pct
+	var gold_deficit: float = float(ratios.get("gold", 0.33)) - gold_pct
+
+	if food_deficit >= wood_deficit and food_deficit >= gold_deficit:
+		return "food"
+	elif wood_deficit >= gold_deficit:
+		return "wood"
+	else:
+		return "gold"

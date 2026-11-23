@@ -24,6 +24,7 @@ var _age_lbl: Label
 var _day_night_btn: Button
 var _fog_btn: Button
 var _audio_btn: Button
+var _priority_btn: Button
 
 var _power_bar_row: HBoxContainer
 var _power_buttons: Dictionary = {}
@@ -106,6 +107,7 @@ func _ready() -> void:
 	GameState.notification_emitted.connect(_on_notification)
 	GameState.divine_summoned_signal.connect(_on_divine_summoned)
 	GameState.divine_summon_blocked.connect(_on_divine_summon_blocked)
+	GameState.villager_priority_changed.connect(_on_villager_priority_changed)
 
 	if SaveLoadSystem != null:
 		SaveLoadSystem.load_completed.connect(func(_ok: bool) -> void:
@@ -125,6 +127,7 @@ func _sync_all_hud_state() -> void:
 	_on_resources_changed(GameState.resources)
 	_on_population_changed(GameState.population_used, GameState.population_cap)
 	_on_age_changed(GameState.current_age)
+	_update_priority_btn_label(GameState.villager_priority_preset)
 	_rebuild_divine_power_bar()
 	_rebuild_command_grid()
 	_on_tactics_changed("")
@@ -203,6 +206,13 @@ func _build_top_bar() -> void:
 			_world.focus_town_center()
 	)
 	hbox.add_child(base_btn)
+
+	_priority_btn = _make_action_button("⚖️ Equil", false, 82.0, 40.0)
+	_priority_btn.pressed.connect(func() -> void:
+		var next_preset: String = GameState.cycle_villager_priority()
+		_update_priority_btn_label(next_preset)
+	)
+	hbox.add_child(_priority_btn)
 
 	_fog_btn = _make_action_button("🌫 Neblina", false, 78.0, 40.0)
 	_fog_btn.pressed.connect(func() -> void: GameState.toggle_fog_of_war())
@@ -1278,6 +1288,22 @@ func _on_fog_toggled(enabled: bool) -> void:
 
 func _on_audio_muted_changed(muted: bool) -> void:
 	_audio_btn.text = "🔇 Mudo" if muted else "🔊 Som"
+
+
+func _on_villager_priority_changed(preset: String) -> void:
+	_update_priority_btn_label(preset)
+
+
+func _update_priority_btn_label(preset: String) -> void:
+	if _priority_btn == null:
+		return
+	var label_map: Dictionary = {
+		"balanced": "⚖️ Equil",
+		"age_rush": "⚡ Rush",
+		"military": "⚔️ Militar",
+		"off": "🛑 Manual"
+	}
+	_priority_btn.text = label_map.get(preset, "⚖️ Equil")
 
 
 func _on_power_target_mode_changed(_power_id: String) -> void:

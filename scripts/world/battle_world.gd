@@ -25,6 +25,16 @@ var _ai_controller: Node
 var _power_system: Node3D
 var _battle_hud: Node = null  # Referência ao BattleScreen (Painel H)
 var _last_idle_villager_idx: int = -1
+var _auto_economy_timer: float = 0.0
+
+
+func _process(delta: float) -> void:
+	if not GameState.match_started:
+		return
+	_auto_economy_timer += delta
+	if _auto_economy_timer >= 2.5:
+		_auto_economy_timer = 0.0
+		_auto_assign_idle_villagers()
 
 
 func _ready() -> void:
@@ -360,11 +370,74 @@ func select_units_by_role(role_kind: String) -> void:
 	GameState.notify("%d unidades selecionadas." % list.size(), false)
 
 
+func _auto_assign_idle_villagers() -> void:
+	if GameState.villager_priority_preset == "off":
+		return
+	var idles: Array = []
+	var counts := {"food": 0, "wood": 0, "gold": 0}
+	for v in get_tree().get_nodes_in_group("villagers"):
+		if v is UnitActor and v.faction == "player" and not v.is_dead():
+			if v.state == UnitActor.State.IDLE:
+				idles.append(v)
+			elif v.state == UnitActor.State.GATHERING or v.state == UnitActor.State.RETURNING:
+				if v.carried_kind in counts:
+					counts[v.carried_kind] += 1
+				elif is_instance_valid(v.target_resource) and v.target_resource.resource_kind in counts:
+					counts[v.target_resource.resource_kind] += 1
+
+	if idles.is_empty():
+		return
+
+	for v in idles:
+		var target_kind: String = GameState.get_target_resource_for_automation(counts)
+		var nearest_res: ResourceNode = _find_nearest_resource_of_kind(v.global_position, target_kind)
+		if nearest_res != null:
+			v.command_gather(nearest_res)
+			counts[target_kind] += 1
+
+
+func _auto_assign_single_villager(v: UnitActor) -> void:
+	if not is_instance_valid(v) or v.is_dead() or GameState.villager_priority_preset == "off":
+		return
+	var counts := {"food": 0, "wood": 0, "gold": 0}
+	for node in get_tree().get_nodes_in_group("villagers"):
+		if node is UnitActor and node.faction == "player" and not node.is_dead():
+			if node.carried_kind in counts:
+				counts[node.carried_kind] += 1
+			elif is_instance_valid(node.target_resource) and node.target_resource.resource_kind in counts:
+				counts[node.target_resource.resource_kind] += 1
+	var target_kind: String = GameState.get_target_resource_for_automation(counts)
+	var nearest_res: ResourceNode = _find_nearest_resource_of_kind(v.global_position, target_kind)
+	if nearest_res != null:
+		v.command_gather(nearest_res)
+
+
+func _find_nearest_resource_of_kind(pos: Vector3, kind: String) -> ResourceNode:
+	var best: ResourceNode = null
+	var best_dist_sq: float = 999999.0
+	for r in get_tree().get_nodes_in_group("resources"):
+		if r is ResourceNode and not r.is_depleted() and r.resource_kind == kind:
+			var d2 := pos.distance_squared_to(r.global_position)
+			if d2 < best_dist_sq:
+				best_dist_sq = d2
+				best = r
+	if best == null:
+		for r in get_tree().get_nodes_in_group("resources"):
+			if r is ResourceNode and not r.is_depleted():
+				var d2 := pos.distance_squared_to(r.global_position)
+				if d2 < best_dist_sq:
+					best_dist_sq = d2
+					best = r
+	return best
+
+
 func _on_building_training_completed(building: BuildingActor, unit_kind: String, spawn_pos: Vector3) -> void:
-	spawn_unit(unit_kind, spawn_pos, building.faction, building.pantheon_id)
+	var u: UnitActor = spawn_unit(unit_kind, spawn_pos, building.faction, building.pantheon_id)
 	if building.faction == "player":
 		var u_name: String = PantheonCatalog.get_unit_spec(building.pantheon_id, unit_kind)["display_name"]
 		GameState.notify("%s pronto para combate!" % u_name, false)
+		if unit_kind == "villager" and GameState.villager_priority_preset != "off":
+			_auto_assign_single_villager(u)
 
 
 func _on_divine_altar_finished(building: BuildingActor) -> void:
