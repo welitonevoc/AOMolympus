@@ -47,10 +47,12 @@ var _skirmish_desc_lbl: Label
 # Elementos do Card de Visualização do Deus Maior (Coluna Direita do Skirmish)
 var _preview_pantheon_tag_lbl: Label
 var _preview_god_name_lbl: Label
+var _preview_god_portrait_rect: TextureRect
 var _preview_god_title_lbl: Label
 var _preview_god_lore_lbl: Label
 var _preview_god_bonus_vbox: VBoxContainer
 var _preview_god_power_lbl: Label
+var _preview_map_preview_rect: TextureRect
 var _preview_biome_desc_lbl: Label
 var _preview_summary_lbl: Label
 
@@ -614,12 +616,19 @@ func _build_skirmish_modal() -> void:
 		_map_size_buttons[ms_id] = opt_btn
 
 	# ── COLUNA DIREITA: Card de Visualização do Deus Maior ───────────────────
+	var right_scroll := ScrollContainer.new()
+	right_scroll.custom_minimum_size = Vector2(410, 480)
+	right_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	split_row.add_child(right_scroll)
+
 	var right_panel := PanelContainer.new()
-	right_panel.custom_minimum_size = Vector2(410, 480)
+	right_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	right_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	right_panel.add_theme_stylebox_override("panel", _make_panel_style(Color(0.06, 0.09, 0.15, 0.96), 10))
-	split_row.add_child(right_panel)
+	right_scroll.add_child(right_panel)
 
 	var right_vbox := VBoxContainer.new()
+	right_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	right_vbox.add_theme_constant_override("separation", 6)
 	right_panel.add_child(right_vbox)
 
@@ -630,9 +639,21 @@ func _build_skirmish_modal() -> void:
 	right_vbox.add_child(_preview_pantheon_tag_lbl)
 
 	_preview_god_name_lbl = Label.new()
-	_preview_god_name_lbl.add_theme_font_size_override("font_size", 17)
+	_preview_god_name_lbl.add_theme_font_size_override("font_size", 18)
 	_preview_god_name_lbl.add_theme_color_override("font_color", Color("#f6e08b"))
 	right_vbox.add_child(_preview_god_name_lbl)
+
+	# ── Retrato em Alta Definição do Deus Maior ──
+	var portrait_frame := PanelContainer.new()
+	portrait_frame.custom_minimum_size = Vector2(366, 170)
+	portrait_frame.add_theme_stylebox_override("panel", _make_frame_style(Color(0.85, 0.70, 0.25, 0.85), 8, 2))
+	right_vbox.add_child(portrait_frame)
+
+	_preview_god_portrait_rect = TextureRect.new()
+	_preview_god_portrait_rect.custom_minimum_size = Vector2(362, 166)
+	_preview_god_portrait_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_preview_god_portrait_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	portrait_frame.add_child(_preview_god_portrait_rect)
 
 	_preview_god_title_lbl = Label.new()
 	_preview_god_title_lbl.add_theme_font_size_override("font_size", 11)
@@ -667,11 +688,23 @@ func _build_skirmish_modal() -> void:
 	_preview_god_power_lbl.add_theme_color_override("font_color", Color("#7dd3fc"))
 	right_vbox.add_child(_preview_god_power_lbl)
 
+	# ── Miniatura Panorâmica do Bioma/Mapa ──
 	var biome_box_title := Label.new()
-	biome_box_title.text = "🗺️ Cenário de Batalha:"
+	biome_box_title.text = "🗺️ Cenário de Batalha Escolhido:"
 	biome_box_title.add_theme_font_size_override("font_size", 11)
 	biome_box_title.add_theme_color_override("font_color", Color("#4ade80"))
 	right_vbox.add_child(biome_box_title)
+
+	var map_frame := PanelContainer.new()
+	map_frame.custom_minimum_size = Vector2(366, 80)
+	map_frame.add_theme_stylebox_override("panel", _make_frame_style(Color(0.29, 0.87, 0.50, 0.65), 6, 1))
+	right_vbox.add_child(map_frame)
+
+	_preview_map_preview_rect = TextureRect.new()
+	_preview_map_preview_rect.custom_minimum_size = Vector2(364, 78)
+	_preview_map_preview_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_preview_map_preview_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	map_frame.add_child(_preview_map_preview_rect)
 
 	_preview_biome_desc_lbl = Label.new()
 	_preview_biome_desc_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -726,8 +759,12 @@ func _rebuild_major_god_buttons() -> void:
 		btn.text = "⚡ %s" % god_name
 		btn.custom_minimum_size = Vector2(god_btn_width, 40)
 		btn.add_theme_font_size_override("font_size", 12)
+		btn.pivot_offset = Vector2(god_btn_width * 0.5, 20.0)
 		btn.pressed.connect(func() -> void:
 			_selected_major_god = god_id
+			var t := create_tween()
+			t.tween_property(btn, "scale", Vector2(0.94, 0.94), 0.06)
+			t.tween_property(btn, "scale", Vector2(1.0, 1.0), 0.25).set_trans(Tween.TRANS_SPRING).set_ease(Tween.EASE_OUT)
 			_refresh_skirmish_highlights()
 		)
 		_major_gods_container.add_child(btn)
@@ -841,12 +878,35 @@ func _refresh_skirmish_highlights() -> void:
 			b_lbl.add_theme_color_override("font_color", Color("#cbd5e1"))
 			_preview_god_bonus_vbox.add_child(b_lbl)
 
+	# Carrega e exibe o retrato ilustrado do Deus Maior com efeito de transição
+	if _preview_god_portrait_rect:
+		var portrait_path := "res://assets/ui/portraits/%s.jpg" % _selected_major_god
+		var god_tex: Texture2D = _load_ui_texture(portrait_path)
+		if god_tex:
+			_preview_god_portrait_rect.texture = god_tex
+			_preview_god_portrait_rect.modulate = Color(1.0, 1.0, 1.0, 0.3)
+			_preview_god_portrait_rect.pivot_offset = Vector2(181.0, 83.0)
+			_preview_god_portrait_rect.scale = Vector2(0.97, 0.97)
+			var p_tween := create_tween().set_parallel(true)
+			p_tween.tween_property(_preview_god_portrait_rect, "modulate", Color.WHITE, 0.28).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+			p_tween.tween_property(_preview_god_portrait_rect, "scale", Vector2.ONE, 0.35).set_trans(Tween.TRANS_SPRING).set_ease(Tween.EASE_OUT)
+
 	# Atualiza o preview do bioma
 	var b_data: Dictionary = PantheonCatalog.get_biome(_selected_biome)
 	_preview_biome_desc_lbl.text = "%s — %s" % [
 		b_data.get("name", _selected_biome),
 		b_data.get("subtitle", "Terreno de combate aberto")
 	]
+
+	# Carrega e exibe a vinheta panorâmica do bioma/mapa
+	if _preview_map_preview_rect:
+		var map_path := "res://assets/ui/maps/%s.jpg" % _selected_biome
+		var map_tex: Texture2D = _load_ui_texture(map_path)
+		if map_tex:
+			_preview_map_preview_rect.texture = map_tex
+			_preview_map_preview_rect.modulate = Color(1.0, 1.0, 1.0, 0.4)
+			var m_tween := create_tween()
+			m_tween.tween_property(_preview_map_preview_rect, "modulate", Color.WHITE, 0.25).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 
 	# Resumo da configuração selecionada
 	var rival_str: String = "Aleatório"
@@ -1667,3 +1727,31 @@ func _make_btn_style(primary: bool, hover: bool = false) -> StyleBoxFlat:
 	sb.set_border_width_all(1)
 	sb.set_corner_radius_all(8)
 	return sb
+
+
+func _make_frame_style(border_col: Color, radius: int, border_w: int = 2) -> StyleBoxFlat:
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0.03, 0.05, 0.09, 0.96)
+	sb.border_color = border_col
+	sb.set_border_width_all(border_w)
+	sb.set_corner_radius_all(radius)
+	sb.content_margin_left = 2
+	sb.content_margin_right = 2
+	sb.content_margin_top = 2
+	sb.content_margin_bottom = 2
+	return sb
+
+
+func _load_ui_texture(res_path: String) -> Texture2D:
+	if ResourceLoader.exists(res_path):
+		var res = load(res_path)
+		if res is Texture2D:
+			return res
+	var global_path: String = ProjectSettings.globalize_path(res_path)
+	if FileAccess.file_exists(global_path):
+		var img := Image.new()
+		var err := img.load(global_path)
+		if err == OK:
+			return ImageTexture.create_from_image(img)
+	return null
+
