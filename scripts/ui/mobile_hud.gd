@@ -150,75 +150,92 @@ func _process(delta: float) -> void:
 func _build_top_bar() -> void:
 	var bar := PanelContainer.new()
 	bar.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	bar.custom_minimum_size = Vector2(0.0, 52.0)
-	bar.add_theme_stylebox_override("panel", _make_panel_style(Color(0.05, 0.07, 0.11, 0.9), 0))
+	bar.custom_minimum_size = Vector2(0.0, 50.0)
+	bar.add_theme_stylebox_override("panel", _make_panel_style(Color(0.04, 0.06, 0.10, 0.94), 0, Color(0.83, 0.69, 0.22, 0.35)))
 	add_child(bar)
 
 	var margin := MarginContainer.new()
-	margin.add_theme_constant_override("margin_left", 12)
-	margin.add_theme_constant_override("margin_right", 12)
-	margin.add_theme_constant_override("margin_top", 6)
-	margin.add_theme_constant_override("margin_bottom", 6)
+	margin.add_theme_constant_override("margin_left", 10)
+	margin.add_theme_constant_override("margin_right", 10)
+	margin.add_theme_constant_override("margin_top", 5)
+	margin.add_theme_constant_override("margin_bottom", 5)
 	bar.add_child(margin)
 
 	var hbox := HBoxContainer.new()
-	hbox.add_theme_constant_override("separation", 10)
+	hbox.add_theme_constant_override("separation", 6)
 	margin.add_child(hbox)
 
-	_food_lbl = _make_metric_label("Alim: 350", Color("#fca5a5"))
-	_wood_lbl = _make_metric_label("Mad: 300", Color("#86efac"))
-	_gold_lbl = _make_metric_label("Ouro: 250", Color("#fde047"))
-	_favor_lbl = _make_metric_label("Favor: 20", Color("#7dd3fc"))
-	_pop_lbl = _make_metric_label("Pop: 0/15", Color("#e2e8f0"))
-	for lbl in [_food_lbl, _wood_lbl, _gold_lbl, _favor_lbl, _pop_lbl]:
-		hbox.add_child(lbl)
+	var food_pill := _make_resource_pill("🌾", "350", Color("#fca5a5"))
+	_food_lbl = food_pill["label"]
+	hbox.add_child(food_pill["container"])
+
+	var wood_pill := _make_resource_pill("🪵", "300", Color("#86efac"))
+	_wood_lbl = wood_pill["label"]
+	hbox.add_child(wood_pill["container"])
+
+	var gold_pill := _make_resource_pill("🪙", "250", Color("#fde047"))
+	_gold_lbl = gold_pill["label"]
+	hbox.add_child(gold_pill["container"])
+
+	var favor_pill := _make_resource_pill("✨", "20", Color("#7dd3fc"))
+	_favor_lbl = favor_pill["label"]
+	hbox.add_child(favor_pill["container"])
+
+	var pop_pill := _make_resource_pill("👥", "0/15", Color("#e2e8f0"))
+	_pop_lbl = pop_pill["label"]
+	hbox.add_child(pop_pill["container"])
 
 	var spacer := Control.new()
 	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	hbox.add_child(spacer)
 
-	_age_lbl = _make_metric_label("Era Arcaica (I)", Color("#f6e08b"))
-	hbox.add_child(_age_lbl)
+	var age_pill := _make_resource_pill("🏛️", "Era Arcaica (I)", Color("#f6e08b"))
+	_age_lbl = age_pill["label"]
+	hbox.add_child(age_pill["container"])
 
-	var base_btn := _make_action_button("Base", false, 64.0, 38.0)
+	var spacer2 := Control.new()
+	spacer2.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	hbox.add_child(spacer2)
+
+	var base_btn := _make_action_button("🏛 Base", false, 68.0, 36.0)
 	base_btn.pressed.connect(func() -> void:
 		if _world != null:
 			_world.focus_town_center()
 	)
 	hbox.add_child(base_btn)
 
-	_fog_btn = _make_action_button("Neblina", false, 72.0, 38.0)
+	_fog_btn = _make_action_button("🌫 Neblina", false, 78.0, 36.0)
 	_fog_btn.pressed.connect(func() -> void: GameState.toggle_fog_of_war())
 	hbox.add_child(_fog_btn)
 
-	_audio_btn = _make_action_button("Som", false, 60.0, 38.0)
+	_audio_btn = _make_action_button("🔊 Som", false, 64.0, 36.0)
 	_audio_btn.pressed.connect(func() -> void: GameState.toggle_audio_muted())
 	hbox.add_child(_audio_btn)
 
-	_day_night_btn = _make_action_button("Noite", false, 66.0, 38.0)
+	_day_night_btn = _make_action_button("🌙 Noite", false, 72.0, 36.0)
 	_day_night_btn.pressed.connect(func() -> void: GameState.toggle_day_night())
 	hbox.add_child(_day_night_btn)
 
-	var save_btn := _make_action_button("Salvar", false, 66.0, 38.0)
+	var save_btn := _make_action_button("💾 Salvar", false, 72.0, 36.0)
 	save_btn.pressed.connect(func() -> void:
 		SaveLoadSystem.save_game(_world, _camera_rig)
 	)
 	hbox.add_child(save_btn)
 
-	var load_btn := _make_action_button("Carregar", false, 74.0, 38.0)
+	var load_btn := _make_action_button("📂 Carregar", false, 78.0, 36.0)
 	load_btn.pressed.connect(func() -> void:
 		SaveLoadSystem.load_game()
 	)
 	hbox.add_child(load_btn)
 
-	_divine_btn = _make_action_button("Deuses", true, 74.0, 38.0)
+	_divine_btn = _make_action_button("⚡ Deuses", true, 78.0, 36.0)
 	_divine_btn.visible = false
 	_divine_btn.pressed.connect(func() -> void:
 		_toggle_divine_panel()
 	)
 	hbox.add_child(_divine_btn)
 
-	var menu_btn := _make_action_button("Menu", false, 60.0, 38.0)
+	var menu_btn := _make_action_button("☰ Menu", false, 66.0, 36.0)
 	menu_btn.pressed.connect(func() -> void:
 		get_tree().change_scene_to_file("res://scenes/title_screen.tscn")
 	)
@@ -358,10 +375,10 @@ func _build_bottom_left_zone() -> void:
 	panel.anchor_top = 1.0
 	panel.anchor_bottom = 1.0
 	panel.offset_left = 14.0
-	panel.offset_right = 368.0
-	panel.offset_top = -148.0
+	panel.offset_right = 372.0
+	panel.offset_top = -152.0
 	panel.offset_bottom = -14.0
-	panel.add_theme_stylebox_override("panel", _make_panel_style(Color(0.05, 0.07, 0.11, 0.88), 10))
+	panel.add_theme_stylebox_override("panel", _make_panel_style(Color(0.04, 0.06, 0.10, 0.92), 12, Color(0.83, 0.69, 0.22, 0.45), true))
 	add_child(panel)
 
 	var margin := MarginContainer.new()
@@ -379,23 +396,24 @@ func _build_bottom_left_zone() -> void:
 	row.add_theme_constant_override("separation", 8)
 	vbox.add_child(row)
 
-	_box_btn = _make_action_button("Caixa", false, 96.0, 48.0)
+	_box_btn = _make_action_button("📦 Caixa", false, 96.0, 46.0)
 	_box_btn.toggle_mode = true
 	_box_btn.toggled.connect(func(active: bool) -> void:
 		GameState.box_select_mode = active
+		_box_btn.add_theme_stylebox_override("normal", _make_btn_style(active))
 		if active:
-			GameState.notify("Arraste na tela para selecionar varias unidades.", false)
+			GameState.notify("Arraste na tela para selecionar várias unidades.", false)
 	)
 	row.add_child(_box_btn)
 
-	var idle_btn := _make_action_button("Aldeao", false, 96.0, 48.0)
+	var idle_btn := _make_action_button("👨‍🌾 Aldeão", false, 96.0, 46.0)
 	idle_btn.pressed.connect(func() -> void:
 		if _world != null:
 			_world.focus_idle_villager()
 	)
 	row.add_child(idle_btn)
 
-	var army_btn := _make_action_button("Exercito", true, 108.0, 48.0)
+	var army_btn := _make_action_button("⚔️ Exército", true, 108.0, 46.0)
 	army_btn.pressed.connect(func() -> void:
 		if _world != null:
 			_world.select_all_military()
@@ -403,14 +421,14 @@ func _build_bottom_left_zone() -> void:
 	row.add_child(army_btn)
 
 	_selection_title = Label.new()
-	_selection_title.text = "Nenhuma selecao"
+	_selection_title.text = "Nenhuma seleção"
 	_selection_title.add_theme_color_override("font_color", Color("#f6e08b"))
-	_selection_title.add_theme_font_size_override("font_size", 15)
+	_selection_title.add_theme_font_size_override("font_size", 14)
 	vbox.add_child(_selection_title)
 
 	_selection_status = Label.new()
-	_selection_status.text = "Toque em uma unidade ou construcao"
-	_selection_status.add_theme_color_override("font_color", Color("#cbd5e1"))
+	_selection_status.text = "Toque em uma unidade ou construção"
+	_selection_status.add_theme_color_override("font_color", Color("#94a3b8"))
 	_selection_status.add_theme_font_size_override("font_size", 12)
 	vbox.add_child(_selection_status)
 
@@ -421,29 +439,45 @@ func _build_bottom_right_commands() -> void:
 	panel.anchor_right = 1.0
 	panel.anchor_top = 1.0
 	panel.anchor_bottom = 1.0
-	panel.offset_left = -402.0
+	panel.offset_left = -408.0
 	panel.offset_right = -14.0
-	panel.offset_top = -236.0
+	panel.offset_top = -242.0
 	panel.offset_bottom = -14.0
-	panel.add_theme_stylebox_override("panel", _make_panel_style(Color(0.05, 0.07, 0.11, 0.88), 10))
+	panel.add_theme_stylebox_override("panel", _make_panel_style(Color(0.04, 0.06, 0.10, 0.92), 12, Color(0.83, 0.69, 0.22, 0.45), true))
 	add_child(panel)
 
 	var margin := MarginContainer.new()
 	margin.add_theme_constant_override("margin_left", 10)
 	margin.add_theme_constant_override("margin_right", 10)
-	margin.add_theme_constant_override("margin_top", 10)
-	margin.add_theme_constant_override("margin_bottom", 10)
+	margin.add_theme_constant_override("margin_top", 8)
+	margin.add_theme_constant_override("margin_bottom", 8)
 	panel.add_child(margin)
 
 	var vbox := VBoxContainer.new()
 	vbox.add_theme_constant_override("separation", 6)
 	margin.add_child(vbox)
 
+	var header_bar := HBoxContainer.new()
+	header_bar.add_theme_constant_override("separation", 4)
+	vbox.add_child(header_bar)
+
+	var header_lbl := Label.new()
+	header_lbl.text = "✦ ORDENS & CONSTRUÇÃO ✦"
+	header_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	header_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	header_lbl.add_theme_color_override("font_color", Color(0.83, 0.69, 0.22, 0.85))
+	header_lbl.add_theme_font_size_override("font_size", 11)
+	header_bar.add_child(header_lbl)
+
 	_age_progress_bar = ProgressBar.new()
 	_age_progress_bar.min_value = 0.0
 	_age_progress_bar.max_value = 100.0
 	_age_progress_bar.custom_minimum_size = Vector2(0.0, 16.0)
 	_age_progress_bar.visible = false
+	var bar_fill := StyleBoxFlat.new()
+	bar_fill.bg_color = Color("#d4af37")
+	bar_fill.set_corner_radius_all(4)
+	_age_progress_bar.add_theme_stylebox_override("fill", bar_fill)
 	vbox.add_child(_age_progress_bar)
 
 	var scroll := ScrollContainer.new()
@@ -466,20 +500,27 @@ func _build_toast_banner() -> void:
 	_toast_panel.anchor_right = 0.5
 	_toast_panel.anchor_top = 0.0
 	_toast_panel.anchor_bottom = 0.0
-	_toast_panel.offset_left = -210.0
-	_toast_panel.offset_right = 210.0
-	_toast_panel.offset_top = 122.0
+	_toast_panel.offset_left = -230.0
+	_toast_panel.offset_right = 230.0
+	_toast_panel.offset_top = 118.0
 	_toast_panel.offset_bottom = 158.0
 	_toast_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_toast_panel.visible = false
-	_toast_panel.add_theme_stylebox_override("panel", _make_panel_style(Color(0.07, 0.1, 0.16, 0.94), 8))
+	_toast_panel.add_theme_stylebox_override("panel", _make_panel_style(Color(0.06, 0.09, 0.15, 0.95), 18, Color(0.83, 0.69, 0.22, 0.65), true))
 	add_child(_toast_panel)
+
+	var m := MarginContainer.new()
+	m.add_theme_constant_override("margin_left", 14)
+	m.add_theme_constant_override("margin_right", 14)
+	m.add_theme_constant_override("margin_top", 6)
+	m.add_theme_constant_override("margin_bottom", 6)
+	_toast_panel.add_child(m)
 
 	_toast_label = Label.new()
 	_toast_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_toast_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_toast_label.add_theme_font_size_override("font_size", 13)
-	_toast_panel.add_child(_toast_label)
+	m.add_child(_toast_label)
 
 
 func _build_pantheon_start_overlay() -> void:
@@ -1156,23 +1197,29 @@ func _on_campaign_objectives_changed(chapter_id: String, title: String, objectiv
 
 
 func _on_resources_changed(res: Dictionary) -> void:
-	_food_lbl.text = "Alim: %d" % int(res.get("food", 0))
-	_wood_lbl.text = "Mad: %d" % int(res.get("wood", 0))
-	_gold_lbl.text = "Ouro: %d" % int(res.get("gold", 0))
-	_favor_lbl.text = "Favor: %d" % int(res.get("favor", 0))
+	if _food_lbl != null:
+		_food_lbl.text = "%d" % int(res.get("food", 0))
+	if _wood_lbl != null:
+		_wood_lbl.text = "%d" % int(res.get("wood", 0))
+	if _gold_lbl != null:
+		_gold_lbl.text = "%d" % int(res.get("gold", 0))
+	if _favor_lbl != null:
+		_favor_lbl.text = "%d" % int(res.get("favor", 0))
 
 
 func _on_population_changed(used: int, cap: int) -> void:
-	_pop_lbl.text = "Pop: %d/%d" % [used, cap]
+	if _pop_lbl != null:
+		_pop_lbl.text = "%d/%d" % [used, cap]
 
 
 func _on_age_changed(new_age: int) -> void:
-	_age_lbl.text = PantheonCatalog.get_age_name(new_age)
+	if _age_lbl != null:
+		_age_lbl.text = "🏛️ %s" % PantheonCatalog.get_age_name(new_age)
 	_refresh_power_buttons_state()
 	_rebuild_command_grid()
 	if new_age >= 5:
 		_divine_btn.visible = true
-		_divine_btn.text = "Deuses (T5)"
+		_divine_btn.text = "⚡ Deuses (T5)"
 
 
 func _on_age_advance_progress(active: bool, _target_age: int, ratio: float) -> void:
@@ -1183,15 +1230,15 @@ func _on_age_advance_progress(active: bool, _target_age: int, ratio: float) -> v
 
 
 func _on_lighting_changed(is_night: bool) -> void:
-	_day_night_btn.text = "Dia" if is_night else "Noite"
+	_day_night_btn.text = "☀️ Dia" if is_night else "🌙 Noite"
 
 
 func _on_fog_toggled(enabled: bool) -> void:
-	_fog_btn.text = "Neblina" if enabled else "Mapa Livre"
+	_fog_btn.text = "🌫 Neblina" if enabled else "🗺️ Livre"
 
 
 func _on_audio_muted_changed(muted: bool) -> void:
-	_audio_btn.text = "Mudo" if muted else "Som"
+	_audio_btn.text = "🔇 Mudo" if muted else "🔊 Som"
 
 
 func _on_power_target_mode_changed(_power_id: String) -> void:
@@ -1201,17 +1248,22 @@ func _on_power_target_mode_changed(_power_id: String) -> void:
 
 func _on_selection_changed(selected_nodes: Array) -> void:
 	if selected_nodes.is_empty():
-		_selection_title.text = "Nenhuma selecao"
-		_selection_status.text = "Toque em uma unidade ou construcao"
+		_selection_title.text = "Nenhuma seleção"
+		_selection_status.text = "Toque em uma unidade ou construção"
 	elif selected_nodes.size() == 1 and is_instance_valid(selected_nodes[0]):
 		var ent: Node = selected_nodes[0]
 		_selection_title.text = ent.get_display_name() if ent.has_method("get_display_name") else ent.name
-		_selection_status.text = ent.get_status_text() if ent.has_method("get_status_text") else ""
+		var st: String = ent.get_status_text() if ent.has_method("get_status_text") else ""
+		if "current_hp" in ent and "max_hp" in ent:
+			var hp_info := " · HP: %d/%d" % [int(ent.current_hp), int(ent.max_hp)]
+			_selection_status.text = st + hp_info
+		else:
+			_selection_status.text = st
 	else:
 		var form_name: String = String(PantheonCatalog.get_formation(GameState.active_formation)["name"])
 		var stance_name: String = String(PantheonCatalog.get_stance(GameState.active_stance)["name"])
 		_selection_title.text = "%d unidades selecionadas" % selected_nodes.size()
-		_selection_status.text = "Formacao: %s · Postura: %s" % [form_name, stance_name]
+		_selection_status.text = "Formação: %s · Postura: %s" % [form_name, stance_name]
 	_rebuild_command_grid()
 
 
@@ -1224,7 +1276,7 @@ func _on_tactics_changed(_id: String) -> void:
 
 
 func _on_notification(message: String, is_warning: bool) -> void:
-	_toast_label.text = message
+	_toast_label.text = "✦ %s ✦" % message
 	_toast_label.add_theme_color_override("font_color", Color("#fca5a5") if is_warning else Color("#f6e08b"))
 	_toast_panel.visible = true
 	_toast_panel.modulate.a = 1.0
@@ -1240,8 +1292,36 @@ func _make_metric_label(text_val: String, color: Color) -> Label:
 	var lbl := Label.new()
 	lbl.text = text_val
 	lbl.add_theme_color_override("font_color", color)
-	lbl.add_theme_font_size_override("font_size", 14)
+	lbl.add_theme_font_size_override("font_size", 13)
 	return lbl
+
+
+func _make_resource_pill(icon_str: String, initial_val: String, text_color: Color) -> Dictionary:
+	var pill := PanelContainer.new()
+	pill.add_theme_stylebox_override("panel", _make_panel_style(Color(0.08, 0.12, 0.18, 0.8), 7, Color(0.83, 0.69, 0.22, 0.28), false))
+	var m := MarginContainer.new()
+	m.add_theme_constant_override("margin_left", 7)
+	m.add_theme_constant_override("margin_right", 7)
+	m.add_theme_constant_override("margin_top", 3)
+	m.add_theme_constant_override("margin_bottom", 3)
+	pill.add_child(m)
+
+	var h := HBoxContainer.new()
+	h.add_theme_constant_override("separation", 4)
+	m.add_child(h)
+
+	var icon_lbl := Label.new()
+	icon_lbl.text = icon_str
+	icon_lbl.add_theme_font_size_override("font_size", 13)
+	h.add_child(icon_lbl)
+
+	var val_lbl := Label.new()
+	val_lbl.text = initial_val
+	val_lbl.add_theme_color_override("font_color", text_color)
+	val_lbl.add_theme_font_size_override("font_size", 13)
+	h.add_child(val_lbl)
+
+	return {"container": pill, "label": val_lbl}
 
 
 func _make_action_button(label_text: String, primary: bool, min_w: float, min_h: float) -> Button:
@@ -1250,30 +1330,62 @@ func _make_action_button(label_text: String, primary: bool, min_w: float, min_h:
 	btn.custom_minimum_size = Vector2(min_w, min_h)
 	btn.add_theme_font_size_override("font_size", 11)
 	btn.add_theme_color_override("font_color", Color("#0d121c") if primary else Color("#f1f5f9"))
-	btn.add_theme_stylebox_override("normal", _make_btn_style(primary))
-	btn.add_theme_stylebox_override("hover", _make_btn_style(primary, true))
-	btn.add_theme_stylebox_override("pressed", _make_btn_style(true))
+	btn.add_theme_stylebox_override("normal", _make_btn_style(primary, false, false))
+	btn.add_theme_stylebox_override("hover", _make_btn_style(primary, true, false))
+	btn.add_theme_stylebox_override("pressed", _make_btn_style(primary, false, true))
+	btn.add_theme_stylebox_override("disabled", _make_btn_style_disabled())
 	btn.pressed.connect(func() -> void: AudioDirector.play_ui_sfx("button"))
 	return btn
 
 
-func _make_panel_style(bg: Color, radius: int) -> StyleBoxFlat:
+func _make_panel_style(bg: Color, radius: int, border_col: Color = Color(0.83, 0.69, 0.22, 0.42), shadow: bool = true) -> StyleBoxFlat:
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = bg
-	sb.border_color = Color(0.83, 0.69, 0.22, 0.38)
+	sb.border_color = border_col
 	sb.set_border_width_all(1)
 	sb.set_corner_radius_all(radius)
+	if shadow:
+		sb.shadow_color = Color(0.0, 0.0, 0.0, 0.42)
+		sb.shadow_size = 6
+		sb.shadow_offset = Vector2(0.0, 2.0)
 	return sb
 
 
-func _make_btn_style(primary: bool, hover: bool = false) -> StyleBoxFlat:
+func _make_btn_style(primary: bool, hover: bool = false, pressed: bool = false) -> StyleBoxFlat:
 	var sb := StyleBoxFlat.new()
 	if primary:
-		sb.bg_color = Color("#e5c158") if hover else Color("#d4af37")
-		sb.border_color = Color("#f6e08b")
+		if pressed:
+			sb.bg_color = Color("#b89428")
+			sb.border_color = Color("#e5c158")
+		elif hover:
+			sb.bg_color = Color("#f0cf6a")
+			sb.border_color = Color("#fff0aa")
+		else:
+			sb.bg_color = Color("#d4af37")
+			sb.border_color = Color("#f6e08b")
+		sb.shadow_color = Color(0.83, 0.69, 0.22, 0.35)
+		sb.shadow_size = 3
 	else:
-		sb.bg_color = Color("#243044") if hover else Color("#161e2e")
-		sb.border_color = Color(0.83, 0.69, 0.22, 0.35)
+		if pressed:
+			sb.bg_color = Color("#0f1522")
+			sb.border_color = Color("#f6e08b")
+		elif hover:
+			sb.bg_color = Color("#2a384f")
+			sb.border_color = Color(0.92, 0.82, 0.45, 0.65)
+		else:
+			sb.bg_color = Color("#172030")
+			sb.border_color = Color(0.83, 0.69, 0.22, 0.4)
+		sb.shadow_color = Color(0.0, 0.0, 0.0, 0.25)
+		sb.shadow_size = 2
+	sb.set_border_width_all(1)
+	sb.set_corner_radius_all(8)
+	return sb
+
+
+func _make_btn_style_disabled() -> StyleBoxFlat:
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0.08, 0.11, 0.16, 0.45)
+	sb.border_color = Color(0.35, 0.4, 0.5, 0.2)
 	sb.set_border_width_all(1)
 	sb.set_corner_radius_all(8)
 	return sb
