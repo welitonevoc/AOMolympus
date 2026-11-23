@@ -59,7 +59,6 @@ theme/custom="res://themes/rts_fantasy_theme.tres"
 
 [rendering]
 
-renderer/rendering_driver="opengl3"
 renderer/rendering_method="mobile"
 textures/vram_compression/import_etc2_astc=true
 anti_aliasing/quality/msaa_3d=1

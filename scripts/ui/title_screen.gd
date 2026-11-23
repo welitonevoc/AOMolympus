@@ -30,7 +30,7 @@ var _selected_difficulty: String = "normal"
 var _selected_victory: String = "conquest"
 var _selected_resources: String = "standard"
 var _selected_starting_age: int = 1
-var _selected_map_size: String = "medium"
+var _selected_map_size: String = "standard"
 
 var _pantheon_buttons: Dictionary = {}
 var _major_god_buttons: Dictionary = {}
@@ -41,7 +41,6 @@ var _diff_buttons: Dictionary = {}
 var _victory_buttons: Dictionary = {}
 var _resource_buttons: Dictionary = {}
 var _starting_age_buttons: Dictionary = {}
-var _selected_map_size: String = "standard"
 var _map_size_buttons: Dictionary = {}
 var _skirmish_desc_lbl: Label
 
