@@ -78,6 +78,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			_update_build_ghost(event.position)
 		elif _is_box_dragging:
 			_on_pointer_drag(event.position)
+		else:
+			_update_mouse_hover_cursor(event.position)
 
 
 func _on_pointer_down(screen_pos: Vector2) -> void:
@@ -167,6 +169,7 @@ func _handle_single_tap(screen_pos: Vector2) -> void:
 			if not collider.is_constructed and selected_villagers.size() > 0:
 				for v in selected_villagers:
 					v.command_build(collider)
+				_spawn_ring_marker(collider.global_position, Color("#3b82f6"), Color("#93c5fd"), CursorManager.CursorType.BUILD)
 				AudioDirector.play_sfx_3d("voice_order", collider.global_position, GameState.active_pantheon)
 				GameState.notify("Aldeoes enviados para concluir %s." % collider.get_display_name(), false)
 				return
@@ -179,6 +182,8 @@ func _handle_single_tap(screen_pos: Vector2) -> void:
 				collider.flash_target()
 				for v in selected_villagers:
 					v.command_gather(collider)
+				var c_type: int = _cursor_for_resource((collider as ResourceNode).resource_kind)
+				_spawn_ring_marker(collider.global_position, Color("#eab308"), Color("#fef08a"), c_type)
 				AudioDirector.play_sfx_3d("voice_order", collider.global_position, GameState.active_pantheon)
 				GameState.notify("Coletando %s." % collider.get_display_name(), false)
 				return
@@ -194,12 +199,14 @@ func _handle_single_tap(screen_pos: Vector2) -> void:
 					nearby_res.flash_target()
 					for v in selected_villagers:
 						v.command_gather(nearby_res)
+					var c_type: int = _cursor_for_resource(nearby_res.resource_kind)
+					_spawn_ring_marker(nearby_res.global_position, Color("#eab308"), Color("#fef08a"), c_type)
 					AudioDirector.play_sfx_3d("voice_order", nearby_res.global_position, GameState.active_pantheon)
 					GameState.notify("Coletando %s." % nearby_res.get_display_name(), false)
 					return
 
 			_move_units_in_formation(selected_units, ground_pos)
-			_spawn_ring_marker(ground_pos, Color("#d4af37"), Color("#f6e08b"))
+			_spawn_ring_marker(ground_pos, Color("#d4af37"), Color("#f6e08b"), CursorManager.CursorType.MOVE)
 			AudioDirector.play_sfx_3d("voice_order", ground_pos, GameState.active_pantheon)
 	else:
 		GameState.set_selection([])
@@ -224,11 +231,14 @@ func _issue_context_order(screen_pos: Vector2) -> void:
 				collider.flash_target()
 				for v in villagers:
 					v.command_gather(collider)
+				var c_type: int = _cursor_for_resource((collider as ResourceNode).resource_kind)
+				_spawn_ring_marker(collider.global_position, Color("#eab308"), Color("#fef08a"), c_type)
 				return
 		if collider is BuildingActor and collider.faction == "player" and not collider.is_constructed:
 			if villagers.size() > 0:
 				for v in villagers:
 					v.command_build(collider)
+				_spawn_ring_marker(collider.global_position, Color("#3b82f6"), Color("#93c5fd"), CursorManager.CursorType.BUILD)
 				return
 	var ground_pos: Variant = _project_to_ground(screen_pos)
 	if ground_pos is Vector3:
@@ -239,19 +249,21 @@ func _issue_context_order(screen_pos: Vector2) -> void:
 				nearby_res.flash_target()
 				for v in villagers:
 					v.command_gather(nearby_res)
+				var c_type: int = _cursor_for_resource(nearby_res.resource_kind)
+				_spawn_ring_marker(nearby_res.global_position, Color("#eab308"), Color("#fef08a"), c_type)
 				AudioDirector.play_sfx_3d("voice_order", nearby_res.global_position, GameState.active_pantheon)
 				GameState.notify("Coletando %s." % nearby_res.get_display_name(), false)
 				return
 
 		_move_units_in_formation(selected_units, ground_pos)
-		_spawn_ring_marker(ground_pos, Color("#d4af37"), Color("#f6e08b"))
+		_spawn_ring_marker(ground_pos, Color("#d4af37"), Color("#f6e08b"), CursorManager.CursorType.MOVE)
 		AudioDirector.play_sfx_3d("voice_order", ground_pos, GameState.active_pantheon)
 
 
 func _command_units_attack(units: Array, target: Node3D) -> void:
 	for u in units:
 		u.command_attack(target)
-	_spawn_ring_marker(target.global_position, Color("#ef4444"), Color("#fca5a5"))
+	_spawn_ring_marker(target.global_position, Color("#ef4444"), Color("#fca5a5"), CursorManager.CursorType.ATTACK)
 	AudioDirector.play_sfx_3d("voice_order", target.global_position, GameState.active_pantheon)
 	var target_name: String = target.get_display_name() if target.has_method("get_display_name") else target.name
 	GameState.notify("Atacando %s!" % target_name, false)
@@ -331,7 +343,9 @@ func _on_power_target_mode_changed(power_id: String) -> void:
 		return
 	if power_id.is_empty():
 		_power_ring.visible = false
+		CursorManager.reset_cursor()
 		return
+	CursorManager.set_cursor(CursorManager.CursorType.DIVINE_POWER)
 	var spec: Dictionary = DivinePowerCatalog.get_power(power_id)
 	var radius: float = maxf(2.5, float(spec["radius"]))
 	var torus := TorusMesh.new()
@@ -367,9 +381,12 @@ func _confirm_power_cast(screen_pos: Vector2) -> void:
 	var ground_pos: Variant = _project_to_ground(screen_pos)
 	if not (ground_pos is Vector3) or power_system == null:
 		GameState.cancel_power_target_mode()
+		CursorManager.reset_cursor()
 		return
 	var pos := Vector3(clampf(ground_pos.x, -44.0, 44.0), 0.0, clampf(ground_pos.z, -44.0, 44.0))
 	power_system.cast_power(pid, pos)
+	CursorManager.spawn_tactical_ping(world, pos, CursorManager.CursorType.DIVINE_POWER, Color("#8b5cf6"), Color("#c4b5fd"))
+	CursorManager.reset_cursor()
 
 
 func _on_build_mode_changed(kind: String) -> void:
@@ -377,7 +394,9 @@ func _on_build_mode_changed(kind: String) -> void:
 		return
 	if kind.is_empty():
 		_build_ghost.visible = false
+		CursorManager.reset_cursor()
 		return
+	CursorManager.set_cursor(CursorManager.CursorType.BUILD)
 	var spec: Dictionary = PantheonCatalog.get_building_spec(kind)
 	var fp: float = float(spec["footprint"])
 	var mesh := BoxMesh.new()
@@ -410,6 +429,7 @@ func _confirm_build_placement(screen_pos: Vector2) -> void:
 	var spec: Dictionary = PantheonCatalog.get_building_spec(kind)
 	if not GameState.spend_resources(spec["cost"]):
 		GameState.cancel_build_mode()
+		CursorManager.reset_cursor()
 		return
 	if world != null and world.has_method("spawn_building"):
 		var building: BuildingActor = world.spawn_building(kind, pos, false, "player", GameState.active_pantheon)
@@ -420,8 +440,10 @@ func _confirm_build_placement(screen_pos: Vector2) -> void:
 				builders.append(idle)
 		for v in builders:
 			v.command_build(building)
+		CursorManager.spawn_tactical_ping(world, pos, CursorManager.CursorType.BUILD, Color("#3b82f6"), Color("#93c5fd"))
 		GameState.set_selection([building])
 	GameState.cancel_build_mode()
+	CursorManager.reset_cursor()
 
 
 func _can_place_at(pos: Vector3, kind: String) -> bool:
@@ -478,30 +500,15 @@ func _find_any_villager() -> UnitActor:
 	return null
 
 
-func _spawn_ring_marker(pos: Vector3, base_col: Color, emit_col: Color) -> void:
+func _spawn_ring_marker(
+	pos: Vector3,
+	base_col: Color,
+	emit_col: Color,
+	cursor_type: int = CursorManager.CursorType.MOVE
+) -> void:
 	if world == null:
 		return
-	var torus := TorusMesh.new()
-	torus.inner_radius = 0.55
-	torus.outer_radius = 0.75
-	var mat := StandardMaterial3D.new()
-	mat.albedo_color = base_col
-	mat.emission_enabled = true
-	mat.emission = emit_col
-	mat.emission_energy_multiplier = 1.6
-	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	var marker := MeshInstance3D.new()
-	marker.mesh = torus
-	marker.material_override = mat
-	marker.position = Vector3(pos.x, 0.12, pos.z)
-	world.add_child(marker)
-
-	var tw := marker.create_tween()
-	tw.set_parallel(true)
-	tw.tween_property(marker, "scale", Vector3(1.6, 1.0, 1.6), 0.38)
-	tw.tween_property(mat, "albedo_color:a", 0.0, 0.38)
-	tw.chain().tween_callback(marker.queue_free)
+	CursorManager.spawn_tactical_ping(world, pos, cursor_type, base_col, emit_col)
 
 
 func _setup_box_overlay() -> void:
@@ -558,3 +565,65 @@ func _find_resource_near(pos: Vector3, max_dist: float) -> ResourceNode:
 				best_dist = d
 				best = res_node
 	return best
+
+
+func _cursor_for_resource(kind: String) -> int:
+	match kind:
+		"food":
+			return CursorManager.CursorType.GATHER_FOOD
+		"wood":
+			return CursorManager.CursorType.GATHER_WOOD
+		"gold":
+			return CursorManager.CursorType.GATHER_GOLD
+		"favor":
+			return CursorManager.CursorType.GATHER_FAVOR
+		_:
+			return CursorManager.CursorType.GATHER_GENERIC
+
+
+func _update_mouse_hover_cursor(screen_pos: Vector2) -> void:
+	if not GameState.pending_power_id.is_empty():
+		CursorManager.set_cursor(CursorManager.CursorType.DIVINE_POWER)
+		return
+	if not GameState.pending_build_kind.is_empty():
+		CursorManager.set_cursor(CursorManager.CursorType.BUILD)
+		return
+
+	var selected_units := _get_selected_units()
+	if selected_units.is_empty():
+		CursorManager.reset_cursor()
+		return
+
+	var hit: Dictionary = _raycast_world(screen_pos, 1 | 2 | 4)
+	if hit.is_empty():
+		CursorManager.set_cursor(CursorManager.CursorType.MOVE)
+		return
+
+	var collider: Object = hit.get("collider")
+	if collider is UnitActor and not collider.is_dead() and collider.visible:
+		if collider.faction == "enemy":
+			CursorManager.set_cursor(CursorManager.CursorType.ATTACK)
+			return
+		else:
+			CursorManager.set_cursor(CursorManager.CursorType.POINTER)
+			return
+
+	if collider is BuildingActor and collider.visible:
+		if collider.faction == "enemy":
+			CursorManager.set_cursor(CursorManager.CursorType.ATTACK)
+			return
+		elif collider.faction == "player":
+			var villagers := _get_selected_villagers()
+			if not collider.is_constructed and villagers.size() > 0:
+				CursorManager.set_cursor(CursorManager.CursorType.BUILD)
+				return
+			CursorManager.set_cursor(CursorManager.CursorType.POINTER)
+			return
+
+	if collider is ResourceNode and not (collider as ResourceNode).is_depleted():
+		var villagers := _get_selected_villagers()
+		if villagers.size() > 0:
+			CursorManager.set_cursor(_cursor_for_resource((collider as ResourceNode).resource_kind))
+			return
+
+	CursorManager.set_cursor(CursorManager.CursorType.MOVE)

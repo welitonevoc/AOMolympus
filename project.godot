@@ -31,6 +31,7 @@ SaveLoadSystem="*res://scripts/autoload/save_load_system.gd"
 AudioDirector="*res://scripts/audio/audio_director.gd"
 MultiplayerManager="*res://scripts/network/multiplayer_manager.gd"
 MCPRuntimeServer="*res://addons/godot_mcp_toolkit/runtime/mcp_runtime_server.gd"
+CursorManager="*res://scripts/ui/cursor_manager.gd"
 
 [display]
 
