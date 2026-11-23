@@ -140,19 +140,36 @@ func cast_power(power_id: String, world_pos: Vector3) -> bool:
 			_damage_and_freeze_enemies(world_pos, radius, 120.0, 3.0)
 			_damage_enemies_in_area(world_pos, radius, 0.0, 240.0)
 			_spawn_ring_burst(world_pos, radius, vfx_col)
-		"siege_quake":
-			_damage_enemies_in_area(world_pos, radius, 70.0, 620.0)
+		"son_of_osiris":
+			_summon_allies(world_pos, "myth", 1)
+			_spawn_sky_beam(world_pos, 2.5, Color("#06b6d4"))
 			_spawn_ring_burst(world_pos, radius, vfx_col)
-		"plague", "chaos":
-			_damage_enemies_in_area(world_pos, radius, 145.0, 60.0)
-			_spawn_sky_particles(world_pos, radius, vfx_col, 26)
+			GameState.notify("O Filho de Osiris ascendeu ao campo de batalha!", true)
+		"buff_bronze":
 			_spawn_ring_burst(world_pos, radius, vfx_col)
-		"convert":
-			_convert_nearest_enemy(world_pos, radius)
-			_spawn_sky_beam(world_pos, 0.85, vfx_col)
-		"implode":
-			_pull_and_damage_enemies(world_pos, radius, 340.0, 360.0)
-			_spawn_black_hole_vfx(world_pos, vfx_col)
+			GameState.notify("Armadura de Bronze ativada para todo o exercito (+40% Armadura)!", false)
+		"cease_fire":
+			_spawn_sky_particles(world_pos, radius, Color("#fbbf24"), 40)
+			GameState.notify("Cessar-Fogo Divino decretado! Hostilidades suspensas temporariamente.", true)
+		"ragnarok":
+			_summon_allies(world_pos, "hero", 4)
+			_spawn_sky_beam(world_pos, 3.0, Color("#dc2626"))
+			_spawn_ring_burst(world_pos, radius, vfx_col)
+			GameState.notify("O Ragnarok comecou! Herois divinos convocados para a batalha final!", true)
+		"walking_woods":
+			_summon_allies(world_pos, "myth", 3)
+			_spawn_ring_burst(world_pos, radius, Color("#16a34a"))
+			GameState.notify("A floresta ganhou vida como guardioes sagrados!", false)
+		"volcano", "tartarian_gate":
+			_damage_enemies_in_area(world_pos, radius, 320.0, 450.0)
+			_spawn_meteor_impact(world_pos, Color("#b91c1c"))
+			_spawn_ring_burst(world_pos, radius, vfx_col)
+		"underworld":
+			_pull_and_damage_enemies(world_pos, radius, 120.0, 100.0)
+			_spawn_vortex_funnel(world_pos, Color("#a855f7"))
+		"sandstorm", "curse":
+			_damage_and_freeze_enemies(world_pos, radius, 110.0, 5.0)
+			_spawn_sky_particles(world_pos, radius, Color("#d97706"), 36)
 		_:
 			_damage_enemies_in_area(world_pos, radius, 150.0, 120.0)
 			_spawn_ring_burst(world_pos, radius, vfx_col)
