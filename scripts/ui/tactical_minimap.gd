@@ -4,9 +4,9 @@ extends Control
 ## Exibe bioma, Neblina de Guerra (3 estados), recursos, aliados, inimigos visiveis
 ## e retangulo da camera. Toque ou arraste para mover a camera instantaneamente.
 
-const ARENA_SIZE: float = 96.0
 const REDRAW_INTERVAL: float = 0.14
 
+var arena_size: float = 220.0
 var _world: BattleWorld
 var _camera_rig: TouchRTSCamera
 var _fog: FogOfWarSystem
@@ -18,12 +18,18 @@ func bind(p_world: BattleWorld, p_camera: TouchRTSCamera, p_fog: FogOfWarSystem)
 	_world = p_world
 	_camera_rig = p_camera
 	_fog = p_fog
+	arena_size = GameState.get_active_arena_size()
 	queue_redraw()
 
 
 func _ready() -> void:
+	arena_size = GameState.get_active_arena_size()
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	custom_minimum_size = Vector2(156.0, 156.0)
+	GameState.match_started_signal.connect(func(_p: String, _e: String) -> void:
+		arena_size = GameState.get_active_arena_size()
+		queue_redraw()
+	)
 
 
 func _process(delta: float) -> void:
@@ -61,7 +67,7 @@ func _jump_camera_to_local(local_pos: Vector2) -> void:
 		return
 	var nx: float = clampf(local_pos.x / size.x, 0.0, 1.0)
 	var nz: float = clampf(local_pos.y / size.y, 0.0, 1.0)
-	var world_pos := Vector3((nx - 0.5) * ARENA_SIZE, 0.0, (nz - 0.5) * ARENA_SIZE)
+	var world_pos := Vector3((nx - 0.5) * arena_size, 0.0, (nz - 0.5) * arena_size)
 	_camera_rig.focus_on(world_pos)
 	queue_redraw()
 
@@ -131,6 +137,6 @@ func _draw() -> void:
 
 
 func _world_to_minimap(world_pos: Vector3, map_rect: Rect2) -> Vector2:
-	var nx: float = clampf((world_pos.x + ARENA_SIZE * 0.5) / ARENA_SIZE, 0.0, 1.0)
-	var nz: float = clampf((world_pos.z + ARENA_SIZE * 0.5) / ARENA_SIZE, 0.0, 1.0)
+	var nx: float = clampf((world_pos.x + arena_size * 0.5) / arena_size, 0.0, 1.0)
+	var nz: float = clampf((world_pos.z + arena_size * 0.5) / arena_size, 0.0, 1.0)
 	return map_rect.position + Vector2(nx * map_rect.size.x, nz * map_rect.size.y)

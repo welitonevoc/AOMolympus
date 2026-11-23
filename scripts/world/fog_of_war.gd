@@ -7,9 +7,9 @@ extends Node3D
 ##   2 = Visivel agora (transparente, revela unidades inimigas)
 
 const GRID_SIZE: int = 48
-const ARENA_SIZE: float = 96.0
 const UPDATE_INTERVAL: float = 0.22
 
+var arena_size: float = 220.0
 var _grid: PackedByteArray = PackedByteArray()
 var _fog_image: Image
 var _fog_texture: ImageTexture
@@ -18,7 +18,14 @@ var _fog_mat: StandardMaterial3D
 var _accum: float = 0.0
 
 
+func set_arena_size(new_size: float) -> void:
+	arena_size = new_size
+	if _fog_mesh != null and _fog_mesh.mesh is PlaneMesh:
+		_fog_mesh.mesh.size = Vector2(arena_size, arena_size)
+
+
 func _ready() -> void:
+	arena_size = GameState.get_active_arena_size()
 	_grid.resize(GRID_SIZE * GRID_SIZE)
 	_grid.fill(0)
 
@@ -27,7 +34,7 @@ func _ready() -> void:
 	_fog_texture = ImageTexture.create_from_image(_fog_image)
 
 	var plane := PlaneMesh.new()
-	plane.size = Vector2(ARENA_SIZE, ARENA_SIZE)
+	plane.size = Vector2(arena_size, arena_size)
 	_fog_mat = StandardMaterial3D.new()
 	_fog_mat.albedo_texture = _fog_texture
 	_fog_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
@@ -139,7 +146,7 @@ func _refresh_fog() -> void:
 
 func _reveal_circle(world_pos: Vector3, radius: float) -> void:
 	var center: Vector2i = _world_to_cell(world_pos)
-	var cell_size: float = ARENA_SIZE / float(GRID_SIZE)
+	var cell_size: float = arena_size / float(GRID_SIZE)
 	var r_cells: int = int(ceil(radius / cell_size))
 	var r2: float = float(r_cells * r_cells)
 
@@ -171,7 +178,7 @@ func _update_enemy_visibility(apply_fog: bool) -> void:
 
 
 func _world_to_cell(world_pos: Vector3) -> Vector2i:
-	var half: float = ARENA_SIZE * 0.5
-	var nx: float = clampf((world_pos.x + half) / ARENA_SIZE, 0.0, 0.999)
-	var nz: float = clampf((world_pos.z + half) / ARENA_SIZE, 0.0, 0.999)
+	var half: float = arena_size * 0.5
+	var nx: float = clampf((world_pos.x + half) / arena_size, 0.0, 0.999)
+	var nz: float = clampf((world_pos.z + half) / arena_size, 0.0, 0.999)
 	return Vector2i(int(nx * float(GRID_SIZE)), int(nz * float(GRID_SIZE)))

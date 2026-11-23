@@ -217,6 +217,41 @@ const AI_DIFFICULTIES: Dictionary = {
 
 const DIFFICULTY_ORDER: Array[String] = ["easy", "normal", "hard"]
 
+const MAP_SIZES: Dictionary = {
+	"compact": {
+		"id": "compact",
+		"name": "Compacto (128m)",
+		"short_name": "Compacto",
+		"description": "Arena ágil para duelos rápidos 1v1 no celular",
+		"meters": 128.0,
+		"player_base_ratio": 0.30,
+		"resource_mult": 1.0,
+		"camera_limit": 56.0,
+	},
+	"standard": {
+		"id": "standard",
+		"name": "Padrão (220m)",
+		"short_name": "Padrão",
+		"description": "Dimensão clássica do AoM com exploração e anéis balanceados de recursos",
+		"meters": 220.0,
+		"player_base_ratio": 0.32,
+		"resource_mult": 1.5,
+		"camera_limit": 98.0,
+	},
+	"epic": {
+		"id": "epic",
+		"name": "Épico (320m)",
+		"short_name": "Épico",
+		"description": "Grande arena para batalhas mitológicas épicas e múltiplos assentamentos",
+		"meters": 320.0,
+		"player_base_ratio": 0.34,
+		"resource_mult": 2.2,
+		"camera_limit": 145.0,
+	},
+}
+
+const MAP_SIZE_ORDER: Array[String] = ["compact", "standard", "epic"]
+
 const AGE_NAMES: Dictionary = {
 	1: "Era Arcaica (I)",
 	2: "Era Classica (II)",
@@ -713,6 +748,10 @@ func get_biome(biome_id: String) -> Dictionary:
 
 func get_ai_difficulty(diff_id: String) -> Dictionary:
 	return AI_DIFFICULTIES.get(diff_id, AI_DIFFICULTIES["normal"])
+
+
+static func get_map_size(size_id: String) -> Dictionary:
+	return MAP_SIZES.get(size_id, MAP_SIZES["standard"])
 
 
 func get_age_name(age: int) -> String:

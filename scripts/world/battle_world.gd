@@ -4,9 +4,13 @@ extends Node3D
 ## Integra BiomeMapGenerator (4 biomas procedurais), FogOfWarSystem, EnemyAIController,
 ## base do jogador + cidadela inimiga evolutiva, projeteis 3D e deteccao de Vitoria/Derrota.
 
-const ARENA_SIZE: float = 96.0
-const PLAYER_BASE_POS: Vector3 = Vector3(-18.0, 0.0, 16.0)
-const ENEMY_BASE_POS: Vector3 = Vector3(20.0, 0.0, -18.0)
+const ARENA_SIZE: float = 220.0
+const PLAYER_BASE_POS: Vector3 = Vector3(-66.0, 0.0, 60.0)
+const ENEMY_BASE_POS: Vector3 = Vector3(66.0, 0.0, -60.0)
+
+var arena_size: float = 220.0
+var player_base_pos: Vector3 = Vector3(-66.0, 0.0, 60.0)
+var enemy_base_pos: Vector3 = Vector3(66.0, 0.0, -60.0)
 
 var _sun_light: DirectionalLight3D
 var _world_env: WorldEnvironment
@@ -19,6 +23,7 @@ var _camera_rig: Node3D
 var _fog_system: Node3D
 var _ai_controller: Node
 var _power_system: Node3D
+var _battle_hud: Node = null  # Referência ao BattleScreen (Painel H)
 
 
 func _ready() -> void:
@@ -49,6 +54,20 @@ func _ready() -> void:
 		_ai_controller.bind(self)
 	if _power_system != null:
 		_power_system.bind(self)
+
+	# === BattleScreen / Painel H (HUD da Partida) ===
+	_battle_hud = get_node_or_null("../BattleScreen")
+	if _battle_hud != null:
+		# Vincula o minimapa com mundo, câmera e neblina
+		if _battle_hud.has_method("bind_minimap"):
+			_battle_hud.bind_minimap(self, _camera_rig, _fog_system)
+
+		# Conecta sinais do HUD com o BattleWorld
+		_battle_hud.build_requested.connect(_on_hud_build_requested)
+		_battle_hud.power_requested.connect(_on_hud_power_requested)
+		_battle_hud.formation_requested.connect(_on_hud_formation_requested)
+		_battle_hud.stance_requested.connect(_on_hud_stance_requested)
+		_battle_hud.unit_command.connect(_on_hud_unit_command)
 
 	GameState.match_started_signal.connect(_on_match_started)
 	GameState.lighting_changed.connect(_apply_day_night_lighting)
@@ -89,59 +108,109 @@ func _on_match_started(pantheon_id: String, enemy_pantheon_id: String) -> void:
 	for proj in _projectiles_root.get_children():
 		proj.queue_free()
 
-	# 1. Gera o mapa procedural para o Bioma + Semente escolhidos
+	# 1. Obtem tamanho dinamico da arena conforme o tamanho do mapa configurado
+	arena_size = GameState.get_active_arena_size()
+	_setup_navigation_mesh()
+	var ratio: float = float(PantheonCatalog.get_map_size(GameState.active_map_size).get("player_base_ratio", 0.32))
+	player_base_pos = Vector3(-arena_size * ratio, 0.0, arena_size * (ratio * 0.90))
+	enemy_base_pos = Vector3(arena_size * ratio, 0.0, -arena_size * (ratio * 0.90))
+
+	# 2. Gera o mapa procedural com os aneis concêntricos de recursos
 	var gen_result: Dictionary = BiomeMapGenerator.build_biome_environment(
 		_terrain_holder,
 		GameState.active_biome,
-		ARENA_SIZE,
-		PLAYER_BASE_POS,
-		ENEMY_BASE_POS,
+		arena_size,
+		player_base_pos,
+		enemy_base_pos,
 		GameState.map_seed
 	)
 	_apply_day_night_lighting(GameState.is_night)
 
-	# 2. Instancia recursos procedurais do plano do bioma
+	# 3. Instancia recursos procedurais do plano do bioma
 	var res_plan: Array = gen_result.get("resources", [])
 	for item in res_plan:
 		_spawn_resource(String(item["kind"]), item["pos"], float(item["amount"]))
 
-	# 3. === BASE DO JOGADOR (Sudoeste) ===
-	var tc: BuildingActor = spawn_building("town_center", PLAYER_BASE_POS, true, "player", pantheon_id, 1)
-	spawn_building("barracks", PLAYER_BASE_POS + Vector3(7.5, 0.0, 3.0), true, "player", pantheon_id, 1)
+	# 4. === BASE DO JOGADOR (Sudoeste) ===
+	var tc: BuildingActor = spawn_building("town_center", player_base_pos, true, "player", pantheon_id, 1)
+	spawn_building("barracks", player_base_pos + Vector3(8.5, 0.0, 3.5), true, "player", pantheon_id, 1)
 
 	var starting_villagers: Array[UnitActor] = []
-	for offset in [Vector3(-3.5, 0.0, 4.5), Vector3(0.0, 0.0, 5.2), Vector3(3.5, 0.0, 4.5), Vector3(-2.0, 0.0, 6.2)]:
-		var v: UnitActor = spawn_unit("villager", PLAYER_BASE_POS + offset, "player", pantheon_id)
+	for offset in [Vector3(-4.0, 0.0, 4.5), Vector3(0.0, 0.0, 5.5), Vector3(4.0, 0.0, 4.5), Vector3(-2.0, 0.0, 7.0)]:
+		var v: UnitActor = spawn_unit("villager", player_base_pos + offset, "player", pantheon_id)
 		starting_villagers.append(v)
 
 	if not starting_villagers.is_empty():
 		call_deferred("_start_villager_demo_action", starting_villagers[0])
 
-	spawn_unit("infantry", PLAYER_BASE_POS + Vector3(5.5, 0.0, -3.5), "player", pantheon_id)
-	spawn_unit("infantry", PLAYER_BASE_POS + Vector3(7.2, 0.0, -2.5), "player", pantheon_id)
-	spawn_unit("archer", PLAYER_BASE_POS + Vector3(4.5, 0.0, -5.2), "player", pantheon_id)
-	spawn_unit("cavalry", PLAYER_BASE_POS + Vector3(8.5, 0.0, -4.5), "player", pantheon_id)
-	spawn_unit("myth", PLAYER_BASE_POS + Vector3(2.5, 0.0, -6.0), "player", pantheon_id)
+	spawn_unit("infantry", player_base_pos + Vector3(6.0, 0.0, -4.0), "player", pantheon_id)
+	spawn_unit("infantry", player_base_pos + Vector3(8.0, 0.0, -3.0), "player", pantheon_id)
+	spawn_unit("archer", player_base_pos + Vector3(5.0, 0.0, -6.0), "player", pantheon_id)
+	spawn_unit("cavalry", player_base_pos + Vector3(9.5, 0.0, -5.0), "player", pantheon_id)
+	spawn_unit("myth", player_base_pos + Vector3(3.0, 0.0, -7.0), "player", pantheon_id)
 
-	# 4. === CIDADELA INIMIGA (Nordeste — gerida pela IA multi-dificuldade) ===
-	spawn_building("town_center", ENEMY_BASE_POS, true, "enemy", enemy_pantheon_id, 1)
-	spawn_building("barracks", ENEMY_BASE_POS + Vector3(-7.0, 0.0, 3.5), true, "enemy", enemy_pantheon_id, 1)
-	spawn_building("tower", ENEMY_BASE_POS + Vector3(-6.5, 0.0, -4.5), true, "enemy", enemy_pantheon_id, 1)
+	# 5. === CIDADELA INIMIGA (Nordeste — gerida pela IA multi-dificuldade) ===
+	spawn_building("town_center", enemy_base_pos, true, "enemy", enemy_pantheon_id, 1)
+	spawn_building("barracks", enemy_base_pos + Vector3(-8.0, 0.0, 4.0), true, "enemy", enemy_pantheon_id, 1)
+	spawn_building("tower", enemy_base_pos + Vector3(-7.5, 0.0, -5.0), true, "enemy", enemy_pantheon_id, 1)
 
-	spawn_unit("infantry", ENEMY_BASE_POS + Vector3(-5.0, 0.0, 6.5), "enemy", enemy_pantheon_id)
-	spawn_unit("infantry", ENEMY_BASE_POS + Vector3(-2.5, 0.0, 7.5), "enemy", enemy_pantheon_id)
-	spawn_unit("archer", ENEMY_BASE_POS + Vector3(-7.5, 0.0, 5.0), "enemy", enemy_pantheon_id)
+	spawn_unit("infantry", enemy_base_pos + Vector3(-5.5, 0.0, 7.0), "enemy", enemy_pantheon_id)
+	spawn_unit("infantry", enemy_base_pos + Vector3(-3.0, 0.0, 8.0), "enemy", enemy_pantheon_id)
+	spawn_unit("archer", enemy_base_pos + Vector3(-8.0, 0.0, 5.5), "enemy", enemy_pantheon_id)
 	if GameState.ai_difficulty != "easy":
-		spawn_unit("cavalry", ENEMY_BASE_POS + Vector3(-9.5, 0.0, 8.5), "enemy", enemy_pantheon_id)
+		spawn_unit("cavalry", enemy_base_pos + Vector3(-10.5, 0.0, 9.5), "enemy", enemy_pantheon_id)
 	if GameState.ai_difficulty == "hard":
-		spawn_unit("myth", ENEMY_BASE_POS + Vector3(-3.5, 0.0, 4.0), "enemy", enemy_pantheon_id)
+		spawn_unit("myth", enemy_base_pos + Vector3(-4.0, 0.0, 4.5), "enemy", enemy_pantheon_id)
 
+	# 6. Sincroniza Fog of War e limites da câmera com o tamanho da arena
 	if _fog_system != null:
+		if _fog_system.has_method("set_arena_size"):
+			_fog_system.set_arena_size(arena_size)
 		_fog_system.reset_fog()
 
-	if _camera_rig != null and _camera_rig.has_method("focus_on"):
-		_camera_rig.focus_on(tc.global_position, true)
+	if _camera_rig != null:
+		if "map_limit" in _camera_rig:
+			var cam_limit: float = float(PantheonCatalog.get_map_size(GameState.active_map_size).get("camera_limit", arena_size * 0.46))
+			_camera_rig.map_limit = cam_limit
+		if _camera_rig.has_method("focus_on"):
+			_camera_rig.focus_on(tc.global_position, true)
 	GameState.set_selection([tc])
+
+
+## ============================================================================
+# Handlers dos sinais do BattleScreen / Painel H (HUD da Partida)
+## ============================================================================
+
+func _on_hud_build_requested(building_kind: String) -> void:
+	GameState.enter_build_mode(building_kind)
+
+
+func _on_hud_power_requested(power_id: String) -> void:
+	if _power_system != null and _power_system.has_method("request_power"):
+		_power_system.request_power(power_id)
+
+
+func _on_hud_formation_requested(formation_id: String) -> void:
+	GameState.set_formation(formation_id)
+
+
+func _on_hud_stance_requested(stance_id: String) -> void:
+	GameState.set_stance(stance_id)
+
+
+func _on_hud_unit_command(command: String, target_object: Object) -> void:
+	if target_object is UnitActor:
+		match command:
+			"move":
+				# Posição alvo viria do clique no mapa; aqui usamos a posição atual como fallback
+				# O clique no mapa deve ser tratado pelo SelectionController
+				pass
+			"attack":
+				if target_object.has_method("command_attack"):
+					target_object.command_attack(target_object)
+			"stop":
+				if target_object.has_method("command_stop"):
+					target_object.command_stop()
 
 
 func spawn_building(
@@ -193,7 +262,7 @@ func focus_town_center() -> void:
 			_camera_rig.focus_on(tc.global_position)
 			GameState.set_selection([tc])
 			return
-	_camera_rig.focus_on(PLAYER_BASE_POS)
+	_camera_rig.focus_on(player_base_pos)
 
 
 func focus_idle_villager() -> void:
@@ -221,7 +290,7 @@ func _start_villager_demo_action(v: UnitActor) -> void:
 	if nearest_tree != null:
 		v.command_gather(nearest_tree)
 	else:
-		v.command_move(PLAYER_BASE_POS + Vector3(-6.0, 0.0, 7.0))
+		v.command_move(player_base_pos + Vector3(-6.0, 0.0, 7.0))
 
 
 func select_all_military() -> void:
@@ -255,7 +324,7 @@ func _on_divine_altar_finished(building: BuildingActor) -> void:
 
 ## Spawn o deus invocado no mundo do jogador.
 func _on_divine_summoned(god_kind: String, tier: String) -> void:
-	var spawn_pos: Vector3 = PLAYER_BASE_POS + Vector3(8.0, 0.0, 0.0)
+	var spawn_pos: Vector3 = player_base_pos + Vector3(8.0, 0.0, 0.0)
 	var u: UnitActor = spawn_unit(god_kind, spawn_pos, "player", GameState.active_pantheon)
 	GameState.notify("Deus %s invocado no campo de batalha!" % _divine_display_name(god_kind), false)
 
@@ -378,12 +447,13 @@ func _apply_day_night_lighting(is_night: bool) -> void:
 
 
 func _setup_navigation_mesh() -> void:
-	_nav_region = NavigationRegion3D.new()
-	_nav_region.name = "NavigationRegion3D"
-	add_child(_nav_region)
+	if _nav_region == null:
+		_nav_region = NavigationRegion3D.new()
+		_nav_region.name = "NavigationRegion3D"
+		add_child(_nav_region)
 
 	var nav_mesh := NavigationMesh.new()
-	var half: float = ARENA_SIZE * 0.48
+	var half: float = arena_size * 0.48
 	nav_mesh.vertices = PackedVector3Array([
 		Vector3(-half, 0.0, -half),
 		Vector3(half, 0.0, -half),
@@ -457,12 +527,18 @@ func restore_entities(data: Dictionary) -> void:
 	GameState.population_used = 0
 
 	# 1. Re-cria o terreno procedural do bioma com a semente exata salva
+	arena_size = GameState.get_active_arena_size()
+	var ratio: float = float(PantheonCatalog.get_map_size(GameState.active_map_size).get("player_base_ratio", 0.32))
+	player_base_pos = Vector3(-arena_size * ratio, 0.0, arena_size * (ratio * 0.90))
+	enemy_base_pos = Vector3(arena_size * ratio, 0.0, -arena_size * (ratio * 0.90))
+	_setup_navigation_mesh()
+
 	BiomeMapGenerator.build_biome_environment(
 		_terrain_holder,
 		GameState.active_biome,
-		ARENA_SIZE,
-		PLAYER_BASE_POS,
-		ENEMY_BASE_POS,
+		arena_size,
+		player_base_pos,
+		enemy_base_pos,
 		GameState.map_seed
 	)
 	_apply_day_night_lighting(GameState.is_night)

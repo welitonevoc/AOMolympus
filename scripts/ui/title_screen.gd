@@ -41,6 +41,8 @@ var _diff_buttons: Dictionary = {}
 var _victory_buttons: Dictionary = {}
 var _resource_buttons: Dictionary = {}
 var _starting_age_buttons: Dictionary = {}
+var _selected_map_size: String = "standard"
+var _map_size_buttons: Dictionary = {}
 var _skirmish_desc_lbl: Label
 
 # Elementos do Card de Visualização do Deus Maior (Coluna Direita do Skirmish)
@@ -593,6 +595,23 @@ func _build_skirmish_modal() -> void:
 		v_row.add_child(btn)
 		_victory_buttons[vid] = btn
 
+	# 8. Dimensão da Arena (Tamanho do Mapa)
+	s_vbox.add_child(_make_section_title("8. DIMENSÃO DA ARENA & RECURSOS (TAMANHO DO MAPA):"))
+	var size_row := HBoxContainer.new()
+	size_row.alignment = BoxContainer.ALIGNMENT_BEGIN
+	size_row.add_theme_constant_override("separation", 8)
+	s_vbox.add_child(size_row)
+
+	for ms_id in PantheonCatalog.MAP_SIZE_ORDER:
+		var ms_data: Dictionary = PantheonCatalog.get_map_size(ms_id)
+		var btn := Button.new()
+		btn.text = "📐 %s" % ms_data.get("name", ms_id)
+		btn.custom_minimum_size = Vector2(195, 38)
+		btn.add_theme_font_size_override("font_size", 12)
+		btn.pressed.connect(func() -> void: _select_map_size(ms_id))
+		size_row.add_child(btn)
+		_map_size_buttons[ms_id] = btn
+
 	# ── COLUNA DIREITA: Card de Visualização do Deus Maior ───────────────────
 	var right_panel := PanelContainer.new()
 	right_panel.custom_minimum_size = Vector2(410, 480)
@@ -750,6 +769,11 @@ func _select_victory(vid: String) -> void:
 	_refresh_skirmish_highlights()
 
 
+func _select_map_size(ms_id: String) -> void:
+	_selected_map_size = ms_id
+	_refresh_skirmish_highlights()
+
+
 func _refresh_skirmish_highlights() -> void:
 	for pid in _pantheon_buttons:
 		var btn: Button = _pantheon_buttons[pid]
@@ -782,6 +806,10 @@ func _refresh_skirmish_highlights() -> void:
 	for vid in _victory_buttons:
 		var btn: Button = _victory_buttons[vid]
 		btn.add_theme_stylebox_override("normal", _make_btn_style(vid == _selected_victory))
+
+	for sid in _map_size_buttons:
+		var btn: Button = _map_size_buttons[sid]
+		btn.add_theme_stylebox_override("normal", _make_btn_style(sid == _selected_map_size))
 
 	# Atualiza o Card de Visualização do Deus Maior (Coluna Direita)
 	var p_data: Dictionary = PantheonCatalog.get_pantheon(_selected_pantheon)
@@ -832,9 +860,13 @@ func _refresh_skirmish_highlights() -> void:
 	if _selected_victory == "wonder": vic_str = "Maravilha"
 	elif _selected_victory == "regicide": vic_str = "Regicídio"
 
-	_preview_summary_lbl.text = "🎯 IA: %s | Rival: %s | Recursos: %s | Era: T%d | Vitória: %s" % [
+	var ms_data: Dictionary = PantheonCatalog.get_map_size(_selected_map_size)
+	var map_str: String = String(ms_data.get("short_name", _selected_map_size))
+
+	_preview_summary_lbl.text = "🎯 IA: %s | Rival: %s | Mapa: %s | Recursos: %s | Era: T%d | Vitória: %s" % [
 		_selected_difficulty.capitalize(),
 		rival_str,
+		map_str,
 		res_str,
 		_selected_starting_age,
 		vic_str
@@ -1434,7 +1466,8 @@ func _launch_skirmish() -> void:
 		_selected_major_god,
 		_selected_victory,
 		_selected_resources,
-		_selected_starting_age
+		_selected_starting_age,
+		_selected_map_size
 	)
 	get_tree().change_scene_to_file(MAIN_SCENE_PATH)
 

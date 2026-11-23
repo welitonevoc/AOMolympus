@@ -30,11 +30,17 @@ var active_major_god: String = "zeus_major"
 var victory_condition: String = "conquest"
 var starting_resources_mode: String = "standard"
 var active_biome: String = "mediterranean"
+var active_map_size: String = "standard"
 var ai_difficulty: String = "normal"
 var active_campaign_id: String = ""
 var map_seed: int = 104729
 var fog_enabled: bool = true
 var audio_muted: bool = false
+
+
+func get_active_arena_size() -> float:
+	var spec: Dictionary = PantheonCatalog.get_map_size(active_map_size)
+	return float(spec.get("meters", 220.0))
 
 var match_started: bool = false
 var match_result: String = ""
@@ -99,7 +105,8 @@ func start_new_match(
 	major_god_id: String = "",
 	victory_mode: String = "conquest",
 	start_res_mode: String = "standard",
-	start_age: int = 1
+	start_age: int = 1,
+	p_map_size: String = "standard"
 ) -> void:
 	active_pantheon = pantheon_id if PantheonCatalog.PANTHEONS.has(pantheon_id) else "greek"
 	if chosen_enemy_pantheon != "" and PantheonCatalog.PANTHEONS.has(chosen_enemy_pantheon):
@@ -108,6 +115,7 @@ func start_new_match(
 		enemy_pantheon = _pick_rival_pantheon(active_pantheon)
 
 	active_biome = biome_id if PantheonCatalog.BIOMES.has(biome_id) else "mediterranean"
+	active_map_size = p_map_size if PantheonCatalog.MAP_SIZES.has(p_map_size) else "standard"
 	ai_difficulty = difficulty_id if PantheonCatalog.AI_DIFFICULTIES.has(difficulty_id) else "normal"
 	active_campaign_id = campaign_id
 	active_major_god = major_god_id if major_god_id != "" else "%s_major" % active_pantheon

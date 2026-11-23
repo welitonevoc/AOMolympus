@@ -621,7 +621,7 @@ func _build_pantheon_start_overlay() -> void:
 		if _start_mode == "campaign":
 			GameState.start_campaign_chapter(_chosen_chapter)
 		else:
-			GameState.start_new_match(_chosen_pantheon, _chosen_biome, _chosen_difficulty)
+			GameState.start_new_match(_chosen_pantheon, _chosen_biome, _chosen_difficulty, -1, "", "", "", "conquest", "standard", 1, GameState.active_map_size)
 	)
 	vbox.add_child(start_btn)
 
@@ -688,7 +688,7 @@ func _build_end_match_overlay() -> void:
 		if not GameState.active_campaign_id.is_empty():
 			GameState.start_campaign_chapter(GameState.active_campaign_id)
 		else:
-			GameState.start_new_match(_chosen_pantheon, _chosen_biome, _chosen_difficulty)
+			GameState.start_new_match(_chosen_pantheon, _chosen_biome, _chosen_difficulty, -1, "", "", "", "conquest", "standard", 1, GameState.active_map_size)
 	)
 	btn_row.add_child(rematch_btn)
 
