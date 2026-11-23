@@ -90,7 +90,7 @@ func _try_expand_base(tc_pos: Vector3) -> bool:
 		{"kind": "fortress", "min_age": 3, "offset": Vector3(-8.5, 0.0, 0.0)},
 	]
 	for item in expansion_plan:
-		var kind: String = String(item["kind"])
+		var kind: String = str(item.get("kind", ""))
 		if _built_kinds.has(kind):
 			continue
 		if GameState.enemy_age < int(item["min_age"]):
@@ -216,7 +216,7 @@ func _get_enemy_military() -> Array:
 	var out: Array = []
 	for node in get_tree().get_nodes_in_group("faction_enemy"):
 		if is_instance_valid(node) and not bool(node.call("is_dead") if node.has_method("is_dead") else false):
-			if String(node.get("unit_kind")) != "villager":
+			if node is UnitActor and node.unit_kind != "villager":
 				out.append(node)
 	return out
 
