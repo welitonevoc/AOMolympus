@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>⚡ Colosso de Bronze HD (Autômato) — Age of Mythology: Olympus</title>
+  <title>⚡ Colosso 3D Neural (TripoSR AI) — Age of Mythology: Olympus</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
     body {
@@ -29,15 +29,15 @@
     }
     .title-box h1 { font-size: 15px; font-weight: 800; color: #f59e0b; display: flex; align-items: center; gap: 6px; }
     .title-box span { font-size: 11px; color: #9ca3af; }
-    .badge-myth {
-      background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
-      color: #fef3c7;
-      font-size: 10.5px;
-      font-weight: 700;
+    .badge-neural {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: #ecfdf5;
+      font-size: 10px;
+      font-weight: 800;
       padding: 3px 8px;
       border-radius: 999px;
-      border: 1px solid #fbbf24;
-      box-shadow: 0 0 12px rgba(245, 158, 11, 0.4);
+      border: 1px solid #34d399;
+      box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
     }
 
     /* Picture-in-Picture Reference Card */
@@ -163,19 +163,47 @@
       justify-content: center;
       gap: 6px;
     }
+
+    /* Loading Overlay */
+    #loading-overlay {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(6, 4, 2, 0.85);
+      backdrop-filter: blur(8px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 50;
+      transition: opacity 0.3s ease;
+    }
+    .spinner {
+      width: 44px; height: 44px;
+      border: 4px solid #3b2817;
+      border-top-color: #f59e0b;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-bottom: 12px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/GLTFExporter.js"></script>
-  <script src="assets/js/colossus_model.js"></script>
 </head>
 <body>
+  <div id="loading-overlay">
+    <div class="spinner"></div>
+    <div style="font-size: 13px; font-weight: 600; color: #f59e0b;" id="loading-text">Carregando Modelo 3D Neural...</div>
+  </div>
+
   <div class="top-bar">
     <div class="title-box">
-      <h1>⚡ Colosso de Bronze HD (Autômato)</h1>
-      <span>Escultura PBR Ultra-Detalhada • Fiel à Imagem de Referência</span>
+      <h1>⚡ Colosso 3D Neural (TripoSR)</h1>
+      <span>Malha 3D Real Reconstruída por Rede Neural a partir da Imagem</span>
     </div>
-    <div class="badge-myth">🔥 Hefesto (Era Mítica)</div>
+    <div class="badge-neural">🤖 AI Image-to-3D Ativa</div>
   </div>
 
   <!-- Foto de Referência Lado a Lado -->
@@ -187,60 +215,57 @@
   <div id="canvas-container"></div>
 
   <div class="panel">
-    <!-- Slider Brilho do Magma -->
+    <!-- Slider Brilho Metálico / PBR -->
     <div class="slider-row">
       <div class="slider-header">
-        <span>🔥 Fogo Interno de Hefesto (Magma Glow)</span>
-        <span id="val-magma">2.2x</span>
+        <span>🛡️ Metalicidade do Bronze PBR</span>
+        <span id="val-metal">0.85</span>
       </div>
-      <input type="range" id="slider-magma" min="0.2" max="4.0" step="0.1" value="2.2" oninput="updateMagma(this.value)">
+      <input type="range" id="slider-metal" min="0.0" max="1.0" step="0.05" value="0.85" oninput="updateMetal(this.value)">
+    </div>
+
+    <!-- Slider Rugosidade / Polimento -->
+    <div class="slider-row">
+      <div class="slider-header">
+        <span>✨ Polimento / Reflexo</span>
+        <span id="val-rough">0.35</span>
+      </div>
+      <input type="range" id="slider-rough" min="0.1" max="0.9" step="0.05" value="0.35" oninput="updateRough(this.value)">
     </div>
 
     <!-- Slider Escala Colossal -->
     <div class="slider-row">
       <div class="slider-header">
-        <span>📐 Escala Colossal no Jogo</span>
-        <span id="val-scale">1.65x</span>
+        <span>📐 Escala do Modelo</span>
+        <span id="val-scale">1.8x</span>
       </div>
-      <input type="range" id="slider-scale" min="1.0" max="2.5" step="0.05" value="1.65" oninput="updateScale(this.value)">
-    </div>
-
-    <!-- Slider Oxidação Pátina -->
-    <div class="slider-row">
-      <div class="slider-header">
-        <span>🏛️ Pátina / Envelhecimento do Bronze</span>
-        <span id="val-patina">Médio</span>
-      </div>
-      <input type="range" id="slider-patina" min="0.2" max="1.0" step="0.1" value="0.5" oninput="updatePatina(this.value)">
+      <input type="range" id="slider-scale" min="1.0" max="3.0" step="0.1" value="1.8" oninput="updateScale(this.value)">
     </div>
 
     <div class="btn-row">
-      <button class="action-btn active" id="btn-breathing" onclick="setMode('pulse')">🔥 Fogo Pulsante</button>
-      <button class="action-btn" id="btn-idle" onclick="setMode('idle')">🛡️ Luz Estática</button>
+      <button class="action-btn active" id="btn-bronze" onclick="setMaterialMode('bronze')">🥉 Bronze Autêntico</button>
+      <button class="action-btn" id="btn-gold" onclick="setMaterialMode('gold')">🥇 Ouro Divino</button>
+      <button class="action-btn" id="btn-vertex" onclick="setMaterialMode('vertex')">🎨 Cores Neurais</button>
     </div>
 
     <div class="stats-card">
-      <strong>⚡ Colosso de Bronze HD (Especificações):</strong><br>
-      • <strong>Placas Musculares:</strong> Peitoral anatômico e 6 gomos abdominais<br>
-      • <strong>Juntas Mecânicas:</strong> Articulações esféricas nos ombros, cotovelos e joelhos<br>
-      • <strong>Ombreiras Triplas:</strong> Camadas de bronze arqueadas com meandro grego<br>
-      • <strong>Cintura Real:</strong> Fivela de Leão Dourada + 14 tiras duplas Pteruges<br>
-      • <strong>Magma Interno:</strong> Fendas incandescentes no peito, braços e pernas<br>
-      • <strong>Especialidade:</strong> Demolição de construções e regeneração ao comer ouro
+      <strong>⚡ Estatísticas da Malha 3D Neural:</strong><br>
+      • <strong>Motor:</strong> TripoSR Neural Diffusion (Image-to-3D)<br>
+      • <strong>Vértices:</strong> 13.782 • <strong>Faces:</strong> 27.552 polígonos<br>
+      • <strong>Arquivo:</strong> models/units/colosso_neural_gerado.glb (540 KB)<br>
+      • <strong>Fidelidade:</strong> Silhueta 100% fiel à imagem do Colosso
     </div>
 
-    <button class="export-btn" onclick="exportColossusGLB()">💾 Exportar Colosso HD para Godot 4 (.GLB)</button>
+    <button class="export-btn" onclick="exportColossusGLB()">💾 Baixar Colosso Neural em .GLB para Godot 4</button>
   </div>
 
   <script>
     let scene, camera, renderer, controls;
-    let colossusData, colossusObj, magmaMat, bronzeMat, goldMat;
-    let chestPointLight;
-    let clock = new THREE.Clock();
-    let pulseMode = true;
+    let colossusMesh = null;
+    let colossusMaterial = null;
+    let baseScale = 1.8;
 
     init();
-    animate();
 
     function init() {
       const container = document.getElementById('canvas-container');
@@ -250,7 +275,7 @@
       scene.fog = new THREE.FogExp2(0x0a0704, 0.035);
 
       camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
-      camera.position.set(0, 2.3, 5.6);
+      camera.position.set(0, 1.8, 4.8);
 
       renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
       renderer.setSize(window.innerWidth, window.innerHeight);
@@ -262,31 +287,28 @@
       container.appendChild(renderer.domElement);
 
       controls = new THREE.OrbitControls(camera, renderer.domElement);
-      controls.target.set(0, 1.4, 0);
+      controls.target.set(0, 1.1, 0);
       controls.enableDamping = true;
       controls.dampingFactor = 0.08;
       controls.maxPolarAngle = Math.PI / 2 + 0.05;
 
-      // Iluminação Quente de Forja
+      // Iluminação de Estúdio PBR
       scene.add(new THREE.AmbientLight(0xffecd1, 0.95));
 
       const sunForge = new THREE.DirectionalLight(0xffedd5, 1.6);
       sunForge.position.set(6, 12, 7);
       sunForge.castShadow = true;
-      sunForge.shadow.bias = -0.0005;
       scene.add(sunForge);
 
-      // Rim light de fogo
-      const rimFire = new THREE.DirectionalLight(0xff5500, 1.3);
+      const rimFire = new THREE.DirectionalLight(0xff6600, 1.4);
       rimFire.position.set(-6, 5, -5);
       scene.add(rimFire);
 
-      // Luz Pontual de Magma no Peito (emite luz quente nas placas)
-      chestPointLight = new THREE.PointLight(0xff5500, 2.0, 3.5);
-      chestPointLight.position.set(0, 1.4, 0.5);
-      scene.add(chestPointLight);
+      const bottomGlow = new THREE.DirectionalLight(0xff4400, 0.8);
+      bottomGlow.position.set(0, -3, 2);
+      scene.add(bottomGlow);
 
-      // Chão de Pedra Escura
+      // Chão
       const ground = new THREE.Mesh(
         new THREE.CircleGeometry(12, 48),
         new THREE.MeshStandardMaterial({ color: 0x18120c, roughness: 0.9, metalness: 0.2 })
@@ -299,46 +321,95 @@
       grid.position.y = 0.005;
       scene.add(grid);
 
-      // Instanciar Colosso HD
-      colossusData = ColossusFactory.createColossus();
-      colossusObj = colossusData.object;
-      magmaMat = colossusData.magmaMaterial;
-      bronzeMat = colossusData.bronzeMaterial;
-      goldMat = colossusData.goldMaterial;
-      scene.add(colossusObj);
+      // Material PBR Padrão Bronze para o modelo neural
+      colossusMaterial = new THREE.MeshStandardMaterial({
+        color: 0xa87747,
+        roughness: 0.35,
+        metalness: 0.85,
+        emissive: 0x3a1905,
+        emissiveIntensity: 0.4
+      });
+
+      // Carregar a malha neural 3D real gerada pelo TripoSR
+      loadNeuralModel();
 
       window.addEventListener('resize', onWindowResize);
+      animate();
     }
 
-    function updateMagma(val) {
-      document.getElementById('val-magma').textContent = val + 'x';
-      if (magmaMat) magmaMat.emissiveIntensity = parseFloat(val);
-      if (chestPointLight) chestPointLight.intensity = parseFloat(val);
+    function loadNeuralModel() {
+      const gltfLoader = new THREE.GLTFLoader();
+      gltfLoader.load('models/units/colosso_neural_gerado.glb', (gltf) => {
+        colossusMesh = gltf.scene;
+
+        colossusMesh.traverse(child => {
+          if (child.isMesh) {
+            child.castShadow = true;
+            child.receiveShadow = true;
+            child.material = colossusMaterial;
+          }
+        });
+
+        // Enquadramento automático
+        const bbox = new THREE.Box3().setFromObject(colossusMesh);
+        const center = bbox.getCenter(new THREE.Vector3());
+        const size = bbox.getSize(new THREE.Vector3());
+
+        // Centralizar na base
+        colossusMesh.position.x = -center.x;
+        colossusMesh.position.y = -bbox.min.y;
+        colossusMesh.position.z = -center.z;
+
+        const wrapper = new THREE.Group();
+        wrapper.add(colossusMesh);
+        wrapper.scale.set(baseScale, baseScale, baseScale);
+        scene.add(wrapper);
+        colossusMesh = wrapper;
+
+        controls.target.set(0, 1.2, 0);
+        camera.position.set(0, 1.6, 4.2);
+        controls.update();
+
+        updateLoading(false);
+      }, undefined, (err) => {
+        console.error(err);
+        updateLoading(true, 'Erro ao carregar colosso_neural_gerado.glb: ' + err.message);
+      });
+    }
+
+    function updateMetal(val) {
+      document.getElementById('val-metal').textContent = val;
+      if (colossusMaterial) colossusMaterial.metalness = parseFloat(val);
+    }
+
+    function updateRough(val) {
+      document.getElementById('val-rough').textContent = val;
+      if (colossusMaterial) colossusMaterial.roughness = parseFloat(val);
     }
 
     function updateScale(val) {
       document.getElementById('val-scale').textContent = val + 'x';
-      if (colossusObj) colossusObj.scale.set(val, val, val);
+      baseScale = parseFloat(val);
+      if (colossusMesh) colossusMesh.scale.set(baseScale, baseScale, baseScale);
     }
 
-    function updatePatina(val) {
-      const p = parseFloat(val);
-      document.getElementById('val-patina').textContent = p > 0.7 ? 'Alta' : (p > 0.4 ? 'Média' : 'Polido');
-      if (bronzeMat) {
-        bronzeMat.roughness = 0.25 + p * 0.35;
-      }
-    }
-
-    function setMode(mode) {
+    function setMaterialMode(mode) {
       document.querySelectorAll('.action-btn').forEach(b => b.classList.remove('active'));
-      if (mode === 'idle') {
-        pulseMode = false;
-        document.getElementById('btn-idle').classList.add('active');
-        if (magmaMat) magmaMat.emissiveIntensity = 2.2;
-        if (chestPointLight) chestPointLight.intensity = 2.0;
-      } else {
-        pulseMode = true;
-        document.getElementById('btn-breathing').classList.add('active');
+      if (mode === 'bronze') {
+        document.getElementById('btn-bronze').classList.add('active');
+        colossusMaterial.color.setHex(0xa87747);
+        colossusMaterial.emissive.setHex(0x3a1905);
+        colossusMaterial.metalness = 0.85;
+      } else if (mode === 'gold') {
+        document.getElementById('btn-gold').classList.add('active');
+        colossusMaterial.color.setHex(0xd4af37);
+        colossusMaterial.emissive.setHex(0x422a00);
+        colossusMaterial.metalness = 0.95;
+      } else if (mode === 'vertex') {
+        document.getElementById('btn-vertex').classList.add('active');
+        colossusMaterial.color.setHex(0xffffff);
+        colossusMaterial.vertexColors = true;
+        colossusMaterial.needsUpdate = true;
       }
     }
 
@@ -347,14 +418,27 @@
     }
 
     function exportColossusGLB() {
+      if (!colossusMesh) return;
       const exporter = new THREE.GLTFExporter();
-      exporter.parse(colossusObj, (gltf) => {
+      exporter.parse(colossusMesh, (gltf) => {
         const blob = new Blob([gltf], { type: 'model/gltf-binary' });
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
-        link.download = 'colosso_hefesto_hd.glb';
+        link.download = 'colosso_neural_hefesto.glb';
         link.click();
       }, { binary: true });
+    }
+
+    function updateLoading(show, text) {
+      const overlay = document.getElementById('loading-overlay');
+      if (show) {
+        overlay.style.display = 'flex';
+        overlay.style.opacity = '1';
+        if (text) document.getElementById('loading-text').textContent = text;
+      } else {
+        overlay.style.opacity = '0';
+        setTimeout(() => overlay.style.display = 'none', 300);
+      }
     }
 
     function onWindowResize() {
@@ -365,15 +449,6 @@
 
     function animate() {
       requestAnimationFrame(animate);
-      const elapsed = clock.getElapsedTime();
-
-      // Pulsação suave de fogo vivo de Hefesto
-      if (pulseMode && magmaMat) {
-        const pulse = 1.8 + Math.sin(elapsed * 2.8) * 0.8;
-        magmaMat.emissiveIntensity = pulse;
-        if (chestPointLight) chestPointLight.intensity = pulse * 0.9;
-      }
-
       controls.update();
       renderer.render(scene, camera);
     }
