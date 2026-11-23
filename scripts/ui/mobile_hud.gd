@@ -927,8 +927,9 @@ func _rebuild_divine_panel() -> void:
 		elif blocked_reason != "":
 			btn.text = "%s\n[%s]" % [label_txt, blocked_reason]
 
-		btn.pressed.connect(func(gk: String = god_kind) -> void:
-			_on_attempt_summon(gk)
+		var target_gk := god_kind
+		btn.pressed.connect(func() -> void:
+			_on_attempt_summon(target_gk)
 		)
 		_divine_grid.add_child(btn)
 		_divine_god_buttons[god_kind] = btn
@@ -1324,7 +1325,7 @@ func _on_wonder_age_activated(_faction: String) -> void:
 
 
 func _on_titan_summoned(_faction: String, _pantheon: String, titan_name: String) -> void:
-	_show_toast("💥 %s despertou no campo de batalha!" % titan_name, true)
+	_on_notification("💥 %s despertou no campo de batalha!" % titan_name, true)
 	_rebuild_command_grid()
 
 
@@ -1408,6 +1409,10 @@ func _on_notification(message: String, is_warning: bool) -> void:
 	_toast_tween.tween_interval(2.6)
 	_toast_tween.tween_property(_toast_panel, "modulate:a", 0.0, 0.35)
 	_toast_tween.tween_callback(func() -> void: _toast_panel.visible = false)
+
+
+func _show_toast(message: String, is_warning: bool = false) -> void:
+	_on_notification(message, is_warning)
 
 
 func _make_metric_label(text_val: String, color: Color) -> Label:
