@@ -12,9 +12,10 @@ Engine: Godot 4.x | Linguagem: GDScript | Plataforma: Android (APK/AAB via Termu
 - **UI**: `scripts/ui/mobile_hud.gd`
 - **Modelos 3D**: `models/civilizations/` (5 panteões × 16 deuses × 15 categorias), `models/referencias_cidade/`
 - **ComfyUI**: Porta 8188, TripoSR workflow, PyTorch CPU (Debian proot-distro, Python 3.13.5)
-- **AgEnFK**: Porta 3000, projeto `10b44d30-2424-4e1c-90f8-21dffa4c4855`
+- **AgEnFK**: Porta 3000, projeto `6b54828f-77d9-4615-95d4-5e7d7f611697`
+- **Gamedev Skills**: Ecossistema de 79 skills profissionais (`~/.gemini/config/skills/`) com router e módulos dedicados Godot 4.x
 
-## Fluxo de Trabalho com AgEnFK (2 Frentes Paralelas)
+## Fluxo de Trabalho com AgEnFK (2 Frentes Paralelas + Skills Especialistas)
 
 Sempre que eu pedir para avançar nas tarefas ou iniciar uma sprint:
 
@@ -27,21 +28,40 @@ Sempre que eu pedir para avançar nas tarefas ou iniciar uma sprint:
    - Ou via API: `PUT http://localhost:3000/items/<id>` com `{"status": "IN_PROGRESS"}`
 
 3. **Dispare 2 subagentes em paralelo** usando a ferramenta `task`:
-   - **Frente 1**: `@gameplay-programmer` ou `@engine-programmer` usando **OpenRouter** (`openrouter/qwen/qwen-2.5-coder-32b-instruct:free`)
-   - **Frente 2**: `@ui-programmer` ou `@godot-specialist` usando **Kilo** (`kilo/~deepseek/deepseek-v4-flash-latest`)
-   - **Gerente/Coordenação**: Modelo principal usando **NVIDIA** (`nvidia/deepseek-ai/deepseek-v4.1-flash`)
+   - **Frente 1 (Gameplay / Engine)**: `@gameplay-programmer` ou `@engine-programmer` usando **OpenRouter** (`openrouter/qwen/qwen-2.5-coder-32b-instruct:free`).
+     - *Skills vinculadas*: `godot-gdscript`, `godot-signals-groups`, `godot-nodes-scenes`, `game-ai`, `game-feel`.
+   - **Frente 2 (UI / Visual)**: `@ui-programmer` ou `@godot-specialist` usando **Kilo** (`kilo/~deepseek/deepseek-v4-flash-latest`).
+     - *Skills vinculadas*: `godot-ui-control`, `game-ui-ux`, `aom-olympus-modelador`, `godot-animation`.
+   - **Frente 3 (3D / Performance)**: Modelador 3D / Shader artist.
+     - *Skills vinculadas*: `godot-3d-essentials`, `godot-shaders`, `performance-optimization`, `audio-design`.
+   - **Gerente/Coordenação**: Modelo principal usando **NVIDIA** (`nvidia/deepseek-ai/deepseek-v4.1-flash`).
+     - *Skill vinculada*: `gamedev-router` (orquestração e roteamento de dependências).
 
 4. **Ao receber o retorno de cada frente**, valide os arquivos e mova os cards para `REVIEW` no AgEnFK.
    - Via CLI: `agenfk verify <id> --evidence "<validacao>"` (IN_PROGRESS → REVIEW)
+   - Validação técnica: Checagem estática com `godot-gdscript` e integridade de cenas/HUD.
    - Após revisão independente: `agenfk verify <id>` (REVIEW → TEST → DONE)
+
+### Mapeamento das Skills do Gamedev Toolkit (`awesome-gamedev-agent-skills`)
+
+Instaladas no diretório global `~/.gemini/config/skills/`, as skills devem ser ativadas pelos agentes de acordo com a natureza do card no AgEnFK:
+
+| Categoria | Skills Disponíveis | Diretriz de Uso no AgEnFK |
+|-----------|--------------------|----------------------------|
+| **UI & Menus** | `godot-ui-control`, `game-ui-ux` | Usar Containers (`VBox`, `HBox`, `Margin`), ancoragem responsiva mobile, nunca posições absolutas fixas. Cores míticas (obsidiana/ouro). |
+| **Código & Lógica** | `godot-gdscript`, `godot-signals-groups` | Tipagem estática GDScript 2.0 (`:=` seguro), sinais tipados, sem polling desnecessário em `_process`. |
+| **Sistemas & IA** | `game-ai`, `ai-behavior-trees-utility-ai` | Máquinas de estado (FSM) de unidades militares, auto-cast mítico e automação de coleta de aldeões. |
+| **Visual & 3D** | `godot-3d-essentials`, `godot-shaders`, `aom-olympus-modelador` | Shaders leves para mobile, auras divinas, rigs Mixamo e sockets de armas. |
+| **Juice & Áudio** | `game-feel`, `audio-design`, `godot-audio` | Screen shake sutil nos poderes divinos, feedback acústico tátil para toques em telas touch. |
+| **Otimização** | `performance-optimization`, `godot-export` | Redução de draw calls, LODs, MultiMesh para tropas grandes no Android. |
 
 ### Regras de Divisão por Provedor
 
-| Frente | Agente | Provedor | Modelo | Uso |
-|--------|--------|----------|--------|-----|
-| Gerente | Coordenação | NVIDIA | `nvidia/deepseek-ai/deepseek-v4.1-flash` | Ler Kanban, atribuir tarefas, validar |
-| Frente 1 | gameplay-programmer, engine-programmer, ai-programmer, etc. | OpenRouter | `openrouter/qwen/qwen-2.5-coder-32b-instruct:free` | Código de gameplay, sistemas, autoloads |
-| Frente 2 | ui-programmer, ui-designer, godot-specialist, etc. | Kilo | `kilo/~deepseek/deepseek-v4-flash-latest` | UI, HUD, cenas, visual, assets |
+| Frente | Agente | Provedor | Modelo | Skills Primárias |
+|--------|--------|----------|--------|------------------|
+| Gerente | Coordenação | NVIDIA | `nvidia/deepseek-ai/deepseek-v4.1-flash` | `gamedev-router` |
+| Frente 1 | gameplay-programmer, engine-programmer | OpenRouter | `openrouter/qwen/qwen-2.5-coder-32b-instruct:free` | `godot-gdscript`, `godot-signals-groups`, `game-ai` |
+| Frente 2 | ui-programmer, ui-designer, godot-specialist | Kilo | `kilo/~deepseek/deepseek-v4-flash-latest` | `godot-ui-control`, `game-ui-ux`, `aom-olympus-modelador` |
 
 ### Motivo da Divisão
 
@@ -64,27 +84,6 @@ Cada provedor gratuito tem limites de taxa (rate limits) por minuto. Dividir as 
    > "Verifique o AgEnFK e toque as duas próximas frentes em paralelo."
 
 O gerente principal usará a API gratuita da NVIDIA para ler o Kanban e coordenar, enquanto a Frente 1 roda no OpenRouter e a Frente 2 roda na Kilo simultaneamente.
-
-## Tarefas Atuais no AgEnFK
-
-Conforme o estado mais recente do servidor (porta 3000):
-
-| Status | Tarefa |
-|--------|--------|
-| ✅ DONE | EPIC: Era T5 - Era dos Deuses (Era Divina) |
-| ✅ DONE | Implementar código da Era T5: DIVINE_PROFILES, create_divine_unit_visual, summon_divine_god |
-| ✅ DONE | UI de invocação divina no mobile_hud.gd |
-| ✅ DONE | Estrutura de pastas e GLBs de unidades (336 modelos copiados) |
-| ✅ DONE | Instalar e configurar ComfyUI com PyTorch CPU |
-| 🔄 IN_PROGRESS | EPIC: Modelos 3D de Construção (Cidade) |
-| 🔄 IN_PROGRESS | Gerar modelo 3D: Centro da cidade (town_center) |
-| 🔄 IN_PROGRESS | Gerar modelo 3D: Templos (temples) |
-| 🔄 IN_PROGRESS | Gerar modelo 3D: Quartéis (barracks) |
-| 🔄 IN_PROGRESS | Gerar modelo 3D: Fortalezas (fortresses) |
-| 🔄 IN_PROGRESS | Gerar modelo 3D: Torre de vigia (towers) |
-| 🔄 IN_PROGRESS | Gerar modelo 3D: Casas (houses) |
-| 🔄 IN_PROGRESS | Gerar modelo 3D: Altar Divino (divine_altar) |
-| 🔄 IN_PROGRESS | Gerar modelo 3D: Elementos geográficos (geografica) |
 
 ## Observações Importantes
 
