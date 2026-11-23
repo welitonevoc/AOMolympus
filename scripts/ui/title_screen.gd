@@ -1808,7 +1808,7 @@ func _make_frame_style(border_col: Color, radius: int, border_w: int = 2) -> Sty
 
 func _load_ui_texture(res_path: String) -> Texture2D:
 	if ResourceLoader.exists(res_path):
-		var res = load(res_path)
+		var res: Resource = load(res_path)
 		if res is Texture2D:
 			return res
 	var global_path: String = ProjectSettings.globalize_path(res_path)

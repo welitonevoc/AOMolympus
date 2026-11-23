@@ -309,7 +309,7 @@ func _check_lan_broadcasts() -> void:
 		var pkt := _udp_listen_peer.get_packet()
 		var sender_ip := _udp_listen_peer.get_packet_ip()
 		var text := pkt.get_string_from_utf8()
-		var parsed = JSON.parse_string(text)
+		var parsed: Variant = JSON.parse_string(text)
 		if parsed is Dictionary and parsed.get("game", "") == "aom_olympus":
 			parsed["ip"] = sender_ip
 			lan_server_found.emit(parsed)

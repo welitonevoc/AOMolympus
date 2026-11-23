@@ -47,7 +47,7 @@ func _ready() -> void:
 	_ai_controller = get_node_or_null("../EnemyAIController") as Node
 	_power_system = get_node_or_null("../DivinePowerSystem") as Node3D
 
-	var selector = get_node_or_null("../SelectionController")
+	var selector: Node = get_node_or_null("../SelectionController")
 	if selector != null and _camera_rig != null:
 		selector.bind(self, _camera_rig, _power_system)
 	if _ai_controller != null:
