@@ -142,6 +142,7 @@ func _cancel_tracking() -> void:
 func _handle_single_tap(screen_pos: Vector2) -> void:
 	var hit: Dictionary = _raycast_world(screen_pos, 1 | 2 | 4)
 	var selected_units := _get_selected_units()
+	var selected_villagers: Array[UnitActor] = []
 
 	if not hit.is_empty():
 		var collider: Object = hit.get("collider")
@@ -162,7 +163,7 @@ func _handle_single_tap(screen_pos: Vector2) -> void:
 					return
 				GameState.set_selection([collider])
 				return
-			var selected_villagers := _get_selected_villagers()
+			selected_villagers = _get_selected_villagers()
 			if not collider.is_constructed and selected_villagers.size() > 0:
 				for v in selected_villagers:
 					v.command_build(collider)
