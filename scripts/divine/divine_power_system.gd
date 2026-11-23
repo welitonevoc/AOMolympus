@@ -6,6 +6,7 @@ extends Node3D
 
 var world: Node3D
 var _cooldowns: Dictionary = {}
+var _cast_counts: Dictionary = {}
 
 
 func bind(p_world: Node3D) -> void:
@@ -18,6 +19,7 @@ func _ready() -> void:
 
 func _on_match_started(_p: String, _e: String) -> void:
 	_cooldowns.clear()
+	_cast_counts.clear()
 
 
 func _process(delta: float) -> void:
@@ -35,6 +37,18 @@ func get_cooldown_remaining(power_id: String) -> float:
 	return float(_cooldowns.get(power_id, 0.0))
 
 
+func get_cast_count(power_id: String) -> int:
+	return int(_cast_counts.get(power_id, 0))
+
+
+## Mecânica Retold: a cada uso do poder divino, o custo de Favor aumenta progressivamente (+50% por uso)
+func get_effective_favor_cost(power_id: String) -> float:
+	var spec: Dictionary = DivinePowerCatalog.get_power(power_id)
+	var base_cost: float = float(spec.get("favor_cost", 0.0))
+	var casts: int = int(_cast_counts.get(power_id, 0))
+	return round(base_cost * (1.0 + 0.5 * float(casts)))
+
+
 func request_power(power_id: String) -> bool:
 	var spec: Dictionary = DivinePowerCatalog.get_power(power_id)
 	var req_age: int = int(spec["min_age"])
@@ -45,9 +59,9 @@ func request_power(power_id: String) -> bool:
 	if cd > 0.0:
 		GameState.notify("%s recarregando (%.0fs)." % [spec["name"], cd], true)
 		return false
-	var favor_cost: float = float(spec["favor_cost"])
+	var favor_cost: float = get_effective_favor_cost(power_id)
 	if not GameState.can_afford({"favor": favor_cost}):
-		GameState.notify("Favor insuficiente (%d Favor necessario)." % int(favor_cost), true)
+		GameState.notify("Favor insuficiente (%d Favor necessário para recast)." % int(favor_cost), true)
 		return false
 
 	if not bool(spec["targeted"]):
@@ -64,11 +78,13 @@ func cast_power(power_id: String, world_pos: Vector3) -> bool:
 		return false
 	if get_cooldown_remaining(power_id) > 0.0:
 		return false
-	if not GameState.spend_resources({"favor": float(spec["favor_cost"])}):
+	var effective_cost: float = get_effective_favor_cost(power_id)
+	if not GameState.spend_resources({"favor": effective_cost}):
 		GameState.cancel_power_target_mode()
 		return false
 
 	_cooldowns[power_id] = float(spec["cooldown"])
+	_cast_counts[power_id] = _cast_counts.get(power_id, 0) + 1
 	GameState.cancel_power_target_mode()
 	GameState.record_power_cast(power_id, world_pos)
 

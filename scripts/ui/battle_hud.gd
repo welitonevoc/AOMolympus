@@ -259,10 +259,23 @@ func _refresh_power_buttons() -> void:
 			var pid := powers[i]
 			var spec := DivinePowerCatalog.get_power(pid) if DivinePowerCatalog.has_method("get_power") else {}
 			var cost := int(spec.get("favor_cost", 0)) if spec.has("favor_cost") else 0
-			var cd := DivinePowerSystem.get_cooldown_remaining(pid) if DivinePowerSystem.has_method("get_cooldown_remaining") else 0.0
+			var cd := 0.0
+			var casts := 0
+			var p_sys: Node = get_node_or_null("../DivinePowerSystem")
+			if p_sys != null:
+				if p_sys.has_method("get_effective_favor_cost"):
+					cost = int(p_sys.get_effective_favor_cost(pid))
+				if p_sys.has_method("get_cooldown_remaining"):
+					cd = float(p_sys.get_cooldown_remaining(pid))
+				if p_sys.has_method("get_cast_count"):
+					casts = int(p_sys.get_cast_count(pid))
 			var can_afford := GameState.can_afford({"favor": float(cost)}) if cost > 0 else true
-			
-			buttons[i].text = "%s\n%d Favor" % [spec.get("name", "Poder %d" % (i + 1)), cost]
+			var lbl_txt := "%s\n%d Favor" % [spec.get("name", "Poder %d" % (i + 1)), cost]
+			if casts > 0:
+				lbl_txt = "%s (+%d)\n%d Favor" % [spec.get("name", "Poder %d" % (i + 1)), casts, cost]
+			if cd > 0.0:
+				lbl_txt = "%s\n%.0fs" % [spec.get("name", "Poder %d" % (i + 1)), cd]
+			buttons[i].text = lbl_txt
 			buttons[i].disabled = (not can_afford) or cd > 0.0
 			buttons[i].visible = true
 		else:
