@@ -401,7 +401,8 @@ func _confirm_build_placement(screen_pos: Vector2) -> void:
 
 
 func _can_place_at(pos: Vector3, kind: String) -> bool:
-	if absf(pos.x) > 40.0 or absf(pos.z) > 40.0:
+	var half_limit: float = GameState.get_active_arena_size() * 0.46
+	if absf(pos.x) > half_limit or absf(pos.z) > half_limit:
 		return false
 	var spec: Dictionary = PantheonCatalog.get_building_spec(kind)
 	var min_clear: float = float(spec["footprint"]) + 1.8

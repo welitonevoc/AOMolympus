@@ -14,7 +14,7 @@ var _is_dragging: bool = false
 var _redraw_accum: float = 0.0
 
 
-func bind(p_world: BattleWorld, p_camera: TouchRTSCamera, p_fog: FogOfWarSystem) -> void:
+func bind(p_world: BattleWorld, p_camera: TouchRTSCamera, p_fog: FogOfWarSystem = null) -> void:
 	_world = p_world
 	_camera_rig = p_camera
 	_fog = p_fog

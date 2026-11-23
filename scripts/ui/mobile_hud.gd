@@ -486,6 +486,8 @@ func _build_pantheon_start_overlay() -> void:
 	_start_overlay = ColorRect.new()
 	_start_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_start_overlay.color = Color(0.04, 0.06, 0.1, 0.9)
+	if GameState.match_started:
+		_start_overlay.visible = false
 	add_child(_start_overlay)
 
 	var center := CenterContainer.new()
@@ -1100,6 +1102,8 @@ func _promote_selected_units(units: Array) -> void:
 
 
 func _on_match_started(_player_pid: String, _enemy_pid: String) -> void:
+	if _start_overlay != null:
+		_start_overlay.visible = false
 	_end_overlay.visible = false
 	_rebuild_divine_power_bar()
 	_rebuild_command_grid()

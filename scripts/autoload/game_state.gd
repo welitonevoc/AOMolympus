@@ -36,12 +36,6 @@ var active_campaign_id: String = ""
 var map_seed: int = 104729
 var fog_enabled: bool = true
 var audio_muted: bool = false
-
-
-func get_active_arena_size() -> float:
-	var spec: Dictionary = PantheonCatalog.get_map_size(active_map_size)
-	return float(spec.get("meters", 220.0))
-
 var match_started: bool = false
 var match_result: String = ""
 var is_night: bool = false
@@ -93,6 +87,11 @@ func _process(delta: float) -> void:
 		flaming_weapons_timer = maxf(0.0, flaming_weapons_timer - delta)
 	if eclipse_timer > 0.0:
 		eclipse_timer = maxf(0.0, eclipse_timer - delta)
+
+
+func get_active_arena_size() -> float:
+	var spec: Dictionary = PantheonCatalog.get_map_size(active_map_size)
+	return float(spec.get("meters", 220.0))
 
 
 func start_new_match(

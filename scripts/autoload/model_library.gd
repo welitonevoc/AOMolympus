@@ -219,7 +219,8 @@ static func _try_instantiate_glb(res_path: String) -> Node3D:
 	var inst: Node = packed.instantiate()
 	if inst is Node3D:
 		return inst
-	inst.queue_free()
+	if inst != null:
+		inst.queue_free()
 	return null
 
 

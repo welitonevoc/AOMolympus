@@ -13,6 +13,7 @@ var _music_phase: float = 0.0
 var _music_state: String = "peace"
 var _combat_scan_accum: float = 0.0
 var _active_3d_voices: int = 0
+var _last_voice_tick_ms: int = 0
 
 
 func _ready() -> void:
@@ -165,8 +166,6 @@ func play_sfx_3d(kind: String, world_pos: Vector3, pantheon_id: String = "greek"
 			player.queue_free()
 	)
 
-
-var _last_voice_tick_ms: int = 0
 
 func play_voice(pantheon: String, unit_role: String, action_type: String, world_pos: Vector3) -> void:
 	if GameState.audio_muted or _active_3d_voices >= 6:

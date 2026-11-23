@@ -173,8 +173,10 @@ func _on_match_started(pantheon_id: String, enemy_pantheon_id: String) -> void:
 			var cam_limit: float = float(PantheonCatalog.get_map_size(GameState.active_map_size).get("camera_limit", arena_size * 0.46))
 			_camera_rig.map_limit = cam_limit
 		if _camera_rig.has_method("focus_on"):
-			_camera_rig.focus_on(tc.global_position, true)
-	GameState.set_selection([tc])
+			var target_pos: Vector3 = tc.global_position if is_instance_valid(tc) else player_base_pos
+			_camera_rig.focus_on(target_pos, true)
+	if is_instance_valid(tc):
+		GameState.set_selection([tc])
 
 
 ## ============================================================================

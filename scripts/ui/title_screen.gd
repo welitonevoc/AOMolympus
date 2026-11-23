@@ -1468,12 +1468,16 @@ func _launch_skirmish() -> void:
 		_selected_starting_age,
 		_selected_map_size
 	)
-	get_tree().change_scene_to_file(MAIN_SCENE_PATH)
+	var err: Error = get_tree().change_scene_to_file(MAIN_SCENE_PATH)
+	if err != OK:
+		push_error("Falha ao abrir a cena principal %s: %d" % [MAIN_SCENE_PATH, err])
 
 
 func _launch_campaign() -> void:
 	GameState.start_campaign_chapter(_selected_chapter)
-	get_tree().change_scene_to_file(MAIN_SCENE_PATH)
+	var err: Error = get_tree().change_scene_to_file(MAIN_SCENE_PATH)
+	if err != OK:
+		push_error("Falha ao abrir a cena principal %s: %d" % [MAIN_SCENE_PATH, err])
 
 
 func _host_lan_match() -> void:
