@@ -38,11 +38,14 @@ window/size/viewport_height=720
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 window/handheld/orientation=6
-window/vsync/vsync_mode=1
 
 [editor_plugins]
 
 enabled=PackedStringArray("res://addons/gamedev_ai/plugin.cfg", "res://addons/godot_mcp_toolkit/plugin.cfg")
+
+[gui]
+
+theme/custom="res://themes/rts_fantasy_theme.tres"
 
 [input_devices]
 
@@ -53,10 +56,6 @@ pointing/emulate_touch_from_mouse=true
 3d_physics/layer_1="units"
 3d_physics/layer_2="resources"
 3d_physics/layer_3="buildings"
-
-[gui]
-
-theme/custom="res://themes/rts_fantasy_theme.tres"
 
 [rendering]
 

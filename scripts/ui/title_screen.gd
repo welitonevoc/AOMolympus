@@ -1818,4 +1818,3 @@ func _load_ui_texture(res_path: String) -> Texture2D:
 		if err == OK:
 			return ImageTexture.create_from_image(img)
 	return null
-
