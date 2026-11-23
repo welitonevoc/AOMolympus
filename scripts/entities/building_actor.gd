@@ -199,7 +199,7 @@ func queue_villager() -> bool:
 	return queue_unit("villager")
 
 
-func take_damage(amount: float, attacker_faction: String, attacker_pantheon: String = "") -> void:
+func take_damage(amount: float, attacker_faction: String, attacker_pantheon: String = "", damage_type: String = "hack") -> void:
 	if _dead or attacker_faction == faction:
 		return
 	var final_dmg: int = maxi(1, int(round(amount)))

@@ -1104,6 +1104,7 @@ func _rebuild_command_grid() -> void:
 	if first is UnitActor:
 		var has_military: bool = false
 		var has_promotable: bool = false
+		var has_myth: bool = false
 		var player_units: Array = []
 		for ent in sel:
 
@@ -1113,6 +1114,8 @@ func _rebuild_command_grid() -> void:
 					has_military = true
 				if ent.can_promote_to_hero():
 					has_promotable = true
+				if not ent.special_ability_id.is_empty():
+					has_myth = true
 
 		if not has_military:
 			_command_grid.columns = 2
@@ -1170,6 +1173,41 @@ func _rebuild_command_grid() -> void:
 				)
 				promo_btn.pressed.connect(func() -> void: _promote_selected_units(player_units))
 				_command_grid.add_child(promo_btn)
+
+			if has_myth:
+				var myth_first: UnitActor = null
+				for u in player_units:
+					if not u.special_ability_id.is_empty():
+						myth_first = u
+						break
+				if myth_first != null:
+					var cast_txt: String = "Auto: %s\n(%s)" % [
+						"ON" if myth_first.special_auto_cast else "OFF",
+						myth_first.special_ability_name
+					]
+					var auto_btn := _make_action_button(cast_txt, myth_first.special_auto_cast, 114.0, 48.0)
+					auto_btn.pressed.connect(func() -> void:
+						for u in player_units:
+							if not u.special_ability_id.is_empty():
+								u.toggle_special_auto_cast()
+						_rebuild_command_grid()
+					)
+					_command_grid.add_child(auto_btn)
+
+					var cd_ready: bool = myth_first.special_ability_timer <= 0.0
+					var trigger_txt: String = "%s\n(%s)" % [
+						myth_first.special_ability_name,
+						"Pronto" if cd_ready else "%.1fs" % myth_first.special_ability_timer
+					]
+					var trigger_btn := _make_action_button(trigger_txt, cd_ready, 114.0, 48.0)
+					trigger_btn.disabled = not cd_ready
+					trigger_btn.pressed.connect(func() -> void:
+						for u in player_units:
+							if not u.special_ability_id.is_empty():
+								u.cast_special_ability()
+						_rebuild_command_grid()
+					)
+					_command_grid.add_child(trigger_btn)
 
 
 func _cycle_stance() -> void:

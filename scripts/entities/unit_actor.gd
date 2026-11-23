@@ -54,10 +54,19 @@ var _build_sfx_timer: float = 0.0
 var _nav_agent: NavigationAgent3D
 var _visual_holder: Node3D
 var _selection_ring: MeshInstance3D
+var _ability_ring: MeshInstance3D = null
 var _carry_crate: MeshInstance3D
 var _hp_bar_bg: MeshInstance3D
 var _hp_bar_fill: MeshInstance3D
 var _anim_player: AnimationPlayer = null
+
+var special_ability_id: String = ""
+var special_ability_name: String = ""
+var special_ability_cooldown: float = 12.0
+var special_ability_timer: float = 0.0
+var special_auto_cast: bool = true
+var special_ability_range: float = 5.0
+var special_ability_damage: float = 65.0
 
 
 func setup(p_pantheon: String, p_kind: String = "villager", p_faction: String = "player") -> void:
@@ -106,6 +115,9 @@ func setup(p_pantheon: String, p_kind: String = "villager", p_faction: String = 
 	formation_id = GameState.active_formation if faction == "player" else "box"
 	stance_id = GameState.active_stance if faction == "player" else "defensive"
 
+	if role == "myth" or is_divine:
+		_setup_mythic_ability(is_divine)
+
 
 func _ready() -> void:
 	add_to_group("units")
@@ -114,6 +126,8 @@ func _ready() -> void:
 		add_to_group("villagers")
 	else:
 		add_to_group("military")
+	if role == "myth" or not special_ability_id.is_empty():
+		add_to_group("myth_units")
 	collision_layer = 1
 	collision_mask = 0
 	_anchor_pos = global_position
@@ -142,6 +156,12 @@ func _ready() -> void:
 	_selection_ring.visible = false
 	add_child(_selection_ring)
 
+	if not special_ability_id.is_empty():
+		_ability_ring = _create_ring(1.15 if unit_kind in ["cavalry", "myth", "siege"] else 0.95, Color(1.0, 0.85, 0.25, 0.9))
+		_ability_ring.name = "AbilityRing"
+		add_child(_ability_ring)
+		_update_ability_ring()
+
 	_carry_crate = MeshInstance3D.new()
 	var crate_mesh := BoxMesh.new()
 	crate_mesh.size = Vector3(0.32, 0.28, 0.32)
@@ -165,6 +185,14 @@ func _physics_process(delta: float) -> void:
 		return
 	_anim_time += delta
 	_attack_timer = maxf(0.0, _attack_timer - delta)
+
+	if not special_ability_id.is_empty():
+		if special_ability_timer > 0.0:
+			special_ability_timer = maxf(0.0, special_ability_timer - delta)
+			if _ability_ring != null and Engine.get_physics_frames() % 6 == 0:
+				_update_ability_ring()
+		elif _ability_ring != null and Engine.get_physics_frames() % 30 == 0:
+			_update_ability_ring()
 
 	# Atualização de LOD Mobile (calculado a cada ~0.3s)
 	if Engine.get_physics_frames() % 18 == 0:
@@ -296,12 +324,17 @@ func apply_freeze(seconds: float) -> void:
 	_freeze_timer = maxf(_freeze_timer, seconds)
 
 
-func take_damage(amount: float, attacker_faction: String, attacker_pantheon: String = "") -> void:
+func take_damage(amount: float, attacker_faction: String, attacker_pantheon: String = "", damage_type: String = "hack") -> void:
 	if _dead or attacker_faction == faction:
 		return
 	var dmg: int = maxi(1, int(round(amount)))
 	current_hp = maxi(0, current_hp - dmg)
 	_update_hp_bar()
+
+	if damage_type == "divine" and _visual_holder != null:
+		var tw := create_tween()
+		tw.tween_property(_visual_holder, "scale", Vector3(1.15, 1.15, 1.15), 0.08)
+		tw.tween_property(_visual_holder, "scale", Vector3.ONE, 0.12)
 
 	# Bônus Nordico: gera Favor Divino ao combater!
 	if attacker_faction == "player" and attacker_pantheon == "norse":
@@ -341,21 +374,29 @@ func get_display_name() -> String:
 func get_status_text() -> String:
 	var form_short: String = String(PantheonCatalog.get_formation(formation_id)["short"])
 	var stance_name: String = String(PantheonCatalog.get_stance(stance_id)["name"])
+	var base_txt: String = ""
 	match state:
 		State.ATTACKING:
-			return "Em combate · HP %d/%d · %s" % [current_hp, max_hp, form_short]
+			base_txt = "Em combate · HP %d/%d · %s" % [current_hp, max_hp, form_short]
 		State.MOVING:
-			return "Em marcha · HP %d/%d · %s" % [current_hp, max_hp, form_short]
+			base_txt = "Em marcha · HP %d/%d · %s" % [current_hp, max_hp, form_short]
 		State.GATHERING:
-			return "Coletando %s (%.0f/%.0f)" % [_resource_label(carried_kind), carried_amount, carry_capacity]
+			base_txt = "Coletando %s (%.0f/%.0f)" % [_resource_label(carried_kind), carried_amount, carry_capacity]
 		State.RETURNING:
-			return "Entregando %s (%.0f)" % [_resource_label(carried_kind), carried_amount]
+			base_txt = "Entregando %s (%.0f)" % [_resource_label(carried_kind), carried_amount]
 		State.BUILDING:
-			return "Construindo estrutura..."
+			base_txt = "Construindo estrutura..."
 		_:
 			if role == "worker":
-				return "Ocioso · HP %d/%d" % [current_hp, max_hp]
-			return "HP %d/%d · %s · %s" % [current_hp, max_hp, form_short, stance_name]
+				base_txt = "Ocioso · HP %d/%d" % [current_hp, max_hp]
+			else:
+				base_txt = "HP %d/%d · %s · %s" % [current_hp, max_hp, form_short, stance_name]
+
+	if not special_ability_id.is_empty():
+		var cd_str: String = "PRONTA" if special_ability_timer <= 0.0 else "%.1fs" % special_ability_timer
+		var auto_str: String = "Auto" if special_auto_cast else "Manual"
+		return "%s · [%s: %s | %s]" % [base_txt, special_ability_name, cd_str, auto_str]
+	return base_txt
 
 
 func _process_attacking(delta: float) -> void:
@@ -386,6 +427,10 @@ func _process_attacking(delta: float) -> void:
 	velocity = Vector3.ZERO
 	_face_towards(combat_target.global_position, delta)
 	_animate_attack()
+
+	# Auto-cast de habilidade especial mítica
+	if special_auto_cast and not special_ability_id.is_empty() and special_ability_timer <= 0.0 and not _dead:
+		cast_special_ability()
 
 	if _attack_timer <= 0.0:
 		_attack_timer = attack_cooldown
@@ -821,3 +866,147 @@ func _create_ring(radius: float, col: Color) -> MeshInstance3D:
 	inst.material_override = mat
 	inst.position = Vector3(0.0, 0.06, 0.0)
 	return inst
+
+
+func _setup_mythic_ability(is_divine: bool) -> void:
+	special_auto_cast = true
+	if is_divine:
+		special_ability_id = "divine_wrath"
+		special_ability_name = "Fúria Divina"
+		special_ability_cooldown = 15.0
+		special_ability_damage = 220.0
+		special_ability_range = 6.5
+	else:
+		match pantheon_id:
+			"greek":
+				special_ability_id = "bull_charge"
+				special_ability_name = "Investida Taurina"
+				special_ability_cooldown = 10.0
+				special_ability_damage = 75.0
+				special_ability_range = 4.5
+			"egyptian":
+				special_ability_id = "jackal_leap"
+				special_ability_name = "Salto de Anúbis"
+				special_ability_cooldown = 8.5
+				special_ability_damage = 60.0
+				special_ability_range = 5.5
+			"norse":
+				special_ability_id = "valkyrie_heal"
+				special_ability_name = "Bênção Divina"
+				special_ability_cooldown = 12.0
+				special_ability_damage = 50.0
+				special_ability_range = 5.0
+			"atlantean":
+				special_ability_id = "clay_slam"
+				special_ability_name = "Impacto Argiloso"
+				special_ability_cooldown = 11.0
+				special_ability_damage = 70.0
+				special_ability_range = 4.0
+			"chinese":
+				special_ability_id = "celestial_roar"
+				special_ability_name = "Rugido Celestial"
+				special_ability_cooldown = 10.0
+				special_ability_damage = 65.0
+				special_ability_range = 5.0
+			_:
+				special_ability_id = "mythic_strike"
+				special_ability_name = "Golpe Mítico"
+				special_ability_cooldown = 10.0
+				special_ability_damage = 60.0
+				special_ability_range = 4.5
+
+	special_ability_timer = 2.0  # pequeno delay inicial antes do primeiro uso
+
+
+func _update_ability_ring() -> void:
+	if _ability_ring == null or _dead:
+		return
+	if special_ability_id.is_empty():
+		_ability_ring.visible = false
+		return
+	_ability_ring.visible = true
+	var mat := _ability_ring.material_override as StandardMaterial3D
+	if mat != null:
+		if special_ability_timer <= 0.0:
+			mat.albedo_color = Color(1.0, 0.88, 0.2, 0.95)
+			mat.emission = Color(1.0, 0.88, 0.2)
+			mat.emission_energy_multiplier = 2.2
+			_ability_ring.scale = Vector3.ONE
+		else:
+			var progress: float = clampf(1.0 - (special_ability_timer / maxf(0.1, special_ability_cooldown)), 0.25, 1.0)
+			mat.albedo_color = Color(0.3, 0.6, 1.0, 0.35)
+			mat.emission = Color(0.2, 0.5, 0.9)
+			mat.emission_energy_multiplier = 0.6 * progress
+			_ability_ring.scale = Vector3(progress, 1.0, progress)
+
+
+func toggle_special_auto_cast() -> bool:
+	special_auto_cast = not special_auto_cast
+	if faction == "player":
+		GameState.notify("%s Auto-Cast: %s" % [special_ability_name, "ATIVADO" if special_auto_cast else "DESATIVADO"], false)
+	return special_auto_cast
+
+
+func cast_special_ability() -> bool:
+	if special_ability_id.is_empty() or special_ability_timer > 0.0 or _dead:
+		return false
+	special_ability_timer = special_ability_cooldown
+	_update_ability_ring()
+
+	AudioDirector.play_sfx_3d("divine_power", global_position, pantheon_id)
+	var target_pos: Vector3 = combat_target.global_position if is_instance_valid(combat_target) else global_position
+
+	match special_ability_id:
+		"bull_charge":
+			_area_divine_damage(target_pos, 3.5, special_ability_damage)
+			if faction == "player":
+				GameState.notify("Minotauro desferiu Investida Taurina com Dano Divino!", false)
+		"jackal_leap":
+			if is_instance_valid(combat_target) and combat_target.has_method("take_damage"):
+				combat_target.take_damage(special_ability_damage, faction, pantheon_id, "divine")
+			if faction == "player":
+				GameState.notify("Anubita desferiu Salto Letal Divino!", false)
+		"valkyrie_heal":
+			_area_heal_allies(global_position, 5.0, 60)
+			_area_divine_damage(global_position, 4.0, special_ability_damage * 0.7)
+			if faction == "player":
+				GameState.notify("Valquíria conjurou Bênção Restauradora e Onda Divina!", false)
+		"clay_slam":
+			_area_divine_damage(target_pos, 4.0, special_ability_damage)
+			if faction == "player":
+				GameState.notify("Prometeano desferiu Impacto Argiloso!", false)
+		"celestial_roar":
+			_area_divine_damage(global_position, 5.5, special_ability_damage)
+			if faction == "player":
+				GameState.notify("Qilin liberou Rugido Divino Celestial!", false)
+		"divine_wrath":
+			_area_divine_damage(target_pos, 7.0, special_ability_damage)
+			if faction == "player":
+				GameState.notify("Presença Divina manifestou Fúria Celestial!", false)
+		_:
+			_area_divine_damage(target_pos, 3.5, special_ability_damage)
+
+	return true
+
+
+func _area_divine_damage(epicenter: Vector3, radius: float, amount: float) -> void:
+	var enemy_group: String = "faction_enemy" if faction == "player" else "faction_player"
+	var r2: float = radius * radius
+	for node in get_tree().get_nodes_in_group(enemy_group):
+		if not is_instance_valid(node):
+			continue
+		var d2: float = epicenter.distance_squared_to(node.global_position)
+		if d2 <= r2 and node.has_method("take_damage"):
+			node.take_damage(amount, faction, pantheon_id, "divine")
+
+
+func _area_heal_allies(epicenter: Vector3, radius: float, heal_amount: int) -> void:
+	var ally_group: String = "faction_player" if faction == "player" else "faction_enemy"
+	var r2: float = radius * radius
+	for node in get_tree().get_nodes_in_group(ally_group):
+		if not is_instance_valid(node) or node == self:
+			continue
+		if node is UnitActor and not node.is_dead():
+			if epicenter.distance_squared_to(node.global_position) <= r2:
+				node.current_hp = mini(node.max_hp, node.current_hp + heal_amount)
+				node._update_hp_bar()
