@@ -150,7 +150,7 @@ func _process(delta: float) -> void:
 func _build_top_bar() -> void:
 	var bar := PanelContainer.new()
 	bar.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	bar.custom_minimum_size = Vector2(0.0, 50.0)
+	bar.custom_minimum_size = Vector2(0.0, 54.0)
 	bar.add_theme_stylebox_override("panel", _make_panel_style(Color(0.04, 0.06, 0.10, 0.94), 0, Color(0.83, 0.69, 0.22, 0.35)))
 	add_child(bar)
 
@@ -197,45 +197,45 @@ func _build_top_bar() -> void:
 	spacer2.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	hbox.add_child(spacer2)
 
-	var base_btn := _make_action_button("🏛 Base", false, 68.0, 36.0)
+	var base_btn := _make_action_button("🏛 Base", false, 68.0, 40.0)
 	base_btn.pressed.connect(func() -> void:
 		if _world != null:
 			_world.focus_town_center()
 	)
 	hbox.add_child(base_btn)
 
-	_fog_btn = _make_action_button("🌫 Neblina", false, 78.0, 36.0)
+	_fog_btn = _make_action_button("🌫 Neblina", false, 78.0, 40.0)
 	_fog_btn.pressed.connect(func() -> void: GameState.toggle_fog_of_war())
 	hbox.add_child(_fog_btn)
 
-	_audio_btn = _make_action_button("🔊 Som", false, 64.0, 36.0)
+	_audio_btn = _make_action_button("🔊 Som", false, 64.0, 40.0)
 	_audio_btn.pressed.connect(func() -> void: GameState.toggle_audio_muted())
 	hbox.add_child(_audio_btn)
 
-	_day_night_btn = _make_action_button("🌙 Noite", false, 72.0, 36.0)
+	_day_night_btn = _make_action_button("🌙 Noite", false, 72.0, 40.0)
 	_day_night_btn.pressed.connect(func() -> void: GameState.toggle_day_night())
 	hbox.add_child(_day_night_btn)
 
-	var save_btn := _make_action_button("💾 Salvar", false, 72.0, 36.0)
+	var save_btn := _make_action_button("💾 Salvar", false, 72.0, 40.0)
 	save_btn.pressed.connect(func() -> void:
 		SaveLoadSystem.save_game(_world, _camera_rig)
 	)
 	hbox.add_child(save_btn)
 
-	var load_btn := _make_action_button("📂 Carregar", false, 78.0, 36.0)
+	var load_btn := _make_action_button("📂 Carregar", false, 78.0, 40.0)
 	load_btn.pressed.connect(func() -> void:
 		SaveLoadSystem.load_game()
 	)
 	hbox.add_child(load_btn)
 
-	_divine_btn = _make_action_button("⚡ Deuses", true, 78.0, 36.0)
+	_divine_btn = _make_action_button("⚡ Deuses", true, 78.0, 40.0)
 	_divine_btn.visible = false
 	_divine_btn.pressed.connect(func() -> void:
 		_toggle_divine_panel()
 	)
 	hbox.add_child(_divine_btn)
 
-	var menu_btn := _make_action_button("☰ Menu", false, 66.0, 36.0)
+	var menu_btn := _make_action_button("☰ Menu", false, 66.0, 40.0)
 	menu_btn.pressed.connect(func() -> void:
 		get_tree().change_scene_to_file("res://scenes/title_screen.tscn")
 	)
