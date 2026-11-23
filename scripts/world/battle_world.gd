@@ -102,7 +102,7 @@ func _on_match_started(pantheon_id: String, enemy_pantheon_id: String) -> void:
 	spawn_building("barracks", PLAYER_BASE_POS + Vector3(7.5, 0.0, 3.0), true, "player", pantheon_id, 1)
 
 	var starting_villagers: Array[UnitActor] = []
-	for offset in [Vector3(-3.5, 0.0, 4.5), Vector3(0.0, 0.0, 5.2), Vector3(3.5, 0.0, 4.5)]:
+	for offset in [Vector3(-3.5, 0.0, 4.5), Vector3(0.0, 0.0, 5.2), Vector3(3.5, 0.0, 4.5), Vector3(-2.0, 0.0, 6.2)]:
 		var v: UnitActor = spawn_unit("villager", PLAYER_BASE_POS + offset, "player", pantheon_id)
 		starting_villagers.append(v)
 
@@ -112,6 +112,8 @@ func _on_match_started(pantheon_id: String, enemy_pantheon_id: String) -> void:
 	spawn_unit("infantry", PLAYER_BASE_POS + Vector3(5.5, 0.0, -3.5), "player", pantheon_id)
 	spawn_unit("infantry", PLAYER_BASE_POS + Vector3(7.2, 0.0, -2.5), "player", pantheon_id)
 	spawn_unit("archer", PLAYER_BASE_POS + Vector3(4.5, 0.0, -5.2), "player", pantheon_id)
+	spawn_unit("cavalry", PLAYER_BASE_POS + Vector3(8.5, 0.0, -4.5), "player", pantheon_id)
+	spawn_unit("myth", PLAYER_BASE_POS + Vector3(2.5, 0.0, -6.0), "player", pantheon_id)
 
 	# 4. === CIDADELA INIMIGA (Nordeste — gerida pela IA multi-dificuldade) ===
 	spawn_building("town_center", ENEMY_BASE_POS, true, "enemy", enemy_pantheon_id, 1)

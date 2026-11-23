@@ -42,21 +42,37 @@ static func create_unit_visual(
 ) -> Node3D:
 	var p: Dictionary = PantheonCatalog.get_pantheon(pantheon_id)
 	var deity_slug: String = String(p.get("deity_slug", "zeus"))
-	var candidates: Array[String] = [
-		# Camps paths in civilization folders
-		"res://models/civilizations/%s/%s/unidade_militar/%s.glb" % [pantheon_id, deity_slug, unit_kind],
-		"res://models/civilizations/%s/%s_major/unidade_militar/%s.glb" % [pantheon_id, deity_slug, unit_kind],
-		"res://models/civilizations/%s/%s/unidade_mitica/%s.glb" % [pantheon_id, deity_slug, unit_kind],
-		"res://models/civilizations/%s/%s_major/unidade_mitica/%s.glb" % [pantheon_id, deity_slug, unit_kind],
-		"res://models/civilizations/%s/%s/aldeao/%s.glb" % [pantheon_id, deity_slug, unit_kind],
-		"res://models/civilizations/%s/%s_major/aldeao/%s.glb" % [pantheon_id, deity_slug, unit_kind],
-		# Standard models folders
-		"res://models/units/%s_%s_%s.glb" % [pantheon_id, deity_slug, unit_kind],
-		"res://models/units/%s_%s.glb" % [pantheon_id, unit_kind],
-		"res://models/units/%s.glb" % unit_kind,
-		"res://models/units/aldeao.glb",
-		"res://models/units/villager.glb",
-	]
+
+	var aliases: Array[String] = [unit_kind]
+	if pantheon_id == "greek":
+		match unit_kind:
+			"villager":
+				aliases.append_array(["villager", "aldeao"])
+			"infantry":
+				aliases.append_array(["infantry", "hoplita_animado", "hoplita", "ancient_blue_hoplite_warrior"])
+			"archer":
+				aliases.append_array(["toxotes", "ancient_blue_hoplite_warrior", "archer"])
+			"cavalry":
+				aliases.append_array(["hippeus", "prodromos", "cavalry"])
+			"hero":
+				aliases.append_array(["ancient_blue_hoplite_warrior", "hoplita_animado", "heroi"])
+			"myth":
+				aliases.append_array(["centauro_guerreiro_animado", "talos_clean_hq_animado_completo", "centauro_guerreiro", "myth"])
+
+	var candidates: Array[String] = []
+	for u_alias in aliases:
+		candidates.append("res://models/civilizations/%s/%s_major/unidade_militar/%s.glb" % [pantheon_id, deity_slug, u_alias])
+		candidates.append("res://models/civilizations/%s/%s/unidade_militar/%s.glb" % [pantheon_id, deity_slug, u_alias])
+		candidates.append("res://models/civilizations/%s/%s_major/aldeao/%s.glb" % [pantheon_id, deity_slug, u_alias])
+		candidates.append("res://models/civilizations/%s/%s/aldeao/%s.glb" % [pantheon_id, deity_slug, u_alias])
+		candidates.append("res://models/civilizations/%s/%s_major/unidade_mitica/%s.glb" % [pantheon_id, deity_slug, u_alias])
+		candidates.append("res://models/civilizations/%s/%s/unidade_mitica/%s.glb" % [pantheon_id, deity_slug, u_alias])
+		candidates.append("res://models/units/%s_%s_%s.glb" % [pantheon_id, deity_slug, u_alias])
+		candidates.append("res://models/units/%s_%s.glb" % [pantheon_id, u_alias])
+		candidates.append("res://models/units/%s.glb" % u_alias)
+	candidates.append("res://models/units/villager.glb")
+	candidates.append("res://models/units/aldeao.glb")
+
 	for path in candidates:
 		var loaded: Node3D = _try_instantiate_glb(path)
 		if loaded != null:
@@ -64,6 +80,10 @@ static func create_unit_visual(
 				# Aplica escala calibrada no Kimodo Studio (1.45x) e equipa machado heróico
 				loaded.scale = Vector3.ONE * 1.45
 				attach_villager_tools(loaded, "axe")
+			elif unit_kind in ["infantry", "archer", "cavalry", "hero"]:
+				loaded.scale = Vector3.ONE * 1.45
+			elif unit_kind == "myth":
+				loaded.scale = Vector3.ONE * 1.50
 			if is_promoted_hero:
 				_attach_hero_aura(loaded, Color("#38bdf8"))
 			return loaded
@@ -178,6 +198,14 @@ static func create_divine_unit_visual(
 static func _try_instantiate_glb(res_path: String) -> Node3D:
 	if not ResourceLoader.exists(res_path):
 		return null
+	# Se for um placeholder vazio ou dummy BoxMesh de 1.2KB, ignora para gerar arquitetura rica
+	if FileAccess.file_exists(res_path):
+		var fa := FileAccess.open(res_path, FileAccess.READ)
+		if fa != null:
+			var sz: int = fa.get_length()
+			fa.close()
+			if sz < 4096:
+				return null
 	var packed: PackedScene
 	if _scene_cache.has(res_path):
 		packed = _scene_cache[res_path]
@@ -251,19 +279,42 @@ static func _build_procedural_building(p: Dictionary, kind: String, tier: int, f
 
 	match kind:
 		"town_center":
-			var body_h: float = 1.9 * tier_scale
-			_add_box(root, Vector3(fp * 1.05, body_h, fp * 0.92), Vector3(0.0, 0.32 + body_h * 0.5, 0.0), stone_mat)
-			# Colunas frontais / pilones culturais
-			for cx in [-1.25, -0.45, 0.45, 1.25]:
-				_add_cylinder(root, 0.16, 0.19, body_h, Vector3(cx, 0.32 + body_h * 0.5, fp * 0.5), stone_mat)
-			# Telhado cultural conforme o panteao
-			if p["id"] == "atlantean":
-				_add_sphere(root, 1.45 * tier_scale, Vector3(0.0, 0.32 + body_h + 0.55, 0.0), roof_mat)
-			elif p["id"] == "egyptian":
-				_add_box(root, Vector3(fp * 1.15, 0.45, fp * 1.0), Vector3(0.0, 0.32 + body_h + 0.22, 0.0), gold_mat)
-				_add_cylinder(root, 0.18, 0.42, 1.8 * tier_scale, Vector3(0.0, 0.32 + body_h + 1.1, -0.4), gold_mat)
+			var body_h: float = 2.1 * tier_scale
+			if p["id"] == "greek":
+				# Stylobate clássico com 3 degraus de mármore
+				_add_box(root, Vector3(fp * 1.35, 0.22, fp * 1.35), Vector3(0.0, 0.42, 0.0), stone_mat)
+				_add_box(root, Vector3(fp * 1.22, 0.22, fp * 1.22), Vector3(0.0, 0.64, 0.0), stone_mat)
+				# Cela central de mármore
+				_add_box(root, Vector3(fp * 0.96, body_h, fp * 0.86), Vector3(0.0, 0.64 + body_h * 0.5, -0.12), stone_mat)
+				# Portal monumental com batente de bronze
+				_add_box(root, Vector3(1.3, body_h * 0.72, 0.2), Vector3(0.0, 0.64 + body_h * 0.36, fp * 0.38), wood_mat)
+				_add_box(root, Vector3(1.5, 0.18, 0.24), Vector3(0.0, 0.64 + body_h * 0.72, fp * 0.38), gold_mat)
+				# Colunata dórica frontal (6 colunas com fuste cônico e capitel)
+				for cx in [-1.55, -0.93, -0.31, 0.31, 0.93, 1.55]:
+					_add_cylinder(root, 0.15, 0.18, body_h, Vector3(cx, 0.64 + body_h * 0.5, fp * 0.44), stone_mat)
+					_add_box(root, Vector3(0.42, 0.12, 0.42), Vector3(cx, 0.64 + body_h + 0.06, fp * 0.44), stone_mat)
+				# Arquitrave e entablamento
+				_add_box(root, Vector3(fp * 1.25, 0.35, fp * 1.15), Vector3(0.0, 0.64 + body_h + 0.24, 0.0), stone_mat)
+				# Telhado de terracota em duas águas
+				_add_prism_roof(root, fp * 1.28, 1.35 * tier_scale, fp * 1.18, Vector3(0.0, 0.64 + body_h + 0.42 + 0.68 * tier_scale, 0.0), roof_mat)
+				# Brasões e tocheiros de fogo nos degraus
+				var fire_mat := _make_mat(Color("#f97316"), 0.2, 0.1, true, Color("#fbbf24"), 2.2)
+				_add_cylinder(root, 0.28, 0.22, 0.6, Vector3(-fp * 0.52, 0.85, fp * 0.52), stone_mat)
+				_add_sphere(root, 0.22, Vector3(-fp * 0.52, 1.25, fp * 0.52), fire_mat)
+				_add_cylinder(root, 0.28, 0.22, 0.6, Vector3(fp * 0.52, 0.85, fp * 0.52), stone_mat)
+				_add_sphere(root, 0.22, Vector3(fp * 0.52, 1.25, fp * 0.52), fire_mat)
 			else:
-				_add_prism_roof(root, fp * 1.25, 1.25 * tier_scale, fp * 1.12, Vector3(0.0, 0.32 + body_h + 0.62 * tier_scale, 0.0), roof_mat)
+				_add_box(root, Vector3(fp * 1.05, body_h, fp * 0.92), Vector3(0.0, 0.32 + body_h * 0.5, 0.0), stone_mat)
+				for cx in [-1.25, -0.45, 0.45, 1.25]:
+					_add_cylinder(root, 0.16, 0.19, body_h, Vector3(cx, 0.32 + body_h * 0.5, fp * 0.5), stone_mat)
+				if p["id"] == "atlantean":
+					_add_sphere(root, 1.45 * tier_scale, Vector3(0.0, 0.32 + body_h + 0.55, 0.0), roof_mat)
+				elif p["id"] == "egyptian":
+					_add_box(root, Vector3(fp * 1.15, 0.45, fp * 1.0), Vector3(0.0, 0.32 + body_h + 0.22, 0.0), gold_mat)
+					_add_cylinder(root, 0.18, 0.42, 1.8 * tier_scale, Vector3(0.0, 0.32 + body_h + 1.1, -0.4), gold_mat)
+				else:
+					_add_prism_roof(root, fp * 1.25, 1.25 * tier_scale, fp * 1.12, Vector3(0.0, 0.32 + body_h + 0.62 * tier_scale, 0.0), roof_mat)
+
 			# Estandarte de faccao + pinaculo dourado T3-T5
 			_add_box(root, Vector3(0.28, 1.5, 0.08), Vector3(fp * 0.58, 1.25, fp * 0.52), primary_mat)
 			if tier >= 3:
