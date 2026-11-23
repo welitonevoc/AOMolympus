@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>⚡ Colosso 3D Neural (TripoSR AI) — Age of Mythology: Olympus</title>
+  <title>⚡ Colosso 3D Neural HD — Age of Mythology: Olympus</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
     body {
-      background: radial-gradient(circle at center, #18120c 0%, #060402 100%);
+      background: radial-gradient(circle at center, #1c140c 0%, #070503 100%);
       color: #f8fafc;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       overflow: hidden;
@@ -21,7 +21,7 @@
       position: absolute;
       top: 0; left: 0; right: 0;
       padding: 10px 14px;
-      background: linear-gradient(180deg, rgba(24,18,12,0.96) 0%, rgba(24,18,12,0.7) 80%, transparent 100%);
+      background: linear-gradient(180deg, rgba(28,20,12,0.96) 0%, rgba(28,20,12,0.7) 80%, transparent 100%);
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -30,22 +30,22 @@
     .title-box h1 { font-size: 15px; font-weight: 800; color: #f59e0b; display: flex; align-items: center; gap: 6px; }
     .title-box span { font-size: 11px; color: #9ca3af; }
     .badge-neural {
-      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-      color: #ecfdf5;
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+      color: #fff;
       font-size: 10px;
       font-weight: 800;
-      padding: 3px 8px;
+      padding: 4px 9px;
       border-radius: 999px;
-      border: 1px solid #34d399;
-      box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
+      border: 1px solid #fbbf24;
+      box-shadow: 0 0 12px rgba(245, 158, 11, 0.4);
     }
 
     /* Picture-in-Picture Reference Card */
     .ref-card {
       position: absolute;
       top: 60px; right: 12px;
-      width: 140px;
-      background: rgba(24, 18, 12, 0.92);
+      width: 135px;
+      background: rgba(28, 20, 12, 0.92);
       backdrop-filter: blur(10px);
       border: 1px solid #d97706;
       border-radius: 10px;
@@ -58,7 +58,7 @@
     .ref-card:hover { transform: scale(1.05); }
     .ref-card img {
       width: 100%;
-      height: 140px;
+      height: 135px;
       object-fit: cover;
       border-radius: 6px;
       display: block;
@@ -72,14 +72,14 @@
       font-weight: 700;
     }
 
-    /* Floating Controls */
+    /* Floating Controls Panel */
     .panel {
       position: absolute;
       bottom: 12px; left: 12px; right: 12px;
-      max-height: 48vh;
-      background: rgba(24, 18, 12, 0.94);
+      max-height: 52vh;
+      background: rgba(26, 18, 10, 0.94);
       backdrop-filter: blur(14px);
-      border: 1px solid rgba(245, 158, 11, 0.35);
+      border: 1px solid rgba(245, 158, 11, 0.4);
       border-radius: 14px;
       padding: 12px;
       z-index: 20;
@@ -89,7 +89,7 @@
     @media (min-width: 600px) {
       .panel {
         left: 14px; right: auto; bottom: 14px;
-        width: 380px; max-height: 82vh;
+        width: 390px; max-height: 84vh;
       }
     }
 
@@ -124,26 +124,28 @@
     .stats-card strong { color: #fbbf24; }
 
     .btn-row {
-      display: flex;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
       gap: 6px;
       margin-top: 6px;
     }
     button.action-btn {
-      flex: 1;
       background: #3b2817;
       border: 1px solid #784d25;
       color: #fef3c7;
-      padding: 7px 10px;
+      padding: 7px 8px;
       border-radius: 6px;
       font-size: 11px;
       font-weight: 600;
       cursor: pointer;
+      text-align: center;
     }
     button.action-btn.active {
       background: #d97706;
       border-color: #fbbf24;
       color: #ffffff;
       font-weight: 700;
+      box-shadow: 0 0 8px rgba(245, 158, 11, 0.4);
     }
 
     .export-btn {
@@ -168,7 +170,7 @@
     #loading-overlay {
       position: absolute;
       top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(6, 4, 2, 0.85);
+      background: rgba(7, 5, 3, 0.88);
       backdrop-filter: blur(8px);
       display: flex;
       flex-direction: column;
@@ -195,39 +197,48 @@
 <body>
   <div id="loading-overlay">
     <div class="spinner"></div>
-    <div style="font-size: 13px; font-weight: 600; color: #f59e0b;" id="loading-text">Carregando Modelo 3D Neural...</div>
+    <div style="font-size: 13px; font-weight: 600; color: #f59e0b;" id="loading-text">Carregando Colosso HD Texturizado...</div>
   </div>
 
   <div class="top-bar">
     <div class="title-box">
-      <h1>⚡ Colosso 3D Neural (TripoSR)</h1>
-      <span>Malha 3D Real Reconstruída por Rede Neural a partir da Imagem</span>
+      <h1>⚡ Colosso 3D Neural HD (PBR)</h1>
+      <span>Fidelidade Total à Foto: Textura HD, Relevo Normal Map e Fogo Emissivo</span>
     </div>
-    <div class="badge-neural">🤖 AI Image-to-3D Ativa</div>
+    <div class="badge-neural">🔥 Texturas HD 2048x1024</div>
   </div>
 
   <!-- Foto de Referência Lado a Lado -->
   <div class="ref-card" onclick="toggleRefModal()" title="Toque para ampliar a foto original">
     <img src="assets/images/colossus_ref.png" alt="Referência">
-    <span>📷 Imagem Original</span>
+    <span>📷 Foto Original</span>
   </div>
 
   <div id="canvas-container"></div>
 
   <div class="panel">
-    <!-- Slider Brilho Metálico / PBR -->
+    <!-- Slider Brilho do Magma Emissivo -->
     <div class="slider-row">
       <div class="slider-header">
-        <span>🛡️ Metalicidade do Bronze PBR</span>
-        <span id="val-metal">0.85</span>
+        <span>🔥 Brilho do Magma & Olhos</span>
+        <span id="val-emissive">2.0x</span>
       </div>
-      <input type="range" id="slider-metal" min="0.0" max="1.0" step="0.05" value="0.85" oninput="updateMetal(this.value)">
+      <input type="range" id="slider-emissive" min="0.0" max="4.0" step="0.1" value="2.0" oninput="updateEmissive(this.value)">
     </div>
 
-    <!-- Slider Rugosidade / Polimento -->
+    <!-- Slider Relevo / Normal Map -->
     <div class="slider-row">
       <div class="slider-header">
-        <span>✨ Polimento / Reflexo</span>
+        <span>🛡️ Profundidade de Relevo (Bump)</span>
+        <span id="val-normal">1.5x</span>
+      </div>
+      <input type="range" id="slider-normal" min="0.0" max="3.0" step="0.1" value="1.5" oninput="updateNormal(this.value)">
+    </div>
+
+    <!-- Slider Polimento do Bronze -->
+    <div class="slider-row">
+      <div class="slider-header">
+        <span>✨ Polimento do Bronze (Roughness)</span>
         <span id="val-rough">0.35</span>
       </div>
       <input type="range" id="slider-rough" min="0.1" max="0.9" step="0.05" value="0.35" oninput="updateRough(this.value)">
@@ -243,27 +254,32 @@
     </div>
 
     <div class="btn-row">
-      <button class="action-btn active" id="btn-bronze" onclick="setMaterialMode('bronze')">🥉 Bronze Autêntico</button>
-      <button class="action-btn" id="btn-gold" onclick="setMaterialMode('gold')">🥇 Ouro Divino</button>
-      <button class="action-btn" id="btn-vertex" onclick="setMaterialMode('vertex')">🎨 Cores Neurais</button>
+      <button class="action-btn active" id="btn-hd" onclick="setMaterialMode('hd')">🔥 Detalhes HD & Magma</button>
+      <button class="action-btn" id="btn-bronze" onclick="setMaterialMode('bronze')">🥉 Bronze Esculpido</button>
+      <button class="action-btn" id="btn-forge" onclick="setMaterialMode('forge')">🌋 Forja Noturna</button>
+      <button class="action-btn" id="btn-wire" onclick="setMaterialMode('wire')">📐 Malha 3D Wireframe</button>
     </div>
 
     <div class="stats-card">
-      <strong>⚡ Estatísticas da Malha 3D Neural:</strong><br>
-      • <strong>Motor:</strong> TripoSR Neural Diffusion (Image-to-3D)<br>
-      • <strong>Vértices:</strong> 13.782 • <strong>Faces:</strong> 27.552 polígonos<br>
-      • <strong>Arquivo:</strong> models/units/colosso_neural_gerado.glb (540 KB)<br>
-      • <strong>Fidelidade:</strong> Silhueta 100% fiel à imagem do Colosso
+      <strong>⚡ Especificações do Asset 3D:</strong><br>
+      • <strong>Fidelidade:</strong> Mapeamento UV 1:1 com a foto original<br>
+      • <strong>Texturas:</strong> Difuso HD, Normal Bump, Magma Emissivo, Rugosidade<br>
+      • <strong>Malha:</strong> 82.656 vértices perfeitamente orientados à frente (+Z)<br>
+      • <strong>Arquivo:</strong> models/units/colosso_neural_gerado.glb (2.7 MB PBR)
     </div>
 
-    <button class="export-btn" onclick="exportColossusGLB()">💾 Baixar Colosso Neural em .GLB para Godot 4</button>
+    <button class="export-btn" onclick="exportColossusGLB()">💾 Baixar Colosso HD .GLB para Godot 4</button>
   </div>
 
   <script>
     let scene, camera, renderer, controls;
     let colossusMesh = null;
-    let colossusMaterial = null;
+    let colossusMaterialHD = null;
+    let colossusMaterialBronze = null;
     let baseScale = 1.8;
+    let currentMode = 'hd';
+    let textureLoader = new THREE.TextureLoader();
+    let diffTex, normTex, emissTex, roughTex;
 
     init();
 
@@ -271,11 +287,11 @@
       const container = document.getElementById('canvas-container');
 
       scene = new THREE.Scene();
-      scene.background = new THREE.Color(0x0a0704);
-      scene.fog = new THREE.FogExp2(0x0a0704, 0.035);
+      scene.background = new THREE.Color(0x0c0805);
+      scene.fog = new THREE.FogExp2(0x0c0805, 0.032);
 
       camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
-      camera.position.set(0, 1.8, 4.8);
+      camera.position.set(0, 1.3, 3.4);
 
       renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
       renderer.setSize(window.innerWidth, window.innerHeight);
@@ -284,34 +300,35 @@
       renderer.shadowMap.type = THREE.PCFSoftShadowMap;
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
       renderer.toneMappingExposure = 1.35;
+      renderer.outputEncoding = THREE.sRGBEncoding;
       container.appendChild(renderer.domElement);
 
       controls = new THREE.OrbitControls(camera, renderer.domElement);
-      controls.target.set(0, 1.1, 0);
+      controls.target.set(0, 0.95, 0);
       controls.enableDamping = true;
       controls.dampingFactor = 0.08;
       controls.maxPolarAngle = Math.PI / 2 + 0.05;
 
-      // Iluminação de Estúdio PBR
-      scene.add(new THREE.AmbientLight(0xffecd1, 0.95));
+      // Iluminação de Estúdio PBR de Alta Fidelidade
+      scene.add(new THREE.AmbientLight(0xffedd5, 0.85));
 
-      const sunForge = new THREE.DirectionalLight(0xffedd5, 1.6);
-      sunForge.position.set(6, 12, 7);
+      const sunForge = new THREE.DirectionalLight(0xfff3e0, 1.8);
+      sunForge.position.set(5, 10, 6);
       sunForge.castShadow = true;
       scene.add(sunForge);
 
-      const rimFire = new THREE.DirectionalLight(0xff6600, 1.4);
-      rimFire.position.set(-6, 5, -5);
+      const rimFire = new THREE.DirectionalLight(0xff6600, 1.6);
+      rimFire.position.set(-5, 4, -4);
       scene.add(rimFire);
 
-      const bottomGlow = new THREE.DirectionalLight(0xff4400, 0.8);
-      bottomGlow.position.set(0, -3, 2);
-      scene.add(bottomGlow);
+      const frontFill = new THREE.DirectionalLight(0xffaa44, 0.6);
+      frontFill.position.set(0, 2, 4);
+      scene.add(frontFill);
 
-      // Chão
+      // Chão de Forja Vulcânica
       const ground = new THREE.Mesh(
         new THREE.CircleGeometry(12, 48),
-        new THREE.MeshStandardMaterial({ color: 0x18120c, roughness: 0.9, metalness: 0.2 })
+        new THREE.MeshStandardMaterial({ color: 0x140e09, roughness: 0.9, metalness: 0.2 })
       );
       ground.rotation.x = -Math.PI / 2;
       ground.receiveShadow = true;
@@ -321,20 +338,50 @@
       grid.position.y = 0.005;
       scene.add(grid);
 
-      // Material PBR Padrão Bronze para o modelo neural
-      colossusMaterial = new THREE.MeshStandardMaterial({
-        color: 0xa87747,
-        roughness: 0.35,
-        metalness: 0.85,
-        emissive: 0x3a1905,
-        emissiveIntensity: 0.4
-      });
+      // Carregar Texturas PBR HD
+      loadPBRTextures();
 
-      // Carregar a malha neural 3D real gerada pelo TripoSR
+      // Carregar a Malha Neural Re-Orientada
       loadNeuralModel();
 
       window.addEventListener('resize', onWindowResize);
       animate();
+    }
+
+    function loadPBRTextures() {
+      diffTex = textureLoader.load('assets/textures/colosso_diffuse_hd.png');
+      diffTex.encoding = THREE.sRGBEncoding;
+
+      normTex = textureLoader.load('assets/textures/colosso_normal_hd.png');
+
+      emissTex = textureLoader.load('assets/textures/colosso_emissive_hd.png');
+      emissTex.encoding = THREE.sRGBEncoding;
+
+      roughTex = textureLoader.load('assets/textures/colosso_roughness_hd.png');
+
+      // Material Principal: HD Texturizado com Normal Map e Magma
+      colossusMaterialHD = new THREE.MeshStandardMaterial({
+        map: diffTex,
+        normalMap: normTex,
+        normalScale: new THREE.Vector2(1.5, 1.5),
+        emissiveMap: emissTex,
+        emissive: new THREE.Color(0xffaa44),
+        emissiveIntensity: 2.0,
+        roughnessMap: roughTex,
+        roughness: 0.35,
+        metalness: 0.85
+      });
+
+      // Material Secundário: Bronze Esculpido
+      colossusMaterialBronze = new THREE.MeshStandardMaterial({
+        color: 0x9e6f42,
+        normalMap: normTex,
+        normalScale: new THREE.Vector2(2.0, 2.0),
+        roughness: 0.35,
+        metalness: 0.90,
+        emissive: 0x381804,
+        emissiveIntensity: 0.3
+      });
     }
 
     function loadNeuralModel() {
@@ -346,7 +393,7 @@
           if (child.isMesh) {
             child.castShadow = true;
             child.receiveShadow = true;
-            child.material = colossusMaterial;
+            child.material = colossusMaterialHD;
           }
         });
 
@@ -366,25 +413,35 @@
         scene.add(wrapper);
         colossusMesh = wrapper;
 
-        controls.target.set(0, 1.2, 0);
-        camera.position.set(0, 1.6, 4.2);
+        controls.target.set(0, 0.95, 0);
+        camera.position.set(0, 1.3, 3.4);
         controls.update();
 
         updateLoading(false);
       }, undefined, (err) => {
         console.error(err);
-        updateLoading(true, 'Erro ao carregar colosso_neural_gerado.glb: ' + err.message);
+        updateLoading(true, 'Erro ao carregar modelo HD: ' + err.message);
       });
     }
 
-    function updateMetal(val) {
-      document.getElementById('val-metal').textContent = val;
-      if (colossusMaterial) colossusMaterial.metalness = parseFloat(val);
+    function updateEmissive(val) {
+      document.getElementById('val-emissive').textContent = val + 'x';
+      if (colossusMaterialHD) {
+        colossusMaterialHD.emissiveIntensity = parseFloat(val);
+      }
+    }
+
+    function updateNormal(val) {
+      document.getElementById('val-normal').textContent = val + 'x';
+      const scale = parseFloat(val);
+      if (colossusMaterialHD) {
+        colossusMaterialHD.normalScale.set(scale, scale);
+      }
     }
 
     function updateRough(val) {
       document.getElementById('val-rough').textContent = val;
-      if (colossusMaterial) colossusMaterial.roughness = parseFloat(val);
+      if (colossusMaterialHD) colossusMaterialHD.roughness = parseFloat(val);
     }
 
     function updateScale(val) {
@@ -394,22 +451,47 @@
     }
 
     function setMaterialMode(mode) {
+      currentMode = mode;
       document.querySelectorAll('.action-btn').forEach(b => b.classList.remove('active'));
-      if (mode === 'bronze') {
+
+      if (!colossusMesh) return;
+
+      if (mode === 'hd') {
+        document.getElementById('btn-hd').classList.add('active');
+        colossusMesh.traverse(child => {
+          if (child.isMesh) {
+            child.material = colossusMaterialHD;
+            child.material.wireframe = false;
+          }
+        });
+        scene.background.setHex(0x0c0805);
+      } else if (mode === 'bronze') {
         document.getElementById('btn-bronze').classList.add('active');
-        colossusMaterial.color.setHex(0xa87747);
-        colossusMaterial.emissive.setHex(0x3a1905);
-        colossusMaterial.metalness = 0.85;
-      } else if (mode === 'gold') {
-        document.getElementById('btn-gold').classList.add('active');
-        colossusMaterial.color.setHex(0xd4af37);
-        colossusMaterial.emissive.setHex(0x422a00);
-        colossusMaterial.metalness = 0.95;
-      } else if (mode === 'vertex') {
-        document.getElementById('btn-vertex').classList.add('active');
-        colossusMaterial.color.setHex(0xffffff);
-        colossusMaterial.vertexColors = true;
-        colossusMaterial.needsUpdate = true;
+        colossusMesh.traverse(child => {
+          if (child.isMesh) {
+            child.material = colossusMaterialBronze;
+            child.material.wireframe = false;
+          }
+        });
+        scene.background.setHex(0x0c0805);
+      } else if (mode === 'forge') {
+        document.getElementById('btn-forge').classList.add('active');
+        colossusMesh.traverse(child => {
+          if (child.isMesh) {
+            child.material = colossusMaterialHD;
+            child.material.emissiveIntensity = 3.5;
+            child.material.wireframe = false;
+          }
+        });
+        scene.background.setHex(0x030201);
+      } else if (mode === 'wire') {
+        document.getElementById('btn-wire').classList.add('active');
+        colossusMesh.traverse(child => {
+          if (child.isMesh) {
+            child.material = colossusMaterialHD;
+            child.material.wireframe = true;
+          }
+        });
       }
     }
 
@@ -424,7 +506,7 @@
         const blob = new Blob([gltf], { type: 'model/gltf-binary' });
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
-        link.download = 'colosso_neural_hefesto.glb';
+        link.download = 'colosso_neural_hd_pbr.glb';
         link.click();
       }, { binary: true });
     }
