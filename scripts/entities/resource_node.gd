@@ -53,6 +53,10 @@ func harvest(requested: float) -> float:
 	return taken
 
 
+func is_depleted() -> bool:
+	return remaining <= 0.01 or is_queued_for_deletion()
+
+
 func flash_target() -> void:
 	if _highlight_ring == null:
 		return
