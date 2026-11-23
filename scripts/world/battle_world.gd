@@ -24,6 +24,7 @@ var _fog_system: Node3D
 var _ai_controller: Node
 var _power_system: Node3D
 var _battle_hud: Node = null  # Referência ao BattleScreen (Painel H)
+var _last_idle_villager_idx: int = -1
 
 
 func _ready() -> void:
@@ -135,7 +136,7 @@ func _on_match_started(pantheon_id: String, enemy_pantheon_id: String) -> void:
 	var tc: BuildingActor = spawn_building("town_center", player_base_pos, true, "player", pantheon_id, 1)
 	spawn_building("barracks", player_base_pos + Vector3(8.5, 0.0, 3.5), true, "player", pantheon_id, 1)
 
-	var starting_villagers: Array[UnitActor] = []
+	var starting_villagers: Array = []
 	for offset in [Vector3(-4.0, 0.0, 4.5), Vector3(0.0, 0.0, 5.5), Vector3(4.0, 0.0, 4.5), Vector3(-2.0, 0.0, 7.0)]:
 		var v: UnitActor = spawn_unit("villager", player_base_pos + offset, "player", pantheon_id)
 		starting_villagers.append(v)
@@ -270,12 +271,18 @@ func focus_town_center() -> void:
 func focus_idle_villager() -> void:
 	if _camera_rig == null:
 		return
+	var idles: Array = []
 	for v in get_tree().get_nodes_in_group("villagers"):
 		if v is UnitActor and v.faction == "player" and not v.is_dead() and v.state == UnitActor.State.IDLE:
-			_camera_rig.focus_on(v.global_position)
-			GameState.set_selection([v])
-			return
-	GameState.notify("Nenhum aldeao ocioso no momento.", false)
+			idles.append(v)
+	if idles.is_empty():
+		_last_idle_villager_idx = -1
+		GameState.notify("Nenhum aldeão ocioso no momento.", false)
+		return
+	_last_idle_villager_idx = (_last_idle_villager_idx + 1) % idles.size()
+	var chosen: UnitActor = idles[_last_idle_villager_idx]
+	_camera_rig.focus_on(chosen.global_position)
+	GameState.set_selection([chosen])
 
 
 func _start_villager_demo_action(v: UnitActor) -> void:

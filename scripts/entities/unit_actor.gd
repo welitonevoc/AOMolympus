@@ -573,7 +573,26 @@ func _process_building(delta: float) -> void:
 
 
 func _step_navigation(delta: float) -> void:
+	var target_dest := Vector3.ZERO
+	if state == State.GATHERING and is_instance_valid(target_resource):
+		target_dest = target_resource.global_position
+	elif state == State.RETURNING and is_instance_valid(dropoff_building):
+		target_dest = dropoff_building.global_position
+	elif state == State.BUILDING and is_instance_valid(target_building):
+		target_dest = target_building.global_position
+	elif state == State.ATTACKING and is_instance_valid(combat_target):
+		target_dest = combat_target.global_position
+	elif state == State.MOVING:
+		target_dest = _anchor_pos
+	else:
+		target_dest = _nav_agent.target_position
+
 	var next_point: Vector3 = _nav_agent.get_next_path_position()
+	# Se NavigationServer ainda nao sincronizou ou retornou a origem erroneamente,
+	# usar fallback direto para o destino desejado
+	if next_point.is_zero_approx() or next_point.distance_squared_to(global_position) < 0.001:
+		next_point = target_dest
+
 	var dir: Vector3 = next_point - global_position
 	dir.y = 0.0
 	if dir.length_squared() < 0.002:

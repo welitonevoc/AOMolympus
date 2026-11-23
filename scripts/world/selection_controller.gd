@@ -142,7 +142,7 @@ func _cancel_tracking() -> void:
 func _handle_single_tap(screen_pos: Vector2) -> void:
 	var hit: Dictionary = _raycast_world(screen_pos, 1 | 2 | 4)
 	var selected_units := _get_selected_units()
-	var selected_villagers: Array[UnitActor] = []
+	var selected_villagers: Array = []
 
 	if not hit.is_empty():
 		var collider: Object = hit.get("collider")
@@ -186,6 +186,18 @@ func _handle_single_tap(screen_pos: Vector2) -> void:
 	if selected_units.size() > 0:
 		var ground_pos: Variant = _project_to_ground(screen_pos)
 		if ground_pos is Vector3:
+			selected_villagers = _get_selected_villagers()
+			# Ergonomia Mobile: se aldeões estiverem selecionados e o toque estiver próximo de um recurso, colhe o recurso!
+			if selected_villagers.size() > 0:
+				var nearby_res: ResourceNode = _find_resource_near(ground_pos, 5.0)
+				if nearby_res != null:
+					nearby_res.flash_target()
+					for v in selected_villagers:
+						v.command_gather(nearby_res)
+					AudioDirector.play_sfx_3d("voice_order", nearby_res.global_position, GameState.active_pantheon)
+					GameState.notify("Coletando %s." % nearby_res.get_display_name(), false)
+					return
+
 			_move_units_in_formation(selected_units, ground_pos)
 			_spawn_ring_marker(ground_pos, Color("#d4af37"), Color("#f6e08b"))
 			AudioDirector.play_sfx_3d("voice_order", ground_pos, GameState.active_pantheon)
@@ -220,6 +232,17 @@ func _issue_context_order(screen_pos: Vector2) -> void:
 				return
 	var ground_pos: Variant = _project_to_ground(screen_pos)
 	if ground_pos is Vector3:
+		var villagers := _get_selected_villagers()
+		if villagers.size() > 0:
+			var nearby_res: ResourceNode = _find_resource_near(ground_pos, 5.0)
+			if nearby_res != null:
+				nearby_res.flash_target()
+				for v in villagers:
+					v.command_gather(nearby_res)
+				AudioDirector.play_sfx_3d("voice_order", nearby_res.global_position, GameState.active_pantheon)
+				GameState.notify("Coletando %s." % nearby_res.get_display_name(), false)
+				return
+
 		_move_units_in_formation(selected_units, ground_pos)
 		_spawn_ring_marker(ground_pos, Color("#d4af37"), Color("#f6e08b"))
 		AudioDirector.play_sfx_3d("voice_order", ground_pos, GameState.active_pantheon)
@@ -256,12 +279,13 @@ func _move_units_in_formation(units: Array, center: Vector3) -> void:
 		ordered.size(),
 		facing_dir
 	)
+	var arena_limit: float = GameState.get_active_arena_size() * 0.48
 	for i in range(ordered.size()):
 		var off: Vector3 = offsets[i] if i < offsets.size() else Vector3.ZERO
 		var dest := Vector3(
-			clampf(center.x + off.x, -43.0, 43.0),
+			clampf(center.x + off.x, -arena_limit, arena_limit),
 			0.0,
-			clampf(center.z + off.z, -43.0, 43.0)
+			clampf(center.z + off.z, -arena_limit, arena_limit)
 		)
 		ordered[i].set_formation(GameState.active_formation)
 		ordered[i].command_move(dest)
@@ -521,3 +545,15 @@ func _setup_power_ring() -> void:
 	_power_ring = MeshInstance3D.new()
 	_power_ring.visible = false
 	add_child(_power_ring)
+
+
+func _find_resource_near(pos: Vector3, max_dist: float) -> ResourceNode:
+	var best: ResourceNode = null
+	var best_dist := max_dist
+	for r in get_tree().get_nodes_in_group("resources"):
+		if r is ResourceNode and not r.is_depleted():
+			var d := r.global_position.distance_to(pos)
+			if d < best_dist:
+				best_dist = d
+				best = r
+	return best
