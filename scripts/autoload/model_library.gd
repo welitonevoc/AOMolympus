@@ -38,10 +38,15 @@ static func create_unit_visual(
 	pantheon_id: String,
 	unit_kind: String,
 	faction: String = "player",
-	is_promoted_hero: bool = false
+	is_promoted_hero: bool = false,
+	major_god_id: String = ""
 ) -> Node3D:
 	var p: Dictionary = PantheonCatalog.get_pantheon(pantheon_id)
 	var deity_slug: String = String(p.get("deity_slug", "zeus"))
+	if major_god_id != "":
+		var god_slug: String = major_god_id.replace("_major", "").replace("_minor", "")
+		if god_slug != "":
+			deity_slug = god_slug
 
 	var aliases: Array[String] = [unit_kind]
 	if pantheon_id == "greek":
@@ -87,7 +92,7 @@ static func create_unit_visual(
 			if is_promoted_hero:
 				_attach_hero_aura(loaded, Color("#38bdf8"))
 			return loaded
-	return _build_procedural_unit(p, unit_kind, faction, is_promoted_hero)
+	return _build_procedural_unit(p, unit_kind, faction, is_promoted_hero, major_god_id)
 
 
 ## Anexa o machado heróico calibrado ao osso da mão direita do aldeão no Godot
@@ -1939,7 +1944,426 @@ static func sf(f: float) -> float:
 	return f
 
 
-static func _build_procedural_unit(p: Dictionary, kind: String, faction: String, is_promoted_hero: bool) -> Node3D:
+# Perfis Visuais e Culturais dos Aldeões para todos os 16 Deuses Maiores e 5 Panteões
+static var VILLAGER_DEITY_PROFILES: Dictionary = {
+	# --- GREGOS (Chíton, sandálias de couro, ouro e bronze dórico) ---
+	"zeus_major": {
+		"pantheon": "greek",
+		"god_name": "Zeus",
+		"name": "Aldeão de Zeus",
+		"title": "Servo Olímpico",
+		"tunic_color": Color("#1d4ed8"),
+		"sash_color": Color("#f59e0b"),
+		"accent_color": Color("#fef08a"),
+		"skin_color": Color("#f2cca0"),
+		"hair_color": Color("#475569"),
+		"headwear": "laurel",
+		"tool_metal": Color("#fbbf24"),
+		"shoulder_prop": "lightning_clasp",
+	},
+	"poseidon_major": {
+		"pantheon": "greek",
+		"god_name": "Poseidon",
+		"name": "Aldeão de Poseidon",
+		"title": "Pescador do Egeu",
+		"tunic_color": Color("#0284c7"),
+		"sash_color": Color("#0d9488"),
+		"accent_color": Color("#38bdf8"),
+		"skin_color": Color("#d89b6b"),
+		"hair_color": Color("#1e293b"),
+		"headwear": "nautical_band",
+		"tool_metal": Color("#0f766e"),
+		"shoulder_prop": "fish_rope",
+	},
+	"hades_major": {
+		"pantheon": "greek",
+		"god_name": "Hades",
+		"name": "Aldeão de Hades",
+		"title": "Mineiro do Tártaro",
+		"tunic_color": Color("#1f2937"),
+		"sash_color": Color("#7c3aed"),
+		"accent_color": Color("#9ca3af"),
+		"skin_color": Color("#e2d4c0"),
+		"hair_color": Color("#0f172a"),
+		"headwear": "shadow_cowl",
+		"tool_metal": Color("#374151"),
+		"shoulder_prop": "gem_pouch",
+	},
+
+	# --- EGÍPCIOS (Linho fino, peitoral usekh, ouro e turquesa do Nilo) ---
+	"ra_major": {
+		"pantheon": "egyptian",
+		"god_name": "Ra",
+		"name": "Aldeão de Ra",
+		"title": "Cultivador Solar",
+		"tunic_color": Color("#fef3c7"),
+		"sash_color": Color("#d97706"),
+		"accent_color": Color("#ef4444"),
+		"skin_color": Color("#b46b38"),
+		"hair_color": Color("#18181b"),
+		"headwear": "solar_band",
+		"tool_metal": Color("#d4af37"),
+		"shoulder_prop": "usekh_collar",
+	},
+	"isis_major": {
+		"pantheon": "egyptian",
+		"god_name": "Isis",
+		"name": "Aldeão de Isis",
+		"title": "Servo Místico do Nilo",
+		"tunic_color": Color("#e0f2fe"),
+		"sash_color": Color("#0284c7"),
+		"accent_color": Color("#38bdf8"),
+		"skin_color": Color("#bd7b4d"),
+		"hair_color": Color("#18181b"),
+		"headwear": "isis_veil",
+		"tool_metal": Color("#0ea5e9"),
+		"shoulder_prop": "ankh_amulet",
+	},
+	"set_major": {
+		"pantheon": "egyptian",
+		"god_name": "Set",
+		"name": "Aldeão de Set",
+		"title": "Nômade das Tempestades",
+		"tunic_color": Color("#78350f"),
+		"sash_color": Color("#dc2626"),
+		"accent_color": Color("#171717"),
+		"skin_color": Color("#a0522d"),
+		"hair_color": Color("#18181b"),
+		"headwear": "sand_wrap",
+		"tool_metal": Color("#525252"),
+		"shoulder_prop": "chacal_band",
+	},
+
+	# --- NÓRDICOS (Lã grossa, pele de animais, aço rúnico e fivelas pesadas) ---
+	"thor_major": {
+		"pantheon": "norse",
+		"god_name": "Thor",
+		"name": "Aldeão de Thor",
+		"title": "Lenhador do Trovão",
+		"tunic_color": Color("#991b1b"),
+		"sash_color": Color("#b45309"),
+		"accent_color": Color("#38bdf8"),
+		"skin_color": Color("#fed7aa"),
+		"hair_color": Color("#ea580c"),
+		"headwear": "fur_mantle",
+		"tool_metal": Color("#475569"),
+		"shoulder_prop": "bear_pelt",
+	},
+	"odin_major": {
+		"pantheon": "norse",
+		"god_name": "Odin",
+		"name": "Aldeão de Odin",
+		"title": "Andarilho de Midgard",
+		"tunic_color": Color("#0f766e"),
+		"sash_color": Color("#334155"),
+		"accent_color": Color("#fbbf24"),
+		"skin_color": Color("#fed7aa"),
+		"hair_color": Color("#94a3b8"),
+		"headwear": "wanderer_hat",
+		"tool_metal": Color("#334155"),
+		"shoulder_prop": "raven_brooch",
+	},
+	"loki_major": {
+		"pantheon": "norse",
+		"god_name": "Loki",
+		"name": "Aldeão de Loki",
+		"title": "Artífice da Trapaça",
+		"tunic_color": Color("#14532d"),
+		"sash_color": Color("#1c1917"),
+		"accent_color": Color("#a3e635"),
+		"skin_color": Color("#fce7f3"),
+		"hair_color": Color("#1c1917"),
+		"headwear": "serpent_circlet",
+		"tool_metal": Color("#15803d"),
+		"shoulder_prop": "serpent_buckle",
+	},
+	"freyr_major": {
+		"pantheon": "norse",
+		"god_name": "Freyr",
+		"name": "Aldeão de Freyr",
+		"title": "Ceifador da Fertilidade",
+		"tunic_color": Color("#65a30d"),
+		"sash_color": Color("#ca8a04"),
+		"accent_color": Color("#fef08a"),
+		"skin_color": Color("#ffedd5"),
+		"hair_color": Color("#facc15"),
+		"headwear": "grain_wreath",
+		"tool_metal": Color("#ca8a04"),
+		"shoulder_prop": "grain_sheaf",
+	},
+
+	# --- ATLANTES (Veste cristalina, oricalco místico e mochila autônoma) ---
+	"kronos_major": {
+		"pantheon": "atlantean",
+		"god_name": "Cronos",
+		"name": "Cidadão de Cronos",
+		"title": "Artífice do Tempo",
+		"tunic_color": Color("#581c87"),
+		"sash_color": Color("#18181b"),
+		"accent_color": Color("#c084fc"),
+		"skin_color": Color("#e0e7ff"),
+		"hair_color": Color("#312e81"),
+		"headwear": "time_crystal",
+		"tool_metal": Color("#a855f7"),
+		"shoulder_prop": "crystal_pack",
+	},
+	"oranos_major": {
+		"pantheon": "atlantean",
+		"god_name": "Urano",
+		"name": "Cidadão de Urano",
+		"title": "Tecelão Celeste",
+		"tunic_color": Color("#0284c7"),
+		"sash_color": Color("#e0f2fe"),
+		"accent_color": Color("#38bdf8"),
+		"skin_color": Color("#e0f2fe"),
+		"hair_color": Color("#67e8f9"),
+		"headwear": "sky_crown",
+		"tool_metal": Color("#38bdf8"),
+		"shoulder_prop": "crystal_pack",
+	},
+	"gaia_major": {
+		"pantheon": "atlantean",
+		"god_name": "Gaia",
+		"name": "Cidadão de Gaia",
+		"title": "Guardião da Terra",
+		"tunic_color": Color("#047857"),
+		"sash_color": Color("#10b981"),
+		"accent_color": Color("#86efac"),
+		"skin_color": Color("#fef3c7"),
+		"hair_color": Color("#14532d"),
+		"headwear": "flora_circlet",
+		"tool_metal": Color("#059669"),
+		"shoulder_prop": "crystal_pack",
+	},
+
+	# --- CHINESES (Hanfu de seda, chapéu douli, jade e bronze imperial) ---
+	"fuxi_major": {
+		"pantheon": "chinese",
+		"god_name": "Fu Xi",
+		"name": "Aldeão de Fu Xi",
+		"title": "Mestre dos Trigramas",
+		"tunic_color": Color("#b91c1c"),
+		"sash_color": Color("#eab308"),
+		"accent_color": Color("#fef08a"),
+		"skin_color": Color("#fed7aa"),
+		"hair_color": Color("#09090b"),
+		"headwear": "douli_bagua",
+		"tool_metal": Color("#d97706"),
+		"shoulder_prop": "scroll_pouch",
+	},
+	"nuwa_major": {
+		"pantheon": "chinese",
+		"god_name": "Nu Wa",
+		"name": "Aldeão de Nu Wa",
+		"title": "Artesão da Argila Divina",
+		"tunic_color": Color("#0d9488"),
+		"sash_color": Color("#fb923c"),
+		"accent_color": Color("#5eead4"),
+		"skin_color": Color("#fed7aa"),
+		"hair_color": Color("#09090b"),
+		"headwear": "silk_ribbon",
+		"tool_metal": Color("#0f766e"),
+		"shoulder_prop": "clay_pot",
+	},
+	"shennong_major": {
+		"pantheon": "chinese",
+		"god_name": "Shennong",
+		"name": "Aldeão de Shennong",
+		"title": "Herbalista Sagrado",
+		"tunic_color": Color("#854d0e"),
+		"sash_color": Color("#15803d"),
+		"accent_color": Color("#fde047"),
+		"skin_color": Color("#fed7aa"),
+		"hair_color": Color("#27272a"),
+		"headwear": "straw_hat_basket",
+		"tool_metal": Color("#a16207"),
+		"shoulder_prop": "herb_basket",
+	},
+}
+
+
+static func get_villager_profiles() -> Dictionary:
+	return VILLAGER_DEITY_PROFILES
+
+
+static func get_villager_profile(god_key: String) -> Dictionary:
+	if VILLAGER_DEITY_PROFILES.has(god_key):
+		return VILLAGER_DEITY_PROFILES[god_key]
+	var fallback_key: String = "%s_major" % god_key
+	if VILLAGER_DEITY_PROFILES.has(fallback_key):
+		return VILLAGER_DEITY_PROFILES[fallback_key]
+	return VILLAGER_DEITY_PROFILES["zeus_major"]
+
+
+static func _build_procedural_villager(
+	p: Dictionary,
+	major_god_id: String,
+	faction: String,
+	is_promoted_hero: bool = false
+) -> Node3D:
+	var root := Node3D.new()
+	var g_key: String = major_god_id
+	if g_key == "" or not VILLAGER_DEITY_PROFILES.has(g_key):
+		var p_id: String = String(p.get("id", "greek"))
+		match p_id:
+			"greek": g_key = "zeus_major"
+			"egyptian": g_key = "ra_major"
+			"norse": g_key = "thor_major"
+			"atlantean": g_key = "kronos_major"
+			"chinese": g_key = "fuxi_major"
+			_: g_key = "zeus_major"
+
+	var prof: Dictionary = get_villager_profile(g_key)
+	root.scale = Vector3.ONE * 1.45
+
+	var tunic_col: Color = Color("#b91c1c") if faction == "enemy" else prof["tunic_color"]
+	var sash_col: Color = Color("#450a0a") if faction == "enemy" else prof["sash_color"]
+	var accent_col: Color = prof["accent_color"]
+	var skin_col: Color = prof["skin_color"]
+	var hair_col: Color = prof["hair_color"]
+	var tool_metal: Color = prof["tool_metal"]
+
+	var skin_mat := _make_mat(skin_col, 0.75, 0.0)
+	var tunic_mat := _make_mat(tunic_col, 0.65, 0.1)
+	var sash_mat := _make_mat(sash_col, 0.60, 0.15)
+	var accent_mat := _make_mat(accent_col, 0.25, 0.82)
+	var hair_mat := _make_mat(hair_col, 0.85, 0.0)
+	var leather_mat := _make_mat(Color("#3e2723"), 0.70, 0.05)
+	var metal_mat := _make_mat(tool_metal, 0.30, 0.85)
+	var wood_mat := _make_mat(Color("#78350f"), 0.80, 0.0)
+	var dark_shoes_mat := _make_mat(Color("#18181b"), 0.80, 0.0)
+
+	# 1. Pernas e Calçados Culturais
+	var p_cult: String = String(prof.get("pantheon", "greek"))
+	match p_cult:
+		"norse":
+			_add_box(root, Vector3(0.18, 0.42, 0.24), Vector3(-0.16, 0.21, 0.02), leather_mat)
+			_add_box(root, Vector3(0.18, 0.42, 0.24), Vector3(0.16, 0.21, 0.02), leather_mat)
+			_add_box(root, Vector3(0.19, 0.35, 0.21), Vector3(-0.16, 0.52, 0.0), sash_mat)
+			_add_box(root, Vector3(0.19, 0.35, 0.21), Vector3(0.16, 0.52, 0.0), sash_mat)
+		"chinese":
+			_add_box(root, Vector3(0.16, 0.18, 0.26), Vector3(-0.15, 0.09, 0.04), dark_shoes_mat)
+			_add_box(root, Vector3(0.16, 0.18, 0.26), Vector3(0.15, 0.09, 0.04), dark_shoes_mat)
+			_add_box(root, Vector3(0.17, 0.52, 0.20), Vector3(-0.15, 0.42, 0.0), sash_mat)
+			_add_box(root, Vector3(0.17, 0.52, 0.20), Vector3(0.15, 0.42, 0.0), sash_mat)
+		"atlantean":
+			_add_box(root, Vector3(0.17, 0.22, 0.24), Vector3(-0.15, 0.11, 0.02), metal_mat)
+			_add_box(root, Vector3(0.17, 0.22, 0.24), Vector3(0.15, 0.11, 0.02), metal_mat)
+			_add_box(root, Vector3(0.16, 0.48, 0.18), Vector3(-0.15, 0.45, 0.0), tunic_mat)
+			_add_box(root, Vector3(0.16, 0.48, 0.18), Vector3(0.15, 0.45, 0.0), tunic_mat)
+		_:
+			_add_box(root, Vector3(0.16, 0.10, 0.26), Vector3(-0.15, 0.05, 0.03), leather_mat)
+			_add_box(root, Vector3(0.16, 0.10, 0.26), Vector3(0.15, 0.05, 0.03), leather_mat)
+			_add_cylinder(root, 0.07, 0.08, 0.58, Vector3(-0.15, 0.38, 0.0), skin_mat)
+			_add_cylinder(root, 0.07, 0.08, 0.58, Vector3(0.15, 0.38, 0.0), skin_mat)
+
+	# 2. Tronco, Túnica e Cinto
+	_add_cylinder(root, 0.21, 0.29, 0.85, Vector3(0.0, 0.95, 0.0), tunic_mat)
+	_add_box(root, Vector3(0.48, 0.08, 0.38), Vector3(0.0, 0.82, 0.0), sash_mat)
+	_add_box(root, Vector3(0.12, 0.10, 0.08), Vector3(0.0, 0.82, 0.18), accent_mat)
+
+	# 3. Braços e Braçadeiras
+	_add_cylinder(root, 0.07, 0.08, 0.62, Vector3(-0.28, 0.92, 0.0), skin_mat, Vector3(0.0, 0.0, 0.25))
+	_add_cylinder(root, 0.07, 0.08, 0.62, Vector3(0.28, 0.92, 0.08), skin_mat, Vector3(-0.35, 0.0, -0.25))
+	_add_cylinder(root, 0.08, 0.08, 0.14, Vector3(-0.32, 0.78, 0.0), metal_mat, Vector3(0.0, 0.0, 0.25))
+	_add_cylinder(root, 0.08, 0.08, 0.14, Vector3(0.32, 0.78, 0.08), metal_mat, Vector3(-0.35, 0.0, -0.25))
+
+	# 4. Cabeça e Cabelo
+	var head_pos := Vector3(0.0, 1.54, 0.0)
+	_add_sphere(root, 0.21, head_pos, skin_mat)
+	_add_sphere(root, 0.22, head_pos + Vector3(0.0, 0.04, -0.05), hair_mat)
+
+	# 5. Adornos de Cabeça dos Deuses
+	var headwear: String = String(prof.get("headwear", "none"))
+	match headwear:
+		"laurel":
+			_add_torus(root, 0.18, 0.24, head_pos + Vector3(0.0, 0.08, 0.0), accent_mat, Vector3(0.2, 0.0, 0.0))
+		"nautical_band":
+			_add_torus(root, 0.19, 0.23, head_pos + Vector3(0.0, 0.05, 0.0), sash_mat)
+			_add_sphere(root, 0.06, head_pos + Vector3(0.0, 0.08, 0.21), accent_mat)
+		"shadow_cowl":
+			_add_sphere(root, 0.25, head_pos + Vector3(0.0, 0.05, -0.04), tunic_mat)
+			_add_box(root, Vector3(0.42, 0.12, 0.36), head_pos + Vector3(0.0, 0.22, 0.0), sash_mat)
+		"solar_band":
+			_add_torus(root, 0.19, 0.23, head_pos + Vector3(0.0, 0.06, 0.0), metal_mat)
+			_add_cylinder(root, 0.09, 0.09, 0.04, head_pos + Vector3(0.0, 0.28, 0.15), accent_mat, Vector3(PI * 0.5, 0.0, 0.0))
+		"isis_veil":
+			_add_torus(root, 0.19, 0.23, head_pos + Vector3(0.0, 0.06, 0.0), accent_mat)
+			_add_box(root, Vector3(0.38, 0.45, 0.04), head_pos + Vector3(0.0, -0.15, -0.22), tunic_mat)
+		"sand_wrap":
+			_add_torus(root, 0.21, 0.27, head_pos + Vector3(0.0, 0.06, 0.0), tunic_mat)
+			_add_torus(root, 0.19, 0.24, head_pos + Vector3(0.0, 0.14, 0.0), sash_mat)
+		"fur_mantle":
+			_add_box(root, Vector3(0.58, 0.22, 0.42), Vector3(0.0, 1.34, 0.0), leather_mat)
+			_add_cylinder(root, 0.06, 0.06, 0.06, Vector3(0.0, 1.35, 0.22), accent_mat, Vector3(PI * 0.5, 0.0, 0.0))
+		"wanderer_hat":
+			_add_cylinder(root, 0.36, 0.38, 0.06, head_pos + Vector3(0.0, 0.12, 0.0), sash_mat)
+			_add_cylinder(root, 0.12, 0.22, 0.28, head_pos + Vector3(0.0, 0.26, -0.03), sash_mat)
+		"serpent_circlet":
+			_add_torus(root, 0.19, 0.23, head_pos + Vector3(0.0, 0.08, 0.0), metal_mat)
+			_add_cylinder(root, 0.03, 0.06, 0.22, head_pos + Vector3(-0.16, 0.25, 0.10), accent_mat, Vector3(0.0, 0.0, 0.35))
+			_add_cylinder(root, 0.03, 0.06, 0.22, head_pos + Vector3(0.16, 0.25, 0.10), accent_mat, Vector3(0.0, 0.0, -0.35))
+		"grain_wreath":
+			_add_torus(root, 0.19, 0.24, head_pos + Vector3(0.0, 0.08, 0.0), accent_mat)
+			_add_cylinder(root, 0.02, 0.04, 0.18, head_pos + Vector3(0.0, 0.24, 0.18), sash_mat, Vector3(0.2, 0.0, 0.0))
+		"time_crystal":
+			_add_torus(root, 0.19, 0.23, head_pos + Vector3(0.0, 0.08, 0.0), metal_mat)
+			_add_cylinder(root, 0.02, 0.07, 0.25, head_pos + Vector3(0.0, 0.32, 0.15), accent_mat)
+		"sky_crown":
+			_add_torus(root, 0.19, 0.23, head_pos + Vector3(0.0, 0.08, 0.0), accent_mat)
+			_add_sphere(root, 0.07, head_pos + Vector3(0.0, 0.34, 0.12), accent_mat)
+		"flora_circlet":
+			_add_torus(root, 0.19, 0.24, head_pos + Vector3(0.0, 0.08, 0.0), tunic_mat)
+			_add_sphere(root, 0.05, head_pos + Vector3(-0.12, 0.12, 0.18), accent_mat)
+			_add_sphere(root, 0.05, head_pos + Vector3(0.12, 0.12, 0.18), sash_mat)
+		"douli_bagua":
+			_add_cylinder(root, 0.03, 0.48, 0.18, head_pos + Vector3(0.0, 0.22, 0.0), wood_mat)
+			_add_sphere(root, 0.06, head_pos + Vector3(0.0, 0.33, 0.0), tunic_mat)
+		"silk_ribbon":
+			_add_torus(root, 0.19, 0.23, head_pos + Vector3(0.0, 0.06, 0.0), sash_mat)
+			_add_box(root, Vector3(0.08, 0.42, 0.04), head_pos + Vector3(0.0, -0.15, -0.22), tunic_mat)
+			_add_sphere(root, 0.06, head_pos + Vector3(0.0, 0.08, 0.20), accent_mat)
+		"straw_hat_basket":
+			_add_cylinder(root, 0.18, 0.46, 0.12, head_pos + Vector3(0.0, 0.20, 0.0), wood_mat)
+			_add_box(root, Vector3(0.38, 0.06, 0.38), head_pos + Vector3(0.0, 0.14, 0.0), sash_mat)
+
+	# 6. Acessório Dorsal Especial
+	var shoulder_prop: String = String(prof.get("shoulder_prop", "none"))
+	match shoulder_prop:
+		"crystal_pack":
+			_add_box(root, Vector3(0.34, 0.44, 0.22), Vector3(0.0, 1.05, -0.25), metal_mat)
+			_add_sphere(root, 0.14, Vector3(0.0, 1.25, -0.25), accent_mat)
+		"herb_basket":
+			_add_cylinder(root, 0.22, 0.18, 0.52, Vector3(0.0, 1.05, -0.26), wood_mat)
+			_add_sphere(root, 0.16, Vector3(0.0, 1.34, -0.26), sash_mat)
+		"usekh_collar":
+			_add_cylinder(root, 0.26, 0.32, 0.12, Vector3(0.0, 1.32, 0.02), accent_mat)
+
+	# 7. Ferramenta de Trabalho Adaptada ao Deus (Mão Direita)
+	var tool_root := Node3D.new()
+	tool_root.name = "VillagerTool"
+	tool_root.position = Vector3(0.34, 0.82, 0.15)
+	_add_cylinder(tool_root, 0.022, 0.026, 0.88, Vector3(0.0, 0.12, 0.0), wood_mat, Vector3(0.35, 0.0, 0.0))
+	_add_box(tool_root, Vector3(0.18, 0.22, 0.05), Vector3(0.0, 0.52, 0.14), metal_mat)
+	_add_cylinder(tool_root, 0.04, 0.04, 0.08, Vector3(0.0, 0.48, 0.12), accent_mat)
+	root.add_child(tool_root)
+
+	if is_promoted_hero:
+		_attach_hero_aura(root, Color("#38bdf8"))
+
+	return root
+
+
+static func _build_procedural_unit(
+	p: Dictionary,
+	kind: String,
+	faction: String,
+	is_promoted_hero: bool = false,
+	major_god_id: String = ""
+) -> Node3D:
+	if kind in ["villager", "aldeao", "worker"]:
+		return _build_procedural_villager(p, major_god_id, faction, is_promoted_hero)
+
 	var root := Node3D.new()
 	var profile: Dictionary = _unit_profile(p, kind)
 	
@@ -2015,7 +2439,6 @@ static func _build_procedural_unit(p: Dictionary, kind: String, faction: String,
 				_add_cylinder(root, sf(0.34), sf(0.34), sf(0.08), sc(Vector3(-0.34, 0.88, 0.22)), gold_mat, Vector3(PI * 0.5, 0.0, 0.0))
 				_add_cylinder(root, sf(0.035), sf(0.035), sf(1.75), sc(Vector3(0.34, 1.05, 0.14)), wood_mat)
 		_:
-			# Aldeao / Cidadao
 			_add_cylinder(root, sf(0.2), sf(0.28), sf(0.88), sc(Vector3(0.0, 0.68, 0.0)), tunic_mat)
 			_add_sphere(root, sf(0.21), sc(Vector3(0.0, 1.32, 0.0)), skin_mat)
 			if has_weapon:

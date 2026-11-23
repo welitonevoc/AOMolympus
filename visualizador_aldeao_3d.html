@@ -277,8 +277,53 @@
       <div class="hud-row" style="margin-bottom: 6px;">
         <label>Modelo 3D</label>
         <select id="model-select">
-          <option value="aldeao.glb" selected>🌾 Aldeão Grego (Mocap & 8 Funções)</option>
+          <option value="aldeao.glb" selected>🌾 Aldeão Base (Rig Mixamo & 8 Ações)</option>
         </select>
+      </div>
+
+      <div class="hud-row" style="margin-bottom: 6px;">
+        <label>Deus Protetor</label>
+        <select id="deity-select" style="font-weight: 600; color: #facc15; background: #1e293b;">
+          <optgroup label="🇬🇷 Gregos">
+            <option value="zeus_major" selected>⚡ Zeus (Servo Olímpico)</option>
+            <option value="poseidon_major">🌊 Poseidon (Pescador do Egeu)</option>
+            <option value="hades_major">💀 Hades (Mineiro do Tártaro)</option>
+          </optgroup>
+          <optgroup label="🇪🇬 Egípcios">
+            <option value="ra_major">☀️ Ra (Cultivador Solar)</option>
+            <option value="isis_major">✨ Isis (Servo do Nilo)</option>
+            <option value="set_major">🌪️ Set (Nômade das Tempestades)</option>
+          </optgroup>
+          <optgroup label="🇳🇴 Nórdicos">
+            <option value="thor_major">🔨 Thor (Lenhador do Trovão)</option>
+            <option value="odin_major">👁️ Odin (Andarilho de Midgard)</option>
+            <option value="loki_major">🐍 Loki (Artífice da Trapaça)</option>
+            <option value="freyr_major">🌾 Freyr (Ceifador da Fertilidade)</option>
+          </optgroup>
+          <optgroup label="🔱 Atlantes">
+            <option value="kronos_major">⏳ Cronos (Artífice do Tempo)</option>
+            <option value="oranos_major">🌌 Urano (Tecelão Celeste)</option>
+            <option value="gaia_major">🌱 Gaia (Guardião da Terra)</option>
+          </optgroup>
+          <optgroup label="🇨🇳 Chineses">
+            <option value="fuxi_major">☯️ Fu Xi (Mestre dos Trigramas)</option>
+            <option value="nuwa_major">🏺 Nu Wa (Artesão da Argila)</option>
+            <option value="shennong_major">🌿 Shennong (Herbalista Sagrado)</option>
+          </optgroup>
+        </select>
+      </div>
+
+      <!-- Card de Identidade Cultural do Aldeão -->
+      <div id="deity-card" style="background: rgba(15, 23, 42, 0.75); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 8px; padding: 8px 10px; margin-bottom: 8px; font-size: 11px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
+          <strong id="deity-villager-name" style="color: #38bdf8; font-size: 12px;">Aldeão de Zeus</strong>
+          <span id="deity-culture-tag" style="background: #2563eb; color: #fff; padding: 1px 6px; border-radius: 4px; font-size: 9px; font-weight: 700;">GREGOS</span>
+        </div>
+        <div id="deity-villager-title" style="color: #94a3b8; font-style: italic; margin-bottom: 4px;">Servo Olímpico com louros de ouro</div>
+        <div style="display: flex; gap: 6px; align-items: center; font-size: 10px;">
+          <span style="color: #cbd5e1;">Adorno:</span>
+          <span id="deity-headwear-desc" style="color: #facc15; font-weight: 600;">Tiara de Louros Dourada</span>
+        </div>
       </div>
 
       <!-- Abas de Edição -->
@@ -447,6 +492,466 @@
     const btnCamRts = document.getElementById('btn-cam-rts');
     const btnToggleMenu = document.getElementById('btn-toggle-menu');
     const modelSelect = document.getElementById('model-select');
+    const deitySelect = document.getElementById('deity-select');
+    const deityVillagerName = document.getElementById('deity-villager-name');
+    const deityCultureTag = document.getElementById('deity-culture-tag');
+    const deityVillagerTitle = document.getElementById('deity-villager-title');
+    const deityHeadwearDesc = document.getElementById('deity-headwear-desc');
+
+    let headSocket = null;
+    let spineSocket = null;
+    let toolMats = null;
+
+    const DEITY_PROFILES = {
+      zeus_major: {
+        pantheon: "GREGOS",
+        tagColor: "#2563eb",
+        name: "Aldeão de Zeus",
+        title: "Servo Olímpico dedicado à glória de Zeus",
+        headwearDesc: "Tiara de Louros Dourada & Faixa Solar",
+        tunicColor: 0x1d4ed8,
+        metalColor: 0xfbbf24,
+        headwear: "laurel",
+      },
+      poseidon_major: {
+        pantheon: "GREGOS",
+        tagColor: "#0284c7",
+        name: "Aldeão de Poseidon",
+        title: "Pescador do Egeu com bênção das marés",
+        headwearDesc: "Bandana do Mar & Concha Perolada",
+        tunicColor: 0x0284c7,
+        metalColor: 0x0f766e,
+        headwear: "nautical",
+      },
+      hades_major: {
+        pantheon: "GREGOS",
+        tagColor: "#4b5563",
+        name: "Aldeão de Hades",
+        title: "Mineiro do Tártaro forjado na obsidiana",
+        headwearDesc: "Capuz das Sombras & Broche de Ônix",
+        tunicColor: 0x1f2937,
+        metalColor: 0x374151,
+        headwear: "cowl",
+      },
+      ra_major: {
+        pantheon: "EGÍPCIOS",
+        tagColor: "#d97706",
+        name: "Aldeão de Ra",
+        title: "Cultivador Solar sob a luz divina de Rá",
+        headwearDesc: "Testeira Real & Disco Solar Radiante",
+        tunicColor: 0xfef3c7,
+        metalColor: 0xd4af37,
+        headwear: "solar",
+      },
+      isis_major: {
+        pantheon: "EGÍPCIOS",
+        tagColor: "#0284c7",
+        name: "Aldeão de Isis",
+        title: "Servo Místico das águas férteis do Nilo",
+        headwearDesc: "Véu Protetor de Linho & Amuleto Ankh",
+        tunicColor: 0xe0f2fe,
+        metalColor: 0x0ea5e9,
+        headwear: "veil",
+      },
+      set_major: {
+        pantheon: "EGÍPCIOS",
+        tagColor: "#b45309",
+        name: "Aldeão de Set",
+        title: "Nômade indomável das tempestades de areia",
+        headwearDesc: "Turbante de Linho Rústico do Deserto",
+        tunicColor: 0x78350f,
+        metalColor: 0x525252,
+        headwear: "turban",
+      },
+      thor_major: {
+        pantheon: "NÓRDICOS",
+        tagColor: "#b91c1c",
+        name: "Aldeão de Thor",
+        title: "Lenhador vigoroso com a força do trovão",
+        headwearDesc: "Gola e Manto de Pele de Urso Polar",
+        tunicColor: 0x991b1b,
+        metalColor: 0x475569,
+        headwear: "fur",
+      },
+      odin_major: {
+        pantheon: "NÓRDICOS",
+        tagColor: "#0f766e",
+        name: "Aldeão de Odin",
+        title: "Andarilho sábio com capa de viajante nórdico",
+        headwearDesc: "Chapéu Cônico de Feltro de Andarilho",
+        tunicColor: 0x0f766e,
+        metalColor: 0x334155,
+        headwear: "wanderer",
+      },
+      loki_major: {
+        pantheon: "NÓRDICOS",
+        tagColor: "#15803d",
+        name: "Aldeão de Loki",
+        title: "Artífice astuto da floresta de pinheiros",
+        headwearDesc: "Tiara Rúnica com Relevo de Serpente",
+        tunicColor: 0x14532d,
+        metalColor: 0x15803d,
+        headwear: "serpent",
+      },
+      freyr_major: {
+        pantheon: "NÓRDICOS",
+        tagColor: "#65a30d",
+        name: "Aldeão de Freyr",
+        title: "Ceifador da Abundância e da primavera dourada",
+        headwearDesc: "Guirlanda Sagrada de Espigas de Trigo",
+        tunicColor: 0x65a30d,
+        metalColor: 0xca8a04,
+        headwear: "wreath",
+      },
+      kronos_major: {
+        pantheon: "ATLANTES",
+        tagColor: "#6b21a8",
+        name: "Cidadão de Cronos",
+        title: "Artífice do Tempo e da arquitetura de oricalco",
+        headwearDesc: "Tiara Temporal com Prisma de Ametista",
+        tunicColor: 0x581c87,
+        metalColor: 0xa855f7,
+        headwear: "time_crystal",
+        hasPack: true,
+      },
+      oranos_major: {
+        pantheon: "ATLANTES",
+        tagColor: "#0284c7",
+        name: "Cidadão de Urano",
+        title: "Tecelão Celeste com oricalco prismático",
+        headwearDesc: "Diadema Alado com Cristais Celestes",
+        tunicColor: 0x0284c7,
+        metalColor: 0x38bdf8,
+        headwear: "sky_crown",
+        hasPack: true,
+      },
+      gaia_major: {
+        pantheon: "ATLANTES",
+        tagColor: "#047857",
+        name: "Cidadão de Gaia",
+        title: "Guardião da Terra com sementes e vinhas vivas",
+        headwearDesc: "Tiara de Vinhas Vivas & Folhas Esmeralda",
+        tunicColor: 0x047857,
+        metalColor: 0x059669,
+        headwear: "flora",
+        hasPack: true,
+      },
+      fuxi_major: {
+        pantheon: "CHINESES",
+        tagColor: "#b91c1c",
+        name: "Aldeão de Fu Xi",
+        title: "Mestre dos Trigramas do Império Celestial",
+        headwearDesc: "Chapéu Cônico Chinês (Douli) com Bagua",
+        tunicColor: 0xb91c1c,
+        metalColor: 0xd97706,
+        headwear: "douli",
+      },
+      nuwa_major: {
+        pantheon: "CHINESES",
+        tagColor: "#0f766e",
+        name: "Aldeão de Nu Wa",
+        title: "Artesão divino da argila e jade da criação",
+        headwearDesc: "Fita de Seda Escarlate com Jade Serpentino",
+        tunicColor: 0x0d9488,
+        metalColor: 0x0f766e,
+        headwear: "silk",
+      },
+      shennong_major: {
+        pantheon: "CHINESES",
+        tagColor: "#854d0e",
+        name: "Aldeão de Shennong",
+        title: "Herbalista Sagrado com cesto de bambu nas costas",
+        headwearDesc: "Chapéu Amplo de Palha & Cesto de Ervas",
+        tunicColor: 0x854d0e,
+        metalColor: 0xa16207,
+        headwear: "straw_basket",
+        hasBasket: true,
+      },
+    };
+
+    function applyDeityStyle(deityKey) {
+      const p = DEITY_PROFILES[deityKey] || DEITY_PROFILES['zeus_major'];
+
+      // 1. Atualizar Card de Identidade na Interface
+      if (deityVillagerName) deityVillagerName.textContent = p.name;
+      if (deityCultureTag) {
+        deityCultureTag.textContent = p.pantheon;
+        deityCultureTag.style.background = p.tagColor;
+      }
+      if (deityVillagerTitle) deityVillagerTitle.textContent = p.title;
+      if (deityHeadwearDesc) deityHeadwearDesc.textContent = p.headwearDesc;
+
+      // 2. Atualizar Cor do Metal Sagrado das Ferramentas
+      if (toolMats && toolMats.bronze) {
+        toolMats.bronze.color.setHex(p.metalColor);
+        toolMats.bronze.needsUpdate = true;
+      }
+
+      // 3. Atualizar Adorno de Cabeça no Socket
+      if (headSocket) {
+        while (headSocket.children.length > 0) {
+          headSocket.remove(headSocket.children[0]);
+        }
+
+        const headGroup = new THREE.Group();
+        headGroup.name = 'Deity_Headwear';
+
+        const goldMat = new THREE.MeshStandardMaterial({ color: 0xfbbf24, metalness: 0.9, roughness: 0.25 });
+        const metalMat = new THREE.MeshStandardMaterial({ color: p.metalColor, metalness: 0.85, roughness: 0.3 });
+        const clothMat = new THREE.MeshStandardMaterial({ color: p.tunicColor, roughness: 0.75 });
+        const rusticMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.85 });
+        const jadeMat = new THREE.MeshStandardMaterial({ color: 0x10b981, roughness: 0.2, metalness: 0.1 });
+        const crystalMat = new THREE.MeshStandardMaterial({ color: p.metalColor, roughness: 0.1, metalness: 0.9, emissive: p.metalColor, emissiveIntensity: 0.3 });
+
+        switch (p.headwear) {
+          case 'laurel': { // Zeus
+            const wreathGeo = new THREE.TorusGeometry(8.2, 0.75, 8, 24);
+            const wreathMesh = new THREE.Mesh(wreathGeo, goldMat);
+            wreathMesh.rotation.x = Math.PI / 2;
+            headGroup.add(wreathMesh);
+            for (let i = 0; i < 8; i++) {
+              const leafGeo = new THREE.ConeGeometry(1.2, 3.2, 4);
+              const leaf = new THREE.Mesh(leafGeo, goldMat);
+              const angle = (i / 8) * Math.PI * 1.6 - Math.PI * 0.8;
+              leaf.position.set(Math.cos(angle) * 8.5, 0.4, Math.sin(angle) * 8.5);
+              leaf.rotation.z = -Math.PI / 3;
+              headGroup.add(leaf);
+            }
+            break;
+          }
+          case 'nautical': { // Poseidon
+            const bandGeo = new THREE.TorusGeometry(8.2, 1.2, 8, 24);
+            const bandMesh = new THREE.Mesh(bandGeo, clothMat);
+            bandMesh.rotation.x = Math.PI / 2;
+            headGroup.add(bandMesh);
+            const shellGeo = new THREE.ConeGeometry(2.4, 4.2, 6);
+            const shellMesh = new THREE.Mesh(shellGeo, metalMat);
+            shellMesh.position.set(0, 0, 8.4);
+            shellMesh.rotation.x = Math.PI / 2;
+            headGroup.add(shellMesh);
+            break;
+          }
+          case 'cowl': { // Hades
+            const cowlGeo = new THREE.SphereGeometry(8.9, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.58);
+            const cowlMesh = new THREE.Mesh(cowlGeo, clothMat);
+            cowlMesh.position.set(0, -1.0, -0.5);
+            headGroup.add(cowlMesh);
+            const broochGeo = new THREE.BoxGeometry(2.4, 2.4, 1.2);
+            const broochMesh = new THREE.Mesh(broochGeo, metalMat);
+            broochMesh.position.set(0, -2.5, 8.4);
+            headGroup.add(broochMesh);
+            break;
+          }
+          case 'solar': { // Ra
+            const bandGeo = new THREE.TorusGeometry(8.2, 1.1, 8, 24);
+            const bandMesh = new THREE.Mesh(bandGeo, goldMat);
+            bandMesh.rotation.x = Math.PI / 2;
+            headGroup.add(bandMesh);
+            const discGeo = new THREE.CylinderGeometry(4.2, 4.2, 0.6, 24);
+            const discMesh = new THREE.Mesh(discGeo, crystalMat);
+            discMesh.position.set(0, 6.0, 7.0);
+            discMesh.rotation.x = Math.PI / 4;
+            headGroup.add(discMesh);
+            break;
+          }
+          case 'veil': { // Isis
+            const bandGeo = new THREE.TorusGeometry(8.2, 1.0, 8, 24);
+            const bandMesh = new THREE.Mesh(bandGeo, clothMat);
+            bandMesh.rotation.x = Math.PI / 2;
+            headGroup.add(bandMesh);
+            const drapeGeo = new THREE.CylinderGeometry(8.6, 10.2, 14.0, 16, 1, true, -Math.PI * 0.7, Math.PI * 1.4);
+            const drapeMesh = new THREE.Mesh(drapeGeo, clothMat);
+            drapeMesh.position.set(0, -6.0, 0);
+            headGroup.add(drapeMesh);
+            const ankhGeo = new THREE.TorusGeometry(1.5, 0.4, 6, 12);
+            const ankhMesh = new THREE.Mesh(ankhGeo, metalMat);
+            ankhMesh.position.set(0, 1.5, 8.4);
+            headGroup.add(ankhMesh);
+            break;
+          }
+          case 'turban': { // Set
+            const turbanGeo = new THREE.TorusGeometry(8.6, 2.5, 8, 24);
+            const turbanMesh = new THREE.Mesh(turbanGeo, clothMat);
+            turbanMesh.rotation.x = Math.PI / 2;
+            turbanMesh.position.set(0, 1.5, 0);
+            headGroup.add(turbanMesh);
+            const topGeo = new THREE.SphereGeometry(6.5, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.45);
+            const topMesh = new THREE.Mesh(topGeo, clothMat);
+            topMesh.position.set(0, 3.0, 0);
+            headGroup.add(topMesh);
+            break;
+          }
+          case 'fur': { // Thor
+            const furGeo = new THREE.TorusGeometry(9.2, 3.2, 8, 16);
+            const furMesh = new THREE.Mesh(furGeo, clothMat);
+            furMesh.rotation.x = Math.PI / 2;
+            furMesh.position.set(0, -3.5, -1.0);
+            headGroup.add(furMesh);
+            break;
+          }
+          case 'wanderer': { // Odin
+            const coneGeo = new THREE.ConeGeometry(7.8, 11.0, 16);
+            const coneMesh = new THREE.Mesh(coneGeo, clothMat);
+            coneMesh.position.set(0, 6.0, -1.0);
+            coneMesh.rotation.x = -0.2;
+            headGroup.add(coneMesh);
+            const brimGeo = new THREE.CylinderGeometry(13.5, 13.5, 0.5, 20);
+            const brimMesh = new THREE.Mesh(brimGeo, clothMat);
+            brimMesh.position.set(0, 1.5, 0);
+            headGroup.add(brimMesh);
+            break;
+          }
+          case 'serpent': { // Loki
+            const tiaraGeo = new THREE.TorusGeometry(8.3, 1.1, 8, 24);
+            const tiaraMesh = new THREE.Mesh(tiaraGeo, metalMat);
+            tiaraMesh.rotation.x = Math.PI / 2;
+            headGroup.add(tiaraMesh);
+            const snakeGeo = new THREE.TorusGeometry(2.8, 0.6, 6, 16, Math.PI * 1.5);
+            const snakeMesh = new THREE.Mesh(snakeGeo, metalMat);
+            snakeMesh.position.set(0, 2.2, 8.4);
+            headGroup.add(snakeMesh);
+            break;
+          }
+          case 'wreath': { // Freyr
+            const wreathGeo = new THREE.TorusGeometry(8.3, 1.3, 8, 20);
+            const wreathMesh = new THREE.Mesh(wreathGeo, goldMat);
+            wreathMesh.rotation.x = Math.PI / 2;
+            headGroup.add(wreathMesh);
+            for (let i = 0; i < 6; i++) {
+              const earGeo = new THREE.ConeGeometry(1.4, 4.0, 5);
+              const earMesh = new THREE.Mesh(earGeo, goldMat);
+              const ang = (i / 6) * Math.PI * 1.5 - Math.PI * 0.75;
+              earMesh.position.set(Math.cos(ang) * 8.6, 1.2, Math.sin(ang) * 8.6);
+              earMesh.rotation.z = -Math.PI / 3;
+              headGroup.add(earMesh);
+            }
+            break;
+          }
+          case 'time_crystal': { // Kronos
+            const tiaraGeo = new THREE.TorusGeometry(8.3, 1.1, 8, 24);
+            const tiaraMesh = new THREE.Mesh(tiaraGeo, metalMat);
+            tiaraMesh.rotation.x = Math.PI / 2;
+            headGroup.add(tiaraMesh);
+            const crystalGeo = new THREE.OctahedronGeometry(2.8, 0);
+            const crystalMesh = new THREE.Mesh(crystalGeo, crystalMat);
+            crystalMesh.position.set(0, 3.0, 8.5);
+            crystalMesh.rotation.y = Math.PI / 4;
+            headGroup.add(crystalMesh);
+            break;
+          }
+          case 'sky_crown': { // Oranos
+            const bandGeo = new THREE.TorusGeometry(8.3, 1.0, 8, 24);
+            const bandMesh = new THREE.Mesh(bandGeo, metalMat);
+            bandMesh.rotation.x = Math.PI / 2;
+            headGroup.add(bandMesh);
+            const wingGeo = new THREE.BoxGeometry(1.2, 6.0, 2.2);
+            const wingLeft = new THREE.Mesh(wingGeo, crystalMat);
+            wingLeft.position.set(-8.2, 3.5, 2.0);
+            wingLeft.rotation.z = -0.4;
+            headGroup.add(wingLeft);
+            const wingRight = new THREE.Mesh(wingGeo, crystalMat);
+            wingRight.position.set(8.2, 3.5, 2.0);
+            wingRight.rotation.z = 0.4;
+            headGroup.add(wingRight);
+            break;
+          }
+          case 'flora': { // Gaia
+            const vineGeo = new THREE.TorusGeometry(8.3, 1.2, 8, 24);
+            const vineMesh = new THREE.Mesh(vineGeo, metalMat);
+            vineMesh.rotation.x = Math.PI / 2;
+            headGroup.add(vineMesh);
+            for (let i = 0; i < 5; i++) {
+              const flowerGeo = new THREE.SphereGeometry(1.5, 6, 6);
+              const flowerMesh = new THREE.Mesh(flowerGeo, jadeMat);
+              const ang = (i / 5) * Math.PI * 1.5 - Math.PI * 0.75;
+              flowerMesh.position.set(Math.cos(ang) * 8.6, 0.8, Math.sin(ang) * 8.6);
+              headGroup.add(flowerMesh);
+            }
+            break;
+          }
+          case 'douli': { // Fu Xi
+            const coneGeo = new THREE.ConeGeometry(14.0, 5.0, 24);
+            const coneMesh = new THREE.Mesh(coneGeo, rusticMat);
+            coneMesh.position.set(0, 3.5, 0);
+            headGroup.add(coneMesh);
+            const baguaDiscGeo = new THREE.CylinderGeometry(3.0, 3.0, 0.4, 8);
+            const baguaMesh = new THREE.Mesh(baguaDiscGeo, metalMat);
+            baguaMesh.position.set(0, 5.5, 0);
+            headGroup.add(baguaMesh);
+            break;
+          }
+          case 'silk': { // Nu Wa
+            const ribbonGeo = new THREE.TorusGeometry(8.2, 0.9, 8, 24);
+            const ribbonMesh = new THREE.Mesh(ribbonGeo, clothMat);
+            ribbonMesh.rotation.x = Math.PI / 2;
+            headGroup.add(ribbonMesh);
+            const gemGeo = new THREE.SphereGeometry(2.0, 8, 8);
+            const gemMesh = new THREE.Mesh(gemGeo, jadeMat);
+            gemMesh.position.set(0, 0, 8.4);
+            headGroup.add(gemMesh);
+            break;
+          }
+          case 'straw_basket': { // Shennong
+            const hatGeo = new THREE.ConeGeometry(15.5, 4.2, 24);
+            const hatMesh = new THREE.Mesh(hatGeo, rusticMat);
+            hatMesh.position.set(0, 3.2, 0);
+            headGroup.add(hatMesh);
+            break;
+          }
+        }
+
+        headSocket.add(headGroup);
+      }
+
+      // 4. Atualizar Acessórios de Costas (Mochila Atlante ou Cesto de Shennong)
+      if (spineSocket) {
+        while (spineSocket.children.length > 0) {
+          spineSocket.remove(spineSocket.children[0]);
+        }
+
+        if (p.hasPack) { // Cidadão Atlante (Cronos, Urano, Gaia)
+          const packGroup = new THREE.Group();
+          packGroup.name = 'Atlantean_Orichalcum_Pack';
+
+          const orichalcumMat = new THREE.MeshStandardMaterial({ color: p.metalColor, metalness: 0.9, roughness: 0.2 });
+          const packBodyGeo = new THREE.BoxGeometry(9.0, 14.0, 5.2);
+          const packBody = new THREE.Mesh(packBodyGeo, orichalcumMat);
+          packBody.position.set(0, 0, 0);
+          packGroup.add(packBody);
+
+          const coreGeo = new THREE.OctahedronGeometry(2.4, 0);
+          const coreMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, emissive: 0x38bdf8, emissiveIntensity: 0.6, roughness: 0.1 });
+          const coreMesh = new THREE.Mesh(coreGeo, coreMat);
+          coreMesh.position.set(0, 2.0, -2.8);
+          packGroup.add(coreMesh);
+
+          packGroup.position.set(0, 0, 0);
+          spineSocket.add(packGroup);
+        } else if (p.hasBasket) { // Shennong
+          const basketGroup = new THREE.Group();
+          basketGroup.name = 'Shennong_Herbal_Basket';
+
+          const basketMat = new THREE.MeshStandardMaterial({ color: 0x854d0e, roughness: 0.85 });
+          const herbMat = new THREE.MeshStandardMaterial({ color: 0x15803d, roughness: 0.6 });
+
+          const bGeo = new THREE.CylinderGeometry(5.8, 4.5, 14.0, 12);
+          const bMesh = new THREE.Mesh(bGeo, basketMat);
+          bMesh.position.set(0, 0, 0);
+          basketGroup.add(bMesh);
+
+          for (let i = 0; i < 4; i++) {
+            const herbGeo = new THREE.ConeGeometry(1.8, 6.0, 4);
+            const herbMesh = new THREE.Mesh(herbGeo, herbMat);
+            const ang = (i / 4) * Math.PI * 2;
+            herbMesh.position.set(Math.cos(ang) * 2.5, 8.0, Math.sin(ang) * 2.5);
+            herbMesh.rotation.z = (Math.random() - 0.5) * 0.5;
+            basketGroup.add(herbMesh);
+          }
+
+          spineSocket.add(basketGroup);
+        }
+      }
+    }
 
     function init() {
       scene = new THREE.Scene();
@@ -595,6 +1100,8 @@
             const woodMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.75 });
             const darkWoodMat = new THREE.MeshStandardMaterial({ color: 0x451a03, roughness: 0.8 });
             const leatherMat = new THREE.MeshStandardMaterial({ color: 0x3e2723, roughness: 0.7 });
+
+            toolMats = { bronze: bronzeMat, steel: steelMat, iron: ironMat };
 
             // 1. Faquinha de Caça/Defesa (Dagger / Makhaira Grega)
             // Proporção heroica RTS (~47cm total): punho que preenche a palma da mão, pomo robusto junto ao pulso,
@@ -1069,11 +1576,19 @@
           statusText.textContent = '🌾 Aldeão Grego pronto (Mocap & 8 Funções - Tamanho 145%)';
           
           let rightHandBone = null;
+          let headBone = null;
+          let spineBone = null;
           let targetMesh = null;
           currentModel.traverse((c) => {
             if (c.isSkinnedMesh && !targetMesh) targetMesh = c;
             if (c.name && c.name.includes('RightHand') && !c.name.includes('end')) {
               rightHandBone = c;
+            }
+            if (c.name && c.name.includes('Head') && !c.name.includes('Top') && !c.name.includes('end')) {
+              headBone = c;
+            }
+            if (c.name && (c.name.includes('Spine1') || c.name.includes('Spine_02') || c.name === 'mixamorigSpine1')) {
+              spineBone = c;
             }
           });
 
@@ -1088,6 +1603,26 @@
               socket.add(aldeaoTools[k]);
               aldeaoTools[k].visible = false;
             }
+          }
+
+          // Criar socket da cabeça e adorno da divindade
+          if (headBone) {
+            headSocket = new THREE.Group();
+            headSocket.name = 'Head_Socket';
+            headSocket.position.set(0, 8.5, 1.0);
+            headBone.add(headSocket);
+          }
+
+          // Criar socket da coluna e acessório dorsal (Mochila de Oricalco ou Cesto Herbal)
+          if (spineBone) {
+            spineSocket = new THREE.Group();
+            spineSocket.name = 'Spine_Socket';
+            spineSocket.position.set(0, 3.0, -8.5);
+            spineBone.add(spineSocket);
+          }
+
+          if (deitySelect) {
+            applyDeityStyle(deitySelect.value);
           }
 
           if (typeof switchEditorTab === 'function') switchEditorTab('aldeao');
@@ -1232,6 +1767,12 @@
     modelSelect.addEventListener('change', (e) => {
       loadModel(e.target.value);
     });
+
+    if (deitySelect) {
+      deitySelect.addEventListener('change', (e) => {
+        applyDeityStyle(e.target.value);
+      });
+    }
 
     // Alternar minimizar/expandir painel do Studio
     const btnToggleStudio = document.getElementById('btn-toggle-studio');

@@ -11,6 +11,7 @@ signal projectile_requested(start_pos: Vector3, target: Node3D, damage: float, f
 var faction: String = "player"
 var pantheon_id: String = "greek"
 var unit_kind: String = "villager"
+var major_god: String = ""
 var role: String = "worker"
 var display_name: String = "Aldeao"
 
@@ -69,15 +70,18 @@ var special_ability_range: float = 5.0
 var special_ability_damage: float = 65.0
 
 
-func setup(p_pantheon: String, p_kind: String = "villager", p_faction: String = "player") -> void:
+func setup(p_pantheon: String, p_kind: String = "villager", p_faction: String = "player", p_major_god: String = "") -> void:
 	faction = p_faction
 	pantheon_id = p_pantheon
 	unit_kind = p_kind
+	if p_major_god != "":
+		major_god = p_major_god
+	elif faction == "player" and GameState != null:
+		major_god = GameState.active_major_god
 
 	# Deuses da Era T5 usam DIVINE_PROFILES em vez de UNITS
 	var is_divine: bool = unit_kind.ends_with("_major") or unit_kind.ends_with("_minor")
 	var spec: Dictionary
-	var display_name: String
 
 	if is_divine:
 		var dprof: Dictionary = ModelLibrary.get_divine_profile(unit_kind)
@@ -99,6 +103,10 @@ func setup(p_pantheon: String, p_kind: String = "villager", p_faction: String = 
 	else:
 		spec = PantheonCatalog.get_unit_spec(pantheon_id, unit_kind)
 		display_name = String(spec["display_name"])
+		if unit_kind in ["villager", "aldeao"] and major_god != "":
+			var v_prof: Dictionary = ModelLibrary.get_villager_profile(major_god)
+			if v_prof.has("name"):
+				display_name = String(v_prof["name"])
 
 	role = String(spec["role"])
 	max_hp = int(spec["hp"])
@@ -712,7 +720,20 @@ func _rebuild_visual() -> void:
 	   unit_kind.begins_with("shennong_") or unit_kind.ends_with("_major") or unit_kind.ends_with("_minor"):
 		mesh_root = ModelLibrary.create_divine_unit_visual(unit_kind, faction)
 	else:
-		mesh_root = ModelLibrary.create_unit_visual(pantheon_id, unit_kind, faction, is_promoted_hero)
+		var god_ctx: String = major_god
+		if god_ctx == "":
+			if faction == "player" and GameState != null:
+				god_ctx = GameState.active_major_god
+			else:
+				var default_major_gods: Dictionary = {
+					"greek": "zeus_major",
+					"egyptian": "ra_major",
+					"norse": "thor_major",
+					"atlantean": "kronos_major",
+					"chinese": "fuxi_major"
+				}
+				god_ctx = String(default_major_gods.get(pantheon_id, "zeus_major"))
+		mesh_root = ModelLibrary.create_unit_visual(pantheon_id, unit_kind, faction, is_promoted_hero, god_ctx)
 	_visual_holder.add_child(mesh_root)
 	if role == "titan":
 		_visual_holder.scale = Vector3(2.5, 2.5, 2.5)
