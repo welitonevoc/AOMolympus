@@ -108,6 +108,8 @@ func _ready() -> void:
 	GameState.divine_summoned_signal.connect(_on_divine_summoned)
 	GameState.divine_summon_blocked.connect(_on_divine_summon_blocked)
 	GameState.villager_priority_changed.connect(_on_villager_priority_changed)
+	GameState.wonder_age_activated.connect(_on_wonder_age_activated)
+	GameState.titan_summoned.connect(_on_titan_summoned)
 
 	if SaveLoadSystem != null:
 		SaveLoadSystem.load_completed.connect(func(_ok: bool) -> void:
@@ -127,6 +129,8 @@ func _sync_all_hud_state() -> void:
 	_on_resources_changed(GameState.resources)
 	_on_population_changed(GameState.population_used, GameState.population_cap)
 	_on_age_changed(GameState.current_age)
+	if GameState.is_wonder_age and _age_lbl != null:
+		_age_lbl.text = "🌟 Era da Maravilha"
 	_update_priority_btn_label(GameState.villager_priority_preset)
 	_rebuild_divine_power_bar()
 	_rebuild_command_grid()
@@ -1301,12 +1305,27 @@ func _on_population_changed(used: int, cap: int) -> void:
 
 func _on_age_changed(new_age: int) -> void:
 	if _age_lbl != null:
-		_age_lbl.text = "🏛️ %s" % PantheonCatalog.get_age_name(new_age)
+		if GameState.is_wonder_age:
+			_age_lbl.text = "🌟 Era da Maravilha"
+		else:
+			_age_lbl.text = "🏛️ %s" % PantheonCatalog.get_age_name(new_age)
 	_refresh_power_buttons_state()
 	_rebuild_command_grid()
 	if new_age >= 5:
 		_divine_btn.visible = true
 		_divine_btn.text = "⚡ Deuses (T5)"
+
+
+func _on_wonder_age_activated(_faction: String) -> void:
+	if _age_lbl != null:
+		_age_lbl.text = "🌟 Era da Maravilha"
+	_rebuild_divine_power_bar()
+	_rebuild_command_grid()
+
+
+func _on_titan_summoned(_faction: String, _pantheon: String, titan_name: String) -> void:
+	_show_toast("💥 %s despertou no campo de batalha!" % titan_name, true)
+	_rebuild_command_grid()
 
 
 func _on_age_advance_progress(active: bool, _target_age: int, ratio: float) -> void:

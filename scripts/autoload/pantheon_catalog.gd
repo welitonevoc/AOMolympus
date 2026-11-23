@@ -479,9 +479,41 @@ const BUILDINGS: Dictionary = {
 		"attack_range": 0.0,
 		"attack_cooldown": 0.0,
 	},
+	"wonder": {
+		"kind": "wonder",
+		"name": "Maravilha",
+		"min_age": 4,
+		"cost": {"food": 1000, "wood": 1000, "gold": 1000, "favor": 50},
+		"base_hp": 6000,
+		"hp_per_age": 0,
+		"pop_bonus": 0,
+		"build_time": 40.0,
+		"footprint": 5.0,
+		"vision_radius": 26.0,
+		"favor_rate": 0.25,
+		"attack_damage": 0.0,
+		"attack_range": 0.0,
+		"attack_cooldown": 0.0,
+	},
+	"titan_gate": {
+		"kind": "titan_gate",
+		"name": "Portal do Titã",
+		"min_age": 4,
+		"cost": {"food": 800, "wood": 800, "gold": 800, "favor": 50},
+		"base_hp": 4500,
+		"hp_per_age": 0,
+		"pop_bonus": 0,
+		"build_time": 30.0,
+		"footprint": 4.5,
+		"vision_radius": 22.0,
+		"favor_rate": 0.0,
+		"attack_damage": 0.0,
+		"attack_range": 0.0,
+		"attack_cooldown": 0.0,
+	},
 }
 
-const VILLAGER_BUILD_ORDER: Array[String] = ["house", "temple", "barracks", "archery", "stable", "tower", "fortress"]
+const VILLAGER_BUILD_ORDER: Array[String] = ["house", "temple", "barracks", "archery", "stable", "tower", "fortress", "wonder", "titan_gate"]
 
 const UNITS: Dictionary = {
 	"villager": {
@@ -603,6 +635,23 @@ const UNITS: Dictionary = {
 		"ranged": false,
 		"projectile": "",
 	},
+	"titan": {
+		"kind": "titan",
+		"role": "titan",
+		"min_age": 4,
+		"cost": {"food": 800, "wood": 800, "gold": 800, "favor": 50},
+		"train_time": 30.0,
+		"pop": 20,
+		"hp": 7000,
+		"attack": 120.0,
+		"armor": 0.70,
+		"range": 3.8,
+		"vision_radius": 24.0,
+		"cooldown": 1.4,
+		"speed": 4.2,
+		"ranged": false,
+		"projectile": "",
+	},
 }
 
 const PANTHEON_UNIT_NAMES: Dictionary = {
@@ -614,6 +663,7 @@ const PANTHEON_UNIT_NAMES: Dictionary = {
 		"hero": "Heroi Grego",
 		"myth": "Minotauro",
 		"siege": "Helepolis",
+		"titan": "Titã Cerbero",
 	},
 	"egyptian": {
 		"villager": "Operario Egipcio",
@@ -623,6 +673,7 @@ const PANTHEON_UNIT_NAMES: Dictionary = {
 		"hero": "Farao",
 		"myth": "Anubita",
 		"siege": "Torre de Cerco",
+		"titan": "Titã Ra-Horus",
 	},
 	"norse": {
 		"villager": "Coletor Nordico",
@@ -632,6 +683,7 @@ const PANTHEON_UNIT_NAMES: Dictionary = {
 		"hero": "Hersir",
 		"myth": "Valquiria",
 		"siege": "Ariete Nordico",
+		"titan": "Titã Ymir",
 	},
 	"atlantean": {
 		"villager": "Cidadao Atlante",
@@ -641,6 +693,7 @@ const PANTHEON_UNIT_NAMES: Dictionary = {
 		"hero": "Heroi Atlante",
 		"myth": "Prometeano",
 		"siege": "Destruidor",
+		"titan": "Titã de Cristal",
 	},
 	"chinese": {
 		"villager": "Aldeao Chines",
@@ -650,6 +703,7 @@ const PANTHEON_UNIT_NAMES: Dictionary = {
 		"hero": "Imortal",
 		"myth": "Qilin",
 		"siege": "Ariete Imperial",
+		"titan": "Titã Pangu",
 	},
 }
 

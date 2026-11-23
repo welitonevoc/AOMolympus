@@ -24,6 +24,8 @@ signal notification_emitted(message: String, is_warning: bool)
 signal divine_summoned_signal(god_kind: String, tier: String)
 signal divine_summon_blocked(reason: String)
 signal villager_priority_changed(preset: String)
+signal wonder_age_activated(faction: String)
+signal titan_summoned(faction: String, pantheon_id: String, titan_name: String)
 
 var active_pantheon: String = "greek"
 var enemy_pantheon: String = "norse"
@@ -74,6 +76,11 @@ var powers_cast_count: int = 0
 var era_divine_unlocked: bool = false
 var divine_gods_summoned: Array = []  # IDs de deuses ja invocados (nao podem repetir)
 var divine_altars_built: int = 0  # Altares Divinos construidos pelo jogador
+
+# --- Era da Maravilha & Mecânica dos Titãs ---
+var is_wonder_age: bool = false
+var wonder_built: bool = false
+var titan_active: bool = false
 
 
 func _process(delta: float) -> void:
@@ -169,6 +176,9 @@ func start_new_match(
 	era_divine_unlocked = false
 	divine_gods_summoned.clear()
 	divine_altars_built = 0
+	is_wonder_age = false
+	wonder_built = false
+	titan_active = false
 	match_result = ""
 	match_started = true
 
@@ -362,6 +372,36 @@ func record_divine_altar_destroyed() -> void:
 
 func has_divine_altar() -> bool:
 	return divine_altars_built > 0
+
+
+func activate_wonder_age(faction: String) -> void:
+	if faction == "player":
+		is_wonder_age = true
+		wonder_built = true
+		wonder_age_activated.emit(faction)
+		notify("🌟 ERA DA MARAVILHA ALCANÇADA! Unidades Míticas fortalecidas (+50% Dano, +100% HP) e recargas divinas aceleradas!", true)
+
+
+func record_wonder_destroyed(faction: String) -> void:
+	if faction == "player":
+		is_wonder_age = false
+		wonder_built = false
+		notify("⚠️ Maravilha destruída! Os bônus da Era da Maravilha cessaram.", true)
+
+
+func record_titan_summoned(faction: String, p_pantheon: String, titan_name: String) -> void:
+	if faction == "player":
+		titan_active = true
+	titan_summoned.emit(faction, p_pantheon, titan_name)
+	notify("💥 O %s DESPERTOU NO CAMPO DE BATALHA!" % titan_name, true)
+
+
+func record_titan_defeated(faction: String) -> void:
+	if faction == "player":
+		titan_active = false
+		notify("O Titã aliado tombou em combate!", true)
+	else:
+		notify("O Titã inimigo foi destruído com sucesso!", false)
 
 
 func get_divine_summoned_count() -> int:

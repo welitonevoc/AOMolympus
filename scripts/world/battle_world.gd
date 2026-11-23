@@ -244,6 +244,10 @@ func spawn_building(
 	b.building_destroyed.connect(_on_building_destroyed)
 	if kind == "divine_altar":
 		b.construction_finished.connect(_on_divine_altar_finished)
+	elif kind == "wonder":
+		b.construction_finished.connect(_on_wonder_finished)
+	elif kind == "titan_gate":
+		b.construction_finished.connect(_on_titan_gate_finished)
 	_entities_root.add_child(b)
 	return b
 
@@ -448,6 +452,28 @@ func _on_divine_altar_finished(building: BuildingActor) -> void:
 		GameState.notify("Altar Divino construido! Invocacoes de deuses disponiveis na Era dos Deuses.", false)
 
 
+func _on_wonder_finished(building: BuildingActor) -> void:
+	if building.building_kind != "wonder":
+		return
+	GameState.activate_wonder_age(building.faction)
+
+
+func _on_titan_gate_finished(building: BuildingActor) -> void:
+	if building.building_kind != "titan_gate":
+		return
+	spawn_titan(building.faction, building.pantheon_id, building.global_position)
+
+
+func spawn_titan(p_faction: String, p_pantheon: String, spawn_pos: Vector3) -> UnitActor:
+	var titan_unit: UnitActor = spawn_unit("titan", spawn_pos, p_faction, p_pantheon)
+	var titan_name: String = PantheonCatalog.get_unit_spec(p_pantheon, "titan")["display_name"]
+	GameState.record_titan_summoned(p_faction, p_pantheon, titan_name)
+	if _power_system != null:
+		_power_system._spawn_sky_beam(spawn_pos, 4.0, Color("#f59e0b"))
+		_power_system._spawn_ring_burst(spawn_pos, 12.0, Color("#ef4444"))
+	return titan_unit
+
+
 ## Spawn o deus invocado no mundo do jogador.
 func _on_divine_summoned(god_kind: String, tier: String) -> void:
 	var spawn_pos: Vector3 = player_base_pos + Vector3(8.0, 0.0, 0.0)
@@ -483,6 +509,9 @@ func _on_building_destroyed(building: BuildingActor) -> void:
 		if building.faction == "player":
 			GameState.record_divine_altar_destroyed()
 			GameState.notify("Altar Divino destruido! Nao eh possivel invocar deuses ate reconstruir.", true)
+		return
+	if building.building_kind == "wonder":
+		GameState.record_wonder_destroyed(building.faction)
 		return
 	if building.building_kind != "town_center":
 		return

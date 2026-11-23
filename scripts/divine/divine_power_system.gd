@@ -25,8 +25,9 @@ func _on_match_started(_p: String, _e: String) -> void:
 func _process(delta: float) -> void:
 	if not GameState.match_started:
 		return
+	var cd_rate: float = 2.5 if GameState.is_wonder_age else 1.0
 	for pid in _cooldowns.keys():
-		var rem: float = float(_cooldowns[pid]) - delta
+		var rem: float = float(_cooldowns[pid]) - (delta * cd_rate)
 		if rem <= 0.0:
 			_cooldowns.erase(pid)
 		else:
@@ -42,11 +43,15 @@ func get_cast_count(power_id: String) -> int:
 
 
 ## Mecânica Retold: a cada uso do poder divino, o custo de Favor aumenta progressivamente (+50% por uso)
+## Na Era da Maravilha (Wonder Age), o custo de Favor é reduzido em 50%.
 func get_effective_favor_cost(power_id: String) -> float:
 	var spec: Dictionary = DivinePowerCatalog.get_power(power_id)
 	var base_cost: float = float(spec.get("favor_cost", 0.0))
 	var casts: int = int(_cast_counts.get(power_id, 0))
-	return round(base_cost * (1.0 + 0.5 * float(casts)))
+	var cost: float = round(base_cost * (1.0 + 0.5 * float(casts)))
+	if GameState.is_wonder_age:
+		cost = maxf(5.0, round(cost * 0.5))
+	return cost
 
 
 func request_power(power_id: String) -> bool:
@@ -186,6 +191,12 @@ func cast_power(power_id: String, world_pos: Vector3) -> bool:
 		"sandstorm", "curse":
 			_damage_and_freeze_enemies(world_pos, radius, 110.0, 5.0)
 			_spawn_sky_particles(world_pos, radius, Color("#d97706"), 36)
+		"titangate":
+			if world != null and world.has_method("spawn_building"):
+				world.spawn_building("titan_gate", world_pos, "player", GameState.active_pantheon, 4, false)
+			_spawn_sky_beam(world_pos, 3.5, Color("#f59e0b"))
+			_spawn_ring_burst(world_pos, radius, Color("#f59e0b"))
+			GameState.notify("Fundação do Portal do Titã posicionada! Convoque aldeões para construir.", true)
 		_:
 			_damage_enemies_in_area(world_pos, radius, 150.0, 120.0)
 			_spawn_ring_burst(world_pos, radius, vfx_col)

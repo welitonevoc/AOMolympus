@@ -115,7 +115,7 @@ func setup(p_pantheon: String, p_kind: String = "villager", p_faction: String = 
 	formation_id = GameState.active_formation if faction == "player" else "box"
 	stance_id = GameState.active_stance if faction == "player" else "defensive"
 
-	if role == "myth" or is_divine:
+	if role in ["myth", "titan"] or is_divine:
 		_setup_mythic_ability(is_divine)
 
 
@@ -126,16 +126,18 @@ func _ready() -> void:
 		add_to_group("villagers")
 	else:
 		add_to_group("military")
-	if role == "myth" or not special_ability_id.is_empty():
+	if role in ["myth", "titan"] or not special_ability_id.is_empty():
 		add_to_group("myth_units")
+		if role == "titan":
+			add_to_group("titans")
 	collision_layer = 1
 	collision_mask = 0
 	_anchor_pos = global_position
 
 	var shape := CollisionShape3D.new()
 	var cap := CapsuleShape3D.new()
-	cap.radius = 0.55 if unit_kind in ["myth", "siege", "cavalry"] else 0.42
-	cap.height = 2.0 if unit_kind == "myth" else 1.65
+	cap.radius = 1.15 if role == "titan" else (0.55 if unit_kind in ["myth", "siege", "cavalry"] else 0.42)
+	cap.height = 3.6 if role == "titan" else (2.0 if unit_kind == "myth" else 1.65)
 	shape.shape = cap
 	shape.position = Vector3(0.0, cap.height * 0.5, 0.0)
 	add_child(shape)
@@ -152,12 +154,14 @@ func _ready() -> void:
 	_rebuild_visual()
 
 	var ring_col: Color = Color("#38bdf8") if faction == "player" else Color("#ef4444")
-	_selection_ring = _create_ring(0.92 if unit_kind in ["cavalry", "myth", "siege"] else 0.72, ring_col)
+	var ring_rad: float = 2.1 if role == "titan" else (0.92 if unit_kind in ["cavalry", "myth", "siege"] else 0.72)
+	_selection_ring = _create_ring(ring_rad, ring_col)
 	_selection_ring.visible = false
 	add_child(_selection_ring)
 
 	if not special_ability_id.is_empty():
-		_ability_ring = _create_ring(1.15 if unit_kind in ["cavalry", "myth", "siege"] else 0.95, Color(1.0, 0.85, 0.25, 0.9))
+		var ability_rad: float = 2.4 if role == "titan" else (1.15 if unit_kind in ["cavalry", "myth", "siege"] else 0.95)
+		_ability_ring = _create_ring(ability_rad, Color(1.0, 0.85, 0.25, 0.9))
 		_ability_ring.name = "AbilityRing"
 		add_child(_ability_ring)
 		_update_ability_ring()
@@ -170,7 +174,7 @@ func _ready() -> void:
 	_carry_crate.visible = false
 	add_child(_carry_crate)
 
-	_setup_hp_bar(2.65 if unit_kind == "myth" else 2.1)
+	_setup_hp_bar(4.2 if role == "titan" else (2.65 if unit_kind == "myth" else 2.1))
 
 	if faction == "player":
 		GameState.add_population_used(pop_cost)
@@ -188,7 +192,8 @@ func _physics_process(delta: float) -> void:
 
 	if not special_ability_id.is_empty():
 		if special_ability_timer > 0.0:
-			special_ability_timer = maxf(0.0, special_ability_timer - delta)
+			var cd_mult: float = 2.0 if (GameState.is_wonder_age and (role in ["myth", "titan"])) else 1.0
+			special_ability_timer = maxf(0.0, special_ability_timer - delta * cd_mult)
 			if _ability_ring != null and Engine.get_physics_frames() % 6 == 0:
 				_update_ability_ring()
 		elif _ability_ring != null and Engine.get_physics_frames() % 30 == 0:
@@ -709,6 +714,8 @@ func _rebuild_visual() -> void:
 	else:
 		mesh_root = ModelLibrary.create_unit_visual(pantheon_id, unit_kind, faction, is_promoted_hero)
 	_visual_holder.add_child(mesh_root)
+	if role == "titan":
+		_visual_holder.scale = Vector3(2.5, 2.5, 2.5)
 	_anim_player = _find_anim_player(mesh_root)
 	if _anim_player != null:
 		_play_named_anim("base")
@@ -755,6 +762,8 @@ func _die() -> void:
 	AudioDirector.play_sfx_3d("unit_death", global_position, pantheon_id)
 	if faction == "player":
 		GameState.add_population_used(-pop_cost)
+	if role == "titan":
+		GameState.record_titan_defeated(faction)
 	if GameState.selected_entities.has(self):
 		var remaining: Array = GameState.selected_entities.duplicate()
 		remaining.erase(self)
@@ -870,7 +879,13 @@ func _create_ring(radius: float, col: Color) -> MeshInstance3D:
 
 func _setup_mythic_ability(is_divine: bool) -> void:
 	special_auto_cast = true
-	if is_divine:
+	if role == "titan":
+		special_ability_id = "titan_slam"
+		special_ability_name = "Esmagamento Titânico"
+		special_ability_cooldown = 12.0
+		special_ability_damage = 180.0
+		special_ability_range = 7.0
+	elif is_divine:
 		special_ability_id = "divine_wrath"
 		special_ability_name = "Fúria Divina"
 		special_ability_cooldown = 15.0
@@ -983,6 +998,10 @@ func cast_special_ability() -> bool:
 			_area_divine_damage(target_pos, 7.0, special_ability_damage)
 			if faction == "player":
 				GameState.notify("Presença Divina manifestou Fúria Celestial!", false)
+		"titan_slam":
+			_area_divine_damage(target_pos, 8.0, special_ability_damage)
+			if faction == "player":
+				GameState.notify("Titã desferiu ESMAGAMENTO TITÂNICO!", true)
 		_:
 			_area_divine_damage(target_pos, 3.5, special_ability_damage)
 

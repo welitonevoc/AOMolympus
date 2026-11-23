@@ -7,6 +7,8 @@ extends RefCounted
 
 static func get_counter_multiplier(attacker_role: String, defender_role: String, target_is_building: bool) -> float:
 	if target_is_building:
+		if attacker_role == "titan":
+			return 3.5
 		if attacker_role == "siege":
 			return 3.0
 		if attacker_role == "myth":
@@ -15,9 +17,21 @@ static func get_counter_multiplier(attacker_role: String, defender_role: String,
 			return 0.55
 		return 0.85
 
-	# Herois counteram fortemente Unidades Miticas
-	if attacker_role == "hero" and defender_role == "myth":
-		return 2.75
+	# Titãs esmagam o campo de batalha
+	if attacker_role == "titan":
+		if defender_role in ["infantry", "archer", "cavalry", "worker"]:
+			return 2.5
+		if defender_role == "myth":
+			return 2.0
+		return 1.5
+
+	# Herois counteram fortemente Unidades Miticas e ferem Titas
+	if attacker_role == "hero":
+		if defender_role == "myth":
+			return 2.75
+		if defender_role == "titan":
+			return 1.75
+
 	# Unidades Miticas tem vantagem sobre soldados humanos comuns
 	if attacker_role == "myth" and defender_role in ["infantry", "archer", "cavalry", "worker"]:
 		return 1.40
@@ -47,6 +61,11 @@ static func compute_damage(
 
 	var counter_mult: float = get_counter_multiplier(attacker_role, defender_role, target_is_building)
 	var raw_damage: float = base_attack * float(atk_form.get("attack_mult", 1.0)) * counter_mult
+
+	# Bônus massivo da Era da Maravilha (Wonder Age) para Unidades Míticas e Titãs
+	if GameState.is_wonder_age and (attacker_role == "myth" or attacker_role == "titan"):
+		raw_damage *= 1.50
+
 	var total_armor: float = clampf(
 		defender_armor + (0.0 if target_is_building else float(def_form.get("armor_bonus", 0.0))),
 		0.0,
