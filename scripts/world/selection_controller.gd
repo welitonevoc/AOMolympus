@@ -549,11 +549,12 @@ func _setup_power_ring() -> void:
 
 func _find_resource_near(pos: Vector3, max_dist: float) -> ResourceNode:
 	var best: ResourceNode = null
-	var best_dist := max_dist
+	var best_dist: float = max_dist
 	for r in get_tree().get_nodes_in_group("resources"):
-		if r is ResourceNode and not r.is_depleted():
-			var d := r.global_position.distance_to(pos)
+		if r is ResourceNode and not (r as ResourceNode).is_depleted():
+			var res_node := r as ResourceNode
+			var d: float = res_node.global_position.distance_to(pos)
 			if d < best_dist:
 				best_dist = d
-				best = r
+				best = res_node
 	return best

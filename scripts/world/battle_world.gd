@@ -420,18 +420,20 @@ func _find_nearest_resource_of_kind(pos: Vector3, kind: String) -> ResourceNode:
 	var best: ResourceNode = null
 	var best_dist_sq: float = 999999.0
 	for r in get_tree().get_nodes_in_group("resources"):
-		if r is ResourceNode and not r.is_depleted() and r.resource_kind == kind:
-			var d2 := pos.distance_squared_to(r.global_position)
+		if r is ResourceNode and not (r as ResourceNode).is_depleted() and (r as ResourceNode).resource_kind == kind:
+			var res_node := r as ResourceNode
+			var d2: float = pos.distance_squared_to(res_node.global_position)
 			if d2 < best_dist_sq:
 				best_dist_sq = d2
-				best = r
+				best = res_node
 	if best == null:
 		for r in get_tree().get_nodes_in_group("resources"):
-			if r is ResourceNode and not r.is_depleted():
-				var d2 := pos.distance_squared_to(r.global_position)
+			if r is ResourceNode and not (r as ResourceNode).is_depleted():
+				var res_node := r as ResourceNode
+				var d2: float = pos.distance_squared_to(res_node.global_position)
 				if d2 < best_dist_sq:
 					best_dist_sq = d2
-					best = r
+					best = res_node
 	return best
 
 

@@ -812,13 +812,14 @@ func _update_carry_visual(visible_flag: bool) -> void:
 
 func _find_nearest_town_center() -> BuildingActor:
 	var best: BuildingActor = null
-	var best_d := INF
+	var best_d: float = INF
 	for node in get_tree().get_nodes_in_group("player_town_centers"):
-		if node is BuildingActor and node.is_constructed:
-			var d := global_position.distance_squared_to(node.global_position)
+		if node is BuildingActor and (node as BuildingActor).is_constructed:
+			var bld := node as BuildingActor
+			var d: float = global_position.distance_squared_to(bld.global_position)
 			if d < best_d:
 				best_d = d
-				best = node
+				best = bld
 	return best
 
 
@@ -826,13 +827,14 @@ func _find_nearest_resource(kind: String) -> ResourceNode:
 	if kind.is_empty():
 		return null
 	var best: ResourceNode = null
-	var best_d := INF
+	var best_d: float = INF
 	for node in get_tree().get_nodes_in_group("resources"):
-		if node is ResourceNode and node.resource_kind == kind and node.remaining > 0.0:
-			var d := global_position.distance_squared_to(node.global_position)
+		if node is ResourceNode and (node as ResourceNode).resource_kind == kind and (node as ResourceNode).remaining > 0.0:
+			var res_node := node as ResourceNode
+			var d: float = global_position.distance_squared_to(res_node.global_position)
 			if d < best_d:
 				best_d = d
-				best = node
+				best = res_node
 	return best
 
 
