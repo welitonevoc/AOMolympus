@@ -43,13 +43,18 @@ func _process(delta: float) -> void:
 func play_ui_sfx(kind: String) -> void:
 	if GameState.audio_muted:
 		return
-	var external_path: String = "res://audio/sfx/%s.ogg" % kind
-	if ResourceLoader.exists(external_path):
-		var st: Resource = load(external_path)
-		if st is AudioStream:
-			_ui_player.stream = st
-			_ui_player.play()
-			return
+	var candidates: Array[String] = [
+		"res://audio/sfx/ui/olympus_ui_%s.wav" % kind,
+		"res://audio/sfx/ui/olympus_ui_%s.ogg" % kind,
+		"res://audio/sfx/%s.ogg" % kind,
+	]
+	for path in candidates:
+		if ResourceLoader.exists(path):
+			var st: Resource = load(path)
+			if st is AudioStream:
+				_ui_player.stream = st
+				_ui_player.play()
+				return
 
 	var freq: float = 520.0
 	var dur: float = 0.14
@@ -80,19 +85,37 @@ func play_sfx_3d(kind: String, world_pos: Vector3, pantheon_id: String = "greek"
 	add_child(player)
 	_active_3d_voices += 1
 
-	var external_path: String = "res://audio/sfx/%s_%s.ogg" % [pantheon_id, kind]
-	if not ResourceLoader.exists(external_path):
-		external_path = "res://audio/sfx/%s.ogg" % kind
-	if ResourceLoader.exists(external_path):
-		var st: Resource = load(external_path)
-		if st is AudioStream:
-			player.stream = st
-			player.finished.connect(func() -> void:
-				_active_3d_voices = maxi(0, _active_3d_voices - 1)
-				player.queue_free()
-			)
-			player.play()
-			return
+	var specific_asset: String = ""
+	match kind:
+		"arrow":
+			specific_asset = "res://audio/sfx/combat/olympus_arrow_shoot.wav"
+		"combat_hit":
+			specific_asset = "res://audio/sfx/combat/olympus_sword_metal_1.wav"
+		"build_done":
+			specific_asset = "res://audio/sfx/economy/olympus_build_1.wav"
+		"voice_order":
+			specific_asset = "res://audio/sfx/voice/greek/olympus_greek_military_move_1.wav"
+
+	var candidates: Array[String] = []
+	if not specific_asset.is_empty():
+		candidates.append(specific_asset)
+	candidates.append("res://audio/sfx/combat/olympus_%s.wav" % kind)
+	candidates.append("res://audio/sfx/economy/olympus_%s.wav" % kind)
+	candidates.append("res://audio/sfx/voice/%s/olympus_%s_%s.wav" % [pantheon_id, pantheon_id, kind])
+	candidates.append("res://audio/sfx/%s_%s.ogg" % [pantheon_id, kind])
+	candidates.append("res://audio/sfx/%s.ogg" % kind)
+
+	for path in candidates:
+		if ResourceLoader.exists(path):
+			var st: Resource = load(path)
+			if st is AudioStream:
+				player.stream = st
+				player.finished.connect(func() -> void:
+					_active_3d_voices = maxi(0, _active_3d_voices - 1)
+					player.queue_free()
+				)
+				player.play()
+				return
 
 	# Timbre cultural espacial sintetizado por panteao
 	var base_pitch: float = _pantheon_voice_pitch(pantheon_id)
@@ -172,6 +195,20 @@ func _update_adaptive_music_state() -> void:
 
 
 func _setup_music_synth() -> void:
+	var music_path: String = "res://audio/music/olympus_theme_main.mp3"
+	if ResourceLoader.exists(music_path):
+		var st: Resource = load(music_path)
+		if st is AudioStream:
+			_music_player = AudioStreamPlayer.new()
+			_music_player.stream = st
+			_music_player.volume_db = -12.0
+			add_child(_music_player)
+			if GameState.audio_muted:
+				_music_player.stream_paused = true
+			else:
+				_music_player.play()
+			return
+
 	var gen := AudioStreamGenerator.new()
 	gen.mix_rate = MIX_RATE
 	gen.buffer_length = 0.18

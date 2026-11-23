@@ -22,6 +22,7 @@ config/icon="res://icon.svg"
 
 [autoload]
 
+OlympusUnitCatalog="*res://scripts/autoload/olympus_unit_catalog.gd"
 PantheonCatalog="*res://scripts/autoload/pantheon_catalog.gd"
 ModelLibrary="*res://scripts/autoload/model_library.gd"
 GameState="*res://scripts/autoload/game_state.gd"
