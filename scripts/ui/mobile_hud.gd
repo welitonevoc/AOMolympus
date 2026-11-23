@@ -1138,6 +1138,7 @@ func _on_campaign_objectives_changed(chapter_id: String, title: String, objectiv
 		_campaign_panel.visible = false
 		return
 	_campaign_panel.visible = true
+	AudioDirector.play_ui_sfx("objective")
 	_campaign_title_lbl.text = title
 	for child in _campaign_obj_vbox.get_children():
 		child.queue_free()
@@ -1248,6 +1249,7 @@ func _make_action_button(label_text: String, primary: bool, min_w: float, min_h:
 	btn.add_theme_stylebox_override("normal", _make_btn_style(primary))
 	btn.add_theme_stylebox_override("hover", _make_btn_style(primary, true))
 	btn.add_theme_stylebox_override("pressed", _make_btn_style(true))
+	btn.pressed.connect(func() -> void: AudioDirector.play_ui_sfx("button"))
 	return btn
 
 

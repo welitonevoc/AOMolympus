@@ -1555,7 +1555,11 @@ func _create_base_modal(title_text: String, w: float, h: float) -> PanelContaine
 	close_btn.add_theme_font_size_override("font_size", 12)
 	close_btn.add_theme_color_override("font_color", Color("#ef4444"))
 	close_btn.add_theme_stylebox_override("normal", _make_btn_style(false))
-	close_btn.pressed.connect(func() -> void: pc.visible = false; _main_menu_panel.visible = true)
+	close_btn.pressed.connect(func() -> void:
+		AudioDirector.play_ui_sfx("click")
+		pc.visible = false
+		_main_menu_panel.visible = true
+	)
 	top.add_child(close_btn)
 
 	var content := VBoxContainer.new()
@@ -1575,6 +1579,7 @@ func _make_menu_button(label_text: String, primary: bool) -> Button:
 	btn.add_theme_stylebox_override("normal", _make_btn_style(primary))
 	btn.add_theme_stylebox_override("hover", _make_btn_style(primary, true))
 	btn.add_theme_stylebox_override("pressed", _make_btn_style(true))
+	btn.pressed.connect(func() -> void: AudioDirector.play_ui_sfx("button"))
 	return btn
 
 
@@ -1587,6 +1592,7 @@ func _make_action_button(label_text: String, primary: bool, min_w: float, min_h:
 	btn.add_theme_stylebox_override("normal", _make_btn_style(primary))
 	btn.add_theme_stylebox_override("hover", _make_btn_style(primary, true))
 	btn.add_theme_stylebox_override("pressed", _make_btn_style(true))
+	btn.pressed.connect(func() -> void: AudioDirector.play_ui_sfx("button"))
 	return btn
 
 

@@ -89,12 +89,27 @@ func play_sfx_3d(kind: String, world_pos: Vector3, pantheon_id: String = "greek"
 	match kind:
 		"arrow":
 			specific_asset = "res://audio/sfx/combat/olympus_arrow_shoot.wav"
+		"arrow_hit":
+			specific_asset = "res://audio/sfx/combat/olympus_arrow_hit.wav"
 		"combat_hit":
-			specific_asset = "res://audio/sfx/combat/olympus_sword_metal_1.wav"
-		"build_done":
-			specific_asset = "res://audio/sfx/economy/olympus_build_1.wav"
+			specific_asset = "res://audio/sfx/combat/olympus_sword_metal_%d.wav" % (randi() % 2 + 1)
+		"sword_flesh":
+			specific_asset = "res://audio/sfx/combat/olympus_sword_flesh_%d.wav" % (randi() % 2 + 1)
+		"unit_death":
+			specific_asset = "res://audio/sfx/combat/olympus_unit_death_m.wav"
+		"build_done", "build_step":
+			specific_asset = "res://audio/sfx/economy/olympus_build_%d.wav" % (randi() % 2 + 1)
+		"gather_wood":
+			specific_asset = "res://audio/sfx/economy/olympus_gather_wood_%d.wav" % (randi() % 2 + 1)
+		"gather_gold":
+			specific_asset = "res://audio/sfx/economy/olympus_gather_gold_%d.wav" % (randi() % 2 + 1)
+		"gather_forage":
+			specific_asset = "res://audio/sfx/economy/olympus_gather_forage.wav"
+		"gather_meat":
+			specific_asset = "res://audio/sfx/economy/olympus_gather_meat.wav"
 		"voice_order":
-			specific_asset = "res://audio/sfx/voice/greek/olympus_greek_military_move_1.wav"
+			if pantheon_id == "greek":
+				specific_asset = "res://audio/sfx/voice/greek/olympus_greek_military_move_1.wav"
 
 	var candidates: Array[String] = []
 	if not specific_asset.is_empty():
@@ -151,6 +166,56 @@ func play_sfx_3d(kind: String, world_pos: Vector3, pantheon_id: String = "greek"
 	)
 
 
+var _last_voice_tick_ms: int = 0
+
+func play_voice(pantheon: String, unit_role: String, action_type: String, world_pos: Vector3) -> void:
+	if GameState.audio_muted or _active_3d_voices >= 6:
+		return
+	var now: int = Time.get_ticks_msec()
+	if now - _last_voice_tick_ms < 280:
+		return
+	_last_voice_tick_ms = now
+
+	var voice_file: String = ""
+	if pantheon == "greek":
+		if unit_role == "worker":
+			match action_type:
+				"select":
+					voice_file = "res://audio/sfx/voice/greek/olympus_greek_villager_select_%d.wav" % (randi() % 4 + 1)
+				"move", "attack":
+					voice_file = "res://audio/sfx/voice/greek/olympus_greek_villager_move_%d.wav" % (randi() % 4 + 1)
+		else:
+			match action_type:
+				"select":
+					voice_file = "res://audio/sfx/voice/greek/olympus_greek_military_select_%d.wav" % (randi() % 3 + 1)
+				"move":
+					voice_file = "res://audio/sfx/voice/greek/olympus_greek_military_move_%d.wav" % (randi() % 3 + 1)
+				"attack":
+					voice_file = "res://audio/sfx/voice/greek/olympus_greek_military_attack_%d.wav" % (randi() % 4 + 1)
+
+	if not voice_file.is_empty() and ResourceLoader.exists(voice_file):
+		var st: Resource = load(voice_file)
+		if st is AudioStream:
+			var player := AudioStreamPlayer3D.new()
+			player.position = world_pos
+			player.max_distance = 64.0
+			player.unit_size = 14.0
+			player.volume_db = -5.0
+			add_child(player)
+			_active_3d_voices += 1
+			player.stream = st
+			player.finished.connect(func() -> void:
+				_active_3d_voices = maxi(0, _active_3d_voices - 1)
+				player.queue_free()
+			)
+			player.play()
+			return
+
+	# Fallback sintetico
+	play_sfx_3d("voice_order", world_pos, pantheon)
+
+
+
 func _pantheon_voice_pitch(pid: String) -> float:
 	match pid:
 		"greek":
@@ -179,7 +244,13 @@ func _on_match_ended(result: String) -> void:
 
 func _on_muted_changed(muted: bool) -> void:
 	if _music_player != null:
-		_music_player.stream_paused = muted
+		if muted:
+			_music_player.stream_paused = true
+		else:
+			if _music_player.stream_paused:
+				_music_player.stream_paused = false
+			elif not _music_player.playing:
+				_music_player.play()
 
 
 func _update_adaptive_music_state() -> void:
@@ -202,6 +273,10 @@ func _setup_music_synth() -> void:
 			_music_player = AudioStreamPlayer.new()
 			_music_player.stream = st
 			_music_player.volume_db = -12.0
+			_music_player.finished.connect(func() -> void:
+				if not GameState.audio_muted and _music_player != null:
+					_music_player.play()
+			)
 			add_child(_music_player)
 			if GameState.audio_muted:
 				_music_player.stream_paused = true

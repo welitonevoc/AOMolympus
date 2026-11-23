@@ -48,6 +48,8 @@ var _anim_time: float = 0.0
 var _attack_timer: float = 0.0
 var _aggro_scan_timer: float = 0.25
 var _freeze_timer: float = 0.0
+var _gather_sfx_timer: float = 0.0
+var _build_sfx_timer: float = 0.0
 
 var _nav_agent: NavigationAgent3D
 var _visual_holder: Node3D
@@ -200,6 +202,8 @@ func command_move(world_pos: Vector3) -> void:
 	_anchor_pos = Vector3(world_pos.x, 0.0, world_pos.z)
 	state = State.MOVING
 	_nav_agent.target_position = _anchor_pos
+	if faction == "player":
+		AudioDirector.play_voice(pantheon_id, role, "move", global_position)
 
 
 func command_stop() -> void:
@@ -217,6 +221,8 @@ func command_attack(target: Node3D) -> void:
 	target_building = null
 	combat_target = target
 	state = State.ATTACKING
+	if faction == "player":
+		AudioDirector.play_voice(pantheon_id, role, "attack", global_position)
 
 
 func command_gather(res_node: ResourceNode) -> void:
@@ -227,6 +233,8 @@ func command_gather(res_node: ResourceNode) -> void:
 	target_resource = res_node
 	state = State.GATHERING
 	_nav_agent.target_position = Vector3(res_node.global_position.x, 0.0, res_node.global_position.z)
+	if faction == "player":
+		AudioDirector.play_voice(pantheon_id, role, "move", global_position)
 
 
 func command_build(building: BuildingActor) -> void:
@@ -237,6 +245,8 @@ func command_build(building: BuildingActor) -> void:
 	target_building = building
 	state = State.BUILDING
 	_nav_agent.target_position = Vector3(building.global_position.x, 0.0, building.global_position.z)
+	if faction == "player":
+		AudioDirector.play_voice(pantheon_id, role, "move", global_position)
 
 
 func set_formation(new_formation: String) -> void:
@@ -319,6 +329,8 @@ func set_selected(selected: bool) -> void:
 	_selected = selected
 	if _selection_ring != null:
 		_selection_ring.visible = selected
+	if selected and faction == "player":
+		AudioDirector.play_voice(pantheon_id, role, "select", global_position)
 
 
 func get_display_name() -> String:
@@ -465,6 +477,20 @@ func _process_gathering(delta: float) -> void:
 	_face_towards(target_resource.global_position, delta)
 	_animate_work()
 
+	if faction == "player":
+		_gather_sfx_timer -= delta
+		if _gather_sfx_timer <= 0.0:
+			_gather_sfx_timer = 1.3
+			var sfx_kind: String = "gather_wood"
+			match target_resource.resource_kind:
+				"gold":
+					sfx_kind = "gather_gold"
+				"food":
+					sfx_kind = "gather_forage"
+				_:
+					sfx_kind = "gather_wood"
+			AudioDirector.play_sfx_3d(sfx_kind, global_position, pantheon_id)
+
 	var p: Dictionary = PantheonCatalog.get_pantheon(pantheon_id)
 	var mult: float = float(p.get("gather_multiplier", 1.0))
 	var taken: float = target_resource.harvest(gather_rate * mult * delta)
@@ -533,6 +559,13 @@ func _process_building(delta: float) -> void:
 	velocity = Vector3.ZERO
 	_face_towards(target_building.global_position, delta)
 	_animate_work()
+
+	if faction == "player":
+		_build_sfx_timer -= delta
+		if _build_sfx_timer <= 0.0:
+			_build_sfx_timer = 1.4
+			AudioDirector.play_sfx_3d("build_step", global_position, pantheon_id)
+
 	if target_building.advance_construction(delta):
 		target_building = null
 		state = State.IDLE
@@ -654,6 +687,7 @@ func _die() -> void:
 	if _dead:
 		return
 	_dead = true
+	AudioDirector.play_sfx_3d("unit_death", global_position, pantheon_id)
 	if faction == "player":
 		GameState.add_population_used(-pop_cost)
 	if GameState.selected_entities.has(self):

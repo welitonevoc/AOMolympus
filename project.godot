@@ -53,6 +53,10 @@ pointing/emulate_touch_from_mouse=true
 3d_physics/layer_2="resources"
 3d_physics/layer_3="buildings"
 
+[gui]
+
+theme/custom="res://themes/rts_fantasy_theme.tres"
+
 [rendering]
 
 renderer/rendering_driver="opengl3"

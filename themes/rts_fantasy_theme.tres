@@ -1,4 +1,6 @@
-[gd_resource type="Theme" format=3 uid="uid://cjtoo7rpf2ejt"]
+[gd_resource type="Theme" load_steps=18 format=3 uid="uid://cjtoo7rpf2ejt"]
+
+[ext_resource type="FontFile" path="res://assets/fonts/olympus_ancient.ttf" id="1_olympus_font"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_y6ied"]
 content_margin_left = 12.0
@@ -230,6 +232,8 @@ corner_radius_bottom_left = 8
 corner_detail = 6
 
 [resource]
+default_font = ExtResource("1_olympus_font")
+default_font_size = 13
 Button/colors/font_color = Color(0.8862745, 0.9098039, 0.9411765, 1)
 Button/colors/font_disabled_color = Color(0.5, 0.48, 0.42, 0.6)
 Button/colors/font_focus_color = Color(0.8862745, 0.9098039, 0.9411765, 1)
