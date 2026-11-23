@@ -291,7 +291,10 @@ func _refresh_power_buttons_state() -> void:
 		var spec: Dictionary = DivinePowerCatalog.get_power(pid)
 		var req_age: int = int(spec["min_age"])
 		var cd: float = _power_system.get_cooldown_remaining(pid) if _power_system != null else 0.0
+		var casts: int = _power_system.get_cast_count(pid) if (_power_system != null and _power_system.has_method("get_cast_count")) else 0
+		var cost: int = int(_power_system.get_effective_favor_cost(pid)) if (_power_system != null and _power_system.has_method("get_effective_favor_cost")) else int(spec.get("favor_cost", 0))
 		var is_targeted: bool = GameState.pending_power_id == pid
+		var can_afford: bool = GameState.can_afford({"favor": float(cost)})
 		if GameState.current_age < req_age:
 			btn.text = "%s\n[Era %d]" % [spec["short"], req_age]
 			btn.disabled = true
@@ -299,8 +302,11 @@ func _refresh_power_buttons_state() -> void:
 			btn.text = "%s\n%.0fs" % [spec["short"], cd]
 			btn.disabled = true
 		else:
-			btn.text = "%s\n%dF" % [spec["short"], int(spec["favor_cost"])]
-			btn.disabled = false
+			var label_txt: String = "%s\n%dF" % [spec["short"], cost]
+			if casts > 0:
+				label_txt = "%s +%d\n%dF" % [spec["short"], casts, cost]
+			btn.text = label_txt
+			btn.disabled = not can_afford
 		btn.add_theme_stylebox_override("normal", _make_btn_style(is_targeted))
 		btn.add_theme_color_override("font_color", Color("#0d121c") if is_targeted else Color("#f1f5f9"))
 
@@ -375,8 +381,8 @@ func _build_bottom_left_zone() -> void:
 	panel.anchor_top = 1.0
 	panel.anchor_bottom = 1.0
 	panel.offset_left = 14.0
-	panel.offset_right = 372.0
-	panel.offset_top = -152.0
+	panel.offset_right = 412.0
+	panel.offset_top = -204.0
 	panel.offset_bottom = -14.0
 	panel.add_theme_stylebox_override("panel", _make_panel_style(Color(0.04, 0.06, 0.10, 0.92), 12, Color(0.83, 0.69, 0.22, 0.45), true))
 	add_child(panel)
@@ -389,14 +395,14 @@ func _build_bottom_left_zone() -> void:
 	panel.add_child(margin)
 
 	var vbox := VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 8)
+	vbox.add_theme_constant_override("separation", 6)
 	margin.add_child(vbox)
 
 	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 8)
+	row.add_theme_constant_override("separation", 6)
 	vbox.add_child(row)
 
-	_box_btn = _make_action_button("📦 Caixa", false, 96.0, 46.0)
+	_box_btn = _make_action_button("📦 Caixa", false, 88.0, 42.0)
 	_box_btn.toggle_mode = true
 	_box_btn.toggled.connect(func(active: bool) -> void:
 		GameState.box_select_mode = active
@@ -406,19 +412,52 @@ func _build_bottom_left_zone() -> void:
 	)
 	row.add_child(_box_btn)
 
-	var idle_btn := _make_action_button("👨‍🌾 Aldeão", false, 96.0, 46.0)
+	var idle_btn := _make_action_button("👨‍🌾 Ocioso", false, 88.0, 42.0)
 	idle_btn.pressed.connect(func() -> void:
 		if _world != null:
 			_world.focus_idle_villager()
 	)
 	row.add_child(idle_btn)
 
-	var army_btn := _make_action_button("⚔️ Exército", true, 108.0, 46.0)
+	var army_btn := _make_action_button("⚔️ Exército", true, 96.0, 42.0)
 	army_btn.pressed.connect(func() -> void:
 		if _world != null:
 			_world.select_all_military()
 	)
 	row.add_child(army_btn)
+
+	# Linha 2: Filtros Táticos Rápidos por Classe (Retold / Titans Ergonomia Mobile)
+	var filter_row := HBoxContainer.new()
+	filter_row.add_theme_constant_override("separation", 6)
+	vbox.add_child(filter_row)
+
+	var vills_all_btn := _make_action_button("👨‍🌾 Todos", false, 80.0, 36.0)
+	vills_all_btn.pressed.connect(func() -> void:
+		if _world != null:
+			_world.select_all_villagers()
+	)
+	filter_row.add_child(vills_all_btn)
+
+	var archers_btn := _make_action_button("🏹 Arqueiros", false, 88.0, 36.0)
+	archers_btn.pressed.connect(func() -> void:
+		if _world != null:
+			_world.select_units_by_role("archer")
+	)
+	filter_row.add_child(archers_btn)
+
+	var cavalry_btn := _make_action_button("🐎 Cavalaria", false, 88.0, 36.0)
+	cavalry_btn.pressed.connect(func() -> void:
+		if _world != null:
+			_world.select_units_by_role("cavalry")
+	)
+	filter_row.add_child(cavalry_btn)
+
+	var myth_btn := _make_action_button("⚡ Míticas", false, 80.0, 36.0)
+	myth_btn.pressed.connect(func() -> void:
+		if _world != null:
+			_world.select_units_by_role("myth")
+	)
+	filter_row.add_child(myth_btn)
 
 	_selection_title = Label.new()
 	_selection_title.text = "Nenhuma seleção"

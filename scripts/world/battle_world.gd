@@ -316,6 +316,50 @@ func select_all_military() -> void:
 	GameState.notify("%d guerreiros selecionados." % army.size(), false)
 
 
+func select_all_villagers() -> void:
+	var list: Array = []
+	for v in get_tree().get_nodes_in_group("villagers"):
+		if v is UnitActor and v.faction == "player" and not v.is_dead():
+			list.append(v)
+	if list.is_empty():
+		GameState.notify("Nenhum aldeão encontrado no mapa.", true)
+		return
+	GameState.set_selection(list)
+	if _camera_rig != null:
+		_camera_rig.focus_on(list[0].global_position)
+	GameState.notify("%d aldeões selecionados." % list.size(), false)
+
+
+func select_units_by_role(role_kind: String) -> void:
+	var list: Array = []
+	for u in get_tree().get_nodes_in_group("units"):
+		if u is UnitActor and u.faction == "player" and not u.is_dead():
+			if role_kind == "villager" and u.unit_kind == "villager":
+				list.append(u)
+			elif role_kind == "cavalry" and u.role == "cavalry":
+				list.append(u)
+			elif role_kind == "archer" and u.role == "archer":
+				list.append(u)
+			elif role_kind == "infantry" and u.role == "infantry":
+				list.append(u)
+			elif role_kind == "myth" and (u.role in ["myth", "titan"] or u.unit_kind in ["centaur", "colossus", "cyclops", "minotaur", "hydra", "manticore", "medusa", "chimera"]):
+				list.append(u)
+	if list.is_empty():
+		var role_names := {
+			"villager": "aldeão",
+			"cavalry": "cavalaria",
+			"archer": "arqueiro",
+			"infantry": "infantaria",
+			"myth": "unidade mítica"
+		}
+		GameState.notify("Nenhum(a) %s disponível no momento." % role_names.get(role_kind, role_kind), true)
+		return
+	GameState.set_selection(list)
+	if _camera_rig != null:
+		_camera_rig.focus_on(list[0].global_position)
+	GameState.notify("%d unidades selecionadas." % list.size(), false)
+
+
 func _on_building_training_completed(building: BuildingActor, unit_kind: String, spawn_pos: Vector3) -> void:
 	spawn_unit(unit_kind, spawn_pos, building.faction, building.pantheon_id)
 	if building.faction == "player":
