@@ -123,25 +123,64 @@ func _ready() -> void:
 		MultiplayerManager.connection_failed.connect(_on_connection_failed)
 
 
-# ── Fundo Visual Mitológico ──────────────────────────────────────────────────
+# ── Fundo Visual Mitológico Dinâmico ──────────────────────────────────────────
 func _build_background_backdrop() -> void:
-	var bg := ColorRect.new()
-	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
-	# Azul escuro obsidiana imperial
-	bg.color = Color(0.03, 0.05, 0.09, 1.0)
-	add_child(bg)
+	# Fundo base de obsidiana profunda
+	var bg_base := ColorRect.new()
+	bg_base.set_anchors_preset(Control.PRESET_FULL_RECT)
+	bg_base.color = Color(0.02, 0.03, 0.06, 1.0)
+	add_child(bg_base)
 
-	# Faixa dourada no topo
+	# Arte Heroica Ilustrada: Cidadela do Monte Olimpo em Alta Resolução
+	var hero_rect := TextureRect.new()
+	hero_rect.set_anchors_preset(Control.PRESET_FULL_RECT)
+	hero_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	hero_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	var hero_tex: Texture2D = _load_ui_texture("res://assets/ui/backgrounds/olympus_citadel_hero.jpg")
+	if hero_tex != null:
+		hero_rect.texture = hero_tex
+		hero_rect.pivot_offset = Vector2(960, 540)
+		# Efeito sutil de respiração cósmica (Ken Burns lento)
+		var t := create_tween().set_loops()
+		t.tween_property(hero_rect, "scale", Vector2(1.03, 1.03), 18.0).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		t.tween_property(hero_rect, "scale", Vector2(1.0, 1.0), 18.0).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	add_child(hero_rect)
+
+	# Vinheta de Gradiente Celestial e Obsidiana (contraste límpido para os menus)
+	var vignette := ColorRect.new()
+	vignette.set_anchors_preset(Control.PRESET_FULL_RECT)
+	vignette.color = Color(0.03, 0.05, 0.09, 0.70)
+	add_child(vignette)
+
+	# Partículas Míticas: Poeira de Ouro e Chispas Divinas Flutuantes
+	var particles := CPUParticles2D.new()
+	particles.position = Vector2(960, 540)
+	particles.amount = 28
+	particles.lifetime = 7.0
+	particles.preprocess = 3.0
+	particles.speed_scale = 0.8
+	particles.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
+	particles.emission_rect_extents = Vector2(960, 540)
+	particles.direction = Vector2(0.2, -1.0)
+	particles.spread = 35.0
+	particles.gravity = Vector2(0, -6)
+	particles.initial_velocity_min = 8.0
+	particles.initial_velocity_max = 24.0
+	particles.scale_amount_min = 1.5
+	particles.scale_amount_max = 3.5
+	particles.color = Color(0.96, 0.88, 0.54, 0.45)
+	add_child(particles)
+
+	# Moldura de Borda Dourada Imperial (Topo e Base)
 	var top_accent := ColorRect.new()
 	top_accent.custom_minimum_size = Vector2(0, 4)
 	top_accent.color = Color("#d4af37")
 	top_accent.set_anchors_preset(Control.PRESET_TOP_WIDE)
 	add_child(top_accent)
 
-	# Faixa dourada na base
 	var bot_accent := ColorRect.new()
 	bot_accent.custom_minimum_size = Vector2(0, 3)
-	bot_accent.color = Color(0.83, 0.69, 0.22, 0.4)
+	bot_accent.color = Color(0.83, 0.69, 0.22, 0.5)
 	bot_accent.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
 	add_child(bot_accent)
 
@@ -152,28 +191,41 @@ func _build_main_menu_hub() -> void:
 	center.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(center)
 
+	var glass_panel := PanelContainer.new()
+	glass_panel.add_theme_stylebox_override("panel", _make_panel_style(Color(0.04, 0.06, 0.11, 0.88), 14))
+	center.add_child(glass_panel)
+
 	_main_menu_panel = VBoxContainer.new()
 	_main_menu_panel.alignment = BoxContainer.ALIGNMENT_CENTER
-	_main_menu_panel.add_theme_constant_override("separation", 12)
-	center.add_child(_main_menu_panel)
+	_main_menu_panel.add_theme_constant_override("separation", 10)
+	glass_panel.add_child(_main_menu_panel)
 
-	# Título do Jogo
+	# Título do Jogo com Tipografia Hierárquica Dourada
 	var title_lbl := Label.new()
 	title_lbl.text = "⚡ AGE OF MYTHOLOGY"
 	title_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title_lbl.add_theme_font_size_override("font_size", 34)
 	title_lbl.add_theme_color_override("font_color", Color("#f6e08b"))
+	title_lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.85))
+	title_lbl.add_theme_constant_override("shadow_offset_y", 2)
+	title_lbl.add_theme_color_override("font_outline_color", Color(0.2, 0.15, 0.05, 0.9))
+	title_lbl.add_theme_constant_override("outline_size", 3)
 	_main_menu_panel.add_child(title_lbl)
 
 	var sub_lbl := Label.new()
 	sub_lbl.text = "🏛️ OLYMPUS — EDIÇÃO MOBILE (GODOT 4)"
 	sub_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	sub_lbl.add_theme_font_size_override("font_size", 15)
+	sub_lbl.add_theme_font_size_override("font_size", 14)
 	sub_lbl.add_theme_color_override("font_color", Color("#cbd5e1"))
 	_main_menu_panel.add_child(sub_lbl)
 
+	var divider := ColorRect.new()
+	divider.custom_minimum_size = Vector2(360, 2)
+	divider.color = Color(0.83, 0.69, 0.22, 0.4)
+	_main_menu_panel.add_child(divider)
+
 	var spacer := Control.new()
-	spacer.custom_minimum_size = Vector2(0, 10)
+	spacer.custom_minimum_size = Vector2(0, 4)
 	_main_menu_panel.add_child(spacer)
 
 	# 1. Continuar Partida
@@ -1673,12 +1725,18 @@ func _make_menu_button(label_text: String, primary: bool) -> Button:
 	var btn := Button.new()
 	btn.text = label_text
 	btn.custom_minimum_size = Vector2(360, 52)
+	btn.pivot_offset = Vector2(180, 26)
 	btn.add_theme_font_size_override("font_size", 13)
 	btn.add_theme_color_override("font_color", Color("#0d121c") if primary else Color("#f1f5f9"))
 	btn.add_theme_stylebox_override("normal", _make_btn_style(primary))
 	btn.add_theme_stylebox_override("hover", _make_btn_style(primary, true))
 	btn.add_theme_stylebox_override("pressed", _make_btn_style(true))
-	btn.pressed.connect(func() -> void: AudioDirector.play_ui_sfx("button"))
+	btn.pressed.connect(func() -> void:
+		AudioDirector.play_ui_sfx("button")
+		var t := create_tween()
+		t.tween_property(btn, "scale", Vector2(0.96, 0.96), 0.05)
+		t.tween_property(btn, "scale", Vector2(1.0, 1.0), 0.22).set_trans(Tween.TRANS_SPRING).set_ease(Tween.EASE_OUT)
+	)
 	return btn
 
 
@@ -1686,12 +1744,18 @@ func _make_action_button(label_text: String, primary: bool, min_w: float, min_h:
 	var btn := Button.new()
 	btn.text = label_text
 	btn.custom_minimum_size = Vector2(min_w, min_h)
+	btn.pivot_offset = Vector2(min_w * 0.5, min_h * 0.5)
 	btn.add_theme_font_size_override("font_size", 12)
 	btn.add_theme_color_override("font_color", Color("#0d121c") if primary else Color("#f1f5f9"))
 	btn.add_theme_stylebox_override("normal", _make_btn_style(primary))
 	btn.add_theme_stylebox_override("hover", _make_btn_style(primary, true))
 	btn.add_theme_stylebox_override("pressed", _make_btn_style(true))
-	btn.pressed.connect(func() -> void: AudioDirector.play_ui_sfx("button"))
+	btn.pressed.connect(func() -> void:
+		AudioDirector.play_ui_sfx("button")
+		var t := create_tween()
+		t.tween_property(btn, "scale", Vector2(0.95, 0.95), 0.05)
+		t.tween_property(btn, "scale", Vector2(1.0, 1.0), 0.22).set_trans(Tween.TRANS_SPRING).set_ease(Tween.EASE_OUT)
+	)
 	return btn
 
 
