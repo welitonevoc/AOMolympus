@@ -83,6 +83,20 @@ static func create_unit_visual(
 		candidates.append("res://models/civilizations/%s/%s_major/deuses/%s.glb" % [pantheon_id, deity_slug, u_alias])
 		candidates.append("res://models/civilizations/%s/%s/deuses/%s.glb" % [pantheon_id, deity_slug, u_alias])
 
+	# 3. Pastas compartilhadas _shared/ (modelos unicos por panteao ou genericos)
+	#    Nivel 2: modelo especifico do panteao (Fase 2 - Synty)
+	#    Nivel 3: modelo generico compartilhado (Fase 1 - agora)
+	var shared_unit_name: String = unit_kind
+	match unit_kind:
+		"villager", "aldeao", "worker":
+			shared_unit_name = "aldeao"
+		"infantry", "soldier", "guerreiro", "soldado", "hoplita":
+			shared_unit_name = "infantaria"
+		"myth", "criatura_mitica", "talos", "automaton":
+			shared_unit_name = "unidade_mitica"
+	candidates.append("res://models/civilizations/_shared/%s/%s_base.glb" % [pantheon_id, shared_unit_name])
+	candidates.append("res://models/civilizations/_shared/%s_base.glb" % shared_unit_name)
+
 	for path in candidates:
 		if path == "":
 			continue
