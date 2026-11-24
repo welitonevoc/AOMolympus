@@ -17,17 +17,22 @@ static func create_building_visual(
 	var deity_slug: String = String(p.get("deity_slug", "zeus"))
 	var tier: int = clampi(age_tier, 1, 5)
 	var candidates: Array[String] = [
+		# Real imported building models by pantheon and kind
+		"res://models/buildings/%s_%s_%s_t%d.glb" % [pantheon_id, deity_slug, building_kind, tier],
+		"res://models/buildings/%s_%s_t%d.glb" % [pantheon_id, building_kind, tier],
+		"res://models/buildings/%s_%s.glb" % [pantheon_id, building_kind],
+		"res://models/buildings/%s.glb" % building_kind,
+		# Town center photorealistic model
+		"res://models/referencias_cidade/town_center_gerado.glb" if building_kind == "town_center" else "",
 		# Camps paths in civilization folders (cidade/*)
 		"res://models/civilizations/%s/%s/cidade/%s/%s.glb" % [pantheon_id, deity_slug, building_kind, building_kind],
 		"res://models/civilizations/%s/%s_major/cidade/%s/%s.glb" % [pantheon_id, deity_slug, building_kind, building_kind],
 		"res://models/civilizations/%s/%s/cidade/%s/divine_altar.glb" % [pantheon_id, deity_slug, building_kind],
 		"res://models/civilizations/%s/%s_major/cidade/%s/divine_altar.glb" % [pantheon_id, deity_slug, building_kind],
-		# Standard models folders
-		"res://models/buildings/%s_%s_%s_t%d.glb" % [pantheon_id, deity_slug, building_kind, tier],
-		"res://models/buildings/%s_%s_t%d.glb" % [pantheon_id, building_kind, tier],
-		"res://models/buildings/%s_%s.glb" % [pantheon_id, building_kind],
 	]
 	for path in candidates:
+		if path == "":
+			continue
 		var loaded: Node3D = _try_instantiate_glb(path)
 		if loaded != null:
 			return loaded
@@ -51,49 +56,39 @@ static func create_unit_visual(
 	var aliases: Array[String] = [unit_kind]
 	match unit_kind:
 		"villager":
-			aliases.append_array(["villager", "aldeao", "worker"])
+			aliases.append_array(["aldeao", "worker", "farmer"])
 		"infantry":
-			aliases.append_array(["infantry", "guerreiro", "soldado"])
+			aliases.append_array(["soldier", "guerreiro", "soldado"])
 		"archer":
-			aliases.append_array(["archer", "arqueiro"])
+			aliases.append_array(["toxotes", "arqueiro"])
 		"cavalry":
-			aliases.append_array(["cavalry", "cavaleiro"])
+			aliases.append_array(["hippeus", "cavaleiro"])
 		"hero":
-			aliases.append_array(["hero", "heroi"])
+			aliases.append_array(["captain", "heroi", "leader"])
 		"myth":
-			aliases.append_array(["myth", "mitico", "criatura_mitica"])
-
-	if pantheon_id == "greek":
-		match unit_kind:
-			"villager":
-				aliases.append_array(["aldeao"])
-			"infantry":
-				aliases.append_array(["hoplita_animado", "hoplita", "ancient_blue_hoplite_warrior"])
-			"archer":
-				aliases.append_array(["toxotes", "ancient_blue_hoplite_warrior"])
-			"cavalry":
-				aliases.append_array(["hippeus", "prodromos"])
-			"hero":
-				aliases.append_array(["ancient_blue_hoplite_warrior", "hoplita_animado"])
-			"myth":
-				aliases.append_array(["colosso_neural_gerado", "centauro_guerreiro_animado", "talos_clean_hq_animado_completo", "centauro_guerreiro"])
+			aliases.append_array(["criatura_mitica", "mummy", "shieldmaiden"])
 
 	var candidates: Array[String] = []
+	# 1. Modelos importados reais texturizados por panteão e classe
+	candidates.append("res://models/units/%s_%s.glb" % [pantheon_id, unit_kind])
 	for u_alias in aliases:
-		candidates.append("res://models/civilizations/%s/%s_major/aldeao/%s.glb" % [pantheon_id, deity_slug, u_alias])
-		candidates.append("res://models/civilizations/%s/%s/aldeao/%s.glb" % [pantheon_id, deity_slug, u_alias])
-		candidates.append("res://models/civilizations/%s/%s_major/unidade_militar/%s.glb" % [pantheon_id, deity_slug, u_alias])
-		candidates.append("res://models/civilizations/%s/%s/unidade_militar/%s.glb" % [pantheon_id, deity_slug, u_alias])
-		candidates.append("res://models/civilizations/%s/%s_major/unidade_mitica/%s.glb" % [pantheon_id, deity_slug, u_alias])
-		candidates.append("res://models/civilizations/%s/%s/unidade_mitica/%s.glb" % [pantheon_id, deity_slug, u_alias])
+		candidates.append("res://models/units/%s_%s.glb" % [pantheon_id, u_alias])
+		candidates.append("res://models/units/%s.glb" % u_alias)
+	candidates.append("res://models/units/%s.glb" % unit_kind)
+
+	# 2. Pastas de civilização se existirem
+	for u_alias in aliases:
+		candidates.append("res://models/civilizations/%s/%s_major/%s/%s.glb" % [pantheon_id, deity_slug, unit_kind, u_alias])
+		candidates.append("res://models/civilizations/%s/%s/%s/%s.glb" % [pantheon_id, deity_slug, unit_kind, u_alias])
 		candidates.append("res://models/civilizations/%s/%s_major/deuses/%s.glb" % [pantheon_id, deity_slug, u_alias])
 		candidates.append("res://models/civilizations/%s/%s/deuses/%s.glb" % [pantheon_id, deity_slug, u_alias])
 
 	for path in candidates:
+		if path == "":
+			continue
 		var loaded: Node3D = _try_instantiate_glb(path)
 		if loaded != null:
 			if unit_kind in ["villager", "aldeao"]:
-				# Aplica escala calibrada no Kimodo Studio (1.45x) e equipa machado heróico
 				loaded.scale = Vector3.ONE * 1.45
 				attach_villager_tools(loaded, "axe")
 			elif unit_kind in ["infantry", "archer", "cavalry", "hero"]:
@@ -213,13 +208,13 @@ static func create_divine_unit_visual(
 static func _try_instantiate_glb(res_path: String) -> Node3D:
 	if not ResourceLoader.exists(res_path):
 		return null
-	# Se for um placeholder vazio ou dummy BoxMesh de 1.2KB, ignora para gerar arquitetura rica
+	# Se for um placeholder vazio ou dummy BoxMesh <= 8KB, ignora para gerar arquitetura rica
 	if FileAccess.file_exists(res_path):
 		var fa := FileAccess.open(res_path, FileAccess.READ)
 		if fa != null:
 			var sz: int = fa.get_length()
 			fa.close()
-			if sz < 4096:
+			if sz < 8192:
 				return null
 	var packed: PackedScene
 	if _scene_cache.has(res_path):

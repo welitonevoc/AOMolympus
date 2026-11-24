@@ -29,6 +29,8 @@ godot4/addons/gamedev_ai/kilo_key.txt
 godot4/addons/gamedev_ai/opencode_key.txt
 godot4/addons/gamedev_ai/nvidia_key.txt
 models/civilizations/
+models/buildings/*.glb
+models/units/*.glb
 models/referencias_cidade/*.glb
 models/referencias_cidade/*.png
 models/natureza/**/*.glb
