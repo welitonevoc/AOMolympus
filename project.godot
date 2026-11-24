@@ -34,6 +34,7 @@ MCPRuntimeServer="*res://addons/godot_mcp_toolkit/runtime/mcp_runtime_server.gd"
 CursorManager="*res://scripts/ui/cursor_manager.gd"
 OlympusProfileManager="*res://scripts/autoload/olympus_profile_manager.gd"
 OlympusCodex="*res://scripts/autoload/olympus_codex.gd"
+OlympusGfxManager="*res://scripts/core/olympus_gfx_manager.gd"
 
 [display]
 

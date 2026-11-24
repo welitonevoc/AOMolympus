@@ -47,6 +47,7 @@ var _age_progress_bar: ProgressBar
 var _toast_panel: PanelContainer
 var _toast_label: Label
 var _toast_tween: Tween
+var _gfx_btn: Button
 
 # --- Códice do Olimpo — Modal Rápido In-Game ---
 var _codex_modal: PanelContainer
@@ -264,6 +265,10 @@ func _build_top_bar() -> void:
 	_day_night_btn.pressed.connect(func() -> void: GameState.toggle_day_night())
 	hbox.add_child(_day_night_btn)
 
+	_gfx_btn = _make_action_button("🖥️ GFX", false, 72.0, 40.0)
+	_gfx_btn.pressed.connect(_on_cycle_gfx_preset_pressed)
+	hbox.add_child(_gfx_btn)
+
 	var save_btn := _make_action_button("💾 Salvar", false, 72.0, 40.0)
 	save_btn.pressed.connect(func() -> void:
 		SaveLoadSystem.save_game(_world, _camera_rig)
@@ -288,6 +293,22 @@ func _build_top_bar() -> void:
 		get_tree().change_scene_to_file("res://scenes/title_screen.tscn")
 	)
 	hbox.add_child(menu_btn)
+
+
+func _on_cycle_gfx_preset_pressed() -> void:
+	var gfx: Node = get_node_or_null("/root/OlympusGfxManager")
+	if gfx == null:
+		return
+	var cur: int = int(gfx.get("current_tier"))
+	var next_tier: int = (cur + 1) % 4
+	gfx.call("set_quality_preset", next_tier, true)
+	var p_info: Dictionary = gfx.call("get_preset_info", next_tier)
+	var t_name: String = String(p_info.get("name", "Perfil"))
+	if _gfx_btn != null:
+		var short_name: String = t_name.split(" ")[0]
+		_gfx_btn.text = "🖥️ %s" % short_name
+	GameState.notify("Perfil Gráfico: %s (%s, %s)" % [t_name, String(p_info.get("res_scale", "")), String(p_info.get("fps_cap", ""))], false)
+
 
 
 func _build_divine_power_bar() -> void:
@@ -1808,8 +1829,7 @@ func _make_resource_pill(icon_str: String, initial_val: String, text_color: Colo
 
 	var val_lbl := Label.new()
 	val_lbl.text = initial_val
-	val_lbl.add_theme_color_override("font_color", text_color)
-	val_lbl.add_theme_font_size_override("font_size", 13)
+	val_lbl.label_settings = OlympusTypography.get_label_settings(OlympusTypography.Style.RESOURCE_VALUE, 13, text_color, 2)
 	h.add_child(val_lbl)
 
 	return {"container": pill, "label": val_lbl}
@@ -1819,8 +1839,8 @@ func _make_action_button(label_text: String, primary: bool, min_w: float, min_h:
 	var btn := Button.new()
 	btn.text = label_text
 	btn.custom_minimum_size = Vector2(min_w, min_h)
-	btn.add_theme_font_size_override("font_size", 11)
-	btn.add_theme_color_override("font_color", Color("#0d121c") if primary else Color("#f1f5f9"))
+	var text_col: Color = Color("#0d121c") if primary else Color("#f1f5f9")
+	OlympusTypography.apply_to_button(btn, OlympusTypography.Style.TACTICAL, 11, text_col)
 	btn.add_theme_stylebox_override("normal", _make_btn_style(primary, false, false))
 	btn.add_theme_stylebox_override("hover", _make_btn_style(primary, true, false))
 	btn.add_theme_stylebox_override("pressed", _make_btn_style(primary, false, true))
@@ -1961,8 +1981,7 @@ func _build_codex_quick_modal() -> void:
 	vbox.add_child(header_row)
 
 	_codex_modal_title = Label.new()
-	_codex_modal_title.add_theme_font_size_override("font_size", 18)
-	_codex_modal_title.add_theme_color_override("font_color", Color("#f6e08b"))
+	_codex_modal_title.label_settings = OlympusTypography.get_label_settings(OlympusTypography.Style.HEADING, 18, Color("#f6e08b"))
 	_codex_modal_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	header_row.add_child(_codex_modal_title)
 
@@ -1974,8 +1993,7 @@ func _build_codex_quick_modal() -> void:
 	header_row.add_child(close_btn)
 
 	_codex_modal_category = Label.new()
-	_codex_modal_category.add_theme_font_size_override("font_size", 11)
-	_codex_modal_category.add_theme_color_override("font_color", Color("#94a3b8"))
+	_codex_modal_category.label_settings = OlympusTypography.get_label_settings(OlympusTypography.Style.TACTICAL, 11, Color("#94a3b8"))
 	vbox.add_child(_codex_modal_category)
 
 	var scroll := ScrollContainer.new()
@@ -1985,8 +2003,7 @@ func _build_codex_quick_modal() -> void:
 
 	_codex_modal_lore = Label.new()
 	_codex_modal_lore.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_codex_modal_lore.add_theme_font_size_override("font_size", 12)
-	_codex_modal_lore.add_theme_color_override("font_color", Color("#e2e8f0"))
+	_codex_modal_lore.label_settings = OlympusTypography.get_label_settings(OlympusTypography.Style.LORE, 13, Color("#e2e8f0"))
 	_codex_modal_lore.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(_codex_modal_lore)
 

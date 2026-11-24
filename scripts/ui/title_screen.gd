@@ -1541,6 +1541,37 @@ func _build_settings_modal() -> void:
 	_fps_btn_max.pressed.connect(func() -> void: _set_target_fps(0))
 	fps_row.add_child(_fps_btn_max)
 
+	# Presets Gráficos do Olimpo
+	content.add_child(_make_section_title("PRESETS GRÁFICOS DO OLIMPO (FIDELIDADE MOBILE):"))
+	var preset_row := HBoxContainer.new()
+	preset_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	preset_row.add_theme_constant_override("separation", 10)
+	content.add_child(preset_row)
+
+	var p_eco := _make_action_button("🔋 Econômico", false, 170, 40)
+	p_eco.pressed.connect(func() -> void:
+		OlympusGfxManager.set_preset(OlympusGfxManager.QualityTier.BATTERY_SAVER)
+	)
+	preset_row.add_child(p_eco)
+
+	var p_bal := _make_action_button("⚖️ Equilibrado", true, 170, 40)
+	p_bal.pressed.connect(func() -> void:
+		OlympusGfxManager.set_preset(OlympusGfxManager.QualityTier.BALANCED)
+	)
+	preset_row.add_child(p_bal)
+
+	var p_high := _make_action_button("🏛️ Olímpico", false, 170, 40)
+	p_high.pressed.connect(func() -> void:
+		OlympusGfxManager.set_preset(OlympusGfxManager.QualityTier.OLYMPUS_HIGH)
+	)
+	preset_row.add_child(p_high)
+
+	var p_ultra := _make_action_button("⚡ Divino Ultra", false, 170, 40)
+	p_ultra.pressed.connect(func() -> void:
+		OlympusGfxManager.set_preset(OlympusGfxManager.QualityTier.DIVINE_ULTRA)
+	)
+	preset_row.add_child(p_ultra)
+
 	# Escala de Resolução
 	content.add_child(_make_section_title("ESCALA DE RESOLUÇÃO (DESEMPENHO MOBILE):"))
 	var res_row := HBoxContainer.new()
@@ -1778,8 +1809,7 @@ func _create_base_modal(title_text: String, w: float, h: float) -> PanelContaine
 	var title_lbl := Label.new()
 	title_lbl.text = title_text
 	title_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	title_lbl.add_theme_font_size_override("font_size", 16)
-	title_lbl.add_theme_color_override("font_color", Color("#f6e08b"))
+	title_lbl.label_settings = OlympusTypography.get_label_settings(OlympusTypography.Style.HEADING, 16, Color("#f6e08b"), 2)
 	top.add_child(title_lbl)
 
 	var close_btn := Button.new()
@@ -1844,8 +1874,7 @@ func _make_action_button(label_text: String, primary: bool, min_w: float, min_h:
 func _make_section_title(text_val: String) -> Label:
 	var lbl := Label.new()
 	lbl.text = text_val
-	lbl.add_theme_font_size_override("font_size", 12)
-	lbl.add_theme_color_override("font_color", Color("#94a3b8"))
+	lbl.label_settings = OlympusTypography.get_label_settings(OlympusTypography.Style.HEADING, 13, Color("#fde047"), 1)
 	return lbl
 
 

@@ -108,6 +108,24 @@ func _ready() -> void:
 	
 	# Esconder painel de unidade por padrão
 	panel_unit_info.visible = false
+
+	# Tipografia autoral de alto contraste
+	if is_instance_valid(lbl_food):
+		lbl_food.label_settings = OlympusTypography.get_label_settings(OlympusTypography.Style.RESOURCE_VALUE, 13, COLOR_FOOD, 2)
+	if is_instance_valid(lbl_wood):
+		lbl_wood.label_settings = OlympusTypography.get_label_settings(OlympusTypography.Style.RESOURCE_VALUE, 13, COLOR_WOOD, 2)
+	if is_instance_valid(lbl_gold):
+		lbl_gold.label_settings = OlympusTypography.get_label_settings(OlympusTypography.Style.RESOURCE_VALUE, 13, COLOR_GOLD, 2)
+	if is_instance_valid(lbl_favor):
+		lbl_favor.label_settings = OlympusTypography.get_label_settings(OlympusTypography.Style.RESOURCE_VALUE, 13, COLOR_FAVOR, 2)
+	if is_instance_valid(lbl_population):
+		lbl_population.label_settings = OlympusTypography.get_label_settings(OlympusTypography.Style.RESOURCE_VALUE, 13, COLOR_POP, 2)
+	if is_instance_valid(lbl_age):
+		lbl_age.label_settings = OlympusTypography.get_label_settings(OlympusTypography.Style.HEADING, 14, COLOR_AGE, 2)
+	if is_instance_valid(lbl_unit_name):
+		lbl_unit_name.label_settings = OlympusTypography.get_label_settings(OlympusTypography.Style.HEADING, 15, Color("#fde047"), 2)
+	if is_instance_valid(lbl_unit_status):
+		lbl_unit_status.label_settings = OlympusTypography.get_label_settings(OlympusTypography.Style.TACTICAL, 12, Color("#e2e8f0"), 2)
 	
 	# Vincular minimapa se as referências estiverem disponíveis
 	if minimap != null and battle_world != null and camera_rig != null:
