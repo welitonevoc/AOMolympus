@@ -96,11 +96,14 @@ static func create_unit_visual(
 			shared_unit_name = "unidade_mitica"
 	candidates.append("res://models/civilizations/_shared/%s/%s_base.glb" % [pantheon_id, shared_unit_name])
 	candidates.append("res://models/civilizations/_shared/%s_base.glb" % shared_unit_name)
+	# 3b. Modelos Synty FBX por panteao (Fase 2 - quando nao houver GLB convertido)
+	candidates.append("res://models/civilizations/_shared/%s/%s_base.fbx" % [pantheon_id, shared_unit_name])
+	candidates.append("res://models/civilizations/_shared/%s_base.fbx" % shared_unit_name)
 
 	for path in candidates:
 		if path == "":
 			continue
-		var loaded: Node3D = _try_instantiate_glb(path)
+		var loaded: Node3D = _try_instantiate_model(path)
 		if loaded != null:
 			if unit_kind in ["villager", "aldeao"]:
 				loaded.scale = Vector3.ONE
@@ -207,7 +210,7 @@ static func create_divine_unit_visual(
 		"res://models/civilizations/%s/%s/deuses/deus.glb" % [pantheon_id, deity_slug],
 	]
 	for path in candidates:
-		var loaded: Node3D = _try_instantiate_glb(path)
+		var loaded: Node3D = _try_instantiate_model(path)
 		if loaded != null:
 			# Aplica escala divina
 			var scale: float = profile.get("scale", 2.0)
@@ -245,6 +248,18 @@ static func _try_instantiate_glb(res_path: String) -> Node3D:
 		return inst
 	if inst != null:
 		inst.queue_free()
+	return null
+
+
+static func _try_instantiate_model(res_path: String) -> Node3D:
+	# Tenta o caminho exato (pode ser .glb ou .fbx)
+	var result: Node3D = _try_instantiate_glb(res_path)
+	if result != null:
+		return result
+	# Se o caminho termina em .glb e nao existe, tenta substituir por .fbx (Fase 2 - Synty FBX)
+	if res_path.ends_with(".glb") and not ResourceLoader.exists(res_path):
+		var fbx_path: String = res_path.substring(0, res_path.length() - 4) + ".fbx"
+		return _try_instantiate_glb(fbx_path)
 	return null
 
 
