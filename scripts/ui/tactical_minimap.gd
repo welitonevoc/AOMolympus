@@ -12,6 +12,7 @@ var _camera_rig: TouchRTSCamera
 var _fog: FogOfWarSystem
 var _is_dragging: bool = false
 var _redraw_accum: float = 0.0
+var _tactical_map_tex: Texture2D = null
 
 
 func bind(p_world: BattleWorld, p_camera: TouchRTSCamera, p_fog: FogOfWarSystem = null) -> void:
@@ -19,6 +20,7 @@ func bind(p_world: BattleWorld, p_camera: TouchRTSCamera, p_fog: FogOfWarSystem 
 	_camera_rig = p_camera
 	_fog = p_fog
 	arena_size = GameState.get_active_arena_size()
+	_load_tactical_map_texture()
 	queue_redraw()
 
 
@@ -26,10 +28,32 @@ func _ready() -> void:
 	arena_size = GameState.get_active_arena_size()
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	custom_minimum_size = Vector2(156.0, 156.0)
+	_load_tactical_map_texture()
 	GameState.match_started_signal.connect(func(_p: String, _e: String) -> void:
 		arena_size = GameState.get_active_arena_size()
+		_load_tactical_map_texture()
 		queue_redraw()
 	)
+
+
+func _load_tactical_map_texture() -> void:
+	if _tactical_map_tex != null:
+		return
+	var paths: Array[String] = [
+		"res://assets/ui/maps/olympus_tactical_minimap_bg.png",
+		"res://assets/ui/maps/olympus_tactical_map_megarandom.png"
+	]
+	for p in paths:
+		if ResourceLoader.exists(p):
+			_tactical_map_tex = load(p) as Texture2D
+			if _tactical_map_tex != null:
+				return
+		var global_p: String = ProjectSettings.globalize_path(p)
+		if FileAccess.file_exists(global_p):
+			var img := Image.new()
+			if img.load(global_p) == OK:
+				_tactical_map_tex = ImageTexture.create_from_image(img)
+				return
 
 
 func _process(delta: float) -> void:
@@ -81,6 +105,10 @@ func _draw() -> void:
 	var pad := Vector2(4.0, 4.0)
 	var map_rect := Rect2(pad, size - pad * 2.0)
 	draw_rect(map_rect, biome["minimap_ground"], true)
+
+	# Textura de mapa tático topográfico do Olympus
+	if _tactical_map_tex != null:
+		draw_texture_rect(_tactical_map_tex, map_rect, false, Color(1.0, 1.0, 1.0, 0.55))
 
 	# Camada de Neblina de Guerra no minimapa (amostragem leve 24x24)
 	if _fog != null and GameState.fog_enabled:
@@ -135,8 +163,17 @@ func _draw() -> void:
 		var box_sz := Vector2(26.0, 18.0)
 		draw_rect(Rect2(cam_p - box_sz * 0.5, box_sz), Color("#f6e08b"), false, 1.5)
 
-	# Moldura bronze imperial
+	# Moldura bronze imperial e cantos mitológicos
 	draw_rect(rect, Color(0.83, 0.69, 0.22, 0.72), false, 2.0)
+	var c_len: float = 8.0
+	draw_line(Vector2(0, 0), Vector2(c_len, 0), Color(0.96, 0.84, 0.35), 2.0)
+	draw_line(Vector2(0, 0), Vector2(0, c_len), Color(0.96, 0.84, 0.35), 2.0)
+	draw_line(Vector2(size.x, 0), Vector2(size.x - c_len, 0), Color(0.96, 0.84, 0.35), 2.0)
+	draw_line(Vector2(size.x, 0), Vector2(size.x, c_len), Color(0.96, 0.84, 0.35), 2.0)
+	draw_line(Vector2(0, size.y), Vector2(c_len, size.y), Color(0.96, 0.84, 0.35), 2.0)
+	draw_line(Vector2(0, size.y), Vector2(0, size.y - c_len), Color(0.96, 0.84, 0.35), 2.0)
+	draw_line(Vector2(size.x, size.y), Vector2(size.x - c_len, size.y), Color(0.96, 0.84, 0.35), 2.0)
+	draw_line(Vector2(size.x, size.y), Vector2(size.x, size.y - c_len), Color(0.96, 0.84, 0.35), 2.0)
 
 
 func _world_to_minimap(world_pos: Vector3, map_rect: Rect2) -> Vector2:

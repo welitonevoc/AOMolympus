@@ -137,6 +137,8 @@ func _build_background_backdrop() -> void:
 	hero_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	hero_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	var hero_tex: Texture2D = _load_ui_texture("res://assets/ui/backgrounds/olympus_citadel_hero.jpg")
+	if hero_tex == null:
+		hero_tex = _load_ui_texture("res://assets/ui/backgrounds/olympus_loading_screen.png")
 	if hero_tex != null:
 		hero_rect.texture = hero_tex
 		hero_rect.pivot_offset = Vector2(960, 540)
@@ -952,9 +954,18 @@ func _refresh_skirmish_highlights() -> void:
 
 	# Carrega e exibe a vinheta panorâmica do bioma/mapa
 	if _preview_map_preview_rect:
-		var map_path := "res://assets/ui/maps/%s.jpg" % _selected_biome
-		var map_tex: Texture2D = _load_ui_texture(map_path)
-		if map_tex:
+		var candidate_paths: Array[String] = [
+			"res://assets/ui/maps/%s.jpg" % _selected_biome,
+			"res://assets/ui/maps/olympus_tactical_map_%s.png" % _selected_biome,
+			"res://assets/ui/maps/%s.png" % _selected_biome,
+			"res://assets/ui/maps/olympus_tactical_map_megarandom.png"
+		]
+		var map_tex: Texture2D = null
+		for mp in candidate_paths:
+			map_tex = _load_ui_texture(mp)
+			if map_tex != null:
+				break
+		if map_tex != null:
 			_preview_map_preview_rect.texture = map_tex
 			_preview_map_preview_rect.modulate = Color(1.0, 1.0, 1.0, 0.4)
 			var m_tween := create_tween()
