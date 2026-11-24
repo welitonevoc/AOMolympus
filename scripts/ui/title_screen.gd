@@ -1456,7 +1456,7 @@ func _get_compendium_items_for_tab(tab_id: String) -> Array:
 
 # ── Submenu 5: Configurações & Gráficos ──────────────────────────────────────
 func _build_settings_modal() -> void:
-	_settings_modal = _create_base_modal("⚙️ CONFIGURAÇÕES & PERFORMANCE MOBILE", 800, 560)
+	_settings_modal = _create_base_modal("⚙️ CONFIGURAÇÕES & PERFORMANCE MOBILE", 800, 620)
 	var content: VBoxContainer = _settings_modal.get_node("VBox/Content") as VBoxContainer
 
 	# Áudio - Sliders Independentes
@@ -1600,6 +1600,34 @@ func _build_settings_modal() -> void:
 	_res_btn_125 = _make_action_button("125% (Alta Nitidez)", false, 200, 38)
 	_res_btn_125.pressed.connect(func() -> void: _set_resolution_scale(1.25))
 	res_row.add_child(_res_btn_125)
+
+	# Idioma e Localização Internacional (Inspirado nas pastas de LCID 1025 a 3082)
+	content.add_child(_make_section_title("IDIOMA E LOCALIZAÇÃO (INTERNACIONAL):"))
+	var lang_scroll := ScrollContainer.new()
+	lang_scroll.custom_minimum_size = Vector2(0, 48)
+	lang_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	lang_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	content.add_child(lang_scroll)
+
+	var lang_row := HBoxContainer.new()
+	lang_row.add_theme_constant_override("separation", 8)
+	lang_scroll.add_child(lang_row)
+
+	var curr_loc: String = OlympusLocalizationManager.instance.get_current_locale() if OlympusLocalizationManager.instance != null else "pt_BR"
+	for loc_info: Dictionary in OlympusLocalizationManager.SUPPORTED_LOCALES:
+		var code: String = String(loc_info.get("code", "pt_BR"))
+		var flag: String = String(loc_info.get("flag", "🌐"))
+		var name_str: String = String(loc_info.get("name", code))
+		var is_selected: bool = (code == curr_loc)
+		var btn := _make_action_button("%s %s" % [flag, name_str], is_selected, 130, 36)
+		btn.pressed.connect(func() -> void:
+			if OlympusLocalizationManager.instance != null:
+				OlympusLocalizationManager.instance.set_locale(code)
+			for child in lang_row.get_children():
+				if child is Button:
+					child.add_theme_stylebox_override("normal", _make_btn_style(child == btn))
+		)
+		lang_row.add_child(btn)
 
 	# Ações de Saída do Modal
 	var spacer := Control.new()

@@ -1,4 +1,3 @@
-class_name OlympusAtmosphereDirector
 extends Node
 
 ## OlympusAtmosphereDirector — Diretor de Atmosfera, Iluminação e Clima para Age of Mythology: Olympus

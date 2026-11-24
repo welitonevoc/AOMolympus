@@ -23,8 +23,8 @@ for mdir in natureza units buildings referencias_cidade; do
 done
 
 # Arquivos de configuracao do Godot
-cp -u "$SRC/project.godot" "$DST/" 2>/dev/null
-cp -u "$SRC/export_presets.cfg" "$DST/" 2>/dev/null
-cp -u "$SRC/icon.svg" "$DST/" 2>/dev/null
+cp -f "$SRC/project.godot" "$DST/" 2>/dev/null
+cp -f "$SRC/export_presets.cfg" "$DST/" 2>/dev/null
+cp -f "$SRC/icon.svg" "$DST/" 2>/dev/null
 
 echo "✅ [Sync Auto] Sincronizado para /sdcard/Documents/age of mythology olympus"

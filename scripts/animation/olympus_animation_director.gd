@@ -1,4 +1,3 @@
-class_name OlympusAnimationDirector
 extends Node
 
 ## OlympusAnimationDirector — Diretor de Lógica de Animações e Sockets 3D para Age of Mythology: Olympus

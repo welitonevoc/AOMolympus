@@ -95,6 +95,15 @@ const LOCALES: Dictionary = {
 		"default_region": "Extremo Oriente",
 		"mythic_flavor": "Terra do Sol Nascente",
 	},
+	"zh_CN": {
+		"code": "zh_CN",
+		"name": "简体中文 (Chinês)",
+		"native_name": "简体中文",
+		"flag": "🇨🇳",
+		"lcid": 2052,
+		"default_region": "Reino Celestial",
+		"mythic_flavor": "Terra dos Dragões e Jade Sagrado",
+	},
 }
 
 const COUNTRIES: Array[Dictionary] = [
@@ -178,7 +187,7 @@ static func get_locale_spec(locale_code: String) -> Dictionary:
 
 static func get_available_locales() -> Array[Dictionary]:
 	var list: Array[Dictionary] = []
-	for k in ["pt_BR", "en_US", "el_GR", "es_ES", "no_NO", "ar_EG", "fr_FR", "de_DE", "it_IT", "ja_JP"]:
+	for k in ["pt_BR", "en_US", "el_GR", "es_ES", "no_NO", "ar_EG", "fr_FR", "de_DE", "it_IT", "ja_JP", "zh_CN"]:
 		if LOCALES.has(k):
 			list.append(LOCALES[k])
 	return list

@@ -1,4 +1,3 @@
-class_name OlympusCinematicPlayer
 extends CanvasLayer
 
 ## OlympusCinematicPlayer — Reprodutor Cinemático Mobile de Age of Mythology: Olympus

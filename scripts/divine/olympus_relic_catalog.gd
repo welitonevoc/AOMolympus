@@ -1,4 +1,3 @@
-class_name OlympusRelicCatalog
 extends Node
 
 ## OlympusRelicCatalog — Catálogo Autoral de Relíquias Sagradas para Age of Mythology: Olympus

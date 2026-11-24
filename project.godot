@@ -40,6 +40,7 @@ OlympusRelicCatalog="*res://scripts/divine/olympus_relic_catalog.gd"
 OlympusCampaignSystem="*res://scripts/campaign/olympus_campaign_system.gd"
 OlympusCinematicPlayer="*res://scripts/ui/olympus_cinematic_player.gd"
 OlympusAnimationDirector="*res://scripts/animation/olympus_animation_director.gd"
+OlympusLocalizationManager="*res://scripts/core/olympus_localization_manager.gd"
 
 [display]
 

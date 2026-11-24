@@ -1,4 +1,3 @@
-class_name OlympusCampaignSystem
 extends Node
 
 ## OlympusCampaignSystem — Sistema Autoral de Campanhas Narrativas de Age of Mythology: Olympus

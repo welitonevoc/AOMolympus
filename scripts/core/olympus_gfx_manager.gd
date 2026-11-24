@@ -1,4 +1,3 @@
-class_name OlympusGfxManager
 extends Node
 
 ## OlympusGfxManager — Gerenciador de Fidelidade Gráfica e Presets Mobile para Age of Mythology: Olympus
