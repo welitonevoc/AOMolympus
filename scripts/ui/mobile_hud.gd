@@ -896,9 +896,25 @@ func _build_pantheon_start_overlay() -> void:
 	c_grid.add_theme_constant_override("v_separation", 8)
 	_campaign_box.add_child(c_grid)
 
-	for cid in CampaignManager.CHAPTER_ORDER:
+	var all_campaign_ids: Array[String] = [
+		"olympus_dawn",
+		"nile_eclipse",
+		"midgard_frost",
+		"atlantis_rise",
+		"erebus_reckoning",
+		"helade_01_argos",
+		"osiris_01_nile",
+		"fiordes_01_midgard",
+		"olympus_01_confronto",
+		"atlante_01_resurge"
+	]
+
+	for cid in all_campaign_ids:
 		var ch: Dictionary = CampaignManager.get_chapter(cid)
-		var c_btn := _make_action_button(String(ch["title"]), cid == _chosen_chapter, 330.0, 48.0)
+		if ch.is_empty():
+			continue
+		var title_txt: String = String(ch.get("title", cid))
+		var c_btn := _make_action_button(title_txt, cid == _chosen_chapter, 330.0, 44.0)
 		c_btn.pressed.connect(func() -> void: _select_start_chapter(cid))
 		c_grid.add_child(c_btn)
 		_chapter_buttons[cid] = c_btn
@@ -1207,9 +1223,20 @@ func _select_start_chapter(cid: String) -> void:
 	_highlight_choice_group(_chapter_buttons, cid)
 	var ch: Dictionary = CampaignManager.get_chapter(cid)
 	if not ch.is_empty():
-		var p: Dictionary = PantheonCatalog.get_pantheon(String(ch["pantheon"]))
-		var bm: Dictionary = PantheonCatalog.get_biome(String(ch["biome"]))
-		_chapter_desc_label.text = "%s (%s · %s)\n%s" % [ch["title"], p["name"], bm["name"], ch["briefing"]]
+		var p_name: String = String(ch.get("pantheon", "greek")).capitalize()
+		var p: Dictionary = PantheonCatalog.get_pantheon(String(ch.get("pantheon", "greek")))
+		if not p.is_empty() and p.has("name"):
+			p_name = String(p["name"])
+		var bm_name: String = String(ch.get("biome", "mediterranean")).capitalize()
+		var bm: Dictionary = PantheonCatalog.get_biome(String(ch.get("biome", "mediterranean")))
+		if not bm.is_empty() and bm.has("name"):
+			bm_name = String(bm["name"])
+		_chapter_desc_label.text = "%s (%s · %s)\n%s" % [
+			ch.get("title", cid),
+			p_name,
+			bm_name,
+			ch.get("briefing", "")
+		]
 
 
 func _highlight_choice_group(btn_map: Dictionary, active_key: String) -> void:

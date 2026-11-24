@@ -47,6 +47,10 @@ func register_trigger(t_name: String, conditions: Array[Dictionary], effects: Ar
 	trig.fire_count = 0
 	trig._timer_accum = 0.0
 
+	if _named_triggers.has(t_name):
+		var old_trig: TriggerDefinition = _named_triggers[t_name]
+		_triggers.erase(old_trig)
+
 	_triggers.append(trig)
 	_named_triggers[t_name] = trig
 	return trig

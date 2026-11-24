@@ -94,7 +94,10 @@ var _check_accum: float = 0.0
 
 
 static func get_chapter(chapter_id: String) -> Dictionary:
-	return CHAPTERS.get(chapter_id, {})
+	var ch: Dictionary = CHAPTERS.get(chapter_id, {})
+	if not ch.is_empty():
+		return ch
+	return OlympusScenarioCatalog.get_scenario(chapter_id)
 
 
 func _ready() -> void:
@@ -118,13 +121,22 @@ func _setup_chapter_triggers() -> void:
 		bw = get_node_or_null("/root/MainScene/BattleWorld")
 	if not is_instance_valid(bw):
 		bw = get_tree().get_first_node_in_group("battle_world")
-	if not is_instance_valid(bw) or not bw.has_method("get_trigger_engine"):
+	if not is_instance_valid(bw):
+		return
+
+	# Verifica se eh um cenario do Catalogo Oficial de Cenarios do Olympus
+	var catalog_scn: Dictionary = OlympusScenarioCatalog.get_scenario(_active_chapter_id)
+	if not catalog_scn.is_empty():
+		OlympusScenarioSpawner.setup_scenario_in_world(bw, catalog_scn)
+		return
+
+	if not bw.has_method("get_trigger_engine"):
 		return
 	var te: OlympusTriggerEngine = bw.get_trigger_engine()
 	if not is_instance_valid(te):
 		return
 
-	# Gatilho de Abertura Narrativa aos 3 segundos
+	# Gatilho de Abertura Narrativa aos 3 segundos para capitulos classicos
 	var open_speaker: String = "Arauto do Olimpo"
 	var open_text: String = ""
 	match _active_chapter_id:
@@ -165,7 +177,7 @@ func _on_match_ended(result: String) -> void:
 	if _active_chapter_id.is_empty():
 		return
 	if result == "victory":
-		var ch: Dictionary = CHAPTERS.get(_active_chapter_id, {})
+		var ch: Dictionary = get_chapter(_active_chapter_id)
 		for obj in ch.get("objectives", []):
 			if String(obj["type"]) == "victory":
 				_completed_ids[String(obj["id"])] = true
@@ -183,7 +195,7 @@ func _process(delta: float) -> void:
 
 
 func _evaluate_objectives() -> void:
-	var ch: Dictionary = CHAPTERS.get(_active_chapter_id, {})
+	var ch: Dictionary = get_chapter(_active_chapter_id)
 	if ch.is_empty():
 		return
 	var changed: bool = false
@@ -243,7 +255,7 @@ func _emit_snapshot() -> void:
 	if _active_chapter_id.is_empty():
 		GameState.emit_campaign_objectives("", "", [])
 		return
-	var ch: Dictionary = CHAPTERS.get(_active_chapter_id, {})
+	var ch: Dictionary = get_chapter(_active_chapter_id)
 	var list: Array = []
 	for obj in ch.get("objectives", []):
 		list.append({

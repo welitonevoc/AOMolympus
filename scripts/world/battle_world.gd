@@ -137,7 +137,11 @@ func get_fog_system() -> FogOfWarSystem:
 
 
 func _on_match_started(pantheon_id: String, enemy_pantheon_id: String) -> void:
-	if is_instance_valid(_startup_config):
+	if not GameState.active_campaign_id.is_empty():
+		var scn_res: Dictionary = OlympusScenarioCatalog.get_scenario(GameState.active_campaign_id)
+		if not scn_res.is_empty():
+			OlympusScenarioSpawner.apply_scenario_to_game_state(scn_res)
+	elif is_instance_valid(_startup_config):
 		_startup_config.apply_resource_preset(GameState.starting_resources_mode)
 
 	for child in _entities_root.get_children():
