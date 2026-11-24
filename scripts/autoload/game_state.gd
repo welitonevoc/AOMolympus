@@ -282,6 +282,11 @@ func finish_match(result: String) -> void:
 	match_result = result
 	cancel_build_mode()
 	cancel_power_target_mode()
+
+	var profile_node: Node = get_node_or_null("/root/OlympusProfileManager")
+	if profile_node != null and profile_node.has_method("record_match_result"):
+		profile_node.record_match_result(result == "victory", victory_condition, powers_cast_count, titan_active)
+
 	match_ended.emit(result)
 
 

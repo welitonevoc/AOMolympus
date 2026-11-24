@@ -219,6 +219,14 @@ func _build_top_bar() -> void:
 	_age_lbl = age_pill["label"]
 	hbox.add_child(age_pill["container"])
 
+	var profile_node: Node = get_node_or_null("/root/OlympusProfileManager")
+	var profile_text: String = "Arconte"
+	if profile_node != null and profile_node.has_method("get_profile_summary"):
+		var p_sum: Dictionary = profile_node.get_profile_summary()
+		profile_text = "%s %s (Nv.%d)" % [String(p_sum.get("flag", "🏛️")), String(p_sum.get("title", "Arconte")), int(p_sum.get("level", 1))]
+	var commander_pill := _make_resource_pill("👑", profile_text, Color("#fde047"))
+	hbox.add_child(commander_pill["container"])
+
 	var spacer2 := Control.new()
 	spacer2.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	hbox.add_child(spacer2)
@@ -803,6 +811,23 @@ func _build_pantheon_start_overlay() -> void:
 	title.add_theme_color_override("font_color", Color("#f6e08b"))
 	title.add_theme_font_size_override("font_size", 21)
 	vbox.add_child(title)
+
+	var prof_node: Node = get_node_or_null("/root/OlympusProfileManager")
+	if prof_node != null and prof_node.has_method("get_profile_summary"):
+		var s: Dictionary = prof_node.get_profile_summary()
+		var prof_badge := Label.new()
+		prof_badge.text = "👑 Comandante: %s %s · %s · ELO: %d (Nível %d · %d Vitórias)" % [
+			String(s.get("flag", "🏛️")),
+			String(s.get("name", "Comandante")),
+			String(s.get("title", "Arconte")),
+			int(s.get("elo", 1000)),
+			int(s.get("level", 1)),
+			int(s.get("won", 0))
+		]
+		prof_badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		prof_badge.add_theme_color_override("font_color", Color("#cbd5e1"))
+		prof_badge.add_theme_font_size_override("font_size", 13)
+		vbox.add_child(prof_badge)
 
 	# Abas: Escaramuca vs Campanha Mitologica
 	var tab_row := HBoxContainer.new()

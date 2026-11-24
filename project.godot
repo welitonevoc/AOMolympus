@@ -32,6 +32,7 @@ AudioDirector="*res://scripts/audio/audio_director.gd"
 MultiplayerManager="*res://scripts/network/multiplayer_manager.gd"
 MCPRuntimeServer="*res://addons/godot_mcp_toolkit/runtime/mcp_runtime_server.gd"
 CursorManager="*res://scripts/ui/cursor_manager.gd"
+OlympusProfileManager="*res://scripts/autoload/olympus_profile_manager.gd"
 
 [display]
 
