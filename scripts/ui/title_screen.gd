@@ -83,6 +83,8 @@ var _compendium_category_lbl: Label
 var _compendium_lore_lbl: Label
 var _compendium_stats_vbox: VBoxContainer
 var _compendium_special_lbl: Label
+var _compendium_search_edit: LineEdit
+var _compendium_current_items: Array = []
 
 # ── Controles de Configurações ──────────────────────────────────────────────
 var _vol_master_slider: HSlider
@@ -1198,42 +1200,60 @@ func _build_multiplayer_modal() -> void:
 	content.add_child(back_btn)
 
 
-# ── Submenu 4: Compêndio Mitológico (Enciclopédia) ───────────────────────────
+# ── Submenu 4: Compêndio Mitológico (Códice do Olimpo) ────────────────────────
 func _build_compendium_modal() -> void:
-	_compendium_modal = _create_base_modal("🏛️ COMPÊNDIO MITOLÓGICO & ARQUIVOS DO OLIMPO", 940, 620)
+	_compendium_modal = _create_base_modal("🏛️ CÓDICE DO OLIMPO & ENCICLOPÉDIA MITOLÓGICA", 980, 640)
 	var content: VBoxContainer = _compendium_modal.get_node("VBox/Content") as VBoxContainer
 
-	# Abas do Compêndio
+	# Abas do Códice (8 Categorias)
+	var tab_scroll := ScrollContainer.new()
+	tab_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	tab_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	tab_scroll.custom_minimum_size = Vector2(940, 44)
+	content.add_child(tab_scroll)
+
 	var tab_row := HBoxContainer.new()
-	tab_row.alignment = BoxContainer.ALIGNMENT_CENTER
-	tab_row.add_theme_constant_override("separation", 8)
-	content.add_child(tab_row)
+	tab_row.alignment = BoxContainer.ALIGNMENT_BEGIN
+	tab_row.add_theme_constant_override("separation", 6)
+	tab_scroll.add_child(tab_row)
 
 	var tabs: Dictionary = {
-		"gods": "⚡ Deuses Maiores",
-		"myth_units": "🦄 Unidades Míticas",
-		"military": "🛡️ Exércitos Culturais",
-		"buildings": "🏛️ Edificações"
+		"gods": "⚡ Deuses",
+		"myth_units": "🦄 Míticas",
+		"heroes": "👑 Heróis",
+		"military": "🛡️ Exércitos",
+		"civilizations": "🏛️ Civilizações",
+		"buildings": "🏛️ Edificações",
+		"techs": "📜 Tecnologias",
+		"mechanics": "⚙️ Regras & Eras"
 	}
 
 	for tab_id in tabs:
 		var btn := Button.new()
 		btn.text = tabs[tab_id]
-		btn.custom_minimum_size = Vector2(210, 42)
-		btn.add_theme_font_size_override("font_size", 12)
+		btn.custom_minimum_size = Vector2(115, 38)
+		btn.add_theme_font_size_override("font_size", 11)
 		btn.pressed.connect(func() -> void: _select_compendium_tab(tab_id))
 		tab_row.add_child(btn)
 		_compendium_tab_buttons[tab_id] = btn
 
+	# Barra de Pesquisa Rápida em Tempo Real
+	_compendium_search_edit = LineEdit.new()
+	_compendium_search_edit.placeholder_text = "🔍 Pesquisar em mais de 800 verbetes por nome, criatura, bênção divina ou poder..."
+	_compendium_search_edit.custom_minimum_size = Vector2(940, 36)
+	_compendium_search_edit.add_theme_font_size_override("font_size", 12)
+	_compendium_search_edit.text_changed.connect(_on_compendium_search_changed)
+	content.add_child(_compendium_search_edit)
+
 	# Layout Dividido: Lista à esquerda + Detalhes à direita
 	var split_box := HBoxContainer.new()
-	split_box.custom_minimum_size = Vector2(900, 450)
+	split_box.custom_minimum_size = Vector2(940, 430)
 	split_box.add_theme_constant_override("separation", 14)
 	content.add_child(split_box)
 
 	# Lista de Itens (Coluna Esquerda)
 	var list_panel := PanelContainer.new()
-	list_panel.custom_minimum_size = Vector2(300, 450)
+	list_panel.custom_minimum_size = Vector2(320, 430)
 	list_panel.add_theme_stylebox_override("panel", _make_panel_style(Color(0.05, 0.07, 0.12, 0.9), 8))
 	split_box.add_child(list_panel)
 
@@ -1244,7 +1264,7 @@ func _build_compendium_modal() -> void:
 
 	_compendium_list_vbox = VBoxContainer.new()
 	_compendium_list_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_compendium_list_vbox.add_theme_constant_override("separation", 6)
+	_compendium_list_vbox.add_theme_constant_override("separation", 4)
 	list_scroll.add_child(_compendium_list_vbox)
 
 	# Ficha Técnica Detalhada (Coluna Direita)
@@ -1254,34 +1274,18 @@ func _build_compendium_modal() -> void:
 	split_box.add_child(sheet_panel)
 
 	var sheet_vbox := VBoxContainer.new()
-	sheet_vbox.add_theme_constant_override("separation", 10)
+	sheet_vbox.add_theme_constant_override("separation", 8)
 	sheet_panel.add_child(sheet_vbox)
 
 	_compendium_title_lbl = Label.new()
-	_compendium_title_lbl.add_theme_font_size_override("font_size", 20)
+	_compendium_title_lbl.add_theme_font_size_override("font_size", 18)
 	_compendium_title_lbl.add_theme_color_override("font_color", Color("#f6e08b"))
 	sheet_vbox.add_child(_compendium_title_lbl)
 
 	_compendium_category_lbl = Label.new()
-	_compendium_category_lbl.add_theme_font_size_override("font_size", 12)
+	_compendium_category_lbl.add_theme_font_size_override("font_size", 11)
 	_compendium_category_lbl.add_theme_color_override("font_color", Color("#94a3b8"))
 	sheet_vbox.add_child(_compendium_category_lbl)
-
-	_compendium_lore_lbl = Label.new()
-	_compendium_lore_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_compendium_lore_lbl.add_theme_font_size_override("font_size", 13)
-	_compendium_lore_lbl.add_theme_color_override("font_color", Color("#e2e8f0"))
-	sheet_vbox.add_child(_compendium_lore_lbl)
-
-	var stat_title := Label.new()
-	stat_title.text = "Atributos & Informações Táticas:"
-	stat_title.add_theme_font_size_override("font_size", 12)
-	stat_title.add_theme_color_override("font_color", Color("#d4af37"))
-	sheet_vbox.add_child(stat_title)
-
-	_compendium_stats_vbox = VBoxContainer.new()
-	_compendium_stats_vbox.add_theme_constant_override("separation", 4)
-	sheet_vbox.add_child(_compendium_stats_vbox)
 
 	_compendium_special_lbl = Label.new()
 	_compendium_special_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -1289,8 +1293,36 @@ func _build_compendium_modal() -> void:
 	_compendium_special_lbl.add_theme_color_override("font_color", Color("#38bdf8"))
 	sheet_vbox.add_child(_compendium_special_lbl)
 
+	# Scroll de Lore Mitológico e Histórico
+	var lore_scroll := ScrollContainer.new()
+	lore_scroll.custom_minimum_size = Vector2(0, 180)
+	lore_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	sheet_vbox.add_child(lore_scroll)
+
+	_compendium_lore_lbl = Label.new()
+	_compendium_lore_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_compendium_lore_lbl.add_theme_font_size_override("font_size", 12)
+	_compendium_lore_lbl.add_theme_color_override("font_color", Color("#e2e8f0"))
+	_compendium_lore_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	lore_scroll.add_child(_compendium_lore_lbl)
+
+	var stat_title := Label.new()
+	stat_title.text = "Atributos, Origem & Detalhes:"
+	stat_title.add_theme_font_size_override("font_size", 11)
+	stat_title.add_theme_color_override("font_color", Color("#d4af37"))
+	sheet_vbox.add_child(stat_title)
+
+	var stats_scroll := ScrollContainer.new()
+	stats_scroll.custom_minimum_size = Vector2(0, 80)
+	stats_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	sheet_vbox.add_child(stats_scroll)
+
+	_compendium_stats_vbox = VBoxContainer.new()
+	_compendium_stats_vbox.add_theme_constant_override("separation", 3)
+	stats_scroll.add_child(_compendium_stats_vbox)
+
 	# Botão Voltar
-	var back_btn := _make_action_button("VOLTAR AO MENU", false, 180, 46)
+	var back_btn := _make_action_button("VOLTAR AO MENU PRINCIPAL", false, 240, 42)
 	back_btn.pressed.connect(func() -> void: _compendium_modal.visible = false; _main_menu_panel.visible = true)
 	content.add_child(back_btn)
 
@@ -1302,24 +1334,55 @@ func _select_compendium_tab(tab_id: String) -> void:
 	for k in _compendium_tab_buttons:
 		_compendium_tab_buttons[k].add_theme_stylebox_override("normal", _make_btn_style(k == tab_id))
 
+	if _compendium_search_edit != null:
+		_compendium_search_edit.text = ""
+
+	_compendium_current_items = _get_compendium_items_for_tab(tab_id)
+	_populate_compendium_list(_compendium_current_items)
+
+
+func _on_compendium_search_changed(query: String) -> void:
+	var q := query.to_lower().strip_edges()
+	if q.is_empty():
+		_populate_compendium_list(_compendium_current_items)
+		return
+
+	var filtered: Array = []
+	for item in _compendium_current_items:
+		var name_str: String = String(item.get("name", "")).to_lower()
+		var lore_str: String = String(item.get("lore", "")).to_lower()
+		if q in name_str or q in lore_str:
+			filtered.append(item)
+
+	_populate_compendium_list(filtered)
+
+
+func _populate_compendium_list(items: Array) -> void:
 	for child in _compendium_list_vbox.get_children():
 		child.queue_free()
 	_compendium_item_buttons.clear()
 
-	var items: Array = _get_compendium_items_for_tab(tab_id)
 	for item_data in items:
 		var i_id: String = item_data.get("id", "")
 		var i_name: String = item_data.get("name", i_id)
 		var btn := Button.new()
 		btn.text = i_name
-		btn.custom_minimum_size = Vector2(260, 38)
-		btn.add_theme_font_size_override("font_size", 12)
+		btn.custom_minimum_size = Vector2(290, 34)
+		btn.add_theme_font_size_override("font_size", 11)
+		btn.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		btn.pressed.connect(func() -> void: _show_compendium_item(item_data))
 		_compendium_list_vbox.add_child(btn)
 		_compendium_item_buttons[i_id] = btn
 
 	if not items.is_empty():
 		_show_compendium_item(items[0])
+	else:
+		_compendium_title_lbl.text = "Nenhum resultado"
+		_compendium_category_lbl.text = ""
+		_compendium_lore_lbl.text = "Nenhum verbete encontrado para a pesquisa informada."
+		_compendium_special_lbl.text = ""
+		for child in _compendium_stats_vbox.get_children():
+			child.queue_free()
 
 
 func _show_compendium_item(data: Dictionary) -> void:
@@ -1333,43 +1396,51 @@ func _show_compendium_item(data: Dictionary) -> void:
 	for stat in data.get("stats", []):
 		var lbl := Label.new()
 		lbl.text = "• %s" % stat
-		lbl.add_theme_font_size_override("font_size", 12)
+		lbl.add_theme_font_size_override("font_size", 11)
 		lbl.add_theme_color_override("font_color", Color("#cbd5e1"))
 		_compendium_stats_vbox.add_child(lbl)
 
 	var spec: String = data.get("special", "")
-	_compendium_special_lbl.text = "Poder / Habilidade: %s" % spec if not spec.is_empty() else ""
+	_compendium_special_lbl.text = "⚡ Habilidade / Poder Especial: %s" % spec if not spec.is_empty() else ""
 
 
 func _get_compendium_items_for_tab(tab_id: String) -> Array:
 	var list: Array = []
-	if tab_id == "gods":
-		list = [
-			{"id": "zeus", "name": "⚡ Zeus (Deus do Trovão)", "category": "Panteão Grego · Deus Maior", "lore": "Rei dos Deuses do Monte Olimpo. Concede relâmpagos fulminantes aos inimigos e fortalece a infantaria de Hoplitas com a força dos céus.", "stats": ["Poder Divino: Raio Fulminante (Elimina uma unidade-alvo instantaneamente)", "Bônus: Hoplitas causam 20% mais dano a unidades míticas", "Favor: Gera favor mais rápido em santuários"], "special": "Tempestade de Raios no T5"},
-			{"id": "poseidon", "name": "🔱 Posídon (Deus dos Mares)", "category": "Panteão Grego · Deus Maior", "lore": "Governante dos oceanos e dos terremotos. Fornece cavalaria vigorosa e atrai a fúria das marés sobre edificações inimigas.", "stats": ["Poder Divino: Tremor Oceânico (Causa dano em área a fortificações)", "Bônus: Cavalaria Prodromos custa 15% menos recursos", "Recursos: Pesca e portos 20% mais produtivos"], "special": "Megalodon Divino e Hidra Marítima"},
-			{"id": "hades", "name": "💀 Hades (Senhor do Submundo)", "category": "Panteão Grego · Deus Maior", "lore": "Mestre do tártaro e das riquezas subterrâneas. Permite que guerreiros caídos retornem temporariamente como sombras vingativas.", "stats": ["Poder Divino: Abóbada das Almas (Invoca soldados espectrais)", "Bônus: Arqueiros Toxotes com +2 de alcance de ataque", "Ouro: Minas de ouro duram 25% a mais"], "special": "Cérbero Divino no T5"},
-			{"id": "ra", "name": "☀️ Rá (Deus do Sol)", "category": "Panteão Egípcio · Deus Maior", "lore": "Criador do mundo egípcio e condutor da barca solar. Seus sacerdotes abençoam monumentos e aumentam exponencialmente a colheita dos campos.", "stats": ["Poder Divino: Chuva Abençoada (Aumenta a velocidade de fazendas em 200%)", "Bônus: Faraós fortalecem edificações próximas", "Arquitetura: Monumentos geram favor constante"], "special": "Olho de Rá Flamejante"},
-			{"id": "odin", "name": "🐺 Odin (Pai de Todos)", "category": "Panteão Nórdico · Deus Maior", "lore": "Senhor de Asgard e mestre da sabedoria rúnica. Concede a visão de seus corvos sagrados e regeneração de vida a todos os guerreiros nórdicos.", "stats": ["Poder Divino: Corvos de Hugin e Munin (Exploram o mapa revelando o nevoeiro)", "Bônus: Unidades regeneram vida automaticamente fora de combate", "Combate: Hersirs ganham o dobro de favor em batalha"], "special": "Invocação de Valquírias e Lobos de Guerra"}
-		]
-	elif tab_id == "myth_units":
-		list = [
-			{"id": "centaur", "name": "🏹 Centauro de Quíron", "category": "Grécia · Idade Clássica", "lore": "Metade homem, metade cavalo. Combina velocidade e arquearia precisa, disparando flechas certeiras que nunca erram o alvo.", "stats": ["Vida: 420 HP", "Ataque: 14 Perfuração", "Custo: 100 Madeira, 15 Favor", "Velocidade: 5.2 m/s"], "special": "Tiro Perfurante Especial com 100% de dano crítico"},
-			{"id": "minotaur", "name": "🐂 Minotauro de Creta", "category": "Grécia · Idade Clássica", "lore": "A fera do labirinto. Investe furiosamente contra agrupamentos de infantaria, arremessando soldados pelos ares com seus chifres.", "stats": ["Vida: 600 HP", "Ataque: 22 Contusão", "Custo: 120 Alimento, 20 Favor", "Armadura: 40% Corte / 35% Perfuração"], "special": "Investida Búfalo (derruba até 4 unidades próximas)"},
-			{"id": "anubite", "name": "🐺 Anubita Saltador", "category": "Egito · Idade Clássica", "lore": "Guerreiro chacal consagrado a Anúbis. Capaz de realizar saltos acrobáticos cobrindo grandes distâncias para emboscar arqueiros.", "stats": ["Vida: 380 HP", "Ataque: 18 Corte", "Custo: 80 Alimento, 18 Favor", "Velocidade: 5.5 m/s"], "special": "Salto das Sombras (ignora barreiras e muralhas)"},
-			{"id": "valkyrie", "name": "⚔️ Valquíria de Odin", "category": "Nórdicos · Idade Clássica", "lore": "Donzela guerreira montada em corcel alado. Além de potente ataque de lança, cura continuamente soldados aliados feridos.", "stats": ["Vida: 500 HP", "Ataque: 16 Corte", "Custo: 110 Ouro, 22 Favor", "Habilidade Passiva: Cura Sagrada"], "special": "Aura de Restauração de Vida"}
-		]
-	elif tab_id == "military":
-		list = [
-			{"id": "hoplite", "name": "🛡️ Hoplita Grego", "category": "Infantaria de Linha · Grécia", "lore": "A espinha dorsal das forças gregas. Empunha lança dory e grande escudo aspis, ganhando imensa resistência quando em Formação de Falange.", "stats": ["Vida: 120 HP", "Ataque: 9 Corte", "Custo: 60 Alimento, 35 Ouro", "Bônus: +150% de dano contra Cavalaria"], "special": "Falange Fechada (+30% Armadura frontal)"},
-			{"id": "toxotes", "name": "🏹 Arqueiro Toxotes", "category": "Unidade de Alcance · Grécia", "lore": "Atirador versátil com arco recurvo, perfeito para dizimar infantaria leve e enfraquecer tropas inimigas antes do choque corporal.", "stats": ["Vida: 75 HP", "Ataque: 7 Perfuração", "Alcance: 16 metros", "Custo: 50 Madeira, 30 Ouro"], "special": "Chuva de Flechas concentrada"},
-			{"id": "prodromos", "name": "🐎 Cavalaria Prodromos", "category": "Cavalaria Anti-Cavalaria · Grécia", "lore": "Batedor veloz e cavaleiro ágil com sarissa leve, projetado para perseguir e destruir cavaleiros e arqueiros inimigos.", "stats": ["Vida: 140 HP", "Ataque: 8 Corte", "Velocidade: 6.0 m/s", "Custo: 70 Alimento, 40 Ouro"], "special": "Bônus massivo contra Cavalaria Inimiga"}
-		]
-	elif tab_id == "buildings":
-		list = [
-			{"id": "town_center", "name": "🏛️ Centro da Cidade (Town Center)", "category": "Edificação Central de Comando", "lore": "Coração de todo assentamento mitológico. Treina aldeões, recebe recursos coletados e dispara flechas defensivas contra invasores.", "stats": ["Vida: 3500 HP", "Suporte Populacional: +15", "Defesa: Ataque de Flechas automático", "Evolução: Centro de avanço de Eras (I a V)"], "special": "Abriga até 15 aldeões para proteção mútua"},
-			{"id": "temple", "name": "🏛️ Templo Sagrado", "category": "Edificação Religiosa", "lore": "Local consagrado às preces e oferendas. Permite treinar unidades míticas fabulosas e pesquisar bênçãos divinas exclusivas.", "stats": ["Vida: 1800 HP", "Geração de Favor: Oferendas regulares", "Treinamento: Bestas e criaturas mitológicas", "Era: Disponível a partir da Era Clássica"], "special": "Canalizador de Poderes Divinos"},
-			{"id": "barracks", "name": "⚔️ Quartéis de Treinamento", "category": "Edificação Militar", "lore": "Academia de artes marciais onde civis se tornam hoplitas e guerreiros de elite para defender a civilização.", "stats": ["Vida: 1600 HP", "Capacidade: Treino contínuo em fila", "Pesquisas: Afiação de Lâminas e Armaduras"], "special": "Treina Infantaria e Tropas de Linha"}
-		]
+	var category_key: String = tab_id
+	match tab_id:
+		"military": category_key = "units_military"
+		"myth_units": category_key = "units_myth"
+
+	var raw_entries: Array = []
+	var codex_node: Node = get_node_or_null("/root/OlympusCodex")
+	if codex_node != null:
+		raw_entries = codex_node.get_entries_by_category(category_key)
+
+	for entry in raw_entries:
+		var meta: Dictionary = entry.get("metadata", {})
+		var stats_list: Array = []
+		for k in meta:
+			stats_list.append("%s: %s" % [String(k).capitalize(), meta[k]])
+
+		var pantheon_name: String = String(entry.get("pantheon", "geral")).capitalize()
+		var p_icon := "🏛️"
+		match entry.get("pantheon", ""):
+			"greek": p_icon = "⚡"
+			"egyptian": p_icon = "☀️"
+			"norse": p_icon = "🐺"
+			"atlantean": p_icon = "🌊"
+			"chinese": p_icon = "🐉"
+
+		var item: Dictionary = {
+			"id": entry.get("id", ""),
+			"name": "%s %s" % [p_icon, entry.get("title", "")],
+			"category": "Panteão %s · %s" % [pantheon_name, String(entry.get("category", "")).replace("_", " ").capitalize()],
+			"lore": entry.get("lore", entry.get("summary", "")),
+			"stats": stats_list,
+			"special": meta.get("ataque especial", meta.get("poder divino", ""))
+		}
+		list.append(item)
+
 	return list
 
 

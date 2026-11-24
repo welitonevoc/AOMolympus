@@ -193,7 +193,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	# Tecla F8: Salvamento rapido
 	if key == KEY_F8:
 		if SaveLoadSystem != null:
-			SaveLoadSystem.save_game(1)
+			SaveLoadSystem.save_game(_world as BattleWorld, _camera as TouchRTSCamera)
 			GameState.notify("💾 QuickSave realizado com sucesso!", false)
 		get_viewport().set_input_as_handled()
 		return
@@ -201,7 +201,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	# Tecla F9: Carregamento rapido
 	if key == KEY_F9:
 		if SaveLoadSystem != null:
-			SaveLoadSystem.load_game(1)
+			SaveLoadSystem.load_game()
 			GameState.notify("📂 Carregando QuickSave...", false)
 		get_viewport().set_input_as_handled()
 		return

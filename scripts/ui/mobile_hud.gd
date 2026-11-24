@@ -48,6 +48,13 @@ var _toast_panel: PanelContainer
 var _toast_label: Label
 var _toast_tween: Tween
 
+# --- Códice do Olimpo — Modal Rápido In-Game ---
+var _codex_modal: PanelContainer
+var _codex_modal_title: Label
+var _codex_modal_category: Label
+var _codex_modal_lore: Label
+var _codex_modal_meta: VBoxContainer
+
 # --- Regras AoM: Cronometro de Maravilha e Dialogos de Gatilho ---
 var _wonder_panel: PanelContainer
 var _wonder_lbl: Label
@@ -500,11 +507,23 @@ func _build_bottom_left_zone() -> void:
 	)
 	filter_row.add_child(myth_btn)
 
+	var title_row := HBoxContainer.new()
+	title_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	vbox.add_child(title_row)
+
 	_selection_title = Label.new()
 	_selection_title.text = "Nenhuma seleção"
 	_selection_title.add_theme_color_override("font_color", Color("#f6e08b"))
 	_selection_title.add_theme_font_size_override("font_size", 14)
-	vbox.add_child(_selection_title)
+	_selection_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	title_row.add_child(_selection_title)
+
+	var lore_btn := Button.new()
+	lore_btn.text = "📖 Códice"
+	lore_btn.custom_minimum_size = Vector2(74, 26)
+	lore_btn.add_theme_font_size_override("font_size", 10)
+	lore_btn.pressed.connect(_on_codex_quick_inspect_pressed)
+	title_row.add_child(lore_btn)
 
 	_selection_status = Label.new()
 	_selection_status.text = "Toque em uma unidade ou construção"
@@ -1851,3 +1870,117 @@ func _make_btn_style_disabled() -> StyleBoxFlat:
 	sb.set_border_width_all(1)
 	sb.set_corner_radius_all(8)
 	return sb
+
+
+# ── Códice do Olimpo — Modal Rápido de Inspeção Tática In-Game ────────────────
+func _on_codex_quick_inspect_pressed() -> void:
+	if GameState.selected_entities.is_empty():
+		_open_codex_quick_inspect("greek")
+		return
+
+	var ent: Node = GameState.selected_entities[0]
+	var key: String = ""
+	if ent.has_method("get_unit_kind"):
+		key = String(ent.get_unit_kind())
+	elif "unit_kind" in ent:
+		key = String(ent.unit_kind)
+	elif "building_kind" in ent:
+		key = String(ent.building_kind)
+	else:
+		key = ent.name.to_lower()
+
+	_open_codex_quick_inspect(key)
+
+
+func _open_codex_quick_inspect(lookup_key: String) -> void:
+	var codex_node: Node = get_node_or_null("/root/OlympusCodex")
+	if codex_node == null:
+		return
+	var entry: Dictionary = codex_node.get_entry(lookup_key)
+	if entry.is_empty():
+		_show_toast("Nenhum verbete encontrado no Códice para: %s" % lookup_key)
+		return
+
+	if _codex_modal == null:
+		_build_codex_quick_modal()
+
+	_codex_modal_title.text = "🏛️ %s" % String(entry.get("title", lookup_key))
+	_codex_modal_category.text = "Panteão %s · %s" % [
+		String(entry.get("pantheon", "Geral")).capitalize(),
+		String(entry.get("category", "")).replace("_", " ").capitalize()
+	]
+	_codex_modal_lore.text = String(entry.get("lore", entry.get("summary", "")))
+
+	for child in _codex_modal_meta.get_children():
+		child.queue_free()
+
+	var meta: Dictionary = entry.get("metadata", {})
+	for k in meta:
+		var lbl := Label.new()
+		lbl.text = "• %s: %s" % [String(k).capitalize(), meta[k]]
+		lbl.add_theme_font_size_override("font_size", 11)
+		lbl.add_theme_color_override("font_color", Color("#cbd5e1"))
+		_codex_modal_meta.add_child(lbl)
+
+	_codex_modal.visible = true
+
+
+func _build_codex_quick_modal() -> void:
+	_codex_modal = PanelContainer.new()
+	_codex_modal.set_anchors_preset(Control.PRESET_CENTER)
+	_codex_modal.custom_minimum_size = Vector2(580, 420)
+	_codex_modal.offset_left = -290.0
+	_codex_modal.offset_right = 290.0
+	_codex_modal.offset_top = -210.0
+	_codex_modal.offset_bottom = 210.0
+	_codex_modal.add_theme_stylebox_override("panel", _make_panel_style(Color(0.04, 0.06, 0.10, 0.96), 12, Color(0.83, 0.69, 0.22, 0.65), true))
+	add_child(_codex_modal)
+
+	var margin := MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 16)
+	margin.add_theme_constant_override("margin_right", 16)
+	margin.add_theme_constant_override("margin_top", 14)
+	margin.add_theme_constant_override("margin_bottom", 14)
+	_codex_modal.add_child(margin)
+
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 8)
+	margin.add_child(vbox)
+
+	var header_row := HBoxContainer.new()
+	vbox.add_child(header_row)
+
+	_codex_modal_title = Label.new()
+	_codex_modal_title.add_theme_font_size_override("font_size", 18)
+	_codex_modal_title.add_theme_color_override("font_color", Color("#f6e08b"))
+	_codex_modal_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	header_row.add_child(_codex_modal_title)
+
+	var close_btn := Button.new()
+	close_btn.text = "✕ Fechar"
+	close_btn.custom_minimum_size = Vector2(80, 32)
+	close_btn.add_theme_font_size_override("font_size", 11)
+	close_btn.pressed.connect(func() -> void: _codex_modal.visible = false)
+	header_row.add_child(close_btn)
+
+	_codex_modal_category = Label.new()
+	_codex_modal_category.add_theme_font_size_override("font_size", 11)
+	_codex_modal_category.add_theme_color_override("font_color", Color("#94a3b8"))
+	vbox.add_child(_codex_modal_category)
+
+	var scroll := ScrollContainer.new()
+	scroll.custom_minimum_size = Vector2(0, 180)
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	vbox.add_child(scroll)
+
+	_codex_modal_lore = Label.new()
+	_codex_modal_lore.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_codex_modal_lore.add_theme_font_size_override("font_size", 12)
+	_codex_modal_lore.add_theme_color_override("font_color", Color("#e2e8f0"))
+	_codex_modal_lore.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(_codex_modal_lore)
+
+	_codex_modal_meta = VBoxContainer.new()
+	_codex_modal_meta.add_theme_constant_override("separation", 3)
+	vbox.add_child(_codex_modal_meta)
+
