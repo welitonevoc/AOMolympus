@@ -320,10 +320,18 @@ func _rebuild_divine_power_bar() -> void:
 		child.queue_free()
 	_power_buttons.clear()
 
-	var pids: Array[String] = DivinePowerCatalog.get_pantheon_power_ids(GameState.active_pantheon)
+	var pids: Array[String] = []
+	if DivinePowerCatalog.has_method("get_canonical_hud_powers"):
+		pids = DivinePowerCatalog.get_canonical_hud_powers(GameState.active_pantheon)
+	else:
+		pids = DivinePowerCatalog.get_pantheon_power_ids(GameState.active_pantheon)
+	if GameState.is_wonder_age and not pids.has("titangate"):
+		pids.append("titangate")
 	for pid in pids:
 		var spec: Dictionary = DivinePowerCatalog.get_power(pid)
-		var btn := _make_action_button("%s\n%dF" % [spec["short"], int(spec["favor_cost"])], false, 84.0, 46.0)
+		if spec.is_empty():
+			continue
+		var btn := _make_action_button("%s\n%dF" % [spec.get("short", pid), int(spec.get("favor_cost", 0))], false, 84.0, 46.0)
 		btn.pressed.connect(func() -> void:
 			if _power_system != null:
 				_power_system.request_power(pid)
@@ -337,7 +345,9 @@ func _refresh_power_buttons_state() -> void:
 	for pid in _power_buttons.keys():
 		var btn: Button = _power_buttons[pid]
 		var spec: Dictionary = DivinePowerCatalog.get_power(pid)
-		var req_age: int = int(spec["min_age"])
+		if spec.is_empty():
+			continue
+		var req_age: int = int(spec.get("min_age", 1))
 		var cd: float = _power_system.get_cooldown_remaining(pid) if _power_system != null else 0.0
 		var casts: int = _power_system.get_cast_count(pid) if (_power_system != null and _power_system.has_method("get_cast_count")) else 0
 		var cost: int = int(_power_system.get_effective_favor_cost(pid)) if (_power_system != null and _power_system.has_method("get_effective_favor_cost")) else int(spec.get("favor_cost", 0))

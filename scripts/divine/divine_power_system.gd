@@ -71,20 +71,22 @@ func get_effective_favor_cost(power_id: String, faction: String = "player") -> f
 
 func request_power(power_id: String) -> bool:
 	var spec: Dictionary = DivinePowerCatalog.get_power(power_id)
-	var req_age: int = int(spec["min_age"])
+	if spec.is_empty():
+		return false
+	var req_age: int = int(spec.get("min_age", 1))
 	if GameState.current_age < req_age:
-		GameState.notify("%s requer Era %d." % [spec["name"], req_age], true)
+		GameState.notify("%s requer Era %d." % [spec.get("name", power_id), req_age], true)
 		return false
 	var cd: float = get_cooldown_remaining(power_id, "player")
 	if cd > 0.0:
-		GameState.notify("%s recarregando (%.0fs)." % [spec["name"], cd], true)
+		GameState.notify("%s recarregando (%.0fs)." % [spec.get("name", power_id), cd], true)
 		return false
 	var favor_cost: float = get_effective_favor_cost(power_id, "player")
 	if not GameState.can_afford({"favor": favor_cost}):
 		GameState.notify("Favor insuficiente (%d Favor necessário para recast)." % int(favor_cost), true)
 		return false
 
-	if not bool(spec["targeted"]):
+	if not bool(spec.get("targeted", true)):
 		var center: Vector3 = BattleWorld.PLAYER_BASE_POS
 		return cast_power(power_id, center, "player")
 
@@ -94,11 +96,13 @@ func request_power(power_id: String) -> bool:
 
 func cast_power(power_id: String, world_pos: Vector3, caster_faction: String = "player", caster_pantheon: String = "") -> bool:
 	var spec: Dictionary = DivinePowerCatalog.get_power(power_id)
+	if spec.is_empty():
+		return false
 	var is_player: bool = (caster_faction == "player")
 	var acting_age: int = GameState.current_age if is_player else GameState.enemy_age
 	var acting_pantheon: String = GameState.active_pantheon if is_player else (caster_pantheon if not caster_pantheon.is_empty() else GameState.enemy_pantheon)
 
-	if acting_age < int(spec["min_age"]):
+	if acting_age < int(spec.get("min_age", 1)):
 		return false
 	if get_cooldown_remaining(power_id, caster_faction) > 0.0:
 		return false
@@ -240,6 +244,61 @@ func cast_power(power_id: String, world_pos: Vector3, caster_faction: String = "
 			_spawn_ring_burst(world_pos, radius, Color("#f59e0b"))
 			var tg_msg: String = "Fundação do Portal do Titã posicionada! Convoque aldeões." if is_player else "⚠️ Inimigo posicionou o Portal do Titã!"
 			GameState.notify(tg_msg, true)
+		"chinese_dragon":
+			_summon_allies(world_pos, "myth", 1, caster_faction, acting_pantheon)
+			_spawn_sky_beam(world_pos, 3.5, Color("#10b981"))
+			_spawn_ring_burst(world_pos, radius, Color("#10b981"))
+			var cd_msg: String = "🐉 O Dragão Celestial de Jade desceu aos campos de batalha!" if is_player else "⚠️ O Inimigo invocou o Dragão Celestial de Jade!"
+			GameState.notify(cd_msg, true)
+		"alchemy_fire":
+			_damage_enemies_in_area(world_pos, radius, 220.0, 260.0, enemy_grp, caster_faction, acting_pantheon)
+			_spawn_meteor_impact(world_pos, Color("#dc2626"))
+			_spawn_ring_burst(world_pos, radius, vfx_col)
+		"yin_yang_shield":
+			_heal_allies_in_area(world_pos, radius, 220.0, true, ally_grp)
+			_spawn_ring_burst(world_pos, radius, Color("#6366f1"))
+			_spawn_sky_particles(world_pos, radius, Color("#6366f1"), 32)
+			var yy_msg: String = "☯️ Barreira do Yin-Yang ativada! Tropas aliadas revigoradas e protegidas." if is_player else "⚠️ Inimigo ativou a Barreira do Yin-Yang!"
+			GameState.notify(yy_msg, not is_player)
+		"deluge":
+			_pull_and_damage_enemies(world_pos, radius, 200.0, 240.0, enemy_grp, caster_faction, acting_pantheon)
+			_spawn_sky_particles(world_pos, radius, Color("#0284c7"), 40)
+			_spawn_ring_burst(world_pos, radius, vfx_col)
+		"pestilence", "plague":
+			_damage_and_freeze_enemies(world_pos, radius, 80.0, 6.0, enemy_grp, caster_faction, acting_pantheon)
+			_spawn_sky_particles(world_pos, radius, Color("#84cc16"), 36)
+			var p_msg: String = "A Praga da Corrupção enfraqueceu as linhas inimigas!" if is_player else "⚠️ Suas tropas foram atingidas pela Praga!"
+			GameState.notify(p_msg, not is_player)
+		"spiders":
+			_summon_allies(world_pos, "myth", 2, caster_faction, acting_pantheon)
+			_spawn_ring_burst(world_pos, radius, Color("#78350f"))
+		"heroize":
+			_heal_allies_in_area(world_pos, radius, 300.0, false, ally_grp)
+			for node in get_tree().get_nodes_in_group(ally_grp):
+				if is_instance_valid(node) and node is UnitActor and not node.is_dead():
+					if node.global_position.distance_to(world_pos) <= radius and node.has_method("promote_to_hero"):
+						node.promote_to_hero()
+			_spawn_sky_beam(world_pos, 2.0, Color("#fbbf24"))
+			_spawn_ring_burst(world_pos, radius, Color("#fbbf24"))
+			var h_msg: String = "Consagração Heroica realizada! Tropas fortalecidas com Oricalco." if is_player else "⚠️ Tropas inimigas consagradas como heróis!"
+			GameState.notify(h_msg, not is_player)
+		"chaos":
+			_convert_nearest_enemy(world_pos, radius, enemy_grp, caster_faction, acting_pantheon)
+			_spawn_sky_particles(world_pos, radius, Color("#a855f7"), 30)
+			_spawn_ring_burst(world_pos, radius, vfx_col)
+			var c_msg: String = "Sedução das Sombras! Uma unidade inimiga foi convertida." if is_player else "⚠️ Uma de suas unidades foi seduzida pelo Inimigo!"
+			GameState.notify(c_msg, not is_player)
+		"implode":
+			_pull_and_damage_enemies(world_pos, radius, 340.0, 420.0, enemy_grp, caster_faction, acting_pantheon)
+			_spawn_black_hole_vfx(world_pos, vfx_col)
+			_spawn_ring_burst(world_pos, radius, vfx_col)
+			var imp_msg: String = "Implosão Gravitacional Cósmica ativada!" if is_player else "⚠️ O Inimigo conjurou Implosão Gravitacional!"
+			GameState.notify(imp_msg, not is_player)
+		"vision":
+			_spawn_sky_beam(world_pos, 3.0, Color("#38bdf8"))
+			_spawn_ring_burst(world_pos, radius, Color("#38bdf8"))
+			var v_msg: String = "Visão Mística revelou a área no mapa!" if is_player else "⚠️ Inimigo obteve visão astral da área!"
+			GameState.notify(v_msg, not is_player)
 		_:
 			_damage_enemies_in_area(world_pos, radius, 150.0, 120.0, enemy_grp, caster_faction, acting_pantheon)
 			_spawn_ring_burst(world_pos, radius, vfx_col)

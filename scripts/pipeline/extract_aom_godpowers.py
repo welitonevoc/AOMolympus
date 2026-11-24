@@ -18,8 +18,8 @@ import struct
 import json
 import re
 
-BAR1_PATH = '/sdcard/Documents/godpowers.bar'
-BAR2_PATH = '/sdcard/Documents/godpowers2.bar'
+BAR1_PATH = '/sdcard/aom/god powers/godpowers.bar' if os.path.exists('/sdcard/aom/god powers/godpowers.bar') else '/sdcard/Documents/godpowers.bar'
+BAR2_PATH = '/sdcard/aom/god powers/godpowers2.bar' if os.path.exists('/sdcard/aom/god powers/godpowers2.bar') else '/sdcard/Documents/godpowers2.bar'
 JSON_OUT_PATH = 'data/official_god_powers.json'
 CATALOG_GD_PATH = 'scripts/divine/divine_power_catalog.gd'
 
