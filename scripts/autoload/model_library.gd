@@ -105,6 +105,9 @@ static func create_unit_visual(
 			continue
 		var loaded: Node3D = _try_instantiate_model(path)
 		if loaded != null:
+			# Força materiais opacos nos modelos importados (GLB/FBX) para evitar
+			# bonecos transparentes quando a fonte traz alpha/transparência nos materiais
+			_force_opaque_materials(loaded)
 			if unit_kind in ["villager", "aldeao"]:
 				loaded.scale = Vector3.ONE
 				attach_villager_tools(loaded, "axe")
@@ -212,6 +215,9 @@ static func create_divine_unit_visual(
 	for path in candidates:
 		var loaded: Node3D = _try_instantiate_model(path)
 		if loaded != null:
+			# Força materiais opacos nos modelos importados (GLB/FBX) para evitar
+			# bonecos transparentes quando a fonte traz alpha/transparência nos materiais
+			_force_opaque_materials(loaded)
 			# Aplica escala divina
 			var scale: float = profile.get("scale", 2.0)
 			loaded.scale = Vector3.ONE * scale
@@ -2517,6 +2523,22 @@ static func _make_mat(
 	return m
 
 
+static func _force_opaque_materials(node: Node) -> void:
+	if node is MeshInstance3D:
+		var mesh: Mesh = node.mesh
+		if mesh != null:
+			for i in range(mesh.get_surface_count()):
+				var mat: Material = mesh.get_surface_material(i)
+				if mat is StandardMaterial3D:
+					mat.transparency = BaseMaterial3D.TRANSPARENCY_DISABLED
+					mat.albedo_color.a = 1.0
+		if node.material_override != null and node.material_override is StandardMaterial3D:
+			node.material_override.transparency = BaseMaterial3D.TRANSPARENCY_DISABLED
+			node.material_override.albedo_color.a = 1.0
+	for child in node.get_children():
+		_force_opaque_materials(child)
+
+
 static func _add_box(parent: Node3D, size: Vector3, pos: Vector3, mat: Material) -> void:
 	var mesh := BoxMesh.new()
 	mesh.size = size
@@ -2671,4 +2693,3 @@ static func _build_procedural_fauna(kind: String) -> Node3D:
 		for lz in [-0.4, 0.4]:
 			_add_cylinder(root, 0.08, 0.07, 0.6, Vector3(lx, 0.3, lz), body_mat)
 	return root
-
