@@ -272,7 +272,7 @@ func apply_preset(preset: AtmospherePreset, transition_time: float = 1.2) -> voi
 func cycle_next_preset() -> void:
 	var total := PRESETS.size()
 	var next_id := (int(current_preset) + 1) % total
-	apply_preset(AtmospherePreset(next_id), 1.2)
+	apply_preset(next_id as AtmospherePreset, 1.2)
 
 
 ## Retorna informações do preset solicitado

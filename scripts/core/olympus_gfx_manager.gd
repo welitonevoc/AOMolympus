@@ -231,7 +231,7 @@ func load_saved_settings_or_autodetect() -> void:
 			if parsed is Dictionary and parsed.has("quality_tier"):
 				var saved_tier: int = int(parsed["quality_tier"])
 				if saved_tier in [QualityTier.BATTERY_SAVER, QualityTier.BALANCED, QualityTier.OLYMPUS_HIGH, QualityTier.DIVINE_ULTRA]:
-					set_quality_preset(QualityTier(saved_tier), false)
+					set_quality_preset(saved_tier as QualityTier, false)
 					return
 
 	# Caso não exista arquivo salvo, detecta o tier recomendado
