@@ -75,6 +75,9 @@ var _biome_buttons: Dictionary = {}
 var _diff_buttons: Dictionary = {}
 var _res_mode_buttons: Dictionary = {}
 var _chapter_buttons: Dictionary = {}
+var _chosen_random_map_preset: String = "olympus_acropolis"
+var _random_map_buttons: Dictionary = {}
+var _random_map_desc_label: Label
 var _pantheon_desc_label: Label
 var _chapter_desc_label: Label
 
@@ -853,6 +856,37 @@ func _build_pantheon_start_overlay() -> void:
 		b_row.add_child(b_btn)
 		_biome_buttons[bid] = b_btn
 
+	var m_lbl := _make_metric_label("Mapa Mítico / Topografia Procedural:", Color("#f6e08b"))
+	m_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_skirmish_box.add_child(m_lbl)
+
+	var m_scroll := ScrollContainer.new()
+	m_scroll.custom_minimum_size = Vector2(0.0, 50.0)
+	m_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	m_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	_skirmish_box.add_child(m_scroll)
+
+	var m_row := HBoxContainer.new()
+	m_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	m_row.add_theme_constant_override("separation", 8)
+	m_scroll.add_child(m_row)
+
+	for mid in OlympusRandomMapPresets.PRESET_ORDER:
+		var m_spec: Dictionary = OlympusRandomMapPresets.get_preset(mid)
+		var icon: String = String(m_spec.get("icon", "🗺️"))
+		var m_name: String = String(m_spec.get("name", mid))
+		var m_btn := _make_action_button("%s %s" % [icon, m_name], mid == _chosen_random_map_preset, 185.0, 42.0)
+		m_btn.pressed.connect(func() -> void: _select_start_random_map(mid))
+		m_row.add_child(m_btn)
+		_random_map_buttons[mid] = m_btn
+
+	_random_map_desc_label = Label.new()
+	_random_map_desc_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_random_map_desc_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_random_map_desc_label.add_theme_color_override("font_color", Color("#cbd5e1"))
+	_random_map_desc_label.add_theme_font_size_override("font_size", 12)
+	_skirmish_box.add_child(_random_map_desc_label)
+
 	var d_lbl := _make_metric_label("Dificuldade da IA Oponente:", Color("#f6e08b"))
 	d_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_skirmish_box.add_child(d_lbl)
@@ -928,6 +962,7 @@ func _build_pantheon_start_overlay() -> void:
 
 	_select_start_pantheon(_chosen_pantheon)
 	_select_start_biome(_chosen_biome)
+	_select_start_random_map(_chosen_random_map_preset)
 	_select_start_difficulty(_chosen_difficulty)
 	_select_start_resource_mode(_chosen_resources_mode)
 	_select_start_chapter(_chosen_chapter)
@@ -939,7 +974,7 @@ func _build_pantheon_start_overlay() -> void:
 		if _start_mode == "campaign":
 			GameState.start_campaign_chapter(_chosen_chapter)
 		else:
-			GameState.start_new_match(_chosen_pantheon, _chosen_biome, _chosen_difficulty, -1, "", "", "", "conquest", _chosen_resources_mode, 1, GameState.active_map_size)
+			GameState.start_new_match(_chosen_pantheon, _chosen_biome, _chosen_difficulty, -1, "", "", "", "conquest", _chosen_resources_mode, 1, GameState.active_map_size, _chosen_random_map_preset)
 	)
 	vbox.add_child(start_btn)
 
@@ -1006,7 +1041,7 @@ func _build_end_match_overlay() -> void:
 		if not GameState.active_campaign_id.is_empty():
 			GameState.start_campaign_chapter(GameState.active_campaign_id)
 		else:
-			GameState.start_new_match(_chosen_pantheon, _chosen_biome, _chosen_difficulty, -1, "", "", "", "conquest", "standard", 1, GameState.active_map_size)
+			GameState.start_new_match(_chosen_pantheon, _chosen_biome, _chosen_difficulty, -1, "", "", "", "conquest", "standard", 1, GameState.active_map_size, _chosen_random_map_preset)
 	)
 	btn_row.add_child(rematch_btn)
 
@@ -1236,6 +1271,19 @@ func _select_start_chapter(cid: String) -> void:
 			p_name,
 			bm_name,
 			ch.get("briefing", "")
+		]
+
+
+func _select_start_random_map(mid: String) -> void:
+	_chosen_random_map_preset = mid
+	_highlight_choice_group(_random_map_buttons, mid)
+	var spec: Dictionary = OlympusRandomMapPresets.get_preset(mid)
+	if not spec.is_empty() and _random_map_desc_label != null:
+		_random_map_desc_label.text = "%s %s — %s\n%s" % [
+			spec.get("icon", "🗺️"),
+			spec.get("name", mid),
+			spec.get("tagline", ""),
+			spec.get("description", "")
 		]
 
 

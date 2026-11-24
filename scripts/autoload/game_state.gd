@@ -34,6 +34,7 @@ var victory_condition: String = "conquest"
 var starting_resources_mode: String = "standard"
 var active_biome: String = "mediterranean"
 var active_map_size: String = "standard"
+var active_random_map_preset: String = "olympus_acropolis"
 var ai_difficulty: String = "normal"
 var active_campaign_id: String = ""
 var map_seed: int = 104729
@@ -114,7 +115,8 @@ func start_new_match(
 	victory_mode: String = "conquest",
 	start_res_mode: String = "standard",
 	start_age: int = 1,
-	p_map_size: String = "standard"
+	p_map_size: String = "standard",
+	p_random_map_preset: String = ""
 ) -> void:
 	active_pantheon = pantheon_id if PantheonCatalog.PANTHEONS.has(pantheon_id) else "greek"
 	if chosen_enemy_pantheon != "" and PantheonCatalog.PANTHEONS.has(chosen_enemy_pantheon):
@@ -124,6 +126,11 @@ func start_new_match(
 
 	active_biome = biome_id if PantheonCatalog.BIOMES.has(biome_id) else "mediterranean"
 	active_map_size = p_map_size if PantheonCatalog.MAP_SIZES.has(p_map_size) else "standard"
+	if p_random_map_preset != "" and OlympusRandomMapPresets.PRESETS.has(p_random_map_preset):
+		active_random_map_preset = p_random_map_preset
+	else:
+		active_random_map_preset = OlympusRandomMapPresets.get_default_preset_id()
+
 	ai_difficulty = difficulty_id if PantheonCatalog.AI_DIFFICULTIES.has(difficulty_id) else "normal"
 	active_campaign_id = campaign_id
 	active_major_god = major_god_id if major_god_id != "" else "%s_major" % active_pantheon

@@ -1,12 +1,12 @@
 class_name BiomeMapGenerator
 extends RefCounted
-## Gerador Cartografico Procedural para 4 Biomas Mitologicos (Fase 3):
+## Gerador Cartografico Procedural para Biomas e Mapas Aleatorios do Olympus:
 ## - Mediterraneo (planicies + mar Egeu + oliveiras)
 ## - Deserto do Nilo (dunas douradas + oasis central + arenito)
 ## - Tundra Nordica (neve glacial + fiorde + pinheiros nevados)
 ## - Erebo Vulcanico (basalto + rios de magma + cristais)
-## Deterministico por semente (map_seed), gera terreno, decoracao cenario e plano de recursos.
-
+## Suporta os 14 Presets Topograficos do OlympusRandomMapPresets (Platos, Mar Central, Canyons, Altar, etc.).
+## Deterministico por semente (map_seed), gera terreno, decoracao cenario e plano balanceado de recursos.
 
 static func build_biome_environment(
 	terrain_root: Node3D,
@@ -23,11 +23,16 @@ static func build_biome_environment(
 	var rng := RandomNumberGenerator.new()
 	rng.seed = map_seed
 
+	# Carrega o preset topografico ativo
+	var preset_id: String = GameState.active_random_map_preset
+	var preset: Dictionary = OlympusRandomMapPresets.get_preset(preset_id)
+	var topo_type: String = String(preset.get("topography_type", "open_plains"))
+
 	# 1. Plano principal de terreno navegavel
 	var ground_mesh := PlaneMesh.new()
 	ground_mesh.size = Vector2(arena_size, arena_size)
-	ground_mesh.subdivide_width = 12
-	ground_mesh.subdivide_depth = 12
+	ground_mesh.subdivide_width = 16
+	ground_mesh.subdivide_depth = 16
 
 	var ground_mat := StandardMaterial3D.new()
 	ground_mat.albedo_color = biome["ground_color"]
@@ -58,7 +63,26 @@ static func build_biome_environment(
 	sea.position = Vector3(0.0, -0.45, 0.0)
 	terrain_root.add_child(sea)
 
-	# 3. Pracas das duas cidadelas
+	# 3. Esculpe a Topografia Procedural do Preset (Acropole, Mar Central, Altar, etc.)
+	match topo_type:
+		"plateau":
+			_build_plateau_base(terrain_root, player_base, float(preset.get("plateau_height", 5.5)), biome["rock_color"])
+			_build_plateau_base(terrain_root, enemy_base, float(preset.get("plateau_height", 5.5)), biome["rock_color"])
+		"central_sea":
+			_build_central_sea(terrain_root, arena_size, float(preset.get("water_radius_ratio", 0.22)), biome["water_color"])
+		"altar_hill":
+			_build_divine_altar_hill(terrain_root, float(preset.get("hill_height", 4.5)), biome)
+		"frozen_lake":
+			_build_frozen_mirror_lake(terrain_root, arena_size, float(preset.get("water_radius_ratio", 0.20)))
+		"oasis":
+			_build_expanded_oasis(terrain_root, arena_size, float(preset.get("water_radius_ratio", 0.14)), biome)
+		"canyon_divide":
+			_build_canyon_divide(terrain_root, arena_size, biome["rock_color"], rng)
+		_:
+			# Destaque padrão do bioma caso não tenha topografia especializada
+			_build_biome_centerpiece(terrain_root, biome_id, biome, rng, arena_size)
+
+	# 4. Pracas das duas cidadelas
 	for plaza_cfg in [
 		{"pos": player_base, "col": biome["plaza_player"]},
 		{"pos": enemy_base, "col": biome["plaza_enemy"]},
@@ -76,9 +100,6 @@ static func build_biome_environment(
 		var p_pos: Vector3 = plaza_cfg["pos"]
 		plaza.position = Vector3(p_pos.x, 0.02, p_pos.z)
 		terrain_root.add_child(plaza)
-
-	# 4. Destaque cartografico central conforme o bioma (Oasis no Nilo, Cratera de Magma no Erebo, Colinas)
-	_build_biome_centerpiece(terrain_root, biome_id, biome, rng, arena_size)
 
 	# 5. Borda rochosa natural instanciada em lote via MultiMeshInstance3D (1 unico draw call)
 	var rock_mat := StandardMaterial3D.new()
@@ -110,13 +131,165 @@ static func build_biome_environment(
 	multi_inst.material_override = rock_mat
 	terrain_root.add_child(multi_inst)
 
-
-	# 6. Plano procedural balanceado de recursos escalado ao tamanho da arena
-	var resource_plan: Array[Dictionary] = _generate_resource_plan(player_base, enemy_base, arena_size, rng)
+	# 6. Plano procedural balanceado de recursos escalado ao tamanho da arena e preset
+	var resource_plan: Array[Dictionary] = _generate_resource_plan(player_base, enemy_base, arena_size, rng, preset)
 	return {
 		"biome": biome,
+		"preset": preset,
 		"resources": resource_plan,
 	}
+
+
+# === FUNÇÕES DE ESCULTURA TOPOGRÁFICA PROCEDURAL ===
+
+static func _build_plateau_base(root: Node3D, base_pos: Vector3, _height: float, rock_color: Color) -> void:
+	# Como as unidades e a navegação no Godot operam no plano Y=0,
+	# modelamos o platô como uma base aterrada elegante (altura 0.18m, topo em Y=0.01)
+	# para que o Centro da Cidade, aldeões e recursos fiquem perfeitamente assentados na superfície.
+	var plateau_mesh := CylinderMesh.new()
+	plateau_mesh.top_radius = 20.0
+	plateau_mesh.bottom_radius = 24.0
+	plateau_mesh.height = 0.18
+
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = rock_color
+	mat.roughness = 0.88
+
+	var p_inst := MeshInstance3D.new()
+	p_inst.mesh = plateau_mesh
+	p_inst.material_override = mat
+	p_inst.position = Vector3(base_pos.x, -0.07, base_pos.z)
+	root.add_child(p_inst)
+
+
+static func _build_central_sea(root: Node3D, arena_size: float, ratio: float, water_color: Color) -> void:
+	var sea_radius: float = arena_size * ratio
+	var sea_mesh := CylinderMesh.new()
+	sea_mesh.top_radius = sea_radius
+	sea_mesh.bottom_radius = sea_radius * 1.08
+	sea_mesh.height = 0.4
+
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = water_color
+	mat.roughness = 0.15
+	mat.metallic = 0.3
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+
+	var inst := MeshInstance3D.new()
+	inst.name = "AegeanCentralSea"
+	inst.mesh = sea_mesh
+	inst.material_override = mat
+	inst.position = Vector3(0.0, 0.05, 0.0)
+	root.add_child(inst)
+
+
+static func _build_divine_altar_hill(root: Node3D, height: float, biome: Dictionary) -> void:
+	# Grande colina circular central com altura balanceada
+	var hill_h: float = minf(height, 1.4)
+	var hill := CylinderMesh.new()
+	hill.top_radius = 12.0
+	hill.bottom_radius = 20.0
+	hill.height = hill_h
+
+	var hill_mat := StandardMaterial3D.new()
+	hill_mat.albedo_color = biome.get("hill_color", Color("#8b5a2b"))
+	hill_mat.roughness = 0.9
+
+	var h_inst := MeshInstance3D.new()
+	h_inst.mesh = hill
+	h_inst.material_override = hill_mat
+	h_inst.position = Vector3(0.0, hill_h * 0.5 - 0.05, 0.0)
+	root.add_child(h_inst)
+
+	# Altar de Ouro dos Deuses no cume da colina
+	var altar_box := BoxMesh.new()
+	altar_box.size = Vector3(5.0, 1.2, 5.0)
+
+	var gold_mat := StandardMaterial3D.new()
+	gold_mat.albedo_color = Color("#f59e0b")
+	gold_mat.metallic = 0.8
+	gold_mat.roughness = 0.25
+	gold_mat.emission_enabled = true
+	gold_mat.emission = Color("#d97706")
+	gold_mat.emission_energy_multiplier = 1.2
+
+	var altar_inst := MeshInstance3D.new()
+	altar_inst.name = "OlympusDivineAltar"
+	altar_inst.mesh = altar_box
+	altar_inst.material_override = gold_mat
+	altar_inst.position = Vector3(0.0, hill_h + 0.5, 0.0)
+	root.add_child(altar_inst)
+
+
+static func _build_frozen_mirror_lake(root: Node3D, arena_size: float, ratio: float) -> void:
+	var lake_radius: float = arena_size * ratio
+	var ice_mesh := CylinderMesh.new()
+	ice_mesh.top_radius = lake_radius
+	ice_mesh.bottom_radius = lake_radius * 1.05
+	ice_mesh.height = 0.1
+
+	var ice_mat := StandardMaterial3D.new()
+	ice_mat.albedo_color = Color(0.72, 0.88, 0.98, 0.88)
+	ice_mat.roughness = 0.08
+	ice_mat.metallic = 0.4
+	ice_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+
+	var inst := MeshInstance3D.new()
+	inst.name = "FrozenMirrorLake"
+	inst.mesh = ice_mesh
+	inst.material_override = ice_mat
+	inst.position = Vector3(0.0, 0.04, 0.0)
+	root.add_child(inst)
+
+
+static func _build_expanded_oasis(root: Node3D, arena_size: float, ratio: float, biome: Dictionary) -> void:
+	var oasis_radius: float = arena_size * ratio
+	var pond_mesh := CylinderMesh.new()
+	pond_mesh.top_radius = oasis_radius
+	pond_mesh.bottom_radius = oasis_radius * 1.1
+	pond_mesh.height = 0.2
+
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = biome.get("water_color", Color(0.12, 0.45, 0.65, 0.75))
+	mat.roughness = 0.15
+	mat.metallic = 0.2
+
+	var inst := MeshInstance3D.new()
+	inst.name = "NileOasisLake"
+	inst.mesh = pond_mesh
+	inst.material_override = mat
+	inst.position = Vector3(0.0, 0.02, 0.0)
+	root.add_child(inst)
+
+
+static func _build_canyon_divide(root: Node3D, arena_size: float, rock_color: Color, rng: RandomNumberGenerator) -> void:
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = rock_color
+	mat.roughness = 0.92
+
+	# Duas grandes massas rochosas com fenda central de passagem e colisores fisicos
+	var ridge_len: float = arena_size * 0.38
+	for side in [-1.0, 1.0]:
+		var ridge := BoxMesh.new()
+		ridge.size = Vector3(14.0, 6.0, ridge_len)
+
+		var r_inst := MeshInstance3D.new()
+		r_inst.mesh = ridge
+		r_inst.material_override = mat
+		var center_z: float = side * (arena_size * 0.24)
+		var r_pos := Vector3(rng.randf_range(-2.0, 2.0), 2.8, center_z)
+		r_inst.position = r_pos
+		root.add_child(r_inst)
+
+		var body := StaticBody3D.new()
+		body.name = "CanyonCliffCollision_%d" % int(side)
+		body.position = r_pos
+		var col := CollisionShape3D.new()
+		var box_shape := BoxShape3D.new()
+		box_shape.size = ridge.size
+		col.shape = box_shape
+		body.add_child(col)
+		root.add_child(body)
 
 
 static func _build_biome_centerpiece(
@@ -127,7 +300,7 @@ static func _build_biome_centerpiece(
 	arena_size: float = 220.0
 ) -> void:
 	var hill_mat := StandardMaterial3D.new()
-	hill_mat.albedo_color = biome["hill_color"]
+	hill_mat.albedo_color = biome.get("hill_color", Color("#8b5a2b"))
 	hill_mat.roughness = 0.92
 
 	# 4 colinas suaves nos flancos para dar leitura topografica sem travar rotas
@@ -150,7 +323,6 @@ static func _build_biome_centerpiece(
 		root.add_child(mound)
 
 	if biome_id == "nile_desert":
-		# Lagoa de Oasis no centro do deserto
 		var oasis := CylinderMesh.new()
 		oasis.top_radius = 5.2
 		oasis.bottom_radius = 6.0
@@ -164,7 +336,6 @@ static func _build_biome_centerpiece(
 		inst.position = Vector3(-4.0, 0.03, -4.0)
 		root.add_child(inst)
 	elif biome_id == "erebus_volcanic":
-		# Fenda de magma incandescente perto do centro
 		var rift := BoxMesh.new()
 		rift.size = Vector3(12.0, 0.1, 2.6)
 		var lava_mat := StandardMaterial3D.new()
@@ -179,7 +350,6 @@ static func _build_biome_centerpiece(
 		inst.rotation_degrees = Vector3(0.0, 38.0, 0.0)
 		root.add_child(inst)
 	elif biome_id == "nordic_tundra":
-		# Lago congelado refletivo
 		var ice := CylinderMesh.new()
 		ice.top_radius = 5.8
 		ice.bottom_radius = 6.4
@@ -194,7 +364,7 @@ static func _build_biome_centerpiece(
 		inst.position = Vector3(-5.5, 0.02, -5.0)
 		root.add_child(inst)
 
-	# Obelisco mitico central (marco visual de disputa de ouro)
+	# Obelisco mitico central
 	var ob_mat := StandardMaterial3D.new()
 	ob_mat.albedo_color = Color("#d4af37")
 	ob_mat.metallic = 0.72
@@ -214,10 +384,12 @@ static func _generate_resource_plan(
 	player_base: Vector3,
 	enemy_base: Vector3,
 	arena_size: float,
-	rng: RandomNumberGenerator
+	rng: RandomNumberGenerator,
+	preset: Dictionary = {}
 ) -> Array[Dictionary]:
 	var plan: Array[Dictionary] = []
 	var mult: float = float(PantheonCatalog.get_map_size(GameState.active_map_size).get("resource_mult", 1.0))
+	var gold_mult: float = float(preset.get("gold_multiplier", 1.0))
 
 	# ── ANEL 1: Recursos Imediatos de Abertura (18m - 24m da base) ──────────
 	# Jogador
@@ -225,31 +397,48 @@ static func _generate_resource_plan(
 	plan.append({"kind": "food", "pos": player_base + Vector3(-14.0, 0.0, 2.5), "amount": 500.0 * mult})
 	plan.append({"kind": "wood", "pos": player_base + Vector3(-11.0, 0.0, 12.0), "amount": 600.0 * mult})
 	plan.append({"kind": "wood", "pos": player_base + Vector3(-6.5, 0.0, 15.0), "amount": 600.0 * mult})
-	plan.append({"kind": "gold", "pos": player_base + Vector3(14.5, 0.0, 10.5), "amount": 800.0 * mult})
+	plan.append({"kind": "gold", "pos": player_base + Vector3(14.5, 0.0, 10.5), "amount": 800.0 * mult * gold_mult})
 
 	# Inimigo (Espelhado)
 	plan.append({"kind": "food", "pos": enemy_base + Vector3(12.5, 0.0, 4.5), "amount": 500.0 * mult})
 	plan.append({"kind": "food", "pos": enemy_base + Vector3(14.0, 0.0, -2.5), "amount": 500.0 * mult})
 	plan.append({"kind": "wood", "pos": enemy_base + Vector3(11.0, 0.0, -12.0), "amount": 600.0 * mult})
 	plan.append({"kind": "wood", "pos": enemy_base + Vector3(6.5, 0.0, -15.0), "amount": 600.0 * mult})
-	plan.append({"kind": "gold", "pos": enemy_base + Vector3(-14.5, 0.0, -10.5), "amount": 800.0 * mult})
+	plan.append({"kind": "gold", "pos": enemy_base + Vector3(-14.5, 0.0, -10.5), "amount": 800.0 * mult * gold_mult})
 
 	# ── ANEL 2: Recursos Médios de Expansão (40m - 60m nos flancos) ─────────
-	# Segundo Ouro do Jogador e Inimigo
 	var med_gold_p: Vector3 = player_base + Vector3(36.0, 0.0, -12.0)
 	var med_gold_e: Vector3 = enemy_base + Vector3(-36.0, 0.0, 12.0)
-	plan.append({"kind": "gold", "pos": med_gold_p, "amount": 900.0 * mult})
-	plan.append({"kind": "gold", "pos": med_gold_e, "amount": 900.0 * mult})
+	plan.append({"kind": "gold", "pos": med_gold_p, "amount": 900.0 * mult * gold_mult})
+	plan.append({"kind": "gold", "pos": med_gold_e, "amount": 900.0 * mult * gold_mult})
 	plan.append({"kind": "wood", "pos": med_gold_p + Vector3(-6.0, 0.0, 8.0), "amount": 600.0 * mult})
 	plan.append({"kind": "wood", "pos": med_gold_e + Vector3(6.0, 0.0, -8.0), "amount": 600.0 * mult})
 
 	# ── ANEL 3: Recursos Neutros Disputados no Centro e Zonas Abertas ────────
-	var center_golds: Array[Vector3] = [
-		Vector3(3.5, 0.0, 3.0),
-		Vector3(-3.5, 0.0, -3.0),
-		Vector3(14.0, 0.0, 15.0),
-		Vector3(-14.0, 0.0, -15.0)
-	]
+	var topography: String = String(preset.get("topography_type", "plains"))
+	var central_exclusion_radius: float = 8.0
+	if topography in ["central_sea", "frozen_lake", "oasis"]:
+		var water_ratio: float = float(preset.get("water_radius_ratio", 0.22))
+		central_exclusion_radius = arena_size * water_ratio + 5.0
+	elif topography == "altar_hill":
+		central_exclusion_radius = 22.0
+
+	var center_golds: Array[Vector3] = []
+	if central_exclusion_radius > 10.0:
+		# Posiciona os ouros na orla/praia ou no sope da colina
+		var ring_r: float = central_exclusion_radius + 4.0
+		center_golds.append(Vector3(ring_r * 0.70, 0.0, ring_r * 0.70))
+		center_golds.append(Vector3(-ring_r * 0.70, 0.0, -ring_r * 0.70))
+		center_golds.append(Vector3(-ring_r * 0.70, 0.0, ring_r * 0.70))
+		center_golds.append(Vector3(ring_r * 0.70, 0.0, -ring_r * 0.70))
+	else:
+		center_golds = [
+			Vector3(3.5, 0.0, 3.0),
+			Vector3(-3.5, 0.0, -3.0),
+			Vector3(14.0, 0.0, 15.0),
+			Vector3(-14.0, 0.0, -15.0)
+		]
+
 	if arena_size >= 200.0:
 		center_golds.append(Vector3(-arena_size * 0.16, 0.0, arena_size * 0.18))
 		center_golds.append(Vector3(arena_size * 0.16, 0.0, -arena_size * 0.18))
@@ -261,7 +450,7 @@ static func _generate_resource_plan(
 
 	for base_gold in center_golds:
 		var jitter := Vector3(rng.randf_range(-3.0, 3.0), 0.0, rng.randf_range(-3.0, 3.0))
-		plan.append({"kind": "gold", "pos": base_gold + jitter, "amount": 1000.0 * mult})
+		plan.append({"kind": "gold", "pos": base_gold + jitter, "amount": 1000.0 * mult * gold_mult})
 
 	# Bosques e rebanhos dispersos pela arena
 	var spawn_extent: float = arena_size * 0.42
@@ -270,7 +459,7 @@ static func _generate_resource_plan(
 		var px: float = rng.randf_range(-spawn_extent, spawn_extent)
 		var pz: float = rng.randf_range(-spawn_extent, spawn_extent)
 		var candidate := Vector3(px, 0.0, pz)
-		if candidate.distance_to(player_base) < 26.0 or candidate.distance_to(enemy_base) < 26.0 or candidate.length() < 8.0:
+		if candidate.distance_to(player_base) < 26.0 or candidate.distance_to(enemy_base) < 26.0 or candidate.length() < central_exclusion_radius:
 			continue
 		var r_kind: String = "wood" if (i % 3 != 0) else "food"
 		plan.append({"kind": r_kind, "pos": candidate, "amount": 540.0 * mult})
