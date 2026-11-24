@@ -24,6 +24,8 @@ var _fog_system: Node3D
 var _ai_controller: Node
 var _power_system: Node3D
 var _battle_hud: Node = null  # Referência ao BattleScreen (Painel H)
+var _victory_rules: OlympusVictoryRules = null
+var _trigger_engine: OlympusTriggerEngine = null
 var _last_idle_villager_idx: int = -1
 var _auto_economy_timer: float = 0.0
 
@@ -38,6 +40,7 @@ func _process(delta: float) -> void:
 
 
 func _ready() -> void:
+	add_to_group("battle_world")
 	_terrain_holder = Node3D.new()
 	_terrain_holder.name = "BiomeTerrain"
 	add_child(_terrain_holder)
@@ -49,6 +52,14 @@ func _ready() -> void:
 	_projectiles_root = Node3D.new()
 	_projectiles_root.name = "Projectiles"
 	add_child(_projectiles_root)
+
+	_victory_rules = OlympusVictoryRules.new()
+	_victory_rules.name = "VictoryRules"
+	add_child(_victory_rules)
+
+	_trigger_engine = OlympusTriggerEngine.new()
+	_trigger_engine.name = "TriggerEngine"
+	add_child(_trigger_engine)
 
 	_setup_lighting_and_sky()
 	_setup_navigation_mesh()
@@ -458,6 +469,8 @@ func _on_wonder_finished(building: BuildingActor) -> void:
 	if building.building_kind != "wonder":
 		return
 	GameState.activate_wonder_age(building.faction)
+	if is_instance_valid(_victory_rules):
+		_victory_rules.register_wonder_built(building.faction)
 
 
 func _on_titan_gate_finished(building: BuildingActor) -> void:
@@ -507,6 +520,9 @@ func _on_projectile_requested(
 
 
 func _on_building_destroyed(building: BuildingActor) -> void:
+	if is_instance_valid(_victory_rules):
+		_victory_rules.register_building_destroyed(building)
+
 	if building.building_kind == "divine_altar":
 		if building.faction == "player":
 			GameState.record_divine_altar_destroyed()
@@ -517,20 +533,29 @@ func _on_building_destroyed(building: BuildingActor) -> void:
 		return
 	if building.building_kind != "town_center":
 		return
-	if building.faction == "enemy":
-		var remaining_enemy: int = 0
-		for tc in get_tree().get_nodes_in_group("enemy_town_centers"):
-			if tc != building and is_instance_valid(tc):
-				remaining_enemy += 1
-		if remaining_enemy == 0:
-			GameState.finish_match("victory")
-	else:
-		var remaining_player: int = 0
-		for tc in get_tree().get_nodes_in_group("player_town_centers"):
-			if tc != building and is_instance_valid(tc):
-				remaining_player += 1
-		if remaining_player == 0:
-			GameState.finish_match("defeat")
+	if not is_instance_valid(_victory_rules):
+		if building.faction == "enemy":
+			var remaining_enemy: int = 0
+			for tc in get_tree().get_nodes_in_group("enemy_town_centers"):
+				if tc != building and is_instance_valid(tc):
+					remaining_enemy += 1
+			if remaining_enemy == 0:
+				GameState.finish_match("victory")
+		else:
+			var remaining_player: int = 0
+			for tc in get_tree().get_nodes_in_group("player_town_centers"):
+				if tc != building and is_instance_valid(tc):
+					remaining_player += 1
+			if remaining_player == 0:
+				GameState.finish_match("defeat")
+
+
+func get_victory_rules() -> OlympusVictoryRules:
+	return _victory_rules
+
+
+func get_trigger_engine() -> OlympusTriggerEngine:
+	return _trigger_engine
 
 
 func spawn_resource_node(kind: String, pos: Vector3, amount: float) -> ResourceNode:

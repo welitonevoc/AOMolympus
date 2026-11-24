@@ -107,6 +107,58 @@ func _on_match_started(_p: String, _e: String) -> void:
 	_completed_ids.clear()
 	_check_accum = 0.0
 	_emit_snapshot()
+	_setup_chapter_triggers()
+
+
+func _setup_chapter_triggers() -> void:
+	if _active_chapter_id.is_empty():
+		return
+	var bw: Node = get_node_or_null("/root/Main/BattleWorld")
+	if not is_instance_valid(bw):
+		bw = get_node_or_null("/root/MainScene/BattleWorld")
+	if not is_instance_valid(bw):
+		bw = get_tree().get_first_node_in_group("battle_world")
+	if not is_instance_valid(bw) or not bw.has_method("get_trigger_engine"):
+		return
+	var te: OlympusTriggerEngine = bw.get_trigger_engine()
+	if not is_instance_valid(te):
+		return
+
+	# Gatilho de Abertura Narrativa aos 3 segundos
+	var open_speaker: String = "Arauto do Olimpo"
+	var open_text: String = ""
+	match _active_chapter_id:
+		"olympus_dawn":
+			open_speaker = "Comandante Ático"
+			open_text = "Soldados de Atenas! Ergam o Templo e consolidem nossas fronteiras antes que a cidadela invasora ataque."
+		"nile_eclipse":
+			open_speaker = "Sacerdote de Rá"
+			open_text = "As minas do oásis guardam as riquezas sagradas do Nilo. Reúnam o ouro e convoquem a força do Sol!"
+		"midgard_frost":
+			open_speaker = "Jarl de Thor"
+			open_text = "O frio de Midgard não poupa os fracos! Derramem o sangue inimigo para conquistar o Favor de Odin."
+		"atlantis_rise":
+			open_speaker = "General de Cronos"
+			open_text = "A glória de Atlântida ressurge das profundezas. Promovam nossos guerreiros aos nobres postos de Heróis!"
+		"erebus_reckoning":
+			open_speaker = "Mestre Fu Xi"
+			open_text = "O Érebo se enfurece sob a marcha do Titã! Ergam a Fortaleza e preparem as hostes celestiais."
+
+	te.register_trigger(
+		"chapter_intro_" + _active_chapter_id,
+		[{"type": "timer_elapsed", "seconds": 3.0}],
+		[{"type": "show_dialogue", "speaker": open_speaker, "title": "Missão de Campanha", "text": open_text, "duration": 6.0}]
+	)
+
+	# Gatilho de Reforços Mitológicos ao atingir Era II
+	te.register_trigger(
+		"chapter_reinforcements_" + _active_chapter_id,
+		[{"type": "age_reached", "age": 2}],
+		[
+			{"type": "show_dialogue", "speaker": open_speaker, "title": "Reforços Chegaram", "text": "Os deuses abençoaram nossa devoção! Reforços divinos juntaram-se à nossa marcha.", "duration": 5.0},
+			{"type": "grant_resources", "resources": {"gold": 150.0, "favor": 20.0}}
+		]
+	)
 
 
 func _on_match_ended(result: String) -> void:

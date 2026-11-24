@@ -48,6 +48,16 @@ var _toast_panel: PanelContainer
 var _toast_label: Label
 var _toast_tween: Tween
 
+# --- Regras AoM: Cronometro de Maravilha e Dialogos de Gatilho ---
+var _wonder_panel: PanelContainer
+var _wonder_lbl: Label
+var _wonder_progress_bar: ProgressBar
+
+var _dialogue_panel: PanelContainer
+var _dialogue_speaker_lbl: Label
+var _dialogue_text_lbl: Label
+var _dialogue_tween: Tween
+
 var _start_overlay: ColorRect
 var _start_mode: String = "skirmish"
 var _skirmish_box: VBoxContainer
@@ -85,9 +95,12 @@ func _ready() -> void:
 	_build_bottom_left_zone()
 	_build_bottom_right_commands()
 	_build_toast_banner()
+	_build_wonder_countdown_panel()
+	_build_narrative_dialogue_panel()
 	_build_pantheon_start_overlay()
 	_build_end_match_overlay()
 	_build_divine_invocation_ui()
+	_connect_world_rules_and_triggers()
 
 	GameState.match_started_signal.connect(_on_match_started)
 	GameState.match_ended.connect(_on_match_ended)
@@ -574,6 +587,159 @@ func _build_toast_banner() -> void:
 	_toast_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_toast_label.add_theme_font_size_override("font_size", 13)
 	m.add_child(_toast_label)
+
+
+func _build_wonder_countdown_panel() -> void:
+	_wonder_panel = PanelContainer.new()
+	_wonder_panel.anchor_left = 0.5
+	_wonder_panel.anchor_right = 0.5
+	_wonder_panel.anchor_top = 0.0
+	_wonder_panel.anchor_bottom = 0.0
+	_wonder_panel.offset_left = -170.0
+	_wonder_panel.offset_right = 170.0
+	_wonder_panel.offset_top = 64.0
+	_wonder_panel.offset_bottom = 114.0
+	_wonder_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_wonder_panel.visible = false
+	_wonder_panel.add_theme_stylebox_override("panel", _make_panel_style(Color(0.06, 0.09, 0.15, 0.94), 12, Color(0.83, 0.69, 0.22, 0.75), true))
+	add_child(_wonder_panel)
+
+	var m := MarginContainer.new()
+	m.add_theme_constant_override("margin_left", 12)
+	m.add_theme_constant_override("margin_right", 12)
+	m.add_theme_constant_override("margin_top", 4)
+	m.add_theme_constant_override("margin_bottom", 4)
+	_wonder_panel.add_child(m)
+
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 3)
+	m.add_child(vbox)
+
+	_wonder_lbl = Label.new()
+	_wonder_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_wonder_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_wonder_lbl.add_theme_font_size_override("font_size", 12)
+	_wonder_lbl.text = "🏛️ MARAVILHA: 10:00"
+	vbox.add_child(_wonder_lbl)
+
+	_wonder_progress_bar = ProgressBar.new()
+	_wonder_progress_bar.custom_minimum_size = Vector2(0.0, 6.0)
+	_wonder_progress_bar.show_percentage = false
+	_wonder_progress_bar.max_value = 600.0
+	_wonder_progress_bar.value = 600.0
+	vbox.add_child(_wonder_progress_bar)
+
+
+func _build_narrative_dialogue_panel() -> void:
+	_dialogue_panel = PanelContainer.new()
+	_dialogue_panel.anchor_left = 0.5
+	_dialogue_panel.anchor_right = 0.5
+	_dialogue_panel.anchor_top = 1.0
+	_dialogue_panel.anchor_bottom = 1.0
+	_dialogue_panel.offset_left = -260.0
+	_dialogue_panel.offset_right = 260.0
+	_dialogue_panel.offset_top = -240.0
+	_dialogue_panel.offset_bottom = -160.0
+	_dialogue_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_dialogue_panel.visible = false
+	_dialogue_panel.add_theme_stylebox_override("panel", _make_panel_style(Color(0.04, 0.06, 0.1, 0.96), 14, Color(0.83, 0.69, 0.22, 0.8), true))
+	add_child(_dialogue_panel)
+
+	var m := MarginContainer.new()
+	m.add_theme_constant_override("margin_left", 14)
+	m.add_theme_constant_override("margin_right", 14)
+	m.add_theme_constant_override("margin_top", 8)
+	m.add_theme_constant_override("margin_bottom", 8)
+	_dialogue_panel.add_child(m)
+
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 4)
+	m.add_child(vbox)
+
+	_dialogue_speaker_lbl = Label.new()
+	_dialogue_speaker_lbl.add_theme_font_size_override("font_size", 13)
+	_dialogue_speaker_lbl.add_theme_color_override("font_color", Color("#f6e08b"))
+	vbox.add_child(_dialogue_speaker_lbl)
+
+	_dialogue_text_lbl = Label.new()
+	_dialogue_text_lbl.add_theme_font_size_override("font_size", 11)
+	_dialogue_text_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_dialogue_text_lbl.add_theme_color_override("font_color", Color("#f1f5f9"))
+	vbox.add_child(_dialogue_text_lbl)
+
+
+func _connect_world_rules_and_triggers() -> void:
+	if not is_instance_valid(_world):
+		_world = get_node_or_null("../BattleWorld") as Node3D
+	if is_instance_valid(_world):
+		if _world.has_method("get_victory_rules"):
+			var rules: OlympusVictoryRules = _world.get_victory_rules()
+			if is_instance_valid(rules):
+				if not rules.wonder_countdown_started.is_connected(_on_wonder_countdown_started):
+					rules.wonder_countdown_started.connect(_on_wonder_countdown_started)
+				if not rules.wonder_countdown_updated.is_connected(_on_wonder_countdown_updated):
+					rules.wonder_countdown_updated.connect(_on_wonder_countdown_updated)
+				if not rules.wonder_countdown_cancelled.is_connected(_on_wonder_countdown_cancelled):
+					rules.wonder_countdown_cancelled.connect(_on_wonder_countdown_cancelled)
+		if _world.has_method("get_trigger_engine"):
+			var trig_eng: OlympusTriggerEngine = _world.get_trigger_engine()
+			if is_instance_valid(trig_eng):
+				if not trig_eng.dialogue_requested.is_connected(_on_trigger_dialogue_requested):
+					trig_eng.dialogue_requested.connect(_on_trigger_dialogue_requested)
+
+
+func _on_wonder_countdown_started(faction: String, duration: float) -> void:
+	if _wonder_panel == null or _wonder_lbl == null or _wonder_progress_bar == null:
+		return
+	_wonder_panel.visible = true
+	_wonder_progress_bar.max_value = duration
+	_wonder_progress_bar.value = duration
+	_update_wonder_banner_text(faction, duration)
+
+
+func _on_wonder_countdown_updated(faction: String, remaining_seconds: float) -> void:
+	if _wonder_panel == null or _wonder_lbl == null or _wonder_progress_bar == null:
+		return
+	_wonder_panel.visible = true
+	_wonder_progress_bar.value = remaining_seconds
+	_update_wonder_banner_text(faction, remaining_seconds)
+
+
+func _on_wonder_countdown_cancelled(_faction: String, _reason: String) -> void:
+	if _wonder_panel != null:
+		_wonder_panel.visible = false
+
+
+func _update_wonder_banner_text(faction: String, remaining_seconds: float) -> void:
+	var mins: int = int(remaining_seconds) / 60
+	var secs: int = int(remaining_seconds) % 60
+	var time_fmt: String = "%02d:%02d" % [mins, secs]
+	if faction == "player":
+		_wonder_lbl.text = "🏛️ MARAVILHA ALIADA: %s" % time_fmt
+		_wonder_lbl.add_theme_color_override("font_color", Color("#f6e08b"))
+	else:
+		_wonder_lbl.text = "⚠️ MARAVILHA INIMIGA: %s" % time_fmt
+		_wonder_lbl.add_theme_color_override("font_color", Color("#f87171"))
+
+
+func _on_trigger_dialogue_requested(speaker: String, title: String, text: String, duration: float, _portrait: String) -> void:
+	if _dialogue_panel == null or _dialogue_speaker_lbl == null or _dialogue_text_lbl == null:
+		return
+	_dialogue_speaker_lbl.text = "%s — %s" % [speaker, title] if not title.is_empty() else speaker
+	_dialogue_text_lbl.text = text
+	_dialogue_panel.visible = true
+	_dialogue_panel.modulate.a = 0.0
+
+	if _dialogue_tween != null and _dialogue_tween.is_valid():
+		_dialogue_tween.kill()
+
+	_dialogue_tween = create_tween()
+	_dialogue_tween.tween_property(_dialogue_panel, "modulate:a", 1.0, 0.25)
+	_dialogue_tween.tween_interval(maxf(1.5, duration))
+	_dialogue_tween.tween_property(_dialogue_panel, "modulate:a", 0.0, 0.35)
+	_dialogue_tween.tween_callback(func() -> void:
+		_dialogue_panel.visible = false
+	)
 
 
 func _build_pantheon_start_overlay() -> void:
@@ -1238,6 +1404,11 @@ func _on_match_started(_player_pid: String, _enemy_pid: String) -> void:
 	if _start_overlay != null:
 		_start_overlay.visible = false
 	_end_overlay.visible = false
+	if _wonder_panel != null:
+		_wonder_panel.visible = false
+	if _dialogue_panel != null:
+		_dialogue_panel.visible = false
+	_connect_world_rules_and_triggers()
 	_rebuild_divine_power_bar()
 	_rebuild_command_grid()
 	if _minimap != null:
