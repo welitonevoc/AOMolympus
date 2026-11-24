@@ -49,34 +49,45 @@ static func create_unit_visual(
 			deity_slug = god_slug
 
 	var aliases: Array[String] = [unit_kind]
+	match unit_kind:
+		"villager":
+			aliases.append_array(["villager", "aldeao", "worker"])
+		"infantry":
+			aliases.append_array(["infantry", "guerreiro", "soldado"])
+		"archer":
+			aliases.append_array(["archer", "arqueiro"])
+		"cavalry":
+			aliases.append_array(["cavalry", "cavaleiro"])
+		"hero":
+			aliases.append_array(["hero", "heroi"])
+		"myth":
+			aliases.append_array(["myth", "mitico", "criatura_mitica"])
+
 	if pantheon_id == "greek":
 		match unit_kind:
 			"villager":
-				aliases.append_array(["villager", "aldeao"])
+				aliases.append_array(["aldeao"])
 			"infantry":
-				aliases.append_array(["infantry", "hoplita_animado", "hoplita", "ancient_blue_hoplite_warrior"])
+				aliases.append_array(["hoplita_animado", "hoplita", "ancient_blue_hoplite_warrior"])
 			"archer":
-				aliases.append_array(["toxotes", "ancient_blue_hoplite_warrior", "archer"])
+				aliases.append_array(["toxotes", "ancient_blue_hoplite_warrior"])
 			"cavalry":
-				aliases.append_array(["hippeus", "prodromos", "cavalry"])
+				aliases.append_array(["hippeus", "prodromos"])
 			"hero":
-				aliases.append_array(["ancient_blue_hoplite_warrior", "hoplita_animado", "heroi"])
+				aliases.append_array(["ancient_blue_hoplite_warrior", "hoplita_animado"])
 			"myth":
-				aliases.append_array(["centauro_guerreiro_animado", "talos_clean_hq_animado_completo", "centauro_guerreiro", "myth"])
+				aliases.append_array(["colosso_neural_gerado", "centauro_guerreiro_animado", "talos_clean_hq_animado_completo", "centauro_guerreiro"])
 
 	var candidates: Array[String] = []
 	for u_alias in aliases:
-		candidates.append("res://models/civilizations/%s/%s_major/unidade_militar/%s.glb" % [pantheon_id, deity_slug, u_alias])
-		candidates.append("res://models/civilizations/%s/%s/unidade_militar/%s.glb" % [pantheon_id, deity_slug, u_alias])
 		candidates.append("res://models/civilizations/%s/%s_major/aldeao/%s.glb" % [pantheon_id, deity_slug, u_alias])
 		candidates.append("res://models/civilizations/%s/%s/aldeao/%s.glb" % [pantheon_id, deity_slug, u_alias])
+		candidates.append("res://models/civilizations/%s/%s_major/unidade_militar/%s.glb" % [pantheon_id, deity_slug, u_alias])
+		candidates.append("res://models/civilizations/%s/%s/unidade_militar/%s.glb" % [pantheon_id, deity_slug, u_alias])
 		candidates.append("res://models/civilizations/%s/%s_major/unidade_mitica/%s.glb" % [pantheon_id, deity_slug, u_alias])
 		candidates.append("res://models/civilizations/%s/%s/unidade_mitica/%s.glb" % [pantheon_id, deity_slug, u_alias])
-		candidates.append("res://models/units/%s_%s_%s.glb" % [pantheon_id, deity_slug, u_alias])
-		candidates.append("res://models/units/%s_%s.glb" % [pantheon_id, u_alias])
-		candidates.append("res://models/units/%s.glb" % u_alias)
-	candidates.append("res://models/units/villager.glb")
-	candidates.append("res://models/units/aldeao.glb")
+		candidates.append("res://models/civilizations/%s/%s_major/deuses/%s.glb" % [pantheon_id, deity_slug, u_alias])
+		candidates.append("res://models/civilizations/%s/%s/deuses/%s.glb" % [pantheon_id, deity_slug, u_alias])
 
 	for path in candidates:
 		var loaded: Node3D = _try_instantiate_glb(path)
@@ -173,19 +184,18 @@ static func create_divine_unit_visual(
 		god_base = god_base.left(-6)
 	elif god_base.ends_with("_minor"):
 		god_base = god_base.left(-6)
+	if god_base != "":
+		deity_slug = god_base
 
 	var candidates: Array[String] = [
-		# Pasta unidade_mitica (deuses são unidades míticas)
-		"res://models/civilizations/%s/%s/unidade_mitica/%s.glb" % [pantheon_id, deity_slug, god_base],
-		"res://models/civilizations/%s/%s/unidade_mitica/%s.glb" % [pantheon_id, deity_slug, god_kind],
+		"res://models/civilizations/%s/%s_major/deuses/%s.glb" % [pantheon_id, deity_slug, god_base],
+		"res://models/civilizations/%s/%s_major/deuses/%s.glb" % [pantheon_id, deity_slug, god_kind],
 		"res://models/civilizations/%s/%s/deuses/%s.glb" % [pantheon_id, deity_slug, god_base],
 		"res://models/civilizations/%s/%s/deuses/%s.glb" % [pantheon_id, deity_slug, god_kind],
-		"res://models/civilizations/%s/%s/unidade_mitica/deus.glb" % [pantheon_id, deity_slug],
-		"res://models/civilizations/%s/%s/unidade_mitica/deidade.glb" % [pantheon_id, deity_slug],
-		# Standard models folders as fallback
-		"res://models/units/%s_%s.glb" % [pantheon_id, god_kind],
-		"res://models/units/%s.glb" % god_kind,
-		"res://models/buildings/%s_%s.glb" % [pantheon_id, god_kind],
+		"res://models/civilizations/%s/%s_major/unidade_mitica/%s.glb" % [pantheon_id, deity_slug, god_base],
+		"res://models/civilizations/%s/%s/unidade_mitica/%s.glb" % [pantheon_id, deity_slug, god_base],
+		"res://models/civilizations/%s/%s_major/deuses/deus.glb" % [pantheon_id, deity_slug],
+		"res://models/civilizations/%s/%s/deuses/deus.glb" % [pantheon_id, deity_slug],
 	]
 	for path in candidates:
 		var loaded: Node3D = _try_instantiate_glb(path)
@@ -2203,6 +2213,9 @@ static func _build_procedural_villager(
 ) -> Node3D:
 	var root := Node3D.new()
 	var g_key: String = major_god_id
+	if g_key != "" and not VILLAGER_DEITY_PROFILES.has(g_key):
+		if VILLAGER_DEITY_PROFILES.has(g_key + "_major"):
+			g_key = g_key + "_major"
 	if g_key == "" or not VILLAGER_DEITY_PROFILES.has(g_key):
 		var p_id: String = String(p.get("id", "greek"))
 		match p_id:
@@ -2338,6 +2351,13 @@ static func _build_procedural_villager(
 			_add_sphere(root, 0.16, Vector3(0.0, 1.34, -0.26), sash_mat)
 		"usekh_collar":
 			_add_cylinder(root, 0.26, 0.32, 0.12, Vector3(0.0, 1.32, 0.02), accent_mat)
+		"bear_pelt", "wolf_pelt":
+			_add_box(root, Vector3(0.42, 0.52, 0.14), Vector3(0.0, 1.10, -0.22), leather_mat)
+			_add_cylinder(root, 0.12, 0.14, 0.35, Vector3(0.0, 1.22, -0.22), leather_mat)
+		"fish_rope", "harvest_rope":
+			_add_torus(root, 0.22, 0.26, Vector3(0.0, 1.02, -0.15), leather_mat, Vector3(0.3, 0.0, 0.0))
+		"lightning_clasp", "gem_pouch", "orichalcum_band":
+			_add_sphere(root, 0.12, Vector3(0.0, 1.12, -0.20), accent_mat)
 
 	# 7. Ferramenta de Trabalho Adaptada ao Deus (Mão Direita)
 	var tool_root := Node3D.new()
@@ -2545,3 +2565,86 @@ static func _add_prism_roof(parent: Node3D, w: float, h: float, d: float, pos: V
 	inst.material_override = mat
 	inst.position = pos
 	parent.add_child(inst)
+
+
+## Obtém ou instancia malha de flora (árvores, arbustos, palmeiras, etc.)
+static func get_nature_flora_mesh(flora_kind: String = "tree", biome: String = "mediterranean") -> Node3D:
+	var candidates: Array[String] = [
+		"res://models/natureza/flora/%s.glb" % flora_kind,
+		"res://models/natureza/flora/%s_%s.glb" % [biome, flora_kind],
+	]
+	if flora_kind in ["forest_pack", "floresta_pack"]:
+		candidates.append("res://models/natureza/flora/low_poly_forest_tree_pack.glb")
+	for path in candidates:
+		var loaded: Node3D = _try_instantiate_glb(path)
+		if loaded != null:
+			return loaded
+	return _build_procedural_flora(flora_kind, biome)
+
+
+## Obtém ou instancia malha de fauna (cervo, javali, lobo, etc.)
+static func get_nature_fauna_mesh(fauna_kind: String = "deer", _biome: String = "mediterranean") -> Node3D:
+	var candidates: Array[String] = [
+		"res://models/natureza/fauna/%s.glb" % fauna_kind,
+	]
+	for path in candidates:
+		var loaded: Node3D = _try_instantiate_glb(path)
+		if loaded != null:
+			return loaded
+	return _build_procedural_fauna(fauna_kind)
+
+
+static func _build_procedural_flora(kind: String, biome: String) -> Node3D:
+	var root := Node3D.new()
+	var wood_mat := _make_mat(Color("#5c3a21"), 0.85, 0.0)
+	var leaf_col: Color
+	match biome:
+		"nile_desert":
+			leaf_col = Color("#4d7c0f")
+		"nordic_tundra":
+			leaf_col = Color("#1e3a1e")
+		"erebus_volcanic":
+			leaf_col = Color("#065f46")
+		_:
+			leaf_col = Color("#15803d")
+	var leaf_mat := _make_mat(leaf_col, 0.6, 0.0)
+
+	match kind:
+		"bush":
+			_add_sphere(root, 0.8, Vector3(0.0, 0.6, 0.0), leaf_mat)
+			_add_sphere(root, 0.6, Vector3(0.4, 0.5, 0.2), leaf_mat)
+			_add_sphere(root, 0.55, Vector3(-0.35, 0.45, -0.2), leaf_mat)
+		_:
+			# Tronco
+			_add_cylinder(root, 0.25, 0.45, 3.2, Vector3(0.0, 1.6, 0.0), wood_mat)
+			# Copa volumétrica
+			_add_sphere(root, 1.4, Vector3(0.0, 3.8, 0.0), leaf_mat)
+			_add_sphere(root, 1.1, Vector3(0.6, 4.2, 0.4), leaf_mat)
+			_add_sphere(root, 1.1, Vector3(-0.5, 4.3, -0.3), leaf_mat)
+			_add_sphere(root, 0.9, Vector3(0.1, 4.9, 0.1), leaf_mat)
+	return root
+
+
+static func _build_procedural_fauna(kind: String) -> Node3D:
+	var root := Node3D.new()
+	var body_col := Color("#78350f")
+	if kind in ["wolf", "lobo"]:
+		body_col = Color("#4b5563")
+	elif kind in ["bear", "urso"]:
+		body_col = Color("#292524")
+	elif kind in ["sheep", "ovelha"]:
+		body_col = Color("#f4f4f5")
+	var body_mat := _make_mat(body_col, 0.8, 0.0)
+	var snout_mat := _make_mat(body_col.darkened(0.3), 0.7, 0.0)
+
+	# Tronco do animal
+	_add_box(root, Vector3(0.6, 0.6, 1.2), Vector3(0.0, 0.7, 0.0), body_mat)
+	# Cabeça
+	_add_box(root, Vector3(0.35, 0.35, 0.45), Vector3(0.0, 1.05, 0.65), body_mat)
+	_add_box(root, Vector3(0.2, 0.2, 0.25), Vector3(0.0, 0.95, 0.95), snout_mat)
+	# 4 patas
+	for lx in [-0.22, 0.22]:
+		for lz in [-0.4, 0.4]:
+			_add_cylinder(root, 0.08, 0.07, 0.6, Vector3(lx, 0.3, lz), body_mat)
+	return root
+

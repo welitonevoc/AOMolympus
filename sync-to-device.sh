@@ -14,6 +14,14 @@ for dir in scripts scenes audio ui themes data assets addons; do
     fi
 done
 
+# Sincroniza apenas pastas de modelos leves de runtime (ignora Synty FBX pesados)
+mkdir -p "$DST/models"
+for mdir in natureza units buildings referencias_cidade; do
+    if [ -d "$SRC/models/$mdir" ]; then
+        cp -ru "$SRC/models/$mdir" "$DST/models/" 2>/dev/null
+    fi
+done
+
 # Arquivos de configuracao do Godot
 cp -u "$SRC/project.godot" "$DST/" 2>/dev/null
 cp -u "$SRC/export_presets.cfg" "$DST/" 2>/dev/null
