@@ -2,7 +2,7 @@
   "name": "Age of Mythology: Olympus (Godot 4 Android)",
   "description": "RTS mitologico 3D nativo em Godot 4 para celulares e tablets Android",
   "flow": "Default Flow",
-  "verifyCommand": "python3 -c \"print('Godot verification passed')\"",
+  "verifyCommand": "python3 scripts/pipeline/verify_olympus.py",
   "setupCommand": "",
   "autoWorktree": false,
   "askBeforeCommit": true
