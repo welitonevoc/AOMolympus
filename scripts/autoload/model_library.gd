@@ -89,12 +89,12 @@ static func create_unit_visual(
 		var loaded: Node3D = _try_instantiate_glb(path)
 		if loaded != null:
 			if unit_kind in ["villager", "aldeao"]:
-				loaded.scale = Vector3.ONE * 1.45
+				loaded.scale = Vector3.ONE
 				attach_villager_tools(loaded, "axe")
 			elif unit_kind in ["infantry", "archer", "cavalry", "hero"]:
-				loaded.scale = Vector3.ONE * 1.45
+				loaded.scale = Vector3.ONE
 			elif unit_kind == "myth":
-				loaded.scale = Vector3.ONE * 1.50
+				loaded.scale = Vector3.ONE
 			if is_promoted_hero:
 				_attach_hero_aura(loaded, Color("#38bdf8"))
 			return loaded
