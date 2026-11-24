@@ -51,6 +51,7 @@ var _aggro_scan_timer: float = 0.25
 var _freeze_timer: float = 0.0
 var _gather_sfx_timer: float = 0.0
 var _build_sfx_timer: float = 0.0
+var _bored_timer: float = 8.0
 
 var _nav_agent: NavigationAgent3D
 var _visual_holder: Node3D
@@ -187,6 +188,14 @@ func _ready() -> void:
 	if faction == "player":
 		GameState.add_population_used(pop_cost)
 
+	# Variação sutil de porte físico para eliminar soldados clones (OlympusAnimationDirector)
+	if role != "titan" and _visual_holder != null:
+		var var_idx := OlympusAnimationDirector.pick_model_variation(get_instance_id(), 3)
+		if var_idx == 1:
+			_visual_holder.scale *= 1.03
+		elif var_idx == 2:
+			_visual_holder.scale *= 0.97
+
 
 func _physics_process(delta: float) -> void:
 	if _dead:
@@ -218,7 +227,7 @@ func _physics_process(delta: float) -> void:
 	match state:
 		State.IDLE:
 			velocity = Vector3.ZERO
-			_animate_idle()
+			_animate_idle(delta)
 			if role != "worker":
 				_scan_for_enemies(delta)
 		State.MOVING:
@@ -348,6 +357,10 @@ func take_damage(amount: float, attacker_faction: String, attacker_pantheon: Str
 		var tw := create_tween()
 		tw.tween_property(_visual_holder, "scale", Vector3(1.15, 1.15, 1.15), 0.08)
 		tw.tween_property(_visual_holder, "scale", Vector3.ONE, 0.12)
+
+	# Efeito de arremesso místico (Flail / Knockback) por impactos pesados ou divinos
+	if (damage_type == "divine" or amount >= 140.0) and role != "titan":
+		OlympusAnimationDirector.apply_mythic_flail(self, global_position - Vector3(randf_range(-1.0, 1.0), 0.0, randf_range(-1.0, 1.0)), 7.5, 5.5)
 
 	# Bônus Nordico: gera Favor Divino ao combater!
 	if attacker_faction == "player" and attacker_pantheon == "norse":
@@ -677,12 +690,22 @@ func _face_towards(target_pos: Vector3, delta: float) -> void:
 		rotation.y = lerp_angle(rotation.y, atan2(dir.x, dir.z), clampf(10.0 * delta, 0.0, 1.0))
 
 
-func _animate_idle() -> void:
+func _animate_idle(delta: float = 0.0) -> void:
 	if _anim_player != null:
 		_play_named_anim("base")
 	elif _visual_holder != null:
 		_visual_holder.position.y = lerpf(_visual_holder.position.y, 0.0, 0.15)
 		_visual_holder.rotation.x = lerpf(_visual_holder.rotation.x, 0.0, 0.15)
+
+	# Lógica de ociosidade aleatória (Bored) inspirada no anim.bar
+	if delta > 0.0:
+		_bored_timer -= delta
+		if _bored_timer <= 0.0:
+			_bored_timer = OlympusAnimationDirector.get_random_bored_interval()
+			if _visual_holder != null:
+				var tw := create_tween()
+				tw.tween_property(_visual_holder, "rotation:y", _visual_holder.rotation.y + randf_range(-0.35, 0.35), 0.3)
+				tw.tween_property(_visual_holder, "rotation:y", 0.0, 0.3)
 
 
 func _animate_work() -> void:

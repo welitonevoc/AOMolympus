@@ -38,6 +38,8 @@ OlympusGfxManager="*res://scripts/core/olympus_gfx_manager.gd"
 OlympusAtmosphereDirector="*res://scripts/world/olympus_atmosphere_director.gd"
 OlympusRelicCatalog="*res://scripts/divine/olympus_relic_catalog.gd"
 OlympusCampaignSystem="*res://scripts/campaign/olympus_campaign_system.gd"
+OlympusCinematicPlayer="*res://scripts/ui/olympus_cinematic_player.gd"
+OlympusAnimationDirector="*res://scripts/animation/olympus_animation_director.gd"
 
 [display]
 

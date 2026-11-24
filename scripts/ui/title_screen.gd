@@ -263,15 +263,24 @@ func _build_main_menu_hub() -> void:
 	compendium_btn.pressed.connect(_open_compendium_modal)
 	_main_menu_panel.add_child(compendium_btn)
 
-	# 6. Configurações & Gráficos
+	# 6. Cinemática de Abertura (OlympusCinematicPlayer)
+	var cine_btn := _make_menu_button("🎬  VER CINEMÁTICA", false)
+	cine_btn.pressed.connect(_on_watch_cinematic_pressed)
+	_main_menu_panel.add_child(cine_btn)
+
+	# 7. Configurações & Gráficos
 	var settings_btn := _make_menu_button("⚙️  CONFIGURAÇÕES & VÍDEO", false)
 	settings_btn.pressed.connect(_open_settings_modal)
 	_main_menu_panel.add_child(settings_btn)
 
-	# 7. Sair do Jogo
+	# 8. Sair do Jogo
 	var quit_btn := _make_menu_button("🚪  SAIR DO JOGO", false)
 	quit_btn.pressed.connect(_open_quit_dialog)
 	_main_menu_panel.add_child(quit_btn)
+
+
+func _on_watch_cinematic_pressed() -> void:
+	OlympusCinematicPlayer.play_cinematic("res://assets/videos/olympus_intro.ogv", "Age of Mythology: Olympus — A Queda do Tártaro")
 
 
 func _update_continue_button() -> void:
