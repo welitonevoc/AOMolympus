@@ -60,6 +60,7 @@ static func create_building_visual(
 		var loaded: Node3D = _try_instantiate_glb(path)
 		if loaded != null:
 			_force_opaque_materials(loaded)
+			_align_model_to_ground(loaded)
 			return loaded
 	return _build_procedural_building(p, building_kind, tier, faction)
 
@@ -137,6 +138,7 @@ static func _instantiate_aom_bundle(bundle_dir: String, slug: String, initial_ac
 		return null
 
 	_force_opaque_materials(loaded)
+	_align_model_to_ground(loaded)
 	_attach_aom_accessories(loaded, bundle_dir, manifest)
 
 	# Inicia o AnimationPlayer do clipe automaticamente em loop
@@ -177,7 +179,7 @@ static func _find_socket_node(node: Node, socket_name: String) -> Node3D:
 	while not queue.is_empty():
 		var cur: Node = queue.pop_front()
 		if cur is Node3D:
-			var cname: String = cur.name.to_upper()
+			var cname: String = String(cur.name).to_upper()
 			if cname == target_upper + "_SOCKET" or cname == target_upper:
 				return cur as Node3D
 		for child in cur.get_children():
@@ -2622,25 +2624,46 @@ static func _make_mat(
 
 static func _force_opaque_materials(node: Node) -> void:
 	if node is MeshInstance3D:
-		var mesh: Mesh = node.mesh
+		var mi: MeshInstance3D = node as MeshInstance3D
+		var mesh: Mesh = mi.mesh
 		if mesh != null:
 			for i in range(mesh.get_surface_count()):
-				var mat: Material = mesh.get_surface_material(i)
+				var mat: Material = mi.get_surface_override_material(i)
+				if mat == null:
+					mat = mesh.surface_get_material(i)
 				if mat is StandardMaterial3D:
-					mat.transparency = BaseMaterial3D.TRANSPARENCY_DISABLED
-					mat.depth_draw_mode = BaseMaterial3D.DEPTH_DRAW_OPAQUE_ONLY
-					mat.cull_mode = BaseMaterial3D.CULL_DISABLED
-					mat.albedo_color.a = 1.0
-					mat.metallic = 0.0
-					mat.roughness = maxf(mat.roughness, 0.75)
-		if node.material_override != null and node.material_override is StandardMaterial3D:
-			node.material_override.transparency = BaseMaterial3D.TRANSPARENCY_DISABLED
-			node.material_override.depth_draw_mode = BaseMaterial3D.DEPTH_DRAW_OPAQUE_ONLY
-			node.material_override.cull_mode = BaseMaterial3D.CULL_DISABLED
-			node.material_override.albedo_color.a = 1.0
-			node.material_override.metallic = 0.0
+					var sm: StandardMaterial3D = mat as StandardMaterial3D
+					sm.transparency = BaseMaterial3D.TRANSPARENCY_DISABLED
+					sm.depth_draw_mode = BaseMaterial3D.DEPTH_DRAW_OPAQUE_ONLY
+					sm.cull_mode = BaseMaterial3D.CULL_DISABLED
+					sm.albedo_color.a = 1.0
+					sm.metallic = 0.0
+					sm.roughness = maxf(sm.roughness, 0.75)
+		if mi.material_override != null and mi.material_override is StandardMaterial3D:
+			var mo: StandardMaterial3D = mi.material_override as StandardMaterial3D
+			mo.transparency = BaseMaterial3D.TRANSPARENCY_DISABLED
+			mo.depth_draw_mode = BaseMaterial3D.DEPTH_DRAW_OPAQUE_ONLY
+			mo.cull_mode = BaseMaterial3D.CULL_DISABLED
+			mo.albedo_color.a = 1.0
+			mo.metallic = 0.0
 	for child in node.get_children():
 		_force_opaque_materials(child)
+
+
+static func _align_model_to_ground(root: Node3D) -> void:
+	var min_y: float = INF
+	var queue: Array[Node] = [root]
+	while not queue.is_empty():
+		var cur: Node = queue.pop_front()
+		if cur is MeshInstance3D:
+			var mi: MeshInstance3D = cur as MeshInstance3D
+			if mi.mesh != null:
+				var aabb: AABB = mi.mesh.get_aabb()
+				min_y = minf(min_y, aabb.position.y)
+		for child in cur.get_children():
+			queue.append(child)
+	if min_y < INF and min_y < -0.02:
+		root.position.y = -min_y
 
 
 static func _add_box(parent: Node3D, size: Vector3, pos: Vector3, mat: Material) -> void:
