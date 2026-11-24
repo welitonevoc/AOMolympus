@@ -269,6 +269,10 @@ func _build_top_bar() -> void:
 	_gfx_btn.pressed.connect(_on_cycle_gfx_preset_pressed)
 	hbox.add_child(_gfx_btn)
 
+	var atmos_btn := _make_action_button("🌤️ Clima", false, 72.0, 40.0)
+	atmos_btn.pressed.connect(_on_cycle_atmosphere_pressed)
+	hbox.add_child(atmos_btn)
+
 	var save_btn := _make_action_button("💾 Salvar", false, 72.0, 40.0)
 	save_btn.pressed.connect(func() -> void:
 		SaveLoadSystem.save_game(_world, _camera_rig)
@@ -293,6 +297,14 @@ func _build_top_bar() -> void:
 		get_tree().change_scene_to_file("res://scenes/title_screen.tscn")
 	)
 	hbox.add_child(menu_btn)
+
+
+func _on_cycle_atmosphere_pressed() -> void:
+	var atmos := get_node_or_null("/root/OlympusAtmosphereDirector") as OlympusAtmosphereDirector
+	if atmos != null:
+		atmos.cycle_next_preset()
+		var p_name := OlympusAtmosphereDirector.get_current_preset_name()
+		GameState.notify("Atmosfera Mítica: %s" % p_name, false)
 
 
 func _on_cycle_gfx_preset_pressed() -> void:

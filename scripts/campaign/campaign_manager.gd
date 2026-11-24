@@ -97,6 +97,19 @@ static func get_chapter(chapter_id: String) -> Dictionary:
 	var ch: Dictionary = CHAPTERS.get(chapter_id, {})
 	if not ch.is_empty():
 		return ch
+	var camp_m: Dictionary = OlympusCampaignSystem.get_mission(chapter_id)
+	if not camp_m.is_empty():
+		return {
+			"id": camp_m.get("id"),
+			"title": camp_m.get("title"),
+			"pantheon": String(camp_m.get("pantheon", "greek")).to_lower(),
+			"biome": camp_m.get("biome", "mediterranean"),
+			"briefing": camp_m.get("briefing", ""),
+			"objectives": [
+				{"id": "primary", "label": camp_m.get("primary_objective", ""), "type": "victory", "count": 1},
+				{"id": "secondary", "label": camp_m.get("secondary_objective", ""), "type": "bonus", "count": 1}
+			]
+		}
 	return OlympusScenarioCatalog.get_scenario(chapter_id)
 
 

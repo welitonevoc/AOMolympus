@@ -172,6 +172,17 @@ func _on_match_started(pantheon_id: String, enemy_pantheon_id: String) -> void:
 	for item in res_plan:
 		_spawn_resource(String(item["kind"]), item["pos"], float(item["amount"]))
 
+	# 3.1 Spawna relíquias sagradas dispersas pelo mapa (OlympusRelicCatalog)
+	var relics: Array[Dictionary] = OlympusRelicCatalog.get_random_relics_for_map(3)
+	for r_data in relics:
+		var r_pos := Vector3(
+			randf_range(-arena_size * 0.30, arena_size * 0.30),
+			0.0,
+			randf_range(-arena_size * 0.30, arena_size * 0.30)
+		)
+		if r_pos.distance_to(player_base_pos) > 18.0 and r_pos.distance_to(enemy_base_pos) > 18.0:
+			_spawn_relic_altar(r_data, r_pos)
+
 	# 4. === BASE DO JOGADOR (Sudoeste) ===
 	var tc: BuildingActor = spawn_building("town_center", player_base_pos, true, "player", pantheon_id, 1)
 	spawn_building("barracks", player_base_pos + Vector3(8.5, 0.0, 3.5), true, "player", pantheon_id, 1)
@@ -603,6 +614,50 @@ func _spawn_resource(kind: String, pos: Vector3, amount: float) -> ResourceNode:
 	return res
 
 
+func _spawn_relic_altar(relic_data: Dictionary, pos: Vector3) -> Node3D:
+	var altar := Node3D.new()
+	altar.name = "RelicAltar_%s" % relic_data.get("id", "relic")
+	altar.position = pos
+
+	# Pedestal cilíndrico de mármore
+	var cyl := CylinderMesh.new()
+	cyl.top_radius = 0.8
+	cyl.bottom_radius = 1.0
+	cyl.height = 0.9
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = Color("#e2e8f0")
+	mat.roughness = 0.35
+	mat.metallic = 0.15
+	var mesh_inst := MeshInstance3D.new()
+	mesh_inst.mesh = cyl
+	mesh_inst.material_override = mat
+	mesh_inst.position = Vector3(0.0, 0.45, 0.0)
+	altar.add_child(mesh_inst)
+
+	# Foco de luz sagrada
+	var light := OmniLight3D.new()
+	light.light_color = Color("#fef08a")
+	light.light_energy = 1.8
+	light.omni_range = 6.0
+	light.position = Vector3(0.0, 1.3, 0.0)
+	altar.add_child(light)
+
+	# Label 3D com o ícone e nome da relíquia
+	var lbl := Label3D.new()
+	lbl.text = "%s %s" % [relic_data.get("icon", "✨"), relic_data.get("name", "Relíquia")]
+	lbl.font_size = 18
+	lbl.outline_size = 3
+	lbl.outline_modulate = Color.BLACK
+	lbl.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	lbl.position = Vector3(0.0, 1.5, 0.0)
+	altar.add_child(lbl)
+
+	altar.set_meta("relic_id", relic_data.get("id", ""))
+	altar.set_meta("is_relic", true)
+	_entities_root.add_child(altar)
+	return altar
+
+
 func _setup_lighting_and_sky() -> void:
 	_sun_light = DirectionalLight3D.new()
 	_sun_light.name = "SunMoonLight"
@@ -629,10 +684,22 @@ func _setup_lighting_and_sky() -> void:
 	_world_env.environment = env
 	add_child(_world_env)
 
+	# Vincula ao OlympusAtmosphereDirector para suporte aos 11 climas épicos
+	var atmos := get_node_or_null("/root/OlympusAtmosphereDirector") as OlympusAtmosphereDirector
+	if atmos != null:
+		atmos.bind_world_nodes(_sun_light, _world_env, _sky_mat)
+
 
 func _apply_day_night_lighting(is_night: bool) -> void:
 	if _sun_light == null or _world_env == null or _world_env.environment == null:
 		return
+
+	var atmos := get_node_or_null("/root/OlympusAtmosphereDirector") as OlympusAtmosphereDirector
+	if atmos != null:
+		var target_preset := OlympusAtmosphereDirector.AtmospherePreset.NIGHT_TACTICAL if is_night else OlympusAtmosphereDirector.AtmospherePreset.OLYMPUS_GLORY
+		atmos.apply_preset(target_preset, 1.2)
+		return
+
 	var env: Environment = _world_env.environment
 	var biome: Dictionary = PantheonCatalog.get_biome(GameState.active_biome)
 	if is_night:

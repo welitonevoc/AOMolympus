@@ -1106,9 +1106,11 @@ func _select_chapter(cid: String) -> void:
 		var btn: Button = _chapter_buttons[k]
 		btn.add_theme_stylebox_override("normal", _make_btn_style(k == cid))
 
-	var ch: Dictionary = CampaignManager.CHAPTERS.get(cid, {})
+	var ch: Dictionary = CampaignManager.get_chapter(cid)
 	_chapter_title_lbl.text = ch.get("title", cid)
+	_chapter_title_lbl.label_settings = OlympusTypography.get_label_settings(OlympusTypography.Style.HEADING, 16, Color("#f6e08b"), 2)
 	_chapter_briefing_lbl.text = ch.get("briefing", "")
+	_chapter_briefing_lbl.label_settings = OlympusTypography.get_label_settings(OlympusTypography.Style.LORE, 13, Color("#e2e8f0"))
 
 	for child in _chapter_objectives_vbox.get_children():
 		child.queue_free()
@@ -1116,8 +1118,7 @@ func _select_chapter(cid: String) -> void:
 	for obj in ch.get("objectives", []):
 		var lbl := Label.new()
 		lbl.text = "• %s" % obj.get("label", "")
-		lbl.add_theme_font_size_override("font_size", 12)
-		lbl.add_theme_color_override("font_color", Color("#f6e08b"))
+		lbl.label_settings = OlympusTypography.get_label_settings(OlympusTypography.Style.TACTICAL, 12, Color("#fde047"), 1)
 		_chapter_objectives_vbox.add_child(lbl)
 
 

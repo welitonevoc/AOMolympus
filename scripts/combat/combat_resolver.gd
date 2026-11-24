@@ -6,43 +6,24 @@ extends RefCounted
 
 
 static func get_counter_multiplier(attacker_role: String, defender_role: String, target_is_building: bool) -> float:
-	if target_is_building:
-		if attacker_role == "titan":
-			return 3.5
-		if attacker_role == "siege":
-			return 3.0
-		if attacker_role == "myth":
-			return 1.35
-		if attacker_role == "archer":
-			return 0.55
-		return 0.85
-
-	# Titãs esmagam o campo de batalha
+	# Titãs e poderes divinos transcendem a matriz convencional
 	if attacker_role == "titan":
+		if target_is_building:
+			return 3.5
 		if defender_role in ["infantry", "archer", "cavalry", "worker"]:
 			return 2.5
 		if defender_role == "myth":
 			return 2.0
 		return 1.5
 
-	# Herois counteram fortemente Unidades Miticas e ferem Titas
-	if attacker_role == "hero":
-		if defender_role == "myth":
-			return 2.75
-		if defender_role == "titan":
-			return 1.75
+	# Mapeamento para a OlympusCombatMatrix
+	var atk_c := OlympusCombatMatrix.parse_unit_class(attacker_role)
+	var def_c := OlympusCombatMatrix.UnitClass.BUILDING if target_is_building else OlympusCombatMatrix.parse_unit_class(defender_role)
 
-	# Unidades Miticas tem vantagem sobre soldados humanos comuns
-	if attacker_role == "myth" and defender_role in ["infantry", "archer", "cavalry", "worker"]:
-		return 1.40
-
-	# Triangulo de contra-ataque humano
-	if attacker_role == "infantry" and defender_role == "cavalry":
-		return 1.50
-	if attacker_role == "cavalry" and defender_role == "archer":
-		return 1.50
-	if attacker_role == "archer" and defender_role == "infantry":
-		return 1.35
+	if OlympusCombatMatrix.CLASS_MULTIPLIERS.has(atk_c):
+		var inner: Dictionary = OlympusCombatMatrix.CLASS_MULTIPLIERS[atk_c]
+		if inner.has(def_c):
+			return float(inner[def_c])
 
 	return 1.0
 
