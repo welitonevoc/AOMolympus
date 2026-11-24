@@ -172,23 +172,23 @@ func _build_top_bar() -> void:
 	hbox.add_theme_constant_override("separation", 6)
 	margin.add_child(hbox)
 
-	var food_pill := _make_resource_pill("🌾", "350", Color("#fca5a5"))
+	var food_pill := _make_resource_pill("🌾", "350", Color("#fca5a5"), "res://assets/ui/icons/resources/olympus_res_resource_food.png")
 	_food_lbl = food_pill["label"]
 	hbox.add_child(food_pill["container"])
 
-	var wood_pill := _make_resource_pill("🪵", "300", Color("#86efac"))
+	var wood_pill := _make_resource_pill("🪵", "300", Color("#86efac"), "res://assets/ui/icons/resources/olympus_res_resource_wood.png")
 	_wood_lbl = wood_pill["label"]
 	hbox.add_child(wood_pill["container"])
 
-	var gold_pill := _make_resource_pill("🪙", "250", Color("#fde047"))
+	var gold_pill := _make_resource_pill("🪙", "250", Color("#fde047"), "res://assets/ui/icons/resources/olympus_res_resource_gold.png")
 	_gold_lbl = gold_pill["label"]
 	hbox.add_child(gold_pill["container"])
 
-	var favor_pill := _make_resource_pill("✨", "20", Color("#7dd3fc"))
+	var favor_pill := _make_resource_pill("✨", "20", Color("#7dd3fc"), "res://assets/ui/icons/resources/olympus_res_resource_favor.png")
 	_favor_lbl = favor_pill["label"]
 	hbox.add_child(favor_pill["container"])
 
-	var pop_pill := _make_resource_pill("👥", "0/15", Color("#e2e8f0"))
+	var pop_pill := _make_resource_pill("👥", "0/15", Color("#e2e8f0"), "res://assets/ui/icons/resources/olympus_res_resource_population.png")
 	_pop_lbl = pop_pill["label"]
 	hbox.add_child(pop_pill["container"])
 
@@ -1423,7 +1423,7 @@ func _make_metric_label(text_val: String, color: Color) -> Label:
 	return lbl
 
 
-func _make_resource_pill(icon_str: String, initial_val: String, text_color: Color) -> Dictionary:
+func _make_resource_pill(icon_str: String, initial_val: String, text_color: Color, icon_path: String = "") -> Dictionary:
 	var pill := PanelContainer.new()
 	pill.add_theme_stylebox_override("panel", _make_panel_style(Color(0.08, 0.12, 0.18, 0.8), 7, Color(0.83, 0.69, 0.22, 0.28), false))
 	var m := MarginContainer.new()
@@ -1437,10 +1437,29 @@ func _make_resource_pill(icon_str: String, initial_val: String, text_color: Colo
 	h.add_theme_constant_override("separation", 4)
 	m.add_child(h)
 
-	var icon_lbl := Label.new()
-	icon_lbl.text = icon_str
-	icon_lbl.add_theme_font_size_override("font_size", 13)
-	h.add_child(icon_lbl)
+	var icon_loaded: bool = false
+	if not icon_path.is_empty():
+		var tex: Texture2D = null
+		if ResourceLoader.exists(icon_path):
+			tex = load(icon_path) as Texture2D
+		elif FileAccess.file_exists(ProjectSettings.globalize_path(icon_path)):
+			var img := Image.new()
+			if img.load(ProjectSettings.globalize_path(icon_path)) == OK:
+				tex = ImageTexture.create_from_image(img)
+		if tex != null:
+			var trect := TextureRect.new()
+			trect.texture = tex
+			trect.custom_minimum_size = Vector2(16.0, 16.0)
+			trect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			trect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			h.add_child(trect)
+			icon_loaded = true
+
+	if not icon_loaded:
+		var icon_lbl := Label.new()
+		icon_lbl.text = icon_str
+		icon_lbl.add_theme_font_size_override("font_size", 13)
+		h.add_child(icon_lbl)
 
 	var val_lbl := Label.new()
 	val_lbl.text = initial_val
