@@ -676,7 +676,10 @@ func _step_navigation(delta: float) -> void:
 	global_position.y = 0.0
 	_face_towards(global_position + dir, delta)
 	if _visual_holder != null:
-		if _anim_player != null:
+		if ModelLibrary.switch_aom_action(_visual_holder, "walk"):
+			_visual_holder.position.y = 0.0
+			_visual_holder.rotation.x = 0.0
+		elif _anim_player != null:
 			_play_named_anim("andar")
 		else:
 			_visual_holder.position.y = absf(sin(_anim_time * 10.5)) * 0.09
@@ -691,7 +694,10 @@ func _face_towards(target_pos: Vector3, delta: float) -> void:
 
 
 func _animate_idle(delta: float = 0.0) -> void:
-	if _anim_player != null:
+	if _visual_holder != null and ModelLibrary.switch_aom_action(_visual_holder, "idle"):
+		_visual_holder.position.y = lerpf(_visual_holder.position.y, 0.0, 0.15)
+		_visual_holder.rotation.x = lerpf(_visual_holder.rotation.x, 0.0, 0.15)
+	elif _anim_player != null:
 		_play_named_anim("base")
 	elif _visual_holder != null:
 		_visual_holder.position.y = lerpf(_visual_holder.position.y, 0.0, 0.15)
@@ -709,6 +715,8 @@ func _animate_idle(delta: float = 0.0) -> void:
 
 
 func _animate_work() -> void:
+	if _visual_holder != null and ModelLibrary.switch_aom_action(_visual_holder, "gather"):
+		return
 	if _anim_player != null:
 		if carried_kind == "gold" or (target_resource != null and target_resource.resource_kind == "gold"):
 			_play_named_anim("ouro")
@@ -721,6 +729,8 @@ func _animate_work() -> void:
 
 
 func _animate_attack() -> void:
+	if _visual_holder != null and ModelLibrary.switch_aom_action(_visual_holder, "attack"):
+		return
 	if _anim_player != null:
 		_play_named_anim("atacar")
 	else:

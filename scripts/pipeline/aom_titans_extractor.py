@@ -305,127 +305,123 @@ def parse_brg(data: bytes) -> Optional[BrgModel]:
     model = BrgModel()
     frame_idx = 0
 
-    while r.remaining() >= 4:
-        tag = r.read_str(4)
-        if tag == "BANG":
-            r.skip(4)
-            _num_materials = r.read_u32()
-            r.skip(4)
-            _num_meshes = r.read_u32()
-            r.skip(8)
-        elif tag == "ASET":
-            model.num_frames = max(1, r.read_u32())
-            r.skip(4)
-            model.anim_time = max(0.05, r.read_f32())
-            r.skip(4)
-            _spf = r.read_f32()
-            model.fps = max(1.0, r.read_f32())
-            r.skip(4)
-        elif tag == "MESI":
-            _ver = r.read_u16()
-            _fmt = r.read_u16()
-            num_verts = r.read_u16()
-            num_faces = r.read_u16()
-            _state = r.read_i32()
-            # bb_center(12) + bb_height(4) + unk(12) + ground_pos(12) = 40 bytes
-            r.skip(40)
-            props = r.read_i32()
-            first_frame = not _has_flag(props, MESH_NOTFIRST)
-            # bb_corner_pos(12) + bb_corner_neg(12) = 24 bytes
-            r.skip(24)
+    try:
+        while r.remaining() >= 4:
+            tag = r.read_str(4)
+            if tag == "BANG":
+                r.skip(4)
+                _num_materials = r.read_u32()
+                r.skip(4)
+                _num_meshes = r.read_u32()
+                r.skip(8)
+            elif tag == "ASET":
+                model.num_frames = max(1, r.read_u32())
+                r.skip(4)
+                model.anim_time = max(0.05, r.read_f32())
+                r.skip(4)
+                _spf = r.read_f32()
+                model.fps = max(1.0, r.read_f32())
+                r.skip(4)
+            elif tag == "MESI":
+                _ver = r.read_u16()
+                _fmt = r.read_u16()
+                num_verts = r.read_u16()
+                num_faces = r.read_u16()
+                _state = r.read_i32()
+                r.skip(40)
+                props = r.read_i32()
+                first_frame = not _has_flag(props, MESH_NOTFIRST)
+                r.skip(24)
 
-            # Read vertices & normals (bfloat16)
-            verts = r.read_bf16_array(num_verts * 3).reshape((num_verts, 3)).copy()
-            norms = r.read_bf16_array(num_verts * 3).reshape((num_verts, 3)).copy()
+                verts = r.read_bf16_array(num_verts * 3).reshape((num_verts, 3)).copy()
+                norms = r.read_bf16_array(num_verts * 3).reshape((num_verts, 3)).copy()
 
-            # AoM is left-handed Y-up; mirror X to right-handed glTF Y-up
-            verts[:, 0] = -verts[:, 0]
-            norms[:, 0] = -norms[:, 0]
+                verts[:, 0] = -verts[:, 0]
+                norms[:, 0] = -norms[:, 0]
 
-            model.frame_positions.append(verts)
-            model.frame_normals.append(norms)
+                model.frame_positions.append(verts)
+                model.frame_normals.append(norms)
 
-            if first_frame:
-                uvs = r.read_bf16_array(num_verts * 2).reshape((num_verts, 2)).copy()
-                # Flip V for glTF
-                uvs[:, 1] = 1.0 - uvs[:, 1]
-                model.uvs = uvs
-                model.face_mat_ids = r.read_u16_array(num_faces)
-                faces = r.read_u16_array(num_faces * 3).reshape((num_faces, 3))
-                # Mirror X flips winding, so reverse (0, 2, 1) to keep outward CCW normals
-                model.faces = faces[:, [0, 2, 1]].copy()
-                if _has_flag(props, MESH_MATERIALS):
-                    r.skip(num_verts * 2)
+                if first_frame:
+                    uvs = r.read_bf16_array(num_verts * 2).reshape((num_verts, 2)).copy()
+                    uvs[:, 1] = 1.0 - uvs[:, 1]
+                    model.uvs = uvs
+                    model.face_mat_ids = r.read_u16_array(num_faces)
+                    faces = r.read_u16_array(num_faces * 3).reshape((num_faces, 3))
+                    model.faces = faces[:, [0, 2, 1]].copy()
+                    if _has_flag(props, MESH_MATERIALS):
+                        r.skip(num_verts * 2)
 
-            r.skip(24)
-            check_space = r.read_u32()
-            len_space = 0
-            if not check_space:
-                _anim_time_mult = r.read_f32()
-                len_space = r.read_u32()
-                _num_mats_used = r.read_u32()
+                r.skip(24)
+                check_space = r.read_u32()
+                len_space = 0
+                if not check_space:
+                    _anim_time_mult = r.read_f32()
+                    len_space = r.read_u32()
+                    _num_mats_used = r.read_u32()
 
-            if (
-                ((_has_flag(props, MESH_TRANSPCOLOR) or _has_flag(props, MESH_CHANGINGCOL)) and first_frame)
-                or _has_flag(props, MESH_VERTCOLOR)
-            ):
-                r.skip(num_verts * 4)
+                if (
+                    ((_has_flag(props, MESH_TRANSPCOLOR) or _has_flag(props, MESH_CHANGINGCOL)) and first_frame)
+                    or _has_flag(props, MESH_VERTCOLOR)
+                ):
+                    r.skip(num_verts * 4)
 
-            if _has_flag(props, MESH_ATTACHPOINTS):
-                num_matrix = r.read_u16()
-                num_index = r.read_u16()
-                r.skip(2)
-                xs = r.read_bf16_array(num_matrix * 3).reshape((num_matrix, 3))
-                ys = r.read_bf16_array(num_matrix * 3).reshape((num_matrix, 3))
-                zs = r.read_bf16_array(num_matrix * 3).reshape((num_matrix, 3))
-                ts = r.read_bf16_array(num_matrix * 3).reshape((num_matrix, 3))
-                # unknown_vectors (num_matrix * 2 * 3 bfloat16)
-                r.skip(num_matrix * 2 * 6)
+                if _has_flag(props, MESH_ATTACHPOINTS):
+                    num_matrix = r.read_u16()
+                    num_index = r.read_u16()
+                    r.skip(2)
+                    xs = r.read_bf16_array(num_matrix * 3).reshape((num_matrix, 3))
+                    ys = r.read_bf16_array(num_matrix * 3).reshape((num_matrix, 3))
+                    zs = r.read_bf16_array(num_matrix * 3).reshape((num_matrix, 3))
+                    ts = r.read_bf16_array(num_matrix * 3).reshape((num_matrix, 3))
+                    r.skip(num_matrix * 2 * 6)
 
-                num_points = 0
-                index_duplis = []
-                for _ in range(num_index):
-                    dupli = r.read_i32()
-                    _idx_off = r.read_i32()
-                    index_duplis.append(dupli)
-                    num_points += dupli
+                    num_points = 0
+                    index_duplis = []
+                    for _ in range(num_index):
+                        dupli = r.read_i32()
+                        _idx_off = r.read_i32()
+                        index_duplis.append(dupli)
+                        num_points += dupli
 
-                point_ids = [r.read_u8() for _ in range(num_points)]
-                rev_names = NODE_NAMES[::-1]
-                pt_cursor = 0
-                for idx_i, dupli in enumerate(index_duplis):
-                    base_aname = rev_names[idx_i] if idx_i < len(rev_names) else f"ATTACH_{idx_i}"
-                    for d_i in range(dupli):
-                        if pt_cursor < len(point_ids):
-                            mat_idx = point_ids[pt_cursor]
-                            if mat_idx < num_matrix:
-                                aname = base_aname if dupli == 1 else f"{base_aname}_{d_i}"
-                                pos = ts[mat_idx].copy()
-                                pos[0] = -pos[0]
-                                rot = np.column_stack([xs[mat_idx], ys[mat_idx], zs[mat_idx]]).astype(np.float32)
-                                model.attachpoints.setdefault(aname, []).append((pos, rot))
-                        pt_cursor += 1
+                    point_ids = [r.read_u8() for _ in range(num_points)]
+                    rev_names = NODE_NAMES[::-1]
+                    pt_cursor = 0
+                    for idx_i, dupli in enumerate(index_duplis):
+                        base_aname = rev_names[idx_i] if idx_i < len(rev_names) else f"ATTACH_{idx_i}"
+                        for d_i in range(dupli):
+                            if pt_cursor < len(point_ids):
+                                mat_idx = point_ids[pt_cursor]
+                                if mat_idx < num_matrix:
+                                    aname = base_aname if dupli == 1 else f"{base_aname}_{d_i}"
+                                    pos = ts[mat_idx].copy()
+                                    pos[0] = -pos[0]
+                                    rot = np.column_stack([xs[mat_idx], ys[mat_idx], zs[mat_idx]]).astype(np.float32)
+                                    model.attachpoints.setdefault(aname, []).append((pos, rot))
+                            pt_cursor += 1
 
-            if not check_space and len_space > 0:
-                r.skip(len_space * 4)
+                if not check_space and len_space > 0:
+                    r.skip(len_space * 4)
 
-            frame_idx += 1
+                frame_idx += 1
 
-        elif tag == "MTRL":
-            mat_id = r.read_u32()
-            mat_props = r.read_i32()
-            r.skip(4)
-            name_len = r.read_u32()
-            r.skip(48)
-            tex_name = r.read_str(name_len).strip("\x00").strip()
-            r.skip(4)
-            if _has_flag(mat_props, MATR_SFX):
-                r.skip(2)
-                sfx_len = r.read_u16()
-                r.skip(sfx_len)
-            model.materials.append({"id": mat_id, "props": mat_props, "texture": tex_name})
-        else:
-            break
+            elif tag == "MTRL":
+                mat_id = r.read_u32()
+                mat_props = r.read_i32()
+                r.skip(4)
+                name_len = r.read_u32()
+                r.skip(48)
+                tex_name = r.read_str(name_len).strip("\x00").strip()
+                r.skip(4)
+                if _has_flag(mat_props, MATR_SFX):
+                    r.skip(2)
+                    sfx_len = r.read_u16()
+                    r.skip(sfx_len)
+                model.materials.append({"id": mat_id, "props": mat_props, "texture": tex_name})
+            else:
+                break
+    except (ValueError, struct.error, IndexError):
+        pass
 
     if not model.frame_positions or model.faces is None or len(model.faces) == 0:
         return None

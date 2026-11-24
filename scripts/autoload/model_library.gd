@@ -5,6 +5,43 @@ extends Node
 ##    e 7 classes de unidades em todos os 5 panteoes, com tintura de faccao inimiga e aura Heroi Atlante.
 
 static var _scene_cache: Dictionary = {}
+static var _manifest_cache: Dictionary = {}
+
+## Mapeamento oficial (panteao -> classe -> pasta autocontida AoM: The Titans)
+const AOM_UNIT_BUNDLES: Dictionary = {
+	"greek": {
+		"villager": ["villager_greek"],
+		"infantry": ["hoplite", "swordman"],
+		"archer": ["toxotes"],
+		"cavalry": ["hippikon"],
+		"hero": ["hero_greek_ajax", "ajax", "arkantos", "hero_greek_achilles"],
+		"myth": ["colossus", "centaur", "cyclops", "chimera", "hippocampus"],
+	},
+	"egyptian": {
+		"villager": ["villager_egyptian"],
+		"infantry": ["spearman", "axeman"],
+		"archer": ["chariot_archer", "slinger"],
+		"cavalry": ["camelry", "mercenary_cavalry"],
+		"hero": ["pharaoh", "priest"],
+		"myth": ["petsuchos", "avenger", "anubite", "sphinx"],
+	},
+	"norse": {
+		"villager": ["villager_norse", "dwarf"],
+		"infantry": ["ulfsark", "huskarl"],
+		"archer": ["throwing_axeman"],
+		"cavalry": ["raiding_cavalry", "jarl"],
+		"hero": ["hersir"],
+		"myth": ["valkyrie", "frost_giant", "troll"],
+	},
+	"atlantean": {
+		"villager": ["villager_atlantean"],
+		"infantry": ["murmillo", "destroyer", "fanatic"],
+		"archer": ["archer_atlantean"],
+		"cavalry": ["turma", "contarius"],
+		"hero": ["villager_atlantean_hero", "archer_atlantean_hero"],
+		"myth": ["automaton", "argus", "promethean"],
+	},
+}
 
 
 static func create_building_visual(
@@ -14,27 +51,15 @@ static func create_building_visual(
 	faction: String = "player"
 ) -> Node3D:
 	var p: Dictionary = PantheonCatalog.get_pantheon(pantheon_id)
-	var deity_slug: String = String(p.get("deity_slug", "zeus"))
 	var tier: int = clampi(age_tier, 1, 5)
-	var candidates: Array[String] = [
-		# Real imported building models by pantheon and kind
-		"res://models/buildings/%s_%s_%s_t%d.glb" % [pantheon_id, deity_slug, building_kind, tier],
-		"res://models/buildings/%s_%s_t%d.glb" % [pantheon_id, building_kind, tier],
-		"res://models/buildings/%s_%s.glb" % [pantheon_id, building_kind],
-		"res://models/buildings/%s.glb" % building_kind,
-		# Town center photorealistic model
-		"res://models/referencias_cidade/town_center_gerado.glb" if building_kind == "town_center" else "",
-		# Camps paths in civilization folders (cidade/*)
-		"res://models/civilizations/%s/%s/cidade/%s/%s.glb" % [pantheon_id, deity_slug, building_kind, building_kind],
-		"res://models/civilizations/%s/%s_major/cidade/%s/%s.glb" % [pantheon_id, deity_slug, building_kind, building_kind],
-		"res://models/civilizations/%s/%s/cidade/%s/divine_altar.glb" % [pantheon_id, deity_slug, building_kind],
-		"res://models/civilizations/%s/%s_major/cidade/%s/divine_altar.glb" % [pantheon_id, deity_slug, building_kind],
-	]
+	var civ_order: Array[String] = [pantheon_id, "shared", "greek"]
+	var candidates: Array[String] = []
+	for civ in civ_order:
+		candidates.append("res://models/civilizations/%s/cidade/%s/%s_base.glb" % [civ, building_kind, building_kind])
 	for path in candidates:
-		if path == "":
-			continue
 		var loaded: Node3D = _try_instantiate_glb(path)
 		if loaded != null:
+			_force_opaque_materials(loaded)
 			return loaded
 	return _build_procedural_building(p, building_kind, tier, faction)
 
@@ -47,78 +72,150 @@ static func create_unit_visual(
 	major_god_id: String = ""
 ) -> Node3D:
 	var p: Dictionary = PantheonCatalog.get_pantheon(pantheon_id)
-	var deity_slug: String = String(p.get("deity_slug", "zeus"))
-	if major_god_id != "":
-		var god_slug: String = major_god_id.replace("_major", "").replace("_minor", "")
-		if god_slug != "":
-			deity_slug = god_slug
+	var civ_key: String = pantheon_id if AOM_UNIT_BUNDLES.has(pantheon_id) else "greek"
+	var civ_map: Dictionary = AOM_UNIT_BUNDLES.get(civ_key, {})
 
-	var aliases: Array[String] = [unit_kind]
-	match unit_kind:
-		"villager":
-			aliases.append_array(["aldeao", "worker", "farmer"])
-		"infantry":
-			aliases.append_array(["soldier", "guerreiro", "soldado"])
-		"archer":
-			aliases.append_array(["toxotes", "arqueiro"])
-		"cavalry":
-			aliases.append_array(["hippeus", "cavaleiro"])
-		"hero":
-			aliases.append_array(["captain", "heroi", "leader"])
-		"myth":
-			aliases.append_array(["criatura_mitica", "mummy", "shieldmaiden"])
+	var slug_candidates: Array[String] = [unit_kind]
+	if civ_map.has(unit_kind):
+		for s in civ_map[unit_kind]:
+			slug_candidates.append(String(s))
+	# Fallback para grego caso a classe nao exista no panteao
+	if civ_key != "greek" and AOM_UNIT_BUNDLES["greek"].has(unit_kind):
+		for s in AOM_UNIT_BUNDLES["greek"][unit_kind]:
+			slug_candidates.append(String(s))
 
-	var candidates: Array[String] = []
-	# 1. Modelos importados reais texturizados por panteão e classe
-	candidates.append("res://models/units/%s_%s.glb" % [pantheon_id, unit_kind])
-	for u_alias in aliases:
-		candidates.append("res://models/units/%s_%s.glb" % [pantheon_id, u_alias])
-		candidates.append("res://models/units/%s.glb" % u_alias)
-	candidates.append("res://models/units/%s.glb" % unit_kind)
+	var civ_search: Array[String] = [civ_key]
+	if civ_key != "greek":
+		civ_search.append("greek")
 
-	# 2. Pastas de civilização se existirem
-	for u_alias in aliases:
-		candidates.append("res://models/civilizations/%s/%s_major/%s/%s.glb" % [pantheon_id, deity_slug, unit_kind, u_alias])
-		candidates.append("res://models/civilizations/%s/%s/%s/%s.glb" % [pantheon_id, deity_slug, unit_kind, u_alias])
-		candidates.append("res://models/civilizations/%s/%s_major/deuses/%s.glb" % [pantheon_id, deity_slug, u_alias])
-		candidates.append("res://models/civilizations/%s/%s/deuses/%s.glb" % [pantheon_id, deity_slug, u_alias])
+	for c_dir in civ_search:
+		for slug in slug_candidates:
+			var bundle_dir: String = "res://models/civilizations/%s/%s" % [c_dir, slug]
+			var assembled: Node3D = _instantiate_aom_bundle(bundle_dir, slug, "idle")
+			if assembled != null:
+				if is_promoted_hero:
+					_attach_hero_aura(assembled, Color("#38bdf8"))
+				return assembled
 
-	# 3. Pastas compartilhadas _shared/ (modelos unicos por panteao ou genericos)
-	#    Nivel 2: modelo especifico do panteao (Fase 2 - Synty)
-	#    Nivel 3: modelo generico compartilhado (Fase 1 - agora)
-	var shared_unit_name: String = unit_kind
-	match unit_kind:
-		"villager", "aldeao", "worker":
-			shared_unit_name = "aldeao"
-		"infantry", "soldier", "guerreiro", "soldado", "hoplita":
-			shared_unit_name = "infantaria"
-		"myth", "criatura_mitica", "talos", "automaton":
-			shared_unit_name = "unidade_mitica"
-	candidates.append("res://models/civilizations/_shared/%s/%s_base.glb" % [pantheon_id, shared_unit_name])
-	candidates.append("res://models/civilizations/_shared/%s_base.glb" % shared_unit_name)
-	# 3b. Modelos Synty FBX por panteao (Fase 2 - quando nao houver GLB convertido)
-	candidates.append("res://models/civilizations/_shared/%s/%s_base.fbx" % [pantheon_id, shared_unit_name])
-	candidates.append("res://models/civilizations/_shared/%s_base.fbx" % shared_unit_name)
-
-	for path in candidates:
-		if path == "":
-			continue
-		var loaded: Node3D = _try_instantiate_model(path)
-		if loaded != null:
-			# Força materiais opacos nos modelos importados (GLB/FBX) para evitar
-			# bonecos transparentes quando a fonte traz alpha/transparência nos materiais
-			_force_opaque_materials(loaded)
-			if unit_kind in ["villager", "aldeao"]:
-				loaded.scale = Vector3.ONE
-				attach_villager_tools(loaded, "axe")
-			elif unit_kind in ["infantry", "archer", "cavalry", "hero"]:
-				loaded.scale = Vector3.ONE
-			elif unit_kind == "myth":
-				loaded.scale = Vector3.ONE
-			if is_promoted_hero:
-				_attach_hero_aura(loaded, Color("#38bdf8"))
-			return loaded
 	return _build_procedural_unit(p, unit_kind, faction, is_promoted_hero, major_god_id)
+
+
+static func _load_aom_manifest(bundle_dir: String) -> Dictionary:
+	if _manifest_cache.has(bundle_dir):
+		return _manifest_cache[bundle_dir]
+	var mpath: String = "%s/manifest.json" % bundle_dir
+	var data: Dictionary = {}
+	if FileAccess.file_exists(mpath):
+		var fa := FileAccess.open(mpath, FileAccess.READ)
+		if fa != null:
+			var parsed: Variant = JSON.parse_string(fa.get_as_text())
+			fa.close()
+			if parsed is Dictionary:
+				data = parsed
+	_manifest_cache[bundle_dir] = data
+	return data
+
+
+static func _instantiate_aom_bundle(bundle_dir: String, slug: String, initial_action: String = "idle") -> Node3D:
+	var manifest: Dictionary = _load_aom_manifest(bundle_dir)
+	var glb_path: String = ""
+	var anims: Dictionary = manifest.get("animations", {})
+	if anims.has(initial_action):
+		glb_path = "%s/%s" % [bundle_dir, String(anims[initial_action])]
+	elif manifest.has("base"):
+		glb_path = "%s/%s" % [bundle_dir, String(manifest["base"])]
+	else:
+		glb_path = "%s/%s_base.glb" % [bundle_dir, slug]
+
+	var loaded: Node3D = _try_instantiate_glb(glb_path)
+	if loaded == null:
+		# Tenta fallback para o base.glb caso o clipe animado nao exista
+		var base_fallback: String = "%s/%s_base.glb" % [bundle_dir, slug]
+		if base_fallback != glb_path:
+			loaded = _try_instantiate_glb(base_fallback)
+	if loaded == null:
+		return null
+
+	_force_opaque_materials(loaded)
+	_attach_aom_accessories(loaded, bundle_dir, manifest)
+
+	# Inicia o AnimationPlayer do clipe automaticamente em loop
+	var anim_player: AnimationPlayer = _find_animation_player(loaded)
+	if anim_player != null:
+		var list: PackedStringArray = anim_player.get_animation_list()
+		if list.size() > 0:
+			var anim_res: Animation = anim_player.get_animation(list[0])
+			if anim_res != null:
+				anim_res.loop_mode = Animation.LOOP_LINEAR
+			anim_player.play(list[0])
+
+	loaded.set_meta("aom_bundle_dir", bundle_dir)
+	loaded.set_meta("aom_slug", slug)
+	loaded.set_meta("aom_action", initial_action)
+	return loaded
+
+
+static func _attach_aom_accessories(root: Node3D, bundle_dir: String, manifest: Dictionary) -> void:
+	var accs: Dictionary = manifest.get("accessories", {})
+	if accs.is_empty():
+		return
+	for sock_raw in accs.keys():
+		var acc_rel: String = String(accs[sock_raw])
+		var acc_path: String = "%s/%s" % [bundle_dir, acc_rel]
+		var socket_node: Node3D = _find_socket_node(root, String(sock_raw))
+		if socket_node == null:
+			continue
+		var acc_inst: Node3D = _try_instantiate_glb(acc_path)
+		if acc_inst != null:
+			_force_opaque_materials(acc_inst)
+			socket_node.add_child(acc_inst)
+
+
+static func _find_socket_node(node: Node, socket_name: String) -> Node3D:
+	var target_upper: String = socket_name.to_upper()
+	var queue: Array[Node] = [node]
+	while not queue.is_empty():
+		var cur: Node = queue.pop_front()
+		if cur is Node3D:
+			var cname: String = cur.name.to_upper()
+			if cname == target_upper + "_SOCKET" or cname == target_upper:
+				return cur as Node3D
+		for child in cur.get_children():
+			queue.append(child)
+	return null
+
+
+static func _find_animation_player(node: Node) -> AnimationPlayer:
+	if node is AnimationPlayer:
+		return node as AnimationPlayer
+	for child in node.get_children():
+		var found: AnimationPlayer = _find_animation_player(child)
+		if found != null:
+			return found
+	return null
+
+
+static func switch_aom_action(visual_holder: Node3D, action: String) -> bool:
+	if visual_holder == null or visual_holder.get_child_count() == 0:
+		return false
+	var current: Node = visual_holder.get_child(0)
+	if not current.has_meta("aom_bundle_dir"):
+		return false
+	var cur_action: String = String(current.get_meta("aom_action", ""))
+	if cur_action == action:
+		return true
+	var bundle_dir: String = String(current.get_meta("aom_bundle_dir", ""))
+	var slug: String = String(current.get_meta("aom_slug", ""))
+	var manifest: Dictionary = _load_aom_manifest(bundle_dir)
+	var anims: Dictionary = manifest.get("animations", {})
+	if not anims.has(action):
+		return false
+	var next_visual: Node3D = _instantiate_aom_bundle(bundle_dir, slug, action)
+	if next_visual == null:
+		return false
+	current.queue_free()
+	visual_holder.add_child(next_visual)
+	return true
 
 
 ## Anexa o machado heróico calibrado ao osso da mão direita do aldeão no Godot
@@ -237,7 +334,7 @@ static func _try_instantiate_glb(res_path: String) -> Node3D:
 		if fa != null:
 			var sz: int = fa.get_length()
 			fa.close()
-			if sz < 8192:
+			if sz < 512:
 				return null
 	var packed: PackedScene
 	if _scene_cache.has(res_path):
@@ -2531,10 +2628,17 @@ static func _force_opaque_materials(node: Node) -> void:
 				var mat: Material = mesh.get_surface_material(i)
 				if mat is StandardMaterial3D:
 					mat.transparency = BaseMaterial3D.TRANSPARENCY_DISABLED
+					mat.depth_draw_mode = BaseMaterial3D.DEPTH_DRAW_OPAQUE_ONLY
+					mat.cull_mode = BaseMaterial3D.CULL_DISABLED
 					mat.albedo_color.a = 1.0
+					mat.metallic = 0.0
+					mat.roughness = maxf(mat.roughness, 0.75)
 		if node.material_override != null and node.material_override is StandardMaterial3D:
 			node.material_override.transparency = BaseMaterial3D.TRANSPARENCY_DISABLED
+			node.material_override.depth_draw_mode = BaseMaterial3D.DEPTH_DRAW_OPAQUE_ONLY
+			node.material_override.cull_mode = BaseMaterial3D.CULL_DISABLED
 			node.material_override.albedo_color.a = 1.0
+			node.material_override.metallic = 0.0
 	for child in node.get_children():
 		_force_opaque_materials(child)
 

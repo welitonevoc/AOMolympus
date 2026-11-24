@@ -16,7 +16,7 @@ done
 
 # Sincroniza apenas pastas de modelos leves de runtime (ignora Synty FBX pesados)
 mkdir -p "$DST/models"
-for mdir in natureza units buildings referencias_cidade; do
+for mdir in civilizations natureza units buildings referencias_cidade; do
     if [ -d "$SRC/models/$mdir" ]; then
         cp -ru "$SRC/models/$mdir" "$DST/models/" 2>/dev/null
     fi
