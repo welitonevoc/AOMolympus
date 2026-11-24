@@ -26,6 +26,8 @@ var _power_system: Node3D
 var _battle_hud: Node = null  # Referência ao BattleScreen (Painel H)
 var _victory_rules: OlympusVictoryRules = null
 var _trigger_engine: OlympusTriggerEngine = null
+var _startup_config: OlympusStartupConfig = null
+var _command_bindings: OlympusCommandBindings = null
 var _last_idle_villager_idx: int = -1
 var _auto_economy_timer: float = 0.0
 
@@ -61,6 +63,14 @@ func _ready() -> void:
 	_trigger_engine.name = "TriggerEngine"
 	add_child(_trigger_engine)
 
+	_startup_config = OlympusStartupConfig.new()
+	_startup_config.name = "StartupConfig"
+	add_child(_startup_config)
+
+	_command_bindings = OlympusCommandBindings.new()
+	_command_bindings.name = "CommandBindings"
+	add_child(_command_bindings)
+
 	_setup_lighting_and_sky()
 	_setup_navigation_mesh()
 
@@ -76,6 +86,8 @@ func _ready() -> void:
 		_ai_controller.bind(self)
 	if _power_system != null:
 		_power_system.bind(self)
+	if _command_bindings != null and _camera_rig != null:
+		_command_bindings.bind(self, _camera_rig)
 
 	# === BattleScreen / Painel H (HUD da Partida) ===
 	_battle_hud = get_node_or_null("../BattleScreen")
@@ -125,6 +137,9 @@ func get_fog_system() -> FogOfWarSystem:
 
 
 func _on_match_started(pantheon_id: String, enemy_pantheon_id: String) -> void:
+	if is_instance_valid(_startup_config):
+		_startup_config.apply_resource_preset(GameState.starting_resources_mode)
+
 	for child in _entities_root.get_children():
 		child.queue_free()
 	for proj in _projectiles_root.get_children():
@@ -283,6 +298,9 @@ func spawn_villager(world_pos: Vector3) -> UnitActor:
 
 
 func focus_town_center() -> void:
+	if is_instance_valid(_command_bindings):
+		_command_bindings.find_town_center()
+		return
 	if _camera_rig == null:
 		return
 	for tc in get_tree().get_nodes_in_group("player_town_centers"):
@@ -294,6 +312,9 @@ func focus_town_center() -> void:
 
 
 func focus_idle_villager() -> void:
+	if is_instance_valid(_command_bindings):
+		_command_bindings.find_idle_villager()
+		return
 	if _camera_rig == null:
 		return
 	var idles: Array = []
@@ -556,6 +577,14 @@ func get_victory_rules() -> OlympusVictoryRules:
 
 func get_trigger_engine() -> OlympusTriggerEngine:
 	return _trigger_engine
+
+
+func get_startup_config() -> OlympusStartupConfig:
+	return _startup_config
+
+
+func get_command_bindings() -> OlympusCommandBindings:
+	return _command_bindings
 
 
 func spawn_resource_node(kind: String, pos: Vector3, amount: float) -> ResourceNode:

@@ -111,12 +111,14 @@ func _check_conditions(trig: TriggerDefinition) -> bool:
 				var group_name: String = String(cond.get("group_name", ""))
 				if not group_name.is_empty():
 					var nodes: Array[Node] = get_tree().get_nodes_in_group(group_name)
+					if nodes.is_empty():
+						return false
 					var living_count: int = 0
 					for n in nodes:
 						if is_instance_valid(n):
 							if n is UnitActor and not n.is_dead():
 								living_count += 1
-							elif n is BuildingActor and not n.is_queued_for_deletion():
+							elif n is BuildingActor and not n.is_queued_for_deletion() and not n.is_dead():
 								living_count += 1
 					if living_count > 0:
 						return false
@@ -139,7 +141,7 @@ func _check_conditions(trig: TriggerDefinition) -> bool:
 
 			"custom":
 				var callable: Callable = cond.get("callable", Callable())
-				if callable.is_valid() and not bool(callable.call()):
+				if not callable.is_valid() or not bool(callable.call()):
 					return false
 
 			_:

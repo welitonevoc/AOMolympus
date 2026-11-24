@@ -52,6 +52,7 @@ var _toast_tween: Tween
 var _wonder_panel: PanelContainer
 var _wonder_lbl: Label
 var _wonder_progress_bar: ProgressBar
+var _active_wonder_times: Dictionary = {"player": -1.0, "enemy": -1.0}
 
 var _dialogue_panel: PanelContainer
 var _dialogue_speaker_lbl: Label
@@ -68,9 +69,11 @@ var _chosen_pantheon: String = "greek"
 var _chosen_biome: String = "mediterranean"
 var _chosen_difficulty: String = "normal"
 var _chosen_chapter: String = "olympus_dawn"
+var _chosen_resources_mode: String = "standard"
 var _pantheon_buttons: Dictionary = {}
 var _biome_buttons: Dictionary = {}
 var _diff_buttons: Dictionary = {}
+var _res_mode_buttons: Dictionary = {}
 var _chapter_buttons: Dictionary = {}
 var _pantheon_desc_label: Label
 var _chapter_desc_label: Label
@@ -691,35 +694,56 @@ func _connect_world_rules_and_triggers() -> void:
 func _on_wonder_countdown_started(faction: String, duration: float) -> void:
 	if _wonder_panel == null or _wonder_lbl == null or _wonder_progress_bar == null:
 		return
+	_active_wonder_times[faction] = duration
 	_wonder_panel.visible = true
 	_wonder_progress_bar.max_value = duration
 	_wonder_progress_bar.value = duration
-	_update_wonder_banner_text(faction, duration)
+	_refresh_wonder_banner()
 
 
 func _on_wonder_countdown_updated(faction: String, remaining_seconds: float) -> void:
 	if _wonder_panel == null or _wonder_lbl == null or _wonder_progress_bar == null:
 		return
+	_active_wonder_times[faction] = remaining_seconds
 	_wonder_panel.visible = true
-	_wonder_progress_bar.value = remaining_seconds
-	_update_wonder_banner_text(faction, remaining_seconds)
+	_refresh_wonder_banner()
 
 
-func _on_wonder_countdown_cancelled(_faction: String, _reason: String) -> void:
-	if _wonder_panel != null:
-		_wonder_panel.visible = false
-
-
-func _update_wonder_banner_text(faction: String, remaining_seconds: float) -> void:
-	var mins: int = int(remaining_seconds) / 60
-	var secs: int = int(remaining_seconds) % 60
-	var time_fmt: String = "%02d:%02d" % [mins, secs]
-	if faction == "player":
-		_wonder_lbl.text = "🏛️ MARAVILHA ALIADA: %s" % time_fmt
-		_wonder_lbl.add_theme_color_override("font_color", Color("#f6e08b"))
+func _on_wonder_countdown_cancelled(faction: String, _reason: String) -> void:
+	_active_wonder_times[faction] = -1.0
+	if float(_active_wonder_times.get("player", -1.0)) <= 0.0 and float(_active_wonder_times.get("enemy", -1.0)) <= 0.0:
+		if _wonder_panel != null:
+			_wonder_panel.visible = false
 	else:
-		_wonder_lbl.text = "⚠️ MARAVILHA INIMIGA: %s" % time_fmt
+		_refresh_wonder_banner()
+
+
+func _refresh_wonder_banner() -> void:
+	var p_rem: float = float(_active_wonder_times.get("player", -1.0))
+	var e_rem: float = float(_active_wonder_times.get("enemy", -1.0))
+
+	if p_rem <= 0.0 and e_rem <= 0.0:
+		_wonder_panel.visible = false
+		return
+
+	_wonder_panel.visible = true
+
+	if p_rem > 0.0 and e_rem > 0.0:
+		var p_str: String = "%02d:%02d" % [int(p_rem) / 60, int(p_rem) % 60]
+		var e_str: String = "%02d:%02d" % [int(e_rem) / 60, int(e_rem) % 60]
+		_wonder_lbl.text = "🏛️ ALIADA: %s  |  ⚠️ INIMIGA: %s" % [p_str, e_str]
+		_wonder_lbl.add_theme_color_override("font_color", Color("#f59e0b"))
+		_wonder_progress_bar.value = minf(p_rem, e_rem)
+	elif p_rem > 0.0:
+		var p_str: String = "%02d:%02d" % [int(p_rem) / 60, int(p_rem) % 60]
+		_wonder_lbl.text = "🏛️ MARAVILHA ALIADA: %s" % p_str
+		_wonder_lbl.add_theme_color_override("font_color", Color("#f6e08b"))
+		_wonder_progress_bar.value = p_rem
+	else:
+		var e_str: String = "%02d:%02d" % [int(e_rem) / 60, int(e_rem) % 60]
+		_wonder_lbl.text = "⚠️ MARAVILHA INIMIGA: %s" % e_str
 		_wonder_lbl.add_theme_color_override("font_color", Color("#f87171"))
+		_wonder_progress_bar.value = e_rem
 
 
 func _on_trigger_dialogue_requested(speaker: String, title: String, text: String, duration: float, _portrait: String) -> void:
@@ -844,6 +868,21 @@ func _build_pantheon_start_overlay() -> void:
 		d_row.add_child(d_btn)
 		_diff_buttons[did] = d_btn
 
+	var r_lbl := _make_metric_label("Recursos Iniciais (Preset de Partida AoM):", Color("#f6e08b"))
+	r_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_skirmish_box.add_child(r_lbl)
+
+	var r_row := HBoxContainer.new()
+	r_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	r_row.add_theme_constant_override("separation", 8)
+	_skirmish_box.add_child(r_row)
+	for rid in ["standard", "deathmatch", "lightning", "hardcore"]:
+		var r_spec: Dictionary = OlympusStartupConfig.RESOURCE_PRESETS.get(rid, {})
+		var r_btn := _make_action_button(String(r_spec.get("name", rid)), rid == _chosen_resources_mode, 155.0, 40.0)
+		r_btn.pressed.connect(func() -> void: _select_start_resource_mode(rid))
+		r_row.add_child(r_btn)
+		_res_mode_buttons[rid] = r_btn
+
 	# === PAINEL CAMPANHA ===
 	_campaign_box = VBoxContainer.new()
 	_campaign_box.add_theme_constant_override("separation", 8)
@@ -874,6 +913,7 @@ func _build_pantheon_start_overlay() -> void:
 	_select_start_pantheon(_chosen_pantheon)
 	_select_start_biome(_chosen_biome)
 	_select_start_difficulty(_chosen_difficulty)
+	_select_start_resource_mode(_chosen_resources_mode)
 	_select_start_chapter(_chosen_chapter)
 
 	var start_btn := _make_action_button("Iniciar Batalha", true, 250.0, 50.0)
@@ -883,7 +923,7 @@ func _build_pantheon_start_overlay() -> void:
 		if _start_mode == "campaign":
 			GameState.start_campaign_chapter(_chosen_chapter)
 		else:
-			GameState.start_new_match(_chosen_pantheon, _chosen_biome, _chosen_difficulty, -1, "", "", "", "conquest", "standard", 1, GameState.active_map_size)
+			GameState.start_new_match(_chosen_pantheon, _chosen_biome, _chosen_difficulty, -1, "", "", "", "conquest", _chosen_resources_mode, 1, GameState.active_map_size)
 	)
 	vbox.add_child(start_btn)
 
@@ -1155,6 +1195,11 @@ func _select_start_biome(bid: String) -> void:
 func _select_start_difficulty(did: String) -> void:
 	_chosen_difficulty = did
 	_highlight_choice_group(_diff_buttons, did)
+
+
+func _select_start_resource_mode(rid: String) -> void:
+	_chosen_resources_mode = rid
+	_highlight_choice_group(_res_mode_buttons, rid)
 
 
 func _select_start_chapter(cid: String) -> void:

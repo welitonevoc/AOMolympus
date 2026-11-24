@@ -14,7 +14,8 @@ enum VictoryMode {
 	CONQUEST,      ## Aniquilacao total de centros urbanos e forcas militares
 	SUDDEN_DEATH,  ## Destruicao da Cidadela / Centro da Vila principal encerra a partida
 	WONDER,        ## Construir e defender Maravilha por 600 segundos
-	LIGHTNING      ## Conquista acelerada
+	LIGHTNING,     ## Conquista acelerada
+	REGICIDE       ## Perda do heroi/rei encerra a partida
 }
 
 const WONDER_DEFAULT_COUNTDOWN: float = 600.0  ## 10 minutos classicos do AoM
@@ -49,6 +50,8 @@ func _sync_mode_from_gamestate() -> void:
 			mode = VictoryMode.WONDER
 		"lightning":
 			mode = VictoryMode.LIGHTNING
+		"regicide":
+			mode = VictoryMode.REGICIDE
 		_:
 			mode = VictoryMode.CONQUEST
 
@@ -132,8 +135,11 @@ func _handle_sudden_death_tc_lost(faction: String) -> void:
 
 	var active_count: int = 0
 	for tc in tcs:
-		if is_instance_valid(tc) and not (tc is BuildingActor and tc.is_queued_for_deletion()):
-			active_count += 1
+		if is_instance_valid(tc) and not tc.is_queued_for_deletion():
+			if tc is BuildingActor and not tc.is_dead():
+				active_count += 1
+			elif not (tc is BuildingActor):
+				active_count += 1
 
 	if active_count <= 1: # O centro atual acabou de cair
 		if faction == "player":
@@ -167,7 +173,8 @@ func _check_wonder_milestones(faction: String, remaining: float) -> void:
 	var rem_int: int = int(ceil(remaining))
 
 	for m in milestones:
-		if rem_int <= m and not dict.has(m):
+		# Dispara apenas quando o tempo estiver dentro de uma janela de 3s do marco para evitar cascata em restores
+		if rem_int <= m and rem_int >= m - 3 and not dict.has(m):
 			dict[m] = true
 			var time_str: String = ""
 			if m >= 60:
