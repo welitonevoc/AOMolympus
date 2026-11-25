@@ -178,17 +178,26 @@ def _decode_dxt_fast(data: bytes, w: int, h: int, mode: str) -> Image.Image:
     buf = np.frombuffer(data[: n_blocks * stride], dtype=np.uint8).reshape((n_blocks, stride))
 
     color_off = 0 if mode in ("dxt1", "dxt1_10") else 8
+    lookup_off = 6 if mode == "dxt1_10" else (color_off + 4)
     c0 = buf[:, color_off].astype(np.uint16) | (buf[:, color_off + 1].astype(np.uint16) << 8)
     c1 = buf[:, color_off + 2].astype(np.uint16) | (buf[:, color_off + 3].astype(np.uint16) << 8)
     lookup = (
-        buf[:, color_off + 4].astype(np.uint32)
-        | (buf[:, color_off + 5].astype(np.uint32) << 8)
-        | (buf[:, color_off + 6].astype(np.uint32) << 16)
-        | (buf[:, color_off + 7].astype(np.uint32) << 24)
+        buf[:, lookup_off].astype(np.uint32)
+        | (buf[:, lookup_off + 1].astype(np.uint32) << 8)
+        | (buf[:, lookup_off + 2].astype(np.uint32) << 16)
+        | (buf[:, lookup_off + 3].astype(np.uint32) << 24)
     )
 
-    r0, g0, b0 = _unpack_rgb565_arr(c0)
-    r1, g1, b1 = _unpack_rgb565_arr(c1)
+    if mode == "dxt1_10":
+        r0 = (((c0 >> 10) & 0x1F).astype(np.uint16) * 255 // 31).astype(np.uint8)
+        g0 = (((c0 >> 5) & 0x1F).astype(np.uint16) * 255 // 31).astype(np.uint8)
+        b0 = ((c0 & 0x1F).astype(np.uint16) * 255 // 31).astype(np.uint8)
+        r1 = (((c1 >> 10) & 0x1F).astype(np.uint16) * 255 // 31).astype(np.uint8)
+        g1 = (((c1 >> 5) & 0x1F).astype(np.uint16) * 255 // 31).astype(np.uint8)
+        b1 = ((c1 & 0x1F).astype(np.uint16) * 255 // 31).astype(np.uint8)
+    else:
+        r0, g0, b0 = _unpack_rgb565_arr(c0)
+        r1, g1, b1 = _unpack_rgb565_arr(c1)
 
     palette = np.zeros((n_blocks, 4, 4), dtype=np.uint8)
     palette[:, 0, 0], palette[:, 0, 1], palette[:, 0, 2], palette[:, 0, 3] = r0, g0, b0, 255

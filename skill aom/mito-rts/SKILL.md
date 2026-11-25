@@ -56,7 +56,7 @@ Skill especialista baseada diretamente nos arquivos originais do **Age of Mythol
 
 1. **Texturas `.ddt` (formato RTS3 do AoM):**
    - `fmt == 4`: DXT1 padrão (**8 bytes/bloco**).
-   - `fmt == 5`: DXT1 + máscara 1-bit de alpha/player-color (**10 bytes/bloco**: `8B DXT1` em `offset 0` + `2B` máscara no final). Ler `fmt == 5` com stride 8 desalinha os blocos 4x4 e gera textura arco-íris verde/roxo.
+   - `fmt == 5`: formato BTX/DXT1A do AoM (**10 bytes/bloco**: `c0`/`c1` em **RGB555** nos bytes `0..3`, máscara 1-bit de alpha/player-color nos bytes `4..5`, e `lookup` DXT1 nos bytes `6..9`). Ler como RGB565 ou stride 8 gera textura arco-íris verde/roxo.
    - `fmt == 8`: DXT3 (16 bytes/bloco, `color_off = 8`).
    - `fmt == 9`: DXT5 (16 bytes/bloco, `color_off = 8`).
    - Extrator oficial: `python3 scripts/pipeline/aom_titans_extractor.py`.
