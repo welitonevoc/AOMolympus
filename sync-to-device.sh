@@ -28,6 +28,9 @@ for mdir in civilizations natureza units buildings referencias_cidade; do
         cp -ru "$SRC/models/$mdir" "$DST/models/" 2>/dev/null
     fi
 done
+if [ -f "$SRC/models/civilizations/.gdignore" ]; then
+    cp -f "$SRC/models/civilizations/.gdignore" "$DST/models/civilizations/.gdignore" 2>/dev/null
+fi
 
 # 4. Arquivos de configuração na raiz (forçados)
 for f in project.godot export_presets.cfg icon.svg AGENTS.md; do

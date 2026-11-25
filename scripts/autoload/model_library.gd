@@ -330,32 +330,53 @@ static func create_divine_unit_visual(
 	return _build_procedural_divine_unit(p, god_kind, faction)
 
 
+static func _set_owner_recursive(node: Node, owner_node: Node) -> void:
+	for child in node.get_children():
+		child.owner = owner_node
+		_set_owner_recursive(child, owner_node)
+
+
 static func _try_instantiate_glb(res_path: String) -> Node3D:
+	if _scene_cache.has(res_path):
+		var cached: PackedScene = _scene_cache[res_path]
+		var c_inst: Node = cached.instantiate()
+		if c_inst is Node3D:
+			return c_inst
+		if c_inst != null:
+			c_inst.queue_free()
+		return null
+
+	# 1. Carregamento runtime nativo via GLTFDocument (dispensa .import e evita crash OOM no Godot Android)
+	if res_path.ends_with(".glb") and FileAccess.file_exists(res_path):
+		var bytes: PackedByteArray = FileAccess.get_file_as_bytes(res_path)
+		if bytes.size() < 512:
+			return null
+		var gltf := GLTFDocument.new()
+		var state := GLTFState.new()
+		var err: Error = gltf.append_from_buffer(bytes, "", state)
+		if err == OK:
+			var root_node: Node = gltf.generate_scene(state)
+			if root_node is Node3D:
+				var packed_rt := PackedScene.new()
+				_set_owner_recursive(root_node, root_node)
+				if packed_rt.pack(root_node) == OK:
+					_scene_cache[res_path] = packed_rt
+				return root_node as Node3D
+			if root_node != null:
+				root_node.queue_free()
+
+	# 2. Fallback para ResourceLoader (.tscn / .fbx / .glb importados fora de civilizations/)
 	if not ResourceLoader.exists(res_path):
 		return null
-	# Se for um placeholder vazio ou dummy BoxMesh <= 8KB, ignora para gerar arquitetura rica
-	if FileAccess.file_exists(res_path):
-		var fa := FileAccess.open(res_path, FileAccess.READ)
-		if fa != null:
-			var sz: int = fa.get_length()
-			fa.close()
-			if sz < 512:
-				return null
-	var packed: PackedScene
-	if _scene_cache.has(res_path):
-		packed = _scene_cache[res_path]
-	else:
-		var loaded: Resource = load(res_path)
-		if loaded is PackedScene:
-			packed = loaded
-			_scene_cache[res_path] = packed
-		else:
-			return null
-	var inst: Node = packed.instantiate()
-	if inst is Node3D:
-		return inst
-	if inst != null:
-		inst.queue_free()
+	var loaded: Resource = load(res_path)
+	if loaded is PackedScene:
+		var packed: PackedScene = loaded
+		_scene_cache[res_path] = packed
+		var inst: Node = packed.instantiate()
+		if inst is Node3D:
+			return inst
+		if inst != null:
+			inst.queue_free()
 	return null
 
 
