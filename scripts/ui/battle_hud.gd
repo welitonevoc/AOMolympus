@@ -164,7 +164,7 @@ func _on_population_changed(used: int, cap: int) -> void:
 
 func _on_age_changed(new_age: int) -> void:
 	var age_names := ["Era Arcaica (I)", "Era Clássica (II)", "Era Heroica (III)", "Era Mítica (IV)", "Era dos Deuses (V)"]
-	var name := age_names[clampi(new_age - 1, 0, 4)] if new_age > 0 else "Desconhecida"
+	var name: String = age_names[clampi(new_age - 1, 0, 4)] if new_age > 0 else "Desconhecida"
 	lbl_age.text = "🏛️ %s" % name
 	_refresh_build_buttons()
 	_refresh_power_buttons()
@@ -221,7 +221,7 @@ func _update_population() -> void:
 
 func _update_age() -> void:
 	var age_names := ["Era Arcaica (I)", "Era Clássica (II)", "Era Heroica (III)", "Era Mítica (IV)", "Era dos Deuses (V)"]
-	var name := age_names[clampi(GameState.current_age - 1, 0, 4)]
+	var name: String = age_names[clampi(GameState.current_age - 1, 0, 4)]
 	lbl_age.text = "🏛️ %s" % name
 
 
@@ -261,8 +261,8 @@ func _refresh_build_buttons() -> void:
 	}
 	
 	for kind in buttons.keys():
-		var req_age := requirements.get(kind, 1)
-		var can_build := current_age >= req_age
+		var req_age: int = requirements.get(kind, 1)
+		var can_build: bool = current_age >= req_age
 		buttons[kind].disabled = not can_build
 		buttons[kind].visible = true
 
@@ -274,7 +274,7 @@ func _refresh_power_buttons() -> void:
 	
 	for i in buttons.size():
 		if i < powers.size():
-			var pid := powers[i]
+			var pid: String = powers[i]
 			var spec := DivinePowerCatalog.get_power(pid)
 			var cost := int(spec.get("favor_cost", 0)) if spec.has("favor_cost") else 0
 			var cd := 0.0
@@ -398,7 +398,7 @@ func show_notification(message: String, is_warning: bool = false) -> void:
 	GameState.notify(message, is_warning)
 
 
-func set_visible(visible: bool) -> void:
+func set_hud_visible(visible: bool) -> void:
 	self.visible = visible
 
 

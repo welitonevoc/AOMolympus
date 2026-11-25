@@ -192,8 +192,6 @@ func _process(delta: float) -> void:
 # ── Filtros ─────────────────────────────────────────────────────────────────
 
 func _on_cat_unidades() -> void:
-	_btn_cat_unidades.pressed = true
-	_btn_cat_construcoes.pressed = false
 	_current_category_type = "units"
 	_current_category = "unidade_militar"
 	_current_era = 1
@@ -203,8 +201,6 @@ func _on_cat_unidades() -> void:
 	_select_first_item()
 
 func _on_cat_construcoes() -> void:
-	_btn_cat_construcoes.pressed = true
-	_btn_cat_unidades.pressed = false
 	_current_category_type = "buildings"
 	_current_category = "town_center"
 	_current_era = 1
@@ -271,7 +267,7 @@ func _get_available_items() -> Array[String]:
 	var base_path: String = "res://models/civilizations/%s/%s/" % [_current_pantheon, _current_god]
 	var categories: Array[String] = _unit_categories.duplicate() if _current_category_type == "units" else _building_categories.duplicate()
 
-	var da: DirAccess = DirAccess.new()
+	var da: DirAccess = DirAccess.open("res://")
 	for cat in categories:
 		var cat_path: String = base_path + cat + "/"
 		if not da.dir_exists_absolute(cat_path):
@@ -670,7 +666,6 @@ func _on_zoom_mais() -> void:
 
 func _on_toggle_rotacao() -> void:
 	_is_rotating = not _is_rotating
-	_btn_girar.pressed = _is_rotating
 	_btn_girar.text = "🔄 Girar 360°" if _is_rotating else "⏸️ Parar Rotação"
 
 func _on_toggle_foco() -> void:
@@ -691,7 +686,7 @@ func _on_exportar_glb() -> void:
 		return
 
 	var dest_path: String = "res://models/units/" + _current_model_name + ".glb"
-	var ok: Error = DirAccess.new().copy(_current_model_path, dest_path)
+	var ok: Error = DirAccess.copy(_current_model_path, dest_path)
 	if ok == OK:
 		_lbl_item_desc.text = "Modelo exportado para: %s" % dest_path
 	else:
