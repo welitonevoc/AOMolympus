@@ -1,0 +1,37 @@
+=== [1] UNIT:villager_greek:idle | path=res://models/civilizations/greek/villager_greek/animations/idle.glb | root=Node3D pos=(0.0, 1.398438, 0.0) scale=(1.0, 1.0, 1.0) vis=true ===
+  MI: MeshRoot vis=true layers=1 sc=3 aabb=[P: (-0.466797, -1.398438, -0.145508), S: (0.875, 2.113281, 0.436523)] mat0=StandardMaterial3D(tex=true,col=(1.0, 1.0, 1.0, 1.0),tr=0,cull=2)
+  total_mesh_instances=1
+=== [2] UNIT:villager_greek:idle | path=res://models/civilizations/greek/villager_greek/animations/idle.glb | root=Node3D pos=(0.0, 1.398438, 0.0) scale=(1.0, 1.0, 1.0) vis=true ===
+  MI: MeshRoot vis=true layers=1 sc=3 aabb=[P: (-0.466797, -1.398438, -0.145508), S: (0.875, 2.113281, 0.436523)] mat0=StandardMaterial3D(tex=true,col=(1.0, 1.0, 1.0, 1.0),tr=0,cull=2)
+  total_mesh_instances=1
+=== [3] UNIT:villager_greek:idle | path=res://models/civilizations/greek/villager_greek/animations/idle.glb | root=Node3D pos=(0.0, 1.398438, 0.0) scale=(1.0, 1.0, 1.0) vis=true ===
+  MI: MeshRoot vis=true layers=1 sc=3 aabb=[P: (-0.466797, -1.398438, -0.145508), S: (0.875, 2.113281, 0.436523)] mat0=StandardMaterial3D(tex=true,col=(1.0, 1.0, 1.0, 1.0),tr=0,cull=2)
+  total_mesh_instances=1
+=== [4] UNIT:villager_greek:idle | path=res://models/civilizations/greek/villager_greek/animations/idle.glb | root=Node3D pos=(0.0, 1.398438, 0.0) scale=(1.0, 1.0, 1.0) vis=true ===
+  MI: MeshRoot vis=true layers=1 sc=3 aabb=[P: (-0.466797, -1.398438, -0.145508), S: (0.875, 2.113281, 0.436523)] mat0=StandardMaterial3D(tex=true,col=(1.0, 1.0, 1.0, 1.0),tr=0,cull=2)
+  total_mesh_instances=1
+=== [5] UNIT:hoplite:idle | path=res://models/civilizations/greek/hoplite/animations/idle.glb | root=Node3D pos=(0.0, 1.109375, 0.0) scale=(1.0, 1.0, 1.0) vis=true ===
+  MI: MeshRoot vis=true layers=1 sc=2 aabb=[P: (-0.5625, -1.109375, -0.337891), S: (0.923828, 1.789063, 0.884766)] mat0=StandardMaterial3D(tex=true,col=(1.0, 1.0, 1.0, 1.0),tr=0,cull=2)
+  MI: MeshRoot vis=true layers=1 sc=1 aabb=[P: (-0.038818, -1.070313, -0.037598), S: (0.076416, 2.585938, 0.076416)] mat0=StandardMaterial3D(tex=true,col=(1.0, 1.0, 1.0, 1.0),tr=0,cull=2)
+  MI: MeshRoot vis=true layers=1 sc=1 aabb=[P: (-0.111816, -0.177734, -0.120605), S: (0.21875, 0.396484, 0.251465)] mat0=StandardMaterial3D(tex=true,col=(1.0, 1.0, 1.0, 1.0),tr=0,cull=2)
+  MI: MeshRoot vis=true layers=1 sc=1 aabb=[P: (-0.235352, -0.235352, -0.144531), S: (0.470703, 0.470703, 0.081543)] mat0=StandardMaterial3D(tex=true,col=(1.0, 1.0, 1.0, 1.0),tr=0,cull=2)
+  total_mesh_instances=4
+=== [6] UNIT:hoplite:idle | path=res://models/civilizations/greek/hoplite/animations/idle.glb | root=Node3D pos=(0.0, 1.109375, 0.0) scale=(1.0, 1.0, 1.0) vis=true ===
+  MI: MeshRoot vis=true layers=1 sc=2 aabb=[P: (-0.5625, -1.109375, -0.337891), S: (0.923828, 1.789063, 0.884766)] mat0=StandardMaterial3D(tex=true,col=(1.0, 1.0, 1.0, 1.0),tr=0,cull=2)
+  MI: MeshRoot vis=true layers=1 sc=1 aabb=[P: (-0.038818, -1.070313, -0.037598), S: (0.076416, 2.585938, 0.076416)] mat0=StandardMaterial3D(tex=true,col=(1.0, 1.0, 1.0, 1.0),tr=0,cull=2)
+  MI: MeshRoot vis=true layers=1 sc=1 aabb=[P: (-0.111816, -0.177734, -0.120605), S: (0.21875, 0.396484, 0.251465)] mat0=StandardMaterial3D(tex=true,col=(1.0, 1.0, 1.0, 1.0),tr=0,cull=2)
+  MI: MeshRoot vis=true layers=1 sc=1 aabb=[P: (-0.235352, -0.235352, -0.144531), S: (0.470703, 0.470703, 0.081543)] mat0=StandardMaterial3D(tex=true,col=(1.0, 1.0, 1.0, 1.0),tr=0,cull=2)
+  total_mesh_instances=4
+=== [7] UNIT:toxotes:idle | path=res://models/civilizations/greek/toxotes/animations/idle.glb | root=Node3D pos=(0.0, 1.109375, 0.0) scale=(1.0, 1.0, 1.0) vis=true ===
+  MI: MeshRoot vis=true layers=1 sc=2 aabb=[P: (-0.365234, -1.109375, -0.353516), S: (0.630859, 1.753906, 0.853516)] mat0=StandardMaterial3D(tex=true,col=(1.0, 1.0, 1.0, 1.0),tr=0,cull=2)
+  MI: MeshRoot vis=true layers=1 sc=1 aabb=[P: (-0.039063, -0.5625, -0.219727), S: (0.078125, 1.125, 0.279297)] mat0=StandardMaterial3D(tex=true,col=(1.0, 1.0, 1.0, 1.0),tr=0,cull=2)
+  MI: MeshRoot vis=true layers=1 sc=1 aabb=[P: (-0.039063, -0.5625, -0.219727), S: (0.078125, 1.125, 0.279297)] mat0=StandardMaterial3D(tex=true,col=(1.0, 1.0, 1.0, 1.0),tr=0,cull=2)
+  MI: MeshRoot vis=true layers=1 sc=1 aabb=[P: (-0.104004, -0.139648, -0.112793), S: (0.207031, 0.366211, 0.240723)] mat0=StandardMaterial3D(tex=true,col=(1.0, 1.0, 1.0, 1.0),tr=0,cull=2)
+  MI: MeshRoot vis=true layers=1 sc=1 aabb=[P: (-0.198242, -0.198242, -0.133789), S: (0.396484, 0.396484, 0.068359)] mat0=StandardMaterial3D(tex=true,col=(1.0, 1.0, 1.0, 1.0),tr=0,cull=2)
+  total_mesh_instances=5
+=== [8] UNIT:hippikon:idle | path=res://models/civilizations/greek/hippikon/animations/idle.glb | root=Node3D pos=(0.0, 1.0625, 0.0) scale=(1.0, 1.0, 1.0) vis=true ===
+  MI: MeshRoot vis=true layers=1 sc=5 aabb=[P: (-0.859375, -1.0625, -1.429688), S: (1.609375, 3.125, 3.023438)] mat0=StandardMaterial3D(tex=true,col=(1.0, 1.0, 1.0, 1.0),tr=0,cull=2)
+  MI: MeshRoot vis=true layers=1 sc=1 aabb=[P: (-0.041504, -0.097656, -0.101074), S: (0.083008, 1.097656, 0.202148)] mat0=StandardMaterial3D(tex=true,col=(1.0, 1.0, 1.0, 1.0),tr=0,cull=2)
+  MI: MeshRoot vis=true layers=1 sc=1 aabb=[P: (-0.098145, -0.15918, -0.117676), S: (0.193848, 0.353516, 0.242188)] mat0=StandardMaterial3D(tex=true,col=(1.0, 1.0, 1.0, 1.0),tr=0,cull=2)
+  MI: MeshRoot vis=true layers=1 sc=1 aabb=[P: (-0.198242, -0.198242, -0.133789), S: (0.396484, 0.396484, 0.068359)] mat0=StandardMaterial3D(tex=true,col=(1.0, 1.0, 1.0, 1.0),tr=0,cull=2)
+  total_mesh_instances=4
