@@ -146,8 +146,10 @@ def decode_ddt_bytes(raw: bytes) -> Optional[Image.Image]:
     bh = max(1, (height + 3) // 4)
     total_blocks = bw * bh
 
-    # DXT1 (fmt == 4 or 5) vs DXT3 (fmt == 8) vs DXT5 (fmt == 9)
-    if fmt in (4, 5) or (fmt not in (1, 8, 9) and len(data) == total_blocks * 8):
+    # DXT1+1bit (fmt == 5, 10 bytes/bloco: 8B DXT1 + 2B mascara) vs DXT1 (fmt == 4, 8B) vs DXT3 (fmt == 8, 16B) vs DXT5 (fmt == 9, 16B)
+    if (fmt == 5 and len(data) >= total_blocks * 10) or len(data) == total_blocks * 10:
+        return _decode_dxt_fast(data, width, height, mode="dxt1_10")
+    elif fmt in (4, 5) or (fmt not in (1, 8, 9) and len(data) == total_blocks * 8):
         return _decode_dxt_fast(data, width, height, mode="dxt1")
     elif fmt == 8:
         return _decode_dxt_fast(data, width, height, mode="dxt3")
@@ -172,10 +174,10 @@ def _decode_dxt_fast(data: bytes, w: int, h: int, mode: str) -> Image.Image:
     bw = max(1, (w + 3) // 4)
     bh = max(1, (h + 3) // 4)
     n_blocks = bw * bh
-    stride = 8 if mode == "dxt1" else 16
+    stride = 8 if mode == "dxt1" else (10 if mode == "dxt1_10" else 16)
     buf = np.frombuffer(data[: n_blocks * stride], dtype=np.uint8).reshape((n_blocks, stride))
 
-    color_off = 0 if mode == "dxt1" else 8
+    color_off = 0 if mode in ("dxt1", "dxt1_10") else 8
     c0 = buf[:, color_off].astype(np.uint16) | (buf[:, color_off + 1].astype(np.uint16) << 8)
     c1 = buf[:, color_off + 2].astype(np.uint16) | (buf[:, color_off + 3].astype(np.uint16) << 8)
     lookup = (
