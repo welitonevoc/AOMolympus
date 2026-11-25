@@ -511,7 +511,8 @@ func set_filters(filters: Dictionary) -> void:
 			_on_god_changed(idx)
 	
 	if filters.has("type"):
-		for i, opt in _unit_type_options:
+		for i in range(_unit_type_options.size()):
+			var opt: Dictionary = _unit_type_options[i]
 			if opt["id"] == filters["type"]:
 				_option_type.selected = i
 				_on_type_changed(i)
