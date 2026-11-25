@@ -1,0 +1,7 @@
+{
+  "dbPath": "/data/user/0/com.agy/files/.local/share/agenfk/.agenfk/db.sqlite",
+  "rulesScope": "global",
+  "withMcp": false,
+  "codexMcp": false,
+  "telemetry": true
+}

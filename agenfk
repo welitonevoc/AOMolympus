@@ -1,0 +1,24 @@
+#!/bin/bash
+# ============================================================================
+# agenfk — Wrapper para rodar o AgEnFK (instalado em com.agy)
+# ============================================================================
+# O AgEnFK está instalado na pasta privada do app com.agy (u0_a290).
+# Este wrapper no sdcard permite versionar a configuração no GitHub e
+# executar o AgEnFK a partir de qualquer shell que tenha acesso ao com.agy.
+# ============================================================================
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Aponta para a instalação real no com.agy
+export HOME="/data/user/0/com.agy/files/.agenfk"
+export AGENFK_HOME="/data/user/0/com.agy/files/.local/share/agenfk"
+export AGENFK_CONFIG_DIR="/data/user/0/com.agy/files/.agenfk"
+
+# Copia de segurança da config no sdcard (para versionar no Git)
+# Se o com.agy não estiver acessível, usa a cópia local
+if [ ! -f "/data/user/0/com.agy/files/.agenfk/config.json" ] && [ -f "$SCRIPT_DIR/.agenfk-install/.agenfk/config.json" ]; then
+    export HOME="$SCRIPT_DIR/.agenfk-install/.agenfk"
+    export AGENFK_CONFIG_DIR="$SCRIPT_DIR/.agenfk-install/.agenfk"
+fi
+
+exec node "$AGENFK_HOME/packages/cli/bin/agenfk.js" "$@"
