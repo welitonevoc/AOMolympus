@@ -1,0 +1,26 @@
+{
+  "unit": "pyramid_osiris_xpack",
+  "civ": "egyptian",
+  "category": "cidade",
+  "source_anim_txt": "pyramid osiris xpack_anim.txt",
+  "base": "pyramid_osiris_xpack_base.glb",
+  "sockets": [
+    "LEFTEAR",
+    "RIGHTEAR",
+    "LEFTFOOT",
+    "RIGHTFOOT"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {
+    "face": "accessories/building_e_rubble8x8.glb",
+    "leftleg": "accessories/building_e_rubble8x8.glb",
+    "neck": "accessories/building_e_rubble8x8.glb",
+    "pelvis": "accessories/building_e_rubble8x8.glb"
+  },
+  "textures": [
+    "building_e_osiris_pyramid.png"
+  ]
+}

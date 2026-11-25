@@ -1,0 +1,22 @@
+{
+  "unit": "arkantos",
+  "civ": "greek",
+  "category": "unidades",
+  "source_anim_txt": "arkantos_anim.txt",
+  "base": "arkantos_base.glb",
+  "sockets": [
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb",
+    "walk": "animations/walk.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "attachments_a_spear_iron.png",
+    "scenario_g_arkantos_head.png",
+    "scenario_g_arkantos_map.png"
+  ]
+}

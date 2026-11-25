@@ -1,0 +1,13 @@
+{
+  "unit": "troy_lighthouse",
+  "civ": "shared",
+  "category": "cidade",
+  "source_anim_txt": "troy lighthouse_anim.txt",
+  "base": "troy_lighthouse_base.glb",
+  "sockets": [],
+  "animations": {
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {},
+  "textures": []
+}

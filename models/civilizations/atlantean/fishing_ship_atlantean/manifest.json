@@ -1,0 +1,23 @@
+{
+  "unit": "fishing_ship_atlantean",
+  "civ": "atlantean",
+  "category": "unidades",
+  "source_anim_txt": "fishing ship atlantean_anim.txt",
+  "base": "fishing_ship_atlantean_base.glb",
+  "sockets": [
+    "ATTACHPOINT",
+    "CHIN",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {
+    "Chin": "accessories/attachments_a_fishflag_idlea.glb"
+  },
+  "textures": [
+    "naval_x_all.png"
+  ]
+}

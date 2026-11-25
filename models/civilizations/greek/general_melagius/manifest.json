@@ -1,0 +1,23 @@
+{
+  "unit": "general_melagius",
+  "civ": "greek",
+  "category": "unidades",
+  "source_anim_txt": "general melagius_anim.txt",
+  "base": "general_melagius_base.glb",
+  "sockets": [
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "attachments_g_shield_bronze.png",
+    "attachments_g_sword_copper.png",
+    "cine_x_mp_melagius_head.png",
+    "infantry_g_hoplite_bronze.png"
+  ]
+}

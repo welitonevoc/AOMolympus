@@ -1,0 +1,37 @@
+{
+  "unit": "war_chariot_hero",
+  "civ": "egyptian",
+  "category": "unidades",
+  "source_anim_txt": "war chariot hero_anim.txt",
+  "base": "war_chariot_hero_base.glb",
+  "sockets": [
+    "LEFTHAND_0",
+    "LEFTHAND_1",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "LEFTEAR",
+    "RIGHTEAR",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "death": "animations/death.glb",
+    "attack": "animations/attack.glb"
+  },
+  "accessories": {
+    "LeftForearm": "accessories/attachments_e_shield_small_copper.glb",
+    "RightEar": "accessories/attachments_a_wheel_spoked.glb",
+    "LeftEar": "accessories/attachments_a_wheel_spoked.glb"
+  },
+  "textures": [
+    "attachments_a_arrow.png",
+    "attachments_a_bow_standard.png",
+    "cavalry_e_chariot_archer_copper.png"
+  ]
+}

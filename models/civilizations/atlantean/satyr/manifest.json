@@ -1,0 +1,26 @@
+{
+  "unit": "satyr",
+  "civ": "atlantean",
+  "category": "unidades",
+  "source_anim_txt": "satyr_anim.txt",
+  "base": "satyr_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "death": "animations/death.glb",
+    "walk": "animations/walk.glb",
+    "attack": "animations/attack.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "attachments_a_spear_standard.png",
+    "mu_x_atlantean_satyr_head_map.png",
+    "mu_x_atlantean_satyr_map.png"
+  ]
+}

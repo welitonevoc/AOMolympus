@@ -1,0 +1,27 @@
+{
+  "unit": "destruction_8x8",
+  "civ": "egyptian",
+  "category": "cidade",
+  "source_anim_txt": "destruction 8x8_anim.txt",
+  "base": "destruction_8x8_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "LEFTEAR",
+    "RIGHTEAR",
+    "NECK",
+    "SMOKE0",
+    "SMOKE1",
+    "SMOKE2",
+    "SMOKE3",
+    "SMOKE4",
+    "SMOKE5"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "building_destruction_egypt.png"
+  ]
+}

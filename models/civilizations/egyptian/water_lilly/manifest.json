@@ -1,0 +1,17 @@
+{
+  "unit": "water_lilly",
+  "civ": "egyptian",
+  "category": "unidades",
+  "source_anim_txt": "water lilly_anim.txt",
+  "base": "water_lilly_base.glb",
+  "sockets": [
+    "LEFTFOOT"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "terrain_e_lily_pads.png"
+  ]
+}

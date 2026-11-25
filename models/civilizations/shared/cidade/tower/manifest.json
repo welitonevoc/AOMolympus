@@ -1,0 +1,34 @@
+{
+  "unit": "tower",
+  "civ": "shared",
+  "category": "cidade",
+  "source_anim_txt": "tower_anim.txt",
+  "base": "tower_base.glb",
+  "sockets": [
+    "HITPOINTBAR",
+    "GARRISONFLAG",
+    "FIRE_0",
+    "FIRE_1",
+    "FIRE_2",
+    "FIRE_3",
+    "FIRE_4"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {
+    "CHIN": "accessories/building_construction_e_small_brick.glb",
+    "Leftleg": "accessories/building_vinea.glb",
+    "Rightfoot": "accessories/building_vinea.glb",
+    "Rightleg": "accessories/building_vineb.glb",
+    "rightfoot": "accessories/building_vinea.glb",
+    "righthand": "accessories/building_vinea.glb",
+    "rightear": "accessories/building_vinea.glb",
+    "LeftLeg": "accessories/building_vinea.glb"
+  },
+  "textures": [
+    "building_n_shared02_2_map.png"
+  ]
+}

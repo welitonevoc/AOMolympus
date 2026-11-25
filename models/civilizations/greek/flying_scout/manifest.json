@@ -1,0 +1,24 @@
+{
+  "unit": "flying_scout",
+  "civ": "greek",
+  "category": "unidades",
+  "source_anim_txt": "flying scout_anim.txt",
+  "base": "flying_scout_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN"
+  ],
+  "animations": {
+    "death": "animations/death.glb",
+    "walk": "animations/walk.glb",
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "special_g_harpy_map.png"
+  ]
+}

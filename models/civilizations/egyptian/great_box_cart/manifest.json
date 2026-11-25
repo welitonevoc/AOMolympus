@@ -1,0 +1,29 @@
+{
+  "unit": "great_box_cart",
+  "civ": "egyptian",
+  "category": "unidades",
+  "source_anim_txt": "great box cart_anim.txt",
+  "base": "great_box_cart_base.glb",
+  "sockets": [
+    "LEFTSHOULDER",
+    "RIGHTSHOULDER",
+    "LEFTTHIGH",
+    "RIGHTTHIGH",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "walk": "animations/walk.glb",
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {
+    "Rightshoulder": "accessories/scenario_e_great_boxcart_wheel.glb",
+    "Leftshoulder": "accessories/scenario_e_great_boxcart_wheel.glb",
+    "Leftthigh": "accessories/scenario_e_great_boxcart_wheel.glb",
+    "Rightthigh": "accessories/scenario_e_great_boxcart_wheel.glb"
+  },
+  "textures": [
+    "scenario_e_great_box.png",
+    "scenario_e_great_box_camel.png",
+    "scenario_e_great_box_cart.png"
+  ]
+}

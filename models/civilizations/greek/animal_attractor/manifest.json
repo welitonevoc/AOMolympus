@@ -1,0 +1,25 @@
+{
+  "unit": "animal_attractor",
+  "civ": "greek",
+  "category": "unidades",
+  "source_anim_txt": "animal attractor_anim.txt",
+  "base": "animal_attractor_base.glb",
+  "sockets": [
+    "ATTACHPOINT",
+    "LEFTHAND",
+    "LEFTEAR",
+    "LEFTSHOULDER",
+    "LEFTTHIGH",
+    "LEFTFOOT",
+    "LEFTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "sfx_g_animal_magnetism.png"
+  ]
+}

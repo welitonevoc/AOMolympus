@@ -1,0 +1,20 @@
+{
+  "unit": "jormund_elver",
+  "civ": "norse",
+  "category": "unidades",
+  "source_anim_txt": "jormund elver_anim.txt",
+  "base": "jormund_elver_base.glb",
+  "sockets": [
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "death": "animations/death.glb",
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "attack": "animations/attack.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "special_n_jormund_brood.png"
+  ]
+}

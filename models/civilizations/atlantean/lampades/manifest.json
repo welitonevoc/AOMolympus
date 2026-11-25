@@ -1,0 +1,25 @@
+{
+  "unit": "lampades",
+  "civ": "atlantean",
+  "category": "unidades",
+  "source_anim_txt": "lampades_anim.txt",
+  "base": "lampades_base.glb",
+  "sockets": [
+    "ATTACHPOINT",
+    "LEFTHAND",
+    "RIGHTHAND",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "walk": "animations/walk.glb",
+    "idle": "animations/idle.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "mu_x_atlantean_lampedes_map.png"
+  ]
+}

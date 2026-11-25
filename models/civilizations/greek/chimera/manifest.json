@@ -1,0 +1,21 @@
+{
+  "unit": "chimera",
+  "civ": "greek",
+  "category": "unidades",
+  "source_anim_txt": "chimera_anim.txt",
+  "base": "chimera_base.glb",
+  "sockets": [
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "death": "animations/death.glb",
+    "walk": "animations/walk.glb",
+    "attack": "animations/attack.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "special_g_chimera.png",
+    "special_g_chimera_tail.png"
+  ]
+}

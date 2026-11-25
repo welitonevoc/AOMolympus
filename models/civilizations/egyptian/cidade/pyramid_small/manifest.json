@@ -1,0 +1,16 @@
+{
+  "unit": "pyramid_small",
+  "civ": "egyptian",
+  "category": "cidade",
+  "source_anim_txt": "pyramid small_anim.txt",
+  "base": "pyramid_small_base.glb",
+  "sockets": [],
+  "animations": {
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "building_e_monumentbase_map.png",
+    "building_e_pyramid.png"
+  ]
+}

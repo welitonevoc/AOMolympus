@@ -1,0 +1,25 @@
+{
+  "unit": "harpy",
+  "civ": "greek",
+  "category": "unidades",
+  "source_anim_txt": "harpy_anim.txt",
+  "base": "harpy_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN"
+  ],
+  "animations": {
+    "death": "animations/death.glb",
+    "walk": "animations/walk.glb",
+    "idle": "animations/idle.glb",
+    "attack": "animations/attack.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "special_g_harpy_map.png"
+  ]
+}

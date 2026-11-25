@@ -1,0 +1,20 @@
+{
+  "unit": "argus",
+  "civ": "atlantean",
+  "category": "unidades",
+  "source_anim_txt": "argus_anim.txt",
+  "base": "argus_base.glb",
+  "sockets": [
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "walk": "animations/walk.glb",
+    "idle": "animations/idle.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "mu_x_argus_map.png"
+  ]
+}

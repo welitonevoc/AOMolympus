@@ -1,0 +1,36 @@
+{
+  "unit": "brokk",
+  "civ": "norse",
+  "category": "unidades",
+  "source_anim_txt": "brokk_anim.txt",
+  "base": "brokk_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "CHIN",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "gather": "animations/gather.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb",
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb"
+  },
+  "accessories": {
+    "RightHand": "accessories/attachments_a_axe_hatchet.glb",
+    "LeftHand": "accessories/attachments_a_bow.glb"
+  },
+  "textures": [
+    "scenario_n_brokk_head.png",
+    "scenario_n_brokk_standard.png"
+  ]
+}

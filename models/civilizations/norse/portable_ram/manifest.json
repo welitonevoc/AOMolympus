@@ -1,0 +1,24 @@
+{
+  "unit": "portable_ram",
+  "civ": "norse",
+  "category": "unidades",
+  "source_anim_txt": "portable ram_anim.txt",
+  "base": "portable_ram_base.glb",
+  "sockets": [
+    "ATTACHPOINT",
+    "BACKCHEST",
+    "BACKABDOMEN",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "death": "animations/death.glb",
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "attack": "animations/attack.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "siege_n_ram.png",
+    "siege_n_ram_ring.png"
+  ]
+}

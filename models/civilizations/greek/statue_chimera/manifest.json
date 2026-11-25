@@ -1,0 +1,19 @@
+{
+  "unit": "statue_chimera",
+  "civ": "greek",
+  "category": "unidades",
+  "source_anim_txt": "statue chimera_anim.txt",
+  "base": "statue_chimera_base.glb",
+  "sockets": [
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "world_g_statue_base.png",
+    "world_g_statue_chimera.png",
+    "world_g_statue_chimera_tail.png"
+  ]
+}

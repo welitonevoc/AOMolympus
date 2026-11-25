@@ -1,0 +1,18 @@
+{
+  "unit": "gaia_forest_tree",
+  "civ": "greek",
+  "category": "unidades",
+  "source_anim_txt": "gaia forest tree_anim.txt",
+  "base": "gaia_forest_tree_base.glb",
+  "sockets": [
+    "ATTACHPOINT"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "world_g_aspen.png"
+  ]
+}

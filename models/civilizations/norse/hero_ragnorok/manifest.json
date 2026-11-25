@@ -1,0 +1,36 @@
+{
+  "unit": "hero_ragnorok",
+  "civ": "norse",
+  "category": "unidades",
+  "source_anim_txt": "hero ragnorok_anim.txt",
+  "base": "hero_ragnorok_base.glb",
+  "sockets": [
+    "ATTACHPOINT",
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "walk": "animations/walk.glb",
+    "idle": "animations/idle.glb",
+    "gather": "animations/gather.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {
+    "RIGHTHAND": "accessories/tool_hammer.glb"
+  },
+  "textures": [
+    "hero_n_ragnorok_axe.png",
+    "hero_n_ragnorok_male.png",
+    "hero_n_ragnorok_male_head.png"
+  ]
+}

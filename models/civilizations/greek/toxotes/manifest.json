@@ -1,0 +1,35 @@
+{
+  "unit": "toxotes",
+  "civ": "greek",
+  "category": "unidades",
+  "source_anim_txt": "toxotes_anim.txt",
+  "base": "toxotes_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {
+    "Righthand": "accessories/attachments_a_bow.glb",
+    "TopOfHead": "accessories/archer_g_toxotes_head_standard.glb",
+    "leftforearm": "accessories/attachments_g_shield_small_copper.glb",
+    "righthand": "accessories/attachments_a_bow.glb"
+  },
+  "textures": [
+    "archer_g_toxotes_standard.png"
+  ]
+}

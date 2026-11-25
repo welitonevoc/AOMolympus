@@ -1,0 +1,20 @@
+{
+  "unit": "ornlu",
+  "civ": "norse",
+  "category": "unidades",
+  "source_anim_txt": "ornlu_anim.txt",
+  "base": "ornlu_base.glb",
+  "sockets": [
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "special_n_fenris.png"
+  ]
+}

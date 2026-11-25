@@ -1,0 +1,21 @@
+{
+  "unit": "ramming_ship_greek",
+  "civ": "greek",
+  "category": "unidades",
+  "source_anim_txt": "ramming ship greek_anim.txt",
+  "base": "ramming_ship_greek_base.glb",
+  "sockets": [
+    "HITPOINTBAR",
+    "FIRE"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "attack": "animations/attack.glb",
+    "walk": "animations/walk.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "naval_g_all.png"
+  ]
+}

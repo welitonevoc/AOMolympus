@@ -1,0 +1,35 @@
+{
+  "unit": "monument_5",
+  "civ": "egyptian",
+  "category": "cidade",
+  "source_anim_txt": "monument 5_anim.txt",
+  "base": "monument_5_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "LEFTEAR",
+    "LEFTLEG",
+    "LEFTFOOT",
+    "HITPOINTBAR",
+    "FIRE_0",
+    "FIRE_1",
+    "FIRE_2",
+    "FIRE_3",
+    "FIRE_4",
+    "FIRE_5",
+    "FIRE_6"
+  ],
+  "animations": {
+    "gather": "animations/gather.glb",
+    "idle": "animations/idle.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {
+    "hotspot": "accessories/building_e_monument5_stand.glb",
+    "attachpoint": "accessories/building_construction_e_long_brick.glb",
+    "face": "accessories/building_construction_e_long_brick.glb",
+    "chin": "accessories/building_construction_e_medium_brick.glb"
+  },
+  "textures": [
+    "building_e_monument5_isis.png"
+  ]
+}

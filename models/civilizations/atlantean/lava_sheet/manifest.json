@@ -1,0 +1,20 @@
+{
+  "unit": "lava_sheet",
+  "civ": "atlantean",
+  "category": "unidades",
+  "source_anim_txt": "lava sheet_anim.txt",
+  "base": "lava_sheet_base.glb",
+  "sockets": [
+    "RIGHTHAND",
+    "RIGHTEAR",
+    "RIGHTLEG",
+    "RIGHTFOOT"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "world_x_lava_pit.png"
+  ]
+}

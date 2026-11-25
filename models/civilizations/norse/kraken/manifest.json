@@ -1,0 +1,30 @@
+{
+  "unit": "kraken",
+  "civ": "norse",
+  "category": "unidades",
+  "source_anim_txt": "kraken_anim.txt",
+  "base": "kraken_base.glb",
+  "sockets": [
+    "ATTACHPOINT",
+    "LEFTHAND",
+    "RIGHTHAND",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {
+    "LEFTFOOT": "accessories/naval_n_tenaclea_idle.glb",
+    "RIGHTFOOT": "accessories/naval_n_tenacleb_idle.glb",
+    "LEFTHAND": "accessories/naval_n_tenaclec_idle.glb",
+    "RIGHTHAND": "accessories/naval_n_tenaclea_idle.glb"
+  },
+  "textures": [
+    "naval_n_kraken.png"
+  ]
+}

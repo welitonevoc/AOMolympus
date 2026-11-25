@@ -1,0 +1,34 @@
+{
+  "unit": "spearman",
+  "civ": "egyptian",
+  "category": "unidades",
+  "source_anim_txt": "spearman_anim.txt",
+  "base": "spearman_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {
+    "TopOfHead": "accessories/infantry_e_spearman_head_standard.glb",
+    "RightHand": "accessories/attachments_a_spear_copper.glb",
+    "LeftForearm": "accessories/attachments_e_shield_large_copper.glb"
+  },
+  "textures": [
+    "infantry_e_spearman_standard.png"
+  ]
+}

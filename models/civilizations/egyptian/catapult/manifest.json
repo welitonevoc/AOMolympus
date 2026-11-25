@@ -1,0 +1,22 @@
+{
+  "unit": "catapult",
+  "civ": "egyptian",
+  "category": "unidades",
+  "source_anim_txt": "catapult_anim.txt",
+  "base": "catapult_base.glb",
+  "sockets": [
+    "HITPOINTBAR",
+    "SMOKE0"
+  ],
+  "animations": {
+    "death": "animations/death.glb",
+    "attack": "animations/attack.glb",
+    "walk": "animations/walk.glb",
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "siege_e_catapult.png",
+    "siege_e_catapult_projectile.png"
+  ]
+}

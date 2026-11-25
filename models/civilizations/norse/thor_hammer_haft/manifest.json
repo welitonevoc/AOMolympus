@@ -1,0 +1,53 @@
+{
+  "unit": "thor_hammer_haft",
+  "civ": "norse",
+  "category": "unidades",
+  "source_anim_txt": "thor hammer haft_anim.txt",
+  "base": "thor_hammer_haft_base.glb",
+  "sockets": [
+    "LEFTHAND_0",
+    "LEFTHAND_1",
+    "LEFTHAND_2",
+    "RIGHTHAND_0",
+    "RIGHTHAND_1",
+    "RIGHTHAND_2",
+    "TOPOFHEAD_0",
+    "TOPOFHEAD_1",
+    "TOPOFHEAD_2",
+    "CHIN_0",
+    "CHIN_1",
+    "CHIN_2",
+    "FRONTCHEST_0",
+    "FRONTCHEST_1",
+    "FRONTCHEST_2",
+    "BACKCHEST_0",
+    "BACKCHEST_1",
+    "BACKCHEST_2",
+    "FRONTABDOMEN_0",
+    "FRONTABDOMEN_1",
+    "FRONTABDOMEN_2",
+    "LEFTFOOT_0",
+    "LEFTFOOT_1",
+    "LEFTFOOT_2",
+    "RIGHTFOOT_0",
+    "RIGHTFOOT_1",
+    "RIGHTFOOT_2",
+    "LEFTFOREARM_0",
+    "LEFTFOREARM_1",
+    "LEFTFOREARM_2",
+    "RIGHTFOREARM_0",
+    "RIGHTFOREARM_1",
+    "RIGHTFOREARM_2"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "scenario_n_thors_hammer.png",
+    "villager_n_dwarf_head.png",
+    "villager_n_dwarf_standard.png"
+  ]
+}

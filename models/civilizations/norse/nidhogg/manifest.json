@@ -1,0 +1,20 @@
+{
+  "unit": "nidhogg",
+  "civ": "norse",
+  "category": "unidades",
+  "source_anim_txt": "nidhogg_anim.txt",
+  "base": "nidhogg_base.glb",
+  "sockets": [
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "walk": "animations/walk.glb",
+    "idle": "animations/idle.glb",
+    "death": "animations/death.glb",
+    "attack": "animations/attack.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "sfx_n_nidhogg.png"
+  ]
+}

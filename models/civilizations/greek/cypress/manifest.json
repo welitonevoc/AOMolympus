@@ -1,0 +1,15 @@
+{
+  "unit": "cypress",
+  "civ": "greek",
+  "category": "unidades",
+  "source_anim_txt": "cypress_anim.txt",
+  "base": "cypress_base.glb",
+  "sockets": [],
+  "animations": {
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "building_attachments.png"
+  ]
+}

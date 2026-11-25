@@ -1,0 +1,20 @@
+{
+  "unit": "broken_siege_weapons",
+  "civ": "egyptian",
+  "category": "unidades",
+  "source_anim_txt": "broken siege weapons_anim.txt",
+  "base": "broken_siege_weapons_base.glb",
+  "sockets": [
+    "SMOKE0",
+    "CORPSE",
+    "LAUNCHPOINT"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "siege_e_catapult.png",
+    "siege_e_catapult_projectile.png"
+  ]
+}

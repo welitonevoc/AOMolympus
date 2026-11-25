@@ -1,0 +1,32 @@
+{
+  "unit": "hero_greek_bellerophon",
+  "civ": "greek",
+  "category": "unidades",
+  "source_anim_txt": "hero greek bellerophon_anim.txt",
+  "base": "hero_greek_bellerophon_base.glb",
+  "sockets": [
+    "ATTACHPOINT",
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "death": "animations/death.glb",
+    "attack": "animations/attack.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "attachment_g_spear_01.png",
+    "special_g_pegasus_wings.png"
+  ]
+}

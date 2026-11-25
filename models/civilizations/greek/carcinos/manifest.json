@@ -1,0 +1,22 @@
+{
+  "unit": "carcinos",
+  "civ": "greek",
+  "category": "unidades",
+  "source_anim_txt": "carcinos_anim.txt",
+  "base": "carcinos_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "walk": "animations/walk.glb",
+    "idle": "animations/idle.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "special_g_carcinos.png"
+  ]
+}

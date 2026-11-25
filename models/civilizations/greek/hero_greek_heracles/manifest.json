@@ -1,0 +1,37 @@
+{
+  "unit": "hero_greek_heracles",
+  "civ": "greek",
+  "category": "unidades",
+  "source_anim_txt": "hero greek heracles_anim.txt",
+  "base": "hero_greek_heracles_base.glb",
+  "sockets": [
+    "ATTACHPOINT",
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR",
+    "DECAL"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb",
+    "walk": "animations/walk.glb"
+  },
+  "accessories": {
+    "righthand": "accessories/attachments_e_sword_standard.glb"
+  },
+  "textures": [
+    "hero_g_heracles.png",
+    "hero_g_heracles_club.png",
+    "hero_g_heracles_head.png",
+    "hero_g_heracles_shield.png"
+  ]
+}

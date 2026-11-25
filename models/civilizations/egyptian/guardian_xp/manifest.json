@@ -1,0 +1,32 @@
+{
+  "unit": "guardian_xp",
+  "civ": "egyptian",
+  "category": "unidades",
+  "source_anim_txt": "guardian xp_anim.txt",
+  "base": "guardian_xp_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "death": "animations/death.glb",
+    "walk": "animations/walk.glb",
+    "attack": "animations/attack.glb"
+  },
+  "accessories": {
+    "RightHand": "accessories/attachments_e_guardian_sword.glb"
+  },
+  "textures": [
+    "scenario_e_guardian.png"
+  ]
+}

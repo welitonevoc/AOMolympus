@@ -1,0 +1,35 @@
+{
+  "unit": "peltast",
+  "civ": "greek",
+  "category": "unidades",
+  "source_anim_txt": "peltast_anim.txt",
+  "base": "peltast_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {
+    "Righthand": "accessories/attachments_a_javelin.glb",
+    "leftforearm": "accessories/attachments_g_shield_small_copper.glb"
+  },
+  "textures": [
+    "archer_g_peltast_cape_standard.png",
+    "archer_g_peltast_head_standard.png",
+    "archer_g_peltast_standard.png"
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "unit": "atlantis_wall_long",
+  "civ": "shared",
+  "category": "cidade",
+  "source_anim_txt": "atlantis wall long_anim.txt",
+  "base": "atlantis_wall_long_base.glb",
+  "sockets": [],
+  "animations": {
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "world_a_atlantis_walls_map.png"
+  ]
+}

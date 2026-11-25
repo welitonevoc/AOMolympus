@@ -1,0 +1,20 @@
+{
+  "unit": "ball_of_fire_prometheus",
+  "civ": "atlantean",
+  "category": "unidades",
+  "source_anim_txt": "ball of fire prometheus_anim.txt",
+  "base": "ball_of_fire_prometheus_base.glb",
+  "sockets": [
+    "ATTACHPOINT",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "mu_x_promethean_map.png"
+  ]
+}

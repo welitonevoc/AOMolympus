@@ -1,0 +1,21 @@
+{
+  "unit": "ramming_ship_norse",
+  "civ": "norse",
+  "category": "unidades",
+  "source_anim_txt": "ramming ship norse_anim.txt",
+  "base": "ramming_ship_norse_base.glb",
+  "sockets": [
+    "HITPOINTBAR",
+    "FIRE"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "attack": "animations/attack.glb",
+    "walk": "animations/walk.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "naval_n_all.png"
+  ]
+}

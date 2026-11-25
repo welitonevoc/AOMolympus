@@ -1,0 +1,33 @@
+{
+  "unit": "destroyed_buildings_large",
+  "civ": "greek",
+  "category": "cidade",
+  "source_anim_txt": "destroyed buildings large_anim.txt",
+  "base": "destroyed_buildings_large_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "LEFTEAR",
+    "LEFTTHIGH",
+    "LEFTLEG"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {
+    "lefthand": "accessories/building_g_rubble4x4.glb",
+    "leftear": "accessories/building_g_rubble4x4.glb",
+    "leftleg": "accessories/building_g_rubble4x4.glb",
+    "leftthigh": "accessories/building_g_rubble4x4.glb",
+    "righthand": "accessories/building_g_rubble4x4.glb",
+    "topofhead": "accessories/building_g_rubble5x5.glb",
+    "leftfoot": "accessories/building_g_rubble5x5.glb",
+    "neck": "accessories/building_g_rubble5x5.glb",
+    "rightfoot": "accessories/building_g_rubble5x5.glb",
+    "rightleg": "accessories/building_g_rubble5x5.glb"
+  },
+  "textures": [
+    "building_g_fortresswall2_destructed.png",
+    "building_g_fortresswall_destructed.png"
+  ]
+}

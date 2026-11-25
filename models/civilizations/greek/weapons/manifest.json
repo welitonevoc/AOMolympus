@@ -1,0 +1,18 @@
+{
+  "unit": "weapons",
+  "civ": "greek",
+  "category": "unidades",
+  "source_anim_txt": "weapons_anim.txt",
+  "base": "weapons_base.glb",
+  "sockets": [],
+  "animations": {
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "attachments_g_shield_bronze.png",
+    "attachments_g_sword_copper.png",
+    "world_a_breastplate_map.png",
+    "world_g_helmet_map.png"
+  ]
+}

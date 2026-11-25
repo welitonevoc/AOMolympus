@@ -1,0 +1,35 @@
+{
+  "unit": "myrmidon",
+  "civ": "greek",
+  "category": "unidades",
+  "source_anim_txt": "myrmidon_anim.txt",
+  "base": "myrmidon_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb",
+    "walk": "animations/walk.glb"
+  },
+  "accessories": {
+    "TopOfHead": "accessories/infantry_g_myrmidon_head_iron.glb",
+    "RightHand": "accessories/attachments_g_sword_standard.glb",
+    "LeftForeArm": "accessories/attachments_g_shield_large_copper.glb"
+  },
+  "textures": [
+    "infantry_g_myrmidon_head_iron.png",
+    "infantry_g_myrmidon_iron.png"
+  ]
+}

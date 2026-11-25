@@ -1,0 +1,21 @@
+{
+  "unit": "caravan_norse",
+  "civ": "norse",
+  "category": "unidades",
+  "source_anim_txt": "caravan norse_anim.txt",
+  "base": "caravan_norse_base.glb",
+  "sockets": [
+    "TOPOFHEAD",
+    "PELVIS",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "trade_n_caravan_ox.png"
+  ]
+}

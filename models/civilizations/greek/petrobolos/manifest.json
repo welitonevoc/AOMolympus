@@ -1,0 +1,24 @@
+{
+  "unit": "petrobolos",
+  "civ": "greek",
+  "category": "unidades",
+  "source_anim_txt": "petrobolos_anim.txt",
+  "base": "petrobolos_base.glb",
+  "sockets": [
+    "HITPOINTBAR",
+    "SMOKE0_0",
+    "SMOKE0_1",
+    "SMOKE0_2"
+  ],
+  "animations": {
+    "death": "animations/death.glb",
+    "attack": "animations/attack.glb",
+    "walk": "animations/walk.glb",
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "siege_g_petrobolos.png",
+    "siege_g_petrobolos_projectile.png"
+  ]
+}

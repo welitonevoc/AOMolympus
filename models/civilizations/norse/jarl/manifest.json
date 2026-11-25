@@ -1,0 +1,31 @@
+{
+  "unit": "jarl",
+  "civ": "norse",
+  "category": "unidades",
+  "source_anim_txt": "jarl_anim.txt",
+  "base": "jarl_base.glb",
+  "sockets": [
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "LEFTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "death": "animations/death.glb",
+    "attack": "animations/attack.glb"
+  },
+  "accessories": {
+    "RightHand": "accessories/attachments_n_sword_standard.glb",
+    "TopOfHead": "accessories/cavalry_n_jarl_head_standard.glb",
+    "LeftForearm": "accessories/attachments_n_shield_small_copper.glb"
+  },
+  "textures": [
+    "cavalry_n_jarl_horse_standard.png",
+    "cavalry_n_jarl_standard.png",
+    "special_n_jarl_cape_map.png"
+  ]
+}

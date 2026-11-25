@@ -1,0 +1,25 @@
+{
+  "unit": "titan_gate_dead",
+  "civ": "shared",
+  "category": "cidade",
+  "source_anim_txt": "titan gate dead_anim.txt",
+  "base": "titan_gate_dead_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "LEFTEAR",
+    "RIGHTEAR",
+    "LEFTSHOULDER",
+    "RIGHTSHOULDER",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "LAUNCHPOINT"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {},
+  "textures": []
+}

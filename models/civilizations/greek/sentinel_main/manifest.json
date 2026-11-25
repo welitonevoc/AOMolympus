@@ -1,0 +1,25 @@
+{
+  "unit": "sentinel_main",
+  "civ": "greek",
+  "category": "unidades",
+  "source_anim_txt": "sentinel main_anim.txt",
+  "base": "sentinel_main_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {
+    "lefthand": "accessories/attachments_a_handarrow.glb",
+    "righthand": "accessories/attachments_a_handarrow.glb"
+  },
+  "textures": [
+    "sfx_g_sentinel.png",
+    "sfx_g_sentinel_weapons.png"
+  ]
+}

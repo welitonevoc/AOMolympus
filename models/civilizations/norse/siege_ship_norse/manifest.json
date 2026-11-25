@@ -1,0 +1,20 @@
+{
+  "unit": "siege_ship_norse",
+  "civ": "norse",
+  "category": "unidades",
+  "source_anim_txt": "siege ship norse_anim.txt",
+  "base": "siege_ship_norse_base.glb",
+  "sockets": [
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "naval_n_all.png"
+  ]
+}

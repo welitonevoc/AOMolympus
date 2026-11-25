@@ -1,0 +1,24 @@
+{
+  "unit": "nereid",
+  "civ": "atlantean",
+  "category": "unidades",
+  "source_anim_txt": "nereid_anim.txt",
+  "base": "nereid_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "attack": "animations/attack.glb",
+    "walk": "animations/walk.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "infantry_x_trident_soldier_trident_iron.png",
+    "mu_x_nereid_rider_map.png",
+    "mu_x_nereid_shark_map.png"
+  ]
+}

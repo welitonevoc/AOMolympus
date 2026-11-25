@@ -1,0 +1,21 @@
+{
+  "unit": "destruction_4x4",
+  "civ": "egyptian",
+  "category": "cidade",
+  "source_anim_txt": "destruction 4x4_anim.txt",
+  "base": "destruction_4x4_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "LEFTEAR",
+    "RIGHTEAR",
+    "NECK"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "building_destruction_egypt.png"
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "unit": "osiris_pyramid_dead",
+  "civ": "egyptian",
+  "category": "cidade",
+  "source_anim_txt": "osiris pyramid dead_anim.txt",
+  "base": "osiris_pyramid_dead_base.glb",
+  "sockets": [
+    "LEFTEAR",
+    "NECK",
+    "LEFTLEG",
+    "RIGHTLEG",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "SMOKE0",
+    "SMOKE1",
+    "SMOKE2",
+    "SMOKE3",
+    "SMOKE4",
+    "SMOKE5"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {
+    "leftear": "accessories/building_e_rubble8x8.glb",
+    "leftleg": "accessories/building_e_rubble8x8.glb",
+    "leftfoot": "accessories/building_e_rubble8x8.glb",
+    "neck": "accessories/building_e_rubble8x8.glb"
+  },
+  "textures": []
+}

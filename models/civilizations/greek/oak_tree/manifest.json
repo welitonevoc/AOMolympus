@@ -1,0 +1,18 @@
+{
+  "unit": "oak_tree",
+  "civ": "greek",
+  "category": "unidades",
+  "source_anim_txt": "oak tree_anim.txt",
+  "base": "oak_tree_base.glb",
+  "sockets": [
+    "ATTACHPOINT"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "world_g_oak_mapb.png"
+  ]
+}

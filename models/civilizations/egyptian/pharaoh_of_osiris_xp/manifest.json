@@ -1,0 +1,35 @@
+{
+  "unit": "pharaoh_of_osiris_xp",
+  "civ": "egyptian",
+  "category": "unidades",
+  "source_anim_txt": "pharaoh of osiris xp_anim.txt",
+  "base": "pharaoh_of_osiris_xp_base.glb",
+  "sockets": [
+    "ATTACHPOINT",
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR",
+    "SMOKE0"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "death": "animations/death.glb",
+    "gather": "animations/gather.glb"
+  },
+  "accessories": {
+    "RightHand": "accessories/attachment_e_staff.glb"
+  },
+  "textures": [
+    "sfx_e_son_of_osiris.png",
+    "sfx_e_son_of_osiris_head.png"
+  ]
+}

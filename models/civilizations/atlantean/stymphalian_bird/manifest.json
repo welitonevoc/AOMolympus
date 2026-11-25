@@ -1,0 +1,27 @@
+{
+  "unit": "stymphalian_bird",
+  "civ": "atlantean",
+  "category": "unidades",
+  "source_anim_txt": "stymphalian bird_anim.txt",
+  "base": "stymphalian_bird_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "HITPOINTBAR",
+    "LAUNCHPOINT"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "mu_x_stymphalian_bird_map.png"
+  ]
+}

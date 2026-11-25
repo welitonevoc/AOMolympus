@@ -1,0 +1,16 @@
+{
+  "unit": "plenty_vault_koth",
+  "civ": "greek",
+  "category": "unidades",
+  "source_anim_txt": "plenty vault koth_anim.txt",
+  "base": "plenty_vault_koth_base.glb",
+  "sockets": [],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "sfx_g_plenty.png"
+  ]
+}

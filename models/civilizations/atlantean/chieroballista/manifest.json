@@ -1,0 +1,28 @@
+{
+  "unit": "chieroballista",
+  "civ": "atlantean",
+  "category": "unidades",
+  "source_anim_txt": "chieroballista_anim.txt",
+  "base": "chieroballista_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTCHEST",
+    "FRONTABDOMEN",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "siege_x_chieroballista.png",
+    "siege_x_chieroballista_man.png"
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "unit": "mercenary_cavalry",
+  "civ": "egyptian",
+  "category": "unidades",
+  "source_anim_txt": "mercenary cavalry_anim.txt",
+  "base": "mercenary_cavalry_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "death": "animations/death.glb",
+    "attack": "animations/attack.glb"
+  },
+  "accessories": {
+    "LeftForearm": "accessories/attachments_e_shield_small_copper.glb"
+  },
+  "textures": [
+    "attachments_e_sword_iron.png",
+    "cavalry_e_mercenary_horse_standard.png",
+    "infantry_e_mercenary.png",
+    "infantry_e_mercenary_head.png"
+  ]
+}

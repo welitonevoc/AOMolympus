@@ -1,0 +1,33 @@
+{
+  "unit": "hero_greek_hippolyta",
+  "civ": "greek",
+  "category": "unidades",
+  "source_anim_txt": "hero greek hippolyta_anim.txt",
+  "base": "hero_greek_hippolyta_base.glb",
+  "sockets": [
+    "ATTACHPOINT",
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb",
+    "walk": "animations/walk.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "attachments_a_bow_iron.png",
+    "hero_g_hippolyta.png",
+    "hero_g_hippolyta_head_standard.png"
+  ]
+}

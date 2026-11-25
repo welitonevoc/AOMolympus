@@ -1,0 +1,34 @@
+{
+  "unit": "crossbowman",
+  "civ": "greek",
+  "category": "unidades",
+  "source_anim_txt": "crossbowman_anim.txt",
+  "base": "crossbowman_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR",
+    "GATHERPOINT",
+    "FIRE"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "archer_g_crossbow.png",
+    "archer_g_crossbowman.png",
+    "archer_g_crossbowman_head.png"
+  ]
+}

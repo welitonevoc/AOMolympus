@@ -1,0 +1,17 @@
+{
+  "unit": "oak_stump_burnt",
+  "civ": "greek",
+  "category": "unidades",
+  "source_anim_txt": "oak stump burnt_anim.txt",
+  "base": "oak_stump_burnt_base.glb",
+  "sockets": [
+    "ATTACHPOINT"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "world_g_oak_burnt.png"
+  ]
+}

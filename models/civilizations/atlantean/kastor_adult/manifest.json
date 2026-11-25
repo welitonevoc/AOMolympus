@@ -1,0 +1,25 @@
+{
+  "unit": "kastor_adult",
+  "civ": "atlantean",
+  "category": "unidades",
+  "source_anim_txt": "kastor adult_anim.txt",
+  "base": "kastor_adult_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "LEFTLEG",
+    "RIGHTLEG",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb",
+    "walk": "animations/walk.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "cine_x_kastor_adult.png",
+    "hero_x_kastor.png"
+  ]
+}

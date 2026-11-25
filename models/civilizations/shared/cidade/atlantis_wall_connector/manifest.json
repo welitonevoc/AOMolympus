@@ -1,0 +1,19 @@
+{
+  "unit": "atlantis_wall_connector",
+  "civ": "shared",
+  "category": "cidade",
+  "source_anim_txt": "atlantis wall connector_anim.txt",
+  "base": "atlantis_wall_connector_base.glb",
+  "sockets": [
+    "CHIN",
+    "HITPOINTBAR_0",
+    "HITPOINTBAR_1"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "world_a_atlantis_walls_map.png"
+  ]
+}

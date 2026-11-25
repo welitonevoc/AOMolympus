@@ -1,0 +1,28 @@
+{
+  "unit": "destruction_settlement",
+  "civ": "egyptian",
+  "category": "cidade",
+  "source_anim_txt": "destruction settlement_anim.txt",
+  "base": "destruction_settlement_base.glb",
+  "sockets": [
+    "NECK",
+    "SMOKE0",
+    "SMOKE1",
+    "SMOKE2",
+    "SMOKE3",
+    "SMOKE4",
+    "SMOKE5",
+    "SMOKE6",
+    "SMOKE7"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {
+    "NECK": "accessories/world_e_statue_isis.glb"
+  },
+  "textures": [
+    "building_e_settlement_age1.png",
+    "building_settlement.png"
+  ]
+}

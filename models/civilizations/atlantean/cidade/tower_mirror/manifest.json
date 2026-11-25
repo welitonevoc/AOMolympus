@@ -1,0 +1,29 @@
+{
+  "unit": "tower_mirror",
+  "civ": "atlantean",
+  "category": "cidade",
+  "source_anim_txt": "tower mirror_anim.txt",
+  "base": "tower_mirror_base.glb",
+  "sockets": [
+    "FACE",
+    "NECK",
+    "FIRE_0",
+    "FIRE_1",
+    "FIRE_2",
+    "FIRE_3",
+    "FIRE_4",
+    "LAUNCHPOINT"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {
+    "attachpoint": "accessories/building_construction_g_long_brick.glb",
+    "chin": "accessories/building_construction_g_medium_brick.glb",
+    "leftfoot": "accessories/building_construction_g_medium_brick.glb",
+    "lefthand": "accessories/building_construction_g_small_brick.glb",
+    "leftleg": "accessories/building_construction_g_small_brick.glb"
+  },
+  "textures": []
+}

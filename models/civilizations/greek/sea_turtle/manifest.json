@@ -1,0 +1,22 @@
+{
+  "unit": "sea_turtle",
+  "civ": "greek",
+  "category": "unidades",
+  "source_anim_txt": "sea turtle_anim.txt",
+  "base": "sea_turtle_base.glb",
+  "sockets": [
+    "ATTACHPOINT",
+    "TOPOFHEAD",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "death": "animations/death.glb",
+    "attack": "animations/attack.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "special_g_sea_turtle.png"
+  ]
+}

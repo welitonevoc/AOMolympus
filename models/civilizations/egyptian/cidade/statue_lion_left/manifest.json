@@ -1,0 +1,13 @@
+{
+  "unit": "statue_lion_left",
+  "civ": "egyptian",
+  "category": "cidade",
+  "source_anim_txt": "statue lion left_anim.txt",
+  "base": "statue_lion_left_base.glb",
+  "sockets": [],
+  "animations": {
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {},
+  "textures": []
+}

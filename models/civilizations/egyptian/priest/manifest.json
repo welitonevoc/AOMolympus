@@ -1,0 +1,36 @@
+{
+  "unit": "priest",
+  "civ": "egyptian",
+  "category": "unidades",
+  "source_anim_txt": "priest_anim.txt",
+  "base": "priest_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "attack": "animations/attack.glb",
+    "gather": "animations/gather.glb",
+    "death": "animations/death.glb",
+    "walk": "animations/walk.glb"
+  },
+  "accessories": {
+    "TopOfHead": "accessories/special_e_priest_head.glb",
+    "RightHand": "accessories/special_e_priest_staff.glb"
+  },
+  "textures": [
+    "special_e_priest.png",
+    "special_e_priest_head.png",
+    "special_e_priest_staff.png"
+  ]
+}

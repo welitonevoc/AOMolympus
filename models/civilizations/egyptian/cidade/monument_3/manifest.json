@@ -1,0 +1,27 @@
+{
+  "unit": "monument_3",
+  "civ": "egyptian",
+  "category": "cidade",
+  "source_anim_txt": "monument 3_anim.txt",
+  "base": "monument_3_base.glb",
+  "sockets": [
+    "HITPOINTBAR",
+    "FIRE_0",
+    "FIRE_1",
+    "FIRE_2",
+    "FIRE_3",
+    "FIRE_4"
+  ],
+  "animations": {
+    "gather": "animations/gather.glb",
+    "idle": "animations/idle.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {
+    "hotspot": "accessories/building_e_monument3_stand.glb",
+    "CHIN": "accessories/building_construction_e_small_brick.glb"
+  },
+  "textures": [
+    "building_e_monument3.png"
+  ]
+}

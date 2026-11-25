@@ -1,0 +1,18 @@
+{
+  "unit": "fountain",
+  "civ": "egyptian",
+  "category": "unidades",
+  "source_anim_txt": "fountain_anim.txt",
+  "base": "fountain_base.glb",
+  "sockets": [
+    "ATTACHPOINT",
+    "TOPOFHEAD"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "world_e_fountain.png"
+  ]
+}

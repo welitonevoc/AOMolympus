@@ -1,0 +1,18 @@
+{
+  "unit": "tartarian_gate_spawn",
+  "civ": "atlantean",
+  "category": "unidades",
+  "source_anim_txt": "tartarian gate spawn_anim.txt",
+  "base": "tartarian_gate_spawn_base.glb",
+  "sockets": [],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "death": "animations/death.glb",
+    "attack": "animations/attack.glb",
+    "walk": "animations/walk.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "gp_x_tartarian_gate_creature.png"
+  ]
+}

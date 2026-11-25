@@ -1,0 +1,15 @@
+{
+  "unit": "columns_fallen",
+  "civ": "egyptian",
+  "category": "unidades",
+  "source_anim_txt": "columns fallen_anim.txt",
+  "base": "columns_fallen_base.glb",
+  "sockets": [],
+  "animations": {
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "world_e_column.png"
+  ]
+}

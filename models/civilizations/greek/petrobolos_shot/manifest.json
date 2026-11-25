@@ -1,0 +1,17 @@
+{
+  "unit": "petrobolos_shot",
+  "civ": "greek",
+  "category": "unidades",
+  "source_anim_txt": "petrobolos shot_anim.txt",
+  "base": "petrobolos_shot_base.glb",
+  "sockets": [
+    "FIRE"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "siege_g_petrobolos_projectile.png"
+  ]
+}

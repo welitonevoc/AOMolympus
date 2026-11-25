@@ -1,0 +1,35 @@
+{
+  "unit": "slinger",
+  "civ": "egyptian",
+  "category": "unidades",
+  "source_anim_txt": "slinger_anim.txt",
+  "base": "slinger_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "CHIN",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {
+    "RightHand": "accessories/attachments_a_sling.glb",
+    "LeftForearm": "accessories/attachments_e_shield_small_copper.glb"
+  },
+  "textures": [
+    "archer_e_slinger_head_standard.png",
+    "archer_e_slinger_standard.png"
+  ]
+}

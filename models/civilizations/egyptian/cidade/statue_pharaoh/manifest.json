@@ -1,0 +1,19 @@
+{
+  "unit": "statue_pharaoh",
+  "civ": "egyptian",
+  "category": "cidade",
+  "source_anim_txt": "statue pharaoh_anim.txt",
+  "base": "statue_pharaoh_base.glb",
+  "sockets": [
+    "HITPOINTBAR",
+    "SMOKE1"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "buildingestatue01.png"
+  ]
+}

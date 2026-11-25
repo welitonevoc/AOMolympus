@@ -1,0 +1,19 @@
+{
+  "unit": "old_man",
+  "civ": "greek",
+  "category": "unidades",
+  "source_anim_txt": "old man_anim.txt",
+  "base": "old_man_base.glb",
+  "sockets": [
+    "RIGHTHAND"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "scenario_g_old_man_map.png",
+    "scenario_old_man_head_map.png"
+  ]
+}

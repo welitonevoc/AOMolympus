@@ -1,0 +1,15 @@
+{
+  "unit": "icy_footprint",
+  "civ": "norse",
+  "category": "unidades",
+  "source_anim_txt": "icy footprint_anim.txt",
+  "base": "icy_footprint_base.glb",
+  "sockets": [
+    "ATTACHPOINT"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {},
+  "textures": []
+}

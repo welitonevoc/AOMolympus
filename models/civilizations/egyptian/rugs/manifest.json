@@ -1,0 +1,15 @@
+{
+  "unit": "rugs",
+  "civ": "egyptian",
+  "category": "unidades",
+  "source_anim_txt": "rugs_anim.txt",
+  "base": "rugs_base.glb",
+  "sockets": [
+    "ATTACHPOINT"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {},
+  "textures": []
+}

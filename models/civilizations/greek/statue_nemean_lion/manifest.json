@@ -1,0 +1,19 @@
+{
+  "unit": "statue_nemean_lion",
+  "civ": "greek",
+  "category": "unidades",
+  "source_anim_txt": "statue nemean lion_anim.txt",
+  "base": "statue_nemean_lion_base.glb",
+  "sockets": [
+    "TOPOFHEAD",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "special_g_nemean_lion_statue.png",
+    "world_g_statue_base.png"
+  ]
+}

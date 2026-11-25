@@ -1,0 +1,15 @@
+{
+  "unit": "tornado_debris",
+  "civ": "egyptian",
+  "category": "unidades",
+  "source_anim_txt": "tornado debris_anim.txt",
+  "base": "tornado_debris_base.glb",
+  "sockets": [],
+  "animations": {
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "building_e_age1.png"
+  ]
+}

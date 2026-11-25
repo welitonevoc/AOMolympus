@@ -1,0 +1,39 @@
+{
+  "unit": "dwarf_foundry",
+  "civ": "norse",
+  "category": "cidade",
+  "source_anim_txt": "dwarf foundry_anim.txt",
+  "base": "dwarf_foundry_base.glb",
+  "sockets": [
+    "FACE",
+    "NECK",
+    "LEFTLEG",
+    "RIGHTLEG",
+    "FIRE_0",
+    "FIRE_1",
+    "FIRE_2",
+    "FIRE_3",
+    "FIRE_4",
+    "FIRE_5",
+    "FIRE_6",
+    "FIRE_7",
+    "FIRE_8",
+    "FIRE_9"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {
+    "Neck": "accessories/building_n_thorarmorypump.glb",
+    "attachpoint": "accessories/building_construction_n_long_brick.glb",
+    "chin": "accessories/building_construction_n_medium_brick.glb",
+    "leftfoot": "accessories/building_construction_n_medium_brick.glb",
+    "lefthand": "accessories/building_construction_n_small_brick.glb"
+  },
+  "textures": [
+    "building_attachments.png",
+    "building_n_thorarmory.png",
+    "building_n_thorarmory1.png"
+  ]
+}

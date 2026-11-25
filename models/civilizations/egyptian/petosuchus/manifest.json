@@ -1,0 +1,21 @@
+{
+  "unit": "petosuchus",
+  "civ": "egyptian",
+  "category": "unidades",
+  "source_anim_txt": "petosuchus_anim.txt",
+  "base": "petosuchus_base.glb",
+  "sockets": [
+    "ATTACHPOINT",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "death": "animations/death.glb",
+    "attack": "animations/attack.glb",
+    "walk": "animations/walk.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "special_e_petesuchos.png"
+  ]
+}

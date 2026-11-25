@@ -1,0 +1,49 @@
+{
+  "unit": "settlement_level_1",
+  "civ": "egyptian",
+  "category": "cidade",
+  "source_anim_txt": "settlement level 1_anim.txt",
+  "base": "settlement_level_1_base.glb",
+  "sockets": [
+    "ATTACHPOINT",
+    "RIGHTHAND",
+    "RIGHTEAR",
+    "NECK",
+    "RIGHTSHOULDER",
+    "RIGHTTHIGH",
+    "RIGHTLEG",
+    "RIGHTFOOT",
+    "RIGHTFOREARM",
+    "HITPOINTBAR",
+    "FIRE_0",
+    "FIRE_1",
+    "FIRE_2",
+    "FIRE_3",
+    "FIRE_4",
+    "FIRE_5",
+    "FIRE_6",
+    "FIRE_7",
+    "FIRE_8",
+    "FIRE_9"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {
+    "NECK": "accessories/world_e_statue_isis.glb",
+    "RIGHTHAND": "accessories/world_a_grass_a.glb",
+    "RIGHTFOOT": "accessories/world_a_grass_a.glb",
+    "RIGHTEAR": "accessories/world_a_grass_a.glb",
+    "RIGHTLEG": "accessories/world_a_grass_a.glb",
+    "RIGHTSHOULDER": "accessories/world_a_grass_a.glb",
+    "RIGHTTHIGH": "accessories/world_a_grass_a.glb"
+  },
+  "textures": [
+    "building_attachments.png",
+    "building_e_props.png",
+    "building_e_settlement_age1.png",
+    "building_settlement.png"
+  ]
+}

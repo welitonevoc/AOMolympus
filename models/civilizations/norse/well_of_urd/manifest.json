@@ -1,0 +1,19 @@
+{
+  "unit": "well_of_urd",
+  "civ": "norse",
+  "category": "unidades",
+  "source_anim_txt": "well of urd_anim.txt",
+  "base": "well_of_urd_base.glb",
+  "sockets": [
+    "LEFTEAR",
+    "LEFTFOOT"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "world_n_well_of_urd.png",
+    "world_n_well_of_urd_runes_map.png"
+  ]
+}

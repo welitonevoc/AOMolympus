@@ -1,0 +1,23 @@
+{
+  "unit": "siege_ship_atlantean",
+  "civ": "atlantean",
+  "category": "unidades",
+  "source_anim_txt": "siege ship atlantean_anim.txt",
+  "base": "siege_ship_atlantean_base.glb",
+  "sockets": [
+    "HITPOINTBAR_0",
+    "HITPOINTBAR_1",
+    "LAUNCHPOINT"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "naval_x_all.png",
+    "siege_n_ballista_bolt.png"
+  ]
+}

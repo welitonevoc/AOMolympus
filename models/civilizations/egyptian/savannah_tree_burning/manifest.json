@@ -1,0 +1,18 @@
+{
+  "unit": "savannah_tree_burning",
+  "civ": "egyptian",
+  "category": "unidades",
+  "source_anim_txt": "savannah tree burning_anim.txt",
+  "base": "savannah_tree_burning_base.glb",
+  "sockets": [
+    "ATTACHPOINT"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "world_e_savannah_map.png"
+  ]
+}

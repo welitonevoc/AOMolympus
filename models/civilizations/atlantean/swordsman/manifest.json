@@ -1,0 +1,29 @@
+{
+  "unit": "swordsman",
+  "civ": "atlantean",
+  "category": "unidades",
+  "source_anim_txt": "swordsman_anim.txt",
+  "base": "swordsman_base.glb",
+  "sockets": [
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTABDOMEN",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "LEFTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {
+    "RightHand": "accessories/attachments_x_sword_standard.glb",
+    "LeftForearm": "accessories/attachments_x_shield_large_copper.glb"
+  },
+  "textures": [
+    "infantry_x_swordsman_iron.png"
+  ]
+}

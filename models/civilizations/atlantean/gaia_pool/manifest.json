@@ -1,0 +1,27 @@
+{
+  "unit": "gaia_pool",
+  "civ": "atlantean",
+  "category": "unidades",
+  "source_anim_txt": "gaia pool_anim.txt",
+  "base": "gaia_pool_base.glb",
+  "sockets": [
+    "LEFTEAR",
+    "LEFTFOOT"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "building_attachments.png",
+    "gaia_pool_ground.png",
+    "terrain_e_lily_pads.png",
+    "terrain_e_lily_pads_b.png",
+    "terrain_e_lily_pads_c.png",
+    "terrain_e_papyrus.png",
+    "terrain_e_papyrus_b.png",
+    "terrain_e_papyrus_leaf.png",
+    "terrain_e_waterreeds_mapa.png",
+    "terrain_e_waterreeds_mapb.png"
+  ]
+}

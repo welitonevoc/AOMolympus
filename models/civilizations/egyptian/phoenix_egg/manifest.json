@@ -1,0 +1,16 @@
+{
+  "unit": "phoenix_egg",
+  "civ": "egyptian",
+  "category": "unidades",
+  "source_anim_txt": "phoenix egg_anim.txt",
+  "base": "phoenix_egg_base.glb",
+  "sockets": [],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "special_e_phoenix_egg.png"
+  ]
+}

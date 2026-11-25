@@ -1,0 +1,36 @@
+{
+  "unit": "dock",
+  "civ": "egyptian",
+  "category": "cidade",
+  "source_anim_txt": "dock_anim.txt",
+  "base": "dock_base.glb",
+  "sockets": [
+    "FACE",
+    "FIRE_0",
+    "FIRE_1",
+    "FIRE_2",
+    "FIRE_3",
+    "FIRE_4",
+    "FIRE_5",
+    "FIRE_6",
+    "FIRE_7",
+    "FIRE_8",
+    "FIRE_9"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {
+    "hotspot": "accessories/building_x_dock_flag.glb"
+  },
+  "textures": [
+    "building_attachments.png",
+    "building_e_age1.png",
+    "building_e_age1_accessories.png",
+    "building_e_age2_accessories.png",
+    "building_e_props.png",
+    "building_e_shrine.png"
+  ]
+}

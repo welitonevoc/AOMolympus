@@ -1,0 +1,22 @@
+{
+  "unit": "oracle_hero",
+  "civ": "atlantean",
+  "category": "unidades",
+  "source_anim_txt": "oracle hero_anim.txt",
+  "base": "oracle_hero_base.glb",
+  "sockets": [
+    "ATTACHPOINT",
+    "RIGHTHAND",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "attack": "animations/attack.glb",
+    "walk": "animations/walk.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "special_x_oracle_hero.png"
+  ]
+}

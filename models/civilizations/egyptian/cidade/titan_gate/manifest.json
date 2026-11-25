@@ -1,0 +1,13 @@
+{
+  "unit": "titan_gate",
+  "civ": "egyptian",
+  "category": "cidade",
+  "source_anim_txt": "titan gate_anim.txt",
+  "base": "titan_gate_base.glb",
+  "sockets": [],
+  "animations": {
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {},
+  "textures": []
+}

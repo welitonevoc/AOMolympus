@@ -1,0 +1,50 @@
+{
+  "unit": "temple_kronos",
+  "civ": "egyptian",
+  "category": "cidade",
+  "source_anim_txt": "temple kronos_anim.txt",
+  "base": "temple_kronos_base.glb",
+  "sockets": [
+    "RIGHTHAND",
+    "FACE",
+    "HITPOINTBAR",
+    "GARRISONFLAG",
+    "GATHERPOINT",
+    "FIRE_0",
+    "FIRE_1",
+    "FIRE_2",
+    "FIRE_3",
+    "FIRE_4",
+    "FIRE_5",
+    "FIRE_6",
+    "FIRE_7",
+    "FIRE_8",
+    "FIRE_9"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {
+    "Righthand": "accessories/world_e_statue_isis.glb",
+    "FACE": "accessories/world_a_bush_short_f.glb",
+    "attachpoint": "accessories/building_construction_e_long_brick.glb",
+    "face": "accessories/building_construction_e_long_brick.glb",
+    "chin": "accessories/building_construction_e_medium_brick.glb",
+    "leftfoot": "accessories/building_construction_e_medium_brick.glb",
+    "lefthand": "accessories/building_construction_e_small_brick.glb",
+    "leftleg": "accessories/building_construction_e_small_brick.glb",
+    "Leftleg": "accessories/terrain_g_cypressa.glb",
+    "Rightfoot": "accessories/terrain_g_cypressb.glb",
+    "Lefthand": "accessories/terrain_g_cypressa.glb",
+    "Leftfoot": "accessories/terrain_g_cypressb.glb",
+    "Rightleg": "accessories/terrain_g_cypressb.glb",
+    "Neck": "accessories/world_e_statue_isis.glb",
+    "NECK": "accessories/world_e_statue_isis.glb",
+    "leftthigh": "accessories/building_vineb.glb"
+  },
+  "textures": [
+    "building_e_age1.png",
+    "building_e_shrine.png"
+  ]
+}

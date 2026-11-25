@@ -1,0 +1,18 @@
+{
+  "unit": "spider_egg",
+  "civ": "atlantean",
+  "category": "unidades",
+  "source_anim_txt": "spider egg_anim.txt",
+  "base": "spider_egg_base.glb",
+  "sockets": [
+    "CORPSE"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "sfx_x_spider_egg_bottom.png"
+  ]
+}

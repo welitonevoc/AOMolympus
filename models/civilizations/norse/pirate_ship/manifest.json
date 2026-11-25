@@ -1,0 +1,21 @@
+{
+  "unit": "pirate_ship",
+  "civ": "norse",
+  "category": "unidades",
+  "source_anim_txt": "pirate ship_anim.txt",
+  "base": "pirate_ship_base.glb",
+  "sockets": [
+    "HITPOINTBAR",
+    "GARRISONFLAG"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "death": "animations/death.glb",
+    "attack": "animations/attack.glb",
+    "walk": "animations/walk.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "naval_e_pirate_ship.png"
+  ]
+}

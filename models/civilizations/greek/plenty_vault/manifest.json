@@ -1,0 +1,16 @@
+{
+  "unit": "plenty_vault",
+  "civ": "greek",
+  "category": "unidades",
+  "source_anim_txt": "plenty vault_anim.txt",
+  "base": "plenty_vault_base.glb",
+  "sockets": [],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "sfx_g_plenty.png"
+  ]
+}

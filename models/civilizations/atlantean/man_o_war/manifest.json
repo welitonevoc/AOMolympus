@@ -1,0 +1,26 @@
+{
+  "unit": "man_o_war",
+  "civ": "atlantean",
+  "category": "unidades",
+  "source_anim_txt": "man o war_anim.txt",
+  "base": "man_o_war_base.glb",
+  "sockets": [
+    "ATTACHPOINT",
+    "FRONTABDOMEN",
+    "BACKABDOMEN",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {
+    "ATTACHPOINT": "accessories/manowar_tenaclea_idle.glb",
+    "FRONTABDOMEN": "accessories/manowar_tenacleb_idle.glb",
+    "BACKABDOMEN": "accessories/manowar_tenacleb_walk.glb"
+  },
+  "textures": [
+    "mu_x_atlantean_manowar_map.png"
+  ]
+}

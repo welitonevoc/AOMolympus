@@ -1,0 +1,33 @@
+{
+  "unit": "hero_norse",
+  "civ": "norse",
+  "category": "unidades",
+  "source_anim_txt": "hero norse_anim.txt",
+  "base": "hero_norse_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "walk": "animations/walk.glb",
+    "idle": "animations/idle.glb",
+    "gather": "animations/gather.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "hero_n_hero.png",
+    "hero_n_hero_hammer.png",
+    "hero_n_hero_head.png"
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "unit": "throwing_axeman",
+  "civ": "norse",
+  "category": "unidades",
+  "source_anim_txt": "throwing axeman_anim.txt",
+  "base": "throwing_axeman_base.glb",
+  "sockets": [
+    "SMOKEPOINT",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "BACKCHEST",
+    "LEFTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "gather": "animations/gather.glb",
+    "walk": "animations/walk.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {
+    "Righthand": "accessories/attachments_n_axe_throwing_standard.glb",
+    "Smokepoint": "accessories/attachments_n_axe_throwing_standard.glb",
+    "LeftForearm": "accessories/attachments_n_shield_small_copper.glb",
+    "TopOfHead": "accessories/archer_n_throwing_axeman_head_standard.glb"
+  },
+  "textures": [
+    "archer_n_throwing_axeman_standard.png"
+  ]
+}

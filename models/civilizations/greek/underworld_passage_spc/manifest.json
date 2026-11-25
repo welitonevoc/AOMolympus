@@ -1,0 +1,37 @@
+{
+  "unit": "underworld_passage_spc",
+  "civ": "greek",
+  "category": "unidades",
+  "source_anim_txt": "underworld passage spc_anim.txt",
+  "base": "underworld_passage_spc_base.glb",
+  "sockets": [
+    "ATTACHPOINT",
+    "RIGHTHAND",
+    "RIGHTEAR",
+    "NECK",
+    "RIGHTTHIGH",
+    "RIGHTLEG",
+    "RIGHTFOOT",
+    "RIGHTFOREARM",
+    "HITPOINTBAR",
+    "GARRISONFLAG",
+    "FIRE_0",
+    "FIRE_1",
+    "FIRE_2",
+    "FIRE_3",
+    "FIRE_4",
+    "FIRE_5",
+    "FIRE_6",
+    "FIRE_7",
+    "FIRE_8",
+    "FIRE_9",
+    "LAUNCHPOINT"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "building_g_underground_passage_greek.png"
+  ]
+}

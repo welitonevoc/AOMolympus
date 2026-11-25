@@ -1,0 +1,18 @@
+{
+  "unit": "pine_burning",
+  "civ": "norse",
+  "category": "unidades",
+  "source_anim_txt": "pine burning_anim.txt",
+  "base": "pine_burning_base.glb",
+  "sockets": [
+    "ATTACHPOINT"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "world_n_pine_map2.png"
+  ]
+}

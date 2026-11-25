@@ -1,0 +1,21 @@
+{
+  "unit": "siege_tower",
+  "civ": "egyptian",
+  "category": "cidade",
+  "source_anim_txt": "siege tower_anim.txt",
+  "base": "siege_tower_base.glb",
+  "sockets": [
+    "HITPOINTBAR",
+    "GARRISONFLAG"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "siege_e_tower.png"
+  ]
+}

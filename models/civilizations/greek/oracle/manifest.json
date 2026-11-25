@@ -1,0 +1,24 @@
+{
+  "unit": "oracle",
+  "civ": "greek",
+  "category": "unidades",
+  "source_anim_txt": "oracle_anim.txt",
+  "base": "oracle_base.glb",
+  "sockets": [
+    "ATTACHPOINT",
+    "RIGHTHAND",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "attack": "animations/attack.glb",
+    "walk": "animations/walk.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "scenario_theocrat.png",
+    "scenario_theocrat_head.png",
+    "scenario_theocrat_staff.png"
+  ]
+}

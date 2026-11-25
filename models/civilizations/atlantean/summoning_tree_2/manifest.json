@@ -1,0 +1,22 @@
+{
+  "unit": "summoning_tree_2",
+  "civ": "atlantean",
+  "category": "unidades",
+  "source_anim_txt": "summoning tree 2_anim.txt",
+  "base": "summoning_tree_2_base.glb",
+  "sockets": [
+    "LEFTEAR",
+    "LEFTFOOT"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {
+    "hotspot": "accessories/sfx_x_gaia_pool.glb"
+  },
+  "textures": [
+    "spc_x_gaia_tree.png",
+    "spc_x_gaia_tree_shadow.png"
+  ]
+}

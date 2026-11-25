@@ -1,0 +1,15 @@
+{
+  "unit": "bolder_wall",
+  "civ": "shared",
+  "category": "cidade",
+  "source_anim_txt": "bolder wall_anim.txt",
+  "base": "bolder_wall_base.glb",
+  "sockets": [],
+  "animations": {
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "world_a_rocks_map.png"
+  ]
+}

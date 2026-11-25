@@ -1,0 +1,19 @@
+{
+  "unit": "bramble_stem",
+  "civ": "norse",
+  "category": "unidades",
+  "source_anim_txt": "bramble stem_anim.txt",
+  "base": "bramble_stem_base.glb",
+  "sockets": [
+    "ATTACHPOINT"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "world_n_pine_map2.png"
+  ]
+}

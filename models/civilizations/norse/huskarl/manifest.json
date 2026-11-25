@@ -1,0 +1,37 @@
+{
+  "unit": "huskarl",
+  "civ": "norse",
+  "category": "unidades",
+  "source_anim_txt": "huskarl_anim.txt",
+  "base": "huskarl_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR",
+    "FIRE"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "gather": "animations/gather.glb",
+    "walk": "animations/walk.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {
+    "RightHand": "accessories/attachments_n_sword_standard.glb",
+    "LeftForearm": "accessories/attachments_n_shield_large_copper.glb"
+  },
+  "textures": [
+    "infantry_n_huskarl_cape.png",
+    "infantry_n_huskarl_head_standard.png",
+    "infantry_n_huskarl_standard.png"
+  ]
+}

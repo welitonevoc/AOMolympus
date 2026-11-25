@@ -1,0 +1,17 @@
+{
+  "unit": "tunnel_opening",
+  "civ": "norse",
+  "category": "unidades",
+  "source_anim_txt": "tunnel opening_anim.txt",
+  "base": "tunnel_opening_base.glb",
+  "sockets": [],
+  "animations": {
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "scenario_n_dwarven_mine_inside.png",
+    "scenario_n_dwarven_mine_opening.png",
+    "scenario_n_dwarven_mine_outside.png"
+  ]
+}

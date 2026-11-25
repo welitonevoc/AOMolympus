@@ -1,0 +1,15 @@
+{
+  "unit": "thor_hammer",
+  "civ": "norse",
+  "category": "unidades",
+  "source_anim_txt": "thor hammer_anim.txt",
+  "base": "thor_hammer_base.glb",
+  "sockets": [],
+  "animations": {
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "scenario_n_thors_hammer.png"
+  ]
+}

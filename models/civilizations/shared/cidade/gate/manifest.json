@@ -1,0 +1,26 @@
+{
+  "unit": "gate",
+  "civ": "shared",
+  "category": "cidade",
+  "source_anim_txt": "gate_anim.txt",
+  "base": "gate_base.glb",
+  "sockets": [
+    "HITPOINTBAR",
+    "SMOKE0",
+    "SMOKE1",
+    "FIRE_0",
+    "FIRE_1",
+    "FIRE_2"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {
+    "smoke0": "accessories/building_gate_flag.glb",
+    "smoke1": "accessories/building_gate_flag.glb",
+    "smoke3": "accessories/building_n_gate_flag.glb"
+  },
+  "textures": [
+    "building_gate.png"
+  ]
+}

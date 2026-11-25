@@ -1,0 +1,20 @@
+{
+  "unit": "caravan_egyptian",
+  "civ": "egyptian",
+  "category": "unidades",
+  "source_anim_txt": "caravan egyptian_anim.txt",
+  "base": "caravan_egyptian_base.glb",
+  "sockets": [
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "trade_e_caravan_basket.png",
+    "trade_e_caravan_camel.png"
+  ]
+}

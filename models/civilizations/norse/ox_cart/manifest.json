@@ -1,0 +1,28 @@
+{
+  "unit": "ox_cart",
+  "civ": "norse",
+  "category": "unidades",
+  "source_anim_txt": "ox cart_anim.txt",
+  "base": "ox_cart_base.glb",
+  "sockets": [
+    "ATTACHPOINT",
+    "LEFTSHOULDER",
+    "RIGHTSHOULDER",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {
+    "leftshoulder": "accessories/attachments_n_oxcart_wheel.glb",
+    "rightshoulder": "accessories/attachments_n_oxcart_wheel.glb"
+  },
+  "textures": [
+    "attachments_a_resources_map.png",
+    "villager_n_ox.png",
+    "villager_n_oxcart.png",
+    "world_a_gold_bin.png"
+  ]
+}

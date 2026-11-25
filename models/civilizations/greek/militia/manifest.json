@@ -1,0 +1,32 @@
+{
+  "unit": "militia",
+  "civ": "greek",
+  "category": "unidades",
+  "source_anim_txt": "militia_anim.txt",
+  "base": "militia_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "attachments_a_spear_standard.png",
+    "infantry_g_militia.png",
+    "infantry_g_militia_head.png"
+  ]
+}

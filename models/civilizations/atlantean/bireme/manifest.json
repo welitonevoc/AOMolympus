@@ -1,0 +1,20 @@
+{
+  "unit": "bireme",
+  "civ": "atlantean",
+  "category": "unidades",
+  "source_anim_txt": "bireme_anim.txt",
+  "base": "bireme_base.glb",
+  "sockets": [
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "naval_x_all.png"
+  ]
+}

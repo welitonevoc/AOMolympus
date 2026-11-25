@@ -1,0 +1,22 @@
+{
+  "unit": "ghost_ship",
+  "civ": "egyptian",
+  "category": "unidades",
+  "source_anim_txt": "ghost ship_anim.txt",
+  "base": "ghost_ship_base.glb",
+  "sockets": [
+    "ATTACHPOINT",
+    "HITPOINTBAR",
+    "GARRISONFLAG"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "sfx_e_ancestors_water.png"
+  ]
+}

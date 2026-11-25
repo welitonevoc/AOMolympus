@@ -1,0 +1,33 @@
+{
+  "unit": "hero_greek_ajax",
+  "civ": "greek",
+  "category": "unidades",
+  "source_anim_txt": "hero greek ajax_anim.txt",
+  "base": "hero_greek_ajax_base.glb",
+  "sockets": [
+    "ATTACHPOINT",
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb",
+    "walk": "animations/walk.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "hero_g_ajax.png",
+    "hero_g_ajax_shield.png",
+    "hero_g_ajax_spear.png"
+  ]
+}

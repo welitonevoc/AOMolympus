@@ -1,0 +1,22 @@
+{
+  "unit": "ballista",
+  "civ": "norse",
+  "category": "unidades",
+  "source_anim_txt": "ballista_anim.txt",
+  "base": "ballista_base.glb",
+  "sockets": [
+    "HITPOINTBAR",
+    "LAUNCHPOINT"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "siege_n_ballista.png",
+    "siege_n_ballista_bolt.png"
+  ]
+}

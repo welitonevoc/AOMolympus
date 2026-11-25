@@ -1,0 +1,16 @@
+{
+  "unit": "cinematic_dead_bodies",
+  "civ": "egyptian",
+  "category": "unidades",
+  "source_anim_txt": "cinematic dead bodies_anim.txt",
+  "base": "cinematic_dead_bodies_base.glb",
+  "sockets": [],
+  "animations": {
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "archer_e_slinger_head_standard.png",
+    "archer_e_slinger_standard.png"
+  ]
+}

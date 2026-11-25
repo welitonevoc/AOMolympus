@@ -1,0 +1,39 @@
+{
+  "unit": "dwarf",
+  "civ": "norse",
+  "category": "unidades",
+  "source_anim_txt": "dwarf_anim.txt",
+  "base": "dwarf_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "CHIN",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "gather": "animations/gather.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb",
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb"
+  },
+  "accessories": {
+    "RightHand": "accessories/attachments_a_axe_hatchet.glb",
+    "LeftHand": "accessories/attachments_a_bow.glb",
+    "rightHand": "accessories/attachments_a_resource_grain.glb",
+    "ATTACHPOINT": "accessories/attachments_a_basket.glb",
+    "Attachpoint": "accessories/attachments_a_basket.glb"
+  },
+  "textures": [
+    "villager_n_dwarf_head.png",
+    "villager_n_dwarf_standard.png"
+  ]
+}

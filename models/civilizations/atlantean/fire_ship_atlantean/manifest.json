@@ -1,0 +1,22 @@
+{
+  "unit": "fire_ship_atlantean",
+  "civ": "atlantean",
+  "category": "unidades",
+  "source_anim_txt": "fire ship atlantean_anim.txt",
+  "base": "fire_ship_atlantean_base.glb",
+  "sockets": [
+    "HITPOINTBAR",
+    "LAUNCHPOINT"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "attack": "animations/attack.glb",
+    "walk": "animations/walk.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "naval_x_all.png",
+    "siege_x_fire_siphon_upgrade.png"
+  ]
+}

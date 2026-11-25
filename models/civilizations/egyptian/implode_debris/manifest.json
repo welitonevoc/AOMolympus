@@ -1,0 +1,15 @@
+{
+  "unit": "implode_debris",
+  "civ": "egyptian",
+  "category": "unidades",
+  "source_anim_txt": "implode debris_anim.txt",
+  "base": "implode_debris_base.glb",
+  "sockets": [],
+  "animations": {
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "building_e_age1.png"
+  ]
+}

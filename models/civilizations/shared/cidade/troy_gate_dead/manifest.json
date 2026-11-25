@@ -1,0 +1,17 @@
+{
+  "unit": "troy_gate_dead",
+  "civ": "shared",
+  "category": "cidade",
+  "source_anim_txt": "troy gate dead_anim.txt",
+  "base": "troy_gate_dead_base.glb",
+  "sockets": [],
+  "animations": {
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "building_destruction_egypt.png",
+    "scenario_t_troy_gate_deadb.png",
+    "scenario_t_troy_wall_long_dead.png"
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "unit": "lightning_storm",
+  "civ": "greek",
+  "category": "unidades",
+  "source_anim_txt": "lightning storm_anim.txt",
+  "base": "lightning_storm_base.glb",
+  "sockets": [
+    "ATTACHPOINT"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {},
+  "textures": []
+}

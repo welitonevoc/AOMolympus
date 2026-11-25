@@ -1,0 +1,21 @@
+{
+  "unit": "hero_greek_argo",
+  "civ": "greek",
+  "category": "unidades",
+  "source_anim_txt": "hero greek argo_anim.txt",
+  "base": "hero_greek_argo_base.glb",
+  "sockets": [
+    "ATTACHPOINT",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "death": "animations/death.glb",
+    "attack": "animations/attack.glb",
+    "walk": "animations/walk.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "naval_g_all.png"
+  ]
+}

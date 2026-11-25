@@ -1,0 +1,21 @@
+{
+  "unit": "transport_ship_egyptian",
+  "civ": "egyptian",
+  "category": "unidades",
+  "source_anim_txt": "transport ship egyptian_anim.txt",
+  "base": "transport_ship_egyptian_base.glb",
+  "sockets": [
+    "ATTACHPOINT",
+    "HITPOINTBAR",
+    "GARRISONFLAG"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "naval_e_all.png"
+  ]
+}

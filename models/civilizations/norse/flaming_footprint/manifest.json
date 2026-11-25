@@ -1,0 +1,16 @@
+{
+  "unit": "flaming_footprint",
+  "civ": "norse",
+  "category": "unidades",
+  "source_anim_txt": "flaming footprint_anim.txt",
+  "base": "flaming_footprint_base.glb",
+  "sockets": [
+    "RESERVED0",
+    "RESERVED1"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {},
+  "textures": []
+}

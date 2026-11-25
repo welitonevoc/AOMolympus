@@ -1,0 +1,23 @@
+{
+  "unit": "frost_drift",
+  "civ": "norse",
+  "category": "unidades",
+  "source_anim_txt": "frost drift_anim.txt",
+  "base": "frost_drift_base.glb",
+  "sockets": [
+    "ATTACHPOINT",
+    "SMOKE0",
+    "SMOKE1",
+    "SMOKE2",
+    "SMOKE3",
+    "SMOKE4",
+    "SMOKE5",
+    "SMOKE6",
+    "SMOKE7"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {},
+  "textures": []
+}

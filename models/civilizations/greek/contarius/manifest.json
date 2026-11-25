@@ -1,0 +1,36 @@
+{
+  "unit": "contarius",
+  "civ": "greek",
+  "category": "unidades",
+  "source_anim_txt": "contarius_anim.txt",
+  "base": "contarius_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "death": "animations/death.glb",
+    "attack": "animations/attack.glb"
+  },
+  "accessories": {
+    "RightHand": "accessories/attachments_g_sword_standard.glb",
+    "LeftForearm": "accessories/attachments_g_shield_small_copper.glb",
+    "TopOfHead": "accessories/infantry_g_hypaspist_head_standard.glb"
+  },
+  "textures": [
+    "cavalry_g_hippikon_cape.png",
+    "cavalry_g_hippikon_horse_standard.png",
+    "cavalry_g_hippikon_standard.png"
+  ]
+}

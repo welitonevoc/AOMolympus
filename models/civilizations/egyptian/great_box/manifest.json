@@ -1,0 +1,15 @@
+{
+  "unit": "great_box",
+  "civ": "egyptian",
+  "category": "unidades",
+  "source_anim_txt": "great box_anim.txt",
+  "base": "great_box_base.glb",
+  "sockets": [],
+  "animations": {
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "scenario_e_great_box.png"
+  ]
+}

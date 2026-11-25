@@ -1,0 +1,43 @@
+{
+  "unit": "longhouse",
+  "civ": "norse",
+  "category": "cidade",
+  "source_anim_txt": "longhouse_anim.txt",
+  "base": "longhouse_base.glb",
+  "sockets": [
+    "LEFTTHIGH",
+    "RIGHTTHIGH",
+    "HITPOINTBAR",
+    "GARRISONFLAG",
+    "GATHERPOINT",
+    "FIRE_0",
+    "FIRE_1",
+    "FIRE_2",
+    "FIRE_3",
+    "FIRE_4",
+    "FIRE_5",
+    "FIRE_6",
+    "FIRE_7",
+    "FIRE_8",
+    "FIRE_9"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {
+    "RIGHTTHIGH": "accessories/building_flag_barracks.glb",
+    "LEFTTHIGH": "accessories/building_flag_barracks.glb",
+    "attachpoint": "accessories/building_construction_n_long_brick.glb",
+    "face": "accessories/building_construction_n_long_brick.glb",
+    "chin": "accessories/building_construction_n_medium_brick.glb",
+    "leftfoot": "accessories/building_construction_n_medium_brick.glb",
+    "lefthand": "accessories/building_construction_n_small_brick.glb",
+    "leftleg": "accessories/building_construction_n_small_brick.glb"
+  },
+  "textures": [
+    "building_attachments.png",
+    "building_n_shared01_2_map.png",
+    "building_n_shared04_2_map.png"
+  ]
+}

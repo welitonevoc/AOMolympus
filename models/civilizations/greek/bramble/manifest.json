@@ -1,0 +1,15 @@
+{
+  "unit": "bramble",
+  "civ": "greek",
+  "category": "unidades",
+  "source_anim_txt": "bramble_anim.txt",
+  "base": "bramble_base.glb",
+  "sockets": [
+    "ATTACHPOINT"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {},
+  "textures": []
+}

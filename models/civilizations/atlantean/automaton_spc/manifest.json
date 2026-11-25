@@ -1,0 +1,22 @@
+{
+  "unit": "automaton_spc",
+  "civ": "atlantean",
+  "category": "unidades",
+  "source_anim_txt": "automaton spc_anim.txt",
+  "base": "automaton_spc_base.glb",
+  "sockets": [
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "death": "animations/death.glb",
+    "attack": "animations/attack.glb"
+  },
+  "accessories": {
+    "RightHand": "accessories/tool_hammer.glb"
+  },
+  "textures": [
+    "mu_x_automation_map.png"
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "unit": "cinematic_palms",
+  "civ": "egyptian",
+  "category": "unidades",
+  "source_anim_txt": "cinematic palms_anim.txt",
+  "base": "cinematic_palms_base.glb",
+  "sockets": [
+    "ATTACHPOINT"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "world_e_palm_map.png"
+  ]
+}

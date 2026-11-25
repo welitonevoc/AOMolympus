@@ -1,0 +1,34 @@
+{
+  "unit": "hero_greek_atalanta",
+  "civ": "greek",
+  "category": "unidades",
+  "source_anim_txt": "hero greek atalanta_anim.txt",
+  "base": "hero_greek_atalanta_base.glb",
+  "sockets": [
+    "ATTACHPOINT",
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb",
+    "walk": "animations/walk.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "attachment_g_spear.png",
+    "hero_g_atalanta.png",
+    "hero_g_atalanta_head_standard.png",
+    "hero_g_atalanta_shield.png"
+  ]
+}

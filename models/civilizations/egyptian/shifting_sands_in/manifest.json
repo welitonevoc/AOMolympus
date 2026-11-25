@@ -1,0 +1,13 @@
+{
+  "unit": "shifting_sands_in",
+  "civ": "egyptian",
+  "category": "unidades",
+  "source_anim_txt": "shifting sands in_anim.txt",
+  "base": "shifting_sands_in_base.glb",
+  "sockets": [],
+  "animations": {
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {},
+  "textures": []
+}

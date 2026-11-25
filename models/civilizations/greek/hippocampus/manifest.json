@@ -1,0 +1,23 @@
+{
+  "unit": "hippocampus",
+  "civ": "greek",
+  "category": "unidades",
+  "source_anim_txt": "hippocampus_anim.txt",
+  "base": "hippocampus_base.glb",
+  "sockets": [
+    "ATTACHPOINT",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "death": "animations/death.glb",
+    "walk": "animations/walk.glb",
+    "attack": "animations/attack.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "special_g_hippocampus.png"
+  ]
+}

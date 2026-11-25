@@ -1,0 +1,31 @@
+{
+  "unit": "amanra_older",
+  "civ": "atlantean",
+  "category": "unidades",
+  "source_anim_txt": "amanra older_anim.txt",
+  "base": "amanra_older_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb",
+    "walk": "animations/walk.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "scenario_x_amanra_map.png",
+    "scenario_x_amanra_swordshield_map.png"
+  ]
+}

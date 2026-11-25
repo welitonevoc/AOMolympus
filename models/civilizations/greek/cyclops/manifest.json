@@ -1,0 +1,31 @@
+{
+  "unit": "cyclops",
+  "civ": "greek",
+  "category": "unidades",
+  "source_anim_txt": "cyclops_anim.txt",
+  "base": "cyclops_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb",
+    "walk": "animations/walk.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "attachments_a_club.png",
+    "special_g_cyclops.png"
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "unit": "statue_valkyrie",
+  "civ": "norse",
+  "category": "unidades",
+  "source_anim_txt": "statue valkyrie_anim.txt",
+  "base": "statue_valkyrie_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "special_n_valkyrie_staute_map.png"
+  ]
+}

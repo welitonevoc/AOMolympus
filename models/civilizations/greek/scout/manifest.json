@@ -1,0 +1,34 @@
+{
+  "unit": "scout",
+  "civ": "greek",
+  "category": "unidades",
+  "source_anim_txt": "scout_anim.txt",
+  "base": "scout_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "death": "animations/death.glb",
+    "attack": "animations/attack.glb"
+  },
+  "accessories": {
+    "RightHand": "accessories/attachments_g_sword_bronze.glb"
+  },
+  "textures": [
+    "cavalry_g_scout_horse.png",
+    "villager_g_male_head.png",
+    "villager_g_male_standard.png"
+  ]
+}

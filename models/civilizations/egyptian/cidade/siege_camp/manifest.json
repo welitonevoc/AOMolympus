@@ -1,0 +1,44 @@
+{
+  "unit": "siege_camp",
+  "civ": "egyptian",
+  "category": "cidade",
+  "source_anim_txt": "siege camp_anim.txt",
+  "base": "siege_camp_base.glb",
+  "sockets": [
+    "FACE",
+    "NECK",
+    "HITPOINTBAR",
+    "GARRISONFLAG",
+    "GATHERPOINT",
+    "FIRE_0",
+    "FIRE_1",
+    "FIRE_2",
+    "FIRE_3",
+    "FIRE_4",
+    "FIRE_5",
+    "FIRE_6",
+    "FIRE_7",
+    "FIRE_8",
+    "FIRE_9"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {
+    "FACE": "accessories/building_e_tarp_siege_camp.glb",
+    "attachpoint": "accessories/building_construction_e_long_brick.glb",
+    "face": "accessories/building_construction_e_long_brick.glb",
+    "chin": "accessories/building_construction_e_medium_brick.glb",
+    "leftfoot": "accessories/building_construction_e_medium_brick.glb",
+    "lefthand": "accessories/building_construction_e_small_brick.glb",
+    "leftleg": "accessories/building_construction_e_small_brick.glb"
+  },
+  "textures": [
+    "building_attachments.png",
+    "building_e_age3.png",
+    "building_e_age3_accessories.png",
+    "building_e_age3a_accessories.png",
+    "building_e_props.png"
+  ]
+}

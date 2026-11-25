@@ -1,0 +1,31 @@
+{
+  "unit": "granary",
+  "civ": "greek",
+  "category": "cidade",
+  "source_anim_txt": "granary_anim.txt",
+  "base": "granary_base.glb",
+  "sockets": [
+    "HITPOINTBAR",
+    "FIRE_0",
+    "FIRE_1",
+    "FIRE_2",
+    "FIRE_3",
+    "FIRE_4"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {
+    "CHIN": "accessories/building_construction_e_small_brick.glb",
+    "FACE": "accessories/building_construction_e_medium_brick.glb",
+    "Rightfoot": "accessories/building_vinea.glb",
+    "Rightear": "accessories/building_vineb.glb"
+  },
+  "textures": [
+    "building_attachments.png",
+    "building_e_age1.png",
+    "building_e_age2_accessories.png",
+    "building_e_props.png"
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "unit": "titan_gaia",
+  "civ": "shared",
+  "category": "unidades",
+  "source_anim_txt": "titan gaia_anim.txt",
+  "base": "titan_gaia_base.glb",
+  "sockets": [],
+  "animations": {
+    "death": "animations/death.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "sfx_a_carnivora.png",
+    "titan_x_gaia.png"
+  ]
+}

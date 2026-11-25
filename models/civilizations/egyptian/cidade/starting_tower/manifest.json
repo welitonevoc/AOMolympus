@@ -1,0 +1,37 @@
+{
+  "unit": "starting_tower",
+  "civ": "egyptian",
+  "category": "cidade",
+  "source_anim_txt": "starting tower_anim.txt",
+  "base": "starting_tower_base.glb",
+  "sockets": [
+    "HITPOINTBAR",
+    "GARRISONFLAG",
+    "SMOKE0",
+    "SMOKE2",
+    "SMOKE4",
+    "SMOKE6",
+    "SMOKE8",
+    "RESERVED0",
+    "RESERVED2",
+    "RESERVED4",
+    "RESERVED6",
+    "RESERVED8"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {
+    "CHIN": "accessories/building_construction_e_small_brick.glb",
+    "ATTACHPOINT": "accessories/building_construction_e_long_brick.glb",
+    "RIGHTEAR": "accessories/building_vinea.glb",
+    "RIGHTFOOT": "accessories/building_vinea.glb",
+    "RIGHTHAND": "accessories/building_vineb.glb"
+  },
+  "textures": [
+    "building_e_shared01_2_map.png",
+    "building_e_shared02_2_map.png"
+  ]
+}

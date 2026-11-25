@@ -1,0 +1,24 @@
+{
+  "unit": "stymph_bird_feather",
+  "civ": "atlantean",
+  "category": "unidades",
+  "source_anim_txt": "stymph bird feather_anim.txt",
+  "base": "stymph_bird_feather_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "HITPOINTBAR",
+    "LAUNCHPOINT"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "mu_x_stymphatian_bird_projectile.png"
+  ]
+}

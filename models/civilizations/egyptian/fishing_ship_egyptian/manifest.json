@@ -1,0 +1,22 @@
+{
+  "unit": "fishing_ship_egyptian",
+  "civ": "egyptian",
+  "category": "unidades",
+  "source_anim_txt": "fishing ship egyptian_anim.txt",
+  "base": "fishing_ship_egyptian_base.glb",
+  "sockets": [
+    "ATTACHPOINT",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {
+    "CHIN": "accessories/attachments_a_fishflag_idlea.glb"
+  },
+  "textures": [
+    "naval_e_all.png"
+  ]
+}

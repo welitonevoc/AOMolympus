@@ -1,0 +1,19 @@
+{
+  "unit": "statue_manticore",
+  "civ": "greek",
+  "category": "unidades",
+  "source_anim_txt": "statue manticore_anim.txt",
+  "base": "statue_manticore_base.glb",
+  "sockets": [
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "special_g_manticore_statue.png",
+    "special_g_manticore_wing_statue.png",
+    "world_g_statue_base.png"
+  ]
+}

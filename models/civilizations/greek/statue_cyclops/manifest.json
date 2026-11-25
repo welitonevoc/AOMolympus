@@ -1,0 +1,28 @@
+{
+  "unit": "statue_cyclops",
+  "civ": "greek",
+  "category": "unidades",
+  "source_anim_txt": "statue cyclops_anim.txt",
+  "base": "statue_cyclops_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "world_g_statue_base.png",
+    "world_g_statue_cyclops.png"
+  ]
+}

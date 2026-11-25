@@ -1,0 +1,31 @@
+{
+  "unit": "storehouse",
+  "civ": "greek",
+  "category": "cidade",
+  "source_anim_txt": "storehouse_anim.txt",
+  "base": "storehouse_base.glb",
+  "sockets": [
+    "RIGHTEAR",
+    "RIGHTFOOT",
+    "HITPOINTBAR",
+    "FIRE_0",
+    "FIRE_1",
+    "FIRE_2",
+    "FIRE_3",
+    "FIRE_4"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {
+    "Rightfoot": "accessories/building_vinea.glb",
+    "Rightear": "accessories/building_vinea.glb",
+    "CHIN": "accessories/building_construction_g_small_brick.glb",
+    "FACE": "accessories/building_construction_g_medium_brick.glb",
+    "ATTACHPOINT": "accessories/building_construction_g_long_brick.glb"
+  },
+  "textures": [
+    "building_g_age0.png"
+  ]
+}

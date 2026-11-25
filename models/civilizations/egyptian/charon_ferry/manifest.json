@@ -1,0 +1,22 @@
+{
+  "unit": "charon_ferry",
+  "civ": "egyptian",
+  "category": "unidades",
+  "source_anim_txt": "charon ferry_anim.txt",
+  "base": "charon_ferry_base.glb",
+  "sockets": [
+    "ATTACHPOINT",
+    "HITPOINTBAR",
+    "GARRISONFLAG"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "sfx_e_ancestors_water.png"
+  ]
+}

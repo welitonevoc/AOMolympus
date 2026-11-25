@@ -1,0 +1,32 @@
+{
+  "unit": "medusa",
+  "civ": "greek",
+  "category": "unidades",
+  "source_anim_txt": "medusa_anim.txt",
+  "base": "medusa_base.glb",
+  "sockets": [
+    "ATTACHPOINT",
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "walk": "animations/walk.glb",
+    "idle": "animations/idle.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {
+    "topofhead": "accessories/special_g_medusa_snakesa_idle.glb",
+    "attachpoint": "accessories/special_g_medusa_snakesb_idle.glb"
+  },
+  "textures": [
+    "special_g_medusa.png"
+  ]
+}

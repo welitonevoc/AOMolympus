@@ -1,0 +1,24 @@
+{
+  "unit": "fire_siphon",
+  "civ": "atlantean",
+  "category": "unidades",
+  "source_anim_txt": "fire siphon_anim.txt",
+  "base": "fire_siphon_base.glb",
+  "sockets": [
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "HITPOINTBAR",
+    "CORPSE",
+    "LAUNCHPOINT"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "siege_x_fire_siphon.png"
+  ]
+}

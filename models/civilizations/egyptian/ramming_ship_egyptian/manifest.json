@@ -1,0 +1,22 @@
+{
+  "unit": "ramming_ship_egyptian",
+  "civ": "egyptian",
+  "category": "unidades",
+  "source_anim_txt": "ramming ship egyptian_anim.txt",
+  "base": "ramming_ship_egyptian_base.glb",
+  "sockets": [
+    "ATTACHPOINT",
+    "HITPOINTBAR",
+    "FIRE"
+  ],
+  "animations": {
+    "death": "animations/death.glb",
+    "idle": "animations/idle.glb",
+    "attack": "animations/attack.glb",
+    "walk": "animations/walk.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "naval_e_all.png"
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "unit": "archer_atlantean",
+  "civ": "atlantean",
+  "category": "unidades",
+  "source_anim_txt": "archer atlantean_anim.txt",
+  "base": "archer_atlantean_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTABDOMEN",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "LEFTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {
+    "Lefthand": "accessories/attachment_x_bow_standard.glb",
+    "TopOfHead": "accessories/archer_x_head_standard.glb",
+    "lefthand": "accessories/attachment_x_bow_standard.glb"
+  },
+  "textures": [
+    "archer_x_iron.png",
+    "attachments_a_arrow.png"
+  ]
+}

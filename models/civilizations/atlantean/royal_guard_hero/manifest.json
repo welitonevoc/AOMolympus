@@ -1,0 +1,34 @@
+{
+  "unit": "royal_guard_hero",
+  "civ": "atlantean",
+  "category": "unidades",
+  "source_anim_txt": "royal guard hero_anim.txt",
+  "base": "royal_guard_hero_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {
+    "RightHand": "accessories/attachments_x_double_sword_standard.glb",
+    "LeftHand": "accessories/attachments_x_double_sword_standard.glb",
+    "TopOfHead": "accessories/infantry_x_2_sword_fighter_head_hero.glb"
+  },
+  "textures": [
+    "infantry_x_2_sword_fighter_iron.png"
+  ]
+}

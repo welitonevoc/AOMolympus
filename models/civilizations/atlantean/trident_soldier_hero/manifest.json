@@ -1,0 +1,30 @@
+{
+  "unit": "trident_soldier_hero",
+  "civ": "atlantean",
+  "category": "unidades",
+  "source_anim_txt": "trident soldier hero_anim.txt",
+  "base": "trident_soldier_hero_base.glb",
+  "sockets": [
+    "ATTACHPOINT",
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "LEFTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {
+    "RightHand": "accessories/infantry_x_trident_soldier_trident.glb",
+    "TopOfHead": "accessories/infantry_x_trident_soldier_head_hero.glb"
+  },
+  "textures": [
+    "infantry_x_trident_soldier_cape_iron.png",
+    "infantry_x_trident_soldier_iron.png",
+    "infantry_x_trident_soldier_shield_iron.png"
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "unit": "snow_drift_tower",
+  "civ": "shared",
+  "category": "cidade",
+  "source_anim_txt": "snow drift tower_anim.txt",
+  "base": "snow_drift_tower_base.glb",
+  "sockets": [],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "sfx_n_frost_ice_block.png"
+  ]
+}

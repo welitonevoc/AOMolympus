@@ -1,0 +1,31 @@
+{
+  "unit": "setna",
+  "civ": "egyptian",
+  "category": "unidades",
+  "source_anim_txt": "setna_anim.txt",
+  "base": "setna_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb",
+    "walk": "animations/walk.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "scenario_e_setna_map.png",
+    "scenario_e_setna_staff_map.png"
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "unit": "lumber_camp",
+  "civ": "egyptian",
+  "category": "cidade",
+  "source_anim_txt": "lumber camp_anim.txt",
+  "base": "lumber_camp_base.glb",
+  "sockets": [
+    "RIGHTEAR",
+    "RIGHTFOOT",
+    "HITPOINTBAR",
+    "SMOKE0",
+    "SMOKE2",
+    "SMOKE4",
+    "SMOKE6",
+    "SMOKE8",
+    "FIRE_0",
+    "FIRE_1",
+    "FIRE_2",
+    "FIRE_3",
+    "FIRE_4"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {
+    "CHIN": "accessories/building_construction_e_small_brick.glb",
+    "FACE": "accessories/building_construction_e_medium_brick.glb"
+  },
+  "textures": [
+    "building_attachments.png",
+    "building_e_age1.png",
+    "building_e_age2_accessories.png",
+    "building_e_age3_accessories.png",
+    "building_e_props.png"
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "unit": "destruction_large",
+  "civ": "egyptian",
+  "category": "cidade",
+  "source_anim_txt": "destruction large_anim.txt",
+  "base": "destruction_large_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "LEFTEAR",
+    "RIGHTEAR",
+    "NECK"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "building_destruction_egypt.png"
+  ]
+}

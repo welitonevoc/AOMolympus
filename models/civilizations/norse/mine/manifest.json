@@ -1,0 +1,29 @@
+{
+  "unit": "mine",
+  "civ": "norse",
+  "category": "unidades",
+  "source_anim_txt": "mine_anim.txt",
+  "base": "mine_base.glb",
+  "sockets": [
+    "RIGHTHAND",
+    "RIGHTEAR",
+    "RIGHTSHOULDER",
+    "RIGHTTHIGH",
+    "RIGHTLEG",
+    "RIGHTFOOT"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {
+    "RIGHTHAND": "accessories/world_a_grass_a.glb",
+    "RIGHTFOOT": "accessories/world_a_grass_a.glb",
+    "RIGHTEAR": "accessories/world_a_grass_a.glb",
+    "RIGHTLEG": "accessories/world_a_grass_a.glb",
+    "RIGHTSHOULDER": "accessories/world_a_grass_a.glb",
+    "RIGHTTHIGH": "accessories/world_a_grass_a.glb"
+  },
+  "textures": [
+    "sfx_n_tunnel_map.png"
+  ]
+}

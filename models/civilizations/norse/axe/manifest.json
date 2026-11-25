@@ -1,0 +1,17 @@
+{
+  "unit": "axe",
+  "civ": "norse",
+  "category": "unidades",
+  "source_anim_txt": "axe_anim.txt",
+  "base": "axe_base.glb",
+  "sockets": [
+    "ATTACHPOINT"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "attachments_n_axe_standard.png"
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "unit": "flag",
+  "civ": "egyptian",
+  "category": "unidades",
+  "source_anim_txt": "flag_anim.txt",
+  "base": "flag_base.glb",
+  "sockets": [],
+  "animations": {
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "world_e_flag.png"
+  ]
+}

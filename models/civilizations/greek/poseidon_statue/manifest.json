@@ -1,0 +1,17 @@
+{
+  "unit": "poseidon_statue",
+  "civ": "greek",
+  "category": "unidades",
+  "source_anim_txt": "poseidon statue_anim.txt",
+  "base": "poseidon_statue_base.glb",
+  "sockets": [],
+  "animations": {
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "cine_g_poseidon_stone.png",
+    "cine_g_poseidon_trident.png",
+    "world_g_statue_poseidon_base.png"
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "unit": "kronny",
+  "civ": "atlantean",
+  "category": "unidades",
+  "source_anim_txt": "kronny_anim.txt",
+  "base": "kronny_base.glb",
+  "sockets": [],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "death": "animations/death.glb",
+    "walk": "animations/walk.glb",
+    "attack": "animations/attack.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "animal_flying_purple_hippo.png",
+    "lp_cine_x_krios.png",
+    "scenario_theocrat_staff.png"
+  ]
+}

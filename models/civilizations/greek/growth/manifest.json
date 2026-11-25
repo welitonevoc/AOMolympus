@@ -1,0 +1,15 @@
+{
+  "unit": "growth",
+  "civ": "greek",
+  "category": "unidades",
+  "source_anim_txt": "growth_anim.txt",
+  "base": "growth_base.glb",
+  "sockets": [
+    "ATTACHPOINT"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {},
+  "textures": []
+}

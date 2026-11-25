@@ -1,0 +1,22 @@
+{
+  "unit": "pegasus",
+  "civ": "greek",
+  "category": "unidades",
+  "source_anim_txt": "pegasus_anim.txt",
+  "base": "pegasus_base.glb",
+  "sockets": [
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "walk": "animations/walk.glb",
+    "idle": "animations/idle.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "special_g_pegasus.png",
+    "special_g_pegasus_wings.png"
+  ]
+}

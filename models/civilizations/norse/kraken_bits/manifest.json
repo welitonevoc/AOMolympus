@@ -1,0 +1,15 @@
+{
+  "unit": "kraken_bits",
+  "civ": "norse",
+  "category": "unidades",
+  "source_anim_txt": "kraken bits_anim.txt",
+  "base": "kraken_bits_base.glb",
+  "sockets": [],
+  "animations": {
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "naval_n_kraken.png"
+  ]
+}

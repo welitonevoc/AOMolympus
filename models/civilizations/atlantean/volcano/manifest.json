@@ -1,0 +1,16 @@
+{
+  "unit": "volcano",
+  "civ": "atlantean",
+  "category": "unidades",
+  "source_anim_txt": "volcano_anim.txt",
+  "base": "volcano_base.glb",
+  "sockets": [
+    "SMOKE0"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {},
+  "textures": []
+}

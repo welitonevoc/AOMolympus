@@ -1,0 +1,15 @@
+{
+  "unit": "shipwreck",
+  "civ": "greek",
+  "category": "unidades",
+  "source_anim_txt": "shipwreck_anim.txt",
+  "base": "shipwreck_base.glb",
+  "sockets": [],
+  "animations": {
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "naval_g_all.png"
+  ]
+}

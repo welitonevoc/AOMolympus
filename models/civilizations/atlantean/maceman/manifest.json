@@ -1,0 +1,33 @@
+{
+  "unit": "maceman",
+  "civ": "atlantean",
+  "category": "unidades",
+  "source_anim_txt": "maceman_anim.txt",
+  "base": "maceman_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {
+    "RightHand": "accessories/attachments_x_mace_standard.glb",
+    "TopOfHead": "accessories/infantry_x_maceman_head_standard.glb"
+  },
+  "textures": [
+    "infantry_x_maceman_iron.png"
+  ]
+}

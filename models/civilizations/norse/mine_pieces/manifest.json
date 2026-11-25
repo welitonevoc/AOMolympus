@@ -1,0 +1,15 @@
+{
+  "unit": "mine_pieces",
+  "civ": "norse",
+  "category": "unidades",
+  "source_anim_txt": "mine pieces_anim.txt",
+  "base": "mine_pieces_base.glb",
+  "sockets": [],
+  "animations": {
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "scenario_n_dwarven_mine_cliff_a.png"
+  ]
+}

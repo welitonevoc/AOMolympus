@@ -1,0 +1,19 @@
+{
+  "unit": "caravan_atlantean",
+  "civ": "atlantean",
+  "category": "unidades",
+  "source_anim_txt": "caravan atlantean_anim.txt",
+  "base": "caravan_atlantean_base.glb",
+  "sockets": [
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "trade_x_caravan.png"
+  ]
+}

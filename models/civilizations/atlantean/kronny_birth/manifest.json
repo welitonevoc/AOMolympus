@@ -1,0 +1,13 @@
+{
+  "unit": "kronny_birth",
+  "civ": "atlantean",
+  "category": "unidades",
+  "source_anim_txt": "kronny birth_anim.txt",
+  "base": "kronny_birth_base.glb",
+  "sockets": [],
+  "animations": {
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {},
+  "textures": []
+}

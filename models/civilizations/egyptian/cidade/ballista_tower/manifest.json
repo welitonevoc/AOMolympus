@@ -1,0 +1,31 @@
+{
+  "unit": "ballista_tower",
+  "civ": "egyptian",
+  "category": "cidade",
+  "source_anim_txt": "ballista tower_anim.txt",
+  "base": "ballista_tower_base.glb",
+  "sockets": [
+    "NECK",
+    "HITPOINTBAR",
+    "FIRE_0",
+    "FIRE_1",
+    "FIRE_2",
+    "FIRE_3",
+    "FIRE_4"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {
+    "RIGHTEAR": "accessories/building_vineb.glb",
+    "RIGHTFOOT": "accessories/building_vinea.glb",
+    "RIGHTHAND": "accessories/building_vinea.glb",
+    "CHIN": "accessories/building_construction_e_small_brick.glb",
+    "ATTACHPOINT": "accessories/building_construction_e_long_brick.glb"
+  },
+  "textures": [
+    "building_e_outpost.png"
+  ]
+}

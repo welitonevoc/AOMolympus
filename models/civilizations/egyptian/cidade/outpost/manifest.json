@@ -1,0 +1,24 @@
+{
+  "unit": "outpost",
+  "civ": "egyptian",
+  "category": "cidade",
+  "source_anim_txt": "outpost_anim.txt",
+  "base": "outpost_base.glb",
+  "sockets": [
+    "NECK",
+    "HITPOINTBAR",
+    "FIRE_0",
+    "FIRE_1",
+    "FIRE_2",
+    "FIRE_3",
+    "FIRE_4"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "building_e_outpost.png"
+  ]
+}

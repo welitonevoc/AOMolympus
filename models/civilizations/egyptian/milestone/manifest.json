@@ -1,0 +1,15 @@
+{
+  "unit": "milestone",
+  "civ": "egyptian",
+  "category": "unidades",
+  "source_anim_txt": "milestone_anim.txt",
+  "base": "milestone_base.glb",
+  "sockets": [],
+  "animations": {
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "world_e_milestone.png"
+  ]
+}

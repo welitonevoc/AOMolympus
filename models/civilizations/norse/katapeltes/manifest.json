@@ -1,0 +1,29 @@
+{
+  "unit": "katapeltes",
+  "civ": "norse",
+  "category": "unidades",
+  "source_anim_txt": "katapeltes_anim.txt",
+  "base": "katapeltes_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "LEFTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "gather": "animations/gather.glb",
+    "walk": "animations/walk.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {
+    "LeftForearm": "accessories/attachments_n_shield_large_copper.glb",
+    "TopOfHead": "accessories/infantry_g_hypaspist_head_standard.glb"
+  },
+  "textures": [
+    "infantry_n_ulfsark_head_standard.png",
+    "infantry_n_ulfsark_standard.png"
+  ]
+}

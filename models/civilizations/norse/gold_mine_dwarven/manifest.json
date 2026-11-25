@@ -1,0 +1,15 @@
+{
+  "unit": "gold_mine_dwarven",
+  "civ": "norse",
+  "category": "unidades",
+  "source_anim_txt": "gold mine dwarven_anim.txt",
+  "base": "gold_mine_dwarven_base.glb",
+  "sockets": [],
+  "animations": {
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "sfx_n_dwarven_mine.png"
+  ]
+}

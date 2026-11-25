@@ -1,0 +1,35 @@
+{
+  "unit": "pharaoh",
+  "civ": "egyptian",
+  "category": "unidades",
+  "source_anim_txt": "pharaoh_anim.txt",
+  "base": "pharaoh_base.glb",
+  "sockets": [
+    "ATTACHPOINT",
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "gather": "animations/gather.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {
+    "RightHand": "accessories/attachments_e_scepter.glb"
+  },
+  "textures": [
+    "special_e_pharaoh.png",
+    "special_e_pharaoh_head.png"
+  ]
+}

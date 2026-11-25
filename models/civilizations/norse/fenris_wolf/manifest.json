@@ -1,0 +1,20 @@
+{
+  "unit": "fenris_wolf",
+  "civ": "norse",
+  "category": "unidades",
+  "source_anim_txt": "fenris wolf_anim.txt",
+  "base": "fenris_wolf_base.glb",
+  "sockets": [
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "special_n_fenris.png"
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "unit": "destroyed_buildings_med",
+  "civ": "egyptian",
+  "category": "cidade",
+  "source_anim_txt": "destroyed buildings med_anim.txt",
+  "base": "destroyed_buildings_med_base.glb",
+  "sockets": [],
+  "animations": {
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {
+    "righthand": "accessories/building_g_rubble4x4.glb"
+  },
+  "textures": [
+    "building_e_age2_accessories_burnt.png",
+    "building_e_age2_burnt.png"
+  ]
+}

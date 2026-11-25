@@ -1,0 +1,20 @@
+{
+  "unit": "titan_atlantean",
+  "civ": "atlantean",
+  "category": "unidades",
+  "source_anim_txt": "titan atlantean_anim.txt",
+  "base": "titan_atlantean_base.glb",
+  "sockets": [
+    "HITPOINTBAR",
+    "CORPSE"
+  ],
+  "animations": {
+    "death": "animations/death.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "titan_e_ra_map.png",
+    "titan_e_ra_pads_map.png",
+    "titan_e_ra_skirt_map.png"
+  ]
+}

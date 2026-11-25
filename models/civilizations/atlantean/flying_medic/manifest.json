@@ -1,0 +1,21 @@
+{
+  "unit": "flying_medic",
+  "civ": "atlantean",
+  "category": "unidades",
+  "source_anim_txt": "flying medic_anim.txt",
+  "base": "flying_medic_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "walk": "animations/walk.glb",
+    "idle": "animations/idle.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "mu_x_atlantean_flying_medic_map.png"
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "unit": "roc",
+  "civ": "egyptian",
+  "category": "unidades",
+  "source_anim_txt": "roc_anim.txt",
+  "base": "roc_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "HITPOINTBAR",
+    "GARRISONFLAG"
+  ],
+  "animations": {
+    "death": "animations/death.glb",
+    "walk": "animations/walk.glb",
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "special_e_roc.png",
+    "special_e_roc_basket.png"
+  ]
+}

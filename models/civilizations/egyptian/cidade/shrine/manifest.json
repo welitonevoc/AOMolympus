@@ -1,0 +1,23 @@
+{
+  "unit": "shrine",
+  "civ": "egyptian",
+  "category": "cidade",
+  "source_anim_txt": "shrine_anim.txt",
+  "base": "shrine_base.glb",
+  "sockets": [
+    "ATTACHPOINT",
+    "FACE",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {
+    "CHIN": "accessories/building_construction_e_small_brick.glb"
+  },
+  "textures": [
+    "building_e_age2.png",
+    "building_e_shrine.png"
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "unit": "wall_short",
+  "civ": "shared",
+  "category": "cidade",
+  "source_anim_txt": "wall short_anim.txt",
+  "base": "wall_short_base.glb",
+  "sockets": [
+    "HITPOINTBAR",
+    "FIRE_0",
+    "FIRE_1",
+    "FIRE_2"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "building_n_shared06_2_map.png"
+  ]
+}

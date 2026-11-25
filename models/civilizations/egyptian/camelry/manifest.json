@@ -1,0 +1,35 @@
+{
+  "unit": "camelry",
+  "civ": "egyptian",
+  "category": "unidades",
+  "source_anim_txt": "camelry_anim.txt",
+  "base": "camelry_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "death": "animations/death.glb",
+    "attack": "animations/attack.glb"
+  },
+  "accessories": {
+    "RightHand": "accessories/attachments_e_sword_standard.glb",
+    "LeftForearm": "accessories/attachments_e_shield_small_copper.glb"
+  },
+  "textures": [
+    "cavalry_e_camelry_camel_copper.png",
+    "cavalry_e_camelry_copper.png",
+    "cavalry_e_camelry_head_copper.png"
+  ]
+}

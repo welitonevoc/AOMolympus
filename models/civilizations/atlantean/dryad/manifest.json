@@ -1,0 +1,31 @@
+{
+  "unit": "dryad",
+  "civ": "atlantean",
+  "category": "unidades",
+  "source_anim_txt": "dryad_anim.txt",
+  "base": "dryad_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "death": "animations/death.glb",
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "attack": "animations/attack.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "mu_x_dryad.png",
+    "mu_x_dryad_hair.png"
+  ]
+}

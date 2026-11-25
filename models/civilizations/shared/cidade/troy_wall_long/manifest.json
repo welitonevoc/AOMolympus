@@ -1,0 +1,15 @@
+{
+  "unit": "troy_wall_long",
+  "civ": "shared",
+  "category": "cidade",
+  "source_anim_txt": "troy wall long_anim.txt",
+  "base": "troy_wall_long_base.glb",
+  "sockets": [],
+  "animations": {
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "scenario_t_troy_wall_long.png"
+  ]
+}

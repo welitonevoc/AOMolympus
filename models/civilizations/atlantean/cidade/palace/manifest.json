@@ -1,0 +1,56 @@
+{
+  "unit": "palace",
+  "civ": "atlantean",
+  "category": "cidade",
+  "source_anim_txt": "palace_anim.txt",
+  "base": "palace_base.glb",
+  "sockets": [
+    "FACE",
+    "CHIN",
+    "LEFTEAR",
+    "RIGHTEAR",
+    "NECK",
+    "RIGHTSHOULDER",
+    "LEFTTHIGH",
+    "RIGHTTHIGH",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR",
+    "GARRISONFLAG",
+    "GATHERPOINT",
+    "FIRE_0",
+    "FIRE_1",
+    "FIRE_2",
+    "FIRE_3",
+    "FIRE_4",
+    "FIRE_5",
+    "FIRE_6",
+    "FIRE_7",
+    "FIRE_8",
+    "FIRE_9",
+    "FIRE_10",
+    "FIRE_11"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {
+    "attachpoint": "accessories/building_construction_g_long_brick.glb",
+    "face": "accessories/building_construction_g_long_brick.glb",
+    "chin": "accessories/building_construction_g_medium_brick.glb",
+    "leftfoot": "accessories/building_construction_g_medium_brick.glb",
+    "lefthand": "accessories/building_construction_g_small_brick.glb",
+    "leftleg": "accessories/building_construction_g_small_brick.glb",
+    "Leftfoot": "accessories/terrain_g_cypressb.glb",
+    "Rightfoot": "accessories/terrain_g_cypressb.glb"
+  },
+  "textures": [
+    "building_attachments.png",
+    "building_x_palace_roof.png",
+    "building_x_roof_age2.png",
+    "building_x_temple_age2.png",
+    "building_x_wall_age2.png"
+  ]
+}

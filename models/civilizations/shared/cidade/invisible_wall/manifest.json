@@ -1,0 +1,20 @@
+{
+  "unit": "invisible_wall",
+  "civ": "shared",
+  "category": "cidade",
+  "source_anim_txt": "invisible wall_anim.txt",
+  "base": "invisible_wall_base.glb",
+  "sockets": [
+    "HITPOINTBAR",
+    "FIRE_0",
+    "FIRE_1",
+    "FIRE_2"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "building_n_shared06_2_map.png"
+  ]
+}

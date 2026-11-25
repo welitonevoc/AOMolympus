@@ -1,0 +1,15 @@
+{
+  "unit": "ruins",
+  "civ": "greek",
+  "category": "cidade",
+  "source_anim_txt": "ruins_anim.txt",
+  "base": "ruins_base.glb",
+  "sockets": [],
+  "animations": {
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "building_g_ruins.png"
+  ]
+}

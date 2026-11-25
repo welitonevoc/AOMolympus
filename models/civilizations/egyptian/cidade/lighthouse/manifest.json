@@ -1,0 +1,40 @@
+{
+  "unit": "lighthouse",
+  "civ": "egyptian",
+  "category": "cidade",
+  "source_anim_txt": "lighthouse_anim.txt",
+  "base": "lighthouse_base.glb",
+  "sockets": [
+    "ATTACHPOINT",
+    "FACE",
+    "NECK",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR",
+    "FIRE_0",
+    "FIRE_1",
+    "FIRE_2",
+    "FIRE_3",
+    "FIRE_4",
+    "FIRE_5",
+    "FIRE_6",
+    "FIRE_7",
+    "FIRE_8",
+    "FIRE_9"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {
+    "face": "accessories/building_construction_e_long_brick.glb",
+    "chin": "accessories/building_construction_e_medium_brick.glb",
+    "leftfoot": "accessories/building_construction_e_medium_brick.glb",
+    "lefthand": "accessories/building_construction_e_small_brick.glb",
+    "leftleg": "accessories/building_construction_e_small_brick.glb"
+  },
+  "textures": [
+    "building_e_lighthouse.png",
+    "building_e_lighthouse_fence.png"
+  ]
+}

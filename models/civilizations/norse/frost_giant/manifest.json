@@ -1,0 +1,32 @@
+{
+  "unit": "frost_giant",
+  "civ": "norse",
+  "category": "unidades",
+  "source_anim_txt": "frost giant_anim.txt",
+  "base": "frost_giant_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "death": "animations/death.glb",
+    "walk": "animations/walk.glb",
+    "attack": "animations/attack.glb"
+  },
+  "accessories": {
+    "TOPOFHEAD": "accessories/special_n_frost_giant_head.glb"
+  },
+  "textures": [
+    "special_n_frost_giant.png"
+  ]
+}

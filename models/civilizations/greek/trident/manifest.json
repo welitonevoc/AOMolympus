@@ -1,0 +1,15 @@
+{
+  "unit": "trident",
+  "civ": "greek",
+  "category": "unidades",
+  "source_anim_txt": "trident_anim.txt",
+  "base": "trident_base.glb",
+  "sockets": [],
+  "animations": {
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "cine_g_poseidon_trident.png"
+  ]
+}

@@ -1,0 +1,54 @@
+{
+  "unit": "hill_fort",
+  "civ": "norse",
+  "category": "cidade",
+  "source_anim_txt": "hill fort_anim.txt",
+  "base": "hill_fort_base.glb",
+  "sockets": [
+    "FACE",
+    "CHIN",
+    "LEFTEAR",
+    "RIGHTEAR",
+    "NECK",
+    "RIGHTSHOULDER",
+    "PELVIS",
+    "LEFTTHIGH",
+    "RIGHTTHIGH",
+    "RIGHTFOREARM",
+    "HITPOINTBAR",
+    "GARRISONFLAG",
+    "GATHERPOINT",
+    "FIRE_0",
+    "FIRE_1",
+    "FIRE_2",
+    "FIRE_3",
+    "FIRE_4",
+    "FIRE_5",
+    "FIRE_6",
+    "FIRE_7",
+    "FIRE_8",
+    "FIRE_9",
+    "LAUNCHPOINT"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {
+    "Rightfoot": "accessories/building_vineb.glb",
+    "Righthand": "accessories/building_vinea.glb",
+    "Rightleg": "accessories/building_vineb.glb",
+    "attachpoint": "accessories/building_construction_n_long_brick.glb",
+    "face": "accessories/building_construction_n_long_brick.glb",
+    "chin": "accessories/building_construction_n_medium_brick.glb",
+    "leftfoot": "accessories/building_construction_n_medium_brick.glb",
+    "lefthand": "accessories/building_construction_n_small_brick.glb",
+    "leftleg": "accessories/building_construction_n_small_brick.glb"
+  },
+  "textures": [
+    "building_attachments.png",
+    "building_n_hillfort.png",
+    "building_n_shared01_3_map.png"
+  ]
+}

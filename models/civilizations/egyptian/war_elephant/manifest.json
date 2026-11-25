@@ -1,0 +1,32 @@
+{
+  "unit": "war_elephant",
+  "civ": "egyptian",
+  "category": "unidades",
+  "source_anim_txt": "war elephant_anim.txt",
+  "base": "war_elephant_base.glb",
+  "sockets": [
+    "ATTACHPOINT",
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "CHIN",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "death": "animations/death.glb",
+    "attack": "animations/attack.glb",
+    "walk": "animations/walk.glb"
+  },
+  "accessories": {
+    "chin": "accessories/cavalry_e_war_elephant_tusks_standard.glb"
+  },
+  "textures": [
+    "cavalry_e_war_elephant_copper.png"
+  ]
+}

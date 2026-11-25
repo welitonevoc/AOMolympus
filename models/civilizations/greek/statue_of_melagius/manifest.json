@@ -1,0 +1,23 @@
+{
+  "unit": "statue_of_melagius",
+  "civ": "greek",
+  "category": "unidades",
+  "source_anim_txt": "statue of melagius_anim.txt",
+  "base": "statue_of_melagius_base.glb",
+  "sockets": [
+    "HITPOINTBAR",
+    "SMOKE0"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "general_body.png",
+    "general_head.png",
+    "general_shield.png",
+    "general_sword.png",
+    "world_g_statue_colossus_base.png"
+  ]
+}

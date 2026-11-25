@@ -1,0 +1,16 @@
+{
+  "unit": "snow_drift_minor_temple",
+  "civ": "shared",
+  "category": "cidade",
+  "source_anim_txt": "snow drift minor temple_anim.txt",
+  "base": "snow_drift_minor_temple_base.glb",
+  "sockets": [],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "sfx_n_frost_ice_block.png"
+  ]
+}

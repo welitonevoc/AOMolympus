@@ -1,0 +1,18 @@
+{
+  "unit": "torch",
+  "civ": "egyptian",
+  "category": "unidades",
+  "source_anim_txt": "torch_anim.txt",
+  "base": "torch_base.glb",
+  "sockets": [
+    "ATTACHPOINT",
+    "TOPOFHEAD"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "building_e_obelisk.png"
+  ]
+}

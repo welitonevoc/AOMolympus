@@ -1,0 +1,17 @@
+{
+  "unit": "javelin_flaming",
+  "civ": "atlantean",
+  "category": "unidades",
+  "source_anim_txt": "javelin flaming_anim.txt",
+  "base": "javelin_flaming_base.glb",
+  "sockets": [
+    "ATTACHPOINT"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "attachments_a_spear_iron.png"
+  ]
+}

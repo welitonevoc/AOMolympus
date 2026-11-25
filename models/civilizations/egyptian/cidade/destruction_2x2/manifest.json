@@ -1,0 +1,19 @@
+{
+  "unit": "destruction_2x2",
+  "civ": "egyptian",
+  "category": "cidade",
+  "source_anim_txt": "destruction 2x2_anim.txt",
+  "base": "destruction_2x2_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "RIGHTEAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "building_destruction_egypt.png"
+  ]
+}

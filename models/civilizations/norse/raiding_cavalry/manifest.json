@@ -1,0 +1,35 @@
+{
+  "unit": "raiding_cavalry",
+  "civ": "norse",
+  "category": "unidades",
+  "source_anim_txt": "raiding cavalry_anim.txt",
+  "base": "raiding_cavalry_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "death": "animations/death.glb",
+    "attack": "animations/attack.glb"
+  },
+  "accessories": {
+    "TopOfHead": "accessories/cavalry_n_raiding_cavalry_head_standard.glb",
+    "RightHand": "accessories/attachments_n_axe_throwing_standard.glb",
+    "LeftForearm": "accessories/attachments_n_shield_small_copper.glb"
+  },
+  "textures": [
+    "cavalry_n_raiding_cavalry_horse_standard.png",
+    "cavalry_n_raiding_cavalry_standard.png"
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "unit": "forkboy",
+  "civ": "atlantean",
+  "category": "unidades",
+  "source_anim_txt": "forkboy_anim.txt",
+  "base": "forkboy_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb",
+    "walk": "animations/walk.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "attachments_a_trident_map.png",
+    "forkboy_map.png"
+  ]
+}

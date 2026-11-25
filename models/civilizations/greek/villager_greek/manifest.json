@@ -1,0 +1,37 @@
+{
+  "unit": "villager_greek",
+  "civ": "greek",
+  "category": "unidades",
+  "source_anim_txt": "villager greek_anim.txt",
+  "base": "villager_greek_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "gather": "animations/gather.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb",
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb"
+  },
+  "accessories": {
+    "RightHand": "accessories/attachments_a_axe_hatchet.glb",
+    "LeftHand": "accessories/attachments_a_bow.glb",
+    "ATTACHPOINT": "accessories/attachments_a_resource_grain.glb",
+    "Attachpoint": "accessories/attachments_a_basket.glb"
+  },
+  "textures": [
+    "villager_g_male_head.png",
+    "villager_g_male_standard.png"
+  ]
+}

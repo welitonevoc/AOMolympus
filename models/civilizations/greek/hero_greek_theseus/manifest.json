@@ -1,0 +1,34 @@
+{
+  "unit": "hero_greek_theseus",
+  "civ": "greek",
+  "category": "unidades",
+  "source_anim_txt": "hero greek theseus_anim.txt",
+  "base": "hero_greek_theseus_base.glb",
+  "sockets": [
+    "ATTACHPOINT",
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb",
+    "walk": "animations/walk.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "attachments_g_sword_iron.png",
+    "hero_g_theseus.png",
+    "hero_g_theseus_head_standard.png",
+    "hero_g_theseus_shield.png"
+  ]
+}

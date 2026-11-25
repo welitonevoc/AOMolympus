@@ -1,0 +1,30 @@
+{
+  "unit": "javelin_cavalry_hero",
+  "civ": "atlantean",
+  "category": "unidades",
+  "source_anim_txt": "javelin cavalry hero_anim.txt",
+  "base": "javelin_cavalry_hero_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTABDOMEN",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "death": "animations/death.glb",
+    "attack": "animations/attack.glb"
+  },
+  "accessories": {
+    "TopOfHead": "accessories/cavalry_x_javelin_head_hero.glb"
+  },
+  "textures": [
+    "attachments_a_spear_iron.png",
+    "cavalry_x_javelin_horse_iron.png",
+    "cavalry_x_javelin_iron.png"
+  ]
+}

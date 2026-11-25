@@ -1,0 +1,19 @@
+{
+  "unit": "raven",
+  "civ": "norse",
+  "category": "unidades",
+  "source_anim_txt": "raven_anim.txt",
+  "base": "raven_base.glb",
+  "sockets": [
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "walk": "animations/walk.glb",
+    "idle": "animations/idle.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "special_n_raven.png"
+  ]
+}

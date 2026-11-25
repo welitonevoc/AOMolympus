@@ -1,0 +1,17 @@
+{
+  "unit": "catapult_shot",
+  "civ": "egyptian",
+  "category": "unidades",
+  "source_anim_txt": "catapult shot_anim.txt",
+  "base": "catapult_shot_base.glb",
+  "sockets": [
+    "FIRE"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "siege_e_catapult_projectile.png"
+  ]
+}

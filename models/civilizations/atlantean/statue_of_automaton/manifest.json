@@ -1,0 +1,17 @@
+{
+  "unit": "statue_of_automaton",
+  "civ": "atlantean",
+  "category": "unidades",
+  "source_anim_txt": "statue of automaton_anim.txt",
+  "base": "statue_of_automaton_base.glb",
+  "sockets": [
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "mu_x_automation_map.png"
+  ]
+}

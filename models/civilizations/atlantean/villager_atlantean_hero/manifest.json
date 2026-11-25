@@ -1,0 +1,36 @@
+{
+  "unit": "villager_atlantean_hero",
+  "civ": "atlantean",
+  "category": "unidades",
+  "source_anim_txt": "villager atlantean hero_anim.txt",
+  "base": "villager_atlantean_hero_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "gather": "animations/gather.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb",
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb"
+  },
+  "accessories": {
+    "RightHand": "accessories/attachments_a_axe_hatchet.glb",
+    "LeftHand": "accessories/attachments_a_bow.glb"
+  },
+  "textures": [
+    "villager_x_crate_empty.png",
+    "villager_x_male.png",
+    "villager_x_pony.png"
+  ]
+}

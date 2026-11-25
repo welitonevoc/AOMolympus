@@ -1,0 +1,19 @@
+{
+  "unit": "sentinel_base",
+  "civ": "greek",
+  "category": "unidades",
+  "source_anim_txt": "sentinel base_anim.txt",
+  "base": "sentinel_base_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "sfx_g_sentinel.png"
+  ]
+}

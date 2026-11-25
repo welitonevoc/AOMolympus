@@ -1,0 +1,22 @@
+{
+  "unit": "heka_gigantes",
+  "civ": "atlantean",
+  "category": "unidades",
+  "source_anim_txt": "heka gigantes_anim.txt",
+  "base": "heka_gigantes_base.glb",
+  "sockets": [
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "death": "animations/death.glb",
+    "walk": "animations/walk.glb",
+    "attack": "animations/attack.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "mu_x_atlantean_hundred_giant_map.png"
+  ]
+}

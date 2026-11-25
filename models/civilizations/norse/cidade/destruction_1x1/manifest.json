@@ -1,0 +1,17 @@
+{
+  "unit": "destruction_1x1",
+  "civ": "norse",
+  "category": "cidade",
+  "source_anim_txt": "destruction 1x1_anim.txt",
+  "base": "destruction_1x1_base.glb",
+  "sockets": [
+    "LEFTHAND"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "building_destruction_norse.png"
+  ]
+}

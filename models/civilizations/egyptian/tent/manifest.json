@@ -1,0 +1,16 @@
+{
+  "unit": "tent",
+  "civ": "egyptian",
+  "category": "unidades",
+  "source_anim_txt": "tent_anim.txt",
+  "base": "tent_base.glb",
+  "sockets": [],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "world_e_tent.png"
+  ]
+}

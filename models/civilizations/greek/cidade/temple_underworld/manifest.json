@@ -1,0 +1,23 @@
+{
+  "unit": "temple_underworld",
+  "civ": "greek",
+  "category": "cidade",
+  "source_anim_txt": "temple underworld_anim.txt",
+  "base": "temple_underworld_base.glb",
+  "sockets": [
+    "RIGHTHAND",
+    "LEFTEAR",
+    "RIGHTEAR",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {
+    "righthand": "accessories/world_e_statue_isis.glb"
+  },
+  "textures": [
+    "world_g_hades_temple.png"
+  ]
+}

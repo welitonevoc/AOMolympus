@@ -1,0 +1,33 @@
+{
+  "unit": "female",
+  "civ": "norse",
+  "category": "unidades",
+  "source_anim_txt": "female_anim.txt",
+  "base": "female_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb",
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb"
+  },
+  "accessories": {
+    "TopofHead": "accessories/villager_n_female_head.glb"
+  },
+  "textures": [
+    "villager_n_female.png",
+    "villager_n_female_head.png"
+  ]
+}

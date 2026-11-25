@@ -1,0 +1,34 @@
+{
+  "unit": "odysseus",
+  "civ": "greek",
+  "category": "unidades",
+  "source_anim_txt": "odysseus_anim.txt",
+  "base": "odysseus_base.glb",
+  "sockets": [
+    "ATTACHPOINT",
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb",
+    "walk": "animations/walk.glb"
+  },
+  "accessories": {
+    "RightHand": "accessories/attachments_a_bow.glb",
+    "LeftHand": "accessories/attachments_a_arrow.glb"
+  },
+  "textures": [
+    "scenario_g_odysseus_map.png"
+  ]
+}

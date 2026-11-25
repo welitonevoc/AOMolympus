@@ -1,0 +1,58 @@
+{
+  "unit": "wonder",
+  "civ": "egyptian",
+  "category": "cidade",
+  "source_anim_txt": "wonder_anim.txt",
+  "base": "wonder_base.glb",
+  "sockets": [
+    "HITPOINTBAR",
+    "FIRE_0",
+    "FIRE_1",
+    "FIRE_2",
+    "FIRE_3",
+    "FIRE_4",
+    "FIRE_5",
+    "FIRE_6",
+    "FIRE_7",
+    "FIRE_8",
+    "FIRE_9"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {
+    "Leftear": "accessories/terrain_g_cypressa.glb",
+    "Neck": "accessories/terrain_g_cypressb.glb",
+    "Leftleg": "accessories/terrain_g_cypressb.glb",
+    "Leftthigh": "accessories/building_vineb.glb",
+    "Rightear": "accessories/terrain_g_cypressa.glb",
+    "Face": "accessories/terrain_g_cypressb.glb",
+    "Rightleg": "accessories/terrain_g_cypressb.glb",
+    "Rightthigh": "accessories/building_vineb.glb",
+    "Rightforearm": "accessories/building_vineb.glb",
+    "Righthand": "accessories/building_vinea.glb",
+    "BackChest": "accessories/world_a_flowers_e.glb",
+    "Backabdomen": "accessories/world_a_flowers_b.glb",
+    "TopofHead": "accessories/world_a_flowers_e.glb",
+    "Pelvis": "accessories/world_a_flowers_b.glb",
+    "Forehead": "accessories/world_a_flowers_e.glb",
+    "RightShoulder": "accessories/world_a_flowers_b.glb",
+    "FRONTABDOMEN": "accessories/world_a_flowers_e.glb",
+    "LEFTFOREARM": "accessories/world_a_flowers_b.glb",
+    "Leftshoulder": "accessories/terrain_g_cypressb.glb",
+    "Leftfoot": "accessories/terrain_g_cypressb.glb",
+    "Lefthand": "accessories/terrain_g_cypressa.glb",
+    "Rightshoulder": "accessories/terrain_g_cypressa.glb",
+    "Rightfoot": "accessories/terrain_g_cypressa.glb",
+    "Topofhead": "accessories/terrain_g_cypressa.glb",
+    "Backchest": "accessories/terrain_g_cypressa.glb",
+    "BACKABDOMEN": "accessories/terrain_g_cypressa.glb",
+    "FOREHEAD": "accessories/terrain_g_cypressa.glb"
+  },
+  "textures": [
+    "building_e_isis_wonder01.png",
+    "building_e_isis_wonder02.png",
+    "building_e_isis_wonder03.png"
+  ]
+}

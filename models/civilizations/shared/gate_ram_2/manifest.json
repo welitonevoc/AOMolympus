@@ -1,0 +1,44 @@
+{
+  "unit": "gate_ram_2",
+  "civ": "shared",
+  "category": "unidades",
+  "source_anim_txt": "gate ram 2_anim.txt",
+  "base": "gate_ram_2_base.glb",
+  "sockets": [
+    "LEFTHAND_0",
+    "LEFTHAND_1",
+    "RIGHTHAND_0",
+    "RIGHTHAND_1",
+    "TOPOFHEAD_0",
+    "TOPOFHEAD_1",
+    "CHIN",
+    "FRONTCHEST_0",
+    "FRONTCHEST_1",
+    "BACKCHEST_0",
+    "BACKCHEST_1",
+    "FRONTABDOMEN_0",
+    "FRONTABDOMEN_1",
+    "LEFTFOOT_0",
+    "LEFTFOOT_1",
+    "RIGHTFOOT_0",
+    "RIGHTFOOT_1",
+    "LEFTFOREARM_0",
+    "LEFTFOREARM_1",
+    "RIGHTFOREARM_0",
+    "RIGHTFOREARM_1",
+    "HITPOINTBAR",
+    "SMOKE1",
+    "SMOKE2",
+    "SMOKE3"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "scenario_a_gate_ram.png",
+    "scenario_a_gate_ram_wall.png"
+  ]
+}

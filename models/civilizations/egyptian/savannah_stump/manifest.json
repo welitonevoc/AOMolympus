@@ -1,0 +1,17 @@
+{
+  "unit": "savannah_stump",
+  "civ": "egyptian",
+  "category": "unidades",
+  "source_anim_txt": "savannah stump_anim.txt",
+  "base": "savannah_stump_base.glb",
+  "sockets": [
+    "ATTACHPOINT"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "world_g_oak_mapb.png"
+  ]
+}

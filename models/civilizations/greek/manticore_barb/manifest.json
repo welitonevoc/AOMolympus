@@ -1,0 +1,17 @@
+{
+  "unit": "manticore_barb",
+  "civ": "greek",
+  "category": "unidades",
+  "source_anim_txt": "manticore barb_anim.txt",
+  "base": "manticore_barb_base.glb",
+  "sockets": [
+    "ATTACHPOINT"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "special_g_manticore_barbs.png"
+  ]
+}

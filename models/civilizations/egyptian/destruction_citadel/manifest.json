@@ -1,0 +1,32 @@
+{
+  "unit": "destruction_citadel",
+  "civ": "egyptian",
+  "category": "unidades",
+  "source_anim_txt": "destruction citadel_anim.txt",
+  "base": "destruction_citadel_base.glb",
+  "sockets": [
+    "ATTACHPOINT",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "FIRE_0",
+    "FIRE_1",
+    "FIRE_2",
+    "FIRE_3",
+    "FIRE_4",
+    "FIRE_5",
+    "FIRE_6",
+    "FIRE_7",
+    "FIRE_8",
+    "FIRE_9"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {
+    "LEFTFOOT": "accessories/world_e_statue_isis.glb",
+    "RIGHTFOOT": "accessories/world_e_statue_isis.glb"
+  },
+  "textures": [
+    "sfx_e_citadel.png"
+  ]
+}

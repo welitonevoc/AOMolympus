@@ -1,0 +1,13 @@
+{
+  "unit": "osiris_box_glow",
+  "civ": "egyptian",
+  "category": "unidades",
+  "source_anim_txt": "osiris box glow_anim.txt",
+  "base": "osiris_box_glow_base.glb",
+  "sockets": [],
+  "animations": {
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {},
+  "textures": []
+}

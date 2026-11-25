@@ -1,0 +1,26 @@
+{
+  "unit": "thor_hammer_head",
+  "civ": "norse",
+  "category": "unidades",
+  "source_anim_txt": "thor hammer head_anim.txt",
+  "base": "thor_hammer_head_base.glb",
+  "sockets": [
+    "TOPOFHEAD",
+    "LEFTSHOULDER",
+    "PELVIS",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {
+    "leftshoulder": "accessories/attachments_n_oxcart_wheel.glb"
+  },
+  "textures": [
+    "scenario_n_thors_hammer.png",
+    "scenario_n_thors_hammer_cart.png",
+    "trade_n_caravan_ox.png"
+  ]
+}

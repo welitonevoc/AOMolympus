@@ -1,0 +1,15 @@
+{
+  "unit": "invisible_gate",
+  "civ": "shared",
+  "category": "unidades",
+  "source_anim_txt": "invisible gate_anim.txt",
+  "base": "invisible_gate_base.glb",
+  "sockets": [],
+  "animations": {
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "world_a_rocks_map.png"
+  ]
+}

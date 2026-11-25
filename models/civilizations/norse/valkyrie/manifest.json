@@ -1,0 +1,31 @@
+{
+  "unit": "valkyrie",
+  "civ": "norse",
+  "category": "unidades",
+  "source_anim_txt": "valkyrie_anim.txt",
+  "base": "valkyrie_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb",
+    "walk": "animations/walk.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "special_n_valkyrie_horse_map.png",
+    "special_n_valkyrie_map.png"
+  ]
+}

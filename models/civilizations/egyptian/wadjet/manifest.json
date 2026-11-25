@@ -1,0 +1,20 @@
+{
+  "unit": "wadjet",
+  "civ": "egyptian",
+  "category": "unidades",
+  "source_anim_txt": "wadjet_anim.txt",
+  "base": "wadjet_base.glb",
+  "sockets": [
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "death": "animations/death.glb",
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "attack": "animations/attack.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "special_e_wadjet.png"
+  ]
+}

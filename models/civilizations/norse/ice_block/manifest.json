@@ -1,0 +1,19 @@
+{
+  "unit": "ice_block",
+  "civ": "norse",
+  "category": "unidades",
+  "source_anim_txt": "ice block_anim.txt",
+  "base": "ice_block_base.glb",
+  "sockets": [
+    "ATTACHPOINT",
+    "TOPOFHEAD"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "sfx_n_frost_ice_block.png"
+  ]
+}

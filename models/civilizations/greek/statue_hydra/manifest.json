@@ -1,0 +1,18 @@
+{
+  "unit": "statue_hydra",
+  "civ": "greek",
+  "category": "unidades",
+  "source_anim_txt": "statue hydra_anim.txt",
+  "base": "statue_hydra_base.glb",
+  "sockets": [
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "special_g_hydra_statue.png",
+    "world_g_statue_base.png"
+  ]
+}

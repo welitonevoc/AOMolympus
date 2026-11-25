@@ -1,0 +1,21 @@
+{
+  "unit": "tartarian_gate_placement",
+  "civ": "atlantean",
+  "category": "unidades",
+  "source_anim_txt": "tartarian gate placement_anim.txt",
+  "base": "tartarian_gate_placement_base.glb",
+  "sockets": [
+    "ATTACHPOINT",
+    "LEFTHAND",
+    "RIGHTHAND",
+    "FACE"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "gp_x_tartarian_gate.png",
+    "gp_x_tartarian_gate_hole.png"
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "unit": "kastor",
+  "civ": "greek",
+  "category": "unidades",
+  "source_anim_txt": "kastor_anim.txt",
+  "base": "kastor_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb",
+    "walk": "animations/walk.glb"
+  },
+  "accessories": {
+    "RightHand": "accessories/attachments_g_sword_standard.glb"
+  },
+  "textures": [
+    "lp_g_myrmidon.png",
+    "scenario_g_kastor_map.png"
+  ]
+}

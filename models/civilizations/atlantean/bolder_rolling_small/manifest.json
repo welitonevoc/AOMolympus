@@ -1,0 +1,20 @@
+{
+  "unit": "bolder_rolling_small",
+  "civ": "atlantean",
+  "category": "unidades",
+  "source_anim_txt": "bolder rolling small_anim.txt",
+  "base": "bolder_rolling_small_base.glb",
+  "sockets": [
+    "ATTACHPOINT",
+    "BACKABDOMEN"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "death": "animations/death.glb",
+    "walk": "animations/walk.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "world_a_rocks_underworld.png"
+  ]
+}

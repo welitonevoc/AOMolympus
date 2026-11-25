@@ -1,0 +1,28 @@
+{
+  "unit": "misc_stairs",
+  "civ": "greek",
+  "category": "cidade",
+  "source_anim_txt": "misc stairs_anim.txt",
+  "base": "misc_stairs_base.glb",
+  "sockets": [
+    "FOREHEAD",
+    "FACE",
+    "CHIN",
+    "LEFTEAR",
+    "RIGHTEAR",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "LEFTLEG",
+    "RIGHTLEG",
+    "LEFTFOOT",
+    "RIGHTFOOT"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "world_g_zuesstairs.png"
+  ]
+}

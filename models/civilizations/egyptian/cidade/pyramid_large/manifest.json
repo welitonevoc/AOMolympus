@@ -1,0 +1,20 @@
+{
+  "unit": "pyramid_large",
+  "civ": "egyptian",
+  "category": "cidade",
+  "source_anim_txt": "pyramid large_anim.txt",
+  "base": "pyramid_large_base.glb",
+  "sockets": [
+    "LEFTEAR",
+    "RIGHTEAR",
+    "LEFTFOOT",
+    "RIGHTFOOT"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "building_e_osiris_pyramid.png"
+  ]
+}

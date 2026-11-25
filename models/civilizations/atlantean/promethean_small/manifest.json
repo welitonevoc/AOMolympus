@@ -1,0 +1,22 @@
+{
+  "unit": "promethean_small",
+  "civ": "atlantean",
+  "category": "unidades",
+  "source_anim_txt": "promethean small_anim.txt",
+  "base": "promethean_small_base.glb",
+  "sockets": [
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "death": "animations/death.glb",
+    "attack": "animations/attack.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "mu_x_promethean_map.png"
+  ]
+}

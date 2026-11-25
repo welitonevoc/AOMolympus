@@ -1,0 +1,36 @@
+{
+  "unit": "hetairoi",
+  "civ": "greek",
+  "category": "unidades",
+  "source_anim_txt": "hetairoi_anim.txt",
+  "base": "hetairoi_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "death": "animations/death.glb",
+    "attack": "animations/attack.glb"
+  },
+  "accessories": {
+    "RightHand": "accessories/attachments_g_sword_standard.glb",
+    "LeftForearm": "accessories/attachments_g_shield_small_copper.glb"
+  },
+  "textures": [
+    "cavalry_g_hetairoi_cape.png",
+    "cavalry_g_hetairoi_head_iron.png",
+    "cavalry_g_hetairoi_horse_iron.png",
+    "cavalry_g_hetairoi_iron.png"
+  ]
+}

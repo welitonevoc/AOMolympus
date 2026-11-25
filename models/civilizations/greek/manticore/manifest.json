@@ -1,0 +1,21 @@
+{
+  "unit": "manticore",
+  "civ": "greek",
+  "category": "unidades",
+  "source_anim_txt": "manticore_anim.txt",
+  "base": "manticore_base.glb",
+  "sockets": [
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "attack": "animations/attack.glb",
+    "walk": "animations/walk.glb",
+    "idle": "animations/idle.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "special_g_manticore.png",
+    "special_g_manticore_wing.png"
+  ]
+}

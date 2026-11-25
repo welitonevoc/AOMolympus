@@ -1,0 +1,31 @@
+{
+  "unit": "titan",
+  "civ": "norse",
+  "category": "unidades",
+  "source_anim_txt": "titan_anim.txt",
+  "base": "titan_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "death": "animations/death.glb",
+    "attack": "animations/attack.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "special_n_giant.png",
+    "special_n_giant_head.png",
+    "special_n_giant_map.png"
+  ]
+}

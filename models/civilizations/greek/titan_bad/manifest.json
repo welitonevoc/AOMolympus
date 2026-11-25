@@ -1,0 +1,19 @@
+{
+  "unit": "titan_bad",
+  "civ": "greek",
+  "category": "unidades",
+  "source_anim_txt": "titan bad_anim.txt",
+  "base": "titan_bad_base.glb",
+  "sockets": [],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "death": "animations/death.glb",
+    "walk": "animations/walk.glb",
+    "attack": "animations/attack.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "cine_g_poseidon_trident.png",
+    "world_g_statue_poseidon.png"
+  ]
+}

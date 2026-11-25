@@ -1,0 +1,20 @@
+{
+  "unit": "hydra",
+  "civ": "greek",
+  "category": "unidades",
+  "source_anim_txt": "hydra_anim.txt",
+  "base": "hydra_base.glb",
+  "sockets": [
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "attack": "animations/attack.glb",
+    "walk": "animations/walk.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "special_g_hydra_land.png"
+  ]
+}

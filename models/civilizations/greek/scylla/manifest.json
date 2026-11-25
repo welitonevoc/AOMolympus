@@ -1,0 +1,20 @@
+{
+  "unit": "scylla",
+  "civ": "greek",
+  "category": "unidades",
+  "source_anim_txt": "scylla_anim.txt",
+  "base": "scylla_base.glb",
+  "sockets": [
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "attack": "animations/attack.glb",
+    "walk": "animations/walk.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "special_g_scylla.png"
+  ]
+}

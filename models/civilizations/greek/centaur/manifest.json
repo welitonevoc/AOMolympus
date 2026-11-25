@@ -1,0 +1,34 @@
+{
+  "unit": "centaur",
+  "civ": "greek",
+  "category": "unidades",
+  "source_anim_txt": "centaur_anim.txt",
+  "base": "centaur_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "RIGHTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "death": "animations/death.glb",
+    "walk": "animations/walk.glb",
+    "attack": "animations/attack.glb"
+  },
+  "accessories": {
+    "TOPOFHEAD": "accessories/special_g_centaur_head_standard.glb",
+    "righthand": "accessories/attachments_a_handarrow.glb"
+  },
+  "textures": [
+    "attachments_a_bow_copper.png",
+    "attachments_a_quiver.png",
+    "special_g_centaur.png"
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "unit": "folstag_flag",
+  "civ": "norse",
+  "category": "unidades",
+  "source_anim_txt": "folstag flag_anim.txt",
+  "base": "folstag_flag_base.glb",
+  "sockets": [],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "scenario_n_folstag_flag.png"
+  ]
+}

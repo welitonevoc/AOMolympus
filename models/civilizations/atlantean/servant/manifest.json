@@ -1,0 +1,23 @@
+{
+  "unit": "servant",
+  "civ": "atlantean",
+  "category": "unidades",
+  "source_anim_txt": "servant_anim.txt",
+  "base": "servant_base.glb",
+  "sockets": [
+    "ATTACHPOINT",
+    "LEFTHAND",
+    "RIGHTHAND",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "attack": "animations/attack.glb",
+    "walk": "animations/walk.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "mu_x_servant_of_oceanus_map.png"
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "unit": "lancer_hero",
+  "civ": "atlantean",
+  "category": "unidades",
+  "source_anim_txt": "lancer hero_anim.txt",
+  "base": "lancer_hero_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTABDOMEN",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "death": "animations/death.glb",
+    "attack": "animations/attack.glb"
+  },
+  "accessories": {
+    "TopOfHead": "accessories/cavalry_x_lancer_head_hero.glb",
+    "LeftForearm": "accessories/attachments_x_shield_small_iron.glb",
+    "RIGHTHAND": "accessories/attachments_x_lance_standard.glb"
+  },
+  "textures": [
+    "cavalry_x_lancer_cape_iron.png",
+    "cavalry_x_lancer_horse_iron.png",
+    "cavalry_x_lancer_iron.png"
+  ]
+}
