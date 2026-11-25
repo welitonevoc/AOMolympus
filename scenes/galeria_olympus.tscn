@@ -16,9 +16,11 @@ margin_bottom = 0.0
 script = ExtResource("1")
 
 [node name="Stage3D" type="Node3D" parent="."]
+unique_name_in_owner = "%Stage3D"
 script = ExtResource("2")
 
 [node name="SubViewport" type="SubViewport" parent="Stage3D"]
+unique_name_in_owner = "%SubViewport"
 size = Vector2(1280, 720)
 usage = 2
 own_world = true
@@ -29,6 +31,7 @@ size_flags_horizontal = 3
 size_flags_vertical = 3
 
 [node name="Camera3D" type="Camera3D" parent="SubViewport"]
+unique_name_in_owner = "%Camera3D"
 position = Vector3(0.0, 2.0, -8.0)
 rotation_degrees = Vector3(0.0, 0.0, 0.0)
 fov = 50.0
@@ -36,9 +39,10 @@ near = 0.1
 far = 500.0
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="SubViewport"]
+unique_name_in_owner = "%DirectionalLight3D"
 direction = Vector3(-0.6, -1.0, -0.4)
 light_energy = 2.8
-light_color = Color(1, 0.95, 0.88)
+light_color = Color(1, 0.95, 0.88, 1)
 shadow_enabled = true
 shadow_max_distance = 50.0
 shadow_normal_bias = 0.3
@@ -59,6 +63,7 @@ position = Vector3(0.0, -0.01, 0.0)
 script = ExtResource("3")
 
 [node name="FilterBar" type="Control" parent="."]
+unique_name_in_owner = "%FilterBar"
 anchors_preset = 1
 anchor_left = 1.0
 offset_left = -320.0
@@ -69,6 +74,7 @@ script = ExtResource("4")
 custom_styles/min_width = 320
 
 [node name="DetailPanel" type="Control" parent="."]
+unique_name_in_owner = "%DetailPanel"
 anchors_preset = 8
 anchor_right = 1.0
 offset_right = -10.0
@@ -87,31 +93,36 @@ size_flags_vertical = 3
 horizontal_scroll_mode = 0
 
 [node name="PanelOverlay" type="Control" parent="."]
+unique_name_in_owner = "%PanelOverlay"
 visible = false
 anchors_preset = 7
 
 [node name="LblLoading" type="Label" parent="PanelOverlay"]
+unique_name_in_owner = "%LblLoading"
 anchors_preset = 7
 text = "Carregando modelo 3D com esqueleto e animações..."
 custom_styles/font_size = 24
-custom_styles/font_color = Color(1, 1, 1)
+custom_styles/font_color = Color(1, 1, 1, 1)
 custom_styles/font_color_shadow = Color(0, 0, 0, 1)
 custom_styles/font_color_shadow_as_outline = true
 custom_styles/font_color_shadow_outline_size = 1
 
 [node name="PanelSemModelo" type="Control" parent="."]
+unique_name_in_owner = "%PanelSemModelo"
 visible = false
 anchors_preset = 7
 
 [node name="LblSemModelo" type="Label" parent="PanelSemModelo"]
+unique_name_in_owner = "%LblSemModelo"
 anchors_preset = 7
 text = "Modelo 3D não encontrado\nExporte este modelo como .glb\nna pasta models/civilizations/."
 custom_styles/font_size = 20
-custom_styles/font_color = Color(0.8, 0.8, 0.8)
+custom_styles/font_color = Color(0.8, 0.8, 0.8, 1)
 custom_styles/align = 1
 custom_styles/valign = 1
 
 [node name="BtnVoltar" type="Button" parent="."]
+unique_name_in_owner = "%BtnVoltar"
 anchors_preset = 9
 anchor_left = 1.0
 anchor_bottom = 1.0

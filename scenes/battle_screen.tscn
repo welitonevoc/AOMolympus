@@ -50,7 +50,7 @@ custom_styles/style_bg = { "color": Color(0.1, 0.1, 0.15, 0.85), "bg_color": Col
 [node name="FoodLabel" type="Label" parent="PanelResources"]
 text = "🌾 350"
 custom_styles/font_size = 20
-custom_styles/font_color = Color(0.87, 0.15, 0.15)
+custom_styles/font_color = Color(0.87, 0.15, 0.15, 1)
 custom_styles/font_color_shadow = Color(0, 0, 0, 1)
 custom_styles/font_color_shadow_as_outline = true
 custom_styles/font_color_shadow_outline_size = 1
@@ -58,7 +58,7 @@ custom_styles/font_color_shadow_outline_size = 1
 [node name="WoodLabel" type="Label" parent="PanelResources"]
 text = "🪵 300"
 custom_styles/font_size = 20
-custom_styles/font_color = Color(0.55, 0.35, 0.17)
+custom_styles/font_color = Color(0.55, 0.35, 0.17, 1)
 custom_styles/font_color_shadow = Color(0, 0, 0, 1)
 custom_styles/font_color_shadow_as_outline = true
 custom_styles/font_color_shadow_outline_size = 1
@@ -66,7 +66,7 @@ custom_styles/font_color_shadow_outline_size = 1
 [node name="GoldLabel" type="Label" parent="PanelResources"]
 text = "🪙 250"
 custom_styles/font_size = 20
-custom_styles/font_color = Color(0.98, 0.80, 0.08)
+custom_styles/font_color = Color(0.98, 0.80, 0.08, 1)
 custom_styles/font_color_shadow = Color(0, 0, 0, 1)
 custom_styles/font_color_shadow_as_outline = true
 custom_styles/font_color_shadow_outline_size = 1
@@ -74,7 +74,7 @@ custom_styles/font_color_shadow_outline_size = 1
 [node name="FavorLabel" type="Label" parent="PanelResources"]
 text = "✨ 20"
 custom_styles/font_size = 20
-custom_styles/font_color = Color(0.65, 0.55, 0.98)
+custom_styles/font_color = Color(0.65, 0.55, 0.98, 1)
 custom_styles/font_color_shadow = Color(0, 0, 0, 1)
 custom_styles/font_color_shadow_as_outline = true
 custom_styles/font_color_shadow_outline_size = 1
@@ -92,7 +92,7 @@ custom_styles/style_bg = { "color": Color(0.1, 0.1, 0.15, 0.85), "bg_color": Col
 [node name="PopulationLabel" type="Label" parent="PanelBottom"]
 text = "👥 0/15"
 custom_styles/font_size = 18
-custom_styles/font_color = Color(1, 1, 1)
+custom_styles/font_color = Color(1, 1, 1, 1)
 custom_styles/font_color_shadow = Color(0, 0, 0, 1)
 custom_styles/font_color_shadow_as_outline = true
 custom_styles/font_color_shadow_outline_size = 1
@@ -100,7 +100,7 @@ custom_styles/font_color_shadow_outline_size = 1
 [node name="AgeLabel" type="Label" parent="PanelBottom"]
 text = "🏛️ Era Arcaica (I)"
 custom_styles/font_size = 18
-custom_styles/font_color = Color(0.13, 0.83, 0.93)
+custom_styles/font_color = Color(0.13, 0.83, 0.93, 1)
 custom_styles/font_color_shadow = Color(0, 0, 0, 1)
 custom_styles/font_color_shadow_as_outline = true
 custom_styles/font_color_shadow_outline_size = 1
@@ -108,7 +108,7 @@ custom_styles/font_color_shadow_outline_size = 1
 [node name="MatchTimeLabel" type="Label" parent="PanelBottom"]
 text = "00:00"
 custom_styles/font_size = 18
-custom_styles/font_color = Color(1, 1, 1)
+custom_styles/font_color = Color(1, 1, 1, 1)
 custom_styles/font_color_shadow = Color(0, 0, 0, 1)
 custom_styles/font_color_shadow_as_outline = true
 custom_styles/font_color_shadow_outline_size = 1
@@ -144,7 +144,7 @@ custom_styles/min_height = 40
 [node name="UnitNameLabel" type="Label" parent="UnitInfoPanel"]
 text = "Nenhuma seleção"
 custom_styles/font_size = 16
-custom_styles/font_color = Color(1, 1, 1)
+custom_styles/font_color = Color(1, 1, 1, 1)
 custom_styles/font_color_shadow = Color(0, 0, 0, 1)
 custom_styles/font_color_shadow_as_outline = true
 custom_styles/font_color_shadow_outline_size = 1
@@ -152,7 +152,7 @@ custom_styles/font_color_shadow_outline_size = 1
 [node name="UnitStatusLabel" type="Label" parent="UnitInfoPanel"]
 text = ""
 custom_styles/font_size = 14
-custom_styles/font_color = Color(0.8, 0.8, 0.8)
+custom_styles/font_color = Color(0.8, 0.8, 0.8, 1)
 custom_styles/font_color_shadow = Color(0, 0, 0, 1)
 custom_styles/font_color_shadow_as_outline = true
 custom_styles/font_color_shadow_outline_size = 1
@@ -232,7 +232,7 @@ custom_styles/style_bg = { "color": Color(0, 0, 0, 0.7), "bg_color": Color(0, 0,
 anchor_preset = 7
 text = "VITÓRIA!"
 custom_styles/font_size = 48
-custom_styles/font_color = Color(0.2, 1, 0.2)
+custom_styles/font_color = Color(0.2, 1, 0.2, 1)
 custom_styles/font_color_shadow = Color(0, 0, 0, 1)
 custom_styles/font_color_shadow_as_outline = true
 custom_styles/font_color_shadow_outline_size = 2

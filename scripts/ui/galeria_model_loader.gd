@@ -1,9 +1,16 @@
-extends RefCounted
+extends Node
 class_name GaleriaModelLoader
 
 ## ============================================================================
-## GaleriaModelLoader — Carregamento assíncrono de modelos 3D (pipeline UnitActor)
-## Carrega modelo base + esqueleto + acessórios + animações via ModelLibrary
+## GaleriaModelLoader — carrega o visual 3D de uma unidade/construção.
+##
+## Fonte primária: ModelLibrary (pipeline AoM: The Titans — manifest.json +
+## <slug>_base.glb + animations/ + accessories/ + textures/). Se o pacote AoM
+## não existir, o próprio ModelLibrary devolve a malha procedural, então a
+## galeria nunca fica vazia.
+##
+## O API público (`load_model_async`, `load_model_sync`, `get_model_stats`,
+## `clear_cache`) é mantido para os consumidores existentes (galeria_olympus).
 ## ============================================================================
 
 signal model_loaded(model: Node3D, skeleton: Skeleton3D, anim_player: AnimationPlayer, animations: Array[String])
@@ -14,7 +21,7 @@ signal load_progress(progress: float, status: String)
 var model_library: ModelLibrary
 var olympus_unit_catalog: OlympusUnitCatalog
 
-func _init() -> void:
+func _ready() -> void:
 	model_library = ModelLibrary
 	olympus_unit_catalog = OlympusUnitCatalog
 
@@ -24,312 +31,164 @@ var _loaded_models: Dictionary = {}
 # ─── API Pública ─────────────────────────────────────────────────────────────
 
 func load_model_async(model_path: String, unit_data: Dictionary = {}) -> void:
-	if model_path in _loaded_models:
-		var cached = _loaded_models[model_path]
-		_apply_accessories(cached.instance, unit_data, "idle")
+	var key: String = _cache_key(model_path, unit_data)
+	if _loaded_models.has(key):
+		var cached: Dictionary = _loaded_models[key]
 		model_loaded.emit(cached.instance, cached.skeleton, cached.anim_player, cached.animations)
 		return
-	
-	call_deferred("_do_load_model", model_path, unit_data)
+	call_deferred("_do_load_model", key, model_path, unit_data)
 
 func load_model_sync(model_path: String, unit_data: Dictionary = {}) -> Dictionary:
-	if model_path in _loaded_models:
-		var cached = _loaded_models[model_path]
-		_apply_accessories(cached.instance, unit_data, "idle")
-		return cached
-	
-	return _do_load_model_sync(model_path, unit_data)
+	var key: String = _cache_key(model_path, unit_data)
+	if _loaded_models.has(key):
+		return _loaded_models[key]
+	return _build_model(key, model_path, unit_data)
 
 func get_cached(model_path: String) -> Dictionary:
-	return _loaded_models.get(model_path, {})
+	return _loaded_models.get(_cache_key(model_path, {}), {})
 
 func clear_cache() -> void:
 	for entry in _loaded_models.values():
-		if entry.instance != null and is_instance_valid(entry.instance):
-			entry.instance.queue_free()
+		var inst: Node3D = entry.get("instance", null)
+		if inst != null and is_instance_valid(inst):
+			inst.queue_free()
 	_loaded_models.clear()
 
-# ─── Implementação Assíncrona ────────────────────────────────────────────────
+# ─── Implementação ───────────────────────────────────────────────────────────
 
-func _do_load_model(model_path: String, unit_data: Dictionary) -> void:
-	load_progress.emit(0.1, "Carregando modelo base...")
-	
-	var model_scene: PackedScene = _load_packed_scene(model_path)
-	if model_scene == null:
-		load_failed.emit("Falha ao carregar PackedScene: " + model_path)
+func _do_load_model(key: String, model_path: String, unit_data: Dictionary) -> void:
+	load_progress.emit(0.15, "Carregando modelo...")
+	var entry: Dictionary = _build_model(key, model_path, unit_data)
+	if entry.is_empty() or entry.get("instance", null) == null:
+		load_failed.emit("Falha ao carregar modelo: %s" % model_path)
 		return
-	
-	load_progress.emit(0.3, "Instanciando modelo...")
-	var instance: Node3D = model_scene.instantiate() as Node3D
-	if instance == null:
-		load_failed.emit("Falha ao instanciar: " + model_path)
-		return
-	
-	load_progress.emit(0.5, "Aplicando materiais...")
-	_apply_materials(instance)
-	
-	load_progress.emit(0.6, "Encontrando esqueleto e animações...")
-	var skeleton: Skeleton3D = _find_skeleton(instance)
-	var anim_player: AnimationPlayer = _find_animation_player(instance)
-	
-	load_progress.emit(0.7, "Carregando animações extras...")
-	var animations: Array[String] = []
-	if anim_player != null:
-		animations = anim_player.get_animation_list()
-		_load_extra_animations(anim_player, model_path)
-		animations = anim_player.get_animation_list()
-	
-	load_progress.emit(0.85, "Aplicando acessórios...")
-	_apply_accessories(instance, unit_data, "idle")
-	
-	load_progress.emit(0.95, "Finalizando...")
-	
-	var entry: Dictionary = {
-		"instance": instance,
-		"skeleton": skeleton,
-		"anim_player": anim_player,
-		"animations": animations,
-		"model_path": model_path
-	}
-	_loaded_models[model_path] = entry
-	
 	load_progress.emit(1.0, "Concluído")
-	model_loaded.emit(instance, skeleton, anim_player, animations)
+	model_loaded.emit(entry.instance, entry.skeleton, entry.anim_player, entry.animations)
 
-func _do_load_model_sync(model_path: String, unit_data: Dictionary) -> Dictionary:
-	var model_scene: PackedScene = _load_packed_scene(model_path)
-	if model_scene == null:
-		return {"error": "Falha ao carregar PackedScene"}
-	
-	var instance: Node3D = model_scene.instantiate() as Node3D
+func _build_model(key: String, model_path: String, unit_data: Dictionary) -> Dictionary:
+	var instance: Node3D = null
+
+	# 1. Pipeline AoM: The Titans via ModelLibrary
+	if not unit_data.is_empty() and model_library != null:
+		instance = _create_via_model_library(unit_data)
+
+	# 2. Fallback: carregar o .glb diretamente do caminho informado
+	if instance == null and model_path != "" and model_path.begins_with("res://"):
+		var scene: PackedScene = load(model_path) as PackedScene
+		if scene != null:
+			instance = scene.instantiate() as Node3D
+
 	if instance == null:
-		return {"error": "Falha ao instanciar"}
-	
-	_apply_materials(instance)
-	
+		return {}
+
 	var skeleton: Skeleton3D = _find_skeleton(instance)
 	var anim_player: AnimationPlayer = _find_animation_player(instance)
-	
-	var animations: Array[String] = []
+	var animations: PackedStringArray = PackedStringArray()
 	if anim_player != null:
 		animations = anim_player.get_animation_list()
-		_load_extra_animations(anim_player, model_path)
-		animations = anim_player.get_animation_list()
-	
-	_apply_accessories(instance, unit_data, "idle")
-	
+
 	var entry: Dictionary = {
 		"instance": instance,
 		"skeleton": skeleton,
 		"anim_player": anim_player,
 		"animations": animations,
-		"model_path": model_path
+		"model_path": model_path,
 	}
-	_loaded_models[model_path] = entry
+	_loaded_models[key] = entry
 	return entry
 
-# ─── Carregamento de Cena ────────────────────────────────────────────────────
-
-func _load_packed_scene(path: String) -> PackedScene:
-	if model_library != null and model_library.has_method("get_or_load"):
-		var scene = model_library.get_or_load(path)
-		if scene != null:
-			return scene as PackedScene
-	
-	var res: Resource = load(path)
-	if res == null:
+func _create_via_model_library(unit_data: Dictionary) -> Node3D:
+	var pantheon: String = String(unit_data.get("pantheon", "greek"))
+	var unit_id: String = String(unit_data.get("id", ""))
+	var category: String = String(unit_data.get("category", ""))
+	if unit_id == "":
 		return null
-	
-	if res is PackedScene:
-		return res as PackedScene
-	
-	# .glb files in Godot 4 load as PackedScene.
-	# Resource and Node3D are incompatible types - cannot pack a Resource directly.
-	push_warning("[GaleriaModelLoader] Arquivo não é PackedScene: " + path)
-	return null
 
-# ─── Materiais ────────────────────────────────────────────────────────────────
+	var is_building: bool = bool(unit_data.get("is_building", false)) \
+		or category in ["construcao", "building", "cidade"]
 
-func _apply_materials(node: Node3D) -> void:
-	var stack: Array = [node]
-	while stack.size() > 0:
-		var n: Node = stack.pop_front()
-		if n is MeshInstance3D:
-			var mesh_inst: MeshInstance3D = n as MeshInstance3D
-			for i in range(mesh_inst.get_surface_count()):
-				var mat: Material = mesh_inst.get_surface_override_material(i)
-				if mat == null:
-					mat = mesh_inst.get_active_material(i)
-				if mat is StandardMaterial3D:
-					var smat: StandardMaterial3D = mat as StandardMaterial3D
-					smat.cull_mode = BaseMaterial3D.CULL_DISABLED
-					smat.transparency = BaseMaterial3D.TRANSPARENCY_DISABLED
-					smat.depth_draw_mode = BaseMaterial3D.DEPTH_DRAW_OPAQUE_ONLY
-				elif mat is ORMMaterial3D:
-					var orm: ORMMaterial3D = mat as ORMMaterial3D
-					var new_mat: StandardMaterial3D = StandardMaterial3D.new()
-					new_mat.albedo_texture = orm.albedo_texture
-					new_mat.cull_mode = BaseMaterial3D.CULL_DISABLED
-					new_mat.transparency = BaseMaterial3D.TRANSPARENCY_DISABLED
-					new_mat.depth_draw_mode = BaseMaterial3D.DEPTH_DRAW_OPAQUE_ONLY
-					if orm.orm_texture != null:
-						new_mat.orm_texture = orm.orm_texture
-					if orm.normal_texture != null:
-						new_mat.normal_texture = orm.normal_texture
-					if orm.emission_texture != null:
-						new_mat.emission_texture = orm.emission_texture
-					new_mat.emission_enabled = orm.emission_enabled
-					new_mat.emission_energy = orm.emission_energy
-					mesh_inst.set_surface_override_material(i, new_mat)
-		for child in n.get_children():
-			stack.push_back(child)
+	if is_building:
+		if not model_library.has_method("create_building_visual"):
+			return null
+		var age_tier: int = int(unit_data.get("age", 1))
+		return model_library.create_building_visual(pantheon, unit_id, age_tier, "player")
 
-# ─── Animações Extras ────────────────────────────────────────────────────────
+	if not model_library.has_method("create_unit_visual"):
+		return null
+	var unit_kind: String = _map_category_to_unit_kind(unit_id, category)
+	var is_hero: bool = bool(unit_data.get("is_hero", false)) or category in ["heroi", "hero"]
+	var major_god: String = String(unit_data.get("major_god", ""))
+	return model_library.create_unit_visual(pantheon, unit_kind, "player", is_hero, major_god)
 
-func _load_extra_animations(anim_player: AnimationPlayer, base_model_path: String) -> void:
-	var base_dir: String = base_model_path.get_base_dir()
-	var anim_dir: String = base_dir + "/animations/"
-	
-	var da: DirAccess = DirAccess.open(anim_dir)
-	if da == null:
-		return
-	
-	var files: Array[String] = da.get_files_at_absolute(anim_dir)
-	for file in files:
-		if not file.ends_with(".glb") or file.ends_with(".glb.import"):
-			continue
-		
-		var anim_path: String = anim_dir + file
-		var anim_res: Resource = load(anim_path)
-		if anim_res == null:
-			continue
-		
-		if anim_res is AnimationLibrary:
-			anim_player.add_animation_library("", anim_res as AnimationLibrary)
-		elif anim_res is PackedScene:
-			var anim_scene: PackedScene = anim_res as PackedScene
-			var anim_inst: Node = anim_scene.instantiate()
-			if anim_inst is AnimationPlayer:
-				var ext_player: AnimationPlayer = anim_inst as AnimationPlayer
-				for anim_name in ext_player.get_animation_list():
-					var anim: Animation = ext_player.get_animation(anim_name)
-					if anim != null and not anim_player.has_animation(anim_name):
-						anim_player.add_animation(anim_name, anim)
-			anim_inst.queue_free()
-		elif anim_res is Animation:
-			var anim_name: String = file.get_basename()
-			if not anim_player.has_animation(anim_name):
-				anim_player.add_animation(anim_name, anim_res as Animation)
+func _map_category_to_unit_kind(unit_id: String, category: String) -> String:
+	# Categorias da galeria -> classes de AOM_UNIT_BUNDLES no ModelLibrary.
+	# Quando o próprio id já é uma classe conhecida, ele é usado direto.
+	match category:
+		"aldeao", "support", "worker":
+			return "villager"
+		"unidade_militar", "infantry":
+			return "infantry"
+		"archer", "arqueiro":
+			return "archer"
+		"cavalry", "cavalaria":
+			return "cavalry"
+		"heroi", "hero":
+			return "hero"
+		"unidade_mitica", "myth", "mythic":
+			return "myth"
+		"deus_maior", "divine":
+			return unit_id
+	return unit_id
 
-# ─── Acessórios ──────────────────────────────────────────────────────────────
-
-func _apply_accessories(instance: Node3D, unit_data: Dictionary, action: String) -> void:
+func _cache_key(model_path: String, unit_data: Dictionary) -> String:
 	if unit_data.is_empty():
-		return
-	
-	var skeleton: Skeleton3D = _find_skeleton(instance)
-	if skeleton == null:
-		return
-	
-	var right_hand_socket: int = skeleton.find_bone("RightHand_Socket") 
-	if right_hand_socket == -1:
-		right_hand_socket = skeleton.find_bone("RightHand")
-	if right_hand_socket == -1:
-		right_hand_socket = skeleton.find_bone("Hand_R")
-	
-	var left_hand_socket: int = skeleton.find_bone("LeftHand_Socket")
-	if left_hand_socket == -1:
-		left_hand_socket = skeleton.find_bone("LeftHand")
-	if left_hand_socket == -1:
-		left_hand_socket = skeleton.find_bone("Hand_L")
-	
-	var head_socket: int = skeleton.find_bone("Head_Socket")
-	if head_socket == -1:
-		head_socket = skeleton.find_bone("Head")
-	if head_socket == -1:
-		head_socket = skeleton.find_bone("TOPOFHEAD")
-	
-	_clear_accessories(instance)
-	
-	var accessories_to_load: Array[Dictionary] = _get_accessories_for_action(unit_data, action)
-	
-	var base_dir: String = ""
-	if unit_data.has("model_path"):
-		base_dir = unit_data["model_path"].get_base_dir() + "/accessories/"
-	
-	if base_dir == "" or not DirAccess.dir_exists_absolute(base_dir):
-		return
-	
-	for acc in accessories_to_load:
-		var acc_path: String = base_dir + acc.file
-		if not FileAccess.file_exists(acc_path):
-			continue
-		
-		var acc_res: Resource = load(acc_path)
-		if acc_res == null or not (acc_res is PackedScene):
-			continue
-		
-		var acc_scene: PackedScene = acc_res as PackedScene
-		var acc_inst: Node3D = acc_scene.instantiate() as Node3D
-		if acc_inst == null:
-			continue
-		
-		var ba: BoneAttachment3D = BoneAttachment3D.new()
-		ba.name = "Acc_" + acc.file.get_basename()
-		
-		if acc.socket == "RightHand" and right_hand_socket >= 0:
-			ba.bone_idx = right_hand_socket
-		elif acc.socket == "LeftHand" and left_hand_socket >= 0:
-			ba.bone_idx = left_hand_socket
-		elif acc.socket == "Head" and head_socket >= 0:
-			ba.bone_idx = head_socket
-		else:
-			instance.add_child(acc_inst)
-			continue
-		
-		instance.add_child(ba)
-		ba.add_child(acc_inst)
-		
-		if acc.has("offset"):
-			acc_inst.position = acc.offset
-		if acc.has("rotation"):
-			acc_inst.rotation_degrees = acc.rotation
-		if acc.has("scale"):
-			acc_inst.scale = acc.scale
+		return model_path
+	var pantheon: String = String(unit_data.get("pantheon", "greek"))
+	var category: String = String(unit_data.get("category", ""))
+	var unit_id: String = String(unit_data.get("id", ""))
+	return "%s:%s:%s" % [pantheon, category, unit_id]
 
-func _get_accessories_for_action(unit_data: Dictionary, action: String) -> Array[Dictionary]:
-	var result: Array[Dictionary] = []
-	var unit_type: String = unit_data.get("category", "")
-	var role: String = unit_data.get("role", "")
-	
-	if action in ["idle", "walk", "run", "death", "bored"]:
-		pass
-	elif action == "attack":
-		if role == "worker" or unit_type == "aldeao":
-			result.append({"file": "attachments_a_knife.glb", "socket": "RightHand"})
-		elif role == "infantry":
-			result.append({"file": "attachments_sword.glb", "socket": "RightHand"})
-		elif role == "cavalry":
-			result.append({"file": "attachments_spear.glb", "socket": "RightHand"})
-	elif action == "gather":
-		if role == "worker":
-			result.append({"file": "attachments_a_axe_hatchet.glb", "socket": "RightHand"})
-	elif action in ["ranged", "hunt"]:
-		if role == "archer" or unit_type == "aldeao":
-			result.append({"file": "attachments_a_bow.glb", "socket": "LeftHand"})
-			result.append({"file": "attachments_arrow.glb", "socket": "RightHand"})
-	elif action == "special":
-		pass
-	
-	return result
+# ─── Estatísticas para o painel de detalhes ──────────────────────────────────
 
-func _clear_accessories(instance: Node3D) -> void:
-	var to_remove: Array[Node] = []
-	for child in instance.get_children():
-		if child is BoneAttachment3D and child.name.begins_with("Acc_"):
-			to_remove.append(child)
-	for node in to_remove:
-		node.queue_free()
+func get_model_stats(key: String) -> Dictionary:
+	var entry: Dictionary = _loaded_models.get(key, {})
+	if entry.is_empty():
+		# Tenta pelo caminho cru, caso o chamador não use a cache key composta
+		entry = _loaded_models.get(key, {})
+	if entry.is_empty():
+		return {}
+
+	var instance: Node3D = entry.get("instance", null)
+	var mesh_count: int = 0
+	var vertex_count: int = 0
+	var surface_count: int = 0
+
+	if instance != null and is_instance_valid(instance):
+		var stack: Array[Node] = [instance]
+		while not stack.is_empty():
+			var n: Node = stack.pop_back()
+			if n is MeshInstance3D:
+				var mi: MeshInstance3D = n as MeshInstance3D
+				if mi.mesh != null:
+					mesh_count += 1
+					for i in range(mi.mesh.get_surface_count()):
+						surface_count += 1
+						var arrays: Array = mi.mesh.surface_get_arrays(i)
+						if arrays.size() > RenderingServer.ARRAY_VERTEX:
+							var verts = arrays[RenderingServer.ARRAY_VERTEX]
+							if verts != null:
+								vertex_count += verts.size()
+			for child in n.get_children():
+				stack.append(child)
+
+	return {
+		"mesh_count": mesh_count,
+		"vertex_count": vertex_count,
+		"surface_count": surface_count,
+		"animation_count": entry.get("animations", []).size(),
+		"has_skeleton": entry.get("skeleton", null) != null,
+		"model_path": entry.get("model_path", ""),
+	}
 
 # ─── Utilitários ─────────────────────────────────────────────────────────────
 
@@ -350,60 +209,3 @@ func _find_animation_player(node: Node) -> AnimationPlayer:
 		if found != null:
 			return found
 	return null
-
-func get_model_stats(model_path: String) -> Dictionary:
-	var entry: Dictionary = _loaded_models.get(model_path, {})
-	if entry.is_empty():
-		return {}
-	
-	var instance: Node3D = entry.instance
-	var skeleton: Skeleton3D = entry.skeleton
-	var anim_player: AnimationPlayer = entry.anim_player
-	
-	if instance == null or not is_instance_valid(instance):
-		return {}
-	
-	var mesh_count: int = 0
-	var surface_count: int = 0
-	var tri_count: int = 0
-	var stack: Array = [instance]
-	while stack.size() > 0:
-		var n: Node = stack.pop_front()
-		if n is MeshInstance3D:
-			mesh_count += 1
-			var mi: MeshInstance3D = n as MeshInstance3D
-			for i in range(mi.get_surface_count()):
-				surface_count += 1
-				var arrays: Array = mi.mesh.get_surface_arrays(i)
-				if arrays.size() >= Mesh.ARRAY_MAX:
-					var index_arr: Array = arrays[Mesh.ARRAY_INDEX]
-					if index_arr.size() > 0:
-						tri_count += index_arr.size() / 3
-					else:
-						var vert_arr: Array = arrays[Mesh.ARRAY_VERTEX]
-						tri_count += vert_arr.size() / 3
-		for child in n.get_children():
-			stack.push_back(child)
-	
-	var socket_count: int = 0
-	stack = [instance]
-	while stack.size() > 0:
-		var n: Node = stack.pop_front()
-		if n is BoneAttachment3D:
-			socket_count += 1
-		for child in n.get_children():
-			stack.push_back(child)
-	
-	var bone_count: int = 0
-	if skeleton != null:
-		bone_count = skeleton.get_bone_count()
-	
-	return {
-		"mesh_count": mesh_count,
-		"surface_count": surface_count,
-		"triangle_count": tri_count,
-		"bone_count": bone_count,
-		"socket_count": socket_count,
-		"animation_count": entry.animations.size(),
-		"animations": entry.animations
-	}

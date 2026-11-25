@@ -64,7 +64,7 @@ func _build_ui() -> void:
 	style_bg.corner_radius_top_right = 8
 	style_bg.corner_radius_bottom_left = 8
 	style_bg.corner_radius_bottom_right = 8
-	_vbox_root.add_theme_style_override("panel", style_bg)
+	_vbox_root.add_theme_stylebox_override("panel", style_bg)
 	
 	# Título
 	var title_hbox: HBoxContainer = HBoxContainer.new()
@@ -328,13 +328,13 @@ func _fetch_filtered_items() -> Array[Dictionary]:
 	
 	for unit in all_units:
 		if _matches_filters(unit):
-			var model_path: String = _resolve_model_path(unit)
-			if model_path != "":
-				result.append({
-					"unit_data": unit,
-					"model_path": model_path,
-					"model_name": unit.get("id", "unknown") + ".glb"
-				})
+			# O caminho do .glb é só informativo: o ModelLibrary resolve o pacote
+			# (ou gera a malha procedural), então um item nunca some da lista.
+			result.append({
+				"unit_data": unit,
+				"model_path": _resolve_model_path(unit),
+				"model_name": String(unit.get("id", "unknown")) + ".glb"
+			})
 	
 	return result
 
@@ -421,7 +421,7 @@ func _resolve_model_path(unit: Dictionary) -> String:
 	# Fallback: buscar qualquer .glb na pasta que contenha o id
 	var da: DirAccess = DirAccess.open(base_path)
 	if da != null:
-		var files: Array[String] = da.get_files_at_absolute(base_path)
+		var files: PackedStringArray = da.get_files()
 		for f in files:
 			if f.ends_with(".glb") and not f.ends_with(".glb.import"):
 				var basename: String = f.get_basename().to_lower()

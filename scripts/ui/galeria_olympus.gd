@@ -57,11 +57,16 @@ func _get_model_loader() -> Object:
 func _ready() -> void:
 	_model_loader = _get_model_loader()
 	_connect_signals()
-	_btn_voltar.pressed.connect(_on_voltar)
-	detail_panel.call("clear")
-	_panel_overlay.visible = false
-	_panel_sem_modelo.visible = false
-	stage_3d.call("grab_focus")
+	if _btn_voltar != null:
+		_btn_voltar.pressed.connect(_on_voltar)
+	if detail_panel != null:
+		detail_panel.call("clear")
+	if _panel_overlay != null:
+		_panel_overlay.visible = false
+	if _panel_sem_modelo != null:
+		_panel_sem_modelo.visible = false
+	if stage_3d != null:
+		stage_3d.call("set_focus_mode", false)
 
 func _connect_signals() -> void:
 	# FilterBar -> item_selected

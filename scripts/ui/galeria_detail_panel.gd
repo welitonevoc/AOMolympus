@@ -148,7 +148,7 @@ func _add_section_header(parent: VBoxContainer, title: String) -> void:
 	var line_left: Control = Control.new()
 	line_left.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	line_left.custom_minimum_size = Vector2(0, 2)
-	line_left.add_theme_style_override("bg", _make_color_stylebox(COLOR_GOLD))
+	line_left.add_theme_stylebox_override("bg", _make_color_stylebox(COLOR_GOLD))
 	hbox.add_child(line_left)
 	
 	var lbl: Label = Label.new()
@@ -160,7 +160,7 @@ func _add_section_header(parent: VBoxContainer, title: String) -> void:
 	var line_right: Control = Control.new()
 	line_right.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	line_right.custom_minimum_size = Vector2(0, 2)
-	line_right.add_theme_style_override("bg", _make_color_stylebox(COLOR_GOLD))
+	line_right.add_theme_stylebox_override("bg", _make_color_stylebox(COLOR_GOLD))
 	hbox.add_child(line_right)
 
 func _make_color_stylebox(color: Color) -> StyleBoxFlat:
@@ -641,7 +641,7 @@ func _get_combat_class(unittypes: Array, role: String) -> String:
 		return "building"
 	return "infantry"
 
-func _get_class_display(class_name: String) -> String:
+func _get_class_display(p_class_name: String) -> String:
 	var map: Dictionary = {
 		"infantry": "🛡️ Infantaria",
 		"archer": "🏹 Arqueiros",
@@ -652,7 +652,7 @@ func _get_class_display(class_name: String) -> String:
 		"building": "🏗️ Construções",
 		"worker": "👷 Aldeões"
 	}
-	return map.get(class_name, class_name.capitalize())
+	return map.get(p_class_name, p_class_name.capitalize())
 
 # ─── Poderes (copiado/adaptado de galeria_olympus.gd original) ──────────────
 
@@ -676,7 +676,6 @@ func _get_divine_profile(god_kind: String) -> Dictionary:
 		"shennong_major": {"power_name": "🌾 Grande Safra", "power_desc": "Preenche instantaneamente os celeiros da cidade com abundância."},
 	}
 	return profiles.get(god_kind, {})
-}
 
 func _get_mythic_power(unit_kind: String) -> Dictionary:
 	var powers: Dictionary = {
@@ -693,7 +692,6 @@ func _get_mythic_power(unit_kind: String) -> Dictionary:
 		"default": {"name": "Golpe Mítico", "desc": "Habilidade especial desta unidade mitológica."},
 	}
 	return powers.get(unit_kind, powers["default"])
-}
 
 func _get_unidade_fala(unit_kind: String, role: String, pantheon_id: String) -> String:
 	var falas: Dictionary = {
@@ -750,4 +748,3 @@ func _get_unidade_fala(unit_kind: String, role: String, pantheon_id: String) -> 
 	}
 	var p_falas: Dictionary = falas.get(pantheon_id, falas["greek"])
 	return p_falas.get(role, "Pelo Olimpo!")
-}

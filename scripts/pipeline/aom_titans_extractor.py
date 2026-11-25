@@ -24,9 +24,32 @@ from typing import Dict, List, Optional, Tuple
 import numpy as np
 from PIL import Image
 
-AOM_ROOT = "/sdcard/aom"
-PROJECT_ROOT = "/data/user/0/com.agy/files/projects/age_of_mythology_olympus"
+
+def _find_aom_root() -> str:
+    """Auto-detect AoM: The Titans installation on Windows."""
+    candidates = [
+        r"E:\Age of Mythology\Age of Mythology",
+        r"C:\Age of Mythology\Age of Mythology",
+        r"D:\Age of Mythology\Age of Mythology",
+        os.path.expandvars(r"%PROGRAMFILES%\Age of Mythology"),
+        os.path.expandvars(r"%PROGRAMFILES(X86)%\Age of Mythology"),
+        os.path.join(os.environ.get("LOCALAPPDATA", ""), "Age of Mythology"),
+    ]
+    for c in candidates:
+        models_bar = os.path.join(c, "models", "models.bar")
+        if os.path.exists(models_bar):
+            return c
+    raise FileNotFoundError(
+        "AoM: The Titans não encontrado. Instale o jogo ou defina AOM_ROOT manualmente."
+    )
+
+
+AOM_ROOT = _find_aom_root()
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 OUT_CIV_ROOT = os.path.join(PROJECT_ROOT, "models", "civilizations")
+
+print(f"[Extractor] AOM_ROOT: {AOM_ROOT}")
+print(f"[Extractor] OUT_CIV_ROOT: {OUT_CIV_ROOT}")
 
 # Attachpoint names table from AoM BRG specification (54 entries)
 NODE_NAMES = (
@@ -1002,7 +1025,7 @@ def main() -> None:
     parser.add_argument("--out", default=OUT_CIV_ROOT, help="Output root directory")
     args = parser.parse_args()
 
-    print("📦 Abrindo arquivos .bar do AoM: The Titans (/sdcard/aom)...")
+    print("[BOX] Abrindo arquivos .bar do AoM: The Titans (AOM_ROOT)...")
     model_bar = BarArchive([
         os.path.join(AOM_ROOT, "models", "models2.bar"),
         os.path.join(AOM_ROOT, "models", "models.bar"),
@@ -1040,7 +1063,7 @@ def main() -> None:
             by_civ[civ] = by_civ.get(civ, 0) + 1
             if extracted <= 25 or extracted % 25 == 0:
                 print(
-                    f"  ✅ [{civ:9}] {cat:8} / {slug:24} | anims={list(res['animations'].keys())} | accs={list(res['accessories'].keys())}"
+                    f"  [OK] [{civ:9}] {cat:8} / {slug:24} | anims={list(res['animations'].keys())} | accs={list(res['accessories'].keys())}"
                 )
             if args.limit > 0 and extracted >= args.limit:
                 break
@@ -1048,7 +1071,7 @@ def main() -> None:
     model_bar.close()
     anim_bar.close()
     tex_bar.close()
-    print(f"\n🏆 Extracao concluida! Total de pacotes autocontidos gerados: {extracted} | Por civ: {by_civ}")
+    print(f"\n[TROPHY2] Extracao concluida! Total de pacotes autocontidos gerados: {extracted} | Por civ: {by_civ}")
 
 
 if __name__ == "__main__":

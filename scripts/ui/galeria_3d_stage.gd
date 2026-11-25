@@ -44,8 +44,9 @@ func _ready() -> void:
 	_update_camera()
 
 func _setup_viewport() -> void:
-	if sub_viewport != null:
-		sub_viewport.own_world = true
+	if sub_viewport != null and sub_viewport is SubViewport:
+		# own_world já definido no .tscn (linha 26). Em Godot 4.8 beta pode ser read-only.
+		# sub_viewport.own_world = true
 		sub_viewport.render_target_update_mode = 2  # WHEN_VISIBLE (valor seguro para Godot 4.x)
 		sub_viewport.size = Vector2(1280, 720)
 		# usage property removido no Godot 4.x
@@ -170,10 +171,10 @@ func get_skeleton() -> Skeleton3D:
 		return null
 	return _find_skeleton(_current_model)
 
-func get_animation_names() -> Array[String]:
+func get_animation_names() -> PackedStringArray:
 	var anim_player: AnimationPlayer = get_animation_player()
 	if anim_player == null:
-		return []
+		return PackedStringArray()
 	return anim_player.get_animation_list()
 
 func play_animation(name: String, loop: bool = true, speed: float = 1.0) -> bool:
