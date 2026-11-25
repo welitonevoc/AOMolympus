@@ -387,7 +387,7 @@ static func _try_instantiate_model(res_path: String) -> Node3D:
 		return result
 	# Se o caminho termina em .glb e nao existe, tenta substituir por .fbx (Fase 2 - Synty FBX)
 	if res_path.ends_with(".glb") and not ResourceLoader.exists(res_path):
-		var fbx_path: String = res_path.substring(0, res_path.length() - 4) + ".fbx"
+		var fbx_path: String = res_path.get_basename() + ".fbx"
 		return _try_instantiate_glb(fbx_path)
 	return null
 

@@ -353,11 +353,7 @@ func _rebuild_divine_power_bar() -> void:
 		child.queue_free()
 	_power_buttons.clear()
 
-	var pids: Array[String] = []
-	if DivinePowerCatalog.has_method("get_canonical_hud_powers"):
-		pids = DivinePowerCatalog.get_canonical_hud_powers(GameState.active_pantheon)
-	else:
-		pids = DivinePowerCatalog.get_pantheon_power_ids(GameState.active_pantheon)
+	var pids: Array[String] = DivinePowerCatalog.get_canonical_hud_powers(GameState.active_pantheon)
 	if GameState.is_wonder_age and not pids.has("titangate"):
 		pids.append("titangate")
 	for pid in pids:

@@ -275,7 +275,7 @@ func _refresh_power_buttons() -> void:
 	for i in buttons.size():
 		if i < powers.size():
 			var pid := powers[i]
-			var spec := DivinePowerCatalog.get_power(pid) if DivinePowerCatalog.has_method("get_power") else {}
+			var spec := DivinePowerCatalog.get_power(pid)
 			var cost := int(spec.get("favor_cost", 0)) if spec.has("favor_cost") else 0
 			var cd := 0.0
 			var casts := 0
