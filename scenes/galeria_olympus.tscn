@@ -59,7 +59,7 @@ position = Vector3(0.0, 0.0, 0.0)
 [node name="GroundMesh" type="MeshInstance3D" parent="SubViewport"]
 position = Vector3(0.0, -0.01, 0.0)
 
-[node name="ModelLoader" type="Node" parent="."]
+[node name="ModelLoader" type="Node" parent="."] unique_name_in_owner="%ModelLoader"
 script = ExtResource("3")
 
 [node name="FilterBar" type="Control" parent="."]
