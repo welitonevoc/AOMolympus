@@ -641,7 +641,7 @@ func _get_combat_class(unittypes: Array, role: String) -> String:
 		return "building"
 	return "infantry"
 
-func _get_class_display(class_name: String) -> String {
+func _get_class_display(class_name: String) -> String:
 	var map: Dictionary = {
 		"infantry": "🛡️ Infantaria",
 		"archer": "🏹 Arqueiros",
@@ -656,7 +656,7 @@ func _get_class_display(class_name: String) -> String {
 
 # ─── Poderes (copiado/adaptado de galeria_olympus.gd original) ──────────────
 
-func _get_divine_profile(god_kind: String) -> Dictionary {
+func _get_divine_profile(god_kind: String) -> Dictionary:
 	var profiles: Dictionary = {
 		"zeus_major": {"power_name": "⚡ Raio Fulminante", "power_desc": "Elimina uma unidade-alvo instantaneamente com um raio divino."},
 		"poseidon_major": {"power_name": "🌊 Tremor Oceânico", "power_desc": "Abalo sísmico que desmorona muralhas e torres inimigas."},
@@ -678,7 +678,7 @@ func _get_divine_profile(god_kind: String) -> Dictionary {
 	return profiles.get(god_kind, {})
 }
 
-func _get_mythic_power(unit_kind: String) -> Dictionary {
+func _get_mythic_power(unit_kind: String) -> Dictionary:
 	var powers: Dictionary = {
 		"centauro_guerreiro": {"name": "🏹 Investida Centúria", "desc": "Carga rápida com arco curto, causando dano à distância antes do combate corpo a corpo."},
 		"talos_clean_hq": {"name": "🔥 Calor do Bronze", "desc": "Emite calor intenso que danifica inimigos próximos e derrete armaduras."},
@@ -695,7 +695,7 @@ func _get_mythic_power(unit_kind: String) -> Dictionary {
 	return powers.get(unit_kind, powers["default"])
 }
 
-func _get_unidade_fala(unit_kind: String, role: String, pantheon_id: String) -> String {
+func _get_unidade_fala(unit_kind: String, role: String, pantheon_id: String) -> String:
 	var falas: Dictionary = {
 		"greek": {
 			"worker": "Por ordem do Olimpo!",

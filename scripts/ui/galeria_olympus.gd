@@ -2,25 +2,19 @@ extends CanvasLayer
 class_name GaleriaOlympus
 
 ## ============================================================================
-## Galeria Olympus — Galeria 3D nativa (REFAATORADA - usa componentes modulares)
-## Componentes:
-##   - Galeria3DStage: palco 3D (SubViewport, câmera, luz, environment)
-##   - GaleriaModelLoader: carregamento assíncrono via ModelLibrary
-##   - GaleriaFilterBar: filtros hierárquicos (Panteão → Deus → Tipo → Era → Busca)
-##   - GaleriaDetailPanel: painel de detalhes (stats, armadura, triângulo, animações, poder, fala)
+## Galeria Olympus — Galeria 3D nativa (REFAATORADA - componentes modulares)
 ## ============================================================================
 
-# Sinais
 signal gallery_closed
 signal model_loaded(model_path: String, model_name: String)
 
-# ─── Referências aos Componentes (instanciados via cena ou código) ───────────
-@onready var stage_3d: Galeria3DStage = %Stage3D
-@onready var model_loader: Node = %ModelLoader
-@onready var filter_bar: GaleriaFilterBar = %FilterBar
-@onready var detail_panel: GaleriaDetailPanel = %DetailPanel
+# ─── Referências aos Componentes (nós da cena, tipados como Node genérico) ───
+@onready var stage_3d: Node3D = %Stage3D
+@onready var model_loader_node: Node = %ModelLoader
+@onready var filter_bar: Node = %FilterBar
+@onready var detail_panel: Node = %DetailPanel
 
-# ─── Referências UI Legado (para compatibilidade durante transição) ──────────
+# ─── Referências UI ──────────────────────────────────────────────────────────
 @onready var _panel_overlay: Control = %PanelOverlay
 @onready var _lbl_loading: Label = %LblLoading
 @onready var _panel_sem_modelo: Control = %PanelSemModelo
@@ -33,60 +27,65 @@ var _current_model_path: String = ""
 var _current_model_name: String = ""
 var _is_loading: bool = false
 
-# Cache do ModelLoader tipado
-var _model_loader_typed: GaleriaModelLoader = null
+# Cache do ModelLoader (objeto genérico, verifica métodos dinamicamente)
+var _model_loader: Object = null
 
-# ─── Inicialização ────────────────────────────────────────────────────────────
+# ─── Helpers de acesso a métodos dinâmicos ───────────────────────────────────
 
-func _ready() -> void:
-	# Obter ModelLoader tipado (com fallback seguro)
-	_model_loader_typed = _get_model_loader()
-	
-	# Conectar sinais dos componentes
-	_connect_signals()
-	
-	# Configurar botão voltar
-	_btn_voltar.pressed.connect(_on_voltar)
-	
-	# Inicializar componentes
-	detail_panel.clear()
-	_panel_overlay.visible = false
-	_panel_sem_modelo.visible = false
-	
-	# Focar no palco 3D para input de teclado
-	stage_3d.grab_focus()
+func _call_method(obj: Object, method: String, args: Array = []) -> Variant:
+	if obj == null:
+		return null
+	if obj.has_method(method):
+		return obj.call(method, args)
+	push_warning("[GaleriaOlympus] Objeto não tem método: %s" % method)
+	return null
 
-func _get_model_loader() -> GaleriaModelLoader:
-	if model_loader != null and model_loader.has_method("load_model_async"):
-		return model_loader as GaleriaModelLoader
-	# Fallback: instanciar se necessário
+func _get_model_loader() -> Object:
+	if model_loader_node != null and model_loader_node.has_method("load_model_async"):
+		return model_loader_node
+	# Fallback: instanciar via script
 	var script: Script = load("res://scripts/ui/galeria_model_loader.gd")
 	if script != null:
-		var instance: Object = script.new()
-		return instance as GaleriaModelLoader
+		var inst: Object = script.new()
+		if inst.has_method("load_model_async"):
+			return inst
 	push_error("[GaleriaOlympus] Falha ao obter GaleriaModelLoader")
 	return null
 
-func _connect_signals() -> void:
-	# FilterBar -> lista de itens
-	filter_bar.item_selected.connect(_on_filter_item_selected)
-	
-	# ModelLoader
-	if _model_loader_typed != null:
-		_model_loader_typed.model_loaded.connect(_on_model_loaded)
-		_model_loader_typed.load_failed.connect(_on_load_failed)
-		_model_loader_typed.load_progress.connect(_on_load_progress)
-	
-	# DetailPanel
-	detail_panel.animation_play_requested.connect(_on_animation_play)
-	detail_panel.animation_stop_requested.connect(_on_animation_stop)
-	detail_panel.voice_play_requested.connect(_on_voice_play)
-	detail_panel.export_glb_requested.connect(_on_export_glb)
-	
-	# Stage3D
-	stage_3d.camera_changed.connect(_on_camera_changed)
+# ─── Inicialização ───────────────────────────────────────────────────────────
 
-# ─── Handlers de Filtros ──────────────────────────────────────────────────────
+func _ready() -> void:
+	_model_loader = _get_model_loader()
+	_connect_signals()
+	_btn_voltar.pressed.connect(_on_voltar)
+	detail_panel.call("clear")
+	_panel_overlay.visible = false
+	_panel_sem_modelo.visible = false
+	stage_3d.call("grab_focus")
+
+func _connect_signals() -> void:
+	# FilterBar -> item_selected
+	if filter_bar != null and filter_bar.has_method("connect"):
+		filter_bar.connect("item_selected", _on_filter_item_selected)
+	
+	# ModelLoader sinais
+	if _model_loader != null:
+		_model_loader.connect("model_loaded", _on_model_loaded)
+		_model_loader.connect("load_failed", _on_load_failed)
+		_model_loader.connect("load_progress", _on_load_progress)
+	
+	# DetailPanel sinais
+	if detail_panel != null:
+		detail_panel.connect("animation_play_requested", _on_animation_play)
+		detail_panel.connect("animation_stop_requested", _on_animation_stop)
+		detail_panel.connect("voice_play_requested", _on_voice_play)
+		detail_panel.connect("export_glb_requested", _on_export_glb)
+	
+	# Stage3D sinais
+	if stage_3d != null:
+		stage_3d.connect("camera_changed", _on_camera_changed)
+
+# ─── Handlers de Filtros ─────────────────────────────────────────────────────
 
 func _on_filter_item_selected(unit_data: Dictionary, model_path: String) -> void:
 	_current_unit_data = unit_data
@@ -97,12 +96,8 @@ func _on_filter_item_selected(unit_data: Dictionary, model_path: String) -> void
 	_lbl_loading.text = "Carregando %s..." % unit_data.get("display_name", unit_data.get("id", "unidade"))
 	_panel_sem_modelo.visible = false
 	
-	# Carregar modelo assincronamente
-	if _model_loader_typed != null:
-		_model_loader_typed.load_model_async(model_path, unit_data)
-	else:
-		push_error("[GaleriaOlympus] ModelLoader não disponível")
-		_on_load_failed("ModelLoader não inicializado")
+	if _model_loader != null:
+		_model_loader.call("load_model_async", model_path, unit_data)
 
 # ─── Handlers de Carregamento ────────────────────────────────────────────────
 
@@ -110,18 +105,14 @@ func _on_model_loaded(model: Node3D, skeleton: Skeleton3D, anim_player: Animatio
 	_is_loading = false
 	_panel_overlay.visible = false
 	
-	# Definir modelo no palco 3D
-	stage_3d.set_model(model)
+	stage_3d.call("set_model", model)
 	
-	# Obter stats do modelo
 	var model_stats: Dictionary = {}
-	if _model_loader_typed != null:
-		model_stats = _model_loader_typed.get_model_stats(_current_model_path)
+	if _model_loader != null:
+		model_stats = _model_loader.call("get_model_stats", _current_model_path)
 	
-	# Atualizar painel de detalhes
-	detail_panel.set_unit_data(_current_unit_data, _current_model_path, _current_model_name, model_stats)
+	detail_panel.call("set_unit_data", _current_unit_data, _current_model_path, _current_model_name, model_stats)
 	
-	# Emitir sinal
 	model_loaded.emit(_current_model_path, _current_model_name)
 
 func _on_load_failed(reason: String) -> void:
@@ -136,7 +127,7 @@ func _on_load_progress(progress: float, status: String) -> void:
 # ─── Handlers de Animação ────────────────────────────────────────────────────
 
 func _on_animation_play(anim_name: String) -> void:
-	var success: bool = stage_3d.play_animation(anim_name, true, 1.0)
+	var success: bool = stage_3d.call("play_animation", anim_name, true, 1.0)
 	if success:
 		_lbl_loading.text = "Reproduzindo: %s" % anim_name
 		_panel_overlay.visible = true
@@ -144,18 +135,15 @@ func _on_animation_play(anim_name: String) -> void:
 		_panel_overlay.visible = false
 
 func _on_animation_stop() -> void:
-	stage_3d.stop_animation()
+	stage_3d.call("stop_animation")
 
 # ─── Handlers de Voz ─────────────────────────────────────────────────────────
 
 func _on_voice_play(role: String, pantheon: String) -> void:
-	# Usar AudioDirector para reproduzir fala
-	# play_voice(pantheon, unit_role, action_type, world_pos)
 	if AudioDirector != null and AudioDirector.has_method("play_voice"):
 		AudioDirector.play_voice(pantheon, role, "voice", Vector3.ZERO)
 	else:
-		# Fallback: log
-		push_warning("[GaleriaOlympus] AudioDirector não disponível para play_voice(%s, %s)" % [role, pantheon])
+		push_warning("[GaleriaOlympus] AudioDirector não disponível")
 
 # ─── Handler de Exportação ───────────────────────────────────────────────────
 
@@ -177,33 +165,32 @@ func _on_export_glb(model_path: String, model_name: String) -> void:
 # ─── Handler de Câmera ───────────────────────────────────────────────────────
 
 func _on_camera_changed(position: Vector3, target: Vector3) -> void:
-	# Log opcional para debug
 	pass
 
-# ─── Controles de Câmera (expostos para UI externa) ──────────────────────────
+# ─── Controles de Câmera ─────────────────────────────────────────────────────
 
 func set_auto_orbit(enabled: bool) -> void:
-	stage_3d.set_auto_orbit(enabled)
+	stage_3d.call("set_auto_orbit", enabled)
 
 func set_focus_mode(enabled: bool) -> void:
-	stage_3d.set_focus_mode(enabled)
+	stage_3d.call("set_focus_mode", enabled)
 
 func adjust_camera_distance(delta: float) -> void:
-	stage_3d.adjust_camera_distance(delta)
+	stage_3d.call("adjust_camera_distance", delta)
 
 func rotate_camera(delta_y: float, delta_x: float) -> void:
-	stage_3d.rotate_camera(delta_y, delta_x)
+	stage_3d.call("rotate_camera", delta_y, delta_x)
 
 func reset_camera() -> void:
-	stage_3d.reset_camera()
+	stage_3d.call("reset_camera")
 
 # ─── Voltar / Fechar ─────────────────────────────────────────────────────────
 
 func _on_voltar() -> void:
-	stage_3d.clear_model()
-	if _model_loader_typed != null:
-		_model_loader_typed.clear_cache()
-	detail_panel.clear()
+	stage_3d.call("clear_model")
+	if _model_loader != null:
+		_model_loader.call("clear_cache")
+	detail_panel.call("clear")
 	_current_unit_data = {}
 	_current_model_path = ""
 	_current_model_name = ""
@@ -214,8 +201,8 @@ func _on_voltar() -> void:
 
 func open_gallery() -> void:
 	visible = true
-	filter_bar.set_filters({"pantheon": "greek", "type": "all", "era": 1, "search": ""})
-	stage_3d.reset_camera()
+	filter_bar.call("set_filters", {"pantheon": "greek", "type": "all", "era": 1, "search": ""})
+	stage_3d.call("reset_camera")
 
 func close_gallery() -> void:
 	_on_voltar()

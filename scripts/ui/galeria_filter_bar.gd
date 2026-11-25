@@ -449,7 +449,7 @@ func _map_category_to_folder(category: String) -> String:
 		return "aldeao"
 	return ""
 
-func _format_item_display(item: Dictionary) -> String {
+func _format_item_display(item: Dictionary) -> String:
 	var unit: Dictionary = item.unit_data
 	var name: String = unit.get("display_name", unit.get("id", "Desconhecido"))
 	var age: int = unit.get("age", 0)
