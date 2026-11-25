@@ -686,7 +686,8 @@ func _on_exportar_glb() -> void:
 		return
 
 	var dest_path: String = "res://models/units/" + _current_model_name + ".glb"
-	var ok: Error = DirAccess.copy(_current_model_path, dest_path)
+	var da: DirAccess = DirAccess.open("res://")
+	var ok: Error = da.copy(_current_model_path, dest_path)
 	if ok == OK:
 		_lbl_item_desc.text = "Modelo exportado para: %s" % dest_path
 	else:
