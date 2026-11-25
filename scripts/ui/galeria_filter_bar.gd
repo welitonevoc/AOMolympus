@@ -280,7 +280,7 @@ func _get_pantheon_icon(pantheon: String) -> String:
 		return "🐉"
 	return "⚪"
 
-func _get_god_display(god_id: String) -> String {
+func _get_god_display(god_id: String) -> String:
 	var map: Dictionary = {
 		"zeus_major": "⚡ Zeus",
 		"poseidon_major": "🔱 Poseidon",

@@ -33,9 +33,15 @@ var _current_model_path: String = ""
 var _current_model_name: String = ""
 var _is_loading: bool = false
 
+# Cache do ModelLoader tipado
+var _model_loader_typed: GaleriaModelLoader = null
+
 # ─── Inicialização ────────────────────────────────────────────────────────────
 
 func _ready() -> void:
+	# Obter ModelLoader tipado (com fallback seguro)
+	_model_loader_typed = _get_model_loader()
+	
 	# Conectar sinais dos componentes
 	_connect_signals()
 	
@@ -50,15 +56,26 @@ func _ready() -> void:
 	# Focar no palco 3D para input de teclado
 	stage_3d.grab_focus()
 
+func _get_model_loader() -> GaleriaModelLoader:
+	if model_loader != null and model_loader.has_method("load_model_async"):
+		return model_loader as GaleriaModelLoader
+	# Fallback: instanciar se necessário
+	var script: Script = load("res://scripts/ui/galeria_model_loader.gd")
+	if script != null:
+		var instance: Object = script.new()
+		return instance as GaleriaModelLoader
+	push_error("[GaleriaOlympus] Falha ao obter GaleriaModelLoader")
+	return null
+
 func _connect_signals() -> void:
 	# FilterBar -> lista de itens
 	filter_bar.item_selected.connect(_on_filter_item_selected)
 	
-	# ModelLoader (cast para acessar sinais)
-	var ml: GaleriaModelLoader = model_loader as GaleriaModelLoader
-	ml.model_loaded.connect(_on_model_loaded)
-	ml.load_failed.connect(_on_load_failed)
-	ml.load_progress.connect(_on_load_progress)
+	# ModelLoader
+	if _model_loader_typed != null:
+		_model_loader_typed.model_loaded.connect(_on_model_loaded)
+		_model_loader_typed.load_failed.connect(_on_load_failed)
+		_model_loader_typed.load_progress.connect(_on_load_progress)
 	
 	# DetailPanel
 	detail_panel.animation_play_requested.connect(_on_animation_play)
@@ -81,8 +98,11 @@ func _on_filter_item_selected(unit_data: Dictionary, model_path: String) -> void
 	_panel_sem_modelo.visible = false
 	
 	# Carregar modelo assincronamente
-	var ml: GaleriaModelLoader = model_loader as GaleriaModelLoader
-	ml.load_model_async(model_path, unit_data)
+	if _model_loader_typed != null:
+		_model_loader_typed.load_model_async(model_path, unit_data)
+	else:
+		push_error("[GaleriaOlympus] ModelLoader não disponível")
+		_on_load_failed("ModelLoader não inicializado")
 
 # ─── Handlers de Carregamento ────────────────────────────────────────────────
 
@@ -94,8 +114,9 @@ func _on_model_loaded(model: Node3D, skeleton: Skeleton3D, anim_player: Animatio
 	stage_3d.set_model(model)
 	
 	# Obter stats do modelo
-	var ml: GaleriaModelLoader = model_loader as GaleriaModelLoader
-	var model_stats: Dictionary = ml.get_model_stats(_current_model_path)
+	var model_stats: Dictionary = {}
+	if _model_loader_typed != null:
+		model_stats = _model_loader_typed.get_model_stats(_current_model_path)
 	
 	# Atualizar painel de detalhes
 	detail_panel.set_unit_data(_current_unit_data, _current_model_path, _current_model_name, model_stats)
@@ -180,8 +201,8 @@ func reset_camera() -> void:
 
 func _on_voltar() -> void:
 	stage_3d.clear_model()
-	var ml: GaleriaModelLoader = model_loader as GaleriaModelLoader
-	ml.clear_cache()
+	if _model_loader_typed != null:
+		_model_loader_typed.clear_cache()
 	detail_panel.clear()
 	_current_unit_data = {}
 	_current_model_path = ""

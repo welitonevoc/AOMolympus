@@ -588,7 +588,7 @@ func _get_category_display(cat: String) -> String:
 	}
 	return map.get(cat, cat.replace("_", " ").capitalize())
 
-func _get_role_display(role: String) -> String {
+func _get_role_display(role: String) -> String:
 	var map: Dictionary = {
 		"worker": "👷 Trabalhador",
 		"infantry": "🛡️ Infantaria",
