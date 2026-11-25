@@ -143,11 +143,9 @@ func _load_packed_scene(path: String) -> PackedScene:
 	if res is PackedScene:
 		return res as PackedScene
 	
-	if res is Node3D:
-		var ps: PackedScene = PackedScene.new()
-		ps.pack(res)
-		return ps
-	
+	# .glb files in Godot 4 load as PackedScene.
+	# Resource and Node3D are incompatible types - cannot pack a Resource directly.
+	push_warning("[GaleriaModelLoader] Arquivo não é PackedScene: " + path)
 	return null
 
 # ─── Materiais ────────────────────────────────────────────────────────────────
