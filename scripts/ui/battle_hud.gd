@@ -8,7 +8,7 @@ extends Control
 # Sinais para o resto do jogo
 signal build_requested(building_kind: String)
 signal power_requested(power_id: String)
-signal unit_command(command: String, target_object: Object = null)
+signal unit_command(command: String, target_object: Object)
 signal formation_requested(formation_id: String)
 signal stance_requested(stance_id: String)
 
