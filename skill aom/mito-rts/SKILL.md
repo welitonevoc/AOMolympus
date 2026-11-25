@@ -49,3 +49,23 @@ Skill especialista baseada diretamente nos arquivos originais do **Age of Mythol
    - Consulte os arquivos em `references/` relevantes ao pedido (nunca invente valores fora das faixas oficiais sem avisar).
    - Entregue sempre em português com: Estratégia → Dados (`UnitData` / `TechResource` / `AbilityResource`) → Briefing Visual/Sockets/Animações/Áudio → Árvore Godot 4 → Checklist.
    - Combine com `aom-aldeao-profissional` quando o usuário pedir modelagem/rigging 3D procedural em Three.js/GLB.
+
+---
+
+## Pipeline Técnico AoM → Godot 4.8 Android (Regras Definitivas)
+
+1. **Texturas `.ddt` (formato RTS3 do AoM):**
+   - `fmt == 4`: DXT1 padrão (**8 bytes/bloco**).
+   - `fmt == 5`: DXT1 + máscara 1-bit de alpha/player-color (**10 bytes/bloco**: `8B DXT1` em `offset 0` + `2B` máscara no final). Ler `fmt == 5` com stride 8 desalinha os blocos 4x4 e gera textura arco-íris verde/roxo.
+   - `fmt == 8`: DXT3 (16 bytes/bloco, `color_off = 8`).
+   - `fmt == 9`: DXT5 (16 bytes/bloco, `color_off = 8`).
+   - Extrator oficial: `python3 scripts/pipeline/aom_titans_extractor.py`.
+
+2. **Carregamento Runtime no Godot 4.8 Android (Anti-Crash OOM):**
+   - `models/civilizations/.gdignore` e `audio/aom/.gdignore` são **obrigatórios** para evitar que o scanner do Editor Godot Android estoure RAM tentando importar ~3.000 `.glb` e ~1.656 sons de uma vez.
+   - Modelos `.glb` são carregados sob demanda via `GLTFDocument.append_from_buffer()` + `generate_scene()` e cacheados em `PackedScene` em memória (`scripts/autoload/model_library.gd`).
+   - Materiais importados de glTF (`ORMMaterial3D`) recebem override limpo de `StandardMaterial3D` preservando `albedo_texture`, com `TRANSPARENCY_DISABLED`, `DEPTH_DRAW_OPAQUE_ONLY` e `CULL_DISABLED` (double-sided para faces DirectX).
+
+3. **Áudio Oficial Categorizado (`audio/aom/`):**
+   - Extrator oficial: `python3 scripts/pipeline/aom_sound_extractor.py` (extrai `sounds.bar`, `sounds2.bar` e `music/` em 13 categorias + `sound_catalog.json`).
+   - `scripts/audio/audio_director.gd` faz streaming sob demanda via `AudioStreamWAV.load_from_file()` e `AudioStreamMP3` com cache em memória.
