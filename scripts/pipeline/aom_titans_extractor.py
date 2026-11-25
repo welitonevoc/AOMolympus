@@ -455,6 +455,7 @@ def export_brg_to_glb(
     anim_name: str = "anim",
     override_texture: Optional[str] = None,
     scale_factor: float = 1.0,
+    align_ground: bool = True,
 ) -> List[str]:
     """
     Exports a parsed BrgModel directly to glTF 2.0 .glb:
@@ -473,9 +474,9 @@ def export_brg_to_glb(
     uvs = brg.uvs.astype(np.float32) if brg.uvs is not None else np.zeros((len(pos0), 2), dtype=np.float32)
     faces = brg.faces.astype(np.uint16)
 
-    # Align ground (min Y = 0) on static/base frame 0 if model is near ground
+    # Align ground (min Y = 0) on static/base frame 0 if model is near ground (never on accessories)
     y_min = float(pos0[:, 1].min())
-    y_shift = -y_min if abs(y_min) < 0.8 else 0.0
+    y_shift = (-y_min if abs(y_min) < 0.8 else 0.0) if align_ground else 0.0
     pos0[:, 1] += y_shift
 
     bin_chunks: List[bytes] = []
@@ -971,7 +972,7 @@ def extract_unit_bundle(
         acc_slug = re.sub(r"[^a-z0-9]+", "_", acc_vis.lower()).strip("_")
         acc_glb = os.path.join(acc_dir, f"{acc_slug}.glb")
         export_brg_to_glb(
-            b, acc_glb, tex_bar, textures_out_dir=tex_dir, include_animation=False, anim_name=acc_slug
+            b, acc_glb, tex_bar, textures_out_dir=tex_dir, include_animation=False, anim_name=acc_slug, align_ground=False
         )
         exported_accs[sock] = f"accessories/{acc_slug}.glb"
 

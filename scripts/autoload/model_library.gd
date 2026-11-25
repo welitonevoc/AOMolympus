@@ -140,7 +140,7 @@ static func _instantiate_aom_bundle(bundle_dir: String, slug: String, initial_ac
 
 	_force_opaque_materials(loaded)
 	_align_model_to_ground(loaded)
-	_attach_aom_accessories(loaded, bundle_dir, manifest)
+	_attach_aom_accessories(loaded, bundle_dir, manifest, slug, initial_action)
 	_log_model_diag("UNIT:" + slug + ":" + initial_action, glb_path, loaded)
 
 	# Inicia o AnimationPlayer do clipe automaticamente em loop
@@ -159,14 +159,31 @@ static func _instantiate_aom_bundle(bundle_dir: String, slug: String, initial_ac
 	return loaded
 
 
-static func _attach_aom_accessories(root: Node3D, bundle_dir: String, manifest: Dictionary) -> void:
+static func _attach_aom_accessories(root: Node3D, bundle_dir: String, manifest: Dictionary, slug: String = "", action: String = "idle") -> void:
 	var accs: Dictionary = manifest.get("accessories", {})
 	if accs.is_empty():
 		return
+	var is_villager: bool = ("villager" in slug.to_lower()) or ("citizen" in slug.to_lower()) or ("dwarf" in slug.to_lower())
+	var act_low: String = action.to_lower()
 	for sock_raw in accs.keys():
+		var sock_str: String = String(sock_raw)
+		var sock_up: String = sock_str.to_upper()
 		var acc_rel: String = String(accs[sock_raw])
+		if is_villager and sock_up != "TOPOFHEAD":
+			# No AoM original (villager greek_anim.txt):
+			# - idle / walk / death: maos vazias (sem arco/lanca/cesta)
+			# - attack: faquinha/adaga (attachments_a_knife.glb) na RightHand
+			# - gather / build: ferramenta na RightHand (sem arco na LeftHand)
+			if act_low in ["idle", "walk", "death", "bored"]:
+				continue
+			if sock_up != "RIGHTHAND":
+				continue
+			if act_low == "attack":
+				var knife_rel: String = "accessories/attachments_a_knife.glb"
+				if FileAccess.file_exists("%s/%s" % [bundle_dir, knife_rel]):
+					acc_rel = knife_rel
 		var acc_path: String = "%s/%s" % [bundle_dir, acc_rel]
-		var socket_node: Node3D = _find_socket_node(root, String(sock_raw))
+		var socket_node: Node3D = _find_socket_node(root, sock_str)
 		if socket_node == null:
 			continue
 		var acc_inst: Node3D = _try_instantiate_glb(acc_path)
