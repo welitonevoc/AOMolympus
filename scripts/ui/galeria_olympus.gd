@@ -43,7 +43,7 @@ func _ready() -> void:
 	_btn_voltar.pressed.connect(_on_voltar)
 	
 	# Inicializar componentes
-	_detail_panel.clear()
+	detail_panel.clear()
 	_panel_overlay.visible = false
 	_panel_sem_modelo.visible = false
 	
@@ -126,8 +126,9 @@ func _on_animation_stop() -> void:
 
 func _on_voice_play(role: String, pantheon: String) -> void:
 	# Usar AudioDirector para reproduzir fala
+	# play_voice(pantheon, unit_role, action_type, world_pos)
 	if AudioDirector != null and AudioDirector.has_method("play_voice"):
-		AudioDirector.play_voice(role, pantheon)
+		AudioDirector.play_voice(pantheon, role, "voice", Vector3.ZERO)
 	else:
 		# Fallback: log
 		push_warning("[GaleriaOlympus] AudioDirector não disponível para play_voice(%s, %s)" % [role, pantheon])
