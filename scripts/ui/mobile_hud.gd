@@ -2018,4 +2018,3 @@ func _build_codex_quick_modal() -> void:
 	_codex_modal_meta = VBoxContainer.new()
 	_codex_modal_meta.add_theme_constant_override("separation", 3)
 	vbox.add_child(_codex_modal_meta)
-

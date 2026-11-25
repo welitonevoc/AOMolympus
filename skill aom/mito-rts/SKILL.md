@@ -54,18 +54,28 @@ Skill especialista baseada diretamente nos arquivos originais do **Age of Mythol
 
 ## Pipeline Técnico AoM → Godot 4.8 Android (Regras Definitivas)
 
-1. **Texturas `.ddt` (formato RTS3 do AoM):**
-   - `fmt == 4`: DXT1 padrão (**8 bytes/bloco**).
-   - `fmt == 5`: formato BTX/DXT1A do AoM (**10 bytes/bloco**: `c0`/`c1` em **RGB555** nos bytes `0..3`, máscara 1-bit de alpha/player-color nos bytes `4..5`, e `lookup` DXT1 nos bytes `6..9`). Ler como RGB565 ou stride 8 gera textura arco-íris verde/roxo.
-   - `fmt == 8`: DXT3 (16 bytes/bloco, `color_off = 8`).
-   - `fmt == 9`: DXT5 (16 bytes/bloco, `color_off = 8`).
+1. **Coordenadas UV em Malhas BRG (AoM):**
+   - As coordenadas UV nos vértices das malhas BRG originais do AoM já possuem `V = 0.0` no topo da textura (compatível com os padrões glTF 2.0 e Direct3D).
+   - **NUNCA inverter V (`1.0 - v`)**: Inverter a coordenada vertical faz a textura ficar de cabeça para baixo no glTF (ex: a faixa branca da barriga do Colosso vai parar nas costas; texturas de construções ficam invertidas). No exportador glTF, mantenha `u` e `v` idênticos aos do BRG original.
+
+2. **Texturas `.ddt` (Formato RTS3 do AoM):**
+   - Header RTS3: 4 bytes mágicos `RTS3`, seguidos por `fmt`, `width`, `height`.
+   - `fmt == 4`: DXT1 padrão (**8 bytes/bloco** 4x4, `c0`/`c1` RGB565 nos bytes `0..3`, lookup nos bytes `4..7`).
+   - `fmt == 5`: Formato proprietário BTX / DXT1A do AoM (**10 bytes/bloco** 4x4):
+     - Bytes `0..3`: `c0` e `c1` codificados em **RGB555** de 16 bits (bits 10-14 R, 5-9 G, 0-4 B).
+     - Bytes `4..5`: Máscara de 16 bits para 1-bit alpha / player color (cor da equipe).
+     - Bytes `6..9`: Tabela de índices DXT1 de 32 bits (2 bits por pixel no bloco 4x4).
+     - *Aviso*: Tentar ler `fmt == 5` como RGB565 ou com stride de 8 bytes gera aberrações cromáticas em arco-íris (ruído roxo/verde/magenta).
+   - `fmt == 8`: DXT3 (16 bytes/bloco, alpha explícito nos primeiros 8 bytes, cores nos bytes 8..15).
+   - `fmt == 9`: DXT5 (16 bytes/bloco, alpha interpolado nos primeiros 8 bytes, cores nos bytes 8..15).
    - Extrator oficial: `python3 scripts/pipeline/aom_titans_extractor.py`.
 
-2. **Carregamento Runtime no Godot 4.8 Android (Anti-Crash OOM):**
-   - `models/civilizations/.gdignore` e `audio/aom/.gdignore` são **obrigatórios** para evitar que o scanner do Editor Godot Android estoure RAM tentando importar ~3.000 `.glb` e ~1.656 sons de uma vez.
-   - Modelos `.glb` são carregados sob demanda via `GLTFDocument.append_from_buffer()` + `generate_scene()` e cacheados em `PackedScene` em memória (`scripts/autoload/model_library.gd`).
-   - Materiais importados de glTF (`ORMMaterial3D`) recebem override limpo de `StandardMaterial3D` preservando `albedo_texture`, com `TRANSPARENCY_DISABLED`, `DEPTH_DRAW_OPAQUE_ONLY` e `CULL_DISABLED` (double-sided para faces DirectX).
+3. **Carregamento Runtime no Godot 4.8 Android (Anti-Crash OOM):**
+   - `models/civilizations/.gdignore` e `audio/aom/.gdignore` são **estritamente obrigatórios** para evitar que o scanner do Editor Godot Android estoure a memória RAM tentando importar ~3.000 arquivos `.glb` e ~1.656 áudios de uma vez na inicialização.
+   - Modelos `.glb` são carregados sob demanda via `GLTFDocument.append_from_buffer(FileAccess.get_file_as_bytes(path), ...)` + `generate_scene()` e cacheados em `PackedScene` em memória (`scripts/autoload/model_library.gd`).
+   - Materiais importados de glTF (`ORMMaterial3D`) recebem override limpo de `StandardMaterial3D` preservando `albedo_texture`, com `TRANSPARENCY_DISABLED`, `DEPTH_DRAW_OPAQUE_ONLY` e **`cull_mode = BaseMaterial3D.CULL_DISABLED`** (double-sided para evitar faces invisíveis causadas pela ordem de enrolamento DirectX).
 
-3. **Áudio Oficial Categorizado (`audio/aom/`):**
-   - Extrator oficial: `python3 scripts/pipeline/aom_sound_extractor.py` (extrai `sounds.bar`, `sounds2.bar` e `music/` em 13 categorias + `sound_catalog.json`).
-   - `scripts/audio/audio_director.gd` faz streaming sob demanda via `AudioStreamWAV.load_from_file()` e `AudioStreamMP3` com cache em memória.
+4. **Áudio Oficial Categorizado (`audio/aom/`):**
+   - Extrator oficial: `python3 scripts/pipeline/aom_sound_extractor.py` (extrai `sounds.bar`, `sounds2.bar` e `music/` em 13 categorias estruturadas + `sound_catalog.json`).
+   - `scripts/audio/audio_director.gd` faz streaming sob demanda via `AudioStreamWAV.load_from_file()` para WAV e `AudioStreamMP3` para músicas com cache em memória.
+
