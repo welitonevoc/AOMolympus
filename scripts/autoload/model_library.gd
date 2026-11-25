@@ -215,6 +215,7 @@ static func switch_aom_action(visual_holder: Node3D, action: String) -> bool:
 	var next_visual: Node3D = _instantiate_aom_bundle(bundle_dir, slug, action)
 	if next_visual == null:
 		return false
+	visual_holder.remove_child(current)
 	current.queue_free()
 	visual_holder.add_child(next_visual)
 	return true
@@ -2631,19 +2632,31 @@ static func _force_opaque_materials(node: Node) -> void:
 				var mat: Material = mi.get_surface_override_material(i)
 				if mat == null:
 					mat = mesh.surface_get_material(i)
-				if mat is StandardMaterial3D:
-					var sm: StandardMaterial3D = mat as StandardMaterial3D
-					sm.transparency = BaseMaterial3D.TRANSPARENCY_DISABLED
-					sm.depth_draw_mode = BaseMaterial3D.DEPTH_DRAW_OPAQUE_ONLY
-					sm.cull_mode = BaseMaterial3D.CULL_DISABLED
-					sm.albedo_color.a = 1.0
-					sm.metallic = 0.0
-					sm.roughness = maxf(sm.roughness, 0.75)
-		if mi.material_override != null and mi.material_override is StandardMaterial3D:
-			var mo: StandardMaterial3D = mi.material_override as StandardMaterial3D
+				if mat is BaseMaterial3D:
+					var bm: BaseMaterial3D = mat as BaseMaterial3D
+					bm.transparency = BaseMaterial3D.TRANSPARENCY_DISABLED
+					bm.depth_draw_mode = BaseMaterial3D.DEPTH_DRAW_OPAQUE_ONLY
+					bm.cull_mode = BaseMaterial3D.CULL_DISABLED
+					bm.shading_mode = BaseMaterial3D.SHADING_MODE_PER_PIXEL
+					bm.albedo_color.a = 1.0
+					bm.metallic = 0.0
+					bm.roughness = maxf(bm.roughness, 0.75)
+				elif mat == null:
+					var fallback_mat := StandardMaterial3D.new()
+					fallback_mat.transparency = BaseMaterial3D.TRANSPARENCY_DISABLED
+					fallback_mat.depth_draw_mode = BaseMaterial3D.DEPTH_DRAW_OPAQUE_ONLY
+					fallback_mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+					fallback_mat.shading_mode = BaseMaterial3D.SHADING_MODE_PER_PIXEL
+					fallback_mat.albedo_color = Color(0.85, 0.82, 0.78, 1.0)
+					fallback_mat.metallic = 0.0
+					fallback_mat.roughness = 0.8
+					mi.set_surface_override_material(i, fallback_mat)
+		if mi.material_override != null and mi.material_override is BaseMaterial3D:
+			var mo: BaseMaterial3D = mi.material_override as BaseMaterial3D
 			mo.transparency = BaseMaterial3D.TRANSPARENCY_DISABLED
 			mo.depth_draw_mode = BaseMaterial3D.DEPTH_DRAW_OPAQUE_ONLY
 			mo.cull_mode = BaseMaterial3D.CULL_DISABLED
+			mo.shading_mode = BaseMaterial3D.SHADING_MODE_PER_PIXEL
 			mo.albedo_color.a = 1.0
 			mo.metallic = 0.0
 	for child in node.get_children():

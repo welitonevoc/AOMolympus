@@ -159,6 +159,7 @@ func _ready() -> void:
 
 	_visual_holder = Node3D.new()
 	_visual_holder.name = "VisualHolder"
+	_visual_holder.visible = true
 	add_child(_visual_holder)
 	_rebuild_visual()
 
@@ -222,6 +223,8 @@ func _physics_process(delta: float) -> void:
 		if cam != null:
 			var lod: LODController.LODLevel = LODController.calculate_lod_level(cam.global_position, global_position, false)
 			LODController.apply_lod_to_node(_visual_holder, lod)
+		elif _visual_holder != null:
+			_visual_holder.visible = true
 
 
 	match state:

@@ -9,9 +9,9 @@ extends RefCounted
 
 enum LODLevel { HIGH = 0, MEDIUM = 1, LOW = 2, CULLED = 3 }
 
-const DIST_HIGH: float = 24.0
-const DIST_MEDIUM: float = 48.0
-const DIST_LOW: float = 78.0
+const DIST_HIGH: float = 32.0
+const DIST_MEDIUM: float = 64.0
+const DIST_LOW: float = 160.0
 
 static func calculate_lod_level(camera_pos: Vector3, entity_pos: Vector3, is_in_fog: bool = false) -> LODLevel:
 	if is_in_fog:
