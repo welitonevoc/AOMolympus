@@ -10,19 +10,19 @@ signal camera_changed(position: Vector3, target: Vector3)
 
 # ─── Configuração ────────────────────────────────────────────────────────────
 @export var auto_orbit_enabled: bool = true
-@export var auto_orbit_speed: float = 15.0  # graus/seg
+@export var auto_orbit_speed: float = 15.0
 @export var camera_min_distance: float = 2.0
 @export var camera_max_distance: float = 30.0
 @export var camera_default_distance: float = 8.0
-@export var focus_offset: Vector3 = Vector3(0, 1.2, -2.5)  # offset para foco rosto/arma
+@export var focus_offset: Vector3 = Vector3(0, 1.2, -2.5)
 
-# ─── Referências de nós (definidas no _ready ou via cena) ────────────────────
+# ─── Referências de nós ──────────────────────────────────────────────────────
 @onready var sub_viewport: SubViewport = %SubViewport
 @onready var camera_3d: Camera3D = %Camera3D
 @onready var directional_light: DirectionalLight3D = %DirectionalLight3D
 @onready var world_env: WorldEnvironment = %WorldEnvironment
 @onready var model_root: Node3D = %ModelRoot
-@onready var ground_grid: GridMap = %GroundGrid
+@onready var ground_mesh: MeshInstance3D = %GroundMesh
 
 # ─── Estado interno ──────────────────────────────────────────────────────────
 var _current_model: Node3D = null
@@ -46,9 +46,9 @@ func _ready() -> void:
 func _setup_viewport() -> void:
 	if sub_viewport != null:
 		sub_viewport.own_world = true
-		sub_viewport.render_target_update_mode = SubViewport.RENDER_TARGET_UPDATE_ALWAYS
+		sub_viewport.render_target_update_mode = SubViewport.RENDER_TARGET_UPDATE_WHEN_VISIBLE
 		sub_viewport.size = Vector2(1280, 720)
-		sub_viewport.usage = SubViewport.USAGE_3D
+		# usage property removido no Godot 4.x
 
 func _setup_camera() -> void:
 	if camera_3d != null:
@@ -67,12 +67,12 @@ func _setup_lighting() -> void:
 		directional_light.shadow_normal_bias = 0.3
 		directional_light.shadow_bias = 0.005
 		directional_light.shadow_contact = 0.1
-		directional_light.size = 0.2  # sombras suaves
+		directional_light.size = 0.2
 
 func _setup_environment() -> void:
 	if world_env != null and world_env.environment == null:
 		var env: Environment = Environment.new()
-		env.background_mode = Environment.BACKGROUND_COLOR
+		env.background_mode = Environment.BACKGROUND_CUSTOM_COLOR
 		env.background_color = Color(0.04, 0.04, 0.06)
 		env.ambient_light = Color(0.35, 0.35, 0.42)
 		env.ambient_light_energy = 1.6
@@ -82,26 +82,18 @@ func _setup_environment() -> void:
 		world_env.environment = env
 
 func _setup_ground() -> void:
-	if ground_grid != null:
-		# GridMap simples com MeshLibrary para chão sutil
-		var mesh_lib: MeshLibrary = MeshLibrary.new()
+	if ground_mesh != null:
 		var plane_mesh: PlaneMesh = PlaneMesh.new()
-		plane_mesh.size = Vector2(1, 1)
-		plane_mesh.subdivide_width = 1
-		plane_mesh.subdivide_depth = 1
+		plane_mesh.size = Vector2(40, 40)
+		plane_mesh.subdivide_width = 20
+		plane_mesh.subdivide_depth = 20
 		plane_mesh.orientation = PlaneMesh.ORIENTATION_Y
 		var mat: StandardMaterial3D = StandardMaterial3D.new()
 		mat.albedo_color = Color(0.15, 0.15, 0.18, 0.3)
 		mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 		mat.cull_mode = BaseMaterial3D.CULL_DISABLED
 		plane_mesh.material = mat
-		mesh_lib.create_item(0, plane_mesh)
-		ground_grid.mesh_library = mesh_lib
-		# Preencher grid 20x20 centrado
-		for x in range(-10, 11):
-			for z in range(-10, 11):
-				if (x + z) % 2 == 0:
-					ground_grid.set_cell(0, Vector3i(x, 0, z), 0)
+		ground_mesh.mesh = plane_mesh
 
 # ─── Processamento ───────────────────────────────────────────────────────────
 
@@ -113,7 +105,6 @@ func _process(delta: float) -> void:
 
 # ─── API Pública ─────────────────────────────────────────────────────────────
 
-## Define o modelo atual (remove anterior, adiciona novo, centraliza, enquadra)
 func set_model(model_node: Node3D) -> void:
 	clear_model()
 	
@@ -122,84 +113,69 @@ func set_model(model_node: Node3D) -> void:
 	
 	_current_model = model_node
 	model_root.add_child(model_node)
-	
-	# Centralizar e escalonar
 	_center_and_frame_model(model_node)
 	
-	# Reset câmera
 	_orbit_angle_y = 0.0
 	_camera_angle_y = 0.0
 	_camera_distance = _get_ideal_distance(model_node)
 	_is_focus_mode = false
 	_update_camera()
 
-## Remove modelo atual
 func clear_model() -> void:
 	if _current_model != null and is_instance_valid(_current_model):
 		_current_model.queue_free()
 		_current_model = null
 
-## Alterna rotação automática
 func set_auto_orbit(enabled: bool) -> void:
 	auto_orbit_enabled = enabled
 	if enabled:
 		_orbit_angle_y = deg_to_rad(_camera_angle_y)
 
-## Alterna modo foco (rosto/arma vs visão geral)
 func set_focus_mode(enabled: bool) -> void:
 	_is_focus_mode = enabled
 	_update_camera()
 
-## Define distância da câmera (zoom)
 func set_camera_distance(distance: float) -> void:
 	_camera_distance = clamp(distance, camera_min_distance, camera_max_distance)
 	_update_camera()
 
-## Ajusta distância relativa (scroll)
 func adjust_camera_distance(delta: float) -> void:
 	set_camera_distance(_camera_distance + delta)
 
-## Rotaciona câmera manualmente (drag)
 func rotate_camera(delta_y: float, delta_x: float) -> void:
 	_camera_angle_y += delta_y
 	_camera_angle_x = clamp(_camera_angle_x + delta_x, -80.0, 80.0)
 	_update_camera()
 
-## Reset câmera para enquadramento ideal
 func reset_camera() -> void:
 	_camera_angle_y = 0.0
 	_camera_angle_x = 18.0
-	_camera_distance = _camera_default_distance
+	_camera_distance = camera_default_distance
 	_is_focus_mode = false
 	_orbit_angle_y = 0.0
 	if _current_model != null:
 		_camera_distance = _get_ideal_distance(_current_model)
 	_update_camera()
 
-## Obtém nó do modelo atual
 func get_current_model() -> Node3D:
 	return _current_model
 
-## Obtém AnimationPlayer do modelo atual (se houver)
 func get_animation_player() -> AnimationPlayer:
 	if _current_model == null:
 		return null
 	return _find_animation_player(_current_model)
 
-## Obtém Skeleton3D do modelo atual
 func get_skeleton() -> Skeleton3D:
 	if _current_model == null:
 		return null
 	return _find_skeleton(_current_model)
 
-## Obtém lista de nomes de animações disponíveis
 func get_animation_names() -> Array[String]:
 	var anim_player: AnimationPlayer = get_animation_player()
 	if anim_player == null:
 		return []
 	return anim_player.get_animation_list()
 
-## Reproduz animação por nome
 func play_animation(name: String, loop: bool = true, speed: float = 1.0) -> bool:
 	var anim_player: AnimationPlayer = get_animation_player()
 	if anim_player == null or not anim_player.has_animation(name):
@@ -208,7 +184,6 @@ func play_animation(name: String, loop: bool = true, speed: float = 1.0) -> bool
 	anim_player.playback_speed = speed
 	return true
 
-## Para animação atual
 func stop_animation() -> void:
 	var anim_player: AnimationPlayer = get_animation_player()
 	if anim_player != null:
@@ -222,9 +197,8 @@ func _update_camera() -> void:
 	
 	var target: Vector3 = _target_position
 	if _is_focus_mode and _current_model != null:
-		# Foco no "rosto/arma" — offset do centro do modelo
 		var bbox: AABB = _calculate_aabb(_current_model)
-		target = bbox.position + bbox.size * 0.5 + _focus_offset
+		target = bbox.position + bbox.size * 0.5 + focus_offset
 	else:
 		target = _target_position
 	
@@ -250,19 +224,13 @@ func _center_and_frame_model(model: Node3D) -> void:
 	var center: Vector3 = bbox.position + bbox.size * 0.5
 	model.position = -center
 	_target_position = Vector3.ZERO
-	
-	# Atualizar grid para escala do modelo
-	var max_dim: float = max(bbox.size.x, bbox.size.y, bbox.size.z)
-	var grid_scale: float = max(1.0, ceil(max_dim / 2.0)) * 2.0
-	if ground_grid != null:
-		ground_grid.scale = Vector3(grid_scale, 1.0, grid_scale)
 
 func _get_ideal_distance(model: Node3D) -> float:
 	var bbox: AABB = _calculate_aabb(model)
 	if bbox.size == Vector3.ZERO:
-		return _camera_default_distance
+		return camera_default_distance
 	var max_dim: float = max(bbox.size.x, bbox.size.y, bbox.size.z)
-	return clamp(max_dim * 2.2, _camera_min_distance, _camera_max_distance)
+	return clamp(max_dim * 2.2, camera_min_distance, camera_max_distance)
 
 func _calculate_aabb(node: Node3D) -> AABB:
 	var min_v: Vector3 = Vector3(1e9, 1e9, 1e9)

@@ -52,7 +52,7 @@ environment = ExtResource("6")
 [node name="ModelRoot" type="Node3D" parent="SubViewport"]
 position = Vector3(0.0, 0.0, 0.0)
 
-[node name="GroundGrid" type="GridMap" parent="SubViewport"]
+[node name="GroundMesh" type="MeshInstance3D" parent="SubViewport"]
 position = Vector3(0.0, -0.01, 0.0)
 
 [node name="ModelLoader" type="Node" parent="."]

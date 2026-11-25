@@ -38,26 +38,22 @@ static func get_label_settings(
 	var col: Color = custom_color
 	var out_sz: int = custom_outline_size
 
-	match style:
-		Style.HEADING:
-			if sz <= 0: sz = 20
-			if col.a <= 0.0: col = Color("#fef08a") # Ouro brilhante
-			if out_sz < 0: out_sz = 2
-
-		Style.LORE:
-			if sz <= 0: sz = 14
-			if col.a <= 0.0: col = Color("#f1f5f9") # Marfim / pergaminho
-			if out_sz < 0: out_sz = 1
-
-		Style.TACTICAL:
-			if sz <= 0: sz = 12
-			if col.a <= 0.0: col = Color("#ffffff") # Branco puro
-			if out_sz < 0: out_sz = 2 # Contorno obrigatório para terreno 3D
-
-		Style.RESOURCE_VALUE:
-			if sz <= 0: sz = 13
-			if col.a <= 0.0: col = Color("#ffffff")
-			if out_sz < 0: out_sz = 2
+	if style == Style.HEADING:
+		if sz <= 0: sz = 20
+		if col.a <= 0.0: col = Color("#fef08a")
+		if out_sz < 0: out_sz = 2
+	elif style == Style.LORE:
+		if sz <= 0: sz = 14
+		if col.a <= 0.0: col = Color("#f1f5f9")
+		if out_sz < 0: out_sz = 1
+	elif style == Style.TACTICAL:
+		if sz <= 0: sz = 12
+		if col.a <= 0.0: col = Color("#ffffff")
+		if out_sz < 0: out_sz = 2
+	elif style == Style.RESOURCE_VALUE:
+		if sz <= 0: sz = 13
+		if col.a <= 0.0: col = Color("#ffffff")
+		if out_sz < 0: out_sz = 2
 
 	# Chave de cache única para reutilização de recursos (inclui canal alfa)
 	var cache_key: String = "%d_%d_%s_%d" % [style, sz, col.to_html(true), out_sz]
@@ -68,39 +64,34 @@ static func get_label_settings(
 	ls.font_size = sz
 	ls.font_color = col
 
-	match style:
-		Style.HEADING:
-			var ancient_f := get_ancient_font()
-			if ancient_f != null:
-				ls.font = ancient_f
-			ls.outline_size = out_sz
-			ls.outline_color = Color("#1e1b18") # Bronze profundo / obsidiana
-			ls.shadow_size = 3
-			ls.shadow_color = Color(0.0, 0.0, 0.0, 0.75)
-			ls.shadow_offset = Vector2(1, 2)
-
-		Style.LORE:
-			var ancient_f := get_ancient_font()
-			if ancient_f != null:
-				ls.font = ancient_f
-			ls.outline_size = out_sz
-			ls.outline_color = Color("#0f172a") # Azul ardósia profundo
-			ls.shadow_size = 2
-			ls.shadow_color = Color(0.0, 0.0, 0.0, 0.5)
-			ls.shadow_offset = Vector2(1, 1)
-
-		Style.TACTICAL:
-			# Usa fonte do sistema sem serifa para máxima clareza em ícones e botões pequenos
-			ls.outline_size = out_sz
-			ls.outline_color = Color(0.0, 0.0, 0.0, 0.95) # Contorno anti-ofuscamento contra grama/areia/fogo
-			ls.shadow_size = 0
-
-		Style.RESOURCE_VALUE:
-			ls.outline_size = out_sz
-			ls.outline_color = Color(0.0, 0.0, 0.0, 0.95)
-			ls.shadow_size = 1
-			ls.shadow_color = Color(0.0, 0.0, 0.0, 0.6)
-			ls.shadow_offset = Vector2(0, 1)
+	if style == Style.HEADING:
+		var ancient_f := get_ancient_font()
+		if ancient_f != null:
+			ls.font = ancient_f
+		ls.outline_size = out_sz
+		ls.outline_color = Color("#1e1b18")
+		ls.shadow_size = 3
+		ls.shadow_color = Color(0.0, 0.0, 0.0, 0.75)
+		ls.shadow_offset = Vector2(1, 2)
+	elif style == Style.LORE:
+		var ancient_f := get_ancient_font()
+		if ancient_f != null:
+			ls.font = ancient_f
+		ls.outline_size = out_sz
+		ls.outline_color = Color("#0f172a")
+		ls.shadow_size = 2
+		ls.shadow_color = Color(0.0, 0.0, 0.0, 0.5)
+		ls.shadow_offset = Vector2(1, 1)
+	elif style == Style.TACTICAL:
+		ls.outline_size = out_sz
+		ls.outline_color = Color(0.0, 0.0, 0.0, 0.95)
+		ls.shadow_size = 0
+	elif style == Style.RESOURCE_VALUE:
+		ls.outline_size = out_sz
+		ls.outline_color = Color(0.0, 0.0, 0.0, 0.95)
+		ls.shadow_size = 1
+		ls.shadow_color = Color(0.0, 0.0, 0.0, 0.6)
+		ls.shadow_offset = Vector2(0, 1)
 
 	_settings_cache[cache_key] = ls
 	return ls

@@ -11,17 +11,18 @@ signal load_failed(reason: String)
 signal load_progress(progress: float, status: String)
 
 # ─── Dependências (Autoloads) ────────────────────────────────────────────────
-@onready var model_library: ModelLibrary = ModelLibrary
-@onready var olympus_unit_catalog: OlympusUnitCatalog = OlympusUnitCatalog
+var model_library: ModelLibrary
+var olympus_unit_catalog: OlympusUnitCatalog
+
+func _init() -> void:
+	model_library = ModelLibrary
+	olympus_unit_catalog = OlympusUnitCatalog
 
 # ─── Cache interno ───────────────────────────────────────────────────────────
-var _loaded_models: Dictionary = {}  # path -> {instance, skeleton, anim_player, animations}
+var _loaded_models: Dictionary = {}
 
 # ─── API Pública ─────────────────────────────────────────────────────────────
 
-## Carrega modelo completo de forma assíncrona
-## model_path: caminho "res://..." do .glb base
-## unit_data: dados da unidade do OlympusUnitCatalog (opcional, para acessórios por ação)
 func load_model_async(model_path: String, unit_data: Dictionary = {}) -> void:
 	if model_path in _loaded_models:
 		var cached = _loaded_models[model_path]
@@ -31,7 +32,6 @@ func load_model_async(model_path: String, unit_data: Dictionary = {}) -> void:
 	
 	call_deferred("_do_load_model", model_path, unit_data)
 
-## Carrega modelo de forma síncrona (bloqueia - usar com cuidado)
 func load_model_sync(model_path: String, unit_data: Dictionary = {}) -> Dictionary:
 	if model_path in _loaded_models:
 		var cached = _loaded_models[model_path]
@@ -40,11 +40,9 @@ func load_model_sync(model_path: String, unit_data: Dictionary = {}) -> Dictiona
 	
 	return _do_load_model_sync(model_path, unit_data)
 
-## Obtém modelo já carregado do cache
 func get_cached(model_path: String) -> Dictionary:
 	return _loaded_models.get(model_path, {})
 
-## Limpa cache
 func clear_cache() -> void:
 	for entry in _loaded_models.values():
 		if entry.instance != null and is_instance_valid(entry.instance):
@@ -78,7 +76,6 @@ func _do_load_model(model_path: String, unit_data: Dictionary) -> void:
 	var animations: Array[String] = []
 	if anim_player != null:
 		animations = anim_player.get_animation_list()
-		# Carregar animações adicionais de arquivos separados
 		_load_extra_animations(anim_player, model_path)
 		animations = anim_player.get_animation_list()
 	
@@ -134,13 +131,11 @@ func _do_load_model_sync(model_path: String, unit_data: Dictionary) -> Dictionar
 # ─── Carregamento de Cena ────────────────────────────────────────────────────
 
 func _load_packed_scene(path: String) -> PackedScene:
-	# Tentar via ModelLibrary primeiro (cache)
 	if model_library != null and model_library.has_method("get_or_load"):
 		var scene = model_library.get_or_load(path)
 		if scene != null:
 			return scene as PackedScene
 	
-	# Fallback: load direto
 	var res: Resource = load(path)
 	if res == null:
 		return null
@@ -148,7 +143,6 @@ func _load_packed_scene(path: String) -> PackedScene:
 	if res is PackedScene:
 		return res as PackedScene
 	
-	# Se for Node3D direto, empacotar
 	if res is Node3D:
 		var ps: PackedScene = PackedScene.new()
 		ps.pack(res)
@@ -156,7 +150,7 @@ func _load_packed_scene(path: String) -> PackedScene:
 	
 	return null
 
-# ─── Materiais (padrão Godot 4.8 Android - anti-faces invisíveis) ────────────
+# ─── Materiais ────────────────────────────────────────────────────────────────
 
 func _apply_materials(node: Node3D) -> void:
 	var stack: Array = [node]
@@ -170,12 +164,10 @@ func _apply_materials(node: Node3D) -> void:
 					mat = mesh_inst.get_active_material(i)
 				if mat is StandardMaterial3D:
 					var smat: StandardMaterial3D = mat as StandardMaterial3D
-					# Double-sided para evitar faces invisíveis (winding DirectX)
 					smat.cull_mode = BaseMaterial3D.CULL_DISABLED
 					smat.transparency = BaseMaterial3D.TRANSPARENCY_DISABLED
 					smat.depth_draw_mode = BaseMaterial3D.DEPTH_DRAW_OPAQUE_ONLY
 				elif mat is ORMMaterial3D:
-					# Converter ORM para Standard limpo preservando albedo
 					var orm: ORMMaterial3D = mat as ORMMaterial3D
 					var new_mat: StandardMaterial3D = StandardMaterial3D.new()
 					new_mat.albedo_texture = orm.albedo_texture
@@ -194,10 +186,9 @@ func _apply_materials(node: Node3D) -> void:
 		for child in n.get_children():
 			stack.push_back(child)
 
-# ─── Animações Extras (arquivos separados animations/*.glb) ──────────────────
+# ─── Animações Extras ────────────────────────────────────────────────────────
 
 func _load_extra_animations(anim_player: AnimationPlayer, base_model_path: String) -> void:
-	# Procurar pasta animations/ ao lado do modelo base
 	var base_dir: String = base_model_path.get_base_dir()
 	var anim_dir: String = base_dir + "/animations/"
 	
@@ -215,7 +206,6 @@ func _load_extra_animations(anim_player: AnimationPlayer, base_model_path: Strin
 		if anim_res == null:
 			continue
 		
-		# Se for AnimationLibrary ou PackedScene com AnimationPlayer
 		if anim_res is AnimationLibrary:
 			anim_player.add_animation_library("", anim_res as AnimationLibrary)
 		elif anim_res is PackedScene:
@@ -233,15 +223,8 @@ func _load_extra_animations(anim_player: AnimationPlayer, base_model_path: Strin
 			if not anim_player.has_animation(anim_name):
 				anim_player.add_animation(anim_name, anim_res as Animation)
 
-# ─── Acessórios (BoneAttachment3D por ação) ──────────────────────────────────
+# ─── Acessórios ──────────────────────────────────────────────────────────────
 
-## Aplica acessórios baseados na ação (idle, walk, attack, gather, ranged, death, special)
-## Regras canônicas AoM (skill mito-rts, regra 6):
-## - idle/walk/death/bored: mãos vazias
-## - attack: faca/adaga em RightHand
-## - gather (madeira/ouro): ferramenta em RightHand (machado, picareta, martelo)
-## - ranged/hunt: arco em LeftHand + flecha em RightHand
-## - special: poder divino/mítico (definido por unidade)
 func _apply_accessories(instance: Node3D, unit_data: Dictionary, action: String) -> void:
 	if unit_data.is_empty():
 		return
@@ -250,7 +233,6 @@ func _apply_accessories(instance: Node3D, unit_data: Dictionary, action: String)
 	if skeleton == null:
 		return
 	
-	# Encontrar sockets
 	var right_hand_socket: int = skeleton.find_bone("RightHand_Socket") 
 	if right_hand_socket == -1:
 		right_hand_socket = skeleton.find_bone("RightHand")
@@ -269,21 +251,13 @@ func _apply_accessories(instance: Node3D, unit_data: Dictionary, action: String)
 	if head_socket == -1:
 		head_socket = skeleton.find_bone("TOPOFHEAD")
 	
-	# Limpar acessórios anteriores
 	_clear_accessories(instance)
 	
-	# Determinar quais acessórios carregar baseando-se na ação e tipo de unidade
 	var accessories_to_load: Array[Dictionary] = _get_accessories_for_action(unit_data, action)
 	
 	var base_dir: String = ""
 	if unit_data.has("model_path"):
 		base_dir = unit_data["model_path"].get_base_dir() + "/accessories/"
-	else:
-		# Fallback: tentar inferir do id
-		var clean_id: String = unit_data.get("id", "")
-		if clean_id != "":
-			# Buscar em models/civilizations/... (complexo, pular por ora)
-			pass
 	
 	if base_dir == "" or not DirAccess.dir_exists_absolute(base_dir):
 		return
@@ -302,7 +276,6 @@ func _apply_accessories(instance: Node3D, unit_data: Dictionary, action: String)
 		if acc_inst == null:
 			continue
 		
-		# Anexar ao socket correto
 		var ba: BoneAttachment3D = BoneAttachment3D.new()
 		ba.name = "Acc_" + acc.file.get_basename()
 		
@@ -313,14 +286,12 @@ func _apply_accessories(instance: Node3D, unit_data: Dictionary, action: String)
 		elif acc.socket == "Head" and head_socket >= 0:
 			ba.bone_idx = head_socket
 		else:
-			# Fallback: anexar ao root
 			instance.add_child(acc_inst)
 			continue
 		
 		instance.add_child(ba)
 		ba.add_child(acc_inst)
 		
-		# Ajustar transform local se necessário
 		if acc.has("offset"):
 			acc_inst.position = acc.offset
 		if acc.has("rotation"):
@@ -333,38 +304,24 @@ func _get_accessories_for_action(unit_data: Dictionary, action: String) -> Array
 	var unit_type: String = unit_data.get("category", "")
 	var role: String = unit_data.get("role", "")
 	
-	match action:
-		"idle", "walk", "run", "death", "bored":
-			# Mãos vazias - nenhum acessório
-			pass
-		
-		"attack":
-			# Faca/adaga para aldeões, arma padrão para militares
-			if role == "worker" or unit_type == "aldeao":
-				result.append({"file": "attachments_a_knife.glb", "socket": "RightHand"})
-			elif role == "infantry":
-				result.append({"file": "attachments_sword.glb", "socket": "RightHand"})
-			elif role == "cavalry":
-				result.append({"file": "attachments_spear.glb", "socket": "RightHand"})
-		
-		"gather":
-			# Ferramenta de trabalho
-			if role == "worker":
-				# Verificar tipo de recurso (simplificado - usar machado)
-				result.append({"file": "attachments_a_axe_hatchet.glb", "socket": "RightHand"})
-		
-		"ranged", "hunt":
-			# Arco + flecha
-			if role == "archer" or unit_type == "aldeao":
-				result.append({"file": "attachments_a_bow.glb", "socket": "LeftHand"})
-				result.append({"file": "attachments_arrow.glb", "socket": "RightHand"})
-		
-		"special":
-			# Poder divino/mítico - específico por unidade (placeholder)
-			pass
-	
-	# Cabeça (TOPOFHEAD) - sempre ativa se existir
-	# Não adicionamos aqui pois o modelo base já deve ter a cabeça anexada
+	if action in ["idle", "walk", "run", "death", "bored"]:
+		pass
+	elif action == "attack":
+		if role == "worker" or unit_type == "aldeao":
+			result.append({"file": "attachments_a_knife.glb", "socket": "RightHand"})
+		elif role == "infantry":
+			result.append({"file": "attachments_sword.glb", "socket": "RightHand"})
+		elif role == "cavalry":
+			result.append({"file": "attachments_spear.glb", "socket": "RightHand"})
+	elif action == "gather":
+		if role == "worker":
+			result.append({"file": "attachments_a_axe_hatchet.glb", "socket": "RightHand"})
+	elif action in ["ranged", "hunt"]:
+		if role == "archer" or unit_type == "aldeao":
+			result.append({"file": "attachments_a_bow.glb", "socket": "LeftHand"})
+			result.append({"file": "attachments_arrow.glb", "socket": "RightHand"})
+	elif action == "special":
+		pass
 	
 	return result
 
@@ -396,7 +353,6 @@ func _find_animation_player(node: Node) -> AnimationPlayer:
 			return found
 	return null
 
-## Obtém estatísticas do modelo carregado (para painel de detalhes)
 func get_model_stats(model_path: String) -> Dictionary:
 	var entry: Dictionary = _loaded_models.get(model_path, {})
 	if entry.is_empty():
@@ -409,7 +365,6 @@ func get_model_stats(model_path: String) -> Dictionary:
 	if instance == null or not is_instance_valid(instance):
 		return {}
 	
-	# Contar malhas
 	var mesh_count: int = 0
 	var surface_count: int = 0
 	var tri_count: int = 0
@@ -432,7 +387,6 @@ func get_model_stats(model_path: String) -> Dictionary:
 		for child in n.get_children():
 			stack.push_back(child)
 	
-	# Contar sockets/acessórios
 	var socket_count: int = 0
 	stack = [instance]
 	while stack.size() > 0:

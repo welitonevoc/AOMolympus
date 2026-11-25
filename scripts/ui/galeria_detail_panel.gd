@@ -446,21 +446,20 @@ func _add_power_section(parent: VBoxContainer) -> void:
 	
 	# Verificar habilidades míticas
 	if power_name == "--":
-		match role:
-			"mythic":
-				var myth_power: Dictionary = _get_mythic_power(unit_kind)
-				if not myth_power.is_empty():
-					power_name = myth_power.get("name", "Golpe Mítico")
-					power_desc = myth_power.get("desc", "Habilidade especial desta unidade mitológica.")
-			"divine":
-				power_name = "Fúria Divina"
-				power_desc = "Poder divino especial desta divindade da Era T5."
-			"worker":
-				power_name = "Trabalho Incansável"
-				power_desc = "Coleta recursos e constrói edifícios."
-			"infantry", "archer", "cavalry":
-				power_name = "Formação de Combate"
-				power_desc = "Pode alternar entre formações (linha, caixa, dispersa) e posturas."
+		if role == "mythic":
+			var myth_power: Dictionary = _get_mythic_power(unit_kind)
+			if not myth_power.is_empty():
+				power_name = myth_power.get("name", "Golpe Mítico")
+				power_desc = myth_power.get("desc", "Habilidade especial desta unidade mitológica.")
+		elif role == "divine":
+			power_name = "Fúria Divina"
+			power_desc = "Poder divino especial desta divindade da Era T5."
+		elif role == "worker":
+			power_name = "Trabalho Incansável"
+			power_desc = "Coleta recursos e constrói edifícios."
+		elif role in ["infantry", "archer", "cavalry"]:
+			power_name = "Formação de Combate"
+			power_desc = "Pode alternar entre formações (linha, caixa, dispersa) e posturas."
 	
 	var vbox: VBoxContainer = VBoxContainer.new()
 	parent.add_child(vbox)
@@ -602,7 +601,6 @@ func _get_role_display(role: String) -> String:
 		"ship": "⛵ Navio"
 	}
 	return map.get(role, role.capitalize())
-}
 
 func _get_combat_class(unittypes: Array, role: String) -> String:
 	# Prioridade: tags explícitas > role
@@ -625,15 +623,22 @@ func _get_combat_class(unittypes: Array, role: String) -> String:
 			return "worker"
 	
 	# Fallback por role
-	match role:
-		"worker", "aldeao": return "worker"
-		"infantry": return "infantry"
-		"archer": return "archer"
-		"cavalry": return "cavalry"
-		"siege": return "siege"
-		"mythic": return "mythic"
-		"hero", "divine": return "hero"
-		"building": return "building"
+	if role == "worker" or role == "aldeao":
+		return "worker"
+	elif role == "infantry":
+		return "infantry"
+	elif role == "archer":
+		return "archer"
+	elif role == "cavalry":
+		return "cavalry"
+	elif role == "siege":
+		return "siege"
+	elif role == "mythic":
+		return "mythic"
+	elif role == "hero" or role == "divine":
+		return "hero"
+	elif role == "building":
+		return "building"
 	return "infantry"
 
 func _get_class_display(class_name: String) -> String {

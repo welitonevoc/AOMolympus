@@ -352,27 +352,26 @@ func _matches_filters(unit: Dictionary) -> bool:
 	# Filtro de tipo
 	if _current_type != "all":
 		var type_match: bool = false
-		match _current_type:
-			"aldeao":
-				type_match = (category == "aldeao" or role == "worker")
-			"infantry":
-				type_match = (role == "infantry")
-			"archer":
-				type_match = (role == "archer")
-			"cavalry":
-				type_match = (role == "cavalry")
-			"siege":
-				type_match = (role == "siege")
-			"mythic":
-				type_match = (category == "unidade_mitica" or role == "mythic")
-			"hero":
-				type_match = (category == "heroi" or role == "hero" or role == "divine")
-			"divine":
-				type_match = (category == "deus_maior" or role == "divine")
-			"building":
-				type_match = (category == "construcao" or category == "building")
-			"ship":
-				type_match = (role == "ship" or "ship" in name)
+		if _current_type == "aldeao":
+			type_match = (category == "aldeao" or role == "worker")
+		elif _current_type == "infantry":
+			type_match = (role == "infantry")
+		elif _current_type == "archer":
+			type_match = (role == "archer")
+		elif _current_type == "cavalry":
+			type_match = (role == "cavalry")
+		elif _current_type == "siege":
+			type_match = (role == "siege")
+		elif _current_type == "mythic":
+			type_match = (category == "unidade_mitica" or role == "mythic")
+		elif _current_type == "hero":
+			type_match = (category == "heroi" or role == "hero" or role == "divine")
+		elif _current_type == "divine":
+			type_match = (category == "deus_maior" or role == "divine")
+		elif _current_type == "building":
+			type_match = (category == "construcao" or category == "building")
+		elif _current_type == "ship":
+			type_match = (role == "ship" or "ship" in name)
 		if not type_match:
 			return false
 	
@@ -388,7 +387,7 @@ func _matches_filters(unit: Dictionary) -> bool:
 	
 	return true
 
-func _resolve_model_path(unit: Dictionary) -> String {
+func _resolve_model_path(unit: Dictionary) -> String:
 	# Tentar resolver o caminho do modelo .glb baseado no id da unidade
 	var clean_id: String = unit.get("id", "")
 	var pantheon: String = unit.get("pantheon", _current_pantheon)
@@ -431,18 +430,24 @@ func _resolve_model_path(unit: Dictionary) -> String {
 	
 	return ""
 
-func _map_category_to_folder(category: String) -> String {
-	match category:
-		"aldeao": return "aldeao"
-		"unidade_militar": return "unidade_militar"
-		"unidade_mitica": return "unidade_mitica"
-		"heroi": return "heroi"
-		"deus_maior": return "deuses"
-		"construcao": return "construcoes"
-		"building": return "construcoes"
-		"support": return "aldeao"  # fallback
+func _map_category_to_folder(category: String) -> String:
+	if category == "aldeao":
+		return "aldeao"
+	elif category == "unidade_militar":
+		return "unidade_militar"
+	elif category == "unidade_mitica":
+		return "unidade_mitica"
+	elif category == "heroi":
+		return "heroi"
+	elif category == "deus_maior":
+		return "deuses"
+	elif category == "construcao":
+		return "construcoes"
+	elif category == "building":
+		return "construcoes"
+	elif category == "support":
+		return "aldeao"
 	return ""
-}
 
 func _format_item_display(item: Dictionary) -> String {
 	var unit: Dictionary = item.unit_data
