@@ -103,6 +103,15 @@ def check_gdscripts(autoloads: Set[str]) -> Tuple[int, List[str]]:
                 if not os.path.exists(target):
                     errors.append(f"{rel_p}:{lineno}: Recurso inexistente em preload/load: res://{m_res.group(1)}")
 
+            # 5. Check Python-style tuple unpacking in for loops.
+            # GDScript 4 nao tem "for i, v in array:" — gera cascata de Parser Errors
+            # ("Expected \"in\" or \":\" after \"for\" variable name", "Cannot use break
+            # outside of a loop" e afins). Use "for i in range(x.size()):".
+            if re.match(r"^\s*for\s+[A-Za-z_]\w*\s*,", code):
+                errors.append(
+                    f"{rel_p}:{lineno}: sintaxe Python 'for a, b in ...' — use 'for i in range(n):' com 'var b = array[i]'"
+                )
+
     return checked, errors
 
 
