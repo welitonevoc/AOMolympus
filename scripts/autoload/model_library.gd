@@ -61,6 +61,7 @@ static func create_building_visual(
 		if loaded != null:
 			_force_opaque_materials(loaded)
 			_align_model_to_ground(loaded)
+			_log_model_diag("BUILDING:" + building_kind, path, loaded)
 			return loaded
 	return _build_procedural_building(p, building_kind, tier, faction)
 
@@ -140,6 +141,7 @@ static func _instantiate_aom_bundle(bundle_dir: String, slug: String, initial_ac
 	_force_opaque_materials(loaded)
 	_align_model_to_ground(loaded)
 	_attach_aom_accessories(loaded, bundle_dir, manifest)
+	_log_model_diag("UNIT:" + slug + ":" + initial_action, glb_path, loaded)
 
 	# Inicia o AnimationPlayer do clipe automaticamente em loop
 	var anim_player: AnimationPlayer = _find_animation_player(loaded)
@@ -2623,34 +2625,82 @@ static func _make_mat(
 	return m
 
 
+static var _diag_logged_count: int = 0
+
+static func _log_model_diag(tag: String, path: String, root: Node3D) -> void:
+	if _diag_logged_count >= 8:
+		return
+	_diag_logged_count += 1
+	var lines: PackedStringArray = []
+	lines.append("=== [%d] %s | path=%s | root=%s pos=%s scale=%s vis=%s ===" % [
+		_diag_logged_count, tag, path, str(root.get_class()), str(root.position), str(root.scale), str(root.visible)
+	])
+	var queue: Array[Node] = [root]
+	var mi_count: int = 0
+	while not queue.is_empty():
+		var cur: Node = queue.pop_front()
+		if cur is MeshInstance3D:
+			mi_count += 1
+			var mi: MeshInstance3D = cur as MeshInstance3D
+			var sc: int = mi.mesh.get_surface_count() if mi.mesh != null else 0
+			var aabb_str: String = str(mi.mesh.get_aabb()) if mi.mesh != null else "null"
+			var mat0: Material = mi.get_surface_override_material(0) if sc > 0 else null
+			if mat0 == null and sc > 0 and mi.mesh != null:
+				mat0 = mi.mesh.surface_get_material(0)
+			var mat_info: String = "null"
+			if mat0 is BaseMaterial3D:
+				var bm0: BaseMaterial3D = mat0 as BaseMaterial3D
+				mat_info = "%s(tex=%s,col=%s,tr=%d,cull=%d)" % [
+					bm0.get_class(), str(bm0.albedo_texture != null), str(bm0.albedo_color), bm0.transparency, bm0.cull_mode
+				]
+			elif mat0 != null:
+				mat_info = mat0.get_class()
+			lines.append("  MI: %s vis=%s layers=%d sc=%d aabb=%s mat0=%s" % [
+				String(mi.name), str(mi.visible), mi.layers, sc, aabb_str, mat_info
+			])
+		for child in cur.get_children():
+			queue.append(child)
+	lines.append("  total_mesh_instances=%d" % mi_count)
+	var mode: FileAccess.ModeFlags = FileAccess.WRITE if _diag_logged_count == 1 else FileAccess.READ_WRITE
+	var fa: FileAccess = FileAccess.open("res://debug_model_diag.txt", mode)
+	if fa != null:
+		if _diag_logged_count > 1:
+			fa.seek_end()
+		for l in lines:
+			fa.store_line(l)
+		fa.close()
+
+
 static func _force_opaque_materials(node: Node) -> void:
 	if node is MeshInstance3D:
 		var mi: MeshInstance3D = node as MeshInstance3D
+		mi.visible = true
+		mi.layers = 1
+		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
 		var mesh: Mesh = mi.mesh
 		if mesh != null:
 			for i in range(mesh.get_surface_count()):
 				var mat: Material = mi.get_surface_override_material(i)
 				if mat == null:
 					mat = mesh.surface_get_material(i)
+				var fresh_mat := StandardMaterial3D.new()
+				fresh_mat.transparency = BaseMaterial3D.TRANSPARENCY_DISABLED
+				fresh_mat.depth_draw_mode = BaseMaterial3D.DEPTH_DRAW_OPAQUE_ONLY
+				fresh_mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+				fresh_mat.shading_mode = BaseMaterial3D.SHADING_MODE_PER_PIXEL
+				fresh_mat.metallic = 0.0
+				fresh_mat.roughness = 0.85
 				if mat is BaseMaterial3D:
 					var bm: BaseMaterial3D = mat as BaseMaterial3D
-					bm.transparency = BaseMaterial3D.TRANSPARENCY_DISABLED
-					bm.depth_draw_mode = BaseMaterial3D.DEPTH_DRAW_OPAQUE_ONLY
-					bm.cull_mode = BaseMaterial3D.CULL_DISABLED
-					bm.shading_mode = BaseMaterial3D.SHADING_MODE_PER_PIXEL
-					bm.albedo_color.a = 1.0
-					bm.metallic = 0.0
-					bm.roughness = maxf(bm.roughness, 0.75)
-				elif mat == null:
-					var fallback_mat := StandardMaterial3D.new()
-					fallback_mat.transparency = BaseMaterial3D.TRANSPARENCY_DISABLED
-					fallback_mat.depth_draw_mode = BaseMaterial3D.DEPTH_DRAW_OPAQUE_ONLY
-					fallback_mat.cull_mode = BaseMaterial3D.CULL_DISABLED
-					fallback_mat.shading_mode = BaseMaterial3D.SHADING_MODE_PER_PIXEL
-					fallback_mat.albedo_color = Color(0.85, 0.82, 0.78, 1.0)
-					fallback_mat.metallic = 0.0
-					fallback_mat.roughness = 0.8
-					mi.set_surface_override_material(i, fallback_mat)
+					fresh_mat.albedo_texture = bm.albedo_texture
+					var col: Color = bm.albedo_color
+					col.a = 1.0
+					if col.r < 0.05 and col.g < 0.05 and col.b < 0.05 and fresh_mat.albedo_texture == null:
+						col = Color(0.82, 0.78, 0.72, 1.0)
+					fresh_mat.albedo_color = col
+				else:
+					fresh_mat.albedo_color = Color(0.85, 0.82, 0.78, 1.0)
+				mi.set_surface_override_material(i, fresh_mat)
 		if mi.material_override != null and mi.material_override is BaseMaterial3D:
 			var mo: BaseMaterial3D = mi.material_override as BaseMaterial3D
 			mo.transparency = BaseMaterial3D.TRANSPARENCY_DISABLED
@@ -2658,7 +2708,6 @@ static func _force_opaque_materials(node: Node) -> void:
 			mo.cull_mode = BaseMaterial3D.CULL_DISABLED
 			mo.shading_mode = BaseMaterial3D.SHADING_MODE_PER_PIXEL
 			mo.albedo_color.a = 1.0
-			mo.metallic = 0.0
 	for child in node.get_children():
 		_force_opaque_materials(child)
 
