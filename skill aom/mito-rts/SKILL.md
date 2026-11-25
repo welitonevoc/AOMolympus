@@ -79,3 +79,16 @@ Skill especialista baseada diretamente nos arquivos originais do **Age of Mythol
    - Extrator oficial: `python3 scripts/pipeline/aom_sound_extractor.py` (extrai `sounds.bar`, `sounds2.bar` e `music/` em 13 categorias estruturadas + `sound_catalog.json`).
    - `scripts/audio/audio_director.gd` faz streaming sob demanda via `AudioStreamWAV.load_from_file()` para WAV e `AudioStreamMP3` para músicas com cache em memória.
 
+5. **Acessórios e Alinhamento de Hotspot (`align_ground = False`):**
+   - No extrator (`aom_titans_extractor.py`), o alinhamento de base ao solo (`y_shift = -y_min`) é aplicado apenas na malha base do corpo.
+   - **NUNCA aplicar `align_ground` em acessórios (`accessories/*.glb`)**: cabeças (`cavalry_g_hippikon_head_standard.glb`, `villager_n_male_head.glb`), escudos e armas dependem da origem local exata do seu *hotspot* em relação ao socket do corpo. Se receberem `y_shift`, a cabeça flutua fora do pescoço ou as armas desencaixam da mão.
+   - Sockets `TOPOFHEAD` (cabeça) devem permanecer sempre ativos e conectados em todas as ações (`idle`, `walk`, `attack`, `death`).
+
+6. **Armas e Ferramentas dos Aldeões por Ação (Canônico AoM `villager greek_anim.txt`):**
+   - **`idle` / `walk` / `death` / `bored`**: Aldeões andam com as **mãos vazias** (sem armas, arco, lança ou cesta).
+   - **`attack`**: Aldeão empunha uma **faquinha / adaga** (`attachments_a_knife.glb` de `Attachments A Knife.brg`) na `RightHand`.
+   - **`gather` (madeira/ouro) / `build`**: Ferramenta de trabalho na `RightHand` (machado `attachments_a_axe_hatchet.glb`, picareta ou martelo).
+   - **`RangedAttack` (caça)**: Arco na `LeftHand` (`attachments_a_bow.glb`) e flecha na `RightHand`.
+   - O `_attach_aom_accessories` em `scripts/autoload/model_library.gd` filtra os acessórios por ação em tempo real.
+
+
