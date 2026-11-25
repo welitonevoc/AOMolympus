@@ -15,6 +15,14 @@ import re
 import sys
 from typing import List, Set, Tuple
 
+# O console do Windows usa cp1252 por padrao e quebra com os simbolos ✅/❌.
+# Forca UTF-8 tolerante para o verifyCommand rodar igual no PC, no Termux e no CI.
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding="utf-8", errors="replace")
+    except (AttributeError, ValueError):
+        pass
+
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 
 
