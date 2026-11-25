@@ -8,16 +8,25 @@ const MIX_RATE: float = 22050.0
 
 var _music_player: AudioStreamPlayer
 var _music_playback: AudioStreamGeneratorPlayback
+var _aom_music_player: AudioStreamPlayer
 var _ui_player: AudioStreamPlayer
 var _music_phase: float = 0.0
 var _music_state: String = "peace"
 var _combat_scan_accum: float = 0.0
 var _active_3d_voices: int = 0
 var _last_voice_tick_ms: int = 0
+var _aom_catalog: Dictionary = {}
+var _stream_cache: Dictionary = {}
 
 
 func _ready() -> void:
+	_load_aom_catalog()
 	_setup_music_synth()
+	_aom_music_player = AudioStreamPlayer.new()
+	_aom_music_player.volume_db = -12.0
+	_aom_music_player.finished.connect(func() -> void: _play_aom_music_for_state(_music_state))
+	add_child(_aom_music_player)
+
 	_ui_player = AudioStreamPlayer.new()
 	_ui_player.volume_db = -10.0
 	add_child(_ui_player)
@@ -28,10 +37,88 @@ func _ready() -> void:
 	GameState.audio_muted_changed.connect(_on_muted_changed)
 
 
+func _load_aom_catalog() -> void:
+	var cpath: String = "res://audio/aom/sound_catalog.json"
+	if not FileAccess.file_exists(cpath):
+		return
+	var fa := FileAccess.open(cpath, FileAccess.READ)
+	if fa == null:
+		return
+	var parsed: Variant = JSON.parse_string(fa.get_as_text())
+	fa.close()
+	if parsed is Dictionary:
+		_aom_catalog = parsed.get("categories", {})
+
+
+func _pick_aom_sound(category: String, sub: String = "") -> String:
+	if not _aom_catalog.has(category):
+		return ""
+	var subs: Dictionary = _aom_catalog[category]
+	if not sub.is_empty() and subs.has(sub):
+		var arr: Array = subs[sub]
+		if not arr.is_empty():
+			return String(arr[randi() % arr.size()])
+	# Fallback para qualquer subcategoria dentro da mesma categoria
+	for k in subs.keys():
+		var arr2: Array = subs[k]
+		if not arr2.is_empty():
+			return String(arr2[randi() % arr2.size()])
+	return ""
+
+
+func _load_runtime_stream(res_path: String) -> AudioStream:
+	if res_path.is_empty():
+		return null
+	if _stream_cache.has(res_path):
+		return _stream_cache[res_path]
+	var st: AudioStream = null
+	if res_path.ends_with(".mp3") and FileAccess.file_exists(res_path):
+		var mp3 := AudioStreamMP3.new()
+		mp3.data = FileAccess.get_file_as_bytes(res_path)
+		if mp3.data.size() > 64:
+			st = mp3
+	elif res_path.ends_with(".wav") and FileAccess.file_exists(res_path):
+		st = AudioStreamWAV.load_from_file(res_path)
+	elif ResourceLoader.exists(res_path):
+		var loaded: Resource = load(res_path)
+		if loaded is AudioStream:
+			st = loaded
+	if st != null:
+		if _stream_cache.size() > 96:
+			_stream_cache.clear()
+		_stream_cache[res_path] = st
+	return st
+
+
+func _play_aom_music_for_state(state_name: String) -> void:
+	if GameState.audio_muted or _aom_music_player == null:
+		return
+	var sub: String = "quiet"
+	match state_name:
+		"combat":
+			sub = "fight"
+		"victory", "menu":
+			sub = "interface"
+		"culture":
+			sub = "culture"
+		_:
+			sub = "quiet"
+	var track_path: String = _pick_aom_sound("music", sub)
+	if track_path.is_empty():
+		return
+	var st: AudioStream = _load_runtime_stream(track_path)
+	if st != null:
+		if _music_player != null and _music_player.playing:
+			_music_player.stop()
+		_aom_music_player.stream = st
+		_aom_music_player.play()
+
+
 func _process(delta: float) -> void:
 	if GameState.audio_muted:
 		return
-	_fill_music_buffer()
+	if _aom_music_player == null or not _aom_music_player.playing:
+		_fill_music_buffer()
 
 	if not GameState.match_started or not GameState.match_result.is_empty():
 		return
@@ -44,6 +131,13 @@ func _process(delta: float) -> void:
 func play_ui_sfx(kind: String) -> void:
 	if GameState.audio_muted:
 		return
+	var aom_ui: String = _pick_aom_sound("ui", kind)
+	if not aom_ui.is_empty():
+		var st_aom: AudioStream = _load_runtime_stream(aom_ui)
+		if st_aom != null:
+			_ui_player.stream = st_aom
+			_ui_player.play()
+			return
 	var candidates: Array[String] = [
 		"res://audio/sfx/ui/olympus_ui_%s.wav" % kind,
 		"res://audio/sfx/ui/olympus_ui_%s.ogg" % kind,
@@ -85,6 +179,44 @@ func play_sfx_3d(kind: String, world_pos: Vector3, pantheon_id: String = "greek"
 	player.volume_db = -8.0
 	add_child(player)
 	_active_3d_voices += 1
+
+	var aom_path: String = ""
+	match kind:
+		"divine_power":
+			aom_path = _pick_aom_sound("god_powers", "god_power")
+		"myth", "titan":
+			aom_path = _pick_aom_sound("myth", "myth")
+		"building", "building_select":
+			aom_path = _pick_aom_sound("buildings", "building")
+		"arrow", "arrow_hit":
+			aom_path = _pick_aom_sound("combat", "arrow")
+		"combat_hit":
+			aom_path = _pick_aom_sound("combat", "combat_hit")
+		"sword_flesh":
+			aom_path = _pick_aom_sound("combat", "sword_flesh")
+		"unit_death":
+			aom_path = _pick_aom_sound("combat", "unit_death")
+		"build_done", "build_step":
+			aom_path = _pick_aom_sound("economy", "build")
+		"gather_wood":
+			aom_path = _pick_aom_sound("economy", "gather_wood")
+		"gather_gold":
+			aom_path = _pick_aom_sound("economy", "gather_gold")
+		"gather_forage", "gather_meat":
+			aom_path = _pick_aom_sound("economy", "gather_forage")
+		"voice_order":
+			aom_path = _pick_aom_sound("voice/" + pantheon_id, "move")
+
+	if not aom_path.is_empty():
+		var st_aom: AudioStream = _load_runtime_stream(aom_path)
+		if st_aom != null:
+			player.stream = st_aom
+			player.finished.connect(func() -> void:
+				_active_3d_voices = maxi(0, _active_3d_voices - 1)
+				player.queue_free()
+			)
+			player.play()
+			return
 
 	var specific_asset: String = ""
 	match kind:
@@ -175,6 +307,26 @@ func play_voice(pantheon: String, unit_role: String, action_type: String, world_
 		return
 	_last_voice_tick_ms = now
 
+	var voice_cat: String = "voice/heroes" if unit_role == "hero" else ("voice/" + pantheon)
+	var aom_voice: String = _pick_aom_sound(voice_cat, action_type)
+	if not aom_voice.is_empty():
+		var st_v: AudioStream = _load_runtime_stream(aom_voice)
+		if st_v != null:
+			var vp := AudioStreamPlayer3D.new()
+			vp.position = world_pos
+			vp.max_distance = 64.0
+			vp.unit_size = 14.0
+			vp.volume_db = -5.0
+			add_child(vp)
+			_active_3d_voices += 1
+			vp.stream = st_v
+			vp.finished.connect(func() -> void:
+				_active_3d_voices = maxi(0, _active_3d_voices - 1)
+				vp.queue_free()
+			)
+			vp.play()
+			return
+
 	var voice_file: String = ""
 	if pantheon == "greek":
 		if unit_role == "worker":
@@ -233,22 +385,26 @@ func _pantheon_voice_pitch(pid: String) -> float:
 
 func _on_match_started(_p: String, _e: String) -> void:
 	_music_state = "peace"
+	_play_aom_music_for_state("peace")
 	play_ui_sfx("order")
 
 
 func _on_match_ended(result: String) -> void:
 	_music_state = "victory" if result == "victory" else "defeat"
+	_play_aom_music_for_state(_music_state)
 	play_ui_sfx(_music_state)
 
 
 func _on_muted_changed(muted: bool) -> void:
+	if _aom_music_player != null:
+		_aom_music_player.stream_paused = muted
 	if _music_player != null:
 		if muted:
 			_music_player.stream_paused = true
 		else:
 			if _music_player.stream_paused:
 				_music_player.stream_paused = false
-			elif not _music_player.playing:
+			elif not _music_player.playing and (_aom_music_player == null or not _aom_music_player.playing):
 				_music_player.play()
 
 

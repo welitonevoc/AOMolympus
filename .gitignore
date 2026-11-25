@@ -41,3 +41,6 @@ models/natureza/**/*.import
 workflow_triposr.json
 n8n-orquestrador-aom.json
 
+
+# Sons extraidos de /sdcard/aom (gerados via scripts/pipeline/aom_sound_extractor.py)
+audio/aom/

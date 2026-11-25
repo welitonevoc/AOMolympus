@@ -20,6 +20,10 @@ for dir in audio ui themes assets addons; do
         cp -ru "$SRC/$dir" "$DST/" 2>/dev/null
     fi
 done
+if [ -f "$SRC/audio/aom/.gdignore" ]; then
+    mkdir -p "$DST/audio/aom"
+    cp -f "$SRC/audio/aom/.gdignore" "$DST/audio/aom/.gdignore" 2>/dev/null
+fi
 
 # 3. Modelos 3D oficiais AoM: The Titans (incremental)
 mkdir -p "$DST/models"
