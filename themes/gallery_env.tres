@@ -1,0 +1,7 @@
+[gd_resource type="Environment" load_steps=1 format=3 uid="uid://gallery_env"]
+
+[resource]
+background_mode = 0
+background_color = Color(0.05, 0.05, 0.1)
+ambient_light = Color(0.4, 0.4, 0.5)
+ambient_light_energy = 1.5

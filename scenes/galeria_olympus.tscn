@@ -1,0 +1,303 @@
+[gd_scene load_steps=4 format=3 uid="uid://galeria_olympus_v2"]
+
+[ext_resource path="res://scripts/ui/galeria_olympus.gd" type="Script" id="1"]
+[ext_resource type="Environment" uid="uid://gallery_env" path="res://themes/gallery_env.tres" id="2"]
+
+[node name="GaleriaOlympus" type="CanvasLayer"]
+anchor_preset = 7
+margin_left = 0.0
+margin_top = 0.0
+margin_right = 0.0
+margin_bottom = 0.0
+script = ExtResource("1")
+custom_styles/style_bg = { "color": Color(0.05, 0.05, 0.08, 0.95), "bg_color": Color(0.05, 0.05, 0.08, 0.95) }
+
+[node name="Panel3D" type="MarginContainer" parent="."]
+anchor_preset = 7
+margin_left = 0.0
+margin_top = 0.0
+margin_right = 0.0
+margin_bottom = 0.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+custom_styles/style_bg = { "color": Color(0.02, 0.02, 0.04, 1.0), "bg_color": Color(0.02, 0.02, 0.04, 1.0) }
+
+[node name="ViewportContainer3D" type="ViewportContainer" parent="Panel3D"]
+anchor_preset = 7
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="SubViewport" type="SubViewport" parent="ViewportContainer3D"]
+size = Vector2(1280, 720)
+usage = 2
+own_world = true
+
+[node name="Camera3D" type="Camera3D" parent="SubViewport"]
+position = Vector3(0.0, 3.0, -8.0)
+rotation_degrees = Vector3(0.0, 0.0, 0.0)
+fov = 45.0
+near = 0.1
+far = 1000.0
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="SubViewport"]
+direction = Vector3(1.0, -1.0, 0.5)
+energy = 2.0
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="SubViewport"]
+environment = ExtResource("2")
+
+[node name="ModelRoot" type="Node3D" parent="SubViewport"]
+position = Vector3(0.0, 0.0, 0.0)
+
+[node name="PanelFiltros" type="MarginContainer" parent="."]
+anchor_preset = 1
+offset_left = 10
+offset_top = 10
+offset_right = 10
+custom_styles/min_width = 300
+custom_styles/style_bg = { "color": Color(0.1, 0.1, 0.15, 0.92), "bg_color": Color(0.1, 0.1, 0.15, 0.92) }
+
+[node name="VBoxFiltros" type="VBoxContainer" parent="PanelFiltros"]
+size_flags_vertical = 1
+separation = 8
+
+[node name="lbl_categoria" type="Label" parent="VBoxFiltros"]
+text = "CATEGORIA"
+custom_styles/font_size = 14
+custom_styles/font_color = Color(0.83, 0.69, 0.22)
+
+[node name="btn_cat_unidades" type="Button" parent="VBoxFiltros"]
+text = "🗡️ Unidades"
+pressed = true
+custom_styles/min_height = 32
+
+[node name="btn_cat_construcoes" type="Button" parent="VBoxFiltros"]
+text = "🏛️ Construções"
+custom_styles/min_height = 32
+
+[node name="lbl_panteao" type="Label" parent="VBoxFiltros"]
+text = "PANTEÃO"
+custom_styles/font_size = 14
+custom_styles/font_color = Color(0.83, 0.69, 0.22)
+
+[node name="OptionPanteao" type="OptionButton" parent="VBoxFiltros"]
+custom_styles/min_height = 32
+
+[node name="lbl_deus" type="Label" parent="VBoxFiltros"]
+text = "DEUS MAIOR"
+custom_styles/font_size = 14
+custom_styles/font_color = Color(0.83, 0.69, 0.22)
+
+[node name="OptionDeus" type="OptionButton" parent="VBoxFiltros"]
+custom_styles/min_height = 32
+
+[node name="lbl_era" type="Label" parent="VBoxFiltros"]
+text = "ERA (Construções)"
+custom_styles/font_size = 14
+custom_styles/font_color = Color(0.83, 0.69, 0.22)
+visible = false
+
+[node name="OptionEra" type="OptionButton" parent="VBoxFiltros"]
+custom_styles/min_height = 32
+visible = false
+
+[node name="lbl_item" type="Label" parent="VBoxFiltros"]
+text = "ITEM"
+custom_styles/font_size = 14
+custom_styles/font_color = Color(0.83, 0.69, 0.22)
+
+[node name="OptionItem" type="OptionButton" parent="VBoxFiltros"]
+custom_styles/min_height = 32
+
+[node name="PanelControles" type="MarginContainer" parent="."]
+anchor_preset = 8
+anchor_left = 0.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 10
+offset_right = 10
+offset_bottom = 10
+custom_styles/min_height = 150
+custom_styles/style_bg = { "color": Color(0.1, 0.1, 0.15, 0.92), "bg_color": Color(0.1, 0.1, 0.15, 0.92) }
+
+[node name="HBoxControles" type="HBoxContainer" parent="PanelControles"]
+size_flags_horizontal = 3
+separation = 10
+
+[node name="lbl_zoom" type="Label" parent="HBoxControles"]
+text = "Zoom: 100%"
+custom_styles/font_size = 16
+custom_styles/font_color = Color(1, 1, 1)
+
+[node name="btn_zoom_menos" type="Button" parent="HBoxControles"]
+text = "−"
+custom_styles/min_width = 32
+custom_styles/min_height = 32
+
+[node name="btn_zoom_mais" type="Button" parent="HBoxControles"]
+text = "+"
+custom_styles/min_width = 32
+custom_styles/min_height = 32
+
+[node name="btn_girar" type="Button" parent="HBoxControles"]
+text = "🔄 Girar 360°"
+pressed = true
+custom_styles/min_width = 100
+custom_styles/min_height = 36
+
+[node name="btn_focar" type="Button" parent="HBoxControles"]
+text = "👁 Foco: Visão Geral"
+custom_styles/min_width = 120
+custom_styles/min_height = 36
+
+[node name="btn_exportar" type="Button" parent="HBoxControles"]
+text = "💾 Exportar .glb"
+custom_styles.min_width = 110
+custom_styles.min_height = 36
+
+[node name="PanelInfo" type="MarginContainer" parent="PanelControles"]
+size_flags_horizontal = 1
+custom_styles/min_width = 300
+
+[node name="VBoxInfo" type="VBoxContainer" parent="PanelInfo"]
+
+[node name="lbl_item_nome" type="Label" parent="VBoxInfo"]
+text = "Nenhum item selecionado"
+custom_styles/font_size = 20
+custom_styles/font_color = Color(0.83, 0.69, 0.22)
+custom_styles/font_color_shadow = Color(0, 0, 0, 1)
+custom_styles/font_color_shadow_as_outline = true
+custom_styles/font_color_shadow_outline_size = 1
+
+[node name="lbl_item_tipo" type="Label" parent="VBoxInfo"]
+text = ""
+custom_styles/font_size = 15
+custom_styles/font_color = Color(0.8, 0.8, 0.8)
+
+[node name="lbl_item_desc" type="Label" parent="VBoxInfo"]
+text = ""
+custom_styles/font_size = 13
+custom_styles/font_color = Color(0.7, 0.7, 0.7)
+
+[node name="PanelDetalhes" type="MarginContainer" parent="PanelInfo"]
+size_flags_horizontal = 1
+custom_styles/min_width = 300
+
+[node name="VBoxDetalhes" type="VBoxContainer" parent="PanelDetalhes"]
+
+[node name="lbl_esqueleto" type="Label" parent="VBoxDetalhes"]
+text = "🦴 ESQUELETO"
+custom_styles/font_size = 11
+custom_styles/font_color = Color(0.83, 0.69, 0.22)
+
+[node name="lbl_esqueleto_info" type="Label" parent="VBoxDetalhes"]
+text = "Ossos: --"
+custom_styles/font_size = 12
+custom_styles/font_color = Color(0.9, 0.9, 0.9)
+
+[node name="lbl_malha" type="Label" parent="VBoxDetalhes"]
+text = "🔷 MALHA"
+custom_styles/font_size = 11
+custom_styles/font_color = Color(0.83, 0.69, 0.22)
+
+[node name="lbl_malha_info" type="Label" parent="VBoxDetalhes"]
+text = "Superfícies: --"
+custom_styles/font_size = 12
+custom_styles/font_color = Color(0.9, 0.9, 0.9)
+
+[node name="lbl_acessorios" type="Label" parent="VBoxDetalhes"]
+text = "🎒 ACESSÓRIOS"
+custom_styles/font_size = 11
+custom_styles/font_color = Color(0.83, 0.69, 0.22)
+
+[node name="lbl_acessorios_info" type="Label" parent="VBoxDetalhes"]
+text = "Sockets: --"
+custom_styles/font_size = 12
+custom_styles/font_color = Color(0.9, 0.9, 0.9)
+
+[node name="PanelAnimacoes" type="MarginContainer" parent="PanelInfo"]
+size_flags_horizontal = 1
+custom_styles/min_width = 300
+visible = false
+
+[node name="lbl_animacoes" type="Label" parent="PanelAnimacoes"]
+text = "🎬 ANIMAÇÕES DISPONÍVEIS"
+custom_styles/font_size = 11
+custom_styles/font_color = Color(0.83, 0.69, 0.22)
+
+[node name="VBoxAnimacoes" type="VBoxContainer" parent="PanelAnimacoes"]
+size_flags_vertical = 1
+
+[node name="PanelPoder" type="MarginContainer" parent="PanelInfo"]
+size_flags_horizontal = 1
+custom_styles/min_width = 300
+
+[node name="VBoxPoder" type="VBoxContainer" parent="PanelPoder"]
+
+[node name="lbl_poder" type="Label" parent="VBoxPoder"]
+text = "⚡ PODER / HABILIDADE"
+custom_styles/font_size = 11
+custom_styles/font_color = Color(0.83, 0.69, 0.22)
+
+[node name="lbl_poder_nome" type="Label" parent="VBoxPoder"]
+text = "--"
+custom_styles/font_size = 14
+custom_styles/font_color = Color(0.4, 0.8, 1.0)
+
+[node name="lbl_poder_desc" type="Label" parent="VBoxPoder"]
+text = ""
+custom_styles/font_size = 12
+custom_styles/font_color = Color(0.7, 0.7, 0.7)
+
+[node name="PanelFala" type="MarginContainer" parent="PanelInfo"]
+size_flags_horizontal = 1
+custom_styles/min_width = 300
+
+[node name="VBoxFala" type="VBoxContainer" parent="PanelFala"]
+
+[node name="lbl_fala" type="Label" parent="VBoxFala"]
+text = "🗣️ FALA / VOZ"
+custom_styles/font_size = 11
+custom_styles/font_color = Color(0.83, 0.69, 0.22)
+
+[node name="lbl_fala_texto" type="Label" parent="VBoxFala"]
+text = "--"
+custom_styles/font_size = 13
+custom_styles/font_color = Color(0.9, 0.9, 0.9)
+autowrap_mode = 2
+
+[node name="PanelBotoesAcao" type="MarginContainer" parent="PanelControles"]
+size_flags_horizontal = 1
+
+[node name="HBoxBotoesAcao" type="HBoxContainer" parent="PanelBotoesAcao"]
+separation = 8
+
+[node name="btn_voltar" type="Button" parent="HBoxBotoesAcao"]
+text = "← Voltar"
+custom_styles/min_width = 90
+custom_styles.min_height = 36
+
+[node name="PanelOverlay" type="Control" parent="."]
+visible = false
+anchor_preset = 7
+
+[node name="lbl_loading" type="Label" parent="PanelOverlay"]
+anchor_preset = 7
+text = "Carregando modelo 3D com esqueleto e animações..."
+custom_styles/font_size = 24
+custom_styles/font_color = Color(1, 1, 1)
+custom_styles/font_color_shadow = Color(0, 0, 0, 1)
+custom_styles/font_color_shadow_as_outline = true
+custom_styles/font_color_shadow_outline_size = 1
+
+[node name="PanelSemModelo" type="Control" parent="."]
+visible = false
+anchor_preset = 7
+
+[node name="lbl_sem_modelo" type="Label" parent="PanelSemModelo"]
+anchor_preset = 7
+text = "Modelo 3D não encontrado\nExporte este modelo como .glb\nna pasta models/civilizations/."
+custom_styles/font_size = 20
+custom_styles/font_color = Color(0.8, 0.8, 0.8)
+custom_styles/align = 1
+custom_styles/valign = 1
