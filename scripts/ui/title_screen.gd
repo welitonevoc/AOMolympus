@@ -20,6 +20,7 @@ var _multiplayer_modal: PanelContainer
 var _compendium_modal: PanelContainer
 var _settings_modal: PanelContainer
 var _quit_modal: PanelContainer
+var _galeria_olympus: GaleriaOlympus
 
 # ── Seleções de Skirmish ────────────────────────────────────────────────────
 var _selected_pantheon: String = "greek"
@@ -116,6 +117,7 @@ func _ready() -> void:
 	_build_compendium_modal()
 	_build_settings_modal()
 	_build_quit_dialog()
+	_build_galeria_olympus()
 	_build_version_footer()
 
 	if MultiplayerManager != null:
@@ -263,7 +265,12 @@ func _build_main_menu_hub() -> void:
 	compendium_btn.pressed.connect(_open_compendium_modal)
 	_main_menu_panel.add_child(compendium_btn)
 
-	# 6. Cinemática de Abertura (OlympusCinematicPlayer)
+	# 6. Galeria Olympus 3D (Modelos e Animações)
+	var galeria_btn := _make_menu_button("🏛️  GALERIA OLYMPUS 3D", false)
+	galeria_btn.pressed.connect(_open_galeria_olympus)
+	_main_menu_panel.add_child(galeria_btn)
+
+	# 7. Cinemática de Abertura (OlympusCinematicPlayer)
 	var cine_btn := _make_menu_button("🎬  VER CINEMÁTICA", false)
 	cine_btn.pressed.connect(_on_watch_cinematic_pressed)
 	_main_menu_panel.add_child(cine_btn)
@@ -1717,6 +1724,29 @@ func _open_settings_modal() -> void:
 func _open_quit_dialog() -> void:
 	_main_menu_panel.visible = false
 	_quit_modal.visible = true
+
+
+# ── Submenu 7: Galeria Olympus 3D ───────────────────────────────────────────
+const GALERIA_TSCN_PATH: String = "res://scenes/galeria_olympus.tscn"
+
+func _build_galeria_olympus() -> void:
+	var galeria_scene: PackedScene = load(GALERIA_TSCN_PATH)
+	if galeria_scene == null:
+		push_error("Falha ao carregar cena da Galeria Olympus: %s" % GALERIA_TSCN_PATH)
+		return
+	_galeria_olympus = galeria_scene.instantiate() as GaleriaOlympus
+	_galeria_olympus.name = "GaleriaOlympus"
+	_galeria_olympus.visible = false
+	_galeria_olympus.gallery_closed.connect(func() -> void:
+		_main_menu_panel.visible = true
+	)
+	add_child(_galeria_olympus)
+
+
+func _open_galeria_olympus() -> void:
+	_main_menu_panel.visible = false
+	if _galeria_olympus != null:
+		_galeria_olympus.open_gallery()
 
 
 func _launch_skirmish() -> void:
