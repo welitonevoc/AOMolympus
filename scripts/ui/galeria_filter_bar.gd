@@ -251,26 +251,34 @@ func _update_era_visibility() -> void:
 	_option_era.visible = show_era
 	# O label da era está na grid, precisamos esconder ambos
 	# Por simplicidade, só escondemos o OptionButton
+	pass
 
 func _get_major_gods_for_pantheon(pantheon: String) -> Array[String]:
 	# Mapeamento baseado no PantheonCatalog e estrutura de modelos
-	match pantheon:
-		"greek": return ["zeus_major", "poseidon_major", "hades_major"]
-		"egyptian": return ["ra_major", "isis_major", "set_major"]
-		"norse": return ["thor_major", "odin_major", "loki_major", "freyr_major"]
-		"atlantean": return ["kronos_major", "oranos_major", "gaia_major"]
-		"chinese": return ["fuxi_major", "nuwa_major", "shennong_major"]
+	if pantheon == "greek":
+		return ["zeus_major", "poseidon_major", "hades_major"]
+	elif pantheon == "egyptian":
+		return ["ra_major", "isis_major", "set_major"]
+	elif pantheon == "norse":
+		return ["thor_major", "odin_major", "loki_major", "freyr_major"]
+	elif pantheon == "atlantean":
+		return ["kronos_major", "oranos_major", "gaia_major"]
+	elif pantheon == "chinese":
+		return ["fuxi_major", "nuwa_major", "shennong_major"]
 	return []
 
-func _get_pantheon_icon(pantheon: String) -> String {
-	match pantheon:
-		"greek": return "⚡"
-		"egyptian": return "☀️"
-		"norse": return "❄️"
-		"atlantean": return "🌊"
-		"chinese": return "🐉"
+func _get_pantheon_icon(pantheon: String) -> String:
+	if pantheon == "greek":
+		return "⚡"
+	elif pantheon == "egyptian":
+		return "☀️"
+	elif pantheon == "norse":
+		return "❄️"
+	elif pantheon == "atlantean":
+		return "🌊"
+	elif pantheon == "chinese":
+		return "🐉"
 	return "⚪"
-}
 
 func _get_god_display(god_id: String) -> String {
 	var map: Dictionary = {

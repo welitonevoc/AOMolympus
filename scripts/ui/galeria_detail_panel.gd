@@ -203,7 +203,8 @@ func _add_combat_stats_section(parent: VBoxContainer) -> void:
 	
 	var attacks: Array = data.get("attacks", [])
 	if attacks.size() > 0:
-		for i, atk in attacks:
+		for i in range(attacks.size()):
+			var atk: Dictionary = attacks[i]
 			var dmg_type: String = atk.get("damage_type", "hack").capitalize()
 			var dmg: float = atk.get("damage", 0)
 			var range: float = atk.get("range", 0)
@@ -211,8 +212,8 @@ func _add_combat_stats_section(parent: VBoxContainer) -> void:
 			var bonus_str: String = ""
 			if not bonus.is_empty():
 				var bonuses: Array[String] = []
-				for k, v in bonus:
-					bonuses.append("×%.1f vs %s" % [v, k])
+				for k in bonus:
+					bonuses.append("×%.1f vs %s" % [bonus[k], k])
 				bonus_str = "  [" + ", ".join(bonuses) + "]"
 			var range_str: String = ""
 			if range > 0:

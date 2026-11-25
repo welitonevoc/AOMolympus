@@ -16,7 +16,7 @@ signal model_loaded(model_path: String, model_name: String)
 
 # ─── Referências aos Componentes (instanciados via cena ou código) ───────────
 @onready var stage_3d: Galeria3DStage = %Stage3D
-@onready var model_loader: GaleriaModelLoader = %ModelLoader
+@onready var model_loader: Node = %ModelLoader
 @onready var filter_bar: GaleriaFilterBar = %FilterBar
 @onready var detail_panel: GaleriaDetailPanel = %DetailPanel
 
@@ -54,10 +54,11 @@ func _connect_signals() -> void:
 	# FilterBar -> lista de itens
 	filter_bar.item_selected.connect(_on_filter_item_selected)
 	
-	# ModelLoader
-	model_loader.model_loaded.connect(_on_model_loaded)
-	model_loader.load_failed.connect(_on_load_failed)
-	model_loader.load_progress.connect(_on_load_progress)
+	# ModelLoader (cast para acessar sinais)
+	var ml: GaleriaModelLoader = model_loader as GaleriaModelLoader
+	ml.model_loaded.connect(_on_model_loaded)
+	ml.load_failed.connect(_on_load_failed)
+	ml.load_progress.connect(_on_load_progress)
 	
 	# DetailPanel
 	detail_panel.animation_play_requested.connect(_on_animation_play)
@@ -80,7 +81,8 @@ func _on_filter_item_selected(unit_data: Dictionary, model_path: String) -> void
 	_panel_sem_modelo.visible = false
 	
 	# Carregar modelo assincronamente
-	model_loader.load_model_async(model_path, unit_data)
+	var ml: GaleriaModelLoader = model_loader as GaleriaModelLoader
+	ml.load_model_async(model_path, unit_data)
 
 # ─── Handlers de Carregamento ────────────────────────────────────────────────
 
@@ -92,7 +94,8 @@ func _on_model_loaded(model: Node3D, skeleton: Skeleton3D, anim_player: Animatio
 	stage_3d.set_model(model)
 	
 	# Obter stats do modelo
-	var model_stats: Dictionary = model_loader.get_model_stats(_current_model_path)
+	var ml: GaleriaModelLoader = model_loader as GaleriaModelLoader
+	var model_stats: Dictionary = ml.get_model_stats(_current_model_path)
 	
 	# Atualizar painel de detalhes
 	detail_panel.set_unit_data(_current_unit_data, _current_model_path, _current_model_name, model_stats)
@@ -177,7 +180,8 @@ func reset_camera() -> void:
 
 func _on_voltar() -> void:
 	stage_3d.clear_model()
-	model_loader.clear_cache()
+	var ml: GaleriaModelLoader = model_loader as GaleriaModelLoader
+	ml.clear_cache()
 	detail_panel.clear()
 	_current_unit_data = {}
 	_current_model_path = ""
