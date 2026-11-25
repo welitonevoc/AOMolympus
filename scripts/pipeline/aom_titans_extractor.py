@@ -355,7 +355,6 @@ def parse_brg(data: bytes) -> Optional[BrgModel]:
 
                 if first_frame:
                     uvs = r.read_bf16_array(num_verts * 2).reshape((num_verts, 2)).copy()
-                    uvs[:, 1] = 1.0 - uvs[:, 1]
                     model.uvs = uvs
                     model.face_mat_ids = r.read_u16_array(num_faces)
                     faces = r.read_u16_array(num_faces * 3).reshape((num_faces, 3))
