@@ -47,6 +47,7 @@ func _setup_viewport() -> void:
 	if sub_viewport != null and sub_viewport is SubViewport:
 		# own_world já definido no .tscn (linha 26). Em Godot 4.8 beta pode ser read-only.
 		# sub_viewport.own_world = true
+		@warning_ignore("int_as_enum_without_cast", "int_as_enum_without_match")
 		sub_viewport.render_target_update_mode = 2  # WHEN_VISIBLE (valor seguro para Godot 4.x)
 		sub_viewport.size = Vector2(1280, 720)
 		# usage property removido no Godot 4.x
@@ -73,6 +74,7 @@ func _setup_lighting() -> void:
 func _setup_environment() -> void:
 	if world_env != null and world_env.environment == null:
 		var env: Environment = Environment.new()
+		@warning_ignore("int_as_enum_without_cast", "int_as_enum_without_match")
 		env.background_mode = 0  # BACKGROUND_COLOR (valor seguro para Godot 4.x)
 		env.background_color = Color(0.04, 0.04, 0.06)
 		env.ambient_light = Color(0.35, 0.35, 0.42)
@@ -88,6 +90,7 @@ func _setup_ground() -> void:
 		plane_mesh.size = Vector2(40, 40)
 		plane_mesh.subdivide_width = 20
 		plane_mesh.subdivide_depth = 20
+		@warning_ignore("int_as_enum_without_cast", "int_as_enum_without_match")
 		plane_mesh.orientation = 1  # ORIENTATION_Y (valor seguro para Godot 4.x)
 		var mat: StandardMaterial3D = StandardMaterial3D.new()
 		mat.albedo_color = Color(0.15, 0.15, 0.18, 0.3)
