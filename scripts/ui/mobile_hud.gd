@@ -337,7 +337,7 @@ func _build_game_menu_modal() -> void:
 
 	var backdrop := ColorRect.new()
 	backdrop.set_anchors_preset(Control.PRESET_FULL_RECT)
-	backdrop.color = Color(0.02, 0.04, 0.08, 0.75)
+	backdrop.color = Color(0.02, 0.04, 0.08, 0.78)
 	_game_menu_modal.add_child(backdrop)
 
 	var panel := PanelContainer.new()
@@ -345,46 +345,46 @@ func _build_game_menu_modal() -> void:
 	panel.anchor_right = 0.5
 	panel.anchor_top = 0.5
 	panel.anchor_bottom = 0.5
-	panel.offset_left = -170.0
-	panel.offset_right = 170.0
-	panel.offset_top = -180.0
-	panel.offset_bottom = 180.0
+	panel.offset_left = -220.0
+	panel.offset_right = 220.0
+	panel.offset_top = -230.0
+	panel.offset_bottom = 230.0
 	panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
 	panel.grow_vertical = Control.GROW_DIRECTION_BOTH
 
 	var sb_menu := StyleBoxFlat.new()
-	sb_menu.bg_color = Color(0.07, 0.09, 0.15, 0.98)
+	sb_menu.bg_color = Color(0.06, 0.08, 0.14, 0.98)
 	sb_menu.border_color = Color(0.88, 0.74, 0.32, 1.0)
 	sb_menu.border_width_left = 3
 	sb_menu.border_width_right = 3
 	sb_menu.border_width_top = 3
 	sb_menu.border_width_bottom = 3
 	sb_menu.set_corner_radius_all(10)
-	sb_menu.shadow_color = Color(0.0, 0.0, 0.0, 0.7)
-	sb_menu.shadow_size = 12
+	sb_menu.shadow_color = Color(0.0, 0.0, 0.0, 0.75)
+	sb_menu.shadow_size = 14
 	panel.add_theme_stylebox_override("panel", sb_menu)
 	_game_menu_modal.add_child(panel)
 
 	var margin := MarginContainer.new()
-	margin.add_theme_constant_override("margin_left", 20)
-	margin.add_theme_constant_override("margin_right", 20)
-	margin.add_theme_constant_override("margin_top", 18)
-	margin.add_theme_constant_override("margin_bottom", 18)
+	margin.add_theme_constant_override("margin_left", 18)
+	margin.add_theme_constant_override("margin_right", 18)
+	margin.add_theme_constant_override("margin_top", 14)
+	margin.add_theme_constant_override("margin_bottom", 14)
 	panel.add_child(margin)
 
 	var vbox := VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 10)
+	vbox.add_theme_constant_override("separation", 8)
 	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
 	margin.add_child(vbox)
 
 	var title_lbl := Label.new()
-	title_lbl.text = "🏛️ AGE OF MYTHOLOGY"
+	title_lbl.text = "🏛️ AGE OF MYTHOLOGY: OLYMPUS"
 	title_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title_lbl.label_settings = OlympusTypography.get_label_settings(OlympusTypography.Style.HEADING, 16, Color("#ffd700"), 2)
+	title_lbl.label_settings = OlympusTypography.get_label_settings(OlympusTypography.Style.HEADING, 15, Color("#ffd700"), 2)
 	vbox.add_child(title_lbl)
 
 	var sub_lbl := Label.new()
-	sub_lbl.text = "PAUSA & MENU DA PARTIDA"
+	sub_lbl.text = "MENU DE OPÇÕES & GESTÃO DA PARTIDA"
 	sub_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	sub_lbl.label_settings = OlympusTypography.get_label_settings(OlympusTypography.Style.TACTICAL, 11, Color("#94a3b8"), 1)
 	vbox.add_child(sub_lbl)
@@ -392,38 +392,103 @@ func _build_game_menu_modal() -> void:
 	var sep := HSeparator.new()
 	vbox.add_child(sep)
 
-	var btn_resume := _make_menu_modal_btn("▶️ Continuar Partida", Color("#22c55e"))
-	btn_resume.pressed.connect(func() -> void:
-		_game_menu_modal.visible = false
-	)
-	vbox.add_child(btn_resume)
+	# Grid de Configurações Táticas e Visuais (2 Colunas)
+	var opt_grid := GridContainer.new()
+	opt_grid.columns = 2
+	opt_grid.add_theme_constant_override("h_separation", 8)
+	opt_grid.add_theme_constant_override("v_separation", 6)
+	vbox.add_child(opt_grid)
 
-	var btn_save := _make_menu_modal_btn("💾 Salvar Partida", Color("#38bdf8"))
-	btn_save.pressed.connect(func() -> void:
+	# 1. GFX Preset
+	var cur_gfx: Node = get_node_or_null("/root/OlympusGfxManager")
+	var initial_gfx_name: String = "Normal"
+	if cur_gfx != null:
+		var p_info: Dictionary = cur_gfx.call("get_preset_info", int(cur_gfx.get("current_tier")))
+		initial_gfx_name = String(p_info.get("name", "Perfil")).split(" ")[0]
+	var gfx_btn := _make_menu_modal_btn("🖥️ GFX: %s" % initial_gfx_name, Color("#38bdf8"))
+	gfx_btn.custom_minimum_size = Vector2(188.0, 34.0)
+	gfx_btn.pressed.connect(func() -> void:
+		_on_cycle_gfx_preset_pressed()
+		var gfx: Node = get_node_or_null("/root/OlympusGfxManager")
+		if gfx != null:
+			var p_info: Dictionary = gfx.call("get_preset_info", int(gfx.get("current_tier")))
+			gfx_btn.text = "🖥️ GFX: %s" % String(p_info.get("name", "Perfil")).split(" ")[0]
+	)
+	opt_grid.add_child(gfx_btn)
+
+	# 2. Neblina de Guerra
+	var fog_btn := _make_menu_modal_btn("🌫️ Neblina: %s" % ("ON" if GameState.fog_enabled else "OFF"), Color("#a78bfa"))
+	fog_btn.custom_minimum_size = Vector2(188.0, 34.0)
+	fog_btn.pressed.connect(func() -> void:
+		GameState.toggle_fog_of_war()
+		fog_btn.text = "🌫️ Neblina: %s" % ("ON" if GameState.fog_enabled else "OFF")
+	)
+	opt_grid.add_child(fog_btn)
+
+	# 3. Áudio / Som
+	var audio_btn := _make_menu_modal_btn("🔊 Som: %s" % ("MUDO" if GameState.audio_muted else "ATIVO"), Color("#4ade80"))
+	audio_btn.custom_minimum_size = Vector2(188.0, 34.0)
+	audio_btn.pressed.connect(func() -> void:
+		GameState.toggle_audio_muted()
+		audio_btn.text = "🔊 Som: %s" % ("MUDO" if GameState.audio_muted else "ATIVO")
+	)
+	opt_grid.add_child(audio_btn)
+
+	# 4. Dia / Noite
+	var day_night_btn := _make_menu_modal_btn("☀️ / 🌙 Dia & Noite", Color("#fde047"))
+	day_night_btn.custom_minimum_size = Vector2(188.0, 34.0)
+	day_night_btn.pressed.connect(func() -> void:
+		GameState.toggle_day_night()
+	)
+	opt_grid.add_child(day_night_btn)
+
+	# 5. Clima Mítico
+	var atmos_btn := _make_menu_modal_btn("🌤️ Clima & Céu", Color("#f97316"))
+	atmos_btn.custom_minimum_size = Vector2(188.0, 34.0)
+	atmos_btn.pressed.connect(func() -> void:
+		_on_cycle_atmosphere_pressed()
+	)
+	opt_grid.add_child(atmos_btn)
+
+	# 6. Prioridade de Aldeões
+	var priority_btn := _make_menu_modal_btn("⚖️ Aldeões: %s" % GameState.villager_priority_preset.capitalize(), Color("#e879f9"))
+	priority_btn.custom_minimum_size = Vector2(188.0, 34.0)
+	priority_btn.pressed.connect(func() -> void:
+		var next_p: String = GameState.cycle_villager_priority()
+		priority_btn.text = "⚖️ Aldeões: %s" % next_p.capitalize()
+	)
+	opt_grid.add_child(priority_btn)
+
+	var sep2 := HSeparator.new()
+	vbox.add_child(sep2)
+
+	# Ações de Gestão de Partida (Linhas inteiras)
+	var save_btn := _make_menu_modal_btn("💾 Salvar Partida", Color("#38bdf8"))
+	save_btn.pressed.connect(func() -> void:
 		SaveLoadSystem.save_game(_world, _camera_rig)
 		_on_notification("Partida salva com sucesso!", false)
 		_game_menu_modal.visible = false
 	)
-	vbox.add_child(btn_save)
+	vbox.add_child(save_btn)
 
-	var btn_load := _make_menu_modal_btn("📂 Carregar Partida", Color("#a78bfa"))
-	btn_load.pressed.connect(func() -> void:
+	var load_btn := _make_menu_modal_btn("📂 Carregar Partida", Color("#a78bfa"))
+	load_btn.pressed.connect(func() -> void:
 		SaveLoadSystem.load_game()
 		_game_menu_modal.visible = false
 	)
-	vbox.add_child(btn_load)
+	vbox.add_child(load_btn)
 
-	var btn_atmos := _make_menu_modal_btn("🌤️ Ciclo de Clima / Céu", Color("#fde047"))
-	btn_atmos.pressed.connect(func() -> void:
-		_on_cycle_atmosphere_pressed()
+	var resume_btn := _make_menu_modal_btn("▶️ Continuar Partida", Color("#22c55e"))
+	resume_btn.pressed.connect(func() -> void:
+		_game_menu_modal.visible = false
 	)
-	vbox.add_child(btn_atmos)
+	vbox.add_child(resume_btn)
 
-	var btn_quit := _make_menu_modal_btn("🏛️ Sair para o Menu Principal", Color("#ef4444"))
-	btn_quit.pressed.connect(func() -> void:
+	var quit_btn := _make_menu_modal_btn("🏛️ Sair para o Menu Principal", Color("#ef4444"))
+	quit_btn.pressed.connect(func() -> void:
 		get_tree().change_scene_to_file("res://scenes/title_screen.tscn")
 	)
-	vbox.add_child(btn_quit)
+	vbox.add_child(quit_btn)
 
 
 func _make_menu_modal_btn(text: String, accent_color: Color) -> Button:
@@ -928,140 +993,105 @@ func _build_campaign_objectives_panel() -> void:
 
 
 func _build_minimap_dock() -> void:
-	# Minimapa Tático Estilizado no Canto Inferior Esquerdo (Octógono Dourado)
-	var panel := PanelContainer.new()
-	panel.anchor_left = 0.0
-	panel.anchor_right = 0.0
-	panel.anchor_top = 1.0
-	panel.anchor_bottom = 1.0
-	panel.offset_left = 14.0
-	panel.offset_right = 234.0
-	panel.offset_top = -234.0
-	panel.offset_bottom = -14.0
-	# Borda dourada espessa e formato poligonal arredondado simulando bisel
-	panel.add_theme_stylebox_override("panel", _make_panel_style(Color(0.04, 0.06, 0.10, 0.94), 22, Color(0.83, 0.69, 0.22, 0.85), true))
-	add_child(panel)
+	# Container do Minimapa Tático em Losango (Diamond) no Canto Inferior Esquerdo
+	var dock := Control.new()
+	dock.name = "MinimapTacticalDock"
+	dock.anchor_left = 0.0
+	dock.anchor_right = 0.0
+	dock.anchor_top = 1.0
+	dock.anchor_bottom = 1.0
+	dock.offset_left = 12.0
+	dock.offset_right = 236.0
+	dock.offset_top = -242.0
+	dock.offset_bottom = -12.0
+	dock.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(dock)
 
-	var margin := MarginContainer.new()
-	margin.add_theme_constant_override("margin_left", 8)
-	margin.add_theme_constant_override("margin_right", 8)
-	margin.add_theme_constant_override("margin_top", 8)
-	margin.add_theme_constant_override("margin_bottom", 8)
-	panel.add_child(margin)
-
+	# 1. O Minimapa em Losango (Diamond) Isométrico com Frustum e Aro Dourado
 	_minimap = TacticalMinimap.new()
-	_minimap.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_minimap.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	margin.add_child(_minimap)
+	_minimap.name = "TacticalMinimap"
+	_minimap.custom_minimum_size = Vector2(210.0, 210.0)
+	_minimap.offset_left = 6.0
+	_minimap.offset_top = 0.0
+	dock.add_child(_minimap)
 	if _world != null and _camera_rig != null:
 		_minimap.bind(_world, _camera_rig, _fog_system)
 
-
-func _build_bottom_left_zone() -> void:
-	# Barra de Filtros e Seleções Rápidas logo acima do Minimapa
-	var panel := PanelContainer.new()
-	panel.anchor_left = 0.0
-	panel.anchor_right = 0.0
-	panel.anchor_top = 1.0
-	panel.anchor_bottom = 1.0
-	panel.offset_left = 14.0
-	panel.offset_right = 250.0
-	panel.offset_top = -306.0
-	panel.offset_bottom = -242.0
-	panel.add_theme_stylebox_override("panel", _make_panel_style(Color(0.04, 0.06, 0.10, 0.90), 8, Color(0.83, 0.69, 0.22, 0.35)))
-	add_child(panel)
-
-	var margin := MarginContainer.new()
-	margin.add_theme_constant_override("margin_left", 6)
-	margin.add_theme_constant_override("margin_right", 6)
-	margin.add_theme_constant_override("margin_top", 4)
-	margin.add_theme_constant_override("margin_bottom", 4)
-	panel.add_child(margin)
-
-	var vbox := VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 4)
-	margin.add_child(vbox)
-
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 4)
-	vbox.add_child(row)
-
-	_box_btn = _make_action_button("📦", false, 42.0, 32.0)
-	_box_btn.toggle_mode = true
-	_box_btn.tooltip_text = "Seleção em caixa"
-	_box_btn.toggled.connect(func(active: bool) -> void:
-		GameState.box_select_mode = active
-		_box_btn.add_theme_stylebox_override("normal", _make_btn_style(active))
-		if active:
-			GameState.notify("Arraste na tela para selecionar várias unidades.", false)
-	)
-	row.add_child(_box_btn)
-
-	var idle_btn := _make_action_button("👨‍🌾", false, 42.0, 32.0)
-	idle_btn.tooltip_text = "Focar aldeão ocioso"
+	# 2. Quatro Botões Redondos Dourados Orbitais na Base do Losango (igual à imagem de referência)
+	# Par da Esquerda:
+	# Botão 1: Aldeão Ocioso
+	var idle_btn := _make_orbital_minimap_button("👨‍🌾", "Focar Aldeão Ocioso")
+	idle_btn.position = Vector2(10.0, 184.0)
 	idle_btn.pressed.connect(func() -> void:
 		if _world != null:
 			_world.focus_idle_villager()
 	)
-	row.add_child(idle_btn)
+	dock.add_child(idle_btn)
 
-	var army_btn := _make_action_button("⚔️", true, 42.0, 32.0)
-	army_btn.tooltip_text = "Selecionar exército"
+	# Botão 2: Selecionar Todo o Exército
+	var army_btn := _make_orbital_minimap_button("⚔️", "Selecionar Todo o Exército")
+	army_btn.position = Vector2(48.0, 192.0)
 	army_btn.pressed.connect(func() -> void:
 		if _world != null:
 			_world.select_all_military()
 	)
-	row.add_child(army_btn)
+	dock.add_child(army_btn)
 
-	var base_quick_btn := _make_action_button("🏛", false, 42.0, 32.0)
-	base_quick_btn.tooltip_text = "Ir à Base / Centro Urbano"
-	base_quick_btn.pressed.connect(func() -> void:
+	# Par da Direita:
+	# Botão 3: Centro Urbano / Base Principal
+	var base_btn := _make_orbital_minimap_button("🏛", "Focar Base / Centro Urbano")
+	base_btn.position = Vector2(142.0, 192.0)
+	base_btn.pressed.connect(func() -> void:
 		if _world != null:
 			_world.focus_town_center()
 	)
-	row.add_child(base_quick_btn)
+	dock.add_child(base_btn)
 
-	var lore_quick_btn := _make_action_button("📖", false, 42.0, 32.0)
-	lore_quick_btn.tooltip_text = "Códice Mitológico"
-	lore_quick_btn.pressed.connect(_on_codex_quick_inspect_pressed)
-	row.add_child(lore_quick_btn)
+	# Botão 4: Códice Mitológico
+	var codex_btn := _make_orbital_minimap_button("📖", "Códice Mitológico do Olimpo")
+	codex_btn.position = Vector2(180.0, 184.0)
+	codex_btn.pressed.connect(_on_codex_quick_inspect_pressed)
+	dock.add_child(codex_btn)
 
-	# Linha 2 de filtros rápidos
-	var filter_row := HBoxContainer.new()
-	filter_row.add_theme_constant_override("separation", 4)
-	vbox.add_child(filter_row)
 
-	var vills_all_btn := _make_action_button("👨‍🌾 Todos", false, 56.0, 24.0)
-	vills_all_btn.add_theme_font_size_override("font_size", 9)
-	vills_all_btn.pressed.connect(func() -> void:
-		if _world != null:
-			_world.select_all_villagers()
-	)
-	filter_row.add_child(vills_all_btn)
+func _make_orbital_minimap_button(icon_text: String, tooltip: String) -> Button:
+	var btn := Button.new()
+	btn.custom_minimum_size = Vector2(32.0, 32.0)
+	btn.size = Vector2(32.0, 32.0)
+	btn.focus_mode = Control.FOCUS_NONE
+	btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	btn.tooltip_text = tooltip
+	btn.text = icon_text
+	btn.add_theme_font_size_override("font_size", 13)
 
-	var archers_btn := _make_action_button("🏹 Arq", false, 54.0, 24.0)
-	archers_btn.add_theme_font_size_override("font_size", 9)
-	archers_btn.pressed.connect(func() -> void:
-		if _world != null:
-			_world.select_units_by_role("archer")
-	)
-	filter_row.add_child(archers_btn)
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0.06, 0.08, 0.14, 0.96)
+	sb.border_color = Color(0.85, 0.72, 0.32, 1.0)
+	sb.border_width_left = 2
+	sb.border_width_right = 2
+	sb.border_width_top = 2
+	sb.border_width_bottom = 2
+	sb.set_corner_radius_all(16)
+	sb.shadow_color = Color(0.0, 0.0, 0.0, 0.55)
+	sb.shadow_size = 4
+	btn.add_theme_stylebox_override("normal", sb)
 
-	var cavalry_btn := _make_action_button("🐎 Cav", false, 54.0, 24.0)
-	cavalry_btn.add_theme_font_size_override("font_size", 9)
-	cavalry_btn.pressed.connect(func() -> void:
-		if _world != null:
-			_world.select_units_by_role("cavalry")
-	)
-	filter_row.add_child(cavalry_btn)
+	var sb_hover := sb.duplicate() as StyleBoxFlat
+	sb_hover.border_color = Color(1.0, 0.95, 0.55, 1.0)
+	sb_hover.bg_color = Color(0.12, 0.18, 0.28, 0.98)
+	btn.add_theme_stylebox_override("hover", sb_hover)
+	btn.add_theme_stylebox_override("pressed", sb)
+	btn.add_theme_stylebox_override("focus", sb)
+	return btn
 
-	var myth_btn := _make_action_button("⚡ Mít", false, 54.0, 24.0)
-	myth_btn.add_theme_font_size_override("font_size", 9)
-	myth_btn.pressed.connect(func() -> void:
-		if _world != null:
-			_world.select_units_by_role("myth")
-	)
-	filter_row.add_child(myth_btn)
+
+func _build_bottom_left_zone() -> void:
+	# Os atalhos essenciais agora são os botões orbitais dourados do minimapa.
+	# Mantemos _box_btn instanciado para compatibilidade interna com GameState.box_select_mode.
+	_box_btn = Button.new()
+	_box_btn.toggle_mode = true
+	_box_btn.visible = false
+	add_child(_box_btn)
 
 
 func _build_unit_inspection_card() -> void:
