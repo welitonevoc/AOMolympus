@@ -9,7 +9,7 @@ signal gallery_closed
 signal model_loaded(model_path: String, model_name: String)
 
 # ─── Referências aos Componentes (nós da cena, tipados como Node genérico) ───
-@onready var stage_3d: Node3D = %Stage3D
+@onready var stage_3d: SubViewportContainer = %Stage3D
 @onready var model_loader_node: Node = %ModelLoader
 @onready var filter_bar: Node = %FilterBar
 @onready var detail_panel: Node = %DetailPanel

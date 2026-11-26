@@ -1,9 +1,10 @@
-extends Node3D
+extends SubViewportContainer
 class_name Galeria3DStage
 
 ## ============================================================================
 ## Galeria3DStage — Palco 3D isolado para visualização de modelos na Galeria
 ## SubViewport com own_world, câmera orbital, luz direcional, environment, chão
+## e controles de arrastar / zoom para mouse e touch mobile.
 ## ============================================================================
 
 signal camera_changed(position: Vector3, target: Vector3)
@@ -32,6 +33,12 @@ var _camera_angle_x: float = 18.0
 var _is_focus_mode: bool = false
 var _target_position: Vector3 = Vector3.ZERO
 var _orbit_angle_y: float = 0.0
+
+# ─── Controle de entrada (arrasto e pinça/zoom) ───────────────────────────────
+var _is_dragging: bool = false
+var _last_drag_pos: Vector2 = Vector2.ZERO
+var _touch_points: Dictionary = {}
+var _last_pinch_dist: float = 0.0
 
 # ─── Inicialização ───────────────────────────────────────────────────────────
 
@@ -99,7 +106,60 @@ func _setup_ground() -> void:
 		plane_mesh.material = mat
 		ground_mesh.mesh = plane_mesh
 
-# ─── Processamento ───────────────────────────────────────────────────────────
+# ─── Processamento e Entrada (Interatividade 3D) ─────────────────────────────
+
+func _gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton:
+		var mb: InputEventMouseButton = event as InputEventMouseButton
+		if mb.button_index == MOUSE_BUTTON_LEFT:
+			_is_dragging = mb.pressed
+			_last_drag_pos = mb.position
+			if mb.pressed:
+				auto_orbit_enabled = false
+		elif mb.button_index == MOUSE_BUTTON_WHEEL_UP and mb.pressed:
+			adjust_camera_distance(-0.8)
+			accept_event()
+		elif mb.button_index == MOUSE_BUTTON_WHEEL_DOWN and mb.pressed:
+			adjust_camera_distance(0.8)
+			accept_event()
+	
+	elif event is InputEventMouseMotion:
+		var mm: InputEventMouseMotion = event as InputEventMouseMotion
+		if _is_dragging:
+			var diff: Vector2 = mm.position - _last_drag_pos
+			_last_drag_pos = mm.position
+			rotate_camera(diff.x * 0.4, -diff.y * 0.4)
+			accept_event()
+			
+	elif event is InputEventScreenTouch:
+		var st: InputEventScreenTouch = event as InputEventScreenTouch
+		if st.pressed:
+			_touch_points[st.index] = st.position
+			if _touch_points.size() == 1:
+				auto_orbit_enabled = false
+		else:
+			_touch_points.erase(st.index)
+			if _touch_points.size() < 2:
+				_last_pinch_dist = 0.0
+				
+	elif event is InputEventScreenDrag:
+		var sd: InputEventScreenDrag = event as InputEventScreenDrag
+		_touch_points[sd.index] = sd.position
+		
+		if _touch_points.size() == 1:
+			rotate_camera(sd.relative.x * 0.4, -sd.relative.y * 0.4)
+			accept_event()
+		elif _touch_points.size() >= 2:
+			var keys: Array = _touch_points.keys()
+			var p1: Vector2 = _touch_points[keys[0]]
+			var p2: Vector2 = _touch_points[keys[1]]
+			var current_dist: float = p1.distance_to(p2)
+			
+			if _last_pinch_dist > 0.0:
+				var diff: float = current_dist - _last_pinch_dist
+				adjust_camera_distance(-diff * 0.05)
+			_last_pinch_dist = current_dist
+			accept_event()
 
 func _process(delta: float) -> void:
 	if auto_orbit_enabled and not _is_focus_mode and _current_model != null:

@@ -15,20 +15,20 @@ margin_right = 0.0
 margin_bottom = 0.0
 script = ExtResource("1")
 
-[node name="Stage3D" type="Node3D" parent="."]
+[node name="Stage3D" type="SubViewportContainer" parent="."]
 unique_name_in_owner = "%Stage3D"
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+stretch = true
 script = ExtResource("2")
 
 [node name="SubViewport" type="SubViewport" parent="Stage3D"]
 unique_name_in_owner = "%SubViewport"
-size = Vector2(1280, 720)
-usage = 2
-own_world = true
-
-[node name="ViewportContainer3D" type="ViewportContainer" parent="SubViewport"]
-anchors_preset = 7
-size_flags_horizontal = 3
-size_flags_vertical = 3
+own_world_3d = true
+size = Vector2i(1280, 720)
 
 [node name="Camera3D" type="Camera3D" parent="SubViewport"]
 unique_name_in_owner = "%Camera3D"
