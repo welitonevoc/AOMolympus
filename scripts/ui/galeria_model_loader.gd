@@ -68,11 +68,17 @@ func _do_load_model(key: String, model_path: String, unit_data: Dictionary) -> v
 func _build_model(key: String, model_path: String, unit_data: Dictionary) -> Dictionary:
 	var instance: Node3D = null
 
-	# 1. Pipeline AoM: The Titans via ModelLibrary
-	if not unit_data.is_empty() and model_library != null:
+	# 1. Se model_path válido foi passado e existe, carrega direto
+	if model_path != "" and model_path.begins_with("res://") and ResourceLoader.exists(model_path):
+		var scene: PackedScene = load(model_path) as PackedScene
+		if scene != null:
+			instance = scene.instantiate() as Node3D
+
+	# 2. Pipeline AoM: The Titans via ModelLibrary
+	if instance == null and not unit_data.is_empty() and model_library != null:
 		instance = _create_via_model_library(unit_data)
 
-	# 2. Fallback: carregar o .glb diretamente do caminho informado
+	# 3. Fallback: carregar o .glb diretamente do caminho informado
 	if instance == null and model_path != "" and model_path.begins_with("res://"):
 		var scene: PackedScene = load(model_path) as PackedScene
 		if scene != null:
@@ -87,6 +93,19 @@ func _build_model(key: String, model_path: String, unit_data: Dictionary) -> Dic
 	if anim_player != null:
 		animations = anim_player.get_animation_list()
 
+	# Se for bundle AoM, também obtém ações do manifest.json se o anim_player estiver vazio
+	if animations.is_empty() and instance.has_meta("aom_bundle_dir"):
+		var bdir: String = String(instance.get_meta("aom_bundle_dir", ""))
+		var manifest_path: String = bdir + "/manifest.json"
+		if FileAccess.file_exists(manifest_path):
+			var fa := FileAccess.open(manifest_path, FileAccess.READ)
+			if fa != null:
+				var mdata = JSON.parse_string(fa.get_as_text())
+				fa.close()
+				if mdata is Dictionary and mdata.has("animations"):
+					for act in mdata["animations"].keys():
+						animations.append(String(act))
+
 	var entry: Dictionary = {
 		"instance": instance,
 		"skeleton": skeleton,
@@ -99,9 +118,10 @@ func _build_model(key: String, model_path: String, unit_data: Dictionary) -> Dic
 
 func _create_via_model_library(unit_data: Dictionary) -> Node3D:
 	var pantheon: String = String(unit_data.get("pantheon", "greek"))
-	var unit_id: String = String(unit_data.get("id", ""))
+	var raw_id: String = String(unit_data.get("id", ""))
+	var clean_id: String = raw_id.trim_prefix("olympus_")
 	var category: String = String(unit_data.get("category", ""))
-	if unit_id == "":
+	if clean_id == "":
 		return null
 
 	var is_building: bool = bool(unit_data.get("is_building", false)) \
@@ -111,13 +131,20 @@ func _create_via_model_library(unit_data: Dictionary) -> Node3D:
 		if not model_library.has_method("create_building_visual"):
 			return null
 		var age_tier: int = int(unit_data.get("age", 1))
-		return model_library.create_building_visual(pantheon, unit_id, age_tier, "player")
+		return model_library.create_building_visual(pantheon, clean_id, age_tier, "player")
 
 	if not model_library.has_method("create_unit_visual"):
 		return null
-	var unit_kind: String = _map_category_to_unit_kind(unit_id, category)
 	var is_hero: bool = bool(unit_data.get("is_hero", false)) or category in ["heroi", "hero"]
 	var major_god: String = String(unit_data.get("major_god", ""))
+	
+	# 1. Tenta carregar com clean_id direto no ModelLibrary (hoplite, colossus, cyclops, etc.)
+	var inst: Node3D = model_library.create_unit_visual(pantheon, clean_id, "player", is_hero, major_god)
+	if inst != null:
+		return inst
+		
+	# 2. Fallback para classe da categoria se clean_id não achou bundle
+	var unit_kind: String = _map_category_to_unit_kind(clean_id, category)
 	return model_library.create_unit_visual(pantheon, unit_kind, "player", is_hero, major_god)
 
 func _map_category_to_unit_kind(unit_id: String, category: String) -> String:
@@ -150,11 +177,15 @@ func _cache_key(model_path: String, unit_data: Dictionary) -> String:
 
 # ─── Estatísticas para o painel de detalhes ──────────────────────────────────
 
-func get_model_stats(key: String) -> Dictionary:
-	var entry: Dictionary = _loaded_models.get(key, {})
+func get_model_stats(key: String, unit_data: Dictionary = {}) -> Dictionary:
+	var ckey: String = key
+	if not unit_data.is_empty():
+		ckey = _cache_key(key, unit_data)
+	var entry: Dictionary = _loaded_models.get(ckey, {})
 	if entry.is_empty():
-		# Tenta pelo caminho cru, caso o chamador não use a cache key composta
 		entry = _loaded_models.get(key, {})
+	if entry.is_empty() and not _loaded_models.is_empty():
+		entry = _loaded_models.values()[-1]
 	if entry.is_empty():
 		return {}
 

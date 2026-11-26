@@ -110,12 +110,25 @@ func _build_ui() -> void:
 	# Linha 3: Tipo de Unidade
 	_add_filter_label(filter_grid, "TIPO")
 	_option_type = _create_option_button()
+	for opt in _unit_type_options:
+		_option_type.add_item(opt["label"])
+	_option_type.selected = 0
 	filter_grid.add_child(_option_type)
 	_option_type.item_selected.connect(_on_type_changed)
 	
 	# Linha 4: Era (só para construções)
 	_add_filter_label(filter_grid, "ERA")
 	_option_era = _create_option_button()
+	var era_labels: Array[String] = [
+		"🏛️ Era 1 (Arcaica)",
+		"⚔️ Era 2 (Clássica)",
+		"🛡️ Era 3 (Heroica)",
+		"👑 Era 4 (Mítica)",
+		"⚡ Era 5 (Titãs)"
+	]
+	for el in era_labels:
+		_option_era.add_item(el)
+	_option_era.selected = 0
 	filter_grid.add_child(_option_era)
 	_option_era.item_selected.connect(_on_era_changed)
 	_update_era_visibility()
@@ -154,6 +167,7 @@ func _build_ui() -> void:
 	_item_list.custom_minimum_size = Vector2(0, 40)
 	_item_list.add_theme_font_size_override("font_size", 13)
 	_item_list.item_selected.connect(_on_item_selected)
+	_item_list.get_popup().index_pressed.connect(_on_item_selected)
 	_vbox_root.add_child(_item_list)
 
 func _create_option_button() -> OptionButton:
@@ -319,6 +333,9 @@ func _rebuild_item_list() -> void:
 	for item in _available_items:
 		var display: String = _format_item_display(item)
 		_item_list.add_item(display)
+	
+	_item_list.selected = 0
+	_on_item_selected(0)
 
 func _fetch_filtered_items() -> Array[Dictionary]:
 	var result: Array[Dictionary] = []
@@ -339,47 +356,41 @@ func _fetch_filtered_items() -> Array[Dictionary]:
 	return result
 
 func _matches_filters(unit: Dictionary) -> bool:
-	# Filtro por Deus Maior (baseado na pasta do modelo)
-	# Nota: o modelo está em models/civilizations/<pantheon>/<god>/...
-	# O unit_data tem 'pantheon' mas não necessariamente o deus maior
-	# Vamos filtrar por tipo/role principalmente
-	
 	var category: String = unit.get("category", "")
 	var role: String = unit.get("role", unit.get("unittype", ""))
-	var age: int = unit.get("age", 1)
+	var age: int = int(unit.get("age", 1))
 	var name: String = unit.get("display_name", unit.get("id", "")).to_lower()
 	
 	# Filtro de tipo
 	if _current_type != "all":
 		var type_match: bool = false
 		if _current_type == "aldeao":
-			type_match = (category == "aldeao" or role == "worker")
+			type_match = (category in ["aldeao", "support", "worker"] or role == "worker" or "villager" in name or "citizen" in name)
 		elif _current_type == "infantry":
-			type_match = (role == "infantry")
+			type_match = (category in ["infantry", "unidade_militar"] or role == "infantry")
 		elif _current_type == "archer":
-			type_match = (role == "archer")
+			type_match = (category in ["archer", "arqueiro"] or role == "archer")
 		elif _current_type == "cavalry":
-			type_match = (role == "cavalry")
+			type_match = (category in ["cavalry", "cavalaria"] or role == "cavalry")
 		elif _current_type == "siege":
-			type_match = (role == "siege")
+			type_match = (category in ["siege", "cerco"] or role == "siege")
 		elif _current_type == "mythic":
-			type_match = (category == "unidade_mitica" or role == "mythic")
+			type_match = (category in ["unidade_mitica", "mythic", "myth"] or role == "mythic")
 		elif _current_type == "hero":
-			type_match = (category == "heroi" or role == "hero" or role == "divine")
+			type_match = (category in ["heroi", "hero"] or role == "hero" or role == "divine")
 		elif _current_type == "divine":
-			type_match = (category == "deus_maior" or role == "divine")
+			type_match = (category in ["deus_maior", "divine"] or role == "divine")
 		elif _current_type == "building":
-			type_match = (category == "construcao" or category == "building")
+			type_match = (category in ["construcao", "building", "cidade"])
 		elif _current_type == "ship":
-			type_match = (role == "ship" or "ship" in name)
+			type_match = (role == "ship" or "ship" in name or "trireme" in name or "boat" in name)
 		if not type_match:
 			return false
 	
-	# Filtro de era (só para construções)
-	if _current_type == "building" or _current_type == "all":
-		if category == "construcao" or category == "building":
-			if age != _current_era:
-				return false
+	# Filtro de era (aplica quando selecionado "Construções")
+	if _current_type == "building":
+		if age != _current_era:
+			return false
 	
 	# Filtro de busca
 	if _search_text != "" and not name.contains(_search_text):
@@ -388,46 +399,27 @@ func _matches_filters(unit: Dictionary) -> bool:
 	return true
 
 func _resolve_model_path(unit: Dictionary) -> String:
-	# Tentar resolver o caminho do modelo .glb baseado no id da unidade
-	var clean_id: String = unit.get("id", "")
-	var pantheon: String = unit.get("pantheon", _current_pantheon)
-	var category: String = unit.get("category", "")
+	var raw_id: String = String(unit.get("id", ""))
+	var clean_id: String = raw_id.trim_prefix("olympus_")
+	var pantheon: String = String(unit.get("pantheon", _current_pantheon))
 	
-	if clean_id == "":
+	if raw_id == "" and clean_id == "":
 		return ""
-	
-	# Mapear categoria para pasta
-	var cat_folder: String = _map_category_to_folder(category)
-	if cat_folder == "":
-		return ""
-	
-	# O deus maior é _current_god (selecionado no filtro)
-	# Tentar caminhos possíveis
-	var base_path: String = "res://models/civilizations/%s/%s/%s/" % [pantheon, _current_god, cat_folder]
-	
-	# Variações de nome do arquivo
-	var possible_names: Array[String] = [
-		"%s.glb" % clean_id,
-		"%s.glb" % clean_id.replace("_", "-"),
-		"%s_base.glb" % clean_id,
-		"%s.glb" % unit.get("display_name", "").to_lower().replace(" ", "_"),
+
+	var candidates: Array[String] = [
+		"res://models/civilizations/%s/%s/%s_base.glb" % [pantheon, clean_id, clean_id],
+		"res://models/civilizations/%s/cidade/%s/%s_base.glb" % [pantheon, clean_id, clean_id],
+		"res://models/civilizations/shared/%s/%s_base.glb" % [clean_id, clean_id],
+		"res://models/civilizations/shared/cidade/%s/%s_base.glb" % [clean_id, clean_id],
+		"res://models/civilizations/%s/%s/%s.glb" % [pantheon, clean_id, clean_id],
+		"res://models/units/%s.glb" % clean_id,
+		"res://models/buildings/%s.glb" % clean_id,
 	]
 	
-	for name in possible_names:
-		var full_path: String = base_path + name
-		if FileAccess.file_exists(full_path):
-			return full_path
-	
-	# Fallback: buscar qualquer .glb na pasta que contenha o id
-	var da: DirAccess = DirAccess.open(base_path)
-	if da != null:
-		var files: PackedStringArray = da.get_files()
-		for f in files:
-			if f.ends_with(".glb") and not f.ends_with(".glb.import"):
-				var basename: String = f.get_basename().to_lower()
-				if clean_id.to_lower() in basename or basename in clean_id.to_lower():
-					return base_path + f
-	
+	for path in candidates:
+		if FileAccess.file_exists(path):
+			return path
+			
 	return ""
 
 func _map_category_to_folder(category: String) -> String:

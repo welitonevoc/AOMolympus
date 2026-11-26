@@ -92,7 +92,8 @@ func _setup_environment() -> void:
 		@warning_ignore("int_as_enum_without_cast", "int_as_enum_without_match")
 		env.background_mode = 0  # BACKGROUND_COLOR (valor seguro para Godot 4.x)
 		env.background_color = Color(0.04, 0.04, 0.06)
-		env.ambient_light = Color(0.35, 0.35, 0.42)
+		env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
+		env.ambient_light_color = Color(0.35, 0.35, 0.42)
 		env.ambient_light_energy = 1.6
 		env.indirect_lighting_energy = 0.3
 		env.glow_enabled = false
@@ -261,11 +262,18 @@ func get_animation_names() -> PackedStringArray:
 
 func play_animation(name: String, loop: bool = true, speed: float = 1.0) -> bool:
 	var anim_player: AnimationPlayer = get_animation_player()
-	if anim_player == null or not anim_player.has_animation(name):
-		return false
-	anim_player.play(name)
-	anim_player.playback_speed = speed
-	return true
+	if anim_player != null and anim_player.has_animation(name):
+		anim_player.play(name)
+		anim_player.playback_speed = speed
+		return true
+	if _current_model != null and _current_model.has_meta("aom_bundle_dir"):
+		var p_node: Node3D = _current_model.get_parent() as Node3D
+		if p_node != null and ModelLibrary != null and ModelLibrary.has_method("switch_aom_action"):
+			var ok: bool = ModelLibrary.switch_aom_action(p_node, name)
+			if ok and p_node.get_child_count() > 0:
+				_current_model = p_node.get_child(0) as Node3D
+				return true
+	return false
 
 func stop_animation() -> void:
 	var anim_player: AnimationPlayer = get_animation_player()
