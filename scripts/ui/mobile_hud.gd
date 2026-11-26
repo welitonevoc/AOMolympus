@@ -56,6 +56,17 @@ var _codex_modal_category: Label
 var _codex_modal_lore: Label
 var _codex_modal_meta: VBoxContainer
 
+# --- Card Central Clássico de Inspeção de Unidade / Edifício ---
+var _unit_card_panel: PanelContainer
+var _unit_card_portrait: TextureRect
+var _unit_card_name: Label
+var _unit_card_lvl: Label
+var _unit_card_hp_bar: ProgressBar
+var _unit_card_hp_lbl: Label
+var _unit_card_stats_row: HBoxContainer
+var _unit_card_banner_lbl: Label
+var _unit_card_portrait_icon: Label
+
 # --- Regras AoM: Cronometro de Maravilha e Dialogos de Gatilho ---
 var _wonder_panel: PanelContainer
 var _wonder_lbl: Label
@@ -107,6 +118,7 @@ func _ready() -> void:
 	_build_campaign_objectives_panel()
 	_build_minimap_dock()
 	_build_bottom_left_zone()
+	_build_unit_inspection_card()
 	_build_bottom_right_commands()
 	_build_toast_banner()
 	_build_wonder_countdown_panel()
@@ -434,23 +446,25 @@ func _build_campaign_objectives_panel() -> void:
 
 
 func _build_minimap_dock() -> void:
+	# Minimapa Tático Estilizado no Canto Inferior Esquerdo (Octógono Dourado)
 	var panel := PanelContainer.new()
-	panel.anchor_left = 1.0
-	panel.anchor_right = 1.0
-	panel.anchor_top = 0.0
-	panel.anchor_bottom = 0.0
-	panel.offset_left = -182.0
-	panel.offset_right = -14.0
-	panel.offset_top = 60.0
-	panel.offset_bottom = 228.0
-	panel.add_theme_stylebox_override("panel", _make_panel_style(Color(0.05, 0.07, 0.11, 0.9), 8))
+	panel.anchor_left = 0.0
+	panel.anchor_right = 0.0
+	panel.anchor_top = 1.0
+	panel.anchor_bottom = 1.0
+	panel.offset_left = 14.0
+	panel.offset_right = 234.0
+	panel.offset_top = -234.0
+	panel.offset_bottom = -14.0
+	# Borda dourada espessa e formato poligonal arredondado simulando bisel
+	panel.add_theme_stylebox_override("panel", _make_panel_style(Color(0.04, 0.06, 0.10, 0.94), 22, Color(0.83, 0.69, 0.22, 0.85), true))
 	add_child(panel)
 
 	var margin := MarginContainer.new()
-	margin.add_theme_constant_override("margin_left", 6)
-	margin.add_theme_constant_override("margin_right", 6)
-	margin.add_theme_constant_override("margin_top", 6)
-	margin.add_theme_constant_override("margin_bottom", 6)
+	margin.add_theme_constant_override("margin_left", 8)
+	margin.add_theme_constant_override("margin_right", 8)
+	margin.add_theme_constant_override("margin_top", 8)
+	margin.add_theme_constant_override("margin_bottom", 8)
 	panel.add_child(margin)
 
 	_minimap = TacticalMinimap.new()
@@ -462,35 +476,37 @@ func _build_minimap_dock() -> void:
 
 
 func _build_bottom_left_zone() -> void:
+	# Barra de Filtros e Seleções Rápidas logo acima do Minimapa
 	var panel := PanelContainer.new()
 	panel.anchor_left = 0.0
 	panel.anchor_right = 0.0
 	panel.anchor_top = 1.0
 	panel.anchor_bottom = 1.0
 	panel.offset_left = 14.0
-	panel.offset_right = 412.0
-	panel.offset_top = -204.0
-	panel.offset_bottom = -14.0
-	panel.add_theme_stylebox_override("panel", _make_panel_style(Color(0.04, 0.06, 0.10, 0.92), 12, Color(0.83, 0.69, 0.22, 0.45), true))
+	panel.offset_right = 250.0
+	panel.offset_top = -306.0
+	panel.offset_bottom = -242.0
+	panel.add_theme_stylebox_override("panel", _make_panel_style(Color(0.04, 0.06, 0.10, 0.90), 8, Color(0.83, 0.69, 0.22, 0.35)))
 	add_child(panel)
 
 	var margin := MarginContainer.new()
-	margin.add_theme_constant_override("margin_left", 12)
-	margin.add_theme_constant_override("margin_right", 12)
-	margin.add_theme_constant_override("margin_top", 10)
-	margin.add_theme_constant_override("margin_bottom", 10)
+	margin.add_theme_constant_override("margin_left", 6)
+	margin.add_theme_constant_override("margin_right", 6)
+	margin.add_theme_constant_override("margin_top", 4)
+	margin.add_theme_constant_override("margin_bottom", 4)
 	panel.add_child(margin)
 
 	var vbox := VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 6)
+	vbox.add_theme_constant_override("separation", 4)
 	margin.add_child(vbox)
 
 	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 6)
+	row.add_theme_constant_override("separation", 4)
 	vbox.add_child(row)
 
-	_box_btn = _make_action_button("📦 Caixa", false, 88.0, 42.0)
+	_box_btn = _make_action_button("📦", false, 42.0, 32.0)
 	_box_btn.toggle_mode = true
+	_box_btn.tooltip_text = "Seleção em caixa"
 	_box_btn.toggled.connect(func(active: bool) -> void:
 		GameState.box_select_mode = active
 		_box_btn.add_theme_stylebox_override("normal", _make_btn_style(active))
@@ -499,100 +515,213 @@ func _build_bottom_left_zone() -> void:
 	)
 	row.add_child(_box_btn)
 
-	var idle_btn := _make_action_button("👨‍🌾 Ocioso", false, 88.0, 42.0)
+	var idle_btn := _make_action_button("👨‍🌾", false, 42.0, 32.0)
+	idle_btn.tooltip_text = "Focar aldeão ocioso"
 	idle_btn.pressed.connect(func() -> void:
 		if _world != null:
 			_world.focus_idle_villager()
 	)
 	row.add_child(idle_btn)
 
-	var army_btn := _make_action_button("⚔️ Exército", true, 96.0, 42.0)
+	var army_btn := _make_action_button("⚔️", true, 42.0, 32.0)
+	army_btn.tooltip_text = "Selecionar exército"
 	army_btn.pressed.connect(func() -> void:
 		if _world != null:
 			_world.select_all_military()
 	)
 	row.add_child(army_btn)
 
-	# Linha 2: Filtros Táticos Rápidos por Classe (Retold / Titans Ergonomia Mobile)
+	var base_quick_btn := _make_action_button("🏛", false, 42.0, 32.0)
+	base_quick_btn.tooltip_text = "Ir à Base / Centro Urbano"
+	base_quick_btn.pressed.connect(func() -> void:
+		if _world != null:
+			_world.focus_town_center()
+	)
+	row.add_child(base_quick_btn)
+
+	var lore_quick_btn := _make_action_button("📖", false, 42.0, 32.0)
+	lore_quick_btn.tooltip_text = "Códice Mitológico"
+	lore_quick_btn.pressed.connect(_on_codex_quick_inspect_pressed)
+	row.add_child(lore_quick_btn)
+
+	# Linha 2 de filtros rápidos
 	var filter_row := HBoxContainer.new()
-	filter_row.add_theme_constant_override("separation", 6)
+	filter_row.add_theme_constant_override("separation", 4)
 	vbox.add_child(filter_row)
 
-	var vills_all_btn := _make_action_button("👨‍🌾 Todos", false, 80.0, 36.0)
+	var vills_all_btn := _make_action_button("👨‍🌾 Todos", false, 56.0, 24.0)
+	vills_all_btn.add_theme_font_size_override("font_size", 9)
 	vills_all_btn.pressed.connect(func() -> void:
 		if _world != null:
 			_world.select_all_villagers()
 	)
 	filter_row.add_child(vills_all_btn)
 
-	var archers_btn := _make_action_button("🏹 Arqueiros", false, 88.0, 36.0)
+	var archers_btn := _make_action_button("🏹 Arq", false, 54.0, 24.0)
+	archers_btn.add_theme_font_size_override("font_size", 9)
 	archers_btn.pressed.connect(func() -> void:
 		if _world != null:
 			_world.select_units_by_role("archer")
 	)
 	filter_row.add_child(archers_btn)
 
-	var cavalry_btn := _make_action_button("🐎 Cavalaria", false, 88.0, 36.0)
+	var cavalry_btn := _make_action_button("🐎 Cav", false, 54.0, 24.0)
+	cavalry_btn.add_theme_font_size_override("font_size", 9)
 	cavalry_btn.pressed.connect(func() -> void:
 		if _world != null:
 			_world.select_units_by_role("cavalry")
 	)
 	filter_row.add_child(cavalry_btn)
 
-	var myth_btn := _make_action_button("⚡ Míticas", false, 80.0, 36.0)
+	var myth_btn := _make_action_button("⚡ Mít", false, 54.0, 24.0)
+	myth_btn.add_theme_font_size_override("font_size", 9)
 	myth_btn.pressed.connect(func() -> void:
 		if _world != null:
 			_world.select_units_by_role("myth")
 	)
 	filter_row.add_child(myth_btn)
 
-	var title_row := HBoxContainer.new()
-	title_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	vbox.add_child(title_row)
 
-	_selection_title = Label.new()
-	_selection_title.text = "Nenhuma seleção"
-	_selection_title.add_theme_color_override("font_color", Color("#f6e08b"))
-	_selection_title.add_theme_font_size_override("font_size", 14)
-	_selection_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	title_row.add_child(_selection_title)
-
-	var lore_btn := Button.new()
-	lore_btn.text = "📖 Códice"
-	lore_btn.custom_minimum_size = Vector2(74, 26)
-	lore_btn.add_theme_font_size_override("font_size", 10)
-	lore_btn.pressed.connect(_on_codex_quick_inspect_pressed)
-	title_row.add_child(lore_btn)
-
-	_selection_status = Label.new()
-	_selection_status.text = "Toque em uma unidade ou construção"
-	_selection_status.add_theme_color_override("font_color", Color("#94a3b8"))
-	_selection_status.add_theme_font_size_override("font_size", 12)
-	vbox.add_child(_selection_status)
-
-
-func _build_bottom_right_commands() -> void:
-	var panel := PanelContainer.new()
-	panel.anchor_left = 1.0
-	panel.anchor_right = 1.0
-	panel.anchor_top = 1.0
-	panel.anchor_bottom = 1.0
-	panel.offset_left = -408.0
-	panel.offset_right = -14.0
-	panel.offset_top = -242.0
-	panel.offset_bottom = -14.0
-	panel.add_theme_stylebox_override("panel", _make_panel_style(Color(0.04, 0.06, 0.10, 0.92), 12, Color(0.83, 0.69, 0.22, 0.45), true))
-	add_child(panel)
+func _build_unit_inspection_card() -> void:
+	# Painel Central Clássico Imperial (Centro Inferior)
+	_unit_card_panel = PanelContainer.new()
+	_unit_card_panel.anchor_left = 0.5
+	_unit_card_panel.anchor_right = 0.5
+	_unit_card_panel.anchor_top = 1.0
+	_unit_card_panel.anchor_bottom = 1.0
+	_unit_card_panel.offset_left = -195.0
+	_unit_card_panel.offset_right = 195.0
+	_unit_card_panel.offset_top = -175.0
+	_unit_card_panel.offset_bottom = -14.0
+	_unit_card_panel.add_theme_stylebox_override("panel", _make_panel_style(Color(0.04, 0.05, 0.08, 0.95), 10, Color(0.83, 0.69, 0.22, 0.65), true))
+	add_child(_unit_card_panel)
 
 	var margin := MarginContainer.new()
 	margin.add_theme_constant_override("margin_left", 10)
 	margin.add_theme_constant_override("margin_right", 10)
 	margin.add_theme_constant_override("margin_top", 8)
 	margin.add_theme_constant_override("margin_bottom", 8)
+	_unit_card_panel.add_child(margin)
+
+	var main_hbox := HBoxContainer.new()
+	main_hbox.add_theme_constant_override("separation", 10)
+	margin.add_child(main_hbox)
+
+	# Retrato com moldura dourada
+	var portrait_box := PanelContainer.new()
+	portrait_box.custom_minimum_size = Vector2(80.0, 100.0)
+	var portrait_style := StyleBoxFlat.new()
+	portrait_style.bg_color = Color(0.08, 0.12, 0.18, 0.9)
+	portrait_style.border_color = Color("#d4af37")
+	portrait_style.set_border_width_all(2)
+	portrait_style.set_corner_radius_all(6)
+	portrait_box.add_theme_stylebox_override("panel", portrait_style)
+	main_hbox.add_child(portrait_box)
+
+	_unit_card_portrait_icon = Label.new()
+	_unit_card_portrait_icon.text = "🏛️"
+	_unit_card_portrait_icon.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_unit_card_portrait_icon.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_unit_card_portrait_icon.add_theme_font_size_override("font_size", 34)
+	portrait_box.add_child(_unit_card_portrait_icon)
+
+	# Informações textuais, barra de HP e atributos
+	var info_vbox := VBoxContainer.new()
+	info_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	info_vbox.add_theme_constant_override("separation", 4)
+	main_hbox.add_child(info_vbox)
+
+	# Título e Nível
+	var title_hbox := HBoxContainer.new()
+	info_vbox.add_child(title_hbox)
+
+	_unit_card_name = Label.new()
+	_unit_card_name.text = "Nenhuma seleção"
+	_unit_card_name.add_theme_color_override("font_color", Color("#f6e08b"))
+	_unit_card_name.add_theme_font_size_override("font_size", 14)
+	_unit_card_name.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	title_hbox.add_child(_unit_card_name)
+
+	_unit_card_lvl = Label.new()
+	_unit_card_lvl.text = "Lvl 1"
+	_unit_card_lvl.add_theme_color_override("font_color", Color("#94a3b8"))
+	_unit_card_lvl.add_theme_font_size_override("font_size", 11)
+	title_hbox.add_child(_unit_card_lvl)
+
+	# Barra de Vida (Verde Esmeralda Imperial)
+	var hp_container := Control.new()
+	hp_container.custom_minimum_size = Vector2(0.0, 16.0)
+	info_vbox.add_child(hp_container)
+
+	_unit_card_hp_bar = ProgressBar.new()
+	_unit_card_hp_bar.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_unit_card_hp_bar.min_value = 0.0
+	_unit_card_hp_bar.max_value = 100.0
+	_unit_card_hp_bar.value = 100.0
+	_unit_card_hp_bar.show_percentage = false
+	var hp_bg := StyleBoxFlat.new()
+	hp_bg.bg_color = Color(0.1, 0.12, 0.16, 0.8)
+	hp_bg.set_corner_radius_all(3)
+	var hp_fill := StyleBoxFlat.new()
+	hp_fill.bg_color = Color("#22c55e")
+	hp_fill.set_corner_radius_all(3)
+	_unit_card_hp_bar.add_theme_stylebox_override("background", hp_bg)
+	_unit_card_hp_bar.add_theme_stylebox_override("fill", hp_fill)
+	hp_container.add_child(_unit_card_hp_bar)
+
+	_unit_card_hp_lbl = Label.new()
+	_unit_card_hp_lbl.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_unit_card_hp_lbl.text = "HP: --/--"
+	_unit_card_hp_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_unit_card_hp_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_unit_card_hp_lbl.add_theme_font_size_override("font_size", 10)
+	_unit_card_hp_lbl.add_theme_color_override("font_color", Color("#ffffff"))
+	_unit_card_hp_lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.8))
+	_unit_card_hp_lbl.add_theme_constant_override("shadow_offset_x", 1)
+	_unit_card_hp_lbl.add_theme_constant_override("shadow_offset_y", 1)
+	hp_container.add_child(_unit_card_hp_lbl)
+
+	# Linha de Atributos (Ataque, Armadura, Velocidade, Alcance)
+	_unit_card_stats_row = HBoxContainer.new()
+	_unit_card_stats_row.add_theme_constant_override("separation", 8)
+	info_vbox.add_child(_unit_card_stats_row)
+
+	# Banner de Habilidade Ativa
+	_unit_card_banner_lbl = Label.new()
+	_unit_card_banner_lbl.text = "PRONTO PARA BATALHA"
+	_unit_card_banner_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_unit_card_banner_lbl.add_theme_font_size_override("font_size", 10)
+	_unit_card_banner_lbl.add_theme_color_override("font_color", Color("#d4af37"))
+	info_vbox.add_child(_unit_card_banner_lbl)
+
+	# Variáveis legadas mantidas para não quebrar compatibilidade
+	_selection_title = _unit_card_name
+	_selection_status = _unit_card_banner_lbl
+
+
+func _build_bottom_right_commands() -> void:
+	# Painel de Comandos e Ordens (Canto Inferior Direito) - Moldura Dourada Clássica
+	var panel := PanelContainer.new()
+	panel.anchor_left = 1.0
+	panel.anchor_right = 1.0
+	panel.anchor_top = 1.0
+	panel.anchor_bottom = 1.0
+	panel.offset_left = -336.0
+	panel.offset_right = -14.0
+	panel.offset_top = -242.0
+	panel.offset_bottom = -14.0
+	panel.add_theme_stylebox_override("panel", _make_panel_style(Color(0.04, 0.06, 0.10, 0.94), 10, Color(0.83, 0.69, 0.22, 0.75), true))
+	add_child(panel)
+
+	var margin := MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 8)
+	margin.add_theme_constant_override("margin_right", 8)
+	margin.add_theme_constant_override("margin_top", 6)
+	margin.add_theme_constant_override("margin_bottom", 6)
 	panel.add_child(margin)
 
 	var vbox := VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 6)
+	vbox.add_theme_constant_override("separation", 4)
 	margin.add_child(vbox)
 
 	var header_bar := HBoxContainer.new()
@@ -600,7 +729,7 @@ func _build_bottom_right_commands() -> void:
 	vbox.add_child(header_bar)
 
 	var header_lbl := Label.new()
-	header_lbl.text = "✦ ORDENS & CONSTRUÇÃO ✦"
+	header_lbl.text = "✦ AÇÕES & ORDENS ✦"
 	header_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	header_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	header_lbl.add_theme_color_override("font_color", Color(0.83, 0.69, 0.22, 0.85))
@@ -610,11 +739,11 @@ func _build_bottom_right_commands() -> void:
 	_age_progress_bar = ProgressBar.new()
 	_age_progress_bar.min_value = 0.0
 	_age_progress_bar.max_value = 100.0
-	_age_progress_bar.custom_minimum_size = Vector2(0.0, 16.0)
+	_age_progress_bar.custom_minimum_size = Vector2(0.0, 14.0)
 	_age_progress_bar.visible = false
 	var bar_fill := StyleBoxFlat.new()
 	bar_fill.bg_color = Color("#d4af37")
-	bar_fill.set_corner_radius_all(4)
+	bar_fill.set_corner_radius_all(3)
 	_age_progress_bar.add_theme_stylebox_override("fill", bar_fill)
 	vbox.add_child(_age_progress_bar)
 
@@ -625,7 +754,7 @@ func _build_bottom_right_commands() -> void:
 	vbox.add_child(scroll)
 
 	_command_grid = GridContainer.new()
-	_command_grid.columns = 2
+	_command_grid.columns = 3
 	_command_grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_command_grid.add_theme_constant_override("h_separation", 6)
 	_command_grid.add_theme_constant_override("v_separation", 6)
@@ -1744,23 +1873,87 @@ func _on_power_target_mode_changed(_power_id: String) -> void:
 
 
 func _on_selection_changed(selected_nodes: Array) -> void:
+	if _unit_card_stats_row != null:
+		for c in _unit_card_stats_row.get_children():
+			c.queue_free()
+
 	if selected_nodes.is_empty():
-		_selection_title.text = "Nenhuma seleção"
-		_selection_status.text = "Toque em uma unidade ou construção"
+		_unit_card_name.text = "Nenhuma seleção"
+		_unit_card_lvl.text = ""
+		_unit_card_hp_bar.value = 0.0
+		_unit_card_hp_lbl.text = "-- / --"
+		_unit_card_portrait_icon.text = "🏛️"
+		_unit_card_banner_lbl.text = "TOQUE EM UMA UNIDADE OU CONSTRUÇÃO"
 	elif selected_nodes.size() == 1 and is_instance_valid(selected_nodes[0]):
 		var ent: Node = selected_nodes[0]
-		_selection_title.text = ent.get_display_name() if ent.has_method("get_display_name") else ent.name
-		var st: String = ent.get_status_text() if ent.has_method("get_status_text") else ""
-		if "current_hp" in ent and "max_hp" in ent:
-			var hp_info := " · HP: %d/%d" % [int(ent.current_hp), int(ent.max_hp)]
-			_selection_status.text = st + hp_info
+		var display_n: String = ent.get_display_name() if ent.has_method("get_display_name") else ent.name
+		_unit_card_name.text = display_n
+		
+		# Ícone de retrato temático
+		if ent is BuildingActor:
+			_unit_card_portrait_icon.text = "🏛️"
+			_unit_card_lvl.text = "Edifício"
+		elif ent is UnitActor:
+			var icon_map: Dictionary = {
+				"villager": "👨‍🌾",
+				"infantry": "🛡️",
+				"archer": "🏹",
+				"cavalry": "🐎",
+				"siege": "🪵",
+				"myth": "⚡",
+				"hero": "⭐",
+				"titan": "💥"
+			}
+			_unit_card_portrait_icon.text = icon_map.get(ent.unit_kind, "⚔️")
+			_unit_card_lvl.text = "Lvl %d" % int(ent.veterancy_level if "veterancy_level" in ent else 1)
 		else:
-			_selection_status.text = st
+			_unit_card_portrait_icon.text = "⚔️"
+			_unit_card_lvl.text = "1"
+
+		# HP
+		if "current_hp" in ent and "max_hp" in ent:
+			var cur_hp: float = float(ent.current_hp)
+			var max_hp: float = float(ent.max_hp)
+			_unit_card_hp_bar.max_value = max_hp
+			_unit_card_hp_bar.value = cur_hp
+			_unit_card_hp_lbl.text = "%d / %d" % [int(cur_hp), int(max_hp)]
+		else:
+			_unit_card_hp_bar.value = 100.0
+			_unit_card_hp_lbl.text = "100%"
+
+		# Linha de Atributos Compactos
+		if _unit_card_stats_row != null:
+			if "base_damage" in ent:
+				var atk_lbl := Label.new()
+				atk_lbl.text = "⚔️ %d" % int(ent.base_damage)
+				atk_lbl.add_theme_font_size_override("font_size", 11)
+				atk_lbl.add_theme_color_override("font_color", Color("#fca5a5"))
+				_unit_card_stats_row.add_child(atk_lbl)
+			if "armor_hack" in ent:
+				var arm_lbl := Label.new()
+				arm_lbl.text = "🛡️ %.0f%%" % (float(ent.armor_hack) * 100.0)
+				arm_lbl.add_theme_font_size_override("font_size", 11)
+				arm_lbl.add_theme_color_override("font_color", Color("#93c5fd"))
+				_unit_card_stats_row.add_child(arm_lbl)
+			if "move_speed" in ent:
+				var spd_lbl := Label.new()
+				spd_lbl.text = "🐎 %.1f" % float(ent.move_speed)
+				spd_lbl.add_theme_font_size_override("font_size", 11)
+				spd_lbl.add_theme_color_override("font_color", Color("#fde047"))
+				_unit_card_stats_row.add_child(spd_lbl)
+
+		var st: String = ent.get_status_text() if ent.has_method("get_status_text") else "EM PRONTIDÃO"
+		_unit_card_banner_lbl.text = st.to_upper()
 	else:
 		var form_name: String = String(PantheonCatalog.get_formation(GameState.active_formation)["name"])
 		var stance_name: String = String(PantheonCatalog.get_stance(GameState.active_stance)["name"])
-		_selection_title.text = "%d unidades selecionadas" % selected_nodes.size()
-		_selection_status.text = "Formação: %s · Postura: %s" % [form_name, stance_name]
+		_unit_card_name.text = "%d Unidades" % selected_nodes.size()
+		_unit_card_lvl.text = "Exército"
+		_unit_card_portrait_icon.text = "⚔️"
+		_unit_card_hp_bar.value = 100.0
+		_unit_card_hp_lbl.text = "MÚLTIPLOS"
+		_unit_card_banner_lbl.text = "FORMAÇÃO: %s · POSTURA: %s" % [form_name.to_upper(), stance_name.to_upper()]
+
 	_rebuild_command_grid()
 
 
