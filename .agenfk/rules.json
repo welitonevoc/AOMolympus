@@ -1,0 +1,12 @@
+{
+  "branchRequired": {
+    "when": { "step": "IN_PROGRESS" },
+    "require": ["branchName"],
+    "message": "Um branch deve ser registrado antes de avançar de IN_PROGRESS para REVIEW."
+  },
+  "finalVerification": {
+    "when": { "step": "DONE" },
+    "require": ["suiteGreen"],
+    "message": "Todos os testes devem passar antes de marcar DONE."
+  }
+}
