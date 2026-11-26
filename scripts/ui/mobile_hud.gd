@@ -194,121 +194,302 @@ func _process(delta: float) -> void:
 
 
 func _build_top_bar() -> void:
-	var bar := PanelContainer.new()
-	bar.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	bar.custom_minimum_size = Vector2(0.0, 54.0)
-	bar.add_theme_stylebox_override("panel", _make_panel_style(Color(0.04, 0.06, 0.10, 0.94), 0, Color(0.83, 0.69, 0.22, 0.35)))
-	add_child(bar)
-
-	var margin := MarginContainer.new()
-	margin.add_theme_constant_override("margin_left", 10)
-	margin.add_theme_constant_override("margin_right", 10)
-	margin.add_theme_constant_override("margin_top", 5)
-	margin.add_theme_constant_override("margin_bottom", 5)
-	bar.add_child(margin)
-
-	var hbox := HBoxContainer.new()
-	hbox.add_theme_constant_override("separation", 6)
-	margin.add_child(hbox)
-
-	var food_pill := _make_resource_pill("🌾", "350", Color("#fca5a5"), "res://assets/ui/icons/resources/olympus_res_resource_food.png")
-	_food_lbl = food_pill["label"]
-	hbox.add_child(food_pill["container"])
-
-	var wood_pill := _make_resource_pill("🪵", "300", Color("#86efac"), "res://assets/ui/icons/resources/olympus_res_resource_wood.png")
-	_wood_lbl = wood_pill["label"]
-	hbox.add_child(wood_pill["container"])
-
-	var gold_pill := _make_resource_pill("🪙", "250", Color("#fde047"), "res://assets/ui/icons/resources/olympus_res_resource_gold.png")
-	_gold_lbl = gold_pill["label"]
-	hbox.add_child(gold_pill["container"])
-
-	var favor_pill := _make_resource_pill("✨", "20", Color("#7dd3fc"), "res://assets/ui/icons/resources/olympus_res_resource_favor.png")
-	_favor_lbl = favor_pill["label"]
-	hbox.add_child(favor_pill["container"])
-
-	var pop_pill := _make_resource_pill("👥", "0/15", Color("#e2e8f0"), "res://assets/ui/icons/resources/olympus_res_resource_population.png")
-	_pop_lbl = pop_pill["label"]
-	hbox.add_child(pop_pill["container"])
-
-	var spacer := Control.new()
-	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	hbox.add_child(spacer)
-
-	var age_pill := _make_resource_pill("🏛️", "Era Arcaica (I)", Color("#f6e08b"))
-	_age_lbl = age_pill["label"]
-	hbox.add_child(age_pill["container"])
-
-	var profile_node: Node = get_node_or_null("/root/OlympusProfileManager")
-	var profile_text: String = "Arconte"
-	if profile_node != null and profile_node.has_method("get_profile_summary"):
-		var p_sum: Dictionary = profile_node.get_profile_summary()
-		profile_text = "%s %s (Nv.%d)" % [String(p_sum.get("flag", "🏛️")), String(p_sum.get("title", "Arconte")), int(p_sum.get("level", 1))]
-	var commander_pill := _make_resource_pill("👑", profile_text, Color("#fde047"))
-	hbox.add_child(commander_pill["container"])
-
-	var spacer2 := Control.new()
-	spacer2.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	hbox.add_child(spacer2)
+	# 1. Container invisível para manter ativas as referências dos botões de controle e debug
+	# sem exibi-los na tela de jogo (atendendo à solicitação "esconder isso aí")
+	var hidden_controls := Control.new()
+	hidden_controls.name = "HiddenActionControls"
+	hidden_controls.visible = false
+	add_child(hidden_controls)
 
 	var base_btn := _make_action_button("🏛 Base", false, 68.0, 40.0)
 	base_btn.pressed.connect(func() -> void:
 		if _world != null:
 			_world.focus_town_center()
 	)
-	hbox.add_child(base_btn)
+	hidden_controls.add_child(base_btn)
 
 	_priority_btn = _make_action_button("⚖️ Equil", false, 82.0, 40.0)
 	_priority_btn.pressed.connect(func() -> void:
 		var next_preset: String = GameState.cycle_villager_priority()
 		_update_priority_btn_label(next_preset)
 	)
-	hbox.add_child(_priority_btn)
+	hidden_controls.add_child(_priority_btn)
 
 	_fog_btn = _make_action_button("🌫 Neblina", false, 78.0, 40.0)
 	_fog_btn.pressed.connect(func() -> void: GameState.toggle_fog_of_war())
-	hbox.add_child(_fog_btn)
+	hidden_controls.add_child(_fog_btn)
 
 	_audio_btn = _make_action_button("🔊 Som", false, 64.0, 40.0)
 	_audio_btn.pressed.connect(func() -> void: GameState.toggle_audio_muted())
-	hbox.add_child(_audio_btn)
+	hidden_controls.add_child(_audio_btn)
 
 	_day_night_btn = _make_action_button("🌙 Noite", false, 72.0, 40.0)
 	_day_night_btn.pressed.connect(func() -> void: GameState.toggle_day_night())
-	hbox.add_child(_day_night_btn)
+	hidden_controls.add_child(_day_night_btn)
 
 	_gfx_btn = _make_action_button("🖥️ GFX", false, 72.0, 40.0)
 	_gfx_btn.pressed.connect(_on_cycle_gfx_preset_pressed)
-	hbox.add_child(_gfx_btn)
+	hidden_controls.add_child(_gfx_btn)
 
 	var atmos_btn := _make_action_button("🌤️ Clima", false, 72.0, 40.0)
 	atmos_btn.pressed.connect(_on_cycle_atmosphere_pressed)
-	hbox.add_child(atmos_btn)
+	hidden_controls.add_child(atmos_btn)
 
 	var save_btn := _make_action_button("💾 Salvar", false, 72.0, 40.0)
 	save_btn.pressed.connect(func() -> void:
 		SaveLoadSystem.save_game(_world, _camera_rig)
 	)
-	hbox.add_child(save_btn)
+	hidden_controls.add_child(save_btn)
 
 	var load_btn := _make_action_button("📂 Carregar", false, 78.0, 40.0)
 	load_btn.pressed.connect(func() -> void:
 		SaveLoadSystem.load_game()
 	)
-	hbox.add_child(load_btn)
+	hidden_controls.add_child(load_btn)
 
 	_divine_btn = _make_action_button("⚡ Deuses", true, 78.0, 40.0)
 	_divine_btn.visible = false
 	_divine_btn.pressed.connect(func() -> void:
 		_toggle_divine_panel()
 	)
-	hbox.add_child(_divine_btn)
+	hidden_controls.add_child(_divine_btn)
 
-	var menu_btn := _make_action_button("☰ Menu", false, 66.0, 40.0)
-	menu_btn.pressed.connect(func() -> void:
+	_age_lbl = Label.new()
+	hidden_controls.add_child(_age_lbl)
+
+	# 2. Medalhão Circular Imperial Ômega (Canto Superior Esquerdo - Ícone clássico oficial)
+	_build_omega_emblem()
+
+	# 3. Placa Imperial Suspensa Centralizada de Recursos (Layout clássico oficial do AoM)
+	_build_imperial_resource_tablet()
+
+
+func _build_omega_emblem() -> void:
+	var omega_btn := Button.new()
+	omega_btn.name = "OmegaEmblemBtn"
+	omega_btn.anchor_left = 0.0
+	omega_btn.anchor_top = 0.0
+	omega_btn.offset_left = 16.0
+	omega_btn.offset_top = 10.0
+	omega_btn.custom_minimum_size = Vector2(54.0, 54.0)
+
+	var sb_normal := StyleBoxFlat.new()
+	sb_normal.bg_color = Color(0.06, 0.12, 0.22, 0.96) # Azul Egeu profundo imperial
+	sb_normal.border_color = Color(0.88, 0.74, 0.32, 1.0) # Ouro imperial
+	sb_normal.border_width_left = 3
+	sb_normal.border_width_top = 3
+	sb_normal.border_width_right = 3
+	sb_normal.border_width_bottom = 3
+	sb_normal.set_corner_radius_all(27)
+	sb_normal.shadow_color = Color(0.0, 0.0, 0.0, 0.6)
+	sb_normal.shadow_size = 6
+	sb_normal.shadow_offset = Vector2(0.0, 2.0)
+
+	var sb_hover := sb_normal.duplicate() as StyleBoxFlat
+	sb_hover.border_color = Color(1.0, 0.90, 0.45, 1.0)
+	sb_hover.bg_color = Color(0.09, 0.18, 0.32, 0.98)
+
+	var sb_pressed := sb_normal.duplicate() as StyleBoxFlat
+	sb_pressed.border_color = Color(0.72, 0.58, 0.20, 1.0)
+	sb_pressed.bg_color = Color(0.04, 0.08, 0.16, 0.98)
+
+	omega_btn.add_theme_stylebox_override("normal", sb_normal)
+	omega_btn.add_theme_stylebox_override("hover", sb_hover)
+	omega_btn.add_theme_stylebox_override("pressed", sb_pressed)
+	omega_btn.add_theme_stylebox_override("focus", sb_normal)
+
+	omega_btn.text = "Ω"
+	omega_btn.add_theme_font_size_override("font_size", 28)
+	omega_btn.add_theme_color_override("font_color", Color("#ffd700"))
+	omega_btn.add_theme_color_override("font_hover_color", Color("#fff3b0"))
+	omega_btn.add_theme_color_override("font_pressed_color", Color("#d4af37"))
+
+	omega_btn.pressed.connect(func() -> void:
 		get_tree().change_scene_to_file("res://scenes/title_screen.tscn")
 	)
-	hbox.add_child(menu_btn)
+	add_child(omega_btn)
+
+
+func _build_imperial_resource_tablet() -> void:
+	# Container Principal Centralizado no Topo
+	var top_root := Control.new()
+	top_root.name = "ImperialTopBarRoot"
+	top_root.anchor_left = 0.5
+	top_root.anchor_right = 0.5
+	top_root.anchor_top = 0.0
+	top_root.anchor_bottom = 0.0
+	top_root.offset_left = -310.0
+	top_root.offset_right = 310.0
+	top_root.offset_top = 0.0
+	top_root.offset_bottom = 40.0
+	add_child(top_root)
+
+	var tablet_h := HBoxContainer.new()
+	tablet_h.set_anchors_preset(Control.PRESET_FULL_RECT)
+	tablet_h.add_theme_constant_override("separation", 0)
+	top_root.add_child(tablet_h)
+
+	# Asa Esquerda Dourada Escalada (ornamento estilo templo grego)
+	var wing_left := _make_tablet_wing(true)
+	tablet_h.add_child(wing_left)
+
+	# Painel Central Imperial
+	var central_panel := PanelContainer.new()
+	central_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	central_panel.size_flags_vertical = Control.SIZE_FILL
+
+	var sb_tablet := StyleBoxFlat.new()
+	sb_tablet.bg_color = Color(0.06, 0.08, 0.12, 0.94)
+	sb_tablet.border_color = Color(0.85, 0.72, 0.32, 1.0) # Borda ouro imperial
+	sb_tablet.border_width_top = 2
+	sb_tablet.border_width_bottom = 2
+	sb_tablet.border_width_left = 0
+	sb_tablet.border_width_right = 0
+	sb_tablet.shadow_color = Color(0.0, 0.0, 0.0, 0.55)
+	sb_tablet.shadow_size = 6
+	sb_tablet.shadow_offset = Vector2(0.0, 2.0)
+	central_panel.add_theme_stylebox_override("panel", sb_tablet)
+	tablet_h.add_child(central_panel)
+
+	# Asa Direita Dourada Escalada (ornamento estilo templo grego)
+	var wing_right := _make_tablet_wing(false)
+	tablet_h.add_child(wing_right)
+
+	# Margem e conteúdo dos recursos
+	var margin := MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 12)
+	margin.add_theme_constant_override("margin_right", 12)
+	margin.add_theme_constant_override("margin_top", 4)
+	margin.add_theme_constant_override("margin_bottom", 4)
+	central_panel.add_child(margin)
+
+	var res_hbox := HBoxContainer.new()
+	res_hbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	res_hbox.add_theme_constant_override("separation", 10)
+	margin.add_child(res_hbox)
+
+	# 1. Alimento (🌾)
+	var food_data := _make_imperial_resource_item("res://assets/ui/icons/resources/olympus_res_resource_food.png", "🌾", "1,420")
+	_food_lbl = food_data["label"]
+	res_hbox.add_child(food_data["container"])
+
+	res_hbox.add_child(_make_imperial_divider())
+
+	# 2. Madeira (🪵)
+	var wood_data := _make_imperial_resource_item("res://assets/ui/icons/resources/olympus_res_resource_wood.png", "🪵", "2,150")
+	_wood_lbl = wood_data["label"]
+	res_hbox.add_child(wood_data["container"])
+
+	res_hbox.add_child(_make_imperial_divider())
+
+	# 3. Ouro (🪙)
+	var gold_data := _make_imperial_resource_item("res://assets/ui/icons/resources/olympus_res_resource_gold.png", "🪙", "1,880")
+	_gold_lbl = gold_data["label"]
+	res_hbox.add_child(gold_data["container"])
+
+	res_hbox.add_child(_make_imperial_divider())
+
+	# 4. Favor Divino (✨)
+	var favor_data := _make_imperial_resource_item("res://assets/ui/icons/resources/olympus_res_resource_favor.png", "✨", "460")
+	_favor_lbl = favor_data["label"]
+	res_hbox.add_child(favor_data["container"])
+
+	res_hbox.add_child(_make_imperial_divider())
+
+	# 5. População (👥)
+	var pop_data := _make_imperial_resource_item("res://assets/ui/icons/resources/olympus_res_resource_population.png", "👥", "85/120")
+	_pop_lbl = pop_data["label"]
+	res_hbox.add_child(pop_data["container"])
+
+
+func _make_tablet_wing(is_left: bool) -> Control:
+	var wing := Panel.new()
+	wing.custom_minimum_size = Vector2(24.0, 38.0)
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0.72, 0.58, 0.22, 0.95) # Bronze/ouro antigo metálico
+	sb.border_color = Color(0.92, 0.82, 0.45, 1.0) # Borda ouro brilhante
+	sb.border_width_top = 2
+	sb.border_width_bottom = 2
+	if is_left:
+		sb.border_width_left = 3
+		sb.border_width_right = 0
+		sb.corner_radius_top_left = 6
+		sb.corner_radius_bottom_left = 2
+	else:
+		sb.border_width_right = 3
+		sb.border_width_left = 0
+		sb.corner_radius_top_right = 6
+		sb.corner_radius_bottom_right = 2
+	wing.add_theme_stylebox_override("panel", sb)
+
+	var ranhuras := Label.new()
+	ranhuras.text = "≡"
+	ranhuras.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	ranhuras.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	ranhuras.set_anchors_preset(Control.PRESET_FULL_RECT)
+	ranhuras.add_theme_font_size_override("font_size", 16)
+	ranhuras.add_theme_color_override("font_color", Color(0.35, 0.25, 0.08, 0.8))
+	wing.add_child(ranhuras)
+
+	return wing
+
+
+func _make_imperial_resource_item(icon_path: String, fallback_emoji: String, initial_val: String) -> Dictionary:
+	var item_hbox := HBoxContainer.new()
+	item_hbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	item_hbox.add_theme_constant_override("separation", 6)
+
+	var icon_loaded: bool = false
+	if not icon_path.is_empty():
+		var tex: Texture2D = null
+		if ResourceLoader.exists(icon_path):
+			tex = load(icon_path) as Texture2D
+		elif FileAccess.file_exists(ProjectSettings.globalize_path(icon_path)):
+			var img := Image.new()
+			if img.load(ProjectSettings.globalize_path(icon_path)) == OK:
+				tex = ImageTexture.create_from_image(img)
+		if tex != null:
+			var trect := TextureRect.new()
+			trect.texture = tex
+			trect.custom_minimum_size = Vector2(20.0, 20.0)
+			trect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			trect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			item_hbox.add_child(trect)
+			icon_loaded = true
+
+	if not icon_loaded:
+		var fallback_lbl := Label.new()
+		fallback_lbl.text = fallback_emoji
+		fallback_lbl.add_theme_font_size_override("font_size", 14)
+		item_hbox.add_child(fallback_lbl)
+
+	var val_lbl := Label.new()
+	val_lbl.text = initial_val
+	val_lbl.label_settings = OlympusTypography.get_label_settings(OlympusTypography.Style.RESOURCE_VALUE, 14, Color("#fef3c7"), 2)
+	item_hbox.add_child(val_lbl)
+
+	return {"container": item_hbox, "label": val_lbl}
+
+
+func _make_imperial_divider() -> Control:
+	var sep := Label.new()
+	sep.text = "|"
+	sep.add_theme_font_size_override("font_size", 14)
+	sep.add_theme_color_override("font_color", Color(0.83, 0.69, 0.22, 0.45))
+	sep.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	return sep
+
+
+func _format_number(val: int) -> String:
+	var s: String = str(abs(val))
+	var res: String = ""
+	var count: int = 0
+	for i in range(s.length() - 1, -1, -1):
+		res = s[i] + res
+		count += 1
+		if count % 3 == 0 and i > 0:
+			res = "," + res
+	return ("-" if val < 0 else "") + res
 
 
 func _on_cycle_atmosphere_pressed() -> void:
@@ -1793,13 +1974,13 @@ func _on_campaign_objectives_changed(chapter_id: String, title: String, objectiv
 
 func _on_resources_changed(res: Dictionary) -> void:
 	if _food_lbl != null:
-		_food_lbl.text = "%d" % int(res.get("food", 0))
+		_food_lbl.text = _format_number(int(res.get("food", 0)))
 	if _wood_lbl != null:
-		_wood_lbl.text = "%d" % int(res.get("wood", 0))
+		_wood_lbl.text = _format_number(int(res.get("wood", 0)))
 	if _gold_lbl != null:
-		_gold_lbl.text = "%d" % int(res.get("gold", 0))
+		_gold_lbl.text = _format_number(int(res.get("gold", 0)))
 	if _favor_lbl != null:
-		_favor_lbl.text = "%d" % int(res.get("favor", 0))
+		_favor_lbl.text = _format_number(int(res.get("favor", 0)))
 
 
 func _on_population_changed(used: int, cap: int) -> void:
