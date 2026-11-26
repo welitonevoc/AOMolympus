@@ -10,6 +10,7 @@ signal population_changed(used: int, cap: int)
 signal age_changed(new_age: int)
 signal enemy_age_changed(new_age: int)
 signal age_advance_progress(active: bool, target_age: int, progress: float)
+signal minor_god_chosen_signal(age: int, god_spec: Dictionary)
 signal lighting_changed(is_night: bool)
 signal fog_toggled(enabled: bool)
 signal audio_muted_changed(muted: bool)
@@ -59,6 +60,8 @@ var enemy_age: int = 1
 var is_advancing_age: bool = false
 var _age_elapsed: float = 0.0
 var _age_duration: float = 10.0
+var chosen_minor_gods: Dictionary = {}
+var advancing_minor_god: Dictionary = {}
 
 var active_formation: String = "box"
 var active_stance: String = "aggressive"
@@ -180,6 +183,8 @@ func start_new_match(
 	flaming_weapons_timer = 0.0
 	eclipse_timer = 0.0
 	powers_cast_count = 0
+	chosen_minor_gods.clear()
+	advancing_minor_god.clear()
 	era_divine_unlocked = false
 	divine_gods_summoned.clear()
 	divine_altars_built = 0
@@ -328,22 +333,27 @@ func has_population_room(needed: int = 1) -> bool:
 	return population_used + needed <= population_cap
 
 
-func begin_age_advance() -> bool:
+func begin_age_advance(minor_god_spec: Dictionary = {}) -> bool:
 	if is_advancing_age:
-		notify("Avanco de Era ja esta em andamento.", true)
+		notify("Avanço de Era já está em andamento.", true)
 		return false
 	if current_age >= 5:
-		notify("Voce ja alcancou a Era V: Era dos Deuses.", false)
+		notify("Você já alcançou a Era V: Era dos Deuses.", false)
 		return false
 	var target_age: int = current_age + 1
 	var cost: Dictionary = PantheonCatalog.get_age_cost(target_age)
 	if not spend_resources(cost):
 		return false
+	advancing_minor_god = minor_god_spec
 	is_advancing_age = true
 	_age_elapsed = 0.0
 	_age_duration = PantheonCatalog.get_age_advance_time(target_age)
 	age_advance_progress.emit(true, target_age, 0.0)
-	notify("Avancando para %s..." % PantheonCatalog.get_age_name(target_age), false)
+	var god_name: String = String(minor_god_spec.get("name", ""))
+	if god_name != "":
+		notify("Evoluindo para %s sob as bênçãos de %s..." % [PantheonCatalog.get_age_name(target_age), god_name], false)
+	else:
+		notify("Avançando para %s..." % PantheonCatalog.get_age_name(target_age), false)
 	return true
 
 
@@ -351,15 +361,26 @@ func _complete_age_advance() -> void:
 	is_advancing_age = false
 	current_age = mini(5, current_age + 1)
 	_age_elapsed = 0.0
+	if not advancing_minor_god.is_empty():
+		chosen_minor_gods[current_age] = advancing_minor_god
+		minor_god_chosen_signal.emit(current_age, advancing_minor_god)
 	age_advance_progress.emit(false, current_age, 1.0)
 	age_changed.emit(current_age)
-	notify("%s alcancada! Construcoes evoluiram para T%d." % [
-		PantheonCatalog.get_age_name(current_age),
-		current_age,
-	], false)
+	var god_name: String = String(advancing_minor_god.get("name", ""))
+	if god_name != "":
+		notify("🏛️ %s alcançada sob a glória de %s! Construções evoluíram para T%d." % [
+			PantheonCatalog.get_age_name(current_age),
+			god_name,
+			current_age,
+		], false)
+	else:
+		notify("%s alcançada! Construções evoluíram para T%d." % [
+			PantheonCatalog.get_age_name(current_age),
+			current_age,
+		], false)
 	if current_age >= 5:
 		era_divine_unlocked = true
-		notify("Era dos Deuses desbloqueada! Invocacoes divinas disponiveis no Altar Divino.", false)
+		notify("Era dos Deuses desbloqueada! Invocações divinas disponíveis no Altar Divino.", false)
 
 
 func set_formation(formation_id: String) -> void:

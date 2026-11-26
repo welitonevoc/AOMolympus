@@ -747,6 +747,1128 @@ const DIVINE_MAX_MINORS_PER_PANTHEON: int = 2
 const DIVINE_MAX_TOTAL_PER_PLAYER: int = 3
 const DIVINE_MIN_AGE: int = 5  # Era V / Era dos Deuses
 
+# --- Catálogo de Deuses Menores para Avanço de Era (Estilo AoM Clássico & Retold) ---
+# Fornece as escolhas de deuses menores para cada transição de Era (II Clássica, III Heroica, IV Mítica, V Titânica).
+const MINOR_GODS_ADVANCEMENT: Dictionary = {
+	"greek": {
+		2: [
+			{
+				"id": "athena",
+				"name": "Atena",
+				"title": "Deusa da Sabedoria e da Guerra Justa",
+				"pantheon": "greek",
+				"age": 2,
+				"portrait": "res://assets/ui/portraits/minor_athena.jpg",
+				"god_power": {
+					"id": "restoration",
+					"name": "Restauração",
+					"icon": "⚡",
+					"desc": "Cura instantaneamente e regenera unidades e edifícios aliados na área por 20 segundos."
+				},
+				"myth_unit": {
+					"id": "minotaur",
+					"name": "Minotauro",
+					"icon": "🐂",
+					"desc": "Infantaria mítica com cabeçada sísmica que atordoa e arremessa tropas inimigas."
+				},
+				"tech": {
+					"id": "sarissa",
+					"name": "Armaduras de Bronze",
+					"icon": "🛡️",
+					"desc": "Infantaria e heróis recebem +20% de resistência contra projéteis e flechas."
+				},
+				"passives": [
+					"• Infantaria e heróis ganham +10% de vida máxima.",
+					"• Torres e muralhas constroem 25% mais rápido.",
+					"• Minotauros causam dano duplo contra edifícios."
+				]
+			},
+			{
+				"id": "hermes",
+				"name": "Hermes",
+				"title": "Mensageiro dos Deuses e da Agilidade",
+				"pantheon": "greek",
+				"age": 2,
+				"portrait": "res://assets/ui/portraits/minor_apollo.jpg",
+				"god_power": {
+					"id": "cephiro",
+					"name": "Cépiro Alado",
+					"icon": "⚡",
+					"desc": "Concede +40% de velocidade de marcha a todo o exército aliado e remove efeitos de lentidão."
+				},
+				"myth_unit": {
+					"id": "centaur",
+					"name": "Centauro",
+					"icon": "🏹",
+					"desc": "Arqueiro místico veloz montado com tiro especial teleguiado infalível."
+				},
+				"tech": {
+					"id": "winged_messenger",
+					"name": "Sapatos Alados",
+					"icon": "🪶",
+					"desc": "Cavalaria e batedores recebem +25% de velocidade de treino e alcance de visão."
+				},
+				"passives": [
+					"• Cavalaria recebe +15% de velocidade de movimento e dano.",
+					"• Aldeões correm 15% mais rápido ao transportar recursos.",
+					"• Reduz o tempo de treino de batedores em 30%."
+				]
+			}
+		],
+		3: [
+			{
+				"id": "apollo",
+				"name": "Apolo",
+				"title": "Deus do Sol, da Música e da Profecia",
+				"pantheon": "greek",
+				"age": 3,
+				"portrait": "res://assets/ui/portraits/minor_apollo.jpg",
+				"god_power": {
+					"id": "underworld_passage",
+					"name": "Passagem Subterrânea",
+					"icon": "⚡",
+					"desc": "Cria dois portais místicos que permitem transporte instantâneo de tropas por qualquer distância."
+				},
+				"myth_unit": {
+					"id": "manticore",
+					"name": "Mantícora",
+					"icon": "🦁",
+					"desc": "Besta alada com espinhos venenosos de cauda que disparam chuva de projéteis em área."
+				},
+				"tech": {
+					"id": "temple_healing",
+					"name": "Luz Solar Curativa",
+					"icon": "☀️",
+					"desc": "Unidades regeneram pontos de vida automaticamente fora de combate."
+				},
+				"passives": [
+					"• Arqueiros recebem +15% de alcance e dano.",
+					"• Visão de todas as unidades aliadas expandida em +5m.",
+					"• Cura de heróis acelerada em 50%."
+				]
+			},
+			{
+				"id": "dionysus",
+				"name": "Dionísio",
+				"title": "Deus do Vinho, do Êxtase e da Fartura",
+				"pantheon": "greek",
+				"age": 3,
+				"portrait": "res://assets/ui/portraits/minor_ares.jpg",
+				"god_power": {
+					"id": "bronze",
+					"name": "Pele de Bronze",
+					"icon": "⚡",
+					"desc": "Cobre todo o exército aliado em bronze sólido, absorvendo 60% de todo o dano recebido."
+				},
+				"myth_unit": {
+					"id": "hydra",
+					"name": "Hidra de Lerna",
+					"icon": "🐉",
+					"desc": "Criatura mitológica aquática que brota cabeças adicionais e multiplica seu dano ao abater inimigos."
+				},
+				"tech": {
+					"id": "bacchanalia",
+					"name": "Bacanália Festiva",
+					"icon": "🍷",
+					"desc": "Reduz o custo de todas as unidades civis e militares em 10% de recursos."
+				},
+				"passives": [
+					"• Cavalaria ganha +20% de pontos de vida.",
+					"• Coleta de recursos agrícolas e caça acelerada em 20%.",
+					"• Hidras regeneram vida 30% mais rápido."
+				]
+			}
+		],
+		4: [
+			{
+				"id": "hephaestus",
+				"name": "Hefesto",
+				"title": "Deus do Fogo, da Forja e dos Vulcões",
+				"pantheon": "greek",
+				"age": 4,
+				"portrait": "res://assets/ui/portraits/zeus_major.jpg",
+				"god_power": {
+					"id": "plenty_vault",
+					"name": "Cofre da Abundância",
+					"icon": "⚡",
+					"desc": "Edifica uma cornucópia dourada que gera tributos infinitos de madeira, ouro e alimento continuamente."
+				},
+				"myth_unit": {
+					"id": "colossus",
+					"name": "Colosso de Bronze",
+					"icon": "🗿",
+					"desc": "Gigante supremo autômato que consome veios de ouro ou árvores para reparar sua estrutura."
+				},
+				"tech": {
+					"id": "forge_of_olympus",
+					"name": "Forja do Olimpo",
+					"icon": "🔨",
+					"desc": "Reduz o custo de todas as melhorias do Arsenal e Fundição em 40%."
+				},
+				"passives": [
+					"• Armaduras de todas as tropas aumentadas em +15%.",
+					"• Edifícios e fortificações recebem +25% de durabilidade máxima.",
+					"• O Colosso causa dano quadruplicado contra fortificações."
+				]
+			},
+			{
+				"id": "hera",
+				"name": "Hera",
+				"title": "Rainha dos Deuses e Protetora Celestial",
+				"pantheon": "greek",
+				"age": 4,
+				"portrait": "res://assets/ui/portraits/minor_athena.jpg",
+				"god_power": {
+					"id": "lightning_storm",
+					"name": "Tempestade de Raios",
+					"icon": "⚡",
+					"desc": "Invoca relâmpagos contínuos do Monte Olimpo que fulminam e destroem tropas em vasta área."
+				},
+				"myth_unit": {
+					"id": "medusa",
+					"name": "Medusa",
+					"icon": "🐍",
+					"desc": "Górgona lendária com olhar petrificador capaz de transformar soldados inimigos em pedra instantaneamente."
+				},
+				"tech": {
+					"id": "monstrous_rage",
+					"name": "Fúria Monstruosa",
+					"icon": "👑",
+					"desc": "Todas as unidades míticas custam 1 a menos de população e causam +25% de dano."
+				},
+				"passives": [
+					"• Templos geram Favor 30% mais rápido.",
+					"• Edifícios e torres disparam flechas extras guiadas.",
+					"• A Medusa recarrega seu ataque petrificante 40% mais rápido."
+				]
+			}
+		],
+		5: [
+			{
+				"id": "zeus_primordial",
+				"name": "Zeus Cósmico",
+				"title": "Soberano Absoluto do Monte Olimpo",
+				"pantheon": "greek",
+				"age": 5,
+				"portrait": "res://assets/ui/portraits/zeus_major.jpg",
+				"god_power": {
+					"id": "divine_apocalypse",
+					"name": "Ira Celestial do Olimpo",
+					"icon": "⚡",
+					"desc": "Dispara tempestade de raios cósmicos que erradica bases inimigas inteiras."
+				},
+				"myth_unit": {
+					"id": "titan_cerberus",
+					"name": "Cérbero Titânico",
+					"icon": "🐕",
+					"desc": "Colosso de três cabeças com bafo vulcânico e pisada sísmica com 10.000 HP."
+				},
+				"tech": {
+					"id": "divine_supremacy",
+					"name": "Supremacia Divina",
+					"icon": "⚡",
+					"desc": "Todas as unidades de todas as categorias recebem +30% de vida e ataque."
+				},
+				"passives": [
+					"• Desbloqueia invocações divinas contínuas no Altar Divino.",
+					"• Limite de população ampliado em +50."
+				]
+			}
+		]
+	},
+	"egyptian": {
+		2: [
+			{
+				"id": "bast",
+				"name": "Bastet",
+				"title": "Deusa dos Felinos, da Alegria e da Fertilidade",
+				"pantheon": "egyptian",
+				"age": 2,
+				"portrait": "res://assets/ui/portraits/isis_major.jpg",
+				"god_power": {
+					"id": "eclipse",
+					"name": "Eclipse Solar",
+					"icon": "⚡",
+					"desc": "Mergulha o campo em trevas, aumentando o poder de todas as unidades míticas aliadas."
+				},
+				"myth_unit": {
+					"id": "sphinx",
+					"name": "Esfinge Sagrada",
+					"icon": "🦁",
+					"desc": "Fera de areia que se transforma em redemoinho mortal de lâminas cortantes."
+				},
+				"tech": {
+					"id": "criosphinx",
+					"name": "Abundância do Nilo",
+					"icon": "🌾",
+					"desc": "Aldeões e coletores egípcios recolhem madeira e alimento 20% mais rápido."
+				},
+				"passives": [
+					"• Aldeões têm velocidade de coleta acelerada em 15%.",
+					"• Esfinges ganham ataque de redemoinho expandido."
+				]
+			},
+			{
+				"id": "anubis",
+				"name": "Anúbis",
+				"title": "Deus dos Mortos e do Julgamento",
+				"pantheon": "egyptian",
+				"age": 2,
+				"portrait": "res://assets/ui/portraits/minor_anubis.jpg",
+				"god_power": {
+					"id": "locust_swarm",
+					"name": "Enxame de Gafanhotos",
+					"icon": "⚡",
+					"desc": "Devora plantações e aldeões inimigos, cortando suprimentos da base adversária."
+				},
+				"myth_unit": {
+					"id": "anubite",
+					"name": "Anubita do Chacal",
+					"icon": "🐺",
+					"desc": "Guerreiro saltador acrobático com lâminas curtas que salta sobre muralhas."
+				},
+				"tech": {
+					"id": "feet_of_the_jackal",
+					"name": "Passos do Chacal",
+					"icon": "🐾",
+					"desc": "Infantaria e Anubitas ganham +20% de velocidade de corrida."
+				},
+				"passives": [
+					"• Infantaria ganha +15% de ataque.",
+					"• Inimigos abatidos têm chance de ressuscitar como Múmias aliadas."
+				]
+			}
+		],
+		3: [
+			{
+				"id": "sekhmet",
+				"name": "Sekhmet",
+				"title": "Deusa Guerreira Leoa do Fogo e da Destruição",
+				"pantheon": "egyptian",
+				"age": 3,
+				"portrait": "res://assets/ui/portraits/set_major.jpg",
+				"god_power": {
+					"id": "citadel",
+					"name": "Cidadela de Pedra",
+					"icon": "⚡",
+					"desc": "Transforma o Centro da Cidade em uma cidadela impenetrável com balestras de longo alcance."
+				},
+				"myth_unit": {
+					"id": "scarab",
+					"name": "Escaravelho Blindado",
+					"icon": "🪲",
+					"desc": "Colosso blindado que cospe ácido corrosivo e destrói muralhas e fortalezas."
+				},
+				"tech": {
+					"id": "bone_bow",
+					"name": "Arco de Osso Sagrado",
+					"icon": "🏹",
+					"desc": "Carros de Guerra e arqueiros egípcios causam +25% de dano perfurante."
+				},
+				"passives": [
+					"• Máquinas de cerco custam 25% menos ouro.",
+					"• Fortalezas e torres têm sua blindagem dobrada."
+				]
+			},
+			{
+				"id": "hathor",
+				"name": "Hathor",
+				"title": "Deusa do Amor, do Céu e da Música",
+				"pantheon": "egyptian",
+				"age": 3,
+				"portrait": "res://assets/ui/portraits/isis_major.jpg",
+				"god_power": {
+					"id": "plague_swarm",
+					"name": "Peste Áurea",
+					"icon": "⚡",
+					"desc": "Desestabiliza edifícios inimigos e dobra a geração de ouro das minas aliadas."
+				},
+				"myth_unit": {
+					"id": "petsochos",
+					"name": "Petsochos",
+					"icon": "🐊",
+					"desc": "Crocodilo místico blindado com joia solar na cabeça que dispara raio laser concentrado."
+				},
+				"tech": {
+					"id": "medjay",
+					"name": "Guarda Medjay",
+					"icon": "🛡️",
+					"desc": "Cavalaria e lanceiros recebem +15% de armadura e vida."
+				},
+				"passives": [
+					"• Edifícios civis custam 20% menos madeira.",
+					"• Petsochos têm alcance de ataque aumentado em +6m."
+				]
+			}
+		],
+		4: [
+			{
+				"id": "osiris",
+				"name": "Osíris",
+				"title": "Soberano da Vida Eterna e do Submundo",
+				"pantheon": "egyptian",
+				"age": 4,
+				"portrait": "res://assets/ui/portraits/minor_anubis.jpg",
+				"god_power": {
+					"id": "son_of_osiris",
+					"name": "Filho de Osíris",
+					"icon": "⚡",
+					"desc": "Eleva o Faraó à divindade viva, disparando relâmpagos que encadeiam em múltiplos inimigos."
+				},
+				"myth_unit": {
+					"id": "mummy",
+					"name": "Múmia Sagrada",
+					"icon": "🧟",
+					"desc": "Sacerdote embalsamado que converte inimigos em servos mortos-vivos."
+				},
+				"tech": {
+					"id": "desert_wind",
+					"name": "Ventos do Deserto",
+					"icon": "🌪️",
+					"desc": "Cavalaria e carros egípcios recebem +25% de velocidade de marcha."
+				},
+				"passives": [
+					"• O Faraó abençoa até 3 edifícios simultaneamente.",
+					"• Tropas míticas causam dano duplo contra heróis."
+				]
+			},
+			{
+				"id": "horus",
+				"name": "Hórus",
+				"title": "Deus Falcão dos Céus e da Vitória",
+				"pantheon": "egyptian",
+				"age": 4,
+				"portrait": "res://assets/ui/portraits/minor_horus.jpg",
+				"god_power": {
+					"id": "tornado",
+					"name": "Tornado Devastador",
+					"icon": "⚡",
+					"desc": "Gera um furacão massivo de areia que suga e tritura exércitos e bases inimigas."
+				},
+				"myth_unit": {
+					"id": "avenger",
+					"name": "Vingador Alado",
+					"icon": "🦅",
+					"desc": "Guerreiro falcão de lâminas duplas com ataque giratório mortal contra multidões."
+				},
+				"tech": {
+					"id": "greatest_of_the_five",
+					"name": "Selo de Hórus",
+					"icon": "👁️",
+					"desc": "Infantaria e Lanceiros do Nilo ganham +30% de dano de ataque."
+				},
+				"passives": [
+					"• Infantaria egípcia tem seu ataque maximizado.",
+					"• O Tornado dura 40% mais tempo."
+				]
+			}
+		],
+		5: [
+			{
+				"id": "ra_primordial",
+				"name": "Ra Solar Supremo",
+				"title": "Deus Sol Primordial Criador do Nilo",
+				"pantheon": "egyptian",
+				"age": 5,
+				"portrait": "res://assets/ui/portraits/ra_major.jpg",
+				"god_power": {
+					"id": "solar_flare",
+					"name": "Erupção Solar Primordial",
+					"icon": "⚡",
+					"desc": "Luz cósmica calcina a terra e aniquila forças invasoras."
+				},
+				"myth_unit": {
+					"id": "titan_ra_horus",
+					"name": "Titã Ra-Horus",
+					"icon": "🦅",
+					"desc": "Colosso solar monumental com cajado de plasma de 10.000 HP."
+				},
+				"tech": {
+					"id": "solar_immortality",
+					"name": "Imortalidade do Sol",
+					"icon": "☀️",
+					"desc": "Aldeões e unidades geram ouro e favor ao rezar."
+				},
+				"passives": [
+					"• Produção de unidades acelerada em 50%.",
+					"• Altar Divino ativo."
+				]
+			}
+		]
+	},
+	"norse": {
+		2: [
+			{
+				"id": "freyja",
+				"name": "Freyja",
+				"title": "Deusa do Amor, da Beleza e da Batalha",
+				"pantheon": "norse",
+				"age": 2,
+				"portrait": "res://assets/ui/portraits/minor_freyja.jpg",
+				"god_power": {
+					"id": "wildfire",
+					"name": "Fogo Selvagem",
+					"icon": "⚡",
+					"desc": "Incendeia florestas e instalações inimigas com labaredas descontroladas."
+				},
+				"myth_unit": {
+					"id": "valkyrie",
+					"name": "Valquíria Nórdica",
+					"icon": "⚔️",
+					"desc": "Guerreira mítica montada com lança que cura continuamente guerreiros aliados próximos."
+				},
+				"tech": {
+					"id": "thundering_hooves",
+					"name": "Cascos Trovejantes",
+					"icon": "🐎",
+					"desc": "Cavalaria de raide ganha +20% de pontos de vida e corrida."
+				},
+				"passives": [
+					"• Cavalaria e batedores causam +15% de dano.",
+					"• Valquírias curam duas unidades ao mesmo tempo."
+				]
+			},
+			{
+				"id": "heimdall",
+				"name": "Heimdall",
+				"title": "Guardião da Bifröst e dos Sentidos Aguçados",
+				"pantheon": "norse",
+				"age": 2,
+				"portrait": "res://assets/ui/portraits/odin_major.jpg",
+				"god_power": {
+					"id": "undermine",
+					"name": "Minar Fortificações",
+					"icon": "⚡",
+					"desc": "Causa colapso estrutural instantâneo em muralhas e torres adversárias."
+				},
+				"myth_unit": {
+					"id": "einherjar",
+					"name": "Einherjar",
+					"icon": "📯",
+					"desc": "Campeão de Valhalla que sopra a trombeta Gjallarhorn aumentando o ataque dos aliados."
+				},
+				"tech": {
+					"id": "safeguard",
+					"name": "Muralha de Bifröst",
+					"icon": "🛡️",
+					"desc": "Muralhas e torres ganham +30% de HP e custam 20% menos madeira."
+				},
+				"passives": [
+					"• Edifícios nórdicos regeneram pontos de vida.",
+					"• Hersir e unidades de combate ganham visão ampliada."
+				]
+			}
+		],
+		3: [
+			{
+				"id": "skadi",
+				"name": "Skadi",
+				"title": "Deusa Gigante da Caça, dos Montes e do Inverno",
+				"pantheon": "norse",
+				"age": 3,
+				"portrait": "res://assets/ui/portraits/minor_skadi.jpg",
+				"god_power": {
+					"id": "frost",
+					"name": "Congelamento Glacial",
+					"icon": "⚡",
+					"desc": "Congela em gelo maciço todo o exército inimigo, impedindo movimentos ou ataques."
+				},
+				"myth_unit": {
+					"id": "frost_giant",
+					"name": "Gigante de Gelo",
+					"icon": "❄️",
+					"desc": "Colosso de gelo que sopra nevasca congelando unidades inimigas em blocos."
+				},
+				"tech": {
+					"id": "winter_hunt",
+					"name": "Caça Invernal",
+					"icon": "🏹",
+					"desc": "Arremessadores de machado causam +25% de dano e ganham +4m de alcance."
+				},
+				"passives": [
+					"• Unidades causam lentidão nos ataques normais.",
+					"• Gigantes de Gelo têm armadura reforçada."
+				]
+			},
+			{
+				"id": "njord",
+				"name": "Njord",
+				"title": "Deus dos Mares, dos Ventos e da Pesca",
+				"pantheon": "norse",
+				"age": 3,
+				"portrait": "res://assets/ui/portraits/thor_major.jpg",
+				"god_power": {
+					"id": "walking_woods",
+					"name": "Bosque Vivo",
+					"icon": "⚡",
+					"desc": "Converte árvores próximas em guerreiros Ents agressivos que marcham contra a base inimiga."
+				},
+				"myth_unit": {
+					"id": "mountain_giant",
+					"name": "Gigante da Montanha",
+					"icon": "🏔️",
+					"desc": "Titã de pedra que usa árvores como clava para demolir fortalezas com extrema força."
+				},
+				"tech": {
+					"id": "longboats",
+					"name": "Drakkars de Carvalho",
+					"icon": "⛵",
+					"desc": "Navios de guerra e construções portuárias têm custo reduzido em 30%."
+				},
+				"passives": [
+					"• Edifícios resistem 25% mais a ataques de cerco.",
+					"• Coleta de madeira acelerada em 20%."
+				]
+			}
+		],
+		4: [
+			{
+				"id": "baldr",
+				"name": "Baldr",
+				"title": "Deus da Luz, da Coragem e da Imortalidade",
+				"pantheon": "norse",
+				"age": 4,
+				"portrait": "res://assets/ui/portraits/odin_major.jpg",
+				"god_power": {
+					"id": "ragnarok",
+					"name": "Ragnarök",
+					"icon": "⚡",
+					"desc": "Converte todos os aldeões e cidadãos em Heróis de Ragnarök com machados em chamas."
+				},
+				"myth_unit": {
+					"id": "fire_giant",
+					"name": "Gigante de Fogo",
+					"icon": "🔥",
+					"desc": "Monstro flamejante que arremessa bolas de fogo explosivas de longa distância."
+				},
+				"tech": {
+					"id": "sons_of_sleipnir",
+					"name": "Filhos de Sleipnir",
+					"icon": "🐎",
+					"desc": "Cavalaria nórdica causa +30% de dano e ganha armadura pesada."
+				},
+				"passives": [
+					"• Todas as tropas nórdicas lutam com fúria Berserker (mais velozes com HP baixo).",
+					"• Gigantes de fogo têm raio de explosão expandido."
+				]
+			},
+			{
+				"id": "tyr",
+				"name": "Tyr",
+				"title": "Deus da Coragem e da Justiça Guerreira",
+				"pantheon": "norse",
+				"age": 4,
+				"portrait": "res://assets/ui/portraits/thor_major.jpg",
+				"god_power": {
+					"id": "fimbulwinter",
+					"name": "Fimbulwinter",
+					"icon": "⚡",
+					"desc": "O inverno apocalíptico cai sobre a terra, invocando matilhas de lobos ferozes contra cada Centro Urbano."
+				},
+				"myth_unit": {
+					"id": "fenris_wolf",
+					"name": "Cria de Fenris",
+					"icon": "🐺",
+					"desc": "Lobo gigante feroz que ganha velocidade e ataque conforme se junta em alcateias."
+				},
+				"tech": {
+					"id": "berserkergang",
+					"name": "Fúria Berserkergang",
+					"icon": "🪓",
+					"desc": "Infantaria Ulfsark causa +25% de dano e ataca 20% mais rápido."
+				},
+				"passives": [
+					"• Infantaria nórdica causa dano massivo contra muralhas e tropas.",
+					"• Lobos Fenris ganham regeneração acelerada de vida."
+				]
+			}
+		],
+		5: [
+			{
+				"id": "thor_primordial",
+				"name": "Thor Trovejante Supremo",
+				"title": "Senhor de Mjölnir e das Tempestades",
+				"pantheon": "norse",
+				"age": 5,
+				"portrait": "res://assets/ui/portraits/thor_major.jpg",
+				"god_power": {
+					"id": "lightning_mjolnir",
+					"name": "Impacto de Mjölnir",
+					"icon": "⚡",
+					"desc": "Queda apocalíptica do martelo esmaga o exército inimigo com trovões eternos."
+				},
+				"myth_unit": {
+					"id": "titan_ymir",
+					"name": "Titã Ymir",
+					"icon": "🧊",
+					"desc": "Primeiro gigante primordial de gelo com clava cósmica de 10.000 HP."
+				},
+				"tech": {
+					"id": "valhalla_glory",
+					"name": "Glória de Valhalla",
+					"icon": "⚡",
+					"desc": "Guerreiros caídos geram Favor e tributos de batalha ao tombar."
+				},
+				"passives": [
+					"• Forja de Thor aplica melhorias divinas máximas a todas as armas.",
+					"• Altar Divino ativo."
+				]
+			}
+		]
+	},
+	"atlantean": {
+		2: [
+			{
+				"id": "prometheus",
+				"name": "Prometeu",
+				"title": "Titã do Fogo Criador e da Sabedoria",
+				"pantheon": "atlantean",
+				"age": 2,
+				"portrait": "res://assets/ui/portraits/minor_prometheus.jpg",
+				"god_power": {
+					"id": "valor",
+					"name": "Valor Divino",
+					"icon": "⚡",
+					"desc": "Promove instantaneamente soldados e cidadãos a Heróis lendários sem custo de recursos."
+				},
+				"myth_unit": {
+					"id": "promethean",
+					"name": "Prometeano de Barro",
+					"icon": "🗿",
+					"desc": "Guerreiro de argila viva que, ao morrer, se divide em dois Prometeanos menores de combate."
+				},
+				"tech": {
+					"id": "heart_of_titans",
+					"name": "Coração de Argila",
+					"icon": "❤️",
+					"desc": "Aumenta a resistência e os pontos de vida de unidades míticas em 20%."
+				},
+				"passives": [
+					"• Cidadãos coletam recursos 10% mais rápido.",
+					"• Promoção de heróis custa 50% menos favor."
+				]
+			},
+			{
+				"id": "leto",
+				"name": "Leto",
+				"title": "Titânide da Noite e dos Mistérios Antigos",
+				"pantheon": "atlantean",
+				"age": 2,
+				"portrait": "res://assets/ui/portraits/gaia_major.jpg",
+				"god_power": {
+					"id": "spider_lair",
+					"name": "Covil de Aranhas",
+					"icon": "⚡",
+					"desc": "Planta casulos subterrâneos que desovam aranhas carnívoras e engolem inimigos."
+				},
+				"myth_unit": {
+					"id": "automaton",
+					"name": "Autômato Dourado",
+					"icon": "🤖",
+					"desc": "Guerreiro de latão articulado com habilidade de reparar e reconstruir aliados caídos."
+				},
+				"tech": {
+					"id": "volcanic_armor",
+					"name": "Armadura Vulcânica",
+					"icon": "🛡️",
+					"desc": "Infantaria Murmillo e autômatos ganham +20% de defesa contra flechas."
+				},
+				"passives": [
+					"• Autômatos se reparam 40% mais rápido.",
+					"• Edifícios defensivos ganham ataque perfurante."
+				]
+			}
+		],
+		3: [
+			{
+				"id": "hyperion",
+				"name": "Hipérion",
+				"title": "Titã do Sol Primordial e da Luz Eterna",
+				"pantheon": "atlantean",
+				"age": 3,
+				"portrait": "res://assets/ui/portraits/oranos_major.jpg",
+				"god_power": {
+					"id": "chaos",
+					"name": "Caos Cósmico",
+					"icon": "⚡",
+					"desc": "Faz com que tropas e monstros inimigos na área se ataquem e se matem mutuamente."
+				},
+				"myth_unit": {
+					"id": "satyr",
+					"name": "Sátiro Selvagem",
+					"icon": "🐐",
+					"desc": "Combatente caprino ágil que dispara rajadas de lanças venenosas de longo alcance."
+				},
+				"tech": {
+					"id": "heroic_renewal",
+					"name": "Regeneração Titânica",
+					"icon": "✨",
+					"desc": "Todas as unidades atlantes regeneram pontos de vida continuamente."
+				},
+				"passives": [
+					"• Cavalaria Contarius causa +20% de dano de carga.",
+					"• Sátiros recarregam lanças 25% mais rápido."
+				]
+			},
+			{
+				"id": "oceanus",
+				"name": "Oceano",
+				"title": "Titã das Águas Primordiais e dos Abismos",
+				"pantheon": "atlantean",
+				"age": 3,
+				"portrait": "res://assets/ui/portraits/cronos_major.jpg",
+				"god_power": {
+					"id": "carnivora",
+					"name": "Planta Carnívora",
+					"icon": "⚡",
+					"desc": "Brota plantas titânicas vorazes que devoram instantaneamente tropas e barcos inimigos."
+				},
+				"myth_unit": {
+					"id": "caladria",
+					"name": "Caladria / Serval",
+					"icon": "🕊️",
+					"desc": "Pássaro místico voador sagrado que voa sobre o exército curando feridos."
+				},
+				"tech": {
+					"id": "weightless_mace",
+					"name": "Maça sem Peso",
+					"icon": "🔨",
+					"desc": "Infantaria Murmillo e Destruidores ganham +25% de velocidade de ataque."
+				},
+				"passives": [
+					"• Infantaria causa +15% de dano contra construções.",
+					"• Tropas marítimas navegam 30% mais rápido."
+				]
+			}
+		],
+		4: [
+			{
+				"id": "helios",
+				"name": "Hélios",
+				"title": "Titã do Carro Solar Incandescente",
+				"pantheon": "atlantean",
+				"age": 4,
+				"portrait": "res://assets/ui/portraits/oranos_major.jpg",
+				"god_power": {
+					"id": "vortex",
+					"name": "Vórtice Dimensional",
+					"icon": "⚡",
+					"desc": "Teleporta instantaneamente todo o exército aliado para qualquer ponto visível do mapa."
+				},
+				"myth_unit": {
+					"id": "heka_giant",
+					"name": "Gigante Heka",
+					"icon": "🗿",
+					"desc": "Colosso de quatro braços que golpeia o solo com palmas de choque sísmico."
+				},
+				"tech": {
+					"id": "radiant_chariot",
+					"name": "Carro Radiante",
+					"icon": "☀️",
+					"desc": "Máquinas de cerco e catapultas disparam projéteis flamejantes com 30% mais dano."
+				},
+				"passives": [
+					"• Catapultas e armas de cerco custam 20% menos ouro.",
+					"• O Vórtice tem recarga reduzida em 30%."
+				]
+			},
+			{
+				"id": "atlas",
+				"name": "Atlas",
+				"title": "Titã dos Pilares do Céu e da Terra",
+				"pantheon": "atlantean",
+				"age": 4,
+				"portrait": "res://assets/ui/portraits/cronos_major.jpg",
+				"god_power": {
+					"id": "implosion",
+					"name": "Implosão de Gravidade",
+					"icon": "⚡",
+					"desc": "Cria campo de gravidade extrema que atrai todos os edifícios e soldados para o centro e implode."
+				},
+				"myth_unit": {
+					"id": "argus",
+					"name": "Argus de Mil Olhos",
+					"icon": "👁️",
+					"desc": "Monstro flutuante com olhos múltiplos que cospe ácido e mata alvos instantaneamente."
+				},
+				"tech": {
+					"id": "titan_shield",
+					"name": "Escudo Titânico",
+					"icon": "🛡️",
+					"desc": "Muralhas, torres e palácios recebem +35% de resistência absoluta a dano."
+				},
+				"passives": [
+					"• Edifícios ganham ataque passivo de choque cósmico.",
+					"• O Argus tem sua barra de ácido preenchida 50% mais rápido."
+				]
+			}
+		],
+		5: [
+			{
+				"id": "cronos_primordial",
+				"name": "Cronos Titã Supremo",
+				"title": "Senhor do Tempo e do Tártaro",
+				"pantheon": "atlantean",
+				"age": 5,
+				"portrait": "res://assets/ui/portraits/cronos_major.jpg",
+				"god_power": {
+					"id": "time_shift",
+					"name": "Distorção Temporal",
+					"icon": "⚡",
+					"desc": "Teleporta edifícios aliados instantaneamente pelo mapa e desacelera o inimigo."
+				},
+				"myth_unit": {
+					"id": "titan_crystal",
+					"name": "Titã de Cristal",
+					"icon": "💎",
+					"desc": "Monstro de obsidiana e cristal de energia pura com 10.000 HP."
+				},
+				"tech": {
+					"id": "temporal_mastery",
+					"name": "Domínio Temporal",
+					"icon": "⏳",
+					"desc": "Pesquisa de todas as melhorias e treinos ocorrem quase instantaneamente."
+				},
+				"passives": [
+					"• Teletransporte de construções liberado.",
+					"• Altar Divino ativo."
+				]
+			}
+		]
+	},
+	"chinese": {
+		2: [
+			{
+				"id": "huangdi",
+				"name": "Huangdi",
+				"title": "Imperador Amarelo da Cultura e das Armas",
+				"pantheon": "chinese",
+				"age": 2,
+				"portrait": "res://assets/ui/portraits/fuxi_major.jpg",
+				"god_power": {
+					"id": "calligraphy_arts",
+					"name": "Caligrafia Imperial",
+					"icon": "⚡",
+					"desc": "Concede súbita inspiração acelerando a pesquisa de todas as tecnologias em 100%."
+				},
+				"myth_unit": {
+					"id": "qilin",
+					"name": "Qilin Sagrado",
+					"icon": "🦄",
+					"desc": "Criatura mística luminosa com galope veloz que abençoa tropas e cura em área."
+				},
+				"tech": {
+					"id": "terracotta_tactics",
+					"name": "Táticas de Terracota",
+					"icon": "🛡️",
+					"desc": "Alabardeiros e lanceiros recebem +20% de armadura e vida."
+				},
+				"passives": [
+					"• Infantaria chinesa tem custo de treino reduzido em 15%.",
+					"• Torres defensivas disparam flechas de fogo."
+				]
+			},
+			{
+				"id": "goumang",
+				"name": "Goumang",
+				"title": "Deus da Primavera, das Florestas e do Crescimento",
+				"pantheon": "chinese",
+				"age": 2,
+				"portrait": "res://assets/ui/portraits/shennong_major.jpg",
+				"god_power": {
+					"id": "sacred_harvest",
+					"name": "Colheita Sagrada",
+					"icon": "⚡",
+					"desc": "Acelera instantaneamente o rendimento de plantações e florestas com recursos abundantes."
+				},
+				"myth_unit": {
+					"id": "fenghuang",
+					"name": "Pássaro Fenghuang",
+					"icon": "🦚",
+					"desc": "Ave mística sagrada de penas de fogo com ataque aéreo de labaredas em espiral."
+				},
+				"tech": {
+					"id": "silk_weaving",
+					"name": "Tecelagem da Seda",
+					"icon": "🧵",
+					"desc": "Aldeões e cidadãos chineses coletam tributos 20% mais rápido."
+				},
+				"passives": [
+					"• Fazendas produzem alimento continuamente sem esgotar.",
+					"• O Pássaro Fenghuang renasce das cinzas após morrer pela primeira vez."
+				]
+			}
+		],
+		3: [
+			{
+				"id": "zhurong",
+				"name": "Zhurong",
+				"title": "Deus do Fogo do Sul e da Guerra Feroz",
+				"pantheon": "chinese",
+				"age": 3,
+				"portrait": "res://assets/ui/portraits/fuxi_major.jpg",
+				"god_power": {
+					"id": "celestial_inferno",
+					"name": "Inferno Celestial",
+					"icon": "⚡",
+					"desc": "Faz chover meteoros de fogo e pólvora sobre as tropas inimigas."
+				},
+				"myth_unit": {
+					"id": "flame_tiger",
+					"name": "Tigre Flamejante",
+					"icon": "🐯",
+					"desc": "Predador místico veloz que cospe fogo em leque e queima o solo ao passar."
+				},
+				"tech": {
+					"id": "dragon_cavalry_saddle",
+					"name": "Sela do Dragão",
+					"icon": "🐎",
+					"desc": "Cavalaria Dragão ganha +25% de ataque e velocidade de investida."
+				},
+				"passives": [
+					"• Cavalaria causa dano por fogo residual em todas as armas.",
+					"• O Tigre Flamejante ataca 30% mais rápido."
+				]
+			},
+			{
+				"id": "houtu",
+				"name": "Houtu",
+				"title": "Deusa Soberana da Terra Profunda e das Montanhas",
+				"pantheon": "chinese",
+				"age": 3,
+				"portrait": "res://assets/ui/portraits/nuwa_major.jpg",
+				"god_power": {
+					"id": "earth_pillar",
+					"name": "Pilares da Terra",
+					"icon": "⚡",
+					"desc": "Erompe muralhas de rocha sólida do chão, bloqueando passagens e esmagando invasores."
+				},
+				"myth_unit": {
+					"id": "terracotta_warrior",
+					"name": "Guerreiro de Terracota",
+					"icon": "🗿",
+					"desc": "Estátua animada inabalável com alta armadura imune a veneno e flechas."
+				},
+				"tech": {
+					"id": "great_wall_bricks",
+					"name": "Muralhas da Grande Muralha",
+					"icon": "🧱",
+					"desc": "Muralhas e torres ganham +40% de vida e disparam projéteis balísticos extras."
+				},
+				"passives": [
+					"• Edifícios chineses resistem 25% mais a armas de cerco.",
+					"• Minas de ouro demoram 30% mais para se esgotar."
+				]
+			}
+		],
+		4: [
+			{
+				"id": "chiyou",
+				"name": "Chiyou",
+				"title": "Deus da Guerra Implacável e das Armas de Metal",
+				"pantheon": "chinese",
+				"age": 4,
+				"portrait": "res://assets/ui/portraits/shennong_major.jpg",
+				"god_power": {
+					"id": "chaos_iron_storm",
+					"name": "Tormenta de Ferro",
+					"icon": "⚡",
+					"desc": "Invoca uma chuva de lanças de aço que despedaça tropas e destrói muralhas."
+				},
+				"myth_unit": {
+					"id": "iron_golem",
+					"name": "Besta de Ferro",
+					"icon": "👹",
+					"desc": "Monstro com cabeça de touro de metal fundido com marreta gigante e 6.000 HP."
+				},
+				"tech": {
+					"id": "blade_mastery",
+					"name": "Maestria das Lâminas de Bronze",
+					"icon": "⚔️",
+					"desc": "Toda a infantaria e cavalaria ganha +30% de dano crítico."
+				},
+				"passives": [
+					"• Todas as tropas militares causam dano duplo contra heróis e míticas.",
+					"• A Besta de Ferro arremessa grupos inteiros de soldados."
+				]
+			},
+			{
+				"id": "xuannu",
+				"name": "Xuannu",
+				"title": "Dama Misteriosa dos Céus e da Estratégia Oculta",
+				"pantheon": "chinese",
+				"age": 4,
+				"portrait": "res://assets/ui/portraits/nuwa_major.jpg",
+				"god_power": {
+					"id": "star_barrage",
+					"name": "Chuva de Estrelas",
+					"icon": "⚡",
+					"desc": "Estrelas cadentes abençoadas limpam a neblina de guerra e causam dano massivo em área."
+				},
+				"myth_unit": {
+					"id": "azure_dragon",
+					"name": "Dragão Azul Celeste",
+					"icon": "🐉",
+					"desc": "Dragão serpentino celestial que cospe relâmpagos e voa sobre montanhas e obstáculos."
+				},
+				"tech": {
+					"id": "art_of_war",
+					"name": "A Arte da Guerra",
+					"icon": "📜",
+					"desc": "Tropas aliadas têm alcance de visão e reflexos de esquiva elevados em 25%."
+				},
+				"passives": [
+					"• Dragão Azul ataca com relâmpago encadeado triplo.",
+					"• O Altar Divino e templos geram Favor 40% mais rápido."
+				]
+			}
+		],
+		5: [
+			{
+				"id": "pangu_primordial",
+				"name": "Pangu Criador do Universo",
+				"title": "O Gigante Primordial que Separou o Céu e a Terra",
+				"pantheon": "chinese",
+				"age": 5,
+				"portrait": "res://assets/ui/portraits/fuxi_major.jpg",
+				"god_power": {
+					"id": "cosmic_cleave",
+					"name": "Fenda Cósmica de Pangu",
+					"icon": "⚡",
+					"desc": "Corta a terra com o machado primordial, abrindo abismos no solo."
+				},
+				"myth_unit": {
+					"id": "titan_pangu",
+					"name": "Titã Pangu",
+					"icon": "🪓",
+					"desc": "Titã colossal com machado primordial de 10.000 HP."
+				},
+				"tech": {
+					"id": "harmony_of_opposites",
+					"name": "Harmonia do Yin e Yang",
+					"icon": "☯️",
+					"desc": "Equilíbrio absoluto que duplica todos os bônus econômicos e militares."
+				},
+				"passives": [
+					"• Todas as tropas recebem bônus cósmico de regeneração e armadura.",
+					"• Altar Divino ativo."
+				]
+			}
+		]
+	}
+}
+
+
+static func get_minor_god_choices(pantheon_id: String, target_age: int) -> Array[Dictionary]:
+	var p_dict: Dictionary = MINOR_GODS_ADVANCEMENT.get(pantheon_id, MINOR_GODS_ADVANCEMENT["greek"])
+	var list: Array = p_dict.get(target_age, [])
+	var typed_res: Array[Dictionary] = []
+	for item in list:
+		if item is Dictionary:
+			typed_res.append(item as Dictionary)
+	return typed_res
+
+
 # Predio pre-requisito para invocacao divina (Altar Divino)
 const DIVINE_BUILDING: Dictionary = {
 	"kind": "divine_altar",

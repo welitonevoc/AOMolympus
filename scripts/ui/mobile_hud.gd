@@ -25,6 +25,15 @@ var _match_time_lbl: Label
 var _match_elapsed_seconds: float = 0.0
 var _match_timer_accum: float = 0.0
 var _game_menu_modal: Control = null
+var _age_advancement_modal: Control = null
+var _age_modal_cards_container: HBoxContainer = null
+var _age_modal_title_lbl: Label = null
+var _age_modal_subtitle_lbl: Label = null
+var _age_modal_emblem_lbl: Label = null
+var _age_modal_age_name_lbl: Label = null
+var _age_modal_cost_lbl: Label = null
+var _age_modal_time_lbl: Label = null
+var _portrait_cache: Dictionary = {}
 var _day_night_btn: Button
 var _fog_btn: Button
 var _audio_btn: Button
@@ -132,6 +141,7 @@ func _ready() -> void:
 	_build_pantheon_start_overlay()
 	_build_end_match_overlay()
 	_build_divine_invocation_ui()
+	_build_age_advancement_modal()
 	_connect_world_rules_and_triggers()
 
 	GameState.match_started_signal.connect(_on_match_started)
@@ -140,6 +150,7 @@ func _ready() -> void:
 	GameState.population_changed.connect(_on_population_changed)
 	GameState.age_changed.connect(_on_age_changed)
 	GameState.age_advance_progress.connect(_on_age_advance_progress)
+	GameState.minor_god_chosen_signal.connect(func(_a: int, _s: Dictionary) -> void: _rebuild_divine_power_bar())
 	GameState.lighting_changed.connect(_on_lighting_changed)
 	GameState.fog_toggled.connect(_on_fog_toggled)
 	GameState.audio_muted_changed.connect(_on_audio_muted_changed)
@@ -712,19 +723,7 @@ func _on_age_badge_pressed() -> void:
 		GameState.notify("Era Máxima (Titânica) já alcançada!", false)
 		return
 	var target_age: int = GameState.current_age + 1
-	var cost: Dictionary = PantheonCatalog.get_age_cost(target_age)
-	var can_afford: bool = true
-	for r in cost.keys():
-		if int(GameState.resources.get(r, 0)) < int(cost[r]):
-			can_afford = false
-			break
-	if can_afford:
-		GameState.begin_age_advance()
-	else:
-		var reqs: Array[String] = []
-		for r in cost.keys():
-			reqs.append("%d %s" % [int(cost[r]), r.capitalize()])
-		GameState.notify("Avançar para %s requer: %s" % [PantheonCatalog.get_age_name(target_age), ", ".join(reqs)], true)
+	_open_age_advancement_modal(target_age)
 
 
 func _update_match_time_display() -> void:
@@ -2101,7 +2100,7 @@ func _rebuild_command_grid() -> void:
 				var cost_txt: String = PantheonCatalog.format_cost(PantheonCatalog.get_age_cost(next_age))
 				var age_btn := _make_action_button("Avancar Era %d\n(%s)" % [next_age, cost_txt], false, 174.0, 52.0)
 				age_btn.disabled = GameState.is_advancing_age
-				age_btn.pressed.connect(func() -> void: GameState.begin_age_advance())
+				age_btn.pressed.connect(func() -> void: _open_age_advancement_modal(next_age))
 				_command_grid.add_child(age_btn)
 			else:
 				var max_btn := _make_action_button("Era Maxima (V)", false, 174.0, 52.0)
@@ -2732,3 +2731,423 @@ func _build_codex_quick_modal() -> void:
 	_codex_modal_meta = VBoxContainer.new()
 	_codex_modal_meta.add_theme_constant_override("separation", 3)
 	vbox.add_child(_codex_modal_meta)
+
+
+# ── Modal Monumental de Avanço de Era com Escolha de Deuses Menores (Estilo AoM Retold) ──
+func _build_age_advancement_modal() -> void:
+	_age_advancement_modal = Control.new()
+	_age_advancement_modal.name = "AgeAdvancementModal"
+	_age_advancement_modal.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_age_advancement_modal.mouse_filter = Control.MOUSE_FILTER_STOP
+	_age_advancement_modal.visible = false
+	add_child(_age_advancement_modal)
+
+	var backdrop := ColorRect.new()
+	backdrop.set_anchors_preset(Control.PRESET_FULL_RECT)
+	backdrop.color = Color(0.02, 0.04, 0.07, 0.88)
+	_age_advancement_modal.add_child(backdrop)
+
+	var panel := PanelContainer.new()
+	panel.anchor_left = 0.5
+	panel.anchor_right = 0.5
+	panel.anchor_top = 0.5
+	panel.anchor_bottom = 0.5
+	panel.offset_left = -470.0
+	panel.offset_right = 470.0
+	panel.offset_top = -280.0
+	panel.offset_bottom = 280.0
+	panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	panel.grow_vertical = Control.GROW_DIRECTION_BOTH
+
+	var sb_adv := StyleBoxFlat.new()
+	sb_adv.bg_color = Color(0.05, 0.07, 0.12, 0.98)
+	sb_adv.border_color = Color(0.88, 0.74, 0.32, 1.0)
+	sb_adv.border_width_left = 3
+	sb_adv.border_width_right = 3
+	sb_adv.border_width_top = 3
+	sb_adv.border_width_bottom = 3
+	sb_adv.set_corner_radius_all(12)
+	sb_adv.shadow_color = Color(0.0, 0.0, 0.0, 0.85)
+	sb_adv.shadow_size = 20
+	panel.add_theme_stylebox_override("panel", sb_adv)
+	_age_advancement_modal.add_child(panel)
+
+	var margin := MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 16)
+	margin.add_theme_constant_override("margin_right", 16)
+	margin.add_theme_constant_override("margin_top", 12)
+	margin.add_theme_constant_override("margin_bottom", 12)
+	panel.add_child(margin)
+
+	var main_vbox := VBoxContainer.new()
+	main_vbox.add_theme_constant_override("separation", 8)
+	margin.add_child(main_vbox)
+
+	# 1. Cabeçalho Majestoso
+	var header_row := HBoxContainer.new()
+	main_vbox.add_child(header_row)
+
+	var header_text_box := VBoxContainer.new()
+	header_text_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	header_row.add_child(header_text_box)
+
+	_age_modal_title_lbl = Label.new()
+	_age_modal_title_lbl.label_settings = OlympusTypography.get_label_settings(OlympusTypography.Style.HEADING, 17, Color("#ffd700"))
+	header_text_box.add_child(_age_modal_title_lbl)
+
+	_age_modal_subtitle_lbl = Label.new()
+	_age_modal_subtitle_lbl.label_settings = OlympusTypography.get_label_settings(OlympusTypography.Style.TACTICAL, 11, Color("#94a3b8"))
+	header_text_box.add_child(_age_modal_subtitle_lbl)
+
+	var close_btn := Button.new()
+	close_btn.text = "✕ Fechar"
+	close_btn.custom_minimum_size = Vector2(80, 32)
+	OlympusTypography.apply_to_button(close_btn, OlympusTypography.Style.TACTICAL, 11, Color("#f1f5f9"))
+	close_btn.add_theme_stylebox_override("normal", _make_btn_style(false, false, false))
+	close_btn.add_theme_stylebox_override("hover", _make_btn_style(false, true, false))
+	close_btn.add_theme_stylebox_override("pressed", _make_btn_style(false, false, true))
+	close_btn.pressed.connect(_close_age_advancement_modal)
+	header_row.add_child(close_btn)
+
+	# Linha divisória em ouro
+	var div_top := ColorRect.new()
+	div_top.custom_minimum_size = Vector2(0, 2)
+	div_top.color = Color(0.88, 0.74, 0.32, 0.65)
+	main_vbox.add_child(div_top)
+
+	# 2. Corpo do Modal (Medalhão da Era à esquerda + Cards de Deuses à direita)
+	var body_row := HBoxContainer.new()
+	body_row.add_theme_constant_override("separation", 14)
+	body_row.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	main_vbox.add_child(body_row)
+
+	# Coluna Esquerda: Medalhão da Era
+	var left_col := VBoxContainer.new()
+	left_col.custom_minimum_size = Vector2(115, 0)
+	left_col.alignment = BoxContainer.ALIGNMENT_CENTER
+	left_col.add_theme_constant_override("separation", 6)
+	body_row.add_child(left_col)
+
+	var emblem_box := PanelContainer.new()
+	emblem_box.custom_minimum_size = Vector2(86, 86)
+	emblem_box.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	var sb_emblem := StyleBoxFlat.new()
+	sb_emblem.bg_color = Color(0.08, 0.11, 0.18, 0.98)
+	sb_emblem.border_color = Color(0.92, 0.80, 0.40, 1.0)
+	sb_emblem.border_width_left = 3
+	sb_emblem.border_width_right = 3
+	sb_emblem.border_width_top = 3
+	sb_emblem.border_width_bottom = 3
+	sb_emblem.set_corner_radius_all(43)
+	sb_emblem.shadow_color = Color(0.88, 0.74, 0.32, 0.35)
+	sb_emblem.shadow_size = 6
+	emblem_box.add_theme_stylebox_override("panel", sb_emblem)
+	left_col.add_child(emblem_box)
+
+	_age_modal_emblem_lbl = Label.new()
+	_age_modal_emblem_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_age_modal_emblem_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_age_modal_emblem_lbl.label_settings = OlympusTypography.get_label_settings(OlympusTypography.Style.HEADING, 34, Color("#fef08a"))
+	emblem_box.add_child(_age_modal_emblem_lbl)
+
+	_age_modal_age_name_lbl = Label.new()
+	_age_modal_age_name_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_age_modal_age_name_lbl.label_settings = OlympusTypography.get_label_settings(OlympusTypography.Style.TACTICAL, 12, Color("#e2e8f0"), 1)
+	left_col.add_child(_age_modal_age_name_lbl)
+
+	var div_left := ColorRect.new()
+	div_left.custom_minimum_size = Vector2(70, 1)
+	div_left.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	div_left.color = Color(0.88, 0.74, 0.32, 0.4)
+	left_col.add_child(div_left)
+
+	_age_modal_cost_lbl = Label.new()
+	_age_modal_cost_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_age_modal_cost_lbl.label_settings = OlympusTypography.get_label_settings(OlympusTypography.Style.TACTICAL, 11, Color("#38bdf8"))
+	left_col.add_child(_age_modal_cost_lbl)
+
+	_age_modal_time_lbl = Label.new()
+	_age_modal_time_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_age_modal_time_lbl.label_settings = OlympusTypography.get_label_settings(OlympusTypography.Style.TACTICAL, 10, Color("#94a3b8"))
+	left_col.add_child(_age_modal_time_lbl)
+
+	# Divisor Vertical
+	var v_sep := ColorRect.new()
+	v_sep.custom_minimum_size = Vector2(2, 0)
+	v_sep.color = Color(0.88, 0.74, 0.32, 0.35)
+	body_row.add_child(v_sep)
+
+	# Coluna Direita: Cards dos Deuses Menores
+	var scroll := ScrollContainer.new()
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	body_row.add_child(scroll)
+
+	_age_modal_cards_container = HBoxContainer.new()
+	_age_modal_cards_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_age_modal_cards_container.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_age_modal_cards_container.add_theme_constant_override("separation", 14)
+	scroll.add_child(_age_modal_cards_container)
+
+
+func _open_age_advancement_modal(target_age: int = 0) -> void:
+	if _age_advancement_modal == null:
+		return
+	if target_age <= 0:
+		target_age = GameState.current_age + 1
+	target_age = clampi(target_age, 2, 5)
+
+	var panteao_id: String = GameState.active_pantheon
+	var panteao_info: Dictionary = PantheonCatalog.get_pantheon(panteao_id)
+	var panteao_name: String = String(panteao_info.get("name", "Grego")).to_upper()
+	var age_name: String = PantheonCatalog.get_age_name(target_age)
+	var roman: String = _get_age_roman(target_age)
+	var cost: Dictionary = PantheonCatalog.get_age_cost(target_age)
+	var adv_time: float = PantheonCatalog.get_age_advance_time(target_age)
+
+	# Atualiza cabeçalho e medalhão
+	_age_modal_title_lbl.text = "🏛️ PANTEÃO %s · AVANÇO DE ERA 🏛️" % panteao_name
+	_age_modal_subtitle_lbl.text = "Escolha o Deus Protetor que abençoará sua civilização na %s (%s)" % [age_name, roman]
+	_age_modal_emblem_lbl.text = roman
+	_age_modal_age_name_lbl.text = age_name.to_upper()
+	_age_modal_cost_lbl.text = "Custo:\n%s" % PantheonCatalog.format_cost(cost)
+	_age_modal_time_lbl.text = "⏱️ Tempo: %ds" % int(adv_time)
+
+	# Limpa cards anteriores
+	for child in _age_modal_cards_container.get_children():
+		child.queue_free()
+
+	# Obtém as opções de Deuses Menores para esta Era
+	var choices: Array[Dictionary] = PantheonCatalog.get_minor_god_choices(panteao_id, target_age)
+	if choices.is_empty():
+		choices = PantheonCatalog.get_minor_god_choices("greek", target_age)
+
+	var can_afford: bool = GameState.can_afford(cost)
+
+	for god in choices:
+		var card := PanelContainer.new()
+		card.custom_minimum_size = Vector2(360, 0)
+		card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		card.size_flags_vertical = Control.SIZE_EXPAND_FILL
+
+		var sb_card := StyleBoxFlat.new()
+		sb_card.bg_color = Color(0.07, 0.09, 0.15, 0.98)
+		sb_card.border_color = Color(0.72, 0.60, 0.28, 0.85)
+		sb_card.border_width_left = 2
+		sb_card.border_width_right = 2
+		sb_card.border_width_top = 2
+		sb_card.border_width_bottom = 2
+		sb_card.set_corner_radius_all(10)
+		sb_card.shadow_color = Color(0.0, 0.0, 0.0, 0.5)
+		sb_card.shadow_size = 6
+		card.add_theme_stylebox_override("panel", sb_card)
+		_age_modal_cards_container.add_child(card)
+
+		var card_margin := MarginContainer.new()
+		card_margin.add_theme_constant_override("margin_left", 12)
+		card_margin.add_theme_constant_override("margin_right", 12)
+		card_margin.add_theme_constant_override("margin_top", 10)
+		card_margin.add_theme_constant_override("margin_bottom", 10)
+		card.add_child(card_margin)
+
+		var card_vbox := VBoxContainer.new()
+		card_vbox.add_theme_constant_override("separation", 6)
+		card_margin.add_child(card_vbox)
+
+		# Cabeçalho do Deus Menor
+		var g_name_lbl := Label.new()
+		g_name_lbl.text = String(god.get("name", "Deus Menor")).to_upper()
+		g_name_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		g_name_lbl.label_settings = OlympusTypography.get_label_settings(OlympusTypography.Style.HEADING, 16, Color("#fef08a"))
+		card_vbox.add_child(g_name_lbl)
+
+		var g_title_lbl := Label.new()
+		g_title_lbl.text = String(god.get("title", ""))
+		g_title_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		g_title_lbl.label_settings = OlympusTypography.get_label_settings(OlympusTypography.Style.TACTICAL, 10, Color("#7dd3fc"))
+		card_vbox.add_child(g_title_lbl)
+
+		var div_god := ColorRect.new()
+		div_god.custom_minimum_size = Vector2(0, 1)
+		div_god.color = Color(0.88, 0.74, 0.32, 0.3)
+		card_vbox.add_child(div_god)
+
+		# Linha Central: Retrato + 3 Caixas de Dádivas
+		var mid_row := HBoxContainer.new()
+		mid_row.add_theme_constant_override("separation", 8)
+		card_vbox.add_child(mid_row)
+
+		# Retrato do Deus
+		var portrait_panel := PanelContainer.new()
+		portrait_panel.custom_minimum_size = Vector2(90, 115)
+		portrait_panel.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		var sb_port := StyleBoxFlat.new()
+		sb_port.bg_color = Color(0.04, 0.05, 0.09)
+		sb_port.border_color = Color(0.88, 0.74, 0.32, 0.7)
+		sb_port.set_border_width_all(1)
+		sb_port.set_corner_radius_all(6)
+		portrait_panel.add_theme_stylebox_override("panel", sb_port)
+		mid_row.add_child(portrait_panel)
+
+		var port_tex_rect := TextureRect.new()
+		port_tex_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		port_tex_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+		port_tex_rect.custom_minimum_size = Vector2(88, 113)
+		var p_tex: Texture2D = _load_portrait_texture(String(god.get("portrait", "")))
+		if p_tex != null:
+			port_tex_rect.texture = p_tex
+		portrait_panel.add_child(port_tex_rect)
+
+		# 3 Caixas de Dádivas
+		var gifts_vbox := VBoxContainer.new()
+		gifts_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		gifts_vbox.add_theme_constant_override("separation", 4)
+		mid_row.add_child(gifts_vbox)
+
+		# 1. Poder Divino Box
+		var gp_spec: Dictionary = god.get("god_power", {})
+		var gp_box := _build_blessing_item(
+			"⚡ PODER: %s" % String(gp_spec.get("name", "Poder")),
+			String(gp_spec.get("desc", "")),
+			Color("#38bdf8")
+		)
+		gifts_vbox.add_child(gp_box)
+
+		# 2. Unidade Mítica Box
+		var mu_spec: Dictionary = god.get("myth_unit", {})
+		var mu_box := _build_blessing_item(
+			"🦁 MÍTICA: %s" % String(mu_spec.get("name", "Criatura")),
+			String(mu_spec.get("desc", "")),
+			Color("#fbbf24")
+		)
+		gifts_vbox.add_child(mu_box)
+
+		# 3. Tecnologia Divina Box
+		var tech_spec: Dictionary = god.get("tech", {})
+		var tech_box := _build_blessing_item(
+			"📜 MELHORIA: %s" % String(tech_spec.get("name", "Tecnologia")),
+			String(tech_spec.get("desc", "")),
+			Color("#c084fc")
+		)
+		gifts_vbox.add_child(tech_box)
+
+		# Bônus Passivos e Vantagens da Civilização
+		var passives_box := VBoxContainer.new()
+		passives_box.add_theme_constant_override("separation", 2)
+		card_vbox.add_child(passives_box)
+
+		var pass_title := Label.new()
+		pass_title.text = "VANTAGENS E BÔNUS PASSIVOS:"
+		pass_title.label_settings = OlympusTypography.get_label_settings(OlympusTypography.Style.TACTICAL, 10, Color("#fde047"))
+		passives_box.add_child(pass_title)
+
+		var passives_list: Array = god.get("passives", [])
+		for p_text in passives_list:
+			var p_lbl := Label.new()
+			p_lbl.text = String(p_text)
+			p_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			p_lbl.label_settings = OlympusTypography.get_label_settings(OlympusTypography.Style.TACTICAL, 10, Color("#cbd5e1"))
+			passives_box.add_child(p_lbl)
+
+		# Botão de Ação / Confirmação
+		var advance_btn := Button.new()
+		advance_btn.custom_minimum_size = Vector2(0, 42)
+		if can_afford:
+			advance_btn.text = "⚡ EVOLUIR COM %s" % String(god.get("name", "")).to_upper()
+			OlympusTypography.apply_to_button(advance_btn, OlympusTypography.Style.HEADING, 12, Color("#0d121c"))
+			advance_btn.add_theme_stylebox_override("normal", _make_btn_style(true, false, false))
+			advance_btn.add_theme_stylebox_override("hover", _make_btn_style(true, true, false))
+			advance_btn.add_theme_stylebox_override("pressed", _make_btn_style(true, false, true))
+			var chosen_god: Dictionary = god.duplicate(true)
+			advance_btn.pressed.connect(func() -> void: _confirm_age_advancement(chosen_god))
+		else:
+			var missing_parts: Array[String] = []
+			for r in cost.keys():
+				var cur_r: int = int(GameState.resources.get(r, 0))
+				var req_r: int = int(cost[r])
+				if cur_r < req_r:
+					missing_parts.append("%d %s" % [req_r - cur_r, r.capitalize()])
+			advance_btn.text = "🔒 Falta: %s" % (", ".join(missing_parts))
+			advance_btn.disabled = true
+			OlympusTypography.apply_to_button(advance_btn, OlympusTypography.Style.TACTICAL, 11, Color("#94a3b8"))
+			advance_btn.add_theme_stylebox_override("disabled", _make_btn_style_disabled())
+		card_vbox.add_child(advance_btn)
+
+	_age_advancement_modal.visible = true
+
+
+func _build_blessing_item(item_title: String, item_desc: String, accent_color: Color) -> PanelContainer:
+	var box := PanelContainer.new()
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0.04, 0.06, 0.10, 0.85)
+	sb.border_color = accent_color
+	sb.set_border_width_all(1)
+	sb.set_corner_radius_all(5)
+	box.add_theme_stylebox_override("panel", sb)
+
+	var margin := MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 6)
+	margin.add_theme_constant_override("margin_right", 6)
+	margin.add_theme_constant_override("margin_top", 4)
+	margin.add_theme_constant_override("margin_bottom", 4)
+	box.add_child(margin)
+
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 1)
+	margin.add_child(vbox)
+
+	var t_lbl := Label.new()
+	t_lbl.text = item_title
+	t_lbl.label_settings = OlympusTypography.get_label_settings(OlympusTypography.Style.TACTICAL, 10, accent_color, 1)
+	vbox.add_child(t_lbl)
+
+	var d_lbl := Label.new()
+	d_lbl.text = item_desc
+	d_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	d_lbl.label_settings = OlympusTypography.get_label_settings(OlympusTypography.Style.TACTICAL, 9, Color("#cbd5e1"))
+	vbox.add_child(d_lbl)
+
+	return box
+
+
+func _close_age_advancement_modal() -> void:
+	if _age_advancement_modal != null:
+		_age_advancement_modal.visible = false
+
+
+func _confirm_age_advancement(god: Dictionary) -> void:
+	_close_age_advancement_modal()
+	var success: bool = GameState.begin_age_advance(god)
+	if success:
+		AudioDirector.play_sfx_3d("divine_power", Vector3.ZERO, GameState.active_pantheon)
+		_rebuild_divine_power_bar()
+
+
+func _get_age_roman(age: int) -> String:
+	match age:
+		1: return "I"
+		2: return "II"
+		3: return "III"
+		4: return "IV"
+		5: return "V"
+		_: return str(age)
+
+
+func _load_portrait_texture(path: String) -> Texture2D:
+	if path == "":
+		return null
+	if _portrait_cache.has(path):
+		return _portrait_cache[path] as Texture2D
+	var global_p: String = ProjectSettings.globalize_path(path)
+	if FileAccess.file_exists(global_p):
+		var img := Image.load_from_file(global_p)
+		if img != null and not img.is_empty():
+			var tex := ImageTexture.create_from_image(img)
+			_portrait_cache[path] = tex
+			return tex
+	if ResourceLoader.exists(path):
+		var tex := load(path) as Texture2D
+		if tex != null:
+			_portrait_cache[path] = tex
+			return tex
+	return null
