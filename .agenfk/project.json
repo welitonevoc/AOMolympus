@@ -5,5 +5,5 @@
   "verifyCommand": "python scripts/pipeline/verify_olympus.py",
   "setupCommand": "",
   "autoWorktree": false,
-  "askBeforeCommit": true
+  "askBeforeCommit": false
 }
