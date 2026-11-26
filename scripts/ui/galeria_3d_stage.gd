@@ -18,12 +18,12 @@ signal camera_changed(position: Vector3, target: Vector3)
 @export var focus_offset: Vector3 = Vector3(0, 1.2, -2.5)
 
 # ─── Referências de nós ──────────────────────────────────────────────────────
-@onready var sub_viewport: SubViewport = %SubViewport
-@onready var camera_3d: Camera3D = %Camera3D
-@onready var directional_light: DirectionalLight3D = %DirectionalLight3D
-@onready var world_env: WorldEnvironment = %WorldEnvironment
-@onready var model_root: Node3D = %ModelRoot
-@onready var ground_mesh: MeshInstance3D = %GroundMesh
+@onready var sub_viewport: SubViewport = get_node_or_null("SubViewport")
+@onready var camera_3d: Camera3D = get_node_or_null("SubViewport/Camera3D")
+@onready var directional_light: DirectionalLight3D = get_node_or_null("SubViewport/DirectionalLight3D")
+@onready var world_env: WorldEnvironment = get_node_or_null("SubViewport/WorldEnvironment")
+@onready var model_root: Node3D = get_node_or_null("SubViewport/ModelRoot")
+@onready var ground_mesh: MeshInstance3D = get_node_or_null("SubViewport/GroundMesh")
 
 # ─── Estado interno ──────────────────────────────────────────────────────────
 var _current_model: Node3D = null
@@ -43,6 +43,18 @@ var _last_pinch_dist: float = 0.0
 # ─── Inicialização ───────────────────────────────────────────────────────────
 
 func _ready() -> void:
+	if sub_viewport == null:
+		sub_viewport = get_node_or_null("SubViewport")
+	if camera_3d == null:
+		camera_3d = get_node_or_null("SubViewport/Camera3D")
+	if directional_light == null:
+		directional_light = get_node_or_null("SubViewport/DirectionalLight3D")
+	if world_env == null:
+		world_env = get_node_or_null("SubViewport/WorldEnvironment")
+	if model_root == null:
+		model_root = get_node_or_null("SubViewport/ModelRoot")
+	if ground_mesh == null:
+		ground_mesh = get_node_or_null("SubViewport/GroundMesh")
 	_setup_viewport()
 	_setup_camera()
 	_setup_lighting()
@@ -56,8 +68,7 @@ func _setup_viewport() -> void:
 		# sub_viewport.own_world = true
 		@warning_ignore("int_as_enum_without_cast", "int_as_enum_without_match")
 		sub_viewport.render_target_update_mode = 2  # WHEN_VISIBLE (valor seguro para Godot 4.x)
-		sub_viewport.size = Vector2(1280, 720)
-		# usage property removido no Godot 4.x
+		# SubViewportContainer com stretch=true gerencia o tamanho automaticamente.
 
 func _setup_camera() -> void:
 	if camera_3d != null:
@@ -68,15 +79,12 @@ func _setup_camera() -> void:
 
 func _setup_lighting() -> void:
 	if directional_light != null:
-		directional_light.direction = Vector3(-0.6, -1.0, -0.4).normalized()
+		directional_light.rotation_degrees = Vector3(-45.0, 35.0, 0.0)
 		directional_light.light_energy = 2.8
 		directional_light.light_color = Color(1.0, 0.95, 0.88)
 		directional_light.shadow_enabled = true
-		directional_light.shadow_max_distance = 50.0
-		directional_light.shadow_normal_bias = 0.3
+		directional_light.directional_shadow_max_distance = 50.0
 		directional_light.shadow_bias = 0.005
-		directional_light.shadow_contact = 0.1
-		directional_light.size = 0.2
 
 func _setup_environment() -> void:
 	if world_env != null and world_env.environment == null:
@@ -175,8 +183,19 @@ func set_model(model_node: Node3D) -> void:
 	if model_node == null:
 		return
 	
+	if model_node.get_parent() != null:
+		model_node.get_parent().remove_child(model_node)
+	
 	_current_model = model_node
-	model_root.add_child(model_node)
+	if model_root == null:
+		model_root = get_node_or_null("SubViewport/ModelRoot")
+	if model_root != null:
+		model_root.add_child(model_node)
+	elif sub_viewport != null:
+		sub_viewport.add_child(model_node)
+	else:
+		push_error("[Galeria3DStage] Nenhum container 3D válido encontrado para renderizar modelo")
+		return
 	_center_and_frame_model(model_node)
 	
 	_orbit_angle_y = 0.0

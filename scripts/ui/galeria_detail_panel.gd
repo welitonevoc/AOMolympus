@@ -12,8 +12,8 @@ signal voice_play_requested(unit_type: String, pantheon: String)
 signal export_glb_requested(model_path: String, model_name: String)
 
 # ─── Referências de nós (criadas dinamicamente ou via cena) ──────────────────
-@onready var vbox_main: VBoxContainer = %VBoxMain
-@onready var scroll: ScrollContainer = %ScrollContainer
+@onready var vbox_main: VBoxContainer = get_node_or_null("VBoxMain")
+@onready var scroll: ScrollContainer = get_node_or_null("VBoxMain/ScrollContainer")
 
 # ─── Estado ──────────────────────────────────────────────────────────────────
 var _current_unit_data: Dictionary = {}
@@ -38,15 +38,25 @@ func _ready() -> void:
 	_build_ui()
 
 func _build_ui() -> void:
-	# Container principal já existe na cena, só garantir estrutura
+	# Container principal já existe na cena, garantir estrutura segura
+	if vbox_main == null:
+		vbox_main = get_node_or_null("VBoxMain")
+	if vbox_main == null and has_node("%VBoxMain"):
+		vbox_main = get_node("%VBoxMain") as VBoxContainer
 	if vbox_main == null:
 		vbox_main = VBoxContainer.new()
+		vbox_main.name = "VBoxMain"
 		add_child(vbox_main)
 		vbox_main.anchors_preset = Control.PRESET_FULL_RECT
 	
 	# Scroll container
 	if scroll == null:
+		scroll = get_node_or_null("VBoxMain/ScrollContainer")
+	if scroll == null and has_node("%ScrollContainer"):
+		scroll = get_node("%ScrollContainer") as ScrollContainer
+	if scroll == null:
 		scroll = ScrollContainer.new()
+		scroll.name = "ScrollContainer"
 		vbox_main.add_child(scroll)
 		scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -68,18 +78,29 @@ func clear() -> void:
 	_current_model_path = ""
 	_current_model_name = ""
 	_model_stats = {}
-	for child in vbox_main.get_children():
-		if child != scroll:
+	if vbox_main != null:
+		for child in vbox_main.get_children():
+			if child != scroll:
+				child.queue_free()
+	if scroll != null:
+		for child in scroll.get_children():
 			child.queue_free()
 	_clear_anim_buttons()
 
 # ─── Reconstrução do Painel ──────────────────────────────────────────────────
 
 func _rebuild_panel() -> void:
+	_build_ui()
+	if vbox_main == null or scroll == null:
+		push_error("[GaleriaDetailPanel] Container principal não inicializado")
+		return
+
 	# Limpar conteúdo anterior (exceto scroll)
 	for child in vbox_main.get_children():
 		if child != scroll:
 			child.queue_free()
+	for child in scroll.get_children():
+		child.queue_free()
 	_clear_anim_buttons()
 	
 	if _current_unit_data.is_empty():
@@ -131,6 +152,8 @@ func _rebuild_panel() -> void:
 	_add_export_section(scroll_content)
 
 func _show_placeholder() -> void:
+	if vbox_main == null:
+		return
 	var lbl: Label = Label.new()
 	lbl.text = "Selecione uma unidade na lista para ver detalhes"
 	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
