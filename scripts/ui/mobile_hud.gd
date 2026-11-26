@@ -21,6 +21,10 @@ var _gold_lbl: Label
 var _favor_lbl: Label
 var _pop_lbl: Label
 var _age_lbl: Label
+var _match_time_lbl: Label
+var _match_elapsed_seconds: float = 0.0
+var _match_timer_accum: float = 0.0
+var _game_menu_modal: Control = null
 var _day_night_btn: Button
 var _fog_btn: Button
 var _audio_btn: Button
@@ -179,6 +183,13 @@ func _sync_all_hud_state() -> void:
 
 
 func _process(delta: float) -> void:
+	if GameState.match_started and GameState.match_result.is_empty():
+		_match_elapsed_seconds += delta
+		_match_timer_accum += delta
+		if _match_timer_accum >= 1.0:
+			_match_timer_accum = 0.0
+			_update_match_time_display()
+
 	if not GameState.match_started:
 		return
 	if GameState.selected_entities.size() == 1 and is_instance_valid(GameState.selected_entities[0]):
@@ -254,13 +265,10 @@ func _build_top_bar() -> void:
 	)
 	hidden_controls.add_child(_divine_btn)
 
-	_age_lbl = Label.new()
-	hidden_controls.add_child(_age_lbl)
-
-	# 2. Medalhão Circular Imperial Ômega (Canto Superior Esquerdo - Ícone clássico oficial)
+	# 2. Medalhão Circular Imperial Ômega (Canto Superior Esquerdo - Abre Menu de Jogo)
 	_build_omega_emblem()
 
-	# 3. Placa Imperial Suspensa Centralizada de Recursos (Layout clássico oficial do AoM)
+	# 3. Placa Imperial Suspensa Centralizada de Recursos, Era e Tempo de Partida
 	_build_imperial_resource_tablet()
 
 
@@ -272,6 +280,7 @@ func _build_omega_emblem() -> void:
 	omega_btn.offset_left = 16.0
 	omega_btn.offset_top = 10.0
 	omega_btn.custom_minimum_size = Vector2(54.0, 54.0)
+	omega_btn.focus_mode = Control.FOCUS_NONE
 
 	var sb_normal := StyleBoxFlat.new()
 	sb_normal.bg_color = Color(0.06, 0.12, 0.22, 0.96) # Azul Egeu profundo imperial
@@ -305,29 +314,162 @@ func _build_omega_emblem() -> void:
 	omega_btn.add_theme_color_override("font_pressed_color", Color("#d4af37"))
 
 	omega_btn.pressed.connect(func() -> void:
-		get_tree().change_scene_to_file("res://scenes/title_screen.tscn")
+		_toggle_game_menu()
 	)
 	add_child(omega_btn)
 
 
-func _build_imperial_resource_tablet() -> void:
-	# Container Principal Centralizado no Topo
-	var top_root := Control.new()
-	top_root.name = "ImperialTopBarRoot"
-	top_root.anchor_left = 0.5
-	top_root.anchor_right = 0.5
-	top_root.anchor_top = 0.0
-	top_root.anchor_bottom = 0.0
-	top_root.offset_left = -310.0
-	top_root.offset_right = 310.0
-	top_root.offset_top = 0.0
-	top_root.offset_bottom = 40.0
-	add_child(top_root)
+func _toggle_game_menu() -> void:
+	if _game_menu_modal != null and is_instance_valid(_game_menu_modal):
+		_game_menu_modal.visible = not _game_menu_modal.visible
+		return
+	_build_game_menu_modal()
 
+
+func _build_game_menu_modal() -> void:
+	_game_menu_modal = Control.new()
+	_game_menu_modal.name = "GameMenuModal"
+	_game_menu_modal.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_game_menu_modal.mouse_filter = Control.MOUSE_FILTER_STOP
+	add_child(_game_menu_modal)
+
+	var backdrop := ColorRect.new()
+	backdrop.set_anchors_preset(Control.PRESET_FULL_RECT)
+	backdrop.color = Color(0.02, 0.04, 0.08, 0.75)
+	_game_menu_modal.add_child(backdrop)
+
+	var panel := PanelContainer.new()
+	panel.anchor_left = 0.5
+	panel.anchor_right = 0.5
+	panel.anchor_top = 0.5
+	panel.anchor_bottom = 0.5
+	panel.offset_left = -170.0
+	panel.offset_right = 170.0
+	panel.offset_top = -180.0
+	panel.offset_bottom = 180.0
+	panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	panel.grow_vertical = Control.GROW_DIRECTION_BOTH
+
+	var sb_menu := StyleBoxFlat.new()
+	sb_menu.bg_color = Color(0.07, 0.09, 0.15, 0.98)
+	sb_menu.border_color = Color(0.88, 0.74, 0.32, 1.0)
+	sb_menu.border_width_left = 3
+	sb_menu.border_width_right = 3
+	sb_menu.border_width_top = 3
+	sb_menu.border_width_bottom = 3
+	sb_menu.set_corner_radius_all(10)
+	sb_menu.shadow_color = Color(0.0, 0.0, 0.0, 0.7)
+	sb_menu.shadow_size = 12
+	panel.add_theme_stylebox_override("panel", sb_menu)
+	_game_menu_modal.add_child(panel)
+
+	var margin := MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 20)
+	margin.add_theme_constant_override("margin_right", 20)
+	margin.add_theme_constant_override("margin_top", 18)
+	margin.add_theme_constant_override("margin_bottom", 18)
+	panel.add_child(margin)
+
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 10)
+	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	margin.add_child(vbox)
+
+	var title_lbl := Label.new()
+	title_lbl.text = "🏛️ AGE OF MYTHOLOGY"
+	title_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title_lbl.label_settings = OlympusTypography.get_label_settings(OlympusTypography.Style.HEADING, 16, Color("#ffd700"), 2)
+	vbox.add_child(title_lbl)
+
+	var sub_lbl := Label.new()
+	sub_lbl.text = "PAUSA & MENU DA PARTIDA"
+	sub_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	sub_lbl.label_settings = OlympusTypography.get_label_settings(OlympusTypography.Style.TACTICAL, 11, Color("#94a3b8"), 1)
+	vbox.add_child(sub_lbl)
+
+	var sep := HSeparator.new()
+	vbox.add_child(sep)
+
+	var btn_resume := _make_menu_modal_btn("▶️ Continuar Partida", Color("#22c55e"))
+	btn_resume.pressed.connect(func() -> void:
+		_game_menu_modal.visible = false
+	)
+	vbox.add_child(btn_resume)
+
+	var btn_save := _make_menu_modal_btn("💾 Salvar Partida", Color("#38bdf8"))
+	btn_save.pressed.connect(func() -> void:
+		SaveLoadSystem.save_game(_world, _camera_rig)
+		_on_notification("Partida salva com sucesso!", false)
+		_game_menu_modal.visible = false
+	)
+	vbox.add_child(btn_save)
+
+	var btn_load := _make_menu_modal_btn("📂 Carregar Partida", Color("#a78bfa"))
+	btn_load.pressed.connect(func() -> void:
+		SaveLoadSystem.load_game()
+		_game_menu_modal.visible = false
+	)
+	vbox.add_child(btn_load)
+
+	var btn_atmos := _make_menu_modal_btn("🌤️ Ciclo de Clima / Céu", Color("#fde047"))
+	btn_atmos.pressed.connect(func() -> void:
+		_on_cycle_atmosphere_pressed()
+	)
+	vbox.add_child(btn_atmos)
+
+	var btn_quit := _make_menu_modal_btn("🏛️ Sair para o Menu Principal", Color("#ef4444"))
+	btn_quit.pressed.connect(func() -> void:
+		get_tree().change_scene_to_file("res://scenes/title_screen.tscn")
+	)
+	vbox.add_child(btn_quit)
+
+
+func _make_menu_modal_btn(text: String, accent_color: Color) -> Button:
+	var btn := Button.new()
+	btn.text = text
+	btn.custom_minimum_size = Vector2(260.0, 36.0)
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0.10, 0.14, 0.22, 0.95)
+	sb.border_color = accent_color
+	sb.border_width_left = 2
+	sb.border_width_right = 2
+	sb.border_width_top = 1
+	sb.border_width_bottom = 1
+	sb.set_corner_radius_all(6)
+	btn.add_theme_stylebox_override("normal", sb)
+
+	var sb_h := sb.duplicate() as StyleBoxFlat
+	sb_h.bg_color = Color(0.14, 0.20, 0.32, 0.98)
+	sb_h.border_color = Color(1.0, 1.0, 1.0, 1.0)
+	btn.add_theme_stylebox_override("hover", sb_h)
+	btn.add_theme_stylebox_override("pressed", sb)
+	btn.add_theme_stylebox_override("focus", sb)
+	btn.add_theme_font_size_override("font_size", 13)
+	btn.add_theme_color_override("font_color", Color("#f8fafc"))
+	return btn
+
+
+func _build_imperial_resource_tablet() -> void:
+	# Container Principal Centralizado no Topo (Placa de Recursos + Era + Relógio de Partida)
+	var top_vbox := VBoxContainer.new()
+	top_vbox.name = "ImperialTopBarRoot"
+	top_vbox.anchor_left = 0.5
+	top_vbox.anchor_right = 0.5
+	top_vbox.anchor_top = 0.0
+	top_vbox.anchor_bottom = 0.0
+	top_vbox.offset_left = -330.0
+	top_vbox.offset_right = 330.0
+	top_vbox.offset_top = 0.0
+	top_vbox.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	top_vbox.add_theme_constant_override("separation", 2)
+	top_vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	add_child(top_vbox)
+
+	# 1. LINHA SUPERIOR: Placa Imperial de Recursos
 	var tablet_h := HBoxContainer.new()
-	tablet_h.set_anchors_preset(Control.PRESET_FULL_RECT)
+	tablet_h.alignment = BoxContainer.ALIGNMENT_CENTER
 	tablet_h.add_theme_constant_override("separation", 0)
-	top_root.add_child(tablet_h)
+	top_vbox.add_child(tablet_h)
 
 	# Asa Esquerda Dourada Escalada (ornamento estilo templo grego)
 	var wing_left := _make_tablet_wing(true)
@@ -357,49 +499,183 @@ func _build_imperial_resource_tablet() -> void:
 
 	# Margem e conteúdo dos recursos
 	var margin := MarginContainer.new()
-	margin.add_theme_constant_override("margin_left", 12)
-	margin.add_theme_constant_override("margin_right", 12)
+	margin.add_theme_constant_override("margin_left", 14)
+	margin.add_theme_constant_override("margin_right", 14)
 	margin.add_theme_constant_override("margin_top", 4)
 	margin.add_theme_constant_override("margin_bottom", 4)
 	central_panel.add_child(margin)
 
 	var res_hbox := HBoxContainer.new()
 	res_hbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	res_hbox.add_theme_constant_override("separation", 10)
+	res_hbox.add_theme_constant_override("separation", 12)
 	margin.add_child(res_hbox)
 
-	# 1. Alimento (🌾)
-	var food_data := _make_imperial_resource_item("res://assets/ui/icons/resources/olympus_res_resource_food.png", "🌾", "1,420")
+	# 1. Alimento (Carne HD)
+	var food_data := _make_imperial_resource_item("res://assets/ui/icons/resources/olympus_res_resource_food.png", "🥩", "1,420")
 	_food_lbl = food_data["label"]
 	res_hbox.add_child(food_data["container"])
 
 	res_hbox.add_child(_make_imperial_divider())
 
-	# 2. Madeira (🪵)
+	# 2. Madeira (Feixe de Madeira HD)
 	var wood_data := _make_imperial_resource_item("res://assets/ui/icons/resources/olympus_res_resource_wood.png", "🪵", "2,150")
 	_wood_lbl = wood_data["label"]
 	res_hbox.add_child(wood_data["container"])
 
 	res_hbox.add_child(_make_imperial_divider())
 
-	# 3. Ouro (🪙)
+	# 3. Ouro (Pilha de Ouro HD)
 	var gold_data := _make_imperial_resource_item("res://assets/ui/icons/resources/olympus_res_resource_gold.png", "🪙", "1,880")
 	_gold_lbl = gold_data["label"]
 	res_hbox.add_child(gold_data["container"])
 
 	res_hbox.add_child(_make_imperial_divider())
 
-	# 4. Favor Divino (✨)
-	var favor_data := _make_imperial_resource_item("res://assets/ui/icons/resources/olympus_res_resource_favor.png", "✨", "460")
+	# 4. Favor Divino (Escudo Grego HD)
+	var favor_data := _make_imperial_resource_item("res://assets/ui/icons/resources/olympus_res_resource_favor.png", "🛡️", "460")
 	_favor_lbl = favor_data["label"]
 	res_hbox.add_child(favor_data["container"])
 
 	res_hbox.add_child(_make_imperial_divider())
 
-	# 5. População (👥)
+	# 5. População (Guerreiros Espartanos HD)
 	var pop_data := _make_imperial_resource_item("res://assets/ui/icons/resources/olympus_res_resource_population.png", "👥", "85/120")
 	_pop_lbl = pop_data["label"]
 	res_hbox.add_child(pop_data["container"])
+
+	# 2. SEGUNDA LINHA: Opção de Era (Badge imperial abaixo dos recursos)
+	_build_imperial_age_badge(top_vbox)
+
+	# 3. TERCEIRA LINHA: Relógio de Partida (Abaixo de Era)
+	_build_imperial_match_timer(top_vbox)
+
+
+func _build_imperial_age_badge(parent: VBoxContainer) -> void:
+	var age_btn := Button.new()
+	age_btn.name = "ImperialAgeBtn"
+	age_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	age_btn.focus_mode = Control.FOCUS_NONE
+	age_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	age_btn.tooltip_text = "Toque para avançar de Era ou ver requisitos"
+	age_btn.pressed.connect(_on_age_badge_pressed)
+
+	var sb_age := StyleBoxFlat.new()
+	sb_age.bg_color = Color(0.06, 0.08, 0.14, 0.94)
+	sb_age.border_color = Color(0.85, 0.72, 0.32, 0.85)
+	sb_age.border_width_left = 2
+	sb_age.border_width_right = 2
+	sb_age.border_width_top = 1
+	sb_age.border_width_bottom = 2
+	sb_age.corner_radius_bottom_left = 6
+	sb_age.corner_radius_bottom_right = 6
+	sb_age.shadow_color = Color(0.0, 0.0, 0.0, 0.4)
+	sb_age.shadow_size = 3
+	age_btn.add_theme_stylebox_override("normal", sb_age)
+
+	var sb_hover := sb_age.duplicate() as StyleBoxFlat
+	sb_hover.bg_color = Color(0.10, 0.14, 0.24, 0.98)
+	sb_hover.border_color = Color(1.0, 0.88, 0.45, 1.0)
+	age_btn.add_theme_stylebox_override("hover", sb_hover)
+	age_btn.add_theme_stylebox_override("pressed", sb_age)
+	age_btn.add_theme_stylebox_override("focus", sb_age)
+	parent.add_child(age_btn)
+
+	var age_margin := MarginContainer.new()
+	age_margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	age_margin.add_theme_constant_override("margin_left", 14)
+	age_margin.add_theme_constant_override("margin_right", 14)
+	age_margin.add_theme_constant_override("margin_top", 2)
+	age_margin.add_theme_constant_override("margin_bottom", 2)
+	age_btn.add_child(age_margin)
+
+	var age_hbox := HBoxContainer.new()
+	age_hbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	age_hbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	age_hbox.add_theme_constant_override("separation", 6)
+	age_margin.add_child(age_hbox)
+
+	var cur_age_name: String = PantheonCatalog.get_age_name(GameState.current_age)
+	_age_lbl = Label.new()
+	_age_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_age_lbl.text = "🏛️ %s" % cur_age_name
+	_age_lbl.label_settings = OlympusTypography.get_label_settings(OlympusTypography.Style.HEADING, 12, Color("#fef3c7"), 1)
+	age_hbox.add_child(_age_lbl)
+
+	var advance_icon := Label.new()
+	advance_icon.name = "AdvanceIcon"
+	advance_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	advance_icon.text = "⚡"
+	advance_icon.add_theme_font_size_override("font_size", 11)
+	advance_icon.add_theme_color_override("font_color", Color("#fbbf24"))
+	age_hbox.add_child(advance_icon)
+
+
+func _on_age_badge_pressed() -> void:
+	if GameState.is_advancing_age:
+		GameState.notify("Já avançando para a próxima Era...", false)
+		return
+	if GameState.current_age >= 5:
+		GameState.notify("Era Máxima (Titânica) já alcançada!", false)
+		return
+	var target_age: int = GameState.current_age + 1
+	var cost: Dictionary = PantheonCatalog.get_age_cost(target_age)
+	var can_afford: bool = true
+	for r in cost.keys():
+		if int(GameState.resources.get(r, 0)) < int(cost[r]):
+			can_afford = false
+			break
+	if can_afford:
+		GameState.begin_age_advance()
+	else:
+		var reqs: Array[String] = []
+		for r in cost.keys():
+			reqs.append("%d %s" % [int(cost[r]), r.capitalize()])
+		GameState.notify("Avançar para %s requer: %s" % [PantheonCatalog.get_age_name(target_age), ", ".join(reqs)], true)
+
+
+func _build_imperial_match_timer(parent: VBoxContainer) -> void:
+	var timer_container := PanelContainer.new()
+	timer_container.name = "ImperialTimerContainer"
+	timer_container.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+
+	var sb_timer := StyleBoxFlat.new()
+	sb_timer.bg_color = Color(0.04, 0.06, 0.10, 0.88)
+	sb_timer.border_color = Color(0.72, 0.58, 0.22, 0.6)
+	sb_timer.border_width_left = 1
+	sb_timer.border_width_right = 1
+	sb_timer.border_width_bottom = 1
+	sb_timer.border_width_top = 0
+	sb_timer.corner_radius_bottom_left = 4
+	sb_timer.corner_radius_bottom_right = 4
+	timer_container.add_theme_stylebox_override("panel", sb_timer)
+	parent.add_child(timer_container)
+
+	var t_margin := MarginContainer.new()
+	t_margin.add_theme_constant_override("margin_left", 8)
+	t_margin.add_theme_constant_override("margin_right", 8)
+	t_margin.add_theme_constant_override("margin_top", 1)
+	t_margin.add_theme_constant_override("margin_bottom", 2)
+	timer_container.add_child(t_margin)
+
+	_match_time_lbl = Label.new()
+	_match_time_lbl.text = "⏱️ 00:00"
+	_match_time_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_match_time_lbl.label_settings = OlympusTypography.get_label_settings(OlympusTypography.Style.TACTICAL, 11, Color("#fde047"), 1)
+	t_margin.add_child(_match_time_lbl)
+
+
+func _update_match_time_display() -> void:
+	if _match_time_lbl == null:
+		return
+	var total_sec: int = int(_match_elapsed_seconds)
+	var mins: int = total_sec / 60
+	var secs: int = total_sec % 60
+	if mins >= 60:
+		var hours: int = mins / 60
+		mins = mins % 60
+		_match_time_lbl.text = "⏱️ %02d:%02d:%02d" % [hours, mins, secs]
+	else:
+		_match_time_lbl.text = "⏱️ %02d:%02d" % [mins, secs]
 
 
 func _make_tablet_wing(is_left: bool) -> Control:
@@ -444,14 +720,16 @@ func _make_imperial_resource_item(icon_path: String, fallback_emoji: String, ini
 		var tex: Texture2D = null
 		if ResourceLoader.exists(icon_path):
 			tex = load(icon_path) as Texture2D
-		elif FileAccess.file_exists(ProjectSettings.globalize_path(icon_path)):
-			var img := Image.new()
-			if img.load(ProjectSettings.globalize_path(icon_path)) == OK:
-				tex = ImageTexture.create_from_image(img)
+		if tex == null:
+			var global_p: String = ProjectSettings.globalize_path(icon_path)
+			if FileAccess.file_exists(global_p):
+				var img := Image.new()
+				if img.load(global_p) == OK:
+					tex = ImageTexture.create_from_image(img)
 		if tex != null:
 			var trect := TextureRect.new()
 			trect.texture = tex
-			trect.custom_minimum_size = Vector2(20.0, 20.0)
+			trect.custom_minimum_size = Vector2(24.0, 24.0)
 			trect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 			trect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 			item_hbox.add_child(trect)
@@ -1914,6 +2192,9 @@ func _promote_selected_units(units: Array) -> void:
 
 
 func _on_match_started(_player_pid: String, _enemy_pid: String) -> void:
+	_match_elapsed_seconds = 0.0
+	_match_timer_accum = 0.0
+	_update_match_time_display()
 	if _start_overlay != null:
 		_start_overlay.visible = false
 	_end_overlay.visible = false
@@ -2013,9 +2294,15 @@ func _on_titan_summoned(_faction: String, _pantheon: String, titan_name: String)
 	_rebuild_command_grid()
 
 
-func _on_age_advance_progress(active: bool, _target_age: int, ratio: float) -> void:
-	_age_progress_bar.visible = active
-	_age_progress_bar.value = ratio * 100.0
+func _on_age_advance_progress(active: bool, target_age: int, ratio: float) -> void:
+	if _age_progress_bar != null:
+		_age_progress_bar.visible = active
+		_age_progress_bar.value = ratio * 100.0
+	if _age_lbl != null:
+		if active:
+			_age_lbl.text = "🏛️ %s (%.0f%%)" % [PantheonCatalog.get_age_name(target_age), ratio * 100.0]
+		else:
+			_age_lbl.text = "🏛️ %s" % PantheonCatalog.get_age_name(GameState.current_age)
 	if not active:
 		_rebuild_command_grid()
 
