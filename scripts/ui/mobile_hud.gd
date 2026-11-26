@@ -31,6 +31,8 @@ var _audio_btn: Button
 var _priority_btn: Button
 
 var _power_bar_row: HBoxContainer
+var _power_bar_left: HBoxContainer
+var _power_bar_right: HBoxContainer
 var _power_buttons: Dictionary = {}
 var _campaign_panel: PanelContainer
 var _campaign_title_lbl: Label
@@ -450,25 +452,26 @@ func _make_menu_modal_btn(text: String, accent_color: Color) -> Button:
 
 
 func _build_imperial_resource_tablet() -> void:
-	# Container Principal Centralizado no Topo (Placa de Recursos + Era + Relógio de Partida)
+	# Container Principal Centralizado no Topo (Placa de Recursos + Sub-Barra: 2 Poderes | Relógio e Era | 2 Poderes)
 	var top_vbox := VBoxContainer.new()
 	top_vbox.name = "ImperialTopBarRoot"
 	top_vbox.anchor_left = 0.5
 	top_vbox.anchor_right = 0.5
 	top_vbox.anchor_top = 0.0
 	top_vbox.anchor_bottom = 0.0
-	top_vbox.offset_left = -330.0
-	top_vbox.offset_right = 330.0
-	top_vbox.offset_top = 0.0
+	top_vbox.offset_left = -275.0
+	top_vbox.offset_right = 275.0
+	top_vbox.offset_top = 4.0
 	top_vbox.grow_horizontal = Control.GROW_DIRECTION_BOTH
-	top_vbox.add_theme_constant_override("separation", 2)
+	top_vbox.add_theme_constant_override("separation", 3)
 	top_vbox.alignment = BoxContainer.ALIGNMENT_CENTER
 	add_child(top_vbox)
 
-	# 1. LINHA SUPERIOR: Placa Imperial de Recursos
+	# 1. LINHA SUPERIOR: Placa Imperial de Recursos (Compacta, Centralizada, Estilo Templo Clássico)
 	var tablet_h := HBoxContainer.new()
 	tablet_h.alignment = BoxContainer.ALIGNMENT_CENTER
 	tablet_h.add_theme_constant_override("separation", 0)
+	tablet_h.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	top_vbox.add_child(tablet_h)
 
 	# Asa Esquerda Dourada Escalada (ornamento estilo templo grego)
@@ -477,9 +480,6 @@ func _build_imperial_resource_tablet() -> void:
 
 	# Painel Central Imperial
 	var central_panel := PanelContainer.new()
-	central_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	central_panel.size_flags_vertical = Control.SIZE_FILL
-
 	var sb_tablet := StyleBoxFlat.new()
 	sb_tablet.bg_color = Color(0.06, 0.08, 0.12, 0.94)
 	sb_tablet.border_color = Color(0.85, 0.72, 0.32, 1.0) # Borda ouro imperial
@@ -488,7 +488,7 @@ func _build_imperial_resource_tablet() -> void:
 	sb_tablet.border_width_left = 0
 	sb_tablet.border_width_right = 0
 	sb_tablet.shadow_color = Color(0.0, 0.0, 0.0, 0.55)
-	sb_tablet.shadow_size = 6
+	sb_tablet.shadow_size = 4
 	sb_tablet.shadow_offset = Vector2(0.0, 2.0)
 	central_panel.add_theme_stylebox_override("panel", sb_tablet)
 	tablet_h.add_child(central_panel)
@@ -499,15 +499,15 @@ func _build_imperial_resource_tablet() -> void:
 
 	# Margem e conteúdo dos recursos
 	var margin := MarginContainer.new()
-	margin.add_theme_constant_override("margin_left", 14)
-	margin.add_theme_constant_override("margin_right", 14)
-	margin.add_theme_constant_override("margin_top", 4)
-	margin.add_theme_constant_override("margin_bottom", 4)
+	margin.add_theme_constant_override("margin_left", 12)
+	margin.add_theme_constant_override("margin_right", 12)
+	margin.add_theme_constant_override("margin_top", 3)
+	margin.add_theme_constant_override("margin_bottom", 3)
 	central_panel.add_child(margin)
 
 	var res_hbox := HBoxContainer.new()
 	res_hbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	res_hbox.add_theme_constant_override("separation", 12)
+	res_hbox.add_theme_constant_override("separation", 10)
 	margin.add_child(res_hbox)
 
 	# 1. Alimento (Carne HD)
@@ -543,71 +543,100 @@ func _build_imperial_resource_tablet() -> void:
 	_pop_lbl = pop_data["label"]
 	res_hbox.add_child(pop_data["container"])
 
-	# 2. SEGUNDA LINHA: Opção de Era (Badge imperial abaixo dos recursos)
-	_build_imperial_age_badge(top_vbox)
+	# 2. SEGUNDA LINHA: 2 Poderes na Esquerda | Relógio e Seletor de Era no Meio | 2 Poderes na Direita
+	var sub_row := HBoxContainer.new()
+	sub_row.name = "ImperialSubRow"
+	sub_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	sub_row.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	sub_row.add_theme_constant_override("separation", 6)
+	top_vbox.add_child(sub_row)
 
-	# 3. TERCEIRA LINHA: Relógio de Partida (Abaixo de Era)
-	_build_imperial_match_timer(top_vbox)
+	# Bloco Esquerdo: 2 Poderes Divinos (Era 1 e Era 2)
+	_power_bar_left = HBoxContainer.new()
+	_power_bar_left.name = "PowerBarLeft"
+	_power_bar_left.alignment = BoxContainer.ALIGNMENT_CENTER
+	_power_bar_left.add_theme_constant_override("separation", 4)
+	sub_row.add_child(_power_bar_left)
+
+	# Bloco Central: Emblema com Era e Relógio de Partida
+	var center_badge := _build_center_era_and_clock_badge()
+	sub_row.add_child(center_badge)
+
+	# Bloco Direito: 2 Poderes Divinos (Era 3 e Era 4)
+	_power_bar_right = HBoxContainer.new()
+	_power_bar_right.name = "PowerBarRight"
+	_power_bar_right.alignment = BoxContainer.ALIGNMENT_CENTER
+	_power_bar_right.add_theme_constant_override("separation", 4)
+	sub_row.add_child(_power_bar_right)
 
 
-func _build_imperial_age_badge(parent: VBoxContainer) -> void:
+func _build_center_era_and_clock_badge() -> PanelContainer:
+	var panel := PanelContainer.new()
+	panel.name = "CenterEraClockBadge"
+	panel.custom_minimum_size = Vector2(200.0, 36.0)
+
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0.05, 0.07, 0.12, 0.94)
+	sb.border_color = Color(0.85, 0.72, 0.32, 0.90)
+	sb.border_width_left = 1
+	sb.border_width_right = 1
+	sb.border_width_top = 1
+	sb.border_width_bottom = 2
+	sb.set_corner_radius_all(6)
+	sb.shadow_color = Color(0.0, 0.0, 0.0, 0.4)
+	sb.shadow_size = 4
+	panel.add_theme_stylebox_override("panel", sb)
+
+	var m := MarginContainer.new()
+	m.add_theme_constant_override("margin_left", 8)
+	m.add_theme_constant_override("margin_right", 8)
+	m.add_theme_constant_override("margin_top", 2)
+	m.add_theme_constant_override("margin_bottom", 2)
+	panel.add_child(m)
+
+	var hbox := HBoxContainer.new()
+	hbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	hbox.add_theme_constant_override("separation", 8)
+	m.add_child(hbox)
+
+	# Botão de Era (interativo)
 	var age_btn := Button.new()
 	age_btn.name = "ImperialAgeBtn"
-	age_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	age_btn.focus_mode = Control.FOCUS_NONE
+	age_btn.flat = true
 	age_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	age_btn.tooltip_text = "Toque para avançar de Era ou ver requisitos"
+	age_btn.custom_minimum_size = Vector2(116.0, 30.0)
 	age_btn.pressed.connect(_on_age_badge_pressed)
-
-	var sb_age := StyleBoxFlat.new()
-	sb_age.bg_color = Color(0.06, 0.08, 0.14, 0.94)
-	sb_age.border_color = Color(0.85, 0.72, 0.32, 0.85)
-	sb_age.border_width_left = 2
-	sb_age.border_width_right = 2
-	sb_age.border_width_top = 1
-	sb_age.border_width_bottom = 2
-	sb_age.corner_radius_bottom_left = 6
-	sb_age.corner_radius_bottom_right = 6
-	sb_age.shadow_color = Color(0.0, 0.0, 0.0, 0.4)
-	sb_age.shadow_size = 3
-	age_btn.add_theme_stylebox_override("normal", sb_age)
-
-	var sb_hover := sb_age.duplicate() as StyleBoxFlat
-	sb_hover.bg_color = Color(0.10, 0.14, 0.24, 0.98)
-	sb_hover.border_color = Color(1.0, 0.88, 0.45, 1.0)
-	age_btn.add_theme_stylebox_override("hover", sb_hover)
-	age_btn.add_theme_stylebox_override("pressed", sb_age)
-	age_btn.add_theme_stylebox_override("focus", sb_age)
-	parent.add_child(age_btn)
-
-	var age_margin := MarginContainer.new()
-	age_margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	age_margin.add_theme_constant_override("margin_left", 14)
-	age_margin.add_theme_constant_override("margin_right", 14)
-	age_margin.add_theme_constant_override("margin_top", 2)
-	age_margin.add_theme_constant_override("margin_bottom", 2)
-	age_btn.add_child(age_margin)
-
-	var age_hbox := HBoxContainer.new()
-	age_hbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	age_hbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	age_hbox.add_theme_constant_override("separation", 6)
-	age_margin.add_child(age_hbox)
 
 	var cur_age_name: String = PantheonCatalog.get_age_name(GameState.current_age)
 	_age_lbl = Label.new()
 	_age_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_age_lbl.text = "🏛️ %s" % cur_age_name
-	_age_lbl.label_settings = OlympusTypography.get_label_settings(OlympusTypography.Style.HEADING, 12, Color("#fef3c7"), 1)
-	age_hbox.add_child(_age_lbl)
+	_age_lbl.text = "🏛️ %s ⚡" % cur_age_name
+	_age_lbl.label_settings = OlympusTypography.get_label_settings(OlympusTypography.Style.HEADING, 11, Color("#fef3c7"), 1)
+	_age_lbl.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_age_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_age_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_age_lbl.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	age_btn.add_child(_age_lbl)
+	hbox.add_child(age_btn)
 
-	var advance_icon := Label.new()
-	advance_icon.name = "AdvanceIcon"
-	advance_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	advance_icon.text = "⚡"
-	advance_icon.add_theme_font_size_override("font_size", 11)
-	advance_icon.add_theme_color_override("font_color", Color("#fbbf24"))
-	age_hbox.add_child(advance_icon)
+	# Divisor vertical dourado
+	var sep := Label.new()
+	sep.text = "|"
+	sep.add_theme_color_override("font_color", Color(0.85, 0.72, 0.32, 0.4))
+	sep.add_theme_font_size_override("font_size", 12)
+	sep.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	hbox.add_child(sep)
+
+	# Relógio de Partida
+	_match_time_lbl = Label.new()
+	_match_time_lbl.name = "ImperialMatchTimeLbl"
+	_match_time_lbl.text = "⏱️ 00:00"
+	_match_time_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_match_time_lbl.label_settings = OlympusTypography.get_label_settings(OlympusTypography.Style.TACTICAL, 11, Color("#fde047"), 1)
+	hbox.add_child(_match_time_lbl)
+
+	return panel
 
 
 func _on_age_badge_pressed() -> void:
@@ -633,37 +662,6 @@ func _on_age_badge_pressed() -> void:
 		GameState.notify("Avançar para %s requer: %s" % [PantheonCatalog.get_age_name(target_age), ", ".join(reqs)], true)
 
 
-func _build_imperial_match_timer(parent: VBoxContainer) -> void:
-	var timer_container := PanelContainer.new()
-	timer_container.name = "ImperialTimerContainer"
-	timer_container.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-
-	var sb_timer := StyleBoxFlat.new()
-	sb_timer.bg_color = Color(0.04, 0.06, 0.10, 0.88)
-	sb_timer.border_color = Color(0.72, 0.58, 0.22, 0.6)
-	sb_timer.border_width_left = 1
-	sb_timer.border_width_right = 1
-	sb_timer.border_width_bottom = 1
-	sb_timer.border_width_top = 0
-	sb_timer.corner_radius_bottom_left = 4
-	sb_timer.corner_radius_bottom_right = 4
-	timer_container.add_theme_stylebox_override("panel", sb_timer)
-	parent.add_child(timer_container)
-
-	var t_margin := MarginContainer.new()
-	t_margin.add_theme_constant_override("margin_left", 8)
-	t_margin.add_theme_constant_override("margin_right", 8)
-	t_margin.add_theme_constant_override("margin_top", 1)
-	t_margin.add_theme_constant_override("margin_bottom", 2)
-	timer_container.add_child(t_margin)
-
-	_match_time_lbl = Label.new()
-	_match_time_lbl.text = "⏱️ 00:00"
-	_match_time_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_match_time_lbl.label_settings = OlympusTypography.get_label_settings(OlympusTypography.Style.TACTICAL, 11, Color("#fde047"), 1)
-	t_margin.add_child(_match_time_lbl)
-
-
 func _update_match_time_display() -> void:
 	if _match_time_lbl == null:
 		return
@@ -680,7 +678,7 @@ func _update_match_time_display() -> void:
 
 func _make_tablet_wing(is_left: bool) -> Control:
 	var wing := Panel.new()
-	wing.custom_minimum_size = Vector2(24.0, 38.0)
+	wing.custom_minimum_size = Vector2(16.0, 36.0)
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = Color(0.72, 0.58, 0.22, 0.95) # Bronze/ouro antigo metálico
 	sb.border_color = Color(0.92, 0.82, 0.45, 1.0) # Borda ouro brilhante
@@ -697,39 +695,30 @@ func _make_tablet_wing(is_left: bool) -> Control:
 		sb.corner_radius_top_right = 6
 		sb.corner_radius_bottom_right = 2
 	wing.add_theme_stylebox_override("panel", sb)
-
-	var ranhuras := Label.new()
-	ranhuras.text = "≡"
-	ranhuras.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	ranhuras.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	ranhuras.set_anchors_preset(Control.PRESET_FULL_RECT)
-	ranhuras.add_theme_font_size_override("font_size", 16)
-	ranhuras.add_theme_color_override("font_color", Color(0.35, 0.25, 0.08, 0.8))
-	wing.add_child(ranhuras)
-
 	return wing
 
 
 func _make_imperial_resource_item(icon_path: String, fallback_emoji: String, initial_val: String) -> Dictionary:
 	var item_hbox := HBoxContainer.new()
 	item_hbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	item_hbox.add_theme_constant_override("separation", 6)
+	item_hbox.add_theme_constant_override("separation", 5)
 
 	var icon_loaded: bool = false
 	if not icon_path.is_empty():
 		var tex: Texture2D = null
-		if ResourceLoader.exists(icon_path):
+		# Carregamento direto de alta fidelidade: ignora .ctex corrompido ou desatualizado
+		var global_p: String = ProjectSettings.globalize_path(icon_path)
+		if FileAccess.file_exists(global_p):
+			var img := Image.load_from_file(global_p)
+			if img != null and not img.is_empty():
+				tex = ImageTexture.create_from_image(img)
+		if tex == null and ResourceLoader.exists(icon_path):
 			tex = load(icon_path) as Texture2D
-		if tex == null:
-			var global_p: String = ProjectSettings.globalize_path(icon_path)
-			if FileAccess.file_exists(global_p):
-				var img := Image.new()
-				if img.load(global_p) == OK:
-					tex = ImageTexture.create_from_image(img)
+
 		if tex != null:
 			var trect := TextureRect.new()
 			trect.texture = tex
-			trect.custom_minimum_size = Vector2(24.0, 24.0)
+			trect.custom_minimum_size = Vector2(22.0, 22.0)
 			trect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 			trect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 			item_hbox.add_child(trect)
@@ -743,7 +732,7 @@ func _make_imperial_resource_item(icon_path: String, fallback_emoji: String, ini
 
 	var val_lbl := Label.new()
 	val_lbl.text = initial_val
-	val_lbl.label_settings = OlympusTypography.get_label_settings(OlympusTypography.Style.RESOURCE_VALUE, 14, Color("#fef3c7"), 2)
+	val_lbl.label_settings = OlympusTypography.get_label_settings(OlympusTypography.Style.RESOURCE_VALUE, 13, Color("#fef3c7"), 2)
 	item_hbox.add_child(val_lbl)
 
 	return {"container": item_hbox, "label": val_lbl}
@@ -795,55 +784,57 @@ func _on_cycle_gfx_preset_pressed() -> void:
 
 
 func _build_divine_power_bar() -> void:
-	var panel := PanelContainer.new()
-	panel.anchor_left = 0.0
-	panel.anchor_right = 0.0
-	panel.anchor_top = 0.0
-	panel.anchor_bottom = 0.0
-	panel.offset_left = 14.0
-	panel.offset_right = 562.0
-	panel.offset_top = 60.0
-	panel.offset_bottom = 118.0
-	panel.add_theme_stylebox_override("panel", _make_panel_style(Color(0.05, 0.07, 0.11, 0.86), 8))
-	add_child(panel)
-
-	var margin := MarginContainer.new()
-	margin.add_theme_constant_override("margin_left", 6)
-	margin.add_theme_constant_override("margin_right", 6)
-	margin.add_theme_constant_override("margin_top", 5)
-	margin.add_theme_constant_override("margin_bottom", 5)
-	panel.add_child(margin)
-
-	_power_bar_row = HBoxContainer.new()
-	_power_bar_row.add_theme_constant_override("separation", 6)
-	margin.add_child(_power_bar_row)
+	# A barra de poderes divinos agora é integrada diretamente na Top Bar (2 à esquerda, Relógio e Era no centro, 2 à direita)
+	_rebuild_divine_power_bar()
 
 
 func _rebuild_divine_power_bar() -> void:
-	for child in _power_bar_row.get_children():
+	if _power_bar_left == null or _power_bar_right == null:
+		return
+	for child in _power_bar_left.get_children():
+		child.queue_free()
+	for child in _power_bar_right.get_children():
 		child.queue_free()
 	_power_buttons.clear()
 
 	var pids: Array[String] = DivinePowerCatalog.get_canonical_hud_powers(GameState.active_pantheon)
 	if GameState.is_wonder_age and not pids.has("titangate"):
 		pids.append("titangate")
-	for pid in pids:
+
+	for i in range(pids.size()):
+		var pid: String = pids[i]
 		var spec: Dictionary = DivinePowerCatalog.get_power(pid)
 		if spec.is_empty():
 			continue
-		var btn := _make_action_button("%s\n%dF" % [spec.get("short", pid), int(spec.get("favor_cost", 0))], false, 84.0, 46.0)
-		btn.pressed.connect(func() -> void:
-			if _power_system != null:
-				_power_system.request_power(pid)
-		)
-		_power_bar_row.add_child(btn)
+		var btn := _make_divine_power_button(pid, spec)
 		_power_buttons[pid] = btn
+		if i < 2:
+			_power_bar_left.add_child(btn)
+		else:
+			_power_bar_right.add_child(btn)
+
 	_refresh_power_buttons_state()
+
+
+func _make_divine_power_button(pid: String, _spec: Dictionary) -> Button:
+	var btn := Button.new()
+	btn.name = "PowerBtn_" + pid
+	btn.custom_minimum_size = Vector2(74.0, 36.0)
+	btn.focus_mode = Control.FOCUS_NONE
+	btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	btn.add_theme_font_size_override("font_size", 10)
+	btn.pressed.connect(func() -> void:
+		if _power_system != null:
+			_power_system.request_power(pid)
+	)
+	return btn
 
 
 func _refresh_power_buttons_state() -> void:
 	for pid in _power_buttons.keys():
 		var btn: Button = _power_buttons[pid]
+		if not is_instance_valid(btn):
+			continue
 		var spec: Dictionary = DivinePowerCatalog.get_power(pid)
 		if spec.is_empty():
 			continue
@@ -853,20 +844,52 @@ func _refresh_power_buttons_state() -> void:
 		var cost: int = int(_power_system.get_effective_favor_cost(pid)) if (_power_system != null and _power_system.has_method("get_effective_favor_cost")) else int(spec.get("favor_cost", 0))
 		var is_targeted: bool = GameState.pending_power_id == pid
 		var can_afford: bool = GameState.can_afford({"favor": float(cost)})
+
+		var short_name: String = String(spec.get("short", pid))
+		var sb := StyleBoxFlat.new()
+		sb.set_corner_radius_all(5)
+
 		if GameState.current_age < req_age:
-			btn.text = "%s\n[Era %d]" % [spec["short"], req_age]
+			btn.text = "%s\n[Era %d]" % [short_name, req_age]
 			btn.disabled = true
+			sb.bg_color = Color(0.04, 0.06, 0.10, 0.70)
+			sb.border_color = Color(0.25, 0.30, 0.38, 0.40)
+			sb.set_border_width_all(1)
+			btn.add_theme_color_override("font_color", Color(0.55, 0.60, 0.68, 0.60))
+			btn.add_theme_color_override("font_disabled_color", Color(0.55, 0.60, 0.68, 0.60))
 		elif cd > 0.0:
-			btn.text = "%s\n%.0fs" % [spec["short"], cd]
+			btn.text = "%s\n%.0fs" % [short_name, cd]
 			btn.disabled = true
+			sb.bg_color = Color(0.03, 0.08, 0.14, 0.85)
+			sb.border_color = Color(0.22, 0.74, 0.97, 0.70)
+			sb.set_border_width_all(1)
+			btn.add_theme_color_override("font_color", Color("#38bdf8"))
+			btn.add_theme_color_override("font_disabled_color", Color("#38bdf8"))
 		else:
-			var label_txt: String = "%s\n%dF" % [spec["short"], cost]
+			var label_txt: String = "%s\n%dF" % [short_name, cost]
 			if casts > 0:
-				label_txt = "%s +%d\n%dF" % [spec["short"], casts, cost]
+				label_txt = "%s +%d\n%dF" % [short_name, casts, cost]
 			btn.text = label_txt
 			btn.disabled = not can_afford
-		btn.add_theme_stylebox_override("normal", _make_btn_style(is_targeted))
-		btn.add_theme_color_override("font_color", Color("#0d121c") if is_targeted else Color("#f1f5f9"))
+			btn.add_theme_color_override("font_disabled_color", Color(0.65, 0.65, 0.65, 0.55))
+
+			if is_targeted:
+				sb.bg_color = Color(0.85, 0.72, 0.32, 0.95)
+				sb.border_color = Color(1.0, 1.0, 1.0, 1.0)
+				sb.set_border_width_all(2)
+				btn.add_theme_color_override("font_color", Color("#0d121c"))
+			else:
+				sb.bg_color = Color(0.06, 0.09, 0.15, 0.92)
+				sb.border_color = Color(0.85, 0.72, 0.32, 0.80) if can_afford else Color(0.40, 0.35, 0.25, 0.50)
+				sb.set_border_width_all(1)
+				btn.add_theme_color_override("font_color", Color("#fef3c7") if can_afford else Color(0.7, 0.7, 0.7, 0.6))
+
+		btn.add_theme_stylebox_override("normal", sb)
+		var sb_hover := sb.duplicate() as StyleBoxFlat
+		sb_hover.border_color = Color(1.0, 0.9, 0.45, 1.0)
+		btn.add_theme_stylebox_override("hover", sb_hover)
+		btn.add_theme_stylebox_override("pressed", sb)
+		btn.add_theme_stylebox_override("disabled", sb)
 
 
 func _build_campaign_objectives_panel() -> void:
@@ -2274,7 +2297,7 @@ func _on_age_changed(new_age: int) -> void:
 		if GameState.is_wonder_age:
 			_age_lbl.text = "🌟 Era da Maravilha"
 		else:
-			_age_lbl.text = "🏛️ %s" % PantheonCatalog.get_age_name(new_age)
+			_age_lbl.text = "🏛️ %s ⚡" % PantheonCatalog.get_age_name(new_age)
 	_refresh_power_buttons_state()
 	_rebuild_command_grid()
 	if new_age >= 5:
@@ -2302,7 +2325,7 @@ func _on_age_advance_progress(active: bool, target_age: int, ratio: float) -> vo
 		if active:
 			_age_lbl.text = "🏛️ %s (%.0f%%)" % [PantheonCatalog.get_age_name(target_age), ratio * 100.0]
 		else:
-			_age_lbl.text = "🏛️ %s" % PantheonCatalog.get_age_name(GameState.current_age)
+			_age_lbl.text = "🏛️ %s ⚡" % PantheonCatalog.get_age_name(GameState.current_age)
 	if not active:
 		_rebuild_command_grid()
 
