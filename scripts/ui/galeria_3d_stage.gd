@@ -195,7 +195,7 @@ func set_auto_orbit(enabled: bool) -> void:
 	if enabled:
 		_orbit_angle_y = deg_to_rad(_camera_angle_y)
 
-func set_focus_mode(enabled: bool) -> void:
+func set_camera_focus_mode(enabled: bool) -> void:
 	_is_focus_mode = enabled
 	_update_camera()
 

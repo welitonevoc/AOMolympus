@@ -66,7 +66,7 @@ func _ready() -> void:
 	if _panel_sem_modelo != null:
 		_panel_sem_modelo.visible = false
 	if stage_3d != null:
-		stage_3d.call("set_focus_mode", false)
+		stage_3d.call("set_camera_focus_mode", false)
 
 func _connect_signals() -> void:
 	# FilterBar -> item_selected
@@ -177,8 +177,8 @@ func _on_camera_changed(position: Vector3, target: Vector3) -> void:
 func set_auto_orbit(enabled: bool) -> void:
 	stage_3d.call("set_auto_orbit", enabled)
 
-func set_focus_mode(enabled: bool) -> void:
-	stage_3d.call("set_focus_mode", enabled)
+func set_camera_focus_mode(enabled: bool) -> void:
+	stage_3d.call("set_camera_focus_mode", enabled)
 
 func adjust_camera_distance(delta: float) -> void:
 	stage_3d.call("adjust_camera_distance", delta)
