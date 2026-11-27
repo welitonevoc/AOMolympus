@@ -1,0 +1,38 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Frameset//EN">
+<html>
+	<head>
+		<meta name="vs_targetSchema" content="http://schemas.microsoft.com/intellisense/ie5">
+		<link rel="stylesheet" href="stylesheet.css">
+	</head>
+	<body bottomMargin="10" topMargin="10">
+		<H2>
+			&nbsp;</H2>
+		<H2>Placement Order</H2>
+		<P>&nbsp;</P>
+		<P>
+			Terrain&nbsp;and objects on maps are placed by Age of Mythology in a specific 
+			order. It's important to keep this in mind when you are creating constraints - 
+			objects cannot avoid things that haven't been placed yet. The placement order 
+			is as follows:</P>
+		<OL>
+			<LI>
+				The map starts covered with the default terrain&nbsp;set in the&nbsp;<A href="globalSettings.html">global 
+					options</A>.
+			<LI>
+				The area terrain of each <A href="classProperties.html">grid square class</A> is 
+				placed as specifid by the <A href="mapGridLayout.html">grid layout</A>.
+			<LI>
+			Small player islands are created if the players start on water, and Town 
+			Centers or starting villagers/units are placed on these.
+			<LI>
+				<A href="subAreas.html">Sub-areas</A>
+			of all classes are placed, in the order they are listed within each class.
+			<LI>
+				<A href="objectGroups.html">Object groups</A>
+			of all classes are placed, in the order they are listed within each class.
+			<LI>
+				Towers are placed if the players are to start with town centers and towers.</LI>
+		</OL>
+		<P>&nbsp;</P>
+	</body>
+</html>

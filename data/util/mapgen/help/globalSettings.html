@@ -1,0 +1,83 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Frameset//EN">
+<html>
+	<head>
+		<meta name="vs_targetSchema" content="http://schemas.microsoft.com/intellisense/ie5">
+		<link rel="stylesheet" href="stylesheet.css">
+	</head>
+	<body bottomMargin="10" topMargin="10">
+		<H2>
+			&nbsp;</H2>
+		<H2>Global Settings</H2>
+		<P>&nbsp;</P>
+		<P>You can&nbsp;choose global settings for your map in the panel below the map 
+			filename. The following settings are available:</P>
+		<P><STRONG>Map Name</STRONG> - The name your map will have on the list of&nbsp;map 
+			types&nbsp;in Age of Mythology.</P>
+		<P><STRONG>Map Icon</STRONG> - The image displayed for your map in the list of maps 
+			in AoM. You can choose the image of one of the standard maps, or a god or 
+			civilization icon, as well as several other icons. If you want to use a texture 
+			that is not listed in this dropdown, just type it in. You can 
+			use&nbsp;custom-made 256x256&nbsp;TGA or DDT&nbsp;image&nbsp;files&nbsp;from 
+			the Age of Mythology\texture folder for map icons, but be aware that these will 
+			not transfer over multiplayer with your map. You can also use any texture in 
+			Age of Mythology, if you know its name, though textures that are not 256x256 
+			may not look as good in the list.</P>
+		<P><STRONG>Map Description</STRONG> - A short text that will appear in the help 
+			area in the Age of Mythology map selection screen when the mouse is hovered 
+			over your map. For example, "Mediterranean: Fight over the rich fishing in the 
+			central sea or attack your enemy on both sides by land." This text must not 
+			contain the '<STRONG>&gt;</STRONG>', '<STRONG>&lt;</STRONG>' or '<STRONG>"</STRONG>' 
+			(quote) symbols.</P>
+		<P><STRONG>Starting Units</STRONG> - Choose what the players will each start with. 
+			The following choices are available:</P>
+		<UL>
+			<LI>
+				<EM>Units and Transport</EM>
+			- This is the recommended choice for multiplayer games. It is similar to the 
+			"Nomad" random map type.&nbsp;Players will start with some villagers/dwarves as 
+			well as 3 Ulfsarks, Ox Cart, Pharaoh, Priest and/or Hyena of Set 
+			depending&nbsp;on their major god choice, and also with enough resources to 
+			build a first Town Center on a Settlement. If players are surrounded by water, 
+			they will start on an island with a Transport as well as the above 
+			units.&nbsp;There will be a 3-minute Ceasefire during which build rates are 
+			sped up but players cannot cast god powers or attack each other, to give 
+			everyone a chance to get settled. Then the game will run as usual. Note that 
+			computer players may not know how to&nbsp;play in this mode, unless you are 
+			using a specially made AI script.
+			<LI>
+				<EM>Town Center Only</EM>&nbsp;- Players get a Town Center and the starting 
+			units for their civilization. They will have to build up and look for resources 
+			like in a standard Random Map game. This mode is useful if you want to play 
+			against computer players.
+			<LI>
+				<EM>Town Center and Towers</EM> - Players get 4 Sentry Towers as well as a Town 
+				Center and their starting units.</LI></UL>
+		<P><STRONG>Default Terrain</STRONG> - The type of terrain placed on the map before 
+			it is painted with your grid square classes, or "Water" to start the map with 
+			water. In general, you should not leave any space on the grid layout black, and 
+			the default terrain should not matter.</P>
+		<P><STRONG>Default&nbsp;Water Type</STRONG>&nbsp;- The type of water the map is 
+			based on. This will affect how&nbsp;shorelines are painted. It should be the 
+			same as the main kind of&nbsp;waterbody&nbsp;you use on your map.</P>
+		<P><STRONG>World Lighting Set</STRONG>&nbsp;- The lighting set (sun position, sun 
+			color, sun brightness, etc) used for your map. In general, Default is the best 
+			choice, but sometimes a slightly moodier set like Alfheim or Erebus can be 
+			useful. You can also type in the name of a custom lighting set, but these don't 
+			transfer over multiplayer along with your map.</P>
+		<P><STRONG>Tiles Per Player (Normal)</STRONG>&nbsp;- Determines the map size for 
+			Normal sized maps. Note that Gaia, the "world player", is counted as a player 
+			here, to make sure there is extra space on smaller maps. The map will contain 
+			TilesPerPlayer x (NumberOfPlayers + 1) x RandomMultiplier tiles, where 
+			RandomMultiplier is between 95% and 105% to add variance. It is recommended 
+			that you use around 9,000 tiles per player on most maps, but you might need 
+			more on water maps with little land area to build on.</P>
+		<P><STRONG>Tiles Per Player (Large)</STRONG>&nbsp;- Same as above, for the Large 
+			map size.</P>
+		<P><STRONG>Day/Night Cycle Time</STRONG>&nbsp;- MapGen can add triggers to your map 
+			to change lighting for day and night. Type in the time, in seconds, of the 
+			day-night cycle animation you want, or "0" (zero)&nbsp;for no day/night cycle. 
+			A good choice is anywhere between 240 and 420 (4 to&nbsp;7 minutes). The 
+			cycle&nbsp;time is split&nbsp;up as follows: 45% day, 11% dusk, 33% night, 11% 
+			dawn, repeat. The lighting fades smoothly between these different periods.</P>
+	</body>
+</html>

@@ -1,0 +1,61 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Frameset//EN">
+<html>
+	<head>
+		<meta name="vs_targetSchema" content="http://schemas.microsoft.com/intellisense/ie5">
+		<link rel="stylesheet" href="stylesheet.css">
+	</head>
+	<body bottomMargin="10" topMargin="10">
+		<H2>
+			&nbsp;</H2>
+		<H2>About Constraints</H2>
+		<P>&nbsp;</P>
+		<P>
+			Constraints are critical for making sure your object groups and sub-areas 
+			aren't placed in the wrong spot. For example, you don't want a relic in the 
+			middle of a forest sub-area, or a cliffy hill overlapping a lake, or two 
+			settlements clumped together. Constraining where&nbsp;resources 
+			and&nbsp;obstacles&nbsp;are placed makes maps fairer and more playable. 
+			Constraints can be used for both <A href="subAreas.html">sub-areas</A> and <A href="objectGroups.html">
+				object groups</A> within a grid square class. Even though object groups and 
+			sub-areas are only placed in the class you created them in, their constraints 
+			will keep them away from items in other areas of the map too; for example, you 
+			can make all Settlements in all areas avoid Settlement objects by 40 tiles. 
+			This ensures that the map is fair throughout.</P>
+		<P>Note that Constraints only apply in relation to objects and terrains&nbsp;that 
+			have already been placed on the map. Read the <A href="placementOrder.html">Placement 
+				Order section</A> for information on how map features are generated.</P>
+		<P>Each Constraint has a <EM>constraint type</EM>, a <EM>distance</EM> in tiles, 
+			and a <EM>name</EM> of objects/terrains to avoid or stay near to. Here's what 
+			the different constraint types do:
+		</P>
+		<UL>
+			<LI>
+				<EM>AvoidSubArea</EM>: Enter the name of a sub-area within the same class 
+			and the item placed will stay away from it.
+			<LI>
+				<EM>AvoidObjectType</EM>: Enter the proto-name of an object or a generic 
+			name such as "Gold" or&nbsp;"Herdable"&nbsp;(use the drop-down list for help), 
+			and the item will stay away from it.
+			<LI>
+				<EM>AvoidPassableTerrain</EM>: Stay away from passable land or water (use 
+			the "name" property to choose which). For example, you want fish to stay away 
+			from passable land.
+			<LI>
+				<EM>AvoidImpassableTerrain</EM>: Stay away from impassable land or water 
+			(use the "name" property to choose which). For example, you may want 
+			Settlements to stay away from impassable land.
+			<LI>
+				<EM>NearPassableTerrain</EM>: Stay within a distance of passable water or 
+			land. For example, you may want crocodiles to be placed near the beach of a 
+			"watering hole".
+			<LI>
+				<EM>NearImpassableTerrain</EM>: Stay within a distance of impassable water or 
+				land. For example, you may want gold mines to be placed near cliff-sides in a 
+				mountainous area.</LI></UL>
+		<P>Note that often it's best to use several constraints on the same object group or 
+			sub-area. The ones you generally want are to avoid objects/sub-areas of the 
+			same type by about 15 tiles, to avoid "all" objects by&nbsp;about 3 tiles, and 
+			to avoid impassable land by 3 or so&nbsp;tiles.</P>
+		<P>&nbsp;</P>
+	</body>
+</html>

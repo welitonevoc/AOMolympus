@@ -1,0 +1,38 @@
+What started as mostly moving around technologies so that everything "felt" better turned into an enormous balance patch that touches almost every aspect of the game.
+
+Some of my favorite highlights are as follows as it's become a lot to take in all at once, while full patch notes are in the Discussions section:
+
+- House population increased to allow for games with bigger armies - 200 population with 2 expansions.
+- Tower damage was buffed across the board, and Masons/Architects improve Hack Armor. Rushing strategies should feel weaker and less required.
+- Hydras and trolls regenerate naturally.
+- Loki can combine Skadi and Hel to get Frost Giants of Thyrm with Granite Blood.
+- Priests benefit from many of the slinger or pharaoh technologies, enabling a full priest army if you invest enough as Isis.
+- Locust Swarm, Meteor, Tornado, Lightning Storm, Nidhogg, and many more of the coolest yet weakest god powers got buffed.
+- Athena gets Athenian Wall instead of Hera. This has to be the most feel-good change here.
+
+Hetairoi - Increased speed to be the same as upgraded centaurs, and gain a damage bonus vs infantry and cavalry, while armor was reduced.
+These were the shock troops of Macedonia, equivalent to the Marines in the modern US army.
+They now hit hard and fast, as opposed to the tankier Hippikons, but must be especially wary of archer and building attacks.
+Like Zeus' and Hades' unique units, Poseidon's is now effective when massed against many compositions, though it does have its counters.
+
+Avengers - Lowered cooldown of special attack so that they do it about once every third hit, and increased their pierce armor to equal their hack armor.
+Avengers inspired awe in me when I first saw them. In reality, they did less damage than most other RANGED AoE myth units.
+They still lose 1v1 to a Chimera, but their ommnidirectional AoE is perfect in the situation where they get surrounded by melee units.
+My goal with Avengers is that when you get your free one, you want to take it for a spin, like a new Corvette, and it actually follows through with the horsepower. Avengers are now Corvettes.
+
+Fimbulwinter - The number of wolves and duration were massively increased. In addition, they and Fenris wolves deal full damage to heroes.
+Fenrir in legend was capable of maiming or slaying gods, one of the few monsters who could. This now translates into the game.
+From a balance perspective, Fimbulwinter was pretty much worse than Eclipse, a Classical age power.
+It now does what it was supposed to do, giving you a good amount of extra troops for an attack on the main, or taking out undefended settlements by itself. Or both!
+
+Fanatics - Atlanteans, economically, are the race which costs double yet is twice as strong. I tried my best to let that feeling carry over to their military, especially Palace units.
+I was so disappointed once I got to Mythic Age for the first time as Atlanteans, and found their units to be about as good as everyone else's.
+Fanatics are now the only human unit to cost favor. It makes sense if you look at their name. And boy, do they hurt.
+The fully upgraded hero version can get over 30 damage, but is also the only human unit in the game to cost 6 population. Costs double, twice as strong. Living the Atlantean dream.
+
+Every Chinese myth unit - Well, let's be honest, the devs copied other pantheon's myth units and changed the model a bit, mostly using existing unused assets. Or used ones, like scaling up monkies and tigers.
+Azure Dragons are now more like spellcasters than Chimeras are, with lower attack and HP but higher special.
+Qilin's spell immunity gains a purpose, as their HP was increased, while their attack was lowered.
+White Tigers' damage was DOUBLED, and their leap range was SLIGHTLY MORE THAN DOUBLED. A lategame 30 favor unit which only attack single targets and doesn't instakill has little use. Unless you make them REALLY GOOD at what they do. And they now are.
+
+Thoughts, suggestions, questions, all welcome.

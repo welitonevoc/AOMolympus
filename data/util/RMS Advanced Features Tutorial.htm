@@ -1,0 +1,573 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+	<head>
+		<title>Advanced Features in Random Map Scripting</title>
+		<meta name="GENERATOR" content="Microsoft Visual Studio.NET 7.0">
+		<meta name="vs_targetSchema" content="http://schemas.microsoft.com/intellisense/ie5">
+	</head>
+	<body>
+		<P><a name="top"></a><STRONG><FONT size="5">Advanced Features in Random Map Scripting</FONT></STRONG></P>
+		<P><EM>An article by <STRONG>Matei</STRONG>&nbsp;of <A href="http://www.woadcreations.com/">
+					Woad Creations</A></EM></P>
+		<P><EM></EM>&nbsp;</P>
+		<P><STRONG><FONT size="4">Table of Contents</FONT></STRONG></P>
+		<UL>
+			<LI>
+				<A href="#introduction">Introduction and Prerequisites</A>
+			<LI>
+				<A href="#variables">Variables</A>
+			<LI>
+				<A href="#controls">Control Statements</A>
+			<LI>
+				<A href="#functions">Functions</A>
+			<LI>
+				<A href="#triggers">Triggers - A Quick FAQ</A>&nbsp;
+			<LI>
+				<A href="#arrays">Arrays</A> and <a href="#arraysForm">Array Generator Form</a>
+			<LI>
+				<A href="#math">Trigonometry and Other Math Functions</A>
+			<LI>
+				<A href="#resources">Useful Resources</A></LI></UL>
+		<P>&nbsp;</P>
+		<P><a name="introduction"></a><STRONG><FONT size="4">Introduction and Prerequisites</FONT></STRONG></P>
+		<P>In <em>Age of Mythology</em>, Ensemble Studios created a brand new scripting 
+			system for random maps, more like a programming language than the old <em>Age of 
+				Kings: The Conquerors</em> system. The new scripting language may have a 
+			steeper learning curve, but it opens up a world of possibilities for the random 
+			map scripter. In this article, I will talk about some of the advanced features 
+			in the new scritping system and how to make use of them. I will also provide a 
+			quick FAQ section on triggers, since the trigger system in AoM RMS is very 
+			powerful but is not too well documented anywhere in my experience.&nbsp;This 
+			article assumes that you have some general knowledge of how to make RM scripts 
+			in AoM - an excellent place to start is <A href="http://www.mrfixitonline.com/aom-rms.asp">
+				Mr Fixit Online's RMS Guide</A>. I won't concentrate on how to use 
+			specific&nbsp;RM system functions.&nbsp;The article&nbsp;also assumes that you 
+			have&nbsp;a little bit of&nbsp;programming experience - JavaScript, PHP, C, 
+			Basic,&nbsp;or anything of that sort.</P>
+		<P>One thing that might come in handy is Age of Mythology's built-in RMS debugger. 
+			If you enable it, it will pop up whenever there's an error in an RM script and 
+			let you see where it was. Once an error occurs, the debugger will show you the 
+			line where it happened, as well as a list of all the variables in your script 
+			and their values. You have to press Run (perhaps multiple times)&nbsp;for the 
+			map to continue generating, and after it's done, close the debugger by clicking 
+			the X in the top right corner.&nbsp;To enable the debugger, rightclick your AoM 
+			desktop shortcut, select Properties, and under Target add "+debugRandomMaps". 
+			For example, your shortcut target might look like&nbsp;<EM>"C:\Program 
+				Files\Microsoft Games\Age of Mythology\aom.exe" +debugRandomMaps</EM>. This 
+			will enable the debugger to pop up if there's a script error&nbsp;when you 
+			launch AoM from the desktop shortcut (if you launch it from the CD's Play 
+			button, the debugger won't come). If you want, you can create a copy of the AoM 
+			shortcut and add the debugger to that instead of using it on the original 
+			shortcut - the benefit of this is that maps played in multiplayer often have 
+			script errors, and you don't want to have to click Run&nbsp;hundreds 
+			of&nbsp;times on the debugger to get into a game with your friends on a map you 
+			didn't make.</P>
+		<P><FONT size="2"><A href="#top">Back to Top</A></FONT></P>
+		<P>&nbsp;</P>
+		<P><a name="variables"></a><STRONG><FONT size="4">Variables</FONT></STRONG></P>
+		<P>Variables are <EM>locations in memory where your script can store information</EM>. 
+			They are very useful in any program because the computer often has to store 
+			intermediate results and then use them later. In AoM RMS, there are four types 
+			of variables:</P>
+		<UL>
+			<LI>
+				<FONT face="Courier New" style="FONT-SIZE:10pt">int</FONT><FONT face="Times New Roman">
+					- Stores an integer, such as 0, 15, or -2. Can be operated upon by the +, -, /, 
+					*, and % operators (the % is modulus, the remainder of division).</FONT>
+			<LI>
+				<FONT face="Courier New" style="FONT-SIZE:10pt">float</FONT><FONT face="Times New Roman">&nbsp;- 
+					Stores a real number, such as 0.2, 3.1415926, or -5.0.</FONT>
+			Can be operated upon by the +, -, /, and * operators, and by the built-in 
+			sqrt() function.
+			<LI>
+				<FONT face="Courier New" style="FONT-SIZE:10pt">bool</FONT><FONT face="Times New Roman">
+					- Stores a true/false logical&nbsp;value, either <FONT face="Courier New" style="FONT-SIZE:10pt">
+						true</FONT> or <FONT face="Courier New" style="FONT-SIZE:10pt">false</FONT>; 
+					named after mathematician Georgre Boole.</FONT>&nbsp;There isn't much 
+			you can do with these, but the ! operator (placed in front of a bool variable) 
+			will get its opposite (for example, !true&nbsp;is false).
+			<LI>
+				<FONT face="Courier New" style="FONT-SIZE:10pt">string</FONT> - Stores text, 
+				such as "hello". You cannot define a really long string constant (such as 
+				"aaaaa......" with, say, 50 a's), but you can get as long a string as you want 
+				by using the + operator and adding smaller strings to the end of a big one. You 
+				can also add values of variables of any type to a string, as long as the thing 
+				before the + sign is a string variable (so for example, if x is a float 
+				variable, you can write "hello"+x but not x+"hello"). Note that you can use the 
+				escape sequence, \n in a string for a "newline character"; use \\ (double back 
+				slash) if you want to print a backslash.</LI></UL>
+		<P>All variables must be <EM>declared</EM> before they are used. The declaration is 
+			of form <EM>&lt;variableType&gt; &lt;name&gt; <STRONG>=</STRONG> &lt;initialValue&gt;;</EM>. 
+			You&nbsp;must always assign an initial value to each variable, even if it's 0 
+			or&nbsp;a blank string ("").&nbsp;The following example&nbsp;shows you how 
+			to&nbsp;define&nbsp;one variable of each type:</P>
+		<Pre>
+int numTownCenters = 4;
+float playerArea = 0.13;
+bool useWater = true;
+string baseTerrainName = "sandA";</Pre>
+		<P>Variables can be either <EM>global</EM> or <EM>local</EM>. Global variables are 
+			defined outside any function, at the very top of your script, and can be used 
+			by any function. They are usually things like environment information, such as 
+			the name of your base terrain type, that the entire script uses.&nbsp;Local 
+			variables are defined at the top if a specific function and can only be used by 
+			it.&nbsp;While you can put them lower in the function, it's easier to&nbsp;have 
+			them at the top.&nbsp;They are used to store temporary results that only that 
+			function needs to "worry" about. Here is an example showing two functions, 
+			someFunction() and someOtherFunction(), and two variables, globalVar and 
+			localVar, as well as several lines trying to use them:</P>
+		<P></P>
+		<pre>
+int globalVar = 0;
+
+// ...
+
+void function1(void) {
+	string localVar = "";
+	
+	localVar = "abc";	// ok, valid statement
+	globalVar = 2;		// ok
+	// ...
+}
+
+void function2(void) {
+	localVar = "abc";	// bad! localVar only exists in function1()
+	globalVar = 2;		// ok
+	// ...
+}
+</pre>
+		<P>Finally, you might want some variables to be <EM>constants</EM>. Constant 
+			variables cannot be changed at all from their initial value. They are declared 
+			by writing <EM>const &lt;variableType&gt; name = &lt;initialValue&gt;</EM>. 
+			They are useful if you don't want to change the value of something by mistake. 
+			In general, however, a non-constant variable can do the same things as a 
+			constant one.</P>
+		<P><FONT size="2"><A href="#top">Back to Top</A></FONT></P>
+		<P><FONT size="2"></FONT>&nbsp;</P>
+		<P><a name="controls"></a><STRONG><FONT size="4">Control Statements</FONT></STRONG></P>
+		<P>Often, you want your script to do different things in different cases, or to 
+			repeat a task twice. This is useful if you want to place an object 5 times for 
+			every player, or you want to do different things depending on which enviromnent 
+			you've randomly chosen, or you want to give players different units if they're 
+			different civilizations. The AoM scripting system provides the following 
+			control flow statements:</P>
+		<P><EM><STRONG>if (</STRONG> &lt;boolCondition&gt; <STRONG>) {</STRONG>
+				<BR>
+				&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;code&gt;<BR>
+				<STRONG>}</STRONG>
+				<BR>
+				[ <STRONG>else {</STRONG>
+				<BR>
+				&nbsp;&nbsp;&nbsp;&nbsp; &nbsp; &lt;code&gt;<BR>
+				<STRONG>}</STRONG> ]</EM></P>
+		<P><EM><STRONG>while (</STRONG> &lt;boolCondition&gt; <STRONG>) {</STRONG>
+				<BR>
+				&nbsp;&nbsp;&nbsp; &nbsp; &lt;code&gt;<BR>
+				<STRONG>}</STRONG></EM></P>
+		<P><EM><STRONG>for&nbsp;(</STRONG> &lt;varName&gt; <STRONG>=</STRONG> &lt;initialValue&gt;<STRONG>;</STRONG>
+				&nbsp;&lt;comparison&gt; &lt;compareValue&gt; <STRONG>) {&nbsp;
+					<BR>
+					&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;code&gt;<BR>
+					}</STRONG></EM></P>
+		<P>Note that the right brackets ("[" and "]") here mean that&nbsp;a part of a 
+			statement&nbsp;is optional.</P>
+		<P>The main difference from other programming languages is the "for" loop. The 
+			"for" loop in AoM's RMS system is limited to using an integer value. For 
+			example, after declaring an int i somewhere in the program, you might write 
+			for(i=1; &lt;cNumberPlayers) to repeat some code for each player number (note 
+			that cNumberPlayers includes gaia, so we don't write &lt;= cNumberPlayers).</P>
+		<P>A quick note: if you have only one statement between the curly brackets after an 
+			if, else, for, or while, you can omit them. So for example you can write 
+			if(i==1) i=0; instead of writing if(i==1) { i=0; }. This sometimes makes code 
+			shorter and more elegant.</P>
+		<P>In general, loops and other control statements can save you much typing and make 
+			your script shorter and more powerful.</P>
+		<P><FONT size="2"><A href="#top">Back to Top</A></FONT></P>
+		<P><STRONG><FONT size="4"></FONT></STRONG>&nbsp;</P>
+		<P><a name="functions"></a><STRONG><FONT size="4">Functions</FONT></STRONG></P>
+		<P>Often you have a piece of code that you want to use several times, perhaps with 
+			slightly different parameters. For example, you might use some code to add a 
+			"send chat" trigger in various places in your script. To do this, you can 
+			define a <EM>function</EM>, which can be <EM>called</EM> later in the script 
+			and can be passed <EM>arguments</EM> to work with or can <EM>return</EM> a 
+			result value to wherever it was called.</P>
+		<P>A function defininition is of form:</P>
+		<P><EM>&lt;returnType&gt; &lt;name&gt; ( &lt;arg1Type&gt; &lt;arg1Name&gt;&nbsp;= 
+				&lt;defaultValue&gt;, &lt;arg2Type&gt; &lt;arg2Name&gt;&nbsp;= 
+				&lt;defaultValue&gt;, ... ) {<br>
+				&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &lt;code&gt;<br>
+				&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [ return ( &lt;returnValue&gt; ) ; ]
+				<br>
+				}</EM>
+		</P>
+		<P>To call a function, use <EM>[ &lt;variable&gt; = ] &lt;name&gt; ( &lt;arg1Value&gt;, 
+				&lt;arg2Value&gt;, ... );</EM>. If the function has no arguments, keep the 
+			brackets after the name but put nothing between them.</P>
+		<P>A function's&nbsp;return type of the function can be <EM>void</EM>, meaning that 
+			the function doesn't give any value back to whatever code called it, or it can 
+			be one of the variable types discussed above. If you have a non-void return 
+			type, you should have one or more return() statements so that your function 
+			returns a valid value of that type. Having no return statements&nbsp;for a 
+			non-void function&nbsp;will cause an error.</P>
+		<P>Functions can have a number of arguments, or none. Note that&nbsp;sometimes 
+			functions seem not to&nbsp;work if they have more than 8 or so 
+			arguments.&nbsp;If a function has no arguments, used <EM>void</EM> in the 
+			brackets after its name instead of a list of arguments. If it does have 
+			arguments, they act as local variables in that function. If a function with, 
+			say, 3 arguments is called with fewer than it has (for example, 2 only), then 
+			the first arguments specified are given the values passed, and the others are 
+			kept at their default values. This is often a useful feature.</P>
+		<P>Here is an example of several functions and how to call them:</P>
+		<pre>// this function 
+makes a message appear every few seconds to the players, using a trigger void addMessage(string text="",
+int repeatTime=120) { id = rmCreateTrigger("message"+rmRandInt());
+	// make a	(random and hopefully unique) trigger name
+	rmSwitchToTrigger(id);
+	rmSetTriggerLoop(true);
+	rmAddTriggerCondition("Timer");
+	 rmSetTriggerConditionParamInt("Param1", repeatTime, false);
+	rmAddTriggerEffect("Message");
+	 rmSetTriggerEffectParamInt("Timeout", 12000, false);	// message should fade after 12 seconds
+	 rmSetTriggerEffectParam("Text", text, false);
+}
+
+// this function returns the absolute value, |f|, of a real number f
+float abs(float f=0.0) {
+	if(f&lt;0) {
+		return(0-f);
+	}
+	else {
+		return(f);
+	}
+}
+
+void main(void) {
+	addMessage("This map uses functions!", 70);		// makes this message appears every 70 seconds
+	addMessage("Isn't it great?");					// appears every 120 seconds (default value)
+	
+	addMessage("The absolute value of -3 is "+abs(-3));	// this time we also use abs()
+	
+	// ...
+}
+</pre>
+		<P>Functions are very powerful because they save you huge amounts of typing. You 
+			often have to do a similar task twice or more in an RMS; functions can let you 
+			do this elegantly and concentrate on writing your script, not copying and 
+			pasting code, and they come with the added benefit that you just have to edit 
+			one place in your code (the function definition) to fix a bug that affects many 
+			other places. Also, functions can call each other, which further increases 
+			their power and usefulness.</P>
+		<P><FONT size="2"><A href="#top">Back to Top</A></FONT></P>
+		<P>&nbsp;</P>
+		<P><a name="triggers"></a><STRONG><FONT size="4">Triggers - A Quick FAQ</FONT></STRONG></P>
+		<P>Triggers can be used to make your script more than a standard Supremacy/Death 
+			Match/Lightning game and add events and interactivity to it. They are mainly 
+			used in scenarios, but can also be used in random maps. If you haven't tried 
+			using triggers before, you should open the scenario editor and make a couple of 
+			them before trying to use them in a random map script. Visit the<A href="http://aom.heavengames.com/cgi-bin/forums/display.cgi?action=ct&amp;f=13,8362,0,365">
+				Scenario Editor FAQ on AoM Heaven</A> for information on how triggers work 
+			in scenarios. The various RMS guides list the different RMS&nbsp;functions to 
+			do with triggers but do not really explain&nbsp;all aspects of&nbsp;using 
+			triggers in RMS, so this section will cover some common questions on triggers.</P>
+		<P>
+			A trigger is essentially a "rule" that has several <EM>conditions</EM> and 
+			several <EM>effects</EM>. If the trigger is <EM>active</EM> and all its 
+			conditions are true, then it will fire and perform its effects. If the trigger 
+			is <EM>looping</EM>, it will be able to fire again when the conditions become 
+			true again; if not, it will only fire once during the course of the game, and 
+			then be deactivated (it may be activated again later by another trigger, 
+			however). Triggers can be marked as <EM>run immediately</EM> to fire their 
+			events before the game even begins (for example, a trigger that grants or 
+			disables technologies for players should do this); such triggers should not be 
+			looping and should not have any conditions. Triggers that run in-game can have 
+			a <EM>priority</EM> between 1 and 5, which dictates how often the game checks 
+			their conditions (it should only be higher for triggers that need precise 
+			timing; the default value of 3 works fine otherwise).</P>
+		<P>Note that all of your triggers need a name, and each trigger should have a 
+			unique name. If two triggers have the same name, you'll get an error. Usually 
+			it is simple to come up with a unique name for each trigger,&nbsp;but if you 
+			have a variable number of triggers&nbsp;you might want to keep 
+			a&nbsp;global&nbsp;"uniqueID" integer variable; then name each&nbsp;new trigger 
+			"trigger_"+uniqueID, and increase uniqueID by 1 after you use it, or even 
+			create a makeUniqueID() function that increases the variable by 1 and returns 
+			it. This can also be a useful technique when placing&nbsp;areas or object 
+			definitions, since they must also have unique names.</P>
+		<P>Here are some commonly asked questions about triggers and their answers:</P>
+		<P><EM>Q: Where can I find a list of trigger conditions and effects and the names of 
+				their parameters?</EM><BR>
+			A: Check out<a href="RMSTriggers.txt">this file</a>. It is a .txt format copy 
+			of the file trigger.xml in the Age of Mythology\trigger folder, which lists all 
+			the effects and conditions available in AoM. The file contains some XML code - 
+			the easiest way to find your&nbsp;required effect or condition&nbsp;is to use 
+			the Edit | Find (Ctrl-F) command in Notepad and search for the name of the 
+			effect or condition you want. The condition or effect parameters, and their 
+			default values, will be listed there.</P>
+		<P><EM>Q: Where can I find numerical ID's for trigger parameters such as technologies, 
+				unit stances, and technology statuses?</EM><BR>
+			A: Check out<a href="RMSConstants.txt">this file</a>. It is a copy of part of 
+			the AoM default AI file, which lists many useful constants. Test that all your 
+			techs are researched by placing a unit for each player that would benefit from 
+			them and seeing if it has them when the game starts.</P>
+		<P><EM>Q: How can I specify a location, such as (x=0.5, z=0.5), in a trigger?</EM><BR>
+			A: You have to use a string in the form <em>xInMetres,0,zInMetres</em>. The 
+			following function converts a location (x,z) in fractions to a location string 
+			that you can then pass to rmSetTriggerEffectParam:<br>
+			<font face="Courier New" style="FONT-SIZE:10pt">string pointLoc(float fracX = 0, 
+				float fracZ = 0) {<br>
+				&nbsp;&nbsp;&nbsp; 
+				return(""+rmXFractionToMeters(fracX)+",0,"+rmZFractionToMeters(fracZ));<br>
+				}</font></P>
+		<P><EM>Q: How can I place a Gastraphetes, Son of Osiris&nbsp;or Einherjar? Some 
+				objects' trigger names are not the same as game names.</EM><BR>
+			A: Check out<a href="RMSObjects.txt">this file</a>. It contains the trigger 
+			names (also used for simply placing objects) of all units. The least obvious is 
+			Gastraphetes, which is called Crossbowman. Einherjar is Einheriar. Son 
+			of&nbsp;Osiris is Pharaoh of&nbsp;Osiris.&nbsp;Other units also 
+			have&nbsp;different names.</P>
+		<P><EM>Q: How can I use a unit in a trigger condition/effect?</EM><BR>
+			A: You have to get the unit's in-game ID when you place it, and convert it to a 
+			string to use in rmSetTriggerEffectParam. Here's an example that places an 
+			Arkantos for player&nbsp;2 at the center of the map and stores its unit ID in 
+			the string unitID:<br>
+			<font face="Courier New" style="FONT-SIZE:10pt">int id = 
+				rmCreateObjectDef("arkantos_p2");<br>
+				rmAddObjectDefItem(id, "Arkantos", 1, 0.0);<br>
+				rmSetObjectDefMinDistance(id, 0.0);<br>
+				rmSetObjectDefMaxDistance(id, 0.0);<br>
+				rmPlaceObjectDefAtLoc(id, 2, 0.5, 0.5);<br>
+				string unitID = rmGetUnitPlaced(id,0);</font></P>
+		<P><EM>Q: How can I an army in a trigger condition/effect?</EM><BR>
+			A: You can create armies using rmCreateArmy(playerNumber, armyName). If you 
+			want an empty army, just use rmCreateArmy and store its return value in some ID 
+			variable. If you want an army to start off with certain units in it, here's how 
+			you might do it (this example places a&nbsp;player&nbsp;2&nbsp;hill fort at the 
+			center of the map and stores the army ID in the integer armyID):<br>
+			<font face="Courier New" style="FONT-SIZE:10pt">int 
+				id=rmCreateObjectDef("hillFort");<br>
+				rmAddObjectDefItem(id, "Hill Fort", 1, 0.0);<br>
+				rmSetObjectDefMinDistance(id, 0.0);<br>
+				rmSetObjectDefMaxDistance(id, 0.0);<br>
+				rmPlaceObjectDefAtLoc(id, 2, 0.5, 0.5);<br>
+				int armyID = rmCreateArmy(2, "hillFort");<br>
+				rmAddUnitsToArmy(2, armyID, id);<br>
+			</font>Note that armies always have a player number associated which you have 
+			to use whenever you reference the army, in rmAddTriggerEffectParamArmy for 
+			example, and that army IDs are ints, not strings.</P>
+		<P><EM>Q: I get weird text when trying to use "%" characters in in-game messages. Why?</EM><BR>
+			A: Use a double percent sign (%%) if you want to print a percent sign. Percent 
+			signs in strings have a special meaning in C++, the language in which AoM was 
+			written, so you shouldn't have single percent signs in an in-game message 
+			string.</P>
+		<P><EM>Q: What is the last (bool) parameter in rmAddTriggerConditionParam and 
+				rmAddTriggerEffectParam?</EM></EM><BR>
+			A: This value should always be false. It's used internally by AoM.</P>
+		<P><EM>Q: Trigger code in RMS is so long and messy! How can I make it quicker to 
+				develop?</EM><BR>
+			A: Use functions, lots and lots of them. For example, I made a grantTech 
+			function which simply adds a trigger effect for enabling a certain tech (it 
+			will be added to whatever trigger is active when the function is called), and a 
+			sendChat function which&nbsp;adds&nbsp;a send chat&nbsp;effect. In general, 
+			anything repetitive and time-consuming should be put in a function. It saves a 
+			lot of typing!</P>
+		<P><FONT size="2"><A href="#top">Back to Top</A></FONT></P>
+		<P><FONT size="2"></FONT>&nbsp;</P>
+		<P><a name="arrays"></a><STRONG><FONT size="4">Arrays</FONT></STRONG></P>
+		<P>In programming, an array is a kind of variable which stores multiple values 
+			under one name. For example, you might have an array of 10 integers called ar. 
+			Then you could write ar[1], ar[2], ar[3], etc to access each integer in the 
+			array. This feature is vital anywhere you might be dealing with multiple 
+			numbered objects - and a Random Map Script&nbsp;is such a place. For example, 
+			instead of having 12 army ID variables, you might want to store players' army 
+			ID's in an array of 12 ints. Arrays are not supported by the XS scripting 
+			system, but luckily there is a way to make them using functions and regular 
+			variables :).</P>
+		<P>For example, say you want an array of integer army IDs, one for each player in 
+			your map. Since there will be at most 12 players, numbered 1 to 12, you can 
+			create 12 variables called army1, army2, army3, ..., army12. To access these 
+			variables easily, you can create two functions: getArmy(int playerNum) and 
+			setArmy(int playerNum, int value). Then you can, for example, call getArmy(5) 
+			to get player 5's army. Here's the code for it:</P>
+		<pre>int army1=0; int army2=0; int army3=0; int army4=0;
+int army5=0; int army6=0; int army7=0; int army8=0;
+int army9=0; int army10=0; int army11=0; int army12=0;
+int getArmy(int p=1) {
+	if(p==1) {return(army1);} else if(p==2) {return(army2);} else if(p==3) {return(army3);} 
+	else if(p==4) {return(army4);} else if(p==5) {return(army5);} else if(p==6) {return(army6);}
+	else if(p==7) {return(army7);} else if(p==8) {return(army8);} else if(p==9) {return(army9);} 
+	else if(p==10) {return(army10);} else if(p==11) {return(army11);} else if(p==12) {return(army12);}
+}
+void setArmy(int p=1, int v=0) {
+	if(p==1) {army1 = v;} else if(p==2) {army2 = v;} else if(p==3) {army3 = v;} 
+	else if(p==4) {army4 = v;} else if(p==5) {army5 = v;} else if(p==6) {army6 = v;} 
+	else if(p==7) {army7 = v;} else if(p==8) {army8 = v;} else if(p==9) {army9 = v;} 
+	else if(p==10) {army10 = v;} else if(p==11) {army11 = v;} else if(p==12) {army12 = v;} 
+}
+
+</pre>
+		<P>This is a pretty powerful technique because it shortens code later on quite 
+			drastically. However, even typing this can take a lot of time. Therefore I have 
+			created the simple form below, where you can create an array of however many 
+			objects you want, numbered 1 to N or 0 to N, in a few seconds and copy it into 
+			your RMS:</P>
+		</A><form name="arrayForm">
+			<p><a name="arraysForm"></a>Create array of
+					<select name="varType">
+						<option value="int" selected>ints</option>
+						<option value="float">floats</option>
+						<option value="string">strings</option>
+						<option value="bool">bools</option>
+					</select>
+					numbered
+					<select name="minNum" ID="Select1">
+						<option value="0">0</option>
+						<option value="1" selected>1</option>
+					</select>
+					to<input type="text" name="maxNum" value="12" size="5"> and called<input type="text" name="name" value="Army" size="14">.<input type="button" onclick="doArrayForm();" value="Go!"></p>
+			<p><textarea name="textArea" rows="12" cols="90">(Generated code will be placed here)</textarea></p>
+			<script language="javascript">
+			function doArrayForm() {
+				with(document.arrayForm) {
+					var text="";
+					var initVal = "0";
+					if(varType.value=="string") initVal='""';
+					if(varType.value=="bool") initVal="false";
+					var j = 0;
+					var i;
+					for(i=1-(1-minNum.value); i<=0+maxNum.value; i++) {
+						text += ""+varType.value+" v"+name.value+""+i+"="+initVal+"; ";
+						if(j%4==3) text += "\n";
+						j++;
+					}
+					text += "\n"+varType.value+" get"+name.value+"(int num=-1) {\n\t";
+					for(i=1-(1-minNum.value); i<=0+maxNum.value; i++) {
+						text += "if(num=="+i+")"+" return(v"+name.value+""+i+"); ";
+						if(j%2==1) text += "\n\t";
+						j++;
+					}
+					text += "\n\treturn("+initVal+");\t// should never be reached\n}\n\t";
+					text += "\n"+varType.value+" set"+name.value+"(int num=-1, "+varType.value+" val="+initVal+") {\n";
+					for(i=1-(1-minNum.value); i<=0+maxNum.value; i++) {
+						text += "if(num=="+i+")"+" v"+name.value+""+i+" = val; ";
+						if(j%2==1) text += "\n\t";
+						j++;
+					}
+					text += "\n\treturn("+initVal+");\t// should never be reached\n}\n";
+					textArea.value=text;
+				}
+			}
+			</script>
+		</form>
+		<P>With this form, you will be able to create arrays quite quickly and efficiently 
+			for any use. Just copy and paste the code created to the top of your script. 
+			The functions to get and set array elements will be getX(int num) and setX (int 
+			num, value) where X is the name you gave to your array.&nbsp;Note that even 
+			though you&nbsp;can type any max length, you should not really go past&nbsp;a 
+			hundred&nbsp;or so unless you desperately need it.&nbsp;Enjoy :)!</P>
+		<P><FONT size="2"><A href="#top">Back to Top</A></FONT></P>
+		<P><FONT size="2"></FONT>&nbsp;</P>
+		<P><a name="math"></a><STRONG><FONT size="4">Trigonometry and Other Math Functions</FONT></STRONG></P>
+		<P>In the same way that the RMS system doesn't support arrays, it doesn't support 
+			trigonometry functions such as sin, cos, tan,&nbsp;and other math functions 
+			like log. Sometimes you want to be able to use these - for example, you might 
+			like to use trigonometry to place players in some sort of circle or ellipse, 
+			place things to the left of each player, etc. Luckily, you can use a function 
+			with hardcoded values to create a pretty good approximation function for any 
+			math function, as long as it's defined on a finite interval. The way you do 
+			this is by evaluating the function at, say, 20 numbers, and interpolating in 
+			between those. For example, if sin 50 = 0.76 and sin 60 = 0.87, a good 
+			approximation for sin 58 = (2/10)*0.76 + (8/10)*0.87, or 0.848 (and in fact, 
+			sin 58 is within 0.01 of that). It's not perfect, but when you get 30 or 40 
+			points on a small interval to interpolate between and you have no weird breaks 
+			in your function it works quite well. Here's a form I created that lets you 
+			type in a function name (in only one variable, which we'll call x) and an 
+			expression (any valid JavaScript style&nbsp;expression, such as sin(x), x*x - 
+			ln(x), etc will work - just type a function name, and it will probably be fine; 
+			note that trig functions are in radians, where PI radians = 180 degrees; if you 
+			know JavaScript, note that you don't have to write Math.sin, Math.cos, etc - 
+			just write sin, cos, etc):</P>
+		<form name="mathForm" ID="Form1">
+			<p>Create a function called<input type="text" name="name" value="sin" ID="Text1" style="TEXT-ALIGN:right" size="14">(x) 
+				with domain<input type="text" name="minNum" value="0.0" size="7"> to<input type="text" name="maxNum" value="3.1415926" size="7">
+				and value equal to<input type="text" name="formula" value="sin(x)" size="14">, 
+				using<input type="text" name="numPoints" value="30" size="3"> points on the 
+				interval.<input type="button" onclick="doFunctionForm();" value="Go!" NAME="Button1"></p>
+			<p><textarea name="textArea" rows="12" cols="90">(Generated code will be placed here)</textarea></p>
+			<P>Just copy and paste the code generated to the top of your script, and you'll be 
+				ready to go :).</P>
+			<P><FONT size="2"><A href="#top">Back to Top</A></FONT></P>
+			<P><A name="arraysForm">&nbsp;</P>
+			<script language="javascript">
+			function doFunctionForm() {
+				with(document.functionForm) {
+					var text="";
+					var i;
+					var jump = (maxNum.value-minNum.value)/(numPoints.value-1);
+					var x = minNum.value;
+					var e1;
+					var e2;
+					text += "float "+name.value+"(float x=0) {\n\t";
+					for(i=1.0-(1.0-minNum.value); i<0.0+maxNum.value; i+=jump) {
+						x = i;
+						eval("with(Math) { e1="+formula.value+"; }");
+						x = i+jump;
+						eval("with(Math) { e2="+formula.value+"; }");
+						text += "if(x<="+(i-0.0+jump)+")"+" return((x-"+i+")*"+(e2/jump)+"+("+jump+"-(x-"+i+"))*"+(e1/jump)+"); ";
+						text += "\n\t";
+					}
+					text += "\n\treturn(0);\t// should never be reached\n}\n";
+					textArea.value=text;
+				}
+			}
+			</script>
+		</form>
+		<P><a name="resources"></a><STRONG><FONT size="4">Useful Resources</FONT></STRONG></P>
+		<P>Here is a quick list of resources you might like for AoM RM Scritping in 
+			general. Apart from the websites and forums liked here, I've created four files 
+			with RMS terrain names, object names, triggers, and trigger&nbsp;integer 
+			constants.</P>
+		<UL>
+			<LI>
+				<A href="http://www.mrfixitonline.com/aom-rms.asp">Mr Fixit Online's RMS Tutorial</A>
+			- Very good information on starting RM scripting.
+			<LI>
+				<A href="http://aom.heavengames.com/cgi-bin/forums/display.cgi?action=t&amp;fn=19">Age 
+					of Mythology Heaven's RMS/AI/Modding Forum</A>
+			- Great place to ask questions on scripting; they'll usually be answered within 
+			a day.
+			<LI>
+				<A href="http://aom.heavengames.com/cgi-bin/forums/display.cgi?action=ct&amp;f=13,8362,0,365">
+					Age of Mythology Heaven's Scenario Editor FAQ</A>
+			-&nbsp;Good place for information on triggers, if you don't have much 
+			experience with them.
+			<LI>
+				<A href="http://www.woadcreations.com">Woad Creations</A>
+			- My design team :). Try the forums if you have questions, or check out our 
+			latest articles and projects.
+			<LI>
+				<A href="http://aom.heavengames.com/downloads/viewinfo.php?id=320">Norse Wars</A>
+			- My own RMS: a blood-style map with four random environments where players get 
+			favor from fighting and can use it to&nbsp;buy special units, god powers and 
+			upgrades.&nbsp;Pretty complicated but&nbsp;a good example in using triggers, 
+			functions and arrays.
+			<LI>
+				<A href="RMSTerrains.txt">RMSTerrains.txt</A>
+			-&nbsp;A downloadable list of terrains, forest types, and water types.
+			<LI>
+				<A href="RMSObjects.txt">RMSObjects.txt</A>
+			-&nbsp;A downloadable list of object names.
+			<LI>
+				<A href="RMSTriggers.txt">RMSTriggers.txt</A>
+			-&nbsp;A downloadable list of trigger conditions and effects.
+			<LI>
+				<A href="RMSConstants.txt">RMSConstants.txt</A>
+			-&nbsp;A downloadable list of trigger constants (tech IDs, tech status IDs, and 
+			unit stance IDs).
+			<LI>
+				<A href="RMSAdvancedFeaturesTutorial.zip">RMSAdvancedFeaturesTutorial.zip</A> - 
+				This tutorial as well as the four resource files above in one zip file.</LI></UL>
+		<P><FONT size="2"><A href="#top">Back to Top</A></FONT></P>
+		<P>&nbsp;</P>
+		<P>&nbsp;</P>
+		<P>&nbsp;</P>
+	</body>
+</html>

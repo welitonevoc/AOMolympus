@@ -1,0 +1,237 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Frameset//EN">
+<html>
+	<head>
+		<meta name="vs_targetSchema" content="http://schemas.microsoft.com/intellisense/ie5">
+		<link rel="stylesheet" href="stylesheet.css">
+	</head>
+	<body bottomMargin="10" topMargin="10">
+		<H2>
+			&nbsp;</H2>
+		<H2>
+			MapGen Tutorial</H2>
+		<P>&nbsp;</P>
+		<P><STRONG>Introduction</STRONG></P>
+		<P>Welcome to MapGen! This tutorial will get you started with creating your first 
+			map and also show you most of the features available in the program. Even 
+			though you'll be making a detailed and playable map, this will be a reasonably 
+			short tutorial, since MapGen&nbsp;and Age of Mythology do&nbsp;a lot of the 
+			work for you.</P>
+		<P>MapGen lets you create custom real-world random maps for Age of Mythology by 
+			painting a&nbsp;square "grid" to denote zones of squares of the same "class". 
+			For example, a map might have an "ocean" class, a "plains" class and a 
+			"mountains" class. Within each class, resources, terrain patches, forests and 
+			decorative objects can&nbsp;be placed in a different way. Your map will always 
+			have the same general shape and the same classes in the same places, but the 
+			forests, hills, animals, etc&nbsp;within each class will be placed randomly 
+			each game,&nbsp;within the&nbsp;constraints you give. You can&nbsp;make maps 
+			either "Nomad-style" (players start with some units and have to claim and build 
+			a Settlement) or&nbsp;like standard AoM maps&nbsp;with a Town Center for each 
+			player. The map file&nbsp;generated&nbsp;is a&nbsp;regular random map script 
+			-&nbsp;it&nbsp;can be played in any of the standard game modes (Supremacy, 
+			Death Match, Lightning, etc) by simply setting up a Random Map game and 
+			selecting your map from the list there.</P>
+		<P>In this tutorial, you'll create a simple "Ancient Greece"&nbsp;custom map.</P>
+		<P>&nbsp;</P>
+		<P><STRONG>Getting Started</STRONG></P>
+		<P>Open MapGen, if it is not already open, by double-clicking MapGen.exe. Then 
+			press New at the top of the screen&nbsp;to create a new map.</P>
+		<P>At the top of the screen, under Map Name, write "Ancient Greece" (or whatever 
+			name you want).&nbsp;Under Map Description, write "Ancient Greece: Sail off and 
+			settle this rich land" (or again, whatever text you want).</P>
+		<P>The map icon is set to the Nomad map icon by default. Set it to "ui\ui god greek 
+			random 256x256", the Greek Gods icon,&nbsp;by either selecting this entry from 
+			the dropdown or typing the text in the box.</P>
+		<P>Leave the other settings at the top of the screen the same. For more information 
+			on these settings, you can read <A href="globalSettings.html">this section</A>.</P>
+		<P>&nbsp;</P>
+		<P><STRONG>Creating the Grid Square Classes</STRONG></P>
+		<P>For this Greece map, we will have three general areas: the sea around Greece, a 
+			"plains" area, and a "hills" area. We'll add these classes in the list box on 
+			the left of the screen, and later we'll add contents&nbsp;in them and paint 
+			them on the map.</P>
+		<P>Press New under this list. There will be a new grid square&nbsp;class called 
+			"Class1". In the center area (which is called the "property editor" and lets 
+			you edit all aspects of a class), change the class's name to "Sea" by typing 
+			"Sea" over "Class1" and pressing Enter, and change the color to blue using the 
+			dropdown. Then, under AreaGenerationMode, select Water, and for AreaTerrain 
+			choose Mediterranean Sea (the default).</P>
+		<P>In the same way, add a "Plains" class. Leave its colour at light&nbsp;green and 
+			leave its AreaGenerationMode and AreaTerrain at Land and GrassA respectively.</P>
+		<P>Add a "Hills" class as above. Change its colour to brown, and its AreaTerrain to 
+			GrassDirt25 (a grass texture with a few hints of dirt in it).</P>
+		<P>Note that if you want, on custom maps,&nbsp;you can create no classes at all and 
+			just Import some of the classes that came with MapGen&nbsp;(they're in the 
+			classes folder) to create maps. In this tutorial we'll create some custom 
+			classes since this will let you customize maps and make them exactly how you 
+			want them.</P>
+		<P>&nbsp;</P>
+		<P><STRONG>Laying out the Map</STRONG></P>
+		<P>Now it's time for some artwork. The black box under Map Grid Layout contains 
+			50x50 tiles which can each be painted with&nbsp;one of the&nbsp;classes you 
+			selected above, or left blank (black). It's generally not good to leave any 
+			tile black - even if you want parts of the map to be empty sea without any 
+			fish, you should cover them with a class.
+		</P>
+		<P>Select the Sea class from the list on the left. Then under the map grid, set 
+			brush size to 15x15 and click around the black square&nbsp;to cover the grid 
+			with Sea. Don't mind the "red border" around the map for now - just paint under 
+			it. This "border" shows the current placement of players.</P>
+		<P>Now select the Plains class, and a brush size of 3x3. Draw a rough outline of 
+			Greece in your sea (remember that North is actually the top left corner because 
+			Age of Mythology maps are rotated 45 degrees from&nbsp;the 
+			vertical/horizontal). Then select a bigger brush and fill in this area, and 
+			maybe the small 1x1 brush to add a few details. Don't get too carried away, 
+			this is just a tutorial. Also, don't put very many details - make sure the 
+			edges of your land are smooth and there are no sharp bays or rough points, 
+			because while these look good in an image, they don't look good in-game.</P>
+		<P>Now, select the Hills class in the list&nbsp;and paint&nbsp;a few parts&nbsp;of 
+			northern and central Greece with it.</P>
+		<P>Finally, under Player Placement, select Line SW to have players start in a line 
+			on the sea in the South-West.</P>
+		<P>At this point, your screen should look a bit like this: <a href="tutorial1.jpg" target="_blank">
+				[Click for Image]</a>.</P>
+		<P>&nbsp;</P>
+		<P><STRONG>Generating and Testing</STRONG></P>
+		<P>To check that everything is working, let's generate the Age of Mythology script 
+			file for this unfinished map and view it in the game.</P>
+		<P>At the bottom of the screen, after the Output File grayed-out text box, select 
+			Browse. Navigate to your <EM>Age of Mythology\rm</EM> directory (usually <EM>C:\Program 
+				Files\Microsoft Games\Age of Mythology\rm</EM>, and type in the name 
+			"AncientGreece.xs". Then, on the right of the Browse button, press Generate 
+			Map.</P>
+		<P>Now, open up Age of Mythology. (It's a good idea to disable the introductory 
+			cinematics and keep Age of Mythology in windowed mode if you want to load it 
+			more quickly and switch between it and MapGen more easily). Go to Single Player 
+			| Random Map, then click Select Map and choose Ancient Greece from the list. 
+			Note how your icon and description text are there.&nbsp;Add some computer 
+			opponents and press Start. You'll be on an island with a transport ships and a 
+			3-minute ceasefire will be active during which you're supposed to find a 
+			Settlement. Press Enter, type the cheat "LAY OF THE LAND" (in all caps) and 
+			press Enter again to reveal the map.</P>
+		<P>Note that you can now pause the game, minimize Age of Mythology, make changes in 
+			MapGen, Generate Map and then Restart the game in AoM without exiting the game. 
+			This is useful for repeated work-and-test "cycles". You could also use File | 
+			New in the Editor (More | Editor from the AoM main menu) to do the same thing, 
+			instead of trying the map out in a game every time. Also, note how your map 
+			scales to the number of players like a standard Random Map.</P>
+		<P>You can also Save your map at this point - MapGen cannot directly open .xs Age 
+			of Mythology script files, so you have to use the Save and Open commands at the 
+			top to save the map in a .mg MapGen file to continue your work later.</P>
+		<P>Congratulations, you've created a map in about 5 minutes. But right now it's 
+			nothing but sea, grass, and GrassDirt25. You now have to populate each class 
+			with sub-areas and objects to make your map really playable.</P>
+		<P>&nbsp;</P>
+		<P><STRONG>Sub-Areas</STRONG></P>
+		<P>Sub-areas are places within a class zone with different terrain. For example, 
+			dirt patches, small lakes,&nbsp;cliffs, or&nbsp;forests. They are placed 
+			randomly within the grid squares covered by a class, and more or fewer are 
+			placed depending on how many in-game tiles the class covers.&nbsp;(In general, 
+			there are about 10,000 tiles on the&nbsp;<EM>entire</EM> map&nbsp;for each 
+			player in the game).</P>
+		<P>We'll start by adding a Forest sub-area and a Dirt Patch sub-area&nbsp;to the 
+			Plains class. Select this class on the left, expand the Sub-Areas node in the 
+			property editor by clicking the small [+] on its left, type 2 under Count, and 
+			press Enter.
+		</P>
+		<P>Expand the Elements node, and sub-area 0 (the first sub-area) within it. Under 
+			Name, type Forests. Set AreaGenerationMode to Forest and leave the forest as 
+			Oak Forest. Change the Number to&nbsp;Min 20, Max&nbsp;24 or so (these values 
+			are per 10,000 tiles covered by the class; a little spread adds randomness), 
+			the Size&nbsp;to 50-80 tiles,&nbsp;and the Coherence (how "clumped together" 
+			the area is) to 0.1.&nbsp;Leave the other settings the same. Now expand the 
+			Constraints node, set the Count to 1, and set the first constraint to 
+			"AvoidSubArea "Forests" by 5" by expanding its node and editing the values. <A href="constraints.html">
+				Constraints</A> are rules that keep areas and objects from overlapping each 
+			other and make the map fair - in this case, we don't want forests to be clumped 
+			together and distributed unevenly.</P>
+		<P>Similarly, add a Patches&nbsp;sub-area as sub-area 1&nbsp;to the Plains class. 
+			Make it a Land sub-area with Size 50 to 80, Number 10 to 12, and Coherence 0.5. 
+			Add constraints to make Patches avoid Patches as well as Forests by 3. Change 
+			the AreaTerrain to "GrassB/GrassDirt25,GrassDirt50,GrassDirt75". What does this 
+			long&nbsp;text&nbsp;mean? First, the "/" slash denotes two random options: 
+			either make the patches "GrassB" (a darker grass texture)&nbsp;or make them 
+			"GrassDirt25,GrassDirt50,GrassDirt75".</P>
+		<P>Finally, add a&nbsp;Cliffs sub-area to the Hills class. These will be the 
+			individual mountains within this zone. Change the area to Cliff mode with Greek 
+			cliff type and make it avoid other Cliffs by 10. Set the Number to 14-16 and 
+			the Size to 200-300. (If you want to learn more about cliff settings, read
+		</P>
+		<P>If you want, test out the map in the editor. All that is left to place now is 
+			Object Groups.</P>
+		<P>&nbsp;</P>
+		<P><STRONG>Object Groups</STRONG></P>
+		<P>Units in MapGen maps are placed in groups, which could have several units of 
+			different types together. For example, you can have a "Settlement" group that 
+			just contains 1 Settlement, or a "huntables" group that contains 4-6 deer, or a 
+			"ruins" group that contains some broken columns, some rocks and an ancient 
+			Relic. Each group is divided into "<EM>items</EM>", which are sets of units of 
+			the same kind, and each item can contain one or more units of a (possibly 
+			random) type. Note that you can place not only "world" objects like rocks, 
+			straggler&nbsp;trees or food sources, but also "neutral" units like infantry, 
+			cavalry and archers which will attack all players like the bandits in the 
+			Valley of the Kings map.</P>
+		<P>Let's start with some Settlements in the Plains area. Select the area and add an 
+			object group by setting the Count of object groups to 1 or clicking Elements 
+			and pressing the [...] button to open a separate editor. Give it the name 
+			"Settlements". Set Number (again per 10,000 tiles covered by the parent class) 
+			to Min 3, Max 3, and add two constraints: AvoidObjectType "Settlement" by 35 
+			and AvoidImpassableTerrain "Land" by 2. Now, set the Count for Items to 1, and 
+			change the first item to&nbsp;"Settlement (Min 1, Max 1, Dist 0.0)". The four 
+			parameters&nbsp;of an item&nbsp;are as follows: unit proto-name (the game's 
+			internal name for each unit, which can be selected from the 
+			dropdown),&nbsp;number of units&nbsp;min and max to place per group, and 
+			"clumping distance" from the center of the group (useful to place some objects 
+			farther from the center than others or give things like berry bush patches more 
+			room to place randomly).</P>
+		<P>Add a similar Settlements group to the Hills area. You might want these to avoid 
+			Cliffs sub-areas if you think they don't look good on clifftops.</P>
+		<P>Add a Huntables group to the Plains, with one item: "Deer/Elk (Min 4, Max 6, 
+			Dist 5.0)". Here the "/" slash lets the game choose randomly between the type 
+			of unit in each group. Give it some constraints to avoid impassable land and 
+			AvoidObjectType "All" by 5. (Note how you can avoid general object types as 
+			well as specific names; other things you might want to avoid are "Gold", 
+			"Food", "Building".).</P>
+		<P>Add a GoldMines group to Hills, with two items: "Gold Mine Medium&nbsp;(Min 1, 
+			Max 1, Dist 0.0)" and "Rock Granite Sprite&nbsp;(Min 1, Max 3, Dist 5.0)" (this 
+			will make the gold mines be surrounded&nbsp;by a few small, decorative rocks). 
+			Set this group's PlacementSubArea to Cliffs sub-areas so all the gold appears 
+			on cliff-tops.</P>
+		<P>Add a Fishes group to the ocean, with "Fish - Mahi/Fish - Perch (Min 2, Max 3, 
+			Dist 5.0)". Make it avoid other fish and make it avoid passable land (the 
+			shoreline).</P>
+		<P>
+			Finally, test the map. It should be in an almost playable state, with pretty 
+			much all the resources players need - not bad for a quick job.</P>
+		<P>&nbsp;</P>
+		<P><STRONG>Congratulations!</STRONG></P>
+		<P>You've finished the tutorial. With the rest of these help files, you should be 
+			well under way to making MapGen maps. Specifically, read the <A href="tips.html">Tips 
+				and Tricks</A> section for some useful time-saving ideas. Best&nbsp;of 
+			luck&nbsp;in creating your maps.</P>
+		<P>Note that there are many classes in
+		</P>
+		<P>Here&nbsp;are several ideas of things you could add to this map if you want:</P>
+		<UL>
+			<LI>
+			Road terrain, fallen columns and relics to give the sense that people have 
+			lived here before
+			<LI>
+			More food sources: berries,&nbsp;herdable animals, bigger wild animals
+			<LI>
+			Predators such as wolves, maybe guarding the gold
+			<LI>
+			Straggler trees and smaller gold mines so that these resources are easier to 
+			gather
+			<LI>
+				Decorations: whales in the sea, seaweed and maybe a few shipwrecks near the 
+				shore, patches of grass, flowers&nbsp;and bushes, rocks of various sizes, small 
+				variations in terrain height (set the height of a sub-area to a random value 
+				different than the surrounding area).</LI></UL>
+		<P>You should save your work so far and&nbsp;maybe even&nbsp;Export your classes to 
+			some files so you can Import them again in another map. As you make more and 
+			more detailed classes, you are essentially creating "building blocks" for 
+			making newer maps; once you have a class for almost every climate zone you'd 
+			like to use, you can create any area of the world with those climate zones just 
+			by painting the map grid.</P>
+	</body>
+</html>

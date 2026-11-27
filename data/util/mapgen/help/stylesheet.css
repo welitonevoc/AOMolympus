@@ -1,0 +1,33 @@
+BODY
+{
+	background: #FFFFFF;
+	color: #000000;
+	font-family: Times New Roman;
+}
+BODY.SIDEBAR 
+{
+	background: url(sidebar.jpg);
+	color: #000000;
+	font-family: Times New Roman;
+}
+H1 
+{
+	font-family: Times New Roman;
+	font-size: x-large;
+}
+H2 
+{
+	font-family: Times New Roman;
+	font-size: large;
+}
+A 
+{
+	color: #009900;
+	text-decoration: none;
+}
+A:HOVER
+{
+	color: #00CC00;
+	text-decoration: none;
+	border-bottom: 1px solid #FF4400;
+}

@@ -1,0 +1,674 @@
+General All
+
+Free myth units on age up is equal to 30 divided by favor cost, instead of just 1
+
+House population from 10 to 14
+Manor population from 20 to 28
+
+Sitting Tiger crush damage from 50 to 10 (same as pierce)
+Onager crush damage from 13 to 5 (same as pierce)
+Catapult crush damage from 50 to 10 (same as pierce)
+Petrobolos crush damage from 11 to 5 (same as pierce)
+
+Town Center damage x3
+Citadel Center damage x5
+Dock damage x5
+Dock range from 18 to 21
+Docks also deal Hack and Crush damage (to cover all naval units appropriately)
+Tower/Mirror Tower/Sentinel/Sky Passage damage x2
+Fortress/Migdol/Hill Fort/Palace/Castle damage x5
+Boiling Oil damage changed to be same as regular attack
+Tower build limit from 20 to 10
+Fortress/Migdol/Hill Fort/Palace/Castle build limit from 10 to 5
+Dock build limit from infinite to 1
+
+Fishing ships can build a Harbor which is just a dock with less hit points that only builds fishing ships and can receive fish (no garrison)
+All civs can build it at normal speed, and Egyptian fishing ship build rate increased from 0.28 to 1.0
+
+Naval Oxybeles range increase from 12 to 3 (upgraded siege ships outrange towers and castles, but not mirror towers, equal to new docks)
+
+Titans can walk in water
+Docks can attack Titans and deal 30x damage to them
+
+Fish have 1000 food. When depleted, they turn gold and fishing ships can harvest gold from them instead, infinitely.
+The gather rate is the same as food gathering rate i.e. faster than a villager mining gold.
+Purse Seine and Salt Amphora fishing upgrades work on gold gathering rate the same as food.
+
+Masons hack armor from +20% to +30% and affects all buildings, not just Town Centers
+Architects also increases hack armor by 30% for all buildings
+
+Eclipse fixed to increase all myth unit damage types by 50%
+Eclipse increases favor generation of Hersirs, Greek Villagers, Gardens, and Town Centers, not just Monuments
+Eclipse recharge time decrease changed to a multiplicative bonus instead of additive (to prevent too much stacking with another recharge time decreases)
+Eclipse bonus to boosts and hack armor removed
+
+General Greek
+
+-
+
+General Egyptian
+
+Hands of the Pharaoh affects New Kingdom pharaoh too
+
+Priest Pierce armor from 1% to 10%
+
+Removed a 50% damage reduction applied to Pharaohs in Archaic age (they still have a separate 40% reduction which is removed in Classical Age)
+
+Mercenary lifespan reduced from 40 seconds to 30 seconds
+
+Slinger gold cost from 24 to 25
+
+Khopesh Swordsman population from 2 to 1
+Khopesh Swordsman cost from 30 food/30 gold to 30 food/20 gold
+Khopesh Swordsman train time from 8 to 4
+Khopesh Swordsmen benefit from general attack, HP, and armor bonuses which affect Spearmen and Axemen
+Therefore they benefit from the following: Leather Frame Shield, Serpent Spear, Scalloped Axe, Axe of Vengeance (not building bonus), Greatest of Fifty (not cav bonus), Spear on the Horizon
+
+Camel Caravans are now considered Camels therefore benefit from Ra's HP and speed bonuses and Desert Wind's HP and speed bonuses
+
+General Norse
+
+Dwarf build time from 16 to 14 (same as Gatherer)
+Dwarf build limit from 40 to 80 (same as Gatherer)
+
+Hersir armor from 20% Hack/15% Pierce to 40% Hack/30% Pierce
+
+General Atlantean
+
+Chieroballista cost from 115 wood/100 gold to 85 wood/75 gold
+Chieroballista population from 4 to 3
+Chieroballista damage bonus vs infantry reduced from 2.5 to 2.0
+Chieroballista damage bonus vs Huskarls reduced from 4.5 to 2.5
+Chieroballista damage bonus vs Destroyers reduced from 4 to 3.0
+Chieroballistas now benefit from anything that benefits "human soldiers" (in addition to siege)
+
+Fanatic and Fanatic hero 15 base damage instead of 10, lose bonus damage vs infantry and cavalry
+Fanatic and Fanatic hero bonus damage to Myth units/Set animals from 5.5/5 to 3.5/3
+Fanatics and Fanatic heroes deal splash damage in radius 2
+Fanatic HP from 120 to 180
+Fanatic hero HP from 135 to 200
+Fanatic population from 3 to 4
+Fanatic hero population from 4 to 6
+Fanatic train time from 12 to 16
+Fanatic food cost to from 75 to 100
+Fanatic gold cost from 55 to 75
+Fanatic favor cost from 0 to 2
+Fanatic hero food cost from 75 to 115
+Fanatic hero gold cost from 70 to 90
+Fanatic hero favor cost from 3 to 5
+
+Arcus 12 base damage instead of 6
+Arcus hero 18 base damage instead of 6
+Arcus hero damage to bonus to Myth units/Set animals from 6/5 to 4/3
+Arcus hero range from 20 to 22
+Arcus HP from 60 to 90
+Arcus hero HP from 70 to 105
+Arcus population from 2 to 4
+Arcus hero population from 3 to 6
+Arcus train time from 12 to 18
+Arcus wood cost to from 60 to 120
+Arcus gold cost from 35 to 70
+Arcus hero wood cost from 70 to 140
+Arcus hero gold cost from 40 to 80
+
+Contarius and Contarius hero 20 base damage instead of 10
+Contarius HP from 130 to 325
+Contarius hero HP from 145 to 360
+Contarius population from 3 to 6
+Contarius hero population from 4 to 8
+Contarius train time from 17 to 25
+Contarius food cost to from 60 to 120
+Contarius gold cost from 40 to 80
+Contarius hero food cost from 80 to 160
+Contarius hero gold cost from 40 to 80
+
+Destroyer hero population from 4 to 5
+
+All Atlantean heroes now gain bonuses from Medium/Heavy/Champion upgrades
+
+Arcus and Contarius moved to Palace
+Destroyer moved to Barracks
+
+General Chinese
+
+Immortals regenerate 2 HP/s
+Immortals use their ranged attack against all myth units
+
+Major Gods
+
+Gaia
+Gaia's Forest charges from 4 to 3
+Gaia's Forest tree growth interval from 3-5 seconds to 0.05-0.50 seconds
+Gaia's Forest number of trees from 20 to 50
+Arcus, Citizens, and Contarius deal 15% more damage
+
+Hades
+Vaults of Erebus gold trickle from 0.75 to 2.00 (roughly equal to 2 villagers)
+Shade population from 1 to 0
+Gastraphetes crush damage from 6 to 1
+Increases building hack armor by same amount as HP (25%)
+
+Isis
+Flood of the Nile food trickle from 0.75 to 2.00 (roughly equal to 2 villagers)
+Priest base damage from 3 to 4.5
+Priest damage vs myth units reduced from 9x to 6x
+Priest damage vs Set animals reduced from 3x to 2x
+
+Kronos
+Myth units are 20% cheaper, remove movespeed bonus and siege movespeed and cost bonuses
+Destroyers, Cheiroballistae, and Fire Siphons deal 15% more damage
+Deconstruction back to 3 charges
+
+Loki
+Eyes in the Forest improves line of sight for all units instead of just infantry
+Eyes in the Forest also provides a wood trickle of 2.00 (roughly equal to 2 villagers)
+Eyes in the Forest gold cost from 50 to 175
+Eyes in the Forest favor cost from 2 to 5
+Eyes in the Forest research time from 25 to 40
+
+Odin
+Lone Wanderer only applies to Odin's starting Ulfsark, but increases speed by 50% instead of 10%
+Lone Wanderer favor cost from 5 to 2
+Lone Wanderer wood cost from 175 to 50
+Jarl HP bonus back to 20%
+
+Oranos
+Fanatics, Katapeltes, and Murmillos deal 15% more damage
+
+Poseidon
+Hetairoi attack bonus from 3.5x vs buildings to 2x vs infantry and cavalry
+Hetairoi Pierce armor from 40% to 10%
+Hetairoi speed from 5.3 to 6.5
+The Argo is available in Classical Age instead of Heroic Age
+Lord of Horses no longer improves line of sight for cavalry (only scouts), but increases cavalry damage against buildings by 25%, too
+Lure min range from 5 to 1, max range from 150 to 500, attract rate from 24 to 15, max food from 1000 to 50000, removed herdables from attract type
+Militia population from 1 to 0
+
+Ra
+Pharaohs and Son of Osiris deal +50% damage
+Son of Osiris resource bonus from empowering from 25% to 50%
+Son of Osiris build speed from empowering from 75% to 100%
+Son of Osiris attack speed from empowering from 2x faster to 4x faster
+Son of Osiris unit training+researching from empowering from 30% to 45%
+Chariot and Camel HP bonus from 22% to 20%
+Skin of the Rhino damage bonus from 10% to 15%
+
+Set
+Has Forest Fire instead of Vision
+Gazelle of Set favor cost from 4 to 2
+Gazelle of Set build time from 3 to 1.5
+Giraffe of Set favor cost from 7 to 4
+Giraffe of Set now trainable in Archaic Age
+Ape of Set now trainable in Heroic Age
+Ape of Set now benefit from bronze/copper/iron blacksmith upgrades
+Ape of Set attack from 5 to 8
+Crocodile of Set population from 1 to 2
+Rhinoceros of Set population from 2 to 3
+
+Shennong
+Fire Lance splash reverted from 2 to 3
+
+Thor
+Each of Thor's unique Dwarven Foundry technologies also increase Dwarf gather rate by 5%
+
+Minor Gods
+
+Greek
+
+Zeus Infantry Build: Artemis, Athena, Hephaestus
+Zeus Myth Units Build: Hermes, Dionysus, Hera
+
+Poseidon Cavalry Build: Hermes, Dionysus, Ares
+Poseidon Naval Units Build: Aphrodite, Apollo, Hera
+
+Hades Archers Build: Artemis, Apollo, Ares
+Hades Defense Build: Aphrodite, Athena, Hephaestus
+
+Aphrodite
+Is now a Classical Age god
+Nemean Lion favor cost from 22 to 20
+Nemean Lion attack damage from 20 to 15
+Nemean Lion special attack damage from 12 to 15
+Nemean Lion HP from 660 to 440
+Curse max villagers cursed from 7 to 3 (250-450 "damage" to 195-195)
+Curse other unit "damage" from 675 to 450
+
+Apollo
+Has Cyclops instead of Manticore
+Has Scylla instead of Dionysus
+Scylla favor cost from 15 to 20
+Scylla given 10/s HP regeneration
+Cyclops favor cost from 18 to 20
+Has Anastrophe instead of Dionysus
+Sun Ray damage increase from 10% to 20%
+Temple of Healing favor cost from 12 to 15
+Temple of Healing gains the LOS bonus from Oracle and renamed to Oracle
+
+Ares
+Replaces Artemis as a Mythical Age god and takes her technologies
+Has Thracian Horses instead of Dionysus
+Thracian Horses increases attack by 20% instead of HP
+Earthquake max damage limit removed
+Earthquake damage from 50 hack/350 crush to 1 hack/100 crush
+Earthquake duration from 12 to 10 seconds
+Earthquake damage vs allied units/villagers/buildings from 40%/25%/50% to 20%/20%/40%
+
+Artemis
+Replaces Ares as a Classical Age god and takes his technologies
+Has Eclipse instead of Pestilence
+Has Minotaur instead of Cyclops
+Minotaur favor cost from 14 to 20
+Minotaur special attack damage from 60 to 90
+Deimos' Sword of Dread also increases Myrmidon hit points by 15%
+Enyo's Bow of Horror also affects Gastraphetes and increases range by 6, instead of attack
+
+Athena
+Is now a Heroic Age god
+Has Hydra instead of Minotaur
+Hydra favor cost from 28 to 30
+Hydra given 10/s HP regeneration
+Sarissa also increases hoplite damage by 10%
+Aegis pierce armor bonus from 10% to 20%
+Athena has Athenian Wall instead of Hera
+Athenian Wall favor cost reduced from 20 to 10
+Athenian Wall non-wall building HP increase from 20% to 15%, additional for walls from 10% to 15%, also grants additional 15% hack armor to all buildings
+Restoration healing in combat from 30 to 60
+
+Dionysus
+Has Satyr instead of Hydra
+Bacchanalia HP bonus from 5% to 10%
+Has Oracle instead of Apollo
+Oracle increases Cavalry health by 20% instead of granting LOS
+Oracle cost increased from 150 wood/10 favor to 300 wood/20 favor
+Oracle renamed to Olympic Games
+
+Hephaestus
+Colossus favor cost from 25 to 30
+
+Hera
+Has Trierarch instead of Ares (old Artemis)
+Medusa favor cost from 28 to 30
+Carcinos favor cost from 15 to 20
+Carcinos blood damage from 300 to 320
+Monstrous Rage now works on all attacks/special attacks including a Titan's special attack and Carcinos's death effect
+Lightning Storm max damage limit removed
+Lightning Storm duration from 15 to 10 seconds
+
+Hermes
+Centaur favor cost from 12 to 10
+Centaur population from 3 to 2
+Spirited Charge also applies to myth units
+Sylvan Lore speed bonus from 1 to 0.5
+
+Egyptian
+
+Ra Spearman+Axeman build: Ptah, Sobek, Horus
+Ra Economy+Naval Units build: Bast, Sekhmet, Thoth
+
+Isis Priests build: Bast, Nephthys, Osiris
+Isis Myth Units build: Anubis, Sobek, Thoth
+
+Set Swarm build: Anubis, Sekhmet, Osiris
+Set Khopesh build: Ptah, Nephthys, Horus
+
+Anubis
+Has Eclipse instead of Plague of Serpents
+Has Electrum Bullets instead of Serpent Spear
+Adze of Wepwawet moved from Bast to Anubis
+Adze of Wepwawet cost from 100 gold to 100 food
+Anubite favor cost from 15 to 10
+Anubite population from 3 to 2
+Anubite jump range from 8 to 10
+Anubite damage from 13 to 15
+Feet of the Jackal increased jump range from 6 to 10
+Feet of the Jackal no longer improves Anubite attack, but doubles jump damage
+Necropolis also decreases the favor cost and train time of Anubites and summoned animals by 50%
+Necropolis favor cost from 5 to 30
+Necropolis gold cost from 180 to 150
+
+Bast
+Has Shifting Sands instead of Eclipse
+Sphinx favor cost from 18 to 20
+Sphinx population from 4 to 3
+Criosphinx and Hieracosphinx upgrades improve the Sphinx's special attack too, not just basic attack
+Hieracosphinx upgrade also increases HP by 70 and Hack armor by 30%
+Sacred Cats gold cost from 110 to 100
+Shaduf moved from Ptah to Bast
+
+Hathor
+Name and portrait changed to Sobek
+Petsuchos favor cost from 15 to 10
+Petsuchos HP from 480 to 420
+Petsuchos population from 4 to 3
+Locust Swarm radius from 6 to 8, duration from 23 to 30, swarm count from 1 to 3, speed from 3 to 6
+New technology: Strength of the Nile - increase Villager HP by 30%, Villager attack by 15%, and myth units, spearman, and axemen regenerate 4 HP/S
+Ram of the West Wind moved from Sekhmet to Osiris and renamed Ram of the Northward Current
+Ram of the West Wind increases hack armor of siege towers by 20% instead of HP, and also increases hack armor of myth units by 40%
+
+Horus
+Son of Osiris moved from Osiris to Horus
+Son of Osiris renamed Son of Horus
+Avenger favor cost from 25 to 30
+Avenger whirlwind attack recharge time from 10 to 3
+Avenger whirlwind attack damage from 25 to 28
+Avenger pierce armor from 40% to 60%
+
+Nephthys
+Stones of Red Linen (catapult and war barge attack) moved from Sekhmet to Nephthys
+City of the Dead benefits Priests, Son of Osiris, and Pharaohs, instead of just Pharaohs
+Funeral Rites affects Khopesh Swordsmen instead of Priests and Pharaohs, and also increases their attack by 20% and movement speed by 10%
+Funeral Rites icon swapped with Medjay
+Leviathan favor cost from 15 to 30
+Scorpion Man favor cost from 22 to 20
+
+Osiris
+War Turtle moved from Thoth to Osiris
+War Turtle favor cost from 15 to 20
+War Turtle special attack damage from 100 hack/30 crush to 150 hack/150 crush
+War Turtle Hack armor from 40% to 90%
+War Turtle Pierce armor from 70% to 90%
+War Turtle Crush armor from 80% to 20%
+War Turtle damage bonus vs myth units from 0 to 2x
+Mummy favor cost from 25 to 30
+Bone Bow moved from Sekhmet to Osiris
+Tusks of Apedemak moved from Thoth to Osiris
+Tusks of Apedemak also affects converted or summoned animals
+Funeral Barge also increases Priest movement speed by 25%
+Tornado moved from Horus to Osiris
+Tornado max damage limit removed
+Tornado damage vs allied units/villagers/buildings from 25%/50%/50% to 40%/15%/40%
+
+Ptah
+Roc moved from Hathor to Ptah
+Roc favor cost from 15 to 30
+Has Plague of Serpents instead of Shifting Sands
+Has Serpent Spear instead of Electrum Bullets
+Serpent Spear cost from 250 food/12 favor to 50 wood/5 favor
+Scalloped Axe cost from 200 Wood/15 favor to 50 wood/5 favor
+Leather Frame Shield cost from 100 food/10 favor to 50 wood/5 favor
+Wadjet favor cost from 15 to 10
+Wadjet population from 3 to 2
+
+Sekhmet
+Desert Wind moved from Osiris to Sekhmet
+Desert Wind also applies to summoned or converted animals
+Medjay moved from Hathor to Sekhmet
+Medjay duration increase from 30 seconds to 15 seconds
+Medjay food cost from 250 to 150 and favor cost from 25 to 15
+Medjay icon swapped with Funeral Rites
+Sun-dried Mud Brick moved from Hathor to Sekhmet and renamed Sun-baked Mud Brick
+Sun-dried Mud Brick increases building hp by 15% instead of 10%
+Sun-dried Mud Brick also increases hack armor by 15%
+Sun-dried Mud Brick cost from 300 wood/20 favor to 300 wood/10 favor
+Scarab favor cost from 18 to 20
+Scarab blood damage from 40 to 160
+Scarab population from 5 to 4
+Citadel Centers have a small god power exclusion area, equal to Hesperides
+
+Thoth
+New Kingdom moved from Osiris to Thoth
+Phoenix favor cost from 25 to 20
+Phoenix population from 5 to 4
+Meteor duration from 15 to 20 seconds
+Meteor max damage limit removed
+Book of Thoth also increases favor generation by 25%
+
+Norse
+
+Odin Jarls build: Freyja, Bragi, Hel
+Odin Naval Units build: Heimdall, Njord, Baldr
+
+Thor Cavalry+Throwing Axemen build: Freyja, Skadi, Baldr
+Thor Ulfsarks+Huskarls build: Forseti, Bragi, Tyr
+
+Loki Giants build: Forseti, Skadi, Hel
+Loki Hersirs Build: Heimdall, Njord, Tyr
+
+Baldr
+Fire Giant favor cost from 28 to 30
+Gets Jormund Elver instead of Tyr
+Jormund Elver favor cost from 15 to 10
+Arctic Gale also increases Throwing Axeman speed and attack by 20%
+
+Bragi
+Ring Giver from Njord to Bragi
+Battle Boar favor cost from 27 to 30
+
+Forseti
+Mountain Giant from Njord to Forseti
+Mountain Giant favor cost from 25 to 20
+Mountain Giant food cost from 250 to 200
+Mountain Giant hack armor from 50% to 10%
+Mountain Giant pierce armor from 40% to 10%
+Safeguard from Heimdall to Forseti
+Mithril Breastplate hack armor from 10% to 20%
+
+Freya
+Has Eclipse instead of Forest Fire
+Valkyrie favor cost from 18 to 20
+
+Heimdall
+Hall of Thanes from Forseti to Heimdall
+Einherjar favor cost from 15 to 20
+
+Hel
+Removed Frost and Mountain Giant
+Fire Giant favor cost from 28 to 30
+Granite Blood also increases Mountain Giant hack armor back to base game levels (50% hack/40% pierce)
+Granite Blood also reduces Fire Giant favor cost to 20 (and Hel gets 2 on age up instead of 1)
+Granite Blood also doubles range of Frost Giant's freeze attack (from 4 to 8)
+Rampage also doubles the damage of Nidhogg
+
+Njord
+Trolls from Forseti to Njord
+Troll favor cost from 15 to 10
+Troll HP from 200 to 300
+Trolls regenerate 5 HP/s
+Hamarrtroll HP increase from 50 to 100
+Hamarrtroll damage increase from 25% to 33%
+Kraken favor cost from 25 to 30
+Thurisaz Rune from Bragi to Njord
+Thuirsaz Rune speed increase from 12% to 15%
+Thurisaz Rune increases myth unit damage by 15% as well
+
+Skadi
+Frost Giant favor cost from 22 to 20
+Frost Giant now costs 250 wood instead of 200 food
+
+Tyr
+Bravery affects Hersirs as well
+Fimbulwinter pack size from 9 to 14
+Fimbulwinter Wolf Crush damage from 8 to 14
+Fimbulwinter Wolf Hack armor from 20% to 70%
+Fimbulwinter Wolf Pierce armor from 70% to 85%
+Fimbulwinter Max affected Settlements from 4 to all
+Fimbulwinter duration from 30 seconds to 60 seconds
+Fimbulwinter Wolf damage against heroes from 50% to 100%
+Fenris Wolf damage against heroes from 25% to 100%
+Fenris Wolf favor cost from 15 to 10
+
+Atlantean
+
+Gaia Defense build: Prometheus, Atlas, Helios
+Gaia Healing build: Oceanus, Theia, Rheia
+
+Oranos Assault build: Leto, Hyperion, Hekate
+Oranos Naval Units build: Oceanus, Theia, Helios
+
+Kronos Myth Units build: Prometheus, Hyperion, Rheia
+Kronos Siege build: Leto, Atlas, Hekate
+
+Atlas
+Is a Heroic God
+Gets Behemoth instead of Rheia
+Behemoth population from 5 to 4
+Behemoth regeneration from 2 to 6
+Gets Valor instead of Implode
+Valor charges back to 3
+Titan Shield gold cost from 200 to 300
+Titan Shield favor cost from 15 to 30
+Titan Shield also affects Destroyers
+Eyes of Atlas gives Destroyers bonus damage instead of granting LOS
+Eyes of Atlas favor cost from 5 to 15
+
+Hekate
+Gets Lance of Stone instead of Theia, increase damage to 20% but remove building damage, applies to all human units, name changed to Savagery
+Lance of Stone favor cost from 12 to 25
+Gets Mail of Orichalkos instead of Rheia
+Mail of Orichalkos affects all human units and heroes
+Asper Blood damage increased from 50 to 80
+Lampades favor cost from 25 to 30
+Lampades pierce damage from 12 to 15
+Lampades damage against heroes from 25% to 200%
+Gets Traitor instead of Rheia
+Traitor cooldown reduced to 1 and charges increased to 5
+
+Helios
+Gets Implode instead of Atlas
+Implode max damage removed
+Gets Stymphalian Bird instead of Theia
+Stymphalian Bird favor cost from 25 to 20
+Man O War favor cost from 15 to 30
+
+Hyperion
+Heroic Renewal changed to increase hero damage by 25% and increase damage that myth units deal to heroes by 25% (name now Primordial Light)
+Heroic Renewal cost from 200 gold/15 favor to 400 gold/30 favor
+Has Heart of the Titans instead of Prometheus
+Heart of the Titans also reduces myth unit favor cost by 20%
+Has Manticore instead of Satyr
+Manticore favor cost from 25 to 20
+Manticore population cost from 5 to 3
+
+Leto
+Automaton favor cost from 6 to 10
+Gets Weightless Mace instead of Oceanus and Weightless Mace also affects all human units, and the damage is changed to 50%, but only against buildings (Orichalkos Armory)
+
+Oceanus
+Servant favor cost from 12 to 10
+Bite of the Shark increases damage of Katapeltes by 20% instead
+Gets Poseidon's Secret instead of Theia, it increases speed of Katapeltes by 40% instead
+Poseidon's Secret favor cost from 20 to 10
+
+Prometheus
+Gets Eclipse instead of Valor
+Alluvial Clay also applies to buildings at half effectiveness (15% instead of 30%)
+Alluvial Clay favor cost from 12 to 15
+Gets Horns of Consecration instead of Rheia
+Promethean population from 3 to 2
+Promethean cost from 80 gold to 80 food
+
+Rheia
+Is a Mythic God
+Gets Heka Gigantes instead of Helios
+Heka Gigantes favor cost from 25 to 30
+Heka Gigantes shockwave damage type from crush to hack
+Heka Gigantes target damage for special attack from 20 to 50
+Gets Tartarian Gate instead of Hekate
+Tartarian Gate now has 3 charges
+Gets Mythic Rejuvenation instead of Hekate
+Mythic Rejuvenation regeneration from 2 HP/s to 6 HP/s
+Gets Celerity instead of Hekate
+Rheia's Gift reduces cost of Secrets of the Titans to 100/100/100/10 (including Rheia's Gift cost), and increases titan movement speed by 50%, instead of present effect
+
+Theia
+Gets Argus instead of Atlas
+Argus favor cost from 25 to 20
+Gets Io Guardian instead of Atlas
+Gets Nereid instead of Hyperion
+Nereid favor cost from 15 to 30
+Lemurian Descendents gives heroes 3 HP/s health regeneration instead of LOS
+Hesperides charge from 2 to 3
+
+Chinese
+
+Fu Xi Economy+Cavalry build: Chang'e, Dabo Gong, Xi Wangmu
+Fu Xi Immortals build: Sun Wukong, He Bo, Chongli
+
+Nu Wa Human Units build: Huang Di, Dabo Gong, Ao Kuang
+Nu Wa Myth Units build: Chang'e, Zhong Kui, Xi Wangmu
+
+Shennong Assault build: Huang Di, Zhong Kui, Chongli
+Shennong Monks+Naval Units build: Sun Wukong, He Bo, Ao Kuang
+
+Ao Kuang
+Azure Dragon HP from 800 to 500
+Azure Dragon Pierce armor from 60% to 80%
+Azure Dragon attack damage from 20 to 15
+Azure Dragon special attack damage from 25 to 36
+Dragon Turtle favor cost from 18 to 20
+Dragon Scales increases hack and pierce armor by 20%, instead of just hack armor by 10%
+East Sea also increases ship movement speed by 15% (takes the bonus from Ancient Destroyer)
+Great Flood damage limit set to 0.1 (for Great Flood, this is when it stops instant killing, and starts dealing normal damage)
+Great Flood crush damage from 2 to 10
+
+Chang'e
+Gets Eclipse instead of Barrage
+Gets Five Grains instead of Huang Di
+Houyi's Bow lets Peasants kill wild animals in 1 hit, instead of increasing archer attack
+Houyi's Bow favor cost from 15 to 1
+Houyi's Bow wood cost from 300 to 25
+Houyi's Bow research time from 40 seconds to 1 second
+Five Grains cost from 100 wood/100 gold/10 favor to 100 food/10 favor
+Jade Rabbit affects myth units too
+Qilin favor cost from 14 to 20
+Qilin HP from 375 to 1000
+Qilin attack from 12 to 5
+
+Chongli
+Ancient Destroyer increases the damage of all units by 20% instead of increasing ship movement speed
+Removed damage cap on Inferno
+
+Dabo Gong
+Gets Rammed Earth instead of He Bo
+Rammed Earth also increases building crush armor by 10%
+Rammed Earth favor cost from 20 to 10
+Gets Stirrup instead of Chongli
+Pixiu HP from 660 to 888
+Pixiu favor cost from 22 to 40
+Pixiu gold cost from 250 to 0
+Pixiu build limit of 2
+Pixiu generate 2.5 gold per second passively, but none on attack
+
+He Bo
+Sacrifices has the effect and cost of Burials instead (makes monks convert enemies faster)
+War Salamander favor cost from 15 to 20
+
+Huang Di
+Gets Barrage instead of Call to Arms
+Gets Elixir of Immortality instead of Chang'e, but it increases Halberdier hack+pierce armor by 10% and Chu Ko Nu attack by 10% instead of old effects
+Elixir of Immortality name changed to Call to Arms
+Oracle Bone Script cost from 300 food/15 favor to 50 gold/5 favor
+Terracotta Warrior HP from 200 to 100
+Terracotta Warrior population from 2 to 1
+Terracotta Warrior favor cost from 10 to 5
+Terracotta Warrior refunds 40 wood and 0 favor on death instead of 10 wood and 1 favor
+Terracotta Warrior damage from 11 to 7.5
+Terracotta Warrior on death damage from 15 to 10
+Terracotta Warrior train time from 16 to 12
+Stone armor reduces Terracotta Warrior train time by 75% in addition to normal effect
+
+Sun Wukong
+Paper Talisman now improves all attributes of heroes by 8%, instead of buffing Halberdier armor
+Paper Talisman research time from 40 to instant
+Monkey King favor cost from 15 to 20
+Monkey King food cost from 100 to 200
+Monkey King HP from 200 to 400
+Monkey King damage and special attack damage from 13 to 15
+
+Xi Wangmu
+White Tiger favor cost from 27 to 30
+White Tiger population from 4 to 5
+White Tiger attack from 30 to 60
+White Tiger leap attack damage from 200 to 120
+White Tiger leap attack range from 14 to 30
+White Tiger damage bonus to myth units from 3x to 2x
+White Tiger damage to heroes from 50% to 10%
+Tiger Spirit also reduces recharge time of all myth units' special attacks by 50%
+
+Zhong Kui
+Gets Burials instead of Dabo Gong
+Burials has the effect and cost of Sacrifices instead (favor trickle)
+Demon Slayer lowers cost of siege weapons by 20% instead of previous effect
+Unbridled Anger increases myth unit movement speed instead of infantry HP
+Jiangshi favor cost from 25 to 20
+Uproot roots pierce armor from 30% to 90%

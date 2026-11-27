@@ -1,0 +1,80 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Frameset//EN">
+<html>
+	<head>
+		<meta name="vs_targetSchema" content="http://schemas.microsoft.com/intellisense/ie5">
+		<link rel="stylesheet" href="stylesheet.css">
+	</head>
+	<body bottomMargin="10" topMargin="10">
+		<H2>
+			&nbsp;</H2>
+		<H2>Object Groups</H2>
+		<P>&nbsp;</P>
+		<P>
+			Gold mines, Settlements, relics, animals, berry bushes, rocks, plants, fish and 
+			all "world" units are placed on the map using object groups inside each of your <A href="classProperties.html">
+				grid square classes</A>. Each object group&nbsp;can have one to several <EM>items</EM>
+			that are individual units which will get placed together around the group's 
+			central point. For example, in one part of your map you might want a "ruins" 
+			object group which contains several broken columns as well as 
+			a&nbsp;few&nbsp;bushes&nbsp;and a relic, or an "old farm" group that contains a 
+			shack, a field, a fence&nbsp;and some pigs. Of course, you could also have 
+			object groups that are simply one straggler tree or a group 
+			of&nbsp;deer.&nbsp;To add object groups to a class, select it in the class 
+			list, and expand the Sub-Areas node. Click the "ObjectGroup[] Array" and press 
+			the [...] button to add, remove and&nbsp;edit&nbsp;sub-areas, or, if you just 
+			want to add one area, increase the Count shown by 1. To edit an 
+			existing&nbsp;object group, expand the Elements node and the appropriate object 
+			group definiton.</P>
+		<P>Note that many of an object group's&nbsp;properties have a "min" and "max" 
+			value.&nbsp;Your map will have a random number within this range each time it 
+			is played. You&nbsp;can use this for randomization, so&nbsp;players have to 
+			scout around and adapt to the map conditions.</P>
+		<P>Each&nbsp;object group&nbsp;has the following properties:</P>
+		<UL>
+			<LI>
+				<EM>Name</EM>: The name displayed for the object group. Should contain only 
+			letters and underscores ("_"). Each object group within the same class should 
+			have a different name.
+			<LI>
+				<EM>Number</EM>: Number of&nbsp;groups of this type&nbsp;to place for each 
+			10,000 tiles covered by the parent class.
+			<LI>
+				<EM>PlacementSubArea</EM>: A specific sub-area name that this group must be 
+			placed in, or blank to place it anywhere in the class. Sometimes you want 
+			objects to stay within a specific sub-area - for example, you might 
+			make&nbsp;some "lake" areas and want to place fish within them, or you might 
+			make some "old city" road-covered areas and want to place ruins and relics 
+			there.
+			<LI>
+				<EM>Constraints</EM>: Rules to obey when placing this object group, so that it 
+				does not overlap with other sub-areas or come too close to various types of 
+				objects. Read <A href="constraints.html">About Constraints</A> for more info.</LI></UL>
+		<P>The heart of an object group is the set of <EM>items</EM> it places. Each item 
+			contains one or more units of the same type. To edit the items of a group, 
+			expand its Items node and then press [...] on the Item[] Array node that 
+			appears, or change the Count of items, press Enter, and expand the Elements 
+			node to edit each of the items. You can edit an item by typing directly into it 
+			or by expanding it and editing individual properties.&nbsp;Each item has the 
+			following properties:</P>
+		<UL>
+			<LI>
+				<EM>Types</EM>: The unit proto-names that you want placed in this group. 
+			Use the drop-down list to look at the names available - while most units in Age 
+			of Mythology have the same proto-name as their English name, there are some 
+			exceptions (Hero Norse rather than Hersir, Crossbowman rather than 
+			Gastraphetes, etc). You can add multiple names separated by slashes ("/"), and 
+			a random one will be selected for each item placed; however, all units in the 
+			item will be of the same kind. For example, to create a "herdable animals" 
+			group, you could have an item with "Pig/Cow/Goat" in groups of 4.
+			<LI>
+				<EM>Number</EM>: The number of units of the type given that should be 
+			placed per group.
+			<LI>
+				<EM>ClusterDistance</EM>: The maximum distance in tiles&nbsp;from the 
+				center&nbsp;of the group where units from this item may be placed. For example, 
+				in a "relic and ruins" group you might want a relic object in the center with 
+				ClusterDistance 1.0, surrounded by some broken columns with ClusterDistance 
+				4.0.</LI></UL>
+		<P>&nbsp;</P>
+	</body>
+</html>

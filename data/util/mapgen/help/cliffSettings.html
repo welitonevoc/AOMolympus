@@ -1,0 +1,40 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Frameset//EN">
+<html>
+	<head>
+		<meta name="vs_targetSchema" content="http://schemas.microsoft.com/intellisense/ie5">
+		<link rel="stylesheet" href="stylesheet.css">
+	</head>
+	<body bottomMargin="10" topMargin="10">
+		<H2>
+			&nbsp;</H2>
+		<H2>About Cliff Settings</H2>
+		<P>&nbsp;</P>
+		<P>
+			Cliffs&nbsp;are placed using several special parameters in MapGen maps. In 
+			general, using the default values (except for Height) is a good idea, though 
+			sometimes you might want to make a cliff without any ramps (EdgeSize 1.0) or 
+			with more of them (smaller EdgeSize, larger number of Edges). The cliff 
+			properties editable are as follows:</P>
+		<UL>
+			<LI>
+				<EM>Edges</EM>: The number of impassable rock regions around the cliff's 
+			border. For example, a circular cliff with only one ramp up has one edge, while 
+			one with two ramps has two edges.
+			<LI>
+				<EM>EdgeSize</EM>: The size, as a fraction of 1.0 (where 1.0 means the 
+			entire border is covered by impassable rock), of each edge. In total, EdgeSize 
+			x Edges should be less than or equal to&nbsp;1.0.
+			<LI>
+				<EM>EdgeSizeVariance</EM>: Random variance in EdgeSize.
+			<LI>
+				<EM>Height</EM>: Height in meters above or below the sea level (the sea 
+			level is 0.0). Using a negative height will create a "canyon".
+			<LI>
+				<EM>HeightVariance</EM>: Random variance in Height.
+			<LI>
+				<EM>Steepness</EM>: How quickly the terrain rises or falls at the edge of a 
+				cliff. The default value of 0.9 is usually fine, but for taller cliffs you 
+				might want higher steepness.</LI></UL>
+		<P>&nbsp;</P>
+	</body>
+</html>

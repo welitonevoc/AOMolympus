@@ -1,0 +1,79 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Frameset//EN">
+<html>
+	<head>
+		<meta name="vs_targetSchema" content="http://schemas.microsoft.com/intellisense/ie5">
+		<link rel="stylesheet" href="stylesheet.css">
+	</head>
+	<body bottomMargin="10" topMargin="10">
+		<H2>
+			&nbsp;</H2>
+		<H2>Sub-Areas</H2>
+		<P>&nbsp;</P>
+		<P>
+			You can create smaller areas within&nbsp;the regions&nbsp;covered by each <A href="classProperties.html">
+				grid square class</A> to add variation, terrain obstacles, or resources. 
+			While classes are placed exactly where the <A href="mapGridLayout.html">grid&nbsp;layout</A>
+			is painted with them, sub-areas are arranged randomly within the&nbsp;class 
+			they are placed on,&nbsp;letting your map&nbsp;be different every time although 
+			the general terrain features are the same in all games. For example, you could 
+			define a "mountains" class with several&nbsp;cliff sub-areas, and a "plains" 
+			class with a few forest sub-areas. If you paint the mountains&nbsp;class in the 
+			north of your map and the plains class in the south, there will always be 
+			cliffs&nbsp;in the north and&nbsp;a&nbsp;forests in the south, but the exact 
+			location of the cliffs and forests will vary each game.&nbsp;Sub-areas can 
+			overlap several&nbsp;grid squares of the same class, so they can be as large 
+			or&nbsp;winding&nbsp;as needed.&nbsp;To add sub-areas to a class, select it in 
+			the class list, and expand the Sub-Areas node. Click the "SubArea[] Array" and 
+			press the [...] button to add, remove and&nbsp;edit&nbsp;sub-areas, or, if you 
+			just want to add one area, increase the Count shown by 1. To edit an 
+			existing&nbsp;area, expand the Elements node.</P>
+		<P>Note that many of a sub-area's properties have a "min" and "max" 
+			value.&nbsp;Your map will have a random number within this range each time it 
+			is played. You&nbsp;can use this for randomization, so&nbsp;players have to 
+			scout around and adapt to the map conditions.</P>
+		<P>Each sub-area has the following properties:</P>
+		<P><STRONG>General:</STRONG></P>
+		<UL>
+			<LI>
+				<EM>Name</EM>: The name displayed for the sub-area. Should contain only 
+			letters and underscores ("_"). Each sub-area&nbsp;within the same 
+			class&nbsp;should have a unique name.
+			<LI>
+				<EM>Number</EM>: Number of areas to place for each 10,000 tiles covered by 
+			the parent class.
+			<LI>
+				<EM>Size</EM>: The size of each area placed,&nbsp;in tiles.
+			<LI>
+				<EM>Constraints</EM>: Rules to obey when placing this sub-area, so that it does 
+				not overlap with other sub-areas or come too close to various types of objects. 
+				Read <A href="constraints.html">About Constraints</A> for more info.</LI></UL>
+		<P><STRONG>Land Generation:</STRONG></P>
+		<UL>
+			<LI>
+				<EM>AreaGenerationMode</EM>: Either Land (plain terrain), Water, Cliff or 
+			Forest.
+			<LI>
+				<EM>AreaTerrain</EM>: The type of land, water, cliff or forest to use. You 
+			can provide several types to randomly select between by separating them with a 
+			slash&nbsp;("/"); for example, "SandA/SandB". For Land sub-areas, you can add 
+			"layers" around&nbsp;the sub-area to make it blend in smoothly with the 
+			surrounding terrain, using a comma (","); for example, 
+			"GrassDirt75,GrassDirt50,GrassDirt25,SandA" will make a smooth transition from 
+			grass with very little dirt in it to sand. You can combine randomization and 
+			layers: for example, "GrassDirt50,SandA/GrassDirt50,SandB".
+			<LI>
+				<EM>Height</EM>: The altitude above (or under)&nbsp;sea level; sea level is 
+			0.0, and most cliffs in Age of Mytholgy are not higher than about 10.0.
+			<LI>
+				<EM>HeightBlend</EM>: How smoothly the area blends in with its 
+			surroundings; note that small areas will probably get flattened out completely 
+			if you use High.
+			<LI>
+				<EM>Coherence</EM>: How much the area&nbsp;"clumps" together, as a number 
+			between 0.0 and 1.0. An area with Coherence 1.0 will be circular.
+			<LI>
+				<EM>CliffSettings</EM>: For cliff areas. Read <A href="cliffSettings.html">About 
+					Cliff Settings</A> for more info.</LI></UL>
+		<P>&nbsp;</P>
+	</body>
+</html>

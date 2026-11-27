@@ -1,0 +1,60 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Frameset//EN">
+<html>
+	<head>
+		<meta name="vs_targetSchema" content="http://schemas.microsoft.com/intellisense/ie5">
+		<link rel="stylesheet" href="stylesheet.css">
+	</head>
+	<body bottomMargin="10" topMargin="10">
+		<H2>
+			&nbsp;</H2>
+		<H2>Map Grid Layout</H2>
+		<P>&nbsp;</P>
+		<P>Maps in MapGen contain various "<A href="editingClasses.html">grid square classes</A>" 
+			representing various climate areas on the map (plains, hilly zones, seas, 
+			forest zones, etc), which are then painted in a square grid layout. The grid is 
+			50x50 squares. Each class is color-coded and shown by this color in the grid, 
+			and areas which have no class assigned are shown black. You should cover the 
+			entire map with classes - even if you just want an area to be empty sea, create 
+			a "sea" class and cover it with that. Here's how you can use the Grid Layout 
+			controls:</P>
+		<P><STRONG>Classes List </STRONG>(On the left of the screen)&nbsp;- Select a Grid 
+			Square Class from the list to paint it. Note that each class will be displayed 
+			with the Color you chose for it in the Property Editor.</P>
+		<P><STRONG>Paint Area</STRONG> (Black box originally) - Click to paint with the 
+			selected class, or right-click to erase areas back to the original un-classed 
+			state. Also shows the selected player placement as a red shape.</P>
+		<BLOCKQUOTE dir="ltr" style="MARGIN-RIGHT: 0px">
+			<P><EM>Tip:</EM> Don't let regions of different classes have very sharp corners, 
+				especially at shorelines. Smoother areas look better and are easier to play on, 
+				although they may not be 100% geographically accurate.</P>
+		</BLOCKQUOTE>
+		<P dir="ltr"><STRONG>Compass</STRONG> - Shows which way is North&nbsp;(the top of 
+			the screen)&nbsp;in Age of Mythology, since the maps are usually rotated 45% to 
+			appear rhombus-shaped.</P>
+		<P><STRONG>Brush Size</STRONG> - Select the size of the brush in squares. The brush 
+			itself is always square.</P>
+		<P><STRONG>Import Image File</STRONG> - Instead of painting the map square by 
+			square, you can use any image of a part of the real world. Select any .png, 
+			.gif, .jpg or .bmp image, and MapGen will choose, for each grid square, the 
+			class whose color most closely matches the color at that location in the image, 
+			or to no class if the&nbsp;pixel is black.&nbsp;The image will first be 
+			rescaled to&nbsp;50x50 pixels.</P>
+		<BLOCKQUOTE dir="ltr" style="MARGIN-RIGHT: 0px">
+			<P><EM>Tip 1:</EM> Instead of editing the image using a paint editor to give 
+				various areas the color close to one of your classes, you can temporarily 
+				change the color of each class in your map, import the image, and then change 
+				the colors back to their originals.</P>
+			<P><EM>Tip 2:</EM> It's easiest to combine Import Image and Export Image along with 
+				a graphics program such as Windows Paint to get all features of the map exactly 
+				as you want them.</P>
+		</BLOCKQUOTE>
+		<P dir="ltr"><STRONG>Export Image File</STRONG> - Lets you save the map layout as 
+			a&nbsp;50x50 pixel&nbsp;.png, .gif, .jpg or .bmp image, with the colors of your 
+			classes for the various pixels. Useful for editing the map layout outside 
+			MapGen and then importing the image back in.</P>
+		<P dir="ltr"><STRONG>Player Placement</STRONG> - Lets you choose the shape in which 
+			players' start locations are placed. The options are Square, Circle, and 4 
+			types of Line, one at each side of the map. The selected placement is shown by 
+			a red line on the Paint Area.</P>
+	</body>
+</html>
