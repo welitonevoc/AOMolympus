@@ -145,6 +145,8 @@ static func _instantiate_aom_bundle(bundle_dir: String, slug: String, initial_ac
 
 	_force_opaque_materials(loaded)
 	_apply_external_manifest_texture(loaded, bundle_dir, manifest)
+	if "colossus" in slug.to_lower():
+		_attach_epic_colossus_armor(loaded)
 	_align_model_to_ground(loaded)
 	_attach_aom_accessories(loaded, bundle_dir, manifest, slug, initial_action)
 	_log_model_diag("UNIT:" + slug + ":" + initial_action, glb_path, loaded)
@@ -221,6 +223,82 @@ static func _apply_external_manifest_texture(node: Node, bundle_dir: String, man
 						mi.set_surface_override_material(i, std)
 		for child in cur.get_children():
 			stack.append(child)
+
+
+static func _attach_epic_colossus_armor(root: Node3D) -> void:
+	var armor_root := Node3D.new()
+	armor_root.name = "EpicColossusArmor"
+	root.add_child(armor_root)
+
+	var gold_mat := StandardMaterial3D.new()
+	gold_mat.albedo_color = Color("#d4af37")
+	gold_mat.metallic = 0.92
+	gold_mat.roughness = 0.24
+
+	var bronze_mat := StandardMaterial3D.new()
+	bronze_mat.albedo_color = Color("#7c5828")
+	bronze_mat.metallic = 0.85
+	bronze_mat.roughness = 0.35
+
+	var rune_mat := StandardMaterial3D.new()
+	rune_mat.albedo_color = Color("#38bdf8")
+	rune_mat.emission_enabled = true
+	rune_mat.emission = Color("#38bdf8")
+	rune_mat.emission_energy_multiplier = 2.8
+
+	# Ombreiras épicas duplas (esquerda e direita)
+	for side in [-1.0, 1.0]:
+		var pauldron := MeshInstance3D.new()
+		var pmesh := BoxMesh.new()
+		pmesh.size = Vector3(0.42, 0.24, 0.44)
+		pauldron.mesh = pmesh
+		pauldron.material_override = gold_mat
+		pauldron.position = Vector3(side * 0.52, 1.88, 0.0)
+		pauldron.rotation_degrees = Vector3(0.0, 0.0, side * -18.0)
+		armor_root.add_child(pauldron)
+
+		var trim := MeshInstance3D.new()
+		var tmesh := BoxMesh.new()
+		tmesh.size = Vector3(0.46, 0.06, 0.48)
+		trim.mesh = tmesh
+		trim.material_override = bronze_mat
+		trim.position = Vector3(side * 0.52, 1.76, 0.0)
+		trim.rotation_degrees = Vector3(0.0, 0.0, side * -18.0)
+		armor_root.add_child(trim)
+
+		var rune := MeshInstance3D.new()
+		var rmesh := BoxMesh.new()
+		rmesh.size = Vector3(0.10, 0.14, 0.06)
+		rune.mesh = rmesh
+		rune.material_override = rune_mat
+		rune.position = Vector3(side * 0.52, 1.90, 0.22)
+		armor_root.add_child(rune)
+
+	# Crista imperial dourada no elmo
+	var crest := MeshInstance3D.new()
+	var cmesh := BoxMesh.new()
+	cmesh.size = Vector3(0.08, 0.34, 0.42)
+	crest.mesh = cmesh
+	crest.material_override = gold_mat
+	crest.position = Vector3(0.0, 2.48, -0.02)
+	armor_root.add_child(crest)
+
+	# Cinturão de placas douradas
+	var belt := MeshInstance3D.new()
+	var bmesh := BoxMesh.new()
+	bmesh.size = Vector3(0.68, 0.14, 0.42)
+	belt.mesh = bmesh
+	belt.material_override = gold_mat
+	belt.position = Vector3(0.0, 1.24, 0.0)
+	armor_root.add_child(belt)
+
+	var buckle := MeshInstance3D.new()
+	var bkmesh := BoxMesh.new()
+	bkmesh.size = Vector3(0.18, 0.18, 0.08)
+	buckle.mesh = bkmesh
+	buckle.material_override = rune_mat
+	buckle.position = Vector3(0.0, 1.24, 0.21)
+	armor_root.add_child(buckle)
 
 
 static func _attach_aom_accessories(root: Node3D, bundle_dir: String, manifest: Dictionary, slug: String = "", action: String = "idle") -> void:
