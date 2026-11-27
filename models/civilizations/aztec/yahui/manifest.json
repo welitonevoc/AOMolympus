@@ -1,0 +1,37 @@
+{
+  "slug": "yahui",
+  "name": "Yahui (Fera Solar Mixteca)",
+  "civilization": "aztec",
+  "category": "unit",
+  "role": "myth",
+  "base": "yahui_base.glb",
+  "source_brg": "special m yahui_idlea.brg",
+  "frames": 20,
+  "vertices": 1998,
+  "faces": 666,
+  "materials": 1,
+  "textures": [
+    "special_m_yahui.png"
+  ],
+  "sockets": {
+    "ATTACHPOINT_Socket": [
+      -0.8906,
+      0.5586,
+      -4.5312
+    ],
+    "TOPOFHEAD_Socket": [
+      -0.5547,
+      1.4766,
+      2.4531
+    ],
+    "HITPOINTBAR_Socket": [
+      0.0,
+      2.5,
+      -0.0
+    ]
+  },
+  "accessories": [],
+  "animations": {
+    "idle": "yahui_base.glb"
+  }
+}

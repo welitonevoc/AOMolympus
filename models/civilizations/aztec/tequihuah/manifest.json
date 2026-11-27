@@ -1,0 +1,97 @@
+{
+  "slug": "tequihuah",
+  "name": "Guerreiro Tequihuah (Atlatl)",
+  "civilization": "aztec",
+  "category": "unit",
+  "role": "archer",
+  "base": "tequihuah_base.glb",
+  "source_brg": "archer m tequihuah_crouchidlea.brg",
+  "frames": 13,
+  "vertices": 479,
+  "faces": 179,
+  "materials": 1,
+  "textures": [
+    "archer_m_tequihua_standard.png"
+  ],
+  "sockets": {
+    "LEFTHAND_Socket": [
+      -0.126,
+      0.8047,
+      0.4121
+    ],
+    "RIGHTHAND_Socket": [
+      -0.3438,
+      0.5195,
+      -0.1836
+    ],
+    "TOPOFHEAD_Socket": [
+      -0.0249,
+      1.1953,
+      0.0278
+    ],
+    "FRONTCHEST_Socket": [
+      -0.0503,
+      0.7344,
+      0.027
+    ],
+    "BACKCHEST_Socket": [
+      0.1211,
+      0.9844,
+      -0.0938
+    ],
+    "FRONTABDOMEN_Socket": [
+      0.0513,
+      0.5,
+      -0.0544
+    ],
+    "BACKABDOMEN_Socket": [
+      0.2109,
+      0.6406,
+      -0.2012
+    ],
+    "LEFTLEG_Socket": [
+      0.1572,
+      0.373,
+      0.332
+    ],
+    "RIGHTLEG_Socket": [
+      -0.0649,
+      0.1328,
+      -0.4141
+    ],
+    "LEFTFOOT_Socket": [
+      0.1982,
+      0.0052,
+      0.375
+    ],
+    "RIGHTFOOT_Socket": [
+      0.0496,
+      0.01,
+      -0.5391
+    ],
+    "LEFTFOREARM_Socket": [
+      0.0557,
+      0.8125,
+      0.3906
+    ],
+    "RIGHTFOREARM_Socket": [
+      -0.1758,
+      0.6289,
+      -0.25
+    ],
+    "HITPOINTBAR_Socket": [
+      0.0,
+      3.0625,
+      -0.0
+    ],
+    "LAUNCHPOINT_Socket": [
+      0.1572,
+      1.8047,
+      0.5898
+    ]
+  },
+  "accessories": [],
+  "animations": {
+    "idle": "tequihuah_base.glb"
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "slug": "tlaloc_canoe",
+  "name": "Canoa Cerimonial de Tlaloc",
+  "civilization": "aztec",
+  "category": "unit",
+  "role": "naval",
+  "base": "tlaloc_canoe_base.glb",
+  "source_brg": "naval m tlaloc canoe_attacka.brg",
+  "frames": 57,
+  "vertices": 489,
+  "faces": 305,
+  "materials": 1,
+  "textures": [
+    "naval_m_tlaloc_canoe.png"
+  ],
+  "sockets": {
+    "HITPOINTBAR_Socket": [
+      0.0,
+      3.2656,
+      -0.0
+    ],
+    "LAUNCHPOINT_Socket": [
+      0.0,
+      1.2578,
+      1.6016
+    ]
+  },
+  "accessories": [],
+  "animations": {
+    "idle": "tlaloc_canoe_base.glb"
+  }
+}

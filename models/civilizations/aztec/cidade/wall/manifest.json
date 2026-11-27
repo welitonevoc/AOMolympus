@@ -1,0 +1,42 @@
+{
+  "slug": "wall",
+  "name": "Muralha de Pedra Coatenpantli",
+  "civilization": "aztec",
+  "category": "building",
+  "role": "building",
+  "base": "wall_base.glb",
+  "source_brg": "building m fortifiedwall long.brg",
+  "frames": 1,
+  "vertices": 46,
+  "faces": 28,
+  "materials": 1,
+  "textures": [
+    "building_m_walls_age2.png"
+  ],
+  "sockets": {
+    "CHIN_Socket": [
+      0.0,
+      0.0,
+      -0.0
+    ],
+    "HITPOINTBAR_Socket": [
+      0.0,
+      8.0,
+      -0.0
+    ],
+    "SMOKE1_Socket": [
+      -0.0,
+      0.6172,
+      -0.5703
+    ],
+    "SMOKE2_Socket": [
+      0.0,
+      0.6172,
+      0.543
+    ]
+  },
+  "accessories": [],
+  "animations": {
+    "idle": "wall_base.glb"
+  }
+}

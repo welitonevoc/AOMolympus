@@ -1,0 +1,67 @@
+{
+  "slug": "mining_camp",
+  "name": "Acampamento de Mineração",
+  "civilization": "aztec",
+  "category": "building",
+  "role": "building",
+  "base": "mining_camp_base.glb",
+  "source_brg": "building m mining camp age3.brg",
+  "frames": 1,
+  "vertices": 1861,
+  "faces": 690,
+  "materials": 1,
+  "textures": [
+    "building_m_shared_age1.png"
+  ],
+  "sockets": {
+    "RIGHTEAR_Socket": [
+      -1.8281,
+      0.2432,
+      -1.8359
+    ],
+    "RIGHTFOOT_Socket": [
+      1.6641,
+      0.4629,
+      0.6641
+    ],
+    "HITPOINTBAR_Socket": [
+      -0.0,
+      5.0,
+      0.0
+    ],
+    "FIRE_0_Socket": [
+      1.5938,
+      1.5469,
+      -1.8203
+    ],
+    "FIRE_1_Socket": [
+      -1.5156,
+      0.4902,
+      -0.2129
+    ],
+    "FIRE_2_Socket": [
+      1.4609,
+      1.3828,
+      -1.5391
+    ],
+    "FIRE_3_Socket": [
+      -0.6641,
+      1.5625,
+      -1.1953
+    ],
+    "FIRE_4_Socket": [
+      1.5938,
+      0.918,
+      0.3516
+    ],
+    "FIRE_5_Socket": [
+      0.2139,
+      0.1904,
+      0.5898
+    ]
+  },
+  "accessories": [],
+  "animations": {
+    "idle": "mining_camp_base.glb"
+  }
+}

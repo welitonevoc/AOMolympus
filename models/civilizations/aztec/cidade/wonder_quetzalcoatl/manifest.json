@@ -1,0 +1,82 @@
+{
+  "slug": "wonder_quetzalcoatl",
+  "name": "Grande Pirâmide de Quetzalcoatl",
+  "civilization": "aztec",
+  "category": "building",
+  "role": "building",
+  "base": "wonder_quetzalcoatl_base.glb",
+  "source_brg": "building m quetz wonder.brg",
+  "frames": 1,
+  "vertices": 11196,
+  "faces": 8288,
+  "materials": 1,
+  "textures": [
+    "building_m_quetza_wonder01.png"
+  ],
+  "sockets": {
+    "RESERVED0_Socket": [
+      -2.7031,
+      6.6562,
+      5.2188
+    ],
+    "RESERVED1_Socket": [
+      2.7031,
+      6.6562,
+      5.2188
+    ],
+    "RESERVED2_Socket": [
+      -1.9844,
+      7.0312,
+      1.4375
+    ],
+    "RESERVED3_Socket": [
+      1.9844,
+      7.0312,
+      1.4375
+    ],
+    "FIRE_0_Socket": [
+      -0.8789,
+      1.7578,
+      -7.0312
+    ],
+    "FIRE_1_Socket": [
+      7.2188,
+      0.5742,
+      7.875
+    ],
+    "FIRE_2_Socket": [
+      3.8125,
+      5.375,
+      -4.0
+    ],
+    "FIRE_3_Socket": [
+      -6.125,
+      3.6562,
+      6.0312
+    ],
+    "FIRE_4_Socket": [
+      -7.3438,
+      1.2969,
+      -0.1582
+    ],
+    "FIRE_5_Socket": [
+      1.25,
+      10.1875,
+      -0.1699
+    ],
+    "FIRE_6_Socket": [
+      -2.0312,
+      7.4062,
+      -1.3203
+    ],
+    "FIRE_7_Socket": [
+      -1.1562,
+      2.2031,
+      7.125
+    ]
+  },
+  "accessories": [],
+  "animations": {
+    "idle": "wonder_quetzalcoatl_base.glb"
+  }
+}

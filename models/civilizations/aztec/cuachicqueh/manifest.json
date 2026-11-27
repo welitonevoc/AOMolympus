@@ -1,0 +1,82 @@
+{
+  "slug": "cuachicqueh",
+  "name": "Guerreiro Tosquiado (Cuachicqueh)",
+  "civilization": "aztec",
+  "category": "unit",
+  "role": "infantry",
+  "base": "cuachicqueh_base.glb",
+  "source_brg": "infantery m cuachicquehwarriort_attacka.brg",
+  "frames": 11,
+  "vertices": 592,
+  "faces": 258,
+  "materials": 1,
+  "textures": [
+    "infantry_m_cuachicqueh.png"
+  ],
+  "sockets": {
+    "ATTACHPOINT_Socket": [
+      -0.1108,
+      1.0469,
+      0.1069
+    ],
+    "LEFTHAND_Socket": [
+      -0.2734,
+      0.9297,
+      0.3828
+    ],
+    "RIGHTHAND_Socket": [
+      -0.3008,
+      0.8945,
+      -0.2197
+    ],
+    "TOPOFHEAD_Socket": [
+      -0.1162,
+      1.7266,
+      0.1235
+    ],
+    "FRONTABDOMEN_Socket": [
+      -0.1108,
+      1.0469,
+      0.1069
+    ],
+    "BACKABDOMEN_Socket": [
+      0.0767,
+      1.1016,
+      -0.063
+    ],
+    "LEFTFOOT_Socket": [
+      0.1836,
+      0.0247,
+      0.4453
+    ],
+    "RIGHTFOOT_Socket": [
+      -0.3965,
+      0.0228,
+      -0.5703
+    ],
+    "LEFTFOREARM_Socket": [
+      -0.1445,
+      1.0703,
+      0.375
+    ],
+    "RIGHTFOREARM_Socket": [
+      -0.2695,
+      1.0938,
+      -0.1719
+    ],
+    "HITPOINTBAR_Socket": [
+      0.0,
+      3.0625,
+      -0.0
+    ],
+    "LAUNCHPOINT_Socket": [
+      0.0,
+      1.0547,
+      -0.0
+    ]
+  },
+  "accessories": [],
+  "animations": {
+    "idle": "cuachicqueh_base.glb"
+  }
+}

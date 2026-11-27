@@ -1,0 +1,37 @@
+{
+  "slug": "fishing_canoe",
+  "name": "Canoa de Pesca e Transporte",
+  "civilization": "aztec",
+  "category": "unit",
+  "role": "naval",
+  "base": "fishing_canoe_base.glb",
+  "source_brg": "naval m fishing_fishinga.brg",
+  "frames": 13,
+  "vertices": 266,
+  "faces": 199,
+  "materials": 1,
+  "textures": [
+    "naval_m_all.png"
+  ],
+  "sockets": {
+    "ATTACHPOINT_Socket": [
+      -0.0,
+      0.1318,
+      1.7812
+    ],
+    "CHIN_Socket": [
+      0.0107,
+      0.5586,
+      1.7656
+    ],
+    "HITPOINTBAR_Socket": [
+      0.0045,
+      3.6875,
+      0.0013
+    ]
+  },
+  "accessories": [],
+  "animations": {
+    "idle": "fishing_canoe_base.glb"
+  }
+}

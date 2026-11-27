@@ -1,0 +1,137 @@
+{
+  "slug": "wonder_huitzilopochtli",
+  "name": "Grande Pirâmide de Huitzilopochtli",
+  "civilization": "aztec",
+  "category": "building",
+  "role": "building",
+  "base": "wonder_huitzilopochtli_base.glb",
+  "source_brg": "building m huitz wonder.brg",
+  "frames": 1,
+  "vertices": 2650,
+  "faces": 1754,
+  "materials": 1,
+  "textures": [
+    "building_m_huitzi_wonder01.png"
+  ],
+  "sockets": {
+    "HITPOINTBAR_Socket": [
+      0.0,
+      12.375,
+      -0.7266
+    ],
+    "RESERVED0_Socket": [
+      -5.125,
+      1.0,
+      4.5
+    ],
+    "RESERVED1_Socket": [
+      5.125,
+      1.0,
+      4.5
+    ],
+    "RESERVED2_Socket": [
+      -0.5391,
+      7.4062,
+      -0.6445
+    ],
+    "RESERVED3_Socket": [
+      0.5391,
+      7.4062,
+      -0.6445
+    ],
+    "RESERVED4_Socket": [
+      4.2188,
+      7.4062,
+      -0.6445
+    ],
+    "RESERVED5_Socket": [
+      -4.2188,
+      7.4062,
+      -0.6445
+    ],
+    "RESERVED6_Socket": [
+      -0.3027,
+      6.9688,
+      1.875
+    ],
+    "RESERVED7_Socket": [
+      0.3027,
+      6.9688,
+      1.875
+    ],
+    "RESERVED8_Socket": [
+      -4.375,
+      6.9688,
+      1.875
+    ],
+    "RESERVED9_Socket": [
+      4.375,
+      6.9688,
+      1.875
+    ],
+    "FIRE_0_Socket": [
+      -0.1768,
+      0.2852,
+      5.7812
+    ],
+    "FIRE_1_Socket": [
+      -6.75,
+      0.5234,
+      3.375
+    ],
+    "FIRE_2_Socket": [
+      3.0625,
+      10.375,
+      -3.4531
+    ],
+    "FIRE_3_Socket": [
+      7.4062,
+      1.5391,
+      7.0938
+    ],
+    "FIRE_4_Socket": [
+      -4.0938,
+      9.3125,
+      -1.7266
+    ],
+    "FIRE_5_Socket": [
+      4.7812,
+      0.5234,
+      5.0938
+    ],
+    "FIRE_6_Socket": [
+      7.4688,
+      0.6133,
+      1.0234
+    ],
+    "FIRE_7_Socket": [
+      6.1562,
+      4.2812,
+      -2.8438
+    ],
+    "FIRE_8_Socket": [
+      -0.7734,
+      7.0,
+      -4.5
+    ],
+    "FIRE_9_Socket": [
+      2.9844,
+      7.1875,
+      -2.1406
+    ],
+    "FIRE_10_Socket": [
+      -1.1484,
+      7.1875,
+      -2.125
+    ],
+    "FIRE_11_Socket": [
+      -6.1562,
+      3.3906,
+      -5.6562
+    ]
+  },
+  "accessories": [],
+  "animations": {
+    "idle": "wonder_huitzilopochtli_base.glb"
+  }
+}

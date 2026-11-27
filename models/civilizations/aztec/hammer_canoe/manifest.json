@@ -1,0 +1,42 @@
+{
+  "slug": "hammer_canoe",
+  "name": "Canoa de Impacto (Aríete)",
+  "civilization": "aztec",
+  "category": "unit",
+  "role": "naval",
+  "base": "hammer_canoe_base.glb",
+  "source_brg": "naval m hammercanoe_attacka.brg",
+  "frames": 8,
+  "vertices": 562,
+  "faces": 332,
+  "materials": 1,
+  "textures": [
+    "naval_m_all.png"
+  ],
+  "sockets": {
+    "ATTACHPOINT_Socket": [
+      0.0062,
+      -0.0108,
+      0.8555
+    ],
+    "HITPOINTBAR_Socket": [
+      0.0068,
+      3.4531,
+      -0.4551
+    ],
+    "GARRISONFLAG_Socket": [
+      0.0282,
+      0.7031,
+      1.9922
+    ],
+    "FIRE_Socket": [
+      0.0369,
+      2.9062,
+      2.5781
+    ]
+  },
+  "accessories": [],
+  "animations": {
+    "idle": "hammer_canoe_base.glb"
+  }
+}

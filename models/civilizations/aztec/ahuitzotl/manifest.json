@@ -1,0 +1,42 @@
+{
+  "slug": "ahuitzotl",
+  "name": "Ahuitzotl (Besta Aquática)",
+  "civilization": "aztec",
+  "category": "unit",
+  "role": "myth",
+  "base": "ahuitzotl_base.glb",
+  "source_brg": "special m ahuitzotl_idlea.brg",
+  "frames": 3,
+  "vertices": 2058,
+  "faces": 1090,
+  "materials": 1,
+  "textures": [
+    "special_m_ahuizotl.png"
+  ],
+  "sockets": {
+    "ATTACHPOINT_0_Socket": [
+      -0.707,
+      2.4688,
+      -1.4531
+    ],
+    "ATTACHPOINT_1_Socket": [
+      0.0,
+      1.2109,
+      -0.0
+    ],
+    "TOPOFHEAD_Socket": [
+      0.0067,
+      1.0234,
+      1.7031
+    ],
+    "HITPOINTBAR_Socket": [
+      0.0,
+      2.8594,
+      0.0
+    ]
+  },
+  "accessories": [],
+  "animations": {
+    "idle": "ahuitzotl_base.glb"
+  }
+}

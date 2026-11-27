@@ -1,0 +1,27 @@
+{
+  "slug": "quetzal_bird",
+  "name": "Pássaro Quetzal Divino",
+  "civilization": "aztec",
+  "category": "unit",
+  "role": "myth",
+  "base": "quetzal_bird_base.glb",
+  "source_brg": "special m quetz bird_walk.brg",
+  "frames": 19,
+  "vertices": 32,
+  "faces": 13,
+  "materials": 1,
+  "textures": [
+    "animal_m_quetz_bird.png"
+  ],
+  "sockets": {
+    "HITPOINTBAR_Socket": [
+      0.0,
+      1.625,
+      -0.0
+    ]
+  },
+  "accessories": [],
+  "animations": {
+    "idle": "quetzal_bird_base.glb"
+  }
+}

@@ -1,0 +1,152 @@
+{
+  "slug": "calmecac",
+  "name": "Calmecac (Fortaleza Nobre)",
+  "civilization": "aztec",
+  "category": "building",
+  "role": "building",
+  "base": "calmecac_base.glb",
+  "source_brg": "building m palace age3.brg",
+  "frames": 2,
+  "vertices": 3887,
+  "faces": 1657,
+  "materials": 1,
+  "textures": [
+    "building_m_shared_age3.png"
+  ],
+  "sockets": {
+    "FACE_Socket": [
+      0.0,
+      0.0,
+      -0.0
+    ],
+    "CHIN_Socket": [
+      0.0,
+      0.0,
+      -0.0
+    ],
+    "LEFTEAR_Socket": [
+      -5.0,
+      3.0,
+      -0.0
+    ],
+    "RIGHTEAR_Socket": [
+      3.5,
+      5.0,
+      4.4688
+    ],
+    "NECK_Socket": [
+      2.0,
+      3.0,
+      5.0
+    ],
+    "RIGHTSHOULDER_Socket": [
+      2.0,
+      3.0,
+      -5.0
+    ],
+    "LEFTTHIGH_Socket": [
+      -2.0,
+      3.0,
+      -5.0
+    ],
+    "RIGHTTHIGH_Socket": [
+      -2.0,
+      3.0,
+      5.0
+    ],
+    "LEFTFOREARM_Socket": [
+      5.0,
+      3.0,
+      -0.0
+    ],
+    "RIGHTFOREARM_Socket": [
+      4.9062,
+      5.0,
+      2.6562
+    ],
+    "HITPOINTBAR_Socket": [
+      0.0,
+      10.0,
+      -0.0
+    ],
+    "GARRISONFLAG_Socket": [
+      4.3438,
+      6.0625,
+      3.9219
+    ],
+    "GATHERPOINT_Socket": [
+      0.0,
+      0.0,
+      5.125
+    ],
+    "FIRE_0_Socket": [
+      -1.0156,
+      5.0938,
+      -3.5156
+    ],
+    "FIRE_1_Socket": [
+      3.6094,
+      2.4062,
+      -4.3125
+    ],
+    "FIRE_2_Socket": [
+      -4.75,
+      3.0938,
+      4.1875
+    ],
+    "FIRE_3_Socket": [
+      2.0469,
+      4.1562,
+      3.9531
+    ],
+    "FIRE_4_Socket": [
+      2.0469,
+      1.4688,
+      -0.875
+    ],
+    "FIRE_5_Socket": [
+      -2.4062,
+      2.5781,
+      1.5391
+    ],
+    "FIRE_6_Socket": [
+      0.293,
+      1.2734,
+      4.0312
+    ],
+    "FIRE_7_Socket": [
+      -3.9688,
+      3.0938,
+      -3.4375
+    ],
+    "FIRE_8_Socket": [
+      3.4844,
+      5.9688,
+      1.625
+    ],
+    "FIRE_9_Socket": [
+      0.0,
+      0.0,
+      -0.0
+    ],
+    "FIRE_10_Socket": [
+      0.4531,
+      3.4688,
+      -1.5938
+    ],
+    "FIRE_11_Socket": [
+      4.125,
+      3.2344,
+      -2.2188
+    ],
+    "LAUNCHPOINT_Socket": [
+      -0.0,
+      5.0,
+      0.0
+    ]
+  },
+  "accessories": [],
+  "animations": {
+    "idle": "calmecac_base.glb"
+  }
+}

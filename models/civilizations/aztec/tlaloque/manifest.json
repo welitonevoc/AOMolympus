@@ -1,0 +1,97 @@
+{
+  "slug": "tlaloque",
+  "name": "Tlaloque (Espírito de Tlaloc)",
+  "civilization": "aztec",
+  "category": "unit",
+  "role": "myth",
+  "base": "tlaloque_base.glb",
+  "source_brg": "special m tlaloque_idlea.brg",
+  "frames": 7,
+  "vertices": 441,
+  "faces": 384,
+  "materials": 1,
+  "textures": [
+    "special_m_tlaloque_a.png"
+  ],
+  "sockets": {
+    "ATTACHPOINT_Socket": [
+      -0.1128,
+      0.1494,
+      -0.0
+    ],
+    "LEFTHAND_Socket": [
+      1.3203,
+      2.3594,
+      0.3281
+    ],
+    "RIGHTHAND_Socket": [
+      -0.8945,
+      2.3594,
+      0.1484
+    ],
+    "TOPOFHEAD_Socket": [
+      -0.0003,
+      3.4375,
+      0.1807
+    ],
+    "FRONTCHEST_Socket": [
+      -0.0004,
+      2.7969,
+      0.2773
+    ],
+    "BACKCHEST_Socket": [
+      -0.0003,
+      2.8438,
+      -0.2578
+    ],
+    "FRONTABDOMEN_Socket": [
+      0.0,
+      2.0,
+      -0.0
+    ],
+    "BACKABDOMEN_Socket": [
+      -0.0002,
+      2.375,
+      -0.2041
+    ],
+    "LEFTLEG_Socket": [
+      0.0583,
+      1.3047,
+      -0.1104
+    ],
+    "RIGHTLEG_Socket": [
+      -0.1621,
+      0.9492,
+      0.1992
+    ],
+    "LEFTFOOT_Socket": [
+      -0.5117,
+      1.1875,
+      -0.3809
+    ],
+    "RIGHTFOOT_Socket": [
+      -0.1367,
+      0.3867,
+      -0.1079
+    ],
+    "LEFTFOREARM_Socket": [
+      0.6133,
+      2.5,
+      0.0479
+    ],
+    "RIGHTFOREARM_Socket": [
+      -0.5742,
+      2.4844,
+      0.0554
+    ],
+    "HITPOINTBAR_Socket": [
+      0.0,
+      4.8125,
+      -0.0
+    ]
+  },
+  "accessories": [],
+  "animations": {
+    "idle": "tlaloque_base.glb"
+  }
+}

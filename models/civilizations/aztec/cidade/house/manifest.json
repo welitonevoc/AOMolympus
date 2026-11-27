@@ -1,0 +1,57 @@
+{
+  "slug": "house",
+  "name": "Casa Asteca",
+  "civilization": "aztec",
+  "category": "building",
+  "role": "building",
+  "base": "house_base.glb",
+  "source_brg": "building m housea age2.brg",
+  "frames": 1,
+  "vertices": 782,
+  "faces": 262,
+  "materials": 1,
+  "textures": [
+    "building_m_shared_age2.png"
+  ],
+  "sockets": {
+    "RESERVED_Socket": [
+      1.1094,
+      2.1562,
+      -1.3125
+    ],
+    "HITPOINTBAR_Socket": [
+      -0.0,
+      5.0,
+      0.0
+    ],
+    "FIRE_0_Socket": [
+      -0.7773,
+      0.2539,
+      1.6875
+    ],
+    "FIRE_1_Socket": [
+      -0.1816,
+      1.8281,
+      -0.0265
+    ],
+    "FIRE_2_Socket": [
+      1.7344,
+      2.0938,
+      -1.8438
+    ],
+    "FIRE_3_Socket": [
+      1.0078,
+      1.8906,
+      1.7969
+    ],
+    "FIRE_4_Socket": [
+      -1.9062,
+      1.8281,
+      -1.5703
+    ]
+  },
+  "accessories": [],
+  "animations": {
+    "idle": "house_base.glb"
+  }
+}

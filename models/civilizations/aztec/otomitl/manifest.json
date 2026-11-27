@@ -1,0 +1,92 @@
+{
+  "slug": "otomitl",
+  "name": "Guerreiro Otomí",
+  "civilization": "aztec",
+  "category": "unit",
+  "role": "infantry",
+  "base": "otomitl_base.glb",
+  "source_brg": "nobles m otomitl knight_crouchidlea.brg",
+  "frames": 6,
+  "vertices": 414,
+  "faces": 153,
+  "materials": 1,
+  "textures": [
+    "nobles_m_otomitl_knight_medium_map.png"
+  ],
+  "sockets": {
+    "ATTACHPOINT_Socket": [
+      -0.1025,
+      0.9492,
+      0.0549
+    ],
+    "LEFTHAND_Socket": [
+      -0.1562,
+      1.1719,
+      0.4512
+    ],
+    "RIGHTHAND_Socket": [
+      -0.4531,
+      0.8945,
+      -0.293
+    ],
+    "TOPOFHEAD_Socket": [
+      -0.1543,
+      1.5938,
+      0.2393
+    ],
+    "FRONTABDOMEN_Socket": [
+      -0.1025,
+      0.9492,
+      0.0549
+    ],
+    "BACKABDOMEN_Socket": [
+      0.0159,
+      1.0625,
+      -0.1445
+    ],
+    "LEFTLEG_Socket": [
+      0.2383,
+      0.373,
+      0.3613
+    ],
+    "RIGHTLEG_Socket": [
+      -0.2871,
+      0.3242,
+      -0.375
+    ],
+    "LEFTFOOT_Socket": [
+      0.2969,
+      0.0067,
+      0.4004
+    ],
+    "RIGHTFOOT_Socket": [
+      -0.2383,
+      0.0091,
+      -0.4863
+    ],
+    "LEFTFOREARM_Socket": [
+      0.0581,
+      1.1406,
+      0.4043
+    ],
+    "RIGHTFOREARM_Socket": [
+      -0.3711,
+      1.0625,
+      -0.1914
+    ],
+    "HITPOINTBAR_Socket": [
+      0.0,
+      3.0625,
+      -0.0
+    ],
+    "LAUNCHPOINT_Socket": [
+      0.0,
+      1.9141,
+      0.75
+    ]
+  },
+  "accessories": [],
+  "animations": {
+    "idle": "otomitl_base.glb"
+  }
+}

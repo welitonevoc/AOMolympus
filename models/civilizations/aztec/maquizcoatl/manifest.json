@@ -1,0 +1,32 @@
+{
+  "slug": "maquizcoatl",
+  "name": "Maquizcoatl (Serpente de Duas Cabeças)",
+  "civilization": "aztec",
+  "category": "unit",
+  "role": "myth",
+  "base": "maquizcoatl_base.glb",
+  "source_brg": "special m maquizcoatl small_idlea.brg",
+  "frames": 10,
+  "vertices": 165,
+  "faces": 179,
+  "materials": 1,
+  "textures": [
+    "special_m_maquizcoatl_a.png"
+  ],
+  "sockets": {
+    "TOPOFHEAD_Socket": [
+      -0.2305,
+      1.125,
+      1.2969
+    ],
+    "HITPOINTBAR_Socket": [
+      0.0,
+      1.8203,
+      0.0
+    ]
+  },
+  "accessories": [],
+  "animations": {
+    "idle": "maquizcoatl_base.glb"
+  }
+}

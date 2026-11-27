@@ -1,0 +1,32 @@
+{
+  "slug": "axolotl",
+  "name": "Axolotl Sagrado",
+  "civilization": "aztec",
+  "category": "unit",
+  "role": "myth",
+  "base": "axolotl_base.glb",
+  "source_brg": "special m axolotl_idlea.brg",
+  "frames": 2,
+  "vertices": 375,
+  "faces": 528,
+  "materials": 1,
+  "textures": [
+    "special_m_axolotl.png"
+  ],
+  "sockets": {
+    "FACE_Socket": [
+      0.0,
+      1.5938,
+      0.0
+    ],
+    "HITPOINTBAR_Socket": [
+      0.0,
+      1.5938,
+      0.0
+    ]
+  },
+  "accessories": [],
+  "animations": {
+    "idle": "axolotl_base.glb"
+  }
+}

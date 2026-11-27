@@ -1,0 +1,102 @@
+{
+  "slug": "villager_aztec",
+  "name": "Macehualli (Aldeão Asteca)",
+  "civilization": "aztec",
+  "category": "unit",
+  "role": "worker",
+  "base": "villager_aztec_base.glb",
+  "source_brg": "villager m male_carryidleb.brg",
+  "frames": 2,
+  "vertices": 415,
+  "faces": 155,
+  "materials": 1,
+  "textures": [
+    "villager_m_male.png"
+  ],
+  "sockets": {
+    "RESERVED_Socket": [
+      0.3594,
+      0.2773,
+      -0.064
+    ],
+    "LEFTHAND_Socket": [
+      0.1611,
+      1.7109,
+      0.2676
+    ],
+    "RIGHTHAND_Socket": [
+      -0.2559,
+      1.0859,
+      0.249
+    ],
+    "TOPOFHEAD_Socket": [
+      -0.0115,
+      1.8828,
+      0.2715
+    ],
+    "FRONTCHEST_Socket": [
+      -0.0067,
+      1.3984,
+      0.2637
+    ],
+    "BACKCHEST_Socket": [
+      -0.0195,
+      1.6719,
+      0.0864
+    ],
+    "FRONTABDOMEN_Socket": [
+      -0.0035,
+      1.1875,
+      0.1533
+    ],
+    "BACKABDOMEN_Socket": [
+      -0.0131,
+      1.3125,
+      -0.0747
+    ],
+    "LEFTLEG_Socket": [
+      0.1885,
+      0.4062,
+      0.0723
+    ],
+    "RIGHTLEG_Socket": [
+      -0.1245,
+      0.375,
+      -0.0254
+    ],
+    "LEFTFOOT_Socket": [
+      0.2129,
+      0.0376,
+      0.0723
+    ],
+    "RIGHTFOOT_Socket": [
+      -0.1133,
+      0.0109,
+      -0.0459
+    ],
+    "LEFTFOREARM_Socket": [
+      0.3418,
+      1.7031,
+      0.3164
+    ],
+    "RIGHTFOREARM_Socket": [
+      -0.2969,
+      1.2656,
+      0.1416
+    ],
+    "HITPOINTBAR_Socket": [
+      0.0,
+      3.0625,
+      -0.0
+    ],
+    "LAUNCHPOINT_Socket": [
+      0.0,
+      1.9141,
+      0.75
+    ]
+  },
+  "accessories": [],
+  "animations": {
+    "idle": "villager_aztec_base.glb"
+  }
+}

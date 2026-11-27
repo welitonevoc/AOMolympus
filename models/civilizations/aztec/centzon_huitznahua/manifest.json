@@ -1,0 +1,77 @@
+{
+  "slug": "centzon_huitznahua",
+  "name": "Centzon Huitznahua (Guerreiro Estelar)",
+  "civilization": "aztec",
+  "category": "unit",
+  "role": "myth",
+  "base": "centzon_huitznahua_base.glb",
+  "source_brg": "special m centzon huitznahua_idlea.brg",
+  "frames": 5,
+  "vertices": 427,
+  "faces": 376,
+  "materials": 1,
+  "textures": [
+    "special_m_centzon_huitznahua.png"
+  ],
+  "sockets": {
+    "LEFTHAND_Socket": [
+      0.4824,
+      1.6484,
+      0.0791
+    ],
+    "RIGHTHAND_Socket": [
+      -0.457,
+      1.7109,
+      0.0396
+    ],
+    "TOPOFHEAD_Socket": [
+      0.0014,
+      2.9062,
+      0.1465
+    ],
+    "FRONTCHEST_Socket": [
+      0.0123,
+      2.2969,
+      0.2734
+    ],
+    "BACKCHEST_Socket": [
+      0.013,
+      2.3906,
+      -0.2031
+    ],
+    "FRONTABDOMEN_Socket": [
+      0.0123,
+      2.0625,
+      0.2109
+    ],
+    "LEFTFOOT_Socket": [
+      0.3281,
+      0.3711,
+      -0.3379
+    ],
+    "RIGHTFOOT_Socket": [
+      -0.3242,
+      0.3184,
+      -0.5586
+    ],
+    "LEFTFOREARM_Socket": [
+      0.6211,
+      1.9688,
+      -0.0282
+    ],
+    "RIGHTFOREARM_Socket": [
+      -0.5664,
+      1.9766,
+      -0.0908
+    ],
+    "HITPOINTBAR_Socket": [
+      0.0123,
+      4.0312,
+      -0.0
+    ]
+  },
+  "accessories": [],
+  "animations": {
+    "idle": "centzon_huitznahua_base.glb"
+  }
+}

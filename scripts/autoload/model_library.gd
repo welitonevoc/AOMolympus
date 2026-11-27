@@ -70,6 +70,22 @@ const AOM_UNIT_BUNDLES: Dictionary = {
 		],
 		"myth": ["greek/colossus"],
 	},
+	"aztec": {
+		"villager": ["villager_aztec", "villager_female_aztec"],
+		"infantry": ["cuextecatl", "papalotl_runner", "cuachicqueh", "otomitl", "skull_knight", "shadow_warrior"],
+		"archer": ["tequihuah", "feathered_warrior", "quicklime_slinger"],
+		"cavalry": ["papalotl_runner", "eagle_knight", "jaguar_knight"],
+		"hero": [
+			"tlatoani", "warrior_priest", "celestial_priest",
+			"coyote_priest", "xoloitzcuintle"
+		],
+		"myth": [
+			"jaguar_knight", "eagle_knight", "ahuitzotl", "amoxoaque",
+			"axolotl", "centzon_huitznahua", "giant_aztec", "itzapapalotl",
+			"maquizcoatl", "tlaloque", "tzitzimime", "xiuhcoatl",
+			"xochitonal", "yahui", "acihuatl", "quetzal_bird", "titan_aztec"
+		],
+	},
 }
 
 ## Mapeamento oficial de construcoes (panteao -> building_kind -> "<civ>/<slug>" em cidade/)
@@ -125,6 +141,19 @@ const AOM_BUILDING_BUNDLES: Dictionary = {
 		"divine_altar": ["atlantean/sky_passage", "atlantean/temple_overgrown"],
 		"wonder": ["egyptian/wonder"],
 		"titan_gate": ["egyptian/titan_gate"],
+	},
+	"aztec": {
+		"town_center": ["aztec/town_center"],
+		"house": ["aztec/house"],
+		"temple": ["aztec/temple", "aztec/tzompantli"],
+		"barracks": ["aztec/barracks"],
+		"archery": ["aztec/calmecac"],
+		"stable": ["aztec/calmecac"],
+		"tower": ["aztec/tower"],
+		"fortress": ["aztec/calmecac"],
+		"divine_altar": ["aztec/tzompantli", "aztec/temple"],
+		"wonder": ["aztec/wonder_quetzalcoatl", "aztec/wonder_huitzilopochtli", "aztec/wonder_tezcatlipoca"],
+		"titan_gate": ["aztec/titan_gate"],
 	},
 }
 

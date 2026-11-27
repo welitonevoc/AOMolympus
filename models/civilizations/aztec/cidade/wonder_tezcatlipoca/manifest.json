@@ -1,0 +1,152 @@
+{
+  "slug": "wonder_tezcatlipoca",
+  "name": "Grande Pirâmide de Tezcatlipoca",
+  "civilization": "aztec",
+  "category": "building",
+  "role": "building",
+  "base": "wonder_tezcatlipoca_base.glb",
+  "source_brg": "building m tezca wonder.brg",
+  "frames": 1,
+  "vertices": 3831,
+  "faces": 2765,
+  "materials": 1,
+  "textures": [
+    "building_m_tezca_wonder1.png"
+  ],
+  "sockets": {
+    "RESERVED_Socket": [
+      5.625,
+      1.2266,
+      5.9062
+    ],
+    "RIGHTHAND_Socket": [
+      -6.7812,
+      3.0312,
+      -6.9062
+    ],
+    "RIGHTEAR_Socket": [
+      7.5,
+      1.2266,
+      4.125
+    ],
+    "FRONTCHEST_Socket": [
+      -4.4375,
+      2.375,
+      6.1562
+    ],
+    "BACKCHEST_Socket": [
+      4.4375,
+      2.375,
+      6.1562
+    ],
+    "RIGHTLEG_Socket": [
+      -6.7812,
+      3.0312,
+      5.1875
+    ],
+    "RIGHTFOOT_Socket": [
+      6.8438,
+      3.0312,
+      5.1875
+    ],
+    "RIGHTFOREARM_Socket": [
+      6.8438,
+      3.0312,
+      -6.9062
+    ],
+    "HITPOINTBAR_Socket": [
+      0.0,
+      12.375,
+      -0.7266
+    ],
+    "RESERVED0_Socket": [
+      3.3594,
+      1.2266,
+      5.9062
+    ],
+    "RESERVED1_Socket": [
+      -3.3281,
+      1.2266,
+      5.9062
+    ],
+    "RESERVED2_Socket": [
+      -5.5938,
+      1.2266,
+      5.9062
+    ],
+    "RESERVED3_Socket": [
+      -7.5312,
+      1.2266,
+      4.0938
+    ],
+    "RESERVED4_Socket": [
+      -7.5312,
+      1.2266,
+      -0.2617
+    ],
+    "RESERVED5_Socket": [
+      -7.5312,
+      1.2266,
+      -1.375
+    ],
+    "RESERVED6_Socket": [
+      -7.5312,
+      1.2266,
+      -5.7188
+    ],
+    "RESERVED7_Socket": [
+      7.5,
+      1.2266,
+      -5.75
+    ],
+    "RESERVED8_Socket": [
+      7.5,
+      1.2266,
+      -1.375
+    ],
+    "RESERVED9_Socket": [
+      7.5,
+      1.2266,
+      -0.2559
+    ],
+    "FIRE_0_Socket": [
+      -0.0723,
+      1.0625,
+      1.0625
+    ],
+    "FIRE_1_Socket": [
+      3.3281,
+      6.2812,
+      -4.25
+    ],
+    "FIRE_2_Socket": [
+      -3.9219,
+      5.1875,
+      -4.25
+    ],
+    "FIRE_3_Socket": [
+      5.5625,
+      2.2031,
+      -1.0547
+    ],
+    "FIRE_4_Socket": [
+      4.4062,
+      2.2812,
+      3.1094
+    ],
+    "FIRE_5_Socket": [
+      -5.4688,
+      2.2812,
+      3.1094
+    ],
+    "FIRE_6_Socket": [
+      -4.5938,
+      2.2812,
+      -1.9453
+    ]
+  },
+  "accessories": [],
+  "animations": {
+    "idle": "wonder_tezcatlipoca_base.glb"
+  }
+}

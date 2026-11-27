@@ -83,9 +83,25 @@ const PANTHEONS: Dictionary = {
 		"can_promote_hero": false,
 		"gather_multiplier": 1.05,
 	},
+	"aztec": {
+		"id": "aztec",
+		"name": "Astecas",
+		"deity": "Quetzalcoatl",
+		"deity_slug": "quetzalcoatl",
+		"architecture_label": "Piramides de obsidiana, Tzompantlis e Chinampas",
+		"bonus_label": "Captura de prisioneiros, Corredores Papalotl e Sacrificios de Favor",
+		"primary_color": Color("#10b981"),
+		"accent_color": Color("#f59e0b"),
+		"stone_color": Color("#475569"),
+		"roof_color": Color("#059669"),
+		"starting_bonus": {"food": 80, "wood": 60, "gold": 40, "favor": 20},
+		"autonomous_gather": false,
+		"can_promote_hero": false,
+		"gather_multiplier": 1.05,
+	},
 }
 
-const PANTHEON_ORDER: Array[String] = ["greek", "egyptian", "norse", "atlantean", "chinese"]
+const PANTHEON_ORDER: Array[String] = ["greek", "egyptian", "norse", "atlantean", "chinese", "aztec"]
 
 const BIOMES: Dictionary = {
 	"mediterranean": {
@@ -714,6 +730,16 @@ const PANTHEON_UNIT_NAMES: Dictionary = {
 		"siege": "Ariete Imperial",
 		"titan": "Titã Pangu",
 	},
+	"aztec": {
+		"villager": "Macehualli (Aldeao)",
+		"infantry": "Cuextecatl",
+		"archer": "Tequihuah (Atlatl)",
+		"cavalry": "Corredor Papalotl",
+		"hero": "Tlatoani",
+		"myth": "Guerreiro Jaguar",
+		"siege": "Ariete Asteca",
+		"titan": "Titã Asteca",
+	},
 }
 
 const HERO_PROMOTION_COST: Dictionary = {"food": 50, "gold": 50, "favor": 5}
@@ -747,6 +773,11 @@ const DIVINE_GODS: Dictionary = {
 		"majors": ["fuxi_major", "nuwa_major", "shennong_major"],
 		"minors": ["chiyou_minor", "gonggong_minor", "goumang_minor", "houtu_minor",
 		           "huangdi_minor", "nuba_minor", "rushou_minor", "xuannu_minor", "zhurong_minor"],
+	},
+	"aztec": {
+		"majors": ["quetzalcoatl_major", "tezcatlipoca_major", "huitzilopochtli_major"],
+		"minors": ["tlaloc_minor", "xolotl_minor", "coatlicue_minor", "mictlantecuhtli_minor",
+		           "coyolxauhqui_minor", "tonatiuh_minor", "chalchiuhtlicue_minor"],
 	},
 }
 
@@ -2222,10 +2253,20 @@ func get_unit_spec(pantheon_id: String, unit_kind: String) -> Dictionary:
 			"atlantean":
 				# Unidades atlantes recebem regeneração mística contínua
 				base["hp_regen"] = 1.5
+			"aztec":
+				# Guerreiro Jaguar / Serpente de Fogo — impacto fulminante e regeneração solar
+				base["hp_regen"] = 1.8
+				base["hp"] = 450
+				base["attack"] = 38.0
 	elif unit_kind == "cavalry" and pantheon_id == "greek":
 		# Hetairoi (Cavalaria de Choque grega do Poseidon): velocidade e impacto aumentados
 		base["speed"] = 7.8
 		base["attack"] = 22.0
+	elif unit_kind == "cavalry" and pantheon_id == "aztec":
+		# Corredor Papalotl (Infantaria ultra-rápida pseudo-cavalaria asteca)
+		base["speed"] = 8.0
+		base["attack"] = 18.0
+		base["armor"] = 0.12
 
 	return base
 

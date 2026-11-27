@@ -1,0 +1,92 @@
+{
+  "slug": "celestial_priest",
+  "name": "Sacerdote Celestial",
+  "civilization": "aztec",
+  "category": "unit",
+  "role": "hero",
+  "base": "celestial_priest_base.glb",
+  "source_brg": "special m celestial priest_idlea.brg",
+  "frames": 11,
+  "vertices": 741,
+  "faces": 331,
+  "materials": 1,
+  "textures": [
+    "special_m_celestial_priest_standard_map.png"
+  ],
+  "sockets": {
+    "ATTACHPOINT_Socket": [
+      -0.0869,
+      1.2734,
+      0.0981
+    ],
+    "LEFTHAND_Socket": [
+      0.0065,
+      1.1406,
+      0.2168
+    ],
+    "RIGHTHAND_Socket": [
+      -0.2578,
+      1.0781,
+      -0.1338
+    ],
+    "TOPOFHEAD_Socket": [
+      -0.0076,
+      1.9453,
+      0.0184
+    ],
+    "FRONTABDOMEN_Socket": [
+      -0.0869,
+      1.2734,
+      0.0981
+    ],
+    "BACKABDOMEN_Socket": [
+      0.0708,
+      1.2734,
+      -0.1079
+    ],
+    "LEFTLEG_Socket": [
+      0.1104,
+      0.375,
+      0.2305
+    ],
+    "RIGHTLEG_Socket": [
+      -0.0474,
+      0.375,
+      -0.209
+    ],
+    "LEFTFOOT_Socket": [
+      0.0981,
+      0.0038,
+      0.293
+    ],
+    "RIGHTFOOT_Socket": [
+      -0.0713,
+      0.0046,
+      -0.2119
+    ],
+    "LEFTFOREARM_Socket": [
+      0.1445,
+      1.3203,
+      0.2148
+    ],
+    "RIGHTFOREARM_Socket": [
+      -0.2119,
+      1.2891,
+      -0.1523
+    ],
+    "HITPOINTBAR_Socket": [
+      0.0,
+      3.0625,
+      -0.0
+    ],
+    "LAUNCHPOINT_Socket": [
+      0.0,
+      1.9141,
+      0.75
+    ]
+  },
+  "accessories": [],
+  "animations": {
+    "idle": "celestial_priest_base.glb"
+  }
+}

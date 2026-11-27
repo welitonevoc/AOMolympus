@@ -1,0 +1,97 @@
+{
+  "slug": "tower",
+  "name": "Torre de Vigia de Obsidiana",
+  "civilization": "aztec",
+  "category": "building",
+  "role": "building",
+  "base": "tower_base.glb",
+  "source_brg": "building m watchtower age3.brg",
+  "frames": 1,
+  "vertices": 726,
+  "faces": 242,
+  "materials": 1,
+  "textures": [
+    "building_m_walls_age3.png"
+  ],
+  "sockets": {
+    "LEFTHAND_Socket": [
+      -0.9102,
+      5.3438,
+      -0.0267
+    ],
+    "RIGHTHAND_Socket": [
+      0.8906,
+      5.3438,
+      0.0
+    ],
+    "LEFTTHIGH_Socket": [
+      -0.0039,
+      5.3438,
+      1.0
+    ],
+    "RIGHTTHIGH_Socket": [
+      -0.0066,
+      5.3438,
+      -0.9102
+    ],
+    "LEFTLEG_Socket": [
+      -0.6758,
+      1.9922,
+      0.7461
+    ],
+    "RIGHTLEG_Socket": [
+      -0.8828,
+      0.0,
+      0.7578
+    ],
+    "RIGHTFOOT_Socket": [
+      -0.8633,
+      0.0,
+      -0.8672
+    ],
+    "HITPOINTBAR_Socket": [
+      0.0,
+      9.9375,
+      -0.0
+    ],
+    "GARRISONFLAG_Socket": [
+      -0.0023,
+      6.8438,
+      -0.9141
+    ],
+    "FIRE_0_Socket": [
+      -0.8516,
+      2.1406,
+      -0.7969
+    ],
+    "FIRE_1_Socket": [
+      0.1187,
+      0.2012,
+      0.668
+    ],
+    "FIRE_2_Socket": [
+      0.7773,
+      6.25,
+      -0.8711
+    ],
+    "FIRE_3_Socket": [
+      0.7578,
+      4.3438,
+      0.6758
+    ],
+    "FIRE_4_Socket": [
+      -0.8828,
+      4.8125,
+      -0.9258
+    ],
+    "LAUNCHPOINT_Socket": [
+      0.0,
+      4.9688,
+      -0.0
+    ]
+  },
+  "accessories": [],
+  "animations": {
+    "idle": "tower_base.glb"
+  }
+}

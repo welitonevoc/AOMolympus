@@ -1,0 +1,97 @@
+{
+  "slug": "cuextecatl",
+  "name": "Guerreiro Cuextecatl",
+  "civilization": "aztec",
+  "category": "unit",
+  "role": "infantry",
+  "base": "cuextecatl_base.glb",
+  "source_brg": "infantry m cuextecatl_crouchidlea.brg",
+  "frames": 3,
+  "vertices": 415,
+  "faces": 155,
+  "materials": 1,
+  "textures": [
+    "infantry_m_cuextecatl_standard_map.png"
+  ],
+  "sockets": {
+    "ATTACHPOINT_Socket": [
+      0.0,
+      -0.0032,
+      -0.5312
+    ],
+    "LEFTHAND_Socket": [
+      -0.1357,
+      1.0391,
+      0.2012
+    ],
+    "RIGHTHAND_Socket": [
+      -0.291,
+      0.8828,
+      0.2148
+    ],
+    "TOPOFHEAD_Socket": [
+      -0.0376,
+      1.5703,
+      0.209
+    ],
+    "FRONTCHEST_Socket": [
+      -0.0444,
+      1.0938,
+      0.0718
+    ],
+    "BACKCHEST_Socket": [
+      -0.0004,
+      1.4141,
+      0.0134
+    ],
+    "FRONTABDOMEN_Socket": [
+      -0.0067,
+      0.9414,
+      -0.0825
+    ],
+    "BACKABDOMEN_Socket": [
+      0.0554,
+      1.125,
+      -0.2559
+    ],
+    "LEFTLEG_Socket": [
+      0.1533,
+      0.3672,
+      0.2402
+    ],
+    "RIGHTLEG_Socket": [
+      -0.1982,
+      0.3281,
+      -0.1973
+    ],
+    "LEFTFOOT_Socket": [
+      0.1523,
+      -0.0036,
+      0.2969
+    ],
+    "RIGHTFOOT_Socket": [
+      -0.1543,
+      0.012,
+      -0.3027
+    ],
+    "LEFTFOREARM_Socket": [
+      0.0723,
+      1.0625,
+      0.2383
+    ],
+    "RIGHTFOREARM_Socket": [
+      -0.3184,
+      1.0156,
+      0.0474
+    ],
+    "HITPOINTBAR_Socket": [
+      0.0,
+      3.0,
+      -0.0
+    ]
+  },
+  "accessories": [],
+  "animations": {
+    "idle": "cuextecatl_base.glb"
+  }
+}

@@ -1,0 +1,61 @@
+{
+  "slug": "granary",
+  "name": "Celeiro de Grãos e Milho",
+  "civilization": "aztec",
+  "category": "building",
+  "role": "building",
+  "base": "granary_base.glb",
+  "source_brg": "building m granary age3.brg",
+  "frames": 1,
+  "vertices": 2230,
+  "faces": 857,
+  "materials": 5,
+  "textures": [
+    "building_m_attachments.png",
+    "building_m_tianguis.png",
+    "building_m_props.png",
+    "building_m_tianguis_props.png",
+    "building_m_sharedroof.png"
+  ],
+  "sockets": {
+    "RIGHTEAR_Socket": [
+      -1.9609,
+      -0.0,
+      -1.9453
+    ],
+    "HITPOINTBAR_Socket": [
+      0.0,
+      4.9688,
+      -0.0
+    ],
+    "FIRE_0_Socket": [
+      1.6719,
+      1.6797,
+      -1.7891
+    ],
+    "FIRE_1_Socket": [
+      -2.0,
+      1.7266,
+      0.4453
+    ],
+    "FIRE_2_Socket": [
+      0.8281,
+      3.2812,
+      0.7148
+    ],
+    "FIRE_3_Socket": [
+      -1.0547,
+      1.5859,
+      -1.0156
+    ],
+    "FIRE_4_Socket": [
+      0.0752,
+      1.4766,
+      -1.9844
+    ]
+  },
+  "accessories": [],
+  "animations": {
+    "idle": "granary_base.glb"
+  }
+}

@@ -1,0 +1,102 @@
+{
+  "slug": "papalotl_runner",
+  "name": "Corredor Papalotl",
+  "civilization": "aztec",
+  "category": "unit",
+  "role": "cavalry",
+  "base": "papalotl_runner_base.glb",
+  "source_brg": "infantry m papalotlrunner_crouchidlea.brg",
+  "frames": 8,
+  "vertices": 434,
+  "faces": 173,
+  "materials": 1,
+  "textures": [
+    "infantry_m_papalotlrunner_standard.png"
+  ],
+  "sockets": {
+    "ATTACHPOINT_Socket": [
+      -0.1045,
+      0.832,
+      0.1104
+    ],
+    "LEFTHAND_Socket": [
+      0.2275,
+      0.7734,
+      0.6211
+    ],
+    "RIGHTHAND_Socket": [
+      -0.498,
+      0.8477,
+      -0.1436
+    ],
+    "TOPOFHEAD_Socket": [
+      -0.0153,
+      1.4844,
+      0.1572
+    ],
+    "FRONTCHEST_Socket": [
+      -0.1025,
+      0.9961,
+      0.1758
+    ],
+    "BACKCHEST_Socket": [
+      0.0476,
+      1.2656,
+      0.0649
+    ],
+    "FRONTABDOMEN_Socket": [
+      -0.0981,
+      0.8125,
+      0.1108
+    ],
+    "BACKABDOMEN_Socket": [
+      0.0947,
+      0.8672,
+      -0.054
+    ],
+    "LEFTLEG_Socket": [
+      0.1621,
+      0.3672,
+      0.5078
+    ],
+    "RIGHTLEG_Socket": [
+      -0.3086,
+      0.2793,
+      -0.2344
+    ],
+    "LEFTFOOT_Socket": [
+      0.2031,
+      0.0039,
+      0.5234
+    ],
+    "RIGHTFOOT_Socket": [
+      -0.2559,
+      0.0161,
+      -0.373
+    ],
+    "LEFTFOREARM_Socket": [
+      0.2383,
+      0.875,
+      0.4199
+    ],
+    "RIGHTFOREARM_Socket": [
+      -0.3438,
+      0.9844,
+      -0.167
+    ],
+    "HITPOINTBAR_Socket": [
+      0.0,
+      3.0625,
+      -0.0
+    ],
+    "LAUNCHPOINT_Socket": [
+      0.0,
+      1.9141,
+      0.75
+    ]
+  },
+  "accessories": [],
+  "animations": {
+    "idle": "papalotl_runner_base.glb"
+  }
+}

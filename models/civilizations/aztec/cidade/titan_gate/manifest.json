@@ -1,0 +1,47 @@
+{
+  "slug": "titan_gate",
+  "name": "Portão do Titã Asteca",
+  "civilization": "aztec",
+  "category": "building",
+  "role": "building",
+  "base": "titan_gate_base.glb",
+  "source_brg": "building m titan gate stage4.brg",
+  "frames": 1,
+  "vertices": 1061,
+  "faces": 743,
+  "materials": 1,
+  "textures": [
+    "building_m_titan_gate_map.png"
+  ],
+  "sockets": {
+    "LEFTFOOT_Socket": [
+      0.0053,
+      3.0,
+      -0.0
+    ],
+    "RESERVED1_Socket": [
+      2.9531,
+      2.8281,
+      -2.9219
+    ],
+    "RESERVED2_Socket": [
+      2.9531,
+      2.8281,
+      2.8906
+    ],
+    "RESERVED3_Socket": [
+      -2.9375,
+      2.8281,
+      2.8906
+    ],
+    "RESERVED4_Socket": [
+      -2.9375,
+      2.8281,
+      -2.9219
+    ]
+  },
+  "accessories": [],
+  "animations": {
+    "idle": "titan_gate_base.glb"
+  }
+}

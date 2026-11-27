@@ -1,0 +1,102 @@
+{
+  "slug": "amoxoaque",
+  "name": "Amoxoaque (Espírito Arbóreo)",
+  "civilization": "aztec",
+  "category": "unit",
+  "role": "myth",
+  "base": "amoxoaque_base.glb",
+  "source_brg": "special m amoxoaque_idle.brg",
+  "frames": 3,
+  "vertices": 669,
+  "faces": 584,
+  "materials": 1,
+  "textures": [
+    "special_m_amoxoaque_map.png"
+  ],
+  "sockets": {
+    "LEFTHAND_Socket": [
+      0.7617,
+      1.4844,
+      1.0391
+    ],
+    "RIGHTHAND_Socket": [
+      -0.9531,
+      1.4219,
+      0.9336
+    ],
+    "TOPOFHEAD_Socket": [
+      0.0006,
+      2.5,
+      0.6523
+    ],
+    "BACKCHEST_Socket": [
+      0.0459,
+      2.625,
+      0.1816
+    ],
+    "FRONTABDOMEN_Socket": [
+      0.0058,
+      1.5,
+      0.3086
+    ],
+    "BACKABDOMEN_Socket": [
+      0.0062,
+      1.5859,
+      -0.2969
+    ],
+    "LEFTFOOT_Socket": [
+      -0.5508,
+      0.1016,
+      0.2158
+    ],
+    "RIGHTFOOT_Socket": [
+      0.5352,
+      0.0977,
+      0.2207
+    ],
+    "LEFTFOREARM_Socket": [
+      0.7891,
+      1.6172,
+      0.5977
+    ],
+    "RIGHTFOREARM_Socket": [
+      -0.8438,
+      1.5859,
+      0.5156
+    ],
+    "HITPOINTBAR_Socket": [
+      0.0,
+      4.5625,
+      -0.0
+    ],
+    "RESERVED1_Socket": [
+      0.3164,
+      3.125,
+      0.5039
+    ],
+    "RESERVED2_Socket": [
+      0.4688,
+      2.875,
+      -0.1768
+    ],
+    "RESERVED3_Socket": [
+      -0.6445,
+      3.2969,
+      0.2041
+    ],
+    "RESERVED4_Socket": [
+      -0.4473,
+      3.3594,
+      -0.1069
+    ],
+    "RESERVED5_Socket": [
+      -0.4531,
+      2.8125,
+      -0.4531
+    ]
+  },
+  "accessories": [],
+  "animations": {
+    "idle": "amoxoaque_base.glb"
+  }
+}

@@ -1,0 +1,132 @@
+{
+  "slug": "prisoner",
+  "name": "Prisioneiro para Sacrifício",
+  "civilization": "aztec",
+  "category": "unit",
+  "role": "worker",
+  "base": "prisoner_base.glb",
+  "source_brg": "villager m male_dead.brg",
+  "frames": 2,
+  "vertices": 155,
+  "faces": 140,
+  "materials": 1,
+  "textures": [
+    "villager_m_male.png"
+  ],
+  "sockets": {
+    "ATTACHPOINT_Socket": [
+      0.0,
+      1.6719,
+      0.5234
+    ],
+    "RESERVED_Socket": [
+      0.0,
+      0.416,
+      -0.4531
+    ],
+    "LEFTHAND_Socket": [
+      0.7617,
+      0.1611,
+      -1.6016
+    ],
+    "RIGHTHAND_Socket": [
+      -0.7656,
+      0.1768,
+      -1.5859
+    ],
+    "TOPOFHEAD_Socket": [
+      -0.0183,
+      0.125,
+      -2.0312
+    ],
+    "NECK_Socket": [
+      -0.0186,
+      0.168,
+      -1.7656
+    ],
+    "LEFTSHOULDER_Socket": [
+      0.2148,
+      0.2227,
+      -1.6719
+    ],
+    "RIGHTSHOULDER_Socket": [
+      -0.2129,
+      0.2314,
+      -1.6719
+    ],
+    "FRONTCHEST_Socket": [
+      -0.0,
+      0.2891,
+      -1.5391
+    ],
+    "BACKCHEST_Socket": [
+      -0.0,
+      0.0488,
+      -1.6719
+    ],
+    "FRONTABDOMEN_Socket": [
+      -0.0,
+      0.3008,
+      -1.3125
+    ],
+    "BACKABDOMEN_Socket": [
+      -0.0,
+      0.0211,
+      -1.3359
+    ],
+    "PELVIS_Socket": [
+      -0.0,
+      0.1279,
+      -1.1328
+    ],
+    "LEFTTHIGH_Socket": [
+      0.1904,
+      0.1191,
+      -0.7109
+    ],
+    "RIGHTTHIGH_Socket": [
+      -0.1914,
+      0.1191,
+      -0.7109
+    ],
+    "LEFTLEG_Socket": [
+      0.2197,
+      0.0591,
+      -0.3281
+    ],
+    "RIGHTLEG_Socket": [
+      -0.2207,
+      0.0591,
+      -0.3301
+    ],
+    "LEFTFOOT_Socket": [
+      0.3008,
+      0.0967,
+      0.0381
+    ],
+    "RIGHTFOOT_Socket": [
+      -0.3008,
+      0.0967,
+      0.0381
+    ],
+    "LEFTFOREARM_Socket": [
+      0.5312,
+      0.1514,
+      -1.5625
+    ],
+    "RIGHTFOREARM_Socket": [
+      -0.5312,
+      0.167,
+      -1.5625
+    ],
+    "HITPOINTBAR_Socket": [
+      0.0,
+      3.0625,
+      -0.0
+    ]
+  },
+  "accessories": [],
+  "animations": {
+    "idle": "prisoner_base.glb"
+  }
+}

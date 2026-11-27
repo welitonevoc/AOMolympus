@@ -1,0 +1,72 @@
+{
+  "slug": "xiuhcoatl",
+  "name": "Xiuhcoatl (Serpente de Fogo)",
+  "civilization": "aztec",
+  "category": "unit",
+  "role": "myth",
+  "base": "xiuhcoatl_base.glb",
+  "source_brg": "special m xiuhcoatl_idlea.brg",
+  "frames": 20,
+  "vertices": 356,
+  "faces": 336,
+  "materials": 1,
+  "textures": [
+    "special_m_fire_serpent.png"
+  ],
+  "sockets": {
+    "TOPOFHEAD_Socket": [
+      0.2754,
+      0.375,
+      1.8125
+    ],
+    "HITPOINTBAR_Socket": [
+      0.0,
+      1.8203,
+      0.0
+    ],
+    "RESERVED0_Socket": [
+      0.6133,
+      0.3574,
+      1.0156
+    ],
+    "RESERVED1_Socket": [
+      0.2354,
+      0.0586,
+      0.0168
+    ],
+    "RESERVED2_Socket": [
+      -0.5586,
+      -0.6562,
+      -0.4688
+    ],
+    "RESERVED3_Socket": [
+      0.1836,
+      -1.1094,
+      -1.1484
+    ],
+    "RESERVED4_Socket": [
+      1.3516,
+      -0.8672,
+      -0.8945
+    ],
+    "RESERVED5_Socket": [
+      2.4531,
+      -1.5938,
+      -0.8164
+    ],
+    "FIRE_Socket": [
+      1.8594,
+      -2.3906,
+      -1.2578
+    ],
+    "LAUNCHPOINT_Socket": [
+      0.3594,
+      0.1914,
+      2.0156
+    ]
+  },
+  "accessories": [],
+  "animations": {
+    "idle": "xiuhcoatl_base.glb"
+  }
+}

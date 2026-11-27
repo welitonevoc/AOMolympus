@@ -1,0 +1,107 @@
+{
+  "slug": "villager_female_aztec",
+  "name": "Macehualli Feminina",
+  "civilization": "aztec",
+  "category": "unit",
+  "role": "worker",
+  "base": "villager_female_aztec_base.glb",
+  "source_brg": "villager m female_carryidleb.brg",
+  "frames": 2,
+  "vertices": 174,
+  "faces": 136,
+  "materials": 1,
+  "textures": [
+    "villager_m_female.png"
+  ],
+  "sockets": {
+    "ATTACHPOINT_Socket": [
+      0.0,
+      2.0312,
+      0.8086
+    ],
+    "RESERVED_Socket": [
+      0.4082,
+      0.2773,
+      -0.3066
+    ],
+    "LEFTHAND_Socket": [
+      0.0918,
+      1.2031,
+      -0.1523
+    ],
+    "RIGHTHAND_Socket": [
+      -0.0684,
+      1.2031,
+      -0.1553
+    ],
+    "TOPOFHEAD_Socket": [
+      -0.0134,
+      1.6953,
+      0.4102
+    ],
+    "FRONTCHEST_Socket": [
+      -0.0058,
+      1.375,
+      0.3359
+    ],
+    "BACKCHEST_Socket": [
+      0.0005,
+      1.6016,
+      0.2559
+    ],
+    "FRONTABDOMEN_Socket": [
+      -0.0043,
+      1.1719,
+      0.1367
+    ],
+    "BACKABDOMEN_Socket": [
+      0.0038,
+      1.3672,
+      0.0031
+    ],
+    "LEFTLEG_Socket": [
+      0.1943,
+      0.4043,
+      0.0417
+    ],
+    "RIGHTLEG_Socket": [
+      -0.1807,
+      0.4062,
+      -0.0742
+    ],
+    "LEFTFOOT_Socket": [
+      0.2305,
+      0.0041,
+      0.0432
+    ],
+    "RIGHTFOOT_Socket": [
+      -0.2246,
+      0.0065,
+      -0.0732
+    ],
+    "LEFTFOREARM_Socket": [
+      0.168,
+      1.3281,
+      -0.0293
+    ],
+    "RIGHTFOREARM_Socket": [
+      -0.1523,
+      1.3359,
+      -0.0378
+    ],
+    "HITPOINTBAR_Socket": [
+      0.0,
+      3.0625,
+      -0.0
+    ],
+    "LAUNCHPOINT_Socket": [
+      0.0,
+      2.0312,
+      0.8086
+    ]
+  },
+  "accessories": [],
+  "animations": {
+    "idle": "villager_female_aztec_base.glb"
+  }
+}

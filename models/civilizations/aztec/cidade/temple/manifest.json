@@ -1,0 +1,95 @@
+{
+  "slug": "temple",
+  "name": "Templo Piramidal Asteca",
+  "civilization": "aztec",
+  "category": "building",
+  "role": "building",
+  "base": "temple_base.glb",
+  "source_brg": "building m temple base age3.brg",
+  "frames": 1,
+  "vertices": 4,
+  "faces": 2,
+  "materials": 1,
+  "textures": [],
+  "sockets": {
+    "ATTACHPOINT_Socket": [
+      -1.2422,
+      4.0625,
+      -0.0
+    ],
+    "RESERVED_Socket": [
+      -2.3594,
+      3.5469,
+      -2.2656
+    ],
+    "LEFTHAND_Socket": [
+      -4.0,
+      0.0,
+      -3.5938
+    ],
+    "TOPOFHEAD_Socket": [
+      -0.3594,
+      3.5469,
+      0.0
+    ],
+    "FACE_Socket": [
+      1.8594,
+      3.5625,
+      -0.0026
+    ],
+    "LEFTLEG_Socket": [
+      -4.0,
+      0.0,
+      3.5938
+    ],
+    "HITPOINTBAR_Socket": [
+      0.0,
+      10.0,
+      -0.0
+    ],
+    "GARRISONFLAG_Socket": [
+      1.5156,
+      6.625,
+      -1.3516
+    ],
+    "RESERVED0_Socket": [
+      -2.3594,
+      3.5469,
+      2.2656
+    ],
+    "FIRE_0_Socket": [
+      1.5312,
+      6.8125,
+      1.0312
+    ],
+    "FIRE_1_Socket": [
+      3.1562,
+      3.5156,
+      -0.9336
+    ],
+    "FIRE_2_Socket": [
+      -3.4219,
+      0.0093,
+      -4.5625
+    ],
+    "FIRE_3_Socket": [
+      0.4395,
+      3.5469,
+      -1.1719
+    ],
+    "FIRE_4_Socket": [
+      -4.0,
+      0.0,
+      3.5938
+    ],
+    "FIRE_5_Socket": [
+      -1.4375,
+      3.5,
+      3.2188
+    ]
+  },
+  "accessories": [],
+  "animations": {
+    "idle": "temple_base.glb"
+  }
+}

@@ -1,0 +1,127 @@
+{
+  "slug": "barracks",
+  "name": "Telpochcalli (Quartel Militar)",
+  "civilization": "aztec",
+  "category": "building",
+  "role": "building",
+  "base": "barracks_base.glb",
+  "source_brg": "building m cuahucalli age3.brg",
+  "frames": 1,
+  "vertices": 2008,
+  "faces": 1025,
+  "materials": 1,
+  "textures": [
+    "building_m_shared_age3.png"
+  ],
+  "sockets": {
+    "HITPOINTBAR_Socket": [
+      0.0,
+      10.0,
+      -0.0
+    ],
+    "GARRISONFLAG_Socket": [
+      -2.6719,
+      4.375,
+      0.7578
+    ],
+    "SMOKE0_Socket": [
+      -0.0,
+      0.0,
+      -3.0938
+    ],
+    "SMOKE1_Socket": [
+      2.6094,
+      0.0,
+      -1.0625
+    ],
+    "SMOKE2_Socket": [
+      -3.0312,
+      0.0,
+      -1.0312
+    ],
+    "SMOKE3_Socket": [
+      -0.0,
+      0.0,
+      3.2031
+    ],
+    "RESERVED1_Socket": [
+      -2.1875,
+      2.5312,
+      1.2969
+    ],
+    "RESERVED2_Socket": [
+      2.1875,
+      2.5312,
+      1.2969
+    ],
+    "RESERVED3_Socket": [
+      3.1406,
+      -0.0,
+      3.5469
+    ],
+    "RESERVED4_Socket": [
+      -3.1406,
+      -0.0,
+      3.5469
+    ],
+    "FIRE_0_Socket": [
+      2.1875,
+      2.5312,
+      1.2969
+    ],
+    "FIRE_1_Socket": [
+      -0.0,
+      6.5938,
+      -0.6602
+    ],
+    "FIRE_2_Socket": [
+      2.8906,
+      4.3125,
+      -1.75
+    ],
+    "FIRE_3_Socket": [
+      -3.3438,
+      1.5078,
+      2.5
+    ],
+    "FIRE_4_Socket": [
+      3.9844,
+      2.125,
+      0.5391
+    ],
+    "FIRE_5_Socket": [
+      -2.7656,
+      4.4688,
+      0.543
+    ],
+    "FIRE_6_Socket": [
+      -1.1641,
+      2.75,
+      1.7734
+    ],
+    "FIRE_7_Socket": [
+      2.25,
+      0.8594,
+      2.5156
+    ],
+    "FIRE_8_Socket": [
+      1.6562,
+      2.5156,
+      -2.7656
+    ],
+    "FIRE_9_Socket": [
+      -1.2422,
+      4.4688,
+      -2.0469
+    ],
+    "FIRE_10_Socket": [
+      -3.9844,
+      3.4062,
+      -1.7734
+    ]
+  },
+  "accessories": [],
+  "animations": {
+    "idle": "barracks_base.glb"
+  }
+}

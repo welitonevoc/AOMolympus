@@ -1,0 +1,37 @@
+{
+  "slug": "gate",
+  "name": "Portão Fortificado Asteca",
+  "civilization": "aztec",
+  "category": "building",
+  "role": "building",
+  "base": "gate_base.glb",
+  "source_brg": "building m gate_closed.brg",
+  "frames": 1,
+  "vertices": 202,
+  "faces": 118,
+  "materials": 1,
+  "textures": [
+    "building_m_props.png"
+  ],
+  "sockets": {
+    "HITPOINTBAR_Socket": [
+      0.0,
+      5.5938,
+      -0.0
+    ],
+    "SMOKE0_Socket": [
+      5.0,
+      0.0,
+      -0.0
+    ],
+    "SMOKE3_Socket": [
+      -5.0,
+      0.0,
+      0.0
+    ]
+  },
+  "accessories": [],
+  "animations": {
+    "idle": "gate_base.glb"
+  }
+}

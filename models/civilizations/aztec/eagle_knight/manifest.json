@@ -1,0 +1,102 @@
+{
+  "slug": "eagle_knight",
+  "name": "Guerreiro Águia",
+  "civilization": "aztec",
+  "category": "unit",
+  "role": "cavalry",
+  "base": "eagle_knight_base.glb",
+  "source_brg": "nobles m eagle knight_crouchidlea.brg",
+  "frames": 6,
+  "vertices": 447,
+  "faces": 172,
+  "materials": 1,
+  "textures": [
+    "nobles_m_eagle_knight_medium_map.png"
+  ],
+  "sockets": {
+    "ATTACHPOINT_Socket": [
+      0.0,
+      0.0,
+      -0.6875
+    ],
+    "LEFTHAND_Socket": [
+      -0.0938,
+      0.6211,
+      0.4473
+    ],
+    "RIGHTHAND_Socket": [
+      -0.4512,
+      0.5078,
+      -0.4414
+    ],
+    "TOPOFHEAD_Socket": [
+      -0.1484,
+      1.1797,
+      0.1484
+    ],
+    "FRONTCHEST_Socket": [
+      -0.1416,
+      0.7383,
+      0.0591
+    ],
+    "BACKCHEST_Socket": [
+      -0.083,
+      1.0469,
+      -0.0295
+    ],
+    "FRONTABDOMEN_Socket": [
+      -0.1035,
+      0.5781,
+      -0.0208
+    ],
+    "BACKABDOMEN_Socket": [
+      0.015,
+      0.6953,
+      -0.2197
+    ],
+    "LEFTLEG_Socket": [
+      0.1729,
+      0.3789,
+      0.373
+    ],
+    "RIGHTLEG_Socket": [
+      -0.3496,
+      0.3711,
+      -0.207
+    ],
+    "LEFTFOOT_Socket": [
+      0.2617,
+      0.0114,
+      0.4902
+    ],
+    "RIGHTFOOT_Socket": [
+      -0.2139,
+      0.0461,
+      -0.3281
+    ],
+    "LEFTFOREARM_Socket": [
+      0.1138,
+      0.7305,
+      0.3184
+    ],
+    "RIGHTFOREARM_Socket": [
+      -0.3027,
+      0.6836,
+      -0.3418
+    ],
+    "HITPOINTBAR_Socket": [
+      0.0,
+      3.0625,
+      -0.0
+    ],
+    "LAUNCHPOINT_Socket": [
+      0.0,
+      1.9141,
+      0.75
+    ]
+  },
+  "accessories": [],
+  "animations": {
+    "idle": "eagle_knight_base.glb"
+  }
+}

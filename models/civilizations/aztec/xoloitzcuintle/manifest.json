@@ -1,0 +1,32 @@
+{
+  "slug": "xoloitzcuintle",
+  "name": "Xoloitzcuintle (Cão Sagrado)",
+  "civilization": "aztec",
+  "category": "unit",
+  "role": "hero",
+  "base": "xoloitzcuintle_base.glb",
+  "source_brg": "special m xoloitzcuintle_idlea.brg",
+  "frames": 10,
+  "vertices": 481,
+  "faces": 328,
+  "materials": 1,
+  "textures": [
+    "special_m_xoloitzcuintle.png"
+  ],
+  "sockets": {
+    "FRONTCHEST_Socket": [
+      -0.0286,
+      0.8789,
+      0.1021
+    ],
+    "HITPOINTBAR_Socket": [
+      0.0,
+      2.75,
+      0.0
+    ]
+  },
+  "accessories": [],
+  "animations": {
+    "idle": "xoloitzcuintle_base.glb"
+  }
+}

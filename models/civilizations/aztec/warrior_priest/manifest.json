@@ -1,0 +1,92 @@
+{
+  "slug": "warrior_priest",
+  "name": "Sacerdote Guerreiro",
+  "civilization": "aztec",
+  "category": "unit",
+  "role": "hero",
+  "base": "warrior_priest_base.glb",
+  "source_brg": "special m priest_idlea.brg",
+  "frames": 3,
+  "vertices": 156,
+  "faces": 140,
+  "materials": 1,
+  "textures": [
+    "special_m_priest.png"
+  ],
+  "sockets": {
+    "ATTACHPOINT_Socket": [
+      0.2695,
+      0.0,
+      -0.582
+    ],
+    "LEFTHAND_Socket": [
+      0.0435,
+      1.4297,
+      0.1514
+    ],
+    "RIGHTHAND_Socket": [
+      -0.0159,
+      1.4766,
+      0.2207
+    ],
+    "TOPOFHEAD_Socket": [
+      0.0226,
+      1.9766,
+      0.025
+    ],
+    "FRONTCHEST_Socket": [
+      0.0096,
+      1.5781,
+      0.1426
+    ],
+    "BACKCHEST_Socket": [
+      0.0356,
+      1.5859,
+      -0.1699
+    ],
+    "FRONTABDOMEN_Socket": [
+      0.0115,
+      1.3047,
+      0.1445
+    ],
+    "BACKABDOMEN_Socket": [
+      0.0322,
+      1.3203,
+      -0.123
+    ],
+    "LEFTLEG_Socket": [
+      0.106,
+      0.377,
+      -0.084
+    ],
+    "RIGHTLEG_Socket": [
+      -0.1543,
+      0.375,
+      -0.085
+    ],
+    "LEFTFOOT_Socket": [
+      0.0977,
+      0.0061,
+      -0.0195
+    ],
+    "RIGHTFOOT_Socket": [
+      -0.1719,
+      0.0041,
+      -0.0197
+    ],
+    "LEFTFOREARM_Socket": [
+      0.2383,
+      1.4141,
+      0.0889
+    ],
+    "RIGHTFOREARM_Socket": [
+      -0.1992,
+      1.4141,
+      0.1201
+    ]
+  },
+  "accessories": [],
+  "animations": {
+    "idle": "warrior_priest_base.glb"
+  }
+}

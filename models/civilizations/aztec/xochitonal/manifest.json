@@ -1,0 +1,37 @@
+{
+  "slug": "xochitonal",
+  "name": "Xochitonal (Guardião de Mictlan)",
+  "civilization": "aztec",
+  "category": "unit",
+  "role": "myth",
+  "base": "xochitonal_base.glb",
+  "source_brg": "special m xochitonal_idlea.brg",
+  "frames": 4,
+  "vertices": 816,
+  "faces": 329,
+  "materials": 1,
+  "textures": [
+    "special_m_xochitonali_map.png"
+  ],
+  "sockets": {
+    "ATTACHPOINT_Socket": [
+      1.5312,
+      -0.0133,
+      -3.0
+    ],
+    "HITPOINTBAR_Socket": [
+      0.0,
+      4.0,
+      -0.0
+    ],
+    "LAUNCHPOINT_Socket": [
+      0.1953,
+      1.0547,
+      1.8906
+    ]
+  },
+  "accessories": [],
+  "animations": {
+    "idle": "xochitonal_base.glb"
+  }
+}

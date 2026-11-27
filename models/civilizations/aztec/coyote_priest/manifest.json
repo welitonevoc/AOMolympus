@@ -1,0 +1,82 @@
+{
+  "slug": "coyote_priest",
+  "name": "Sacerdote Coiote",
+  "civilization": "aztec",
+  "category": "unit",
+  "role": "hero",
+  "base": "coyote_priest_base.glb",
+  "source_brg": "special m coyote priest_carryidlea.brg",
+  "frames": 5,
+  "vertices": 577,
+  "faces": 249,
+  "materials": 1,
+  "textures": [
+    "special_m_coyote_priest_map.png"
+  ],
+  "sockets": {
+    "ATTACHPOINT_Socket": [
+      0.0771,
+      1.2344,
+      0.7656
+    ],
+    "LEFTHAND_Socket": [
+      0.375,
+      1.4062,
+      0.6094
+    ],
+    "RIGHTHAND_Socket": [
+      -0.2148,
+      1.3984,
+      0.6016
+    ],
+    "TOPOFHEAD_Socket": [
+      0.106,
+      1.9062,
+      0.248
+    ],
+    "FRONTABDOMEN_Socket": [
+      0.0806,
+      1.2422,
+      0.4375
+    ],
+    "BACKABDOMEN_Socket": [
+      0.1079,
+      1.2422,
+      0.1797
+    ],
+    "LEFTFOOT_Socket": [
+      0.2969,
+      0.0062,
+      0.3496
+    ],
+    "RIGHTFOOT_Socket": [
+      -0.126,
+      0.0056,
+      0.2715
+    ],
+    "LEFTFOREARM_Socket": [
+      0.3906,
+      1.3672,
+      0.3887
+    ],
+    "RIGHTFOREARM_Socket": [
+      -0.2217,
+      1.3828,
+      0.3887
+    ],
+    "HITPOINTBAR_Socket": [
+      0.0,
+      3.0625,
+      -0.0
+    ],
+    "LAUNCHPOINT_Socket": [
+      -0.0002,
+      2.25,
+      1.8828
+    ]
+  },
+  "accessories": [],
+  "animations": {
+    "idle": "coyote_priest_base.glb"
+  }
+}

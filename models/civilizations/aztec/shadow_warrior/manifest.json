@@ -1,0 +1,92 @@
+{
+  "slug": "shadow_warrior",
+  "name": "Sombra de Mictlan",
+  "civilization": "aztec",
+  "category": "unit",
+  "role": "infantry",
+  "base": "shadow_warrior_base.glb",
+  "source_brg": "special m shadow spearman_idlea.brg",
+  "frames": 7,
+  "vertices": 236,
+  "faces": 178,
+  "materials": 1,
+  "textures": [
+    "special_m_shadow_of_mictlan.png"
+  ],
+  "sockets": {
+    "ATTACHPOINT_Socket": [
+      -0.0009,
+      1.3438,
+      0.002
+    ],
+    "RESERVED_Socket": [
+      0.0,
+      0.0,
+      -0.6797
+    ],
+    "LEFTHAND_Socket": [
+      0.2949,
+      1.0469,
+      0.0562
+    ],
+    "RIGHTHAND_Socket": [
+      -0.293,
+      1.0625,
+      -0.0486
+    ],
+    "TOPOFHEAD_Socket": [
+      -0.0007,
+      2.125,
+      0.0559
+    ],
+    "FRONTCHEST_Socket": [
+      0.0151,
+      1.5938,
+      0.1689
+    ],
+    "BACKCHEST_Socket": [
+      -0.0159,
+      1.6719,
+      -0.1235
+    ],
+    "FRONTABDOMEN_Socket": [
+      -0.0101,
+      1.3516,
+      0.0096
+    ],
+    "LEFTFOOT_Socket": [
+      0.2695,
+      0.0708,
+      -0.0156
+    ],
+    "RIGHTFOOT_Socket": [
+      -0.4668,
+      0.0757,
+      -0.1904
+    ],
+    "LEFTFOREARM_Socket": [
+      0.291,
+      1.3125,
+      -0.04
+    ],
+    "RIGHTFOREARM_Socket": [
+      -0.2949,
+      1.3359,
+      -0.1089
+    ],
+    "HITPOINTBAR_Socket": [
+      0.0,
+      3.4531,
+      -0.0
+    ],
+    "LAUNCHPOINT_Socket": [
+      0.0,
+      2.0625,
+      0.8516
+    ]
+  },
+  "accessories": [],
+  "animations": {
+    "idle": "shadow_warrior_base.glb"
+  }
+}

@@ -1,0 +1,72 @@
+{
+  "slug": "tianguis",
+  "name": "Tianguis (Grande Mercado Mesoamericano)",
+  "civilization": "aztec",
+  "category": "building",
+  "role": "building",
+  "base": "tianguis_base.glb",
+  "source_brg": "building m tianguis age2.brg",
+  "frames": 2,
+  "vertices": 3259,
+  "faces": 1842,
+  "materials": 1,
+  "textures": [
+    "building_m_sharedstone_age2.png"
+  ],
+  "sockets": {
+    "FIRE_0_Socket": [
+      2.0625,
+      0.7383,
+      3.9062
+    ],
+    "FIRE_1_Socket": [
+      3.0938,
+      1.4766,
+      2.1719
+    ],
+    "FIRE_2_Socket": [
+      -3.0312,
+      -0.207,
+      3.1719
+    ],
+    "FIRE_3_Socket": [
+      1.6953,
+      2.5312,
+      -3.3438
+    ],
+    "FIRE_4_Socket": [
+      4.3438,
+      1.9453,
+      0.6211
+    ],
+    "FIRE_5_Socket": [
+      3.2656,
+      0.0,
+      -1.5
+    ],
+    "FIRE_6_Socket": [
+      -4.4062,
+      -0.0,
+      0.2383
+    ],
+    "FIRE_7_Socket": [
+      -4.7812,
+      1.5703,
+      -4.6875
+    ],
+    "FIRE_8_Socket": [
+      4.6875,
+      0.0,
+      -4.4062
+    ],
+    "FIRE_9_Socket": [
+      -1.3516,
+      0.9102,
+      -3.5
+    ]
+  },
+  "accessories": [],
+  "animations": {
+    "idle": "tianguis_base.glb"
+  }
+}

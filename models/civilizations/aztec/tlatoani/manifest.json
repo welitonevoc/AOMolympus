@@ -1,0 +1,127 @@
+{
+  "slug": "tlatoani",
+  "name": "Tlatoani (Imperador & Líder Supremo)",
+  "civilization": "aztec",
+  "category": "unit",
+  "role": "hero",
+  "base": "tlatoani_base.glb",
+  "source_brg": "special m tlatoani_carryidlea.brg",
+  "frames": 2,
+  "vertices": 156,
+  "faces": 140,
+  "materials": 1,
+  "textures": [
+    "special_m_tlatoani.png"
+  ],
+  "sockets": {
+    "ATTACHPOINT_Socket": [
+      0.0014,
+      1.2812,
+      0.332
+    ],
+    "RESERVED_Socket": [
+      0.0,
+      0.2734,
+      -0.4531
+    ],
+    "LEFTHAND_Socket": [
+      0.2695,
+      1.2656,
+      0.2695
+    ],
+    "RIGHTHAND_Socket": [
+      -0.2637,
+      1.2891,
+      0.2891
+    ],
+    "TOPOFHEAD_Socket": [
+      0.0005,
+      1.9219,
+      -0.1328
+    ],
+    "LEFTSHOULDER_Socket": [
+      0.1992,
+      1.7422,
+      -0.0371
+    ],
+    "RIGHTSHOULDER_Socket": [
+      -0.21,
+      1.7422,
+      -0.0437
+    ],
+    "FRONTCHEST_Socket": [
+      -0.0083,
+      1.6094,
+      0.0535
+    ],
+    "BACKCHEST_Socket": [
+      0.001,
+      1.6719,
+      -0.2148
+    ],
+    "FRONTABDOMEN_Socket": [
+      -0.0081,
+      1.3906,
+      0.127
+    ],
+    "BACKABDOMEN_Socket": [
+      0.0029,
+      1.3438,
+      -0.126
+    ],
+    "PELVIS_Socket": [
+      -0.0009,
+      1.1797,
+      -0.0137
+    ],
+    "LEFTTHIGH_Socket": [
+      0.1895,
+      0.7578,
+      0.033
+    ],
+    "RIGHTTHIGH_Socket": [
+      -0.1934,
+      0.7578,
+      0.063
+    ],
+    "LEFTLEG_Socket": [
+      0.2109,
+      0.3809,
+      -0.0293
+    ],
+    "RIGHTLEG_Socket": [
+      -0.2188,
+      0.377,
+      0.0322
+    ],
+    "LEFTFOOT_Socket": [
+      0.249,
+      0.0093,
+      0.0157
+    ],
+    "RIGHTFOOT_Socket": [
+      -0.2637,
+      0.0053,
+      0.0879
+    ],
+    "LEFTFOREARM_Socket": [
+      0.2637,
+      1.4375,
+      0.1348
+    ],
+    "RIGHTFOREARM_Socket": [
+      -0.3027,
+      1.4453,
+      0.125
+    ],
+    "HITPOINTBAR_Socket": [
+      0.0,
+      3.0625,
+      -0.0
+    ]
+  },
+  "accessories": [],
+  "animations": {
+    "idle": "tlatoani_base.glb"
+  }
+}

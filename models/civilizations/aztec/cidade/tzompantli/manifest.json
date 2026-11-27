@@ -1,0 +1,82 @@
+{
+  "slug": "tzompantli",
+  "name": "Tzompantli (Plataforma Ritual de Crânios)",
+  "civilization": "aztec",
+  "category": "building",
+  "role": "building",
+  "base": "tzompantli_base.glb",
+  "source_brg": "building m tzompantli age1.brg",
+  "frames": 1,
+  "vertices": 683,
+  "faces": 249,
+  "materials": 1,
+  "textures": [
+    "building_m_sharedstone_age1.png"
+  ],
+  "sockets": {
+    "ATTACHPOINT_Socket": [
+      0.0,
+      0.0,
+      -0.0
+    ],
+    "RESERVED_Socket": [
+      -3.3594,
+      0.5117,
+      1.9609
+    ],
+    "LEFTHAND_Socket": [
+      2.5312,
+      0.0,
+      0.2793
+    ],
+    "RIGHTHAND_Socket": [
+      -2.5312,
+      0.0,
+      0.291
+    ],
+    "LEFTEAR_Socket": [
+      0.0,
+      0.9922,
+      0.0
+    ],
+    "LEFTFOOT_Socket": [
+      0.0,
+      0.498,
+      0.0
+    ],
+    "HITPOINTBAR_Socket": [
+      -0.0,
+      7.0,
+      -0.0
+    ],
+    "RESERVED0_Socket": [
+      3.3594,
+      0.5117,
+      1.9609
+    ],
+    "FIRE_0_Socket": [
+      2.1875,
+      1.0,
+      -1.3828
+    ],
+    "FIRE_1_Socket": [
+      -1.1172,
+      0.9805,
+      -1.2031
+    ],
+    "FIRE_2_Socket": [
+      -3.4062,
+      0.3477,
+      -1.8359
+    ],
+    "FIRE_3_Socket": [
+      3.5781,
+      1.6641,
+      -1.3359
+    ]
+  },
+  "accessories": [],
+  "animations": {
+    "idle": "tzompantli_base.glb"
+  }
+}

@@ -1,0 +1,90 @@
+{
+  "slug": "giant_aztec",
+  "name": "Quinametzin (Gigante Asteca)",
+  "civilization": "aztec",
+  "category": "unit",
+  "role": "myth",
+  "base": "giant_aztec_base.glb",
+  "source_brg": "special m giant_idlea.brg",
+  "frames": 8,
+  "vertices": 496,
+  "faces": 238,
+  "materials": 1,
+  "textures": [],
+  "sockets": {
+    "ATTACHPOINT_Socket": [
+      0.0051,
+      2.3906,
+      0.1445
+    ],
+    "LEFTHAND_Socket": [
+      0.6016,
+      2.2344,
+      0.9492
+    ],
+    "RIGHTHAND_Socket": [
+      -0.6875,
+      2.3906,
+      0.957
+    ],
+    "TOPOFHEAD_Socket": [
+      0.0179,
+      3.8594,
+      0.6758
+    ],
+    "FRONTABDOMEN_Socket": [
+      0.0051,
+      2.3906,
+      0.1445
+    ],
+    "BACKABDOMEN_Socket": [
+      0.0055,
+      2.4375,
+      -0.1099
+    ],
+    "LEFTLEG_Socket": [
+      0.7188,
+      1.0391,
+      0.4492
+    ],
+    "RIGHTLEG_Socket": [
+      -0.707,
+      1.0391,
+      0.4492
+    ],
+    "LEFTFOOT_Socket": [
+      0.8164,
+      0.1875,
+      0.2754
+    ],
+    "RIGHTFOOT_Socket": [
+      -0.8164,
+      0.1914,
+      0.2734
+    ],
+    "LEFTFOREARM_Socket": [
+      0.7578,
+      2.5469,
+      0.7109
+    ],
+    "RIGHTFOREARM_Socket": [
+      -0.7617,
+      2.5938,
+      0.6602
+    ],
+    "HITPOINTBAR_Socket": [
+      0.0,
+      5.7188,
+      0.0
+    ],
+    "LAUNCHPOINT_Socket": [
+      -0.0002,
+      2.25,
+      1.8828
+    ]
+  },
+  "accessories": [],
+  "animations": {
+    "idle": "giant_aztec_base.glb"
+  }
+}

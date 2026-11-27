@@ -1,0 +1,102 @@
+{
+  "slug": "jaguar_knight",
+  "name": "Guerreiro Jaguar",
+  "civilization": "aztec",
+  "category": "unit",
+  "role": "infantry",
+  "base": "jaguar_knight_base.glb",
+  "source_brg": "nobles m jaguar knight_crouchidlea.brg",
+  "frames": 7,
+  "vertices": 415,
+  "faces": 155,
+  "materials": 1,
+  "textures": [
+    "nobles_m_jaguar_knight_medium_map.png"
+  ],
+  "sockets": {
+    "ATTACHPOINT_Socket": [
+      0.0,
+      0.0,
+      -0.7266
+    ],
+    "LEFTHAND_Socket": [
+      -0.0967,
+      0.6562,
+      0.4434
+    ],
+    "RIGHTHAND_Socket": [
+      -0.3984,
+      0.6094,
+      0.0452
+    ],
+    "TOPOFHEAD_Socket": [
+      -0.1562,
+      1.2266,
+      0.123
+    ],
+    "FRONTCHEST_Socket": [
+      -0.1465,
+      0.7773,
+      0.0238
+    ],
+    "BACKCHEST_Socket": [
+      -0.0869,
+      1.0859,
+      -0.0649
+    ],
+    "FRONTABDOMEN_Socket": [
+      -0.105,
+      0.6094,
+      -0.0601
+    ],
+    "BACKABDOMEN_Socket": [
+      0.0138,
+      0.7227,
+      -0.2598
+    ],
+    "LEFTLEG_Socket": [
+      0.1748,
+      0.4062,
+      0.3613
+    ],
+    "RIGHTLEG_Socket": [
+      -0.375,
+      0.3906,
+      -0.2393
+    ],
+    "LEFTFOOT_Socket": [
+      0.2715,
+      0.0155,
+      0.4785
+    ],
+    "RIGHTFOOT_Socket": [
+      -0.2197,
+      0.054,
+      -0.373
+    ],
+    "LEFTFOREARM_Socket": [
+      0.1182,
+      0.7617,
+      0.293
+    ],
+    "RIGHTFOREARM_Socket": [
+      -0.4375,
+      0.7461,
+      -0.1738
+    ],
+    "HITPOINTBAR_Socket": [
+      0.0,
+      3.0625,
+      -0.0
+    ],
+    "LAUNCHPOINT_Socket": [
+      0.0,
+      1.9141,
+      0.75
+    ]
+  },
+  "accessories": [],
+  "animations": {
+    "idle": "jaguar_knight_base.glb"
+  }
+}

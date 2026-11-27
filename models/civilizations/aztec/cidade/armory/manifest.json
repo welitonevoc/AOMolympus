@@ -1,0 +1,97 @@
+{
+  "slug": "armory",
+  "name": "Armaria de Obsidiana",
+  "civilization": "aztec",
+  "category": "building",
+  "role": "building",
+  "base": "armory_base.glb",
+  "source_brg": "building m armory age3.brg",
+  "frames": 1,
+  "vertices": 2798,
+  "faces": 1033,
+  "materials": 1,
+  "textures": [
+    "building_m_shared_age3.png"
+  ],
+  "sockets": {
+    "ATTACHPOINT_Socket": [
+      -2.4688,
+      2.4219,
+      2.7344
+    ],
+    "RESERVED_Socket": [
+      -0.9688,
+      2.6406,
+      -2.6719
+    ],
+    "HITPOINTBAR_Socket": [
+      0.0,
+      9.0,
+      -0.0
+    ],
+    "RESERVED0_Socket": [
+      3.2188,
+      2.1406,
+      -0.9727
+    ],
+    "RESERVED1_Socket": [
+      2.2812,
+      2.1406,
+      2.0469
+    ],
+    "FIRE_0_Socket": [
+      -2.1406,
+      1.9219,
+      -3.6875
+    ],
+    "FIRE_1_Socket": [
+      3.7969,
+      2.3438,
+      -3.8125
+    ],
+    "FIRE_2_Socket": [
+      1.7734,
+      0.0327,
+      3.3906
+    ],
+    "FIRE_3_Socket": [
+      -0.6406,
+      0.2275,
+      -1.1797
+    ],
+    "FIRE_4_Socket": [
+      -2.7031,
+      0.5312,
+      -1.5547
+    ],
+    "FIRE_5_Socket": [
+      -1.4062,
+      0.4102,
+      3.4375
+    ],
+    "FIRE_6_Socket": [
+      3.5625,
+      1.8984,
+      -0.416
+    ],
+    "FIRE_7_Socket": [
+      1.0938,
+      2.1094,
+      -1.2656
+    ],
+    "FIRE_8_Socket": [
+      -0.2598,
+      2.4062,
+      -3.0469
+    ],
+    "FIRE_9_Socket": [
+      3.6562,
+      1.8359,
+      2.5312
+    ]
+  },
+  "accessories": [],
+  "animations": {
+    "idle": "armory_base.glb"
+  }
+}
