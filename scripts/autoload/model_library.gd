@@ -54,8 +54,6 @@ static func create_building_visual(
 	var tier: int = clampi(age_tier, 1, 5)
 	var civ_order: Array[String] = [pantheon_id, "shared", "greek"]
 	var candidates: Array[String] = []
-	if building_kind == "town_center" and pantheon_id == "greek":
-		return _build_procedural_building(p, building_kind, tier, faction)
 	var age_model_tier: int = clampi(tier, 1, 4)
 	for civ in civ_order:
 		candidates.append("res://models/civilizations/%s/cidade/%s/%s_age%d.glb" % [civ, building_kind, building_kind, age_model_tier])
@@ -145,8 +143,6 @@ static func _instantiate_aom_bundle(bundle_dir: String, slug: String, initial_ac
 
 	_force_opaque_materials(loaded)
 	_apply_external_manifest_texture(loaded, bundle_dir, manifest)
-	if "colossus" in slug.to_lower():
-		_attach_epic_colossus_armor(loaded)
 	_align_model_to_ground(loaded)
 	_attach_aom_accessories(loaded, bundle_dir, manifest, slug, initial_action)
 	_log_model_diag("UNIT:" + slug + ":" + initial_action, glb_path, loaded)
@@ -223,82 +219,6 @@ static func _apply_external_manifest_texture(node: Node, bundle_dir: String, man
 						mi.set_surface_override_material(i, std)
 		for child in cur.get_children():
 			stack.append(child)
-
-
-static func _attach_epic_colossus_armor(root: Node3D) -> void:
-	var armor_root := Node3D.new()
-	armor_root.name = "EpicColossusArmor"
-	root.add_child(armor_root)
-
-	var gold_mat := StandardMaterial3D.new()
-	gold_mat.albedo_color = Color("#d4af37")
-	gold_mat.metallic = 0.92
-	gold_mat.roughness = 0.24
-
-	var bronze_mat := StandardMaterial3D.new()
-	bronze_mat.albedo_color = Color("#7c5828")
-	bronze_mat.metallic = 0.85
-	bronze_mat.roughness = 0.35
-
-	var rune_mat := StandardMaterial3D.new()
-	rune_mat.albedo_color = Color("#38bdf8")
-	rune_mat.emission_enabled = true
-	rune_mat.emission = Color("#38bdf8")
-	rune_mat.emission_energy_multiplier = 2.8
-
-	# Ombreiras épicas duplas (esquerda e direita)
-	for side in [-1.0, 1.0]:
-		var pauldron := MeshInstance3D.new()
-		var pmesh := BoxMesh.new()
-		pmesh.size = Vector3(0.42, 0.24, 0.44)
-		pauldron.mesh = pmesh
-		pauldron.material_override = gold_mat
-		pauldron.position = Vector3(side * 0.52, 1.88, 0.0)
-		pauldron.rotation_degrees = Vector3(0.0, 0.0, side * -18.0)
-		armor_root.add_child(pauldron)
-
-		var trim := MeshInstance3D.new()
-		var tmesh := BoxMesh.new()
-		tmesh.size = Vector3(0.46, 0.06, 0.48)
-		trim.mesh = tmesh
-		trim.material_override = bronze_mat
-		trim.position = Vector3(side * 0.52, 1.76, 0.0)
-		trim.rotation_degrees = Vector3(0.0, 0.0, side * -18.0)
-		armor_root.add_child(trim)
-
-		var rune := MeshInstance3D.new()
-		var rmesh := BoxMesh.new()
-		rmesh.size = Vector3(0.10, 0.14, 0.06)
-		rune.mesh = rmesh
-		rune.material_override = rune_mat
-		rune.position = Vector3(side * 0.52, 1.90, 0.22)
-		armor_root.add_child(rune)
-
-	# Crista imperial dourada no elmo
-	var crest := MeshInstance3D.new()
-	var cmesh := BoxMesh.new()
-	cmesh.size = Vector3(0.08, 0.34, 0.42)
-	crest.mesh = cmesh
-	crest.material_override = gold_mat
-	crest.position = Vector3(0.0, 2.48, -0.02)
-	armor_root.add_child(crest)
-
-	# Cinturão de placas douradas
-	var belt := MeshInstance3D.new()
-	var bmesh := BoxMesh.new()
-	bmesh.size = Vector3(0.68, 0.14, 0.42)
-	belt.mesh = bmesh
-	belt.material_override = gold_mat
-	belt.position = Vector3(0.0, 1.24, 0.0)
-	armor_root.add_child(belt)
-
-	var buckle := MeshInstance3D.new()
-	var bkmesh := BoxMesh.new()
-	bkmesh.size = Vector3(0.18, 0.18, 0.08)
-	buckle.mesh = bkmesh
-	buckle.material_override = rune_mat
-	buckle.position = Vector3(0.0, 1.24, 0.21)
-	armor_root.add_child(buckle)
 
 
 static func _attach_aom_accessories(root: Node3D, bundle_dir: String, manifest: Dictionary, slug: String = "", action: String = "idle") -> void:
@@ -616,39 +536,28 @@ static func _build_procedural_building(p: Dictionary, kind: String, tier: int, f
 		"town_center":
 			var body_h: float = 2.1 * tier_scale
 			if p["id"] == "greek":
-				# Stylobate monumental em 3 degraus de mármore
-				_add_box(root, Vector3(fp * 1.42, 0.24, fp * 1.42), Vector3(0.0, 0.40, 0.0), stone_mat)
-				_add_box(root, Vector3(fp * 1.28, 0.24, fp * 1.28), Vector3(0.0, 0.64, 0.0), stone_mat)
-				_add_box(root, Vector3(fp * 1.16, 0.16, fp * 1.16), Vector3(0.0, 0.84, 0.0), stone_mat)
-				# Cela central em mármore com friso dourado
-				var base_y: float = 0.92
-				_add_box(root, Vector3(fp * 0.88, body_h, fp * 0.80), Vector3(0.0, base_y + body_h * 0.5, -0.08), stone_mat)
-				# Portal monumental em bronze e ouro
-				_add_box(root, Vector3(1.35, body_h * 0.74, 0.22), Vector3(0.0, base_y + body_h * 0.37, fp * 0.34), wood_mat)
-				_add_box(root, Vector3(1.65, 0.22, 0.28), Vector3(0.0, base_y + body_h * 0.76, fp * 0.34), gold_mat)
-				# Colunata dórica perimetral (frente e trás)
-				for cx in [-1.65, -0.99, -0.33, 0.33, 0.99, 1.65]:
-					for cz in [fp * 0.48, -fp * 0.48]:
-						_add_cylinder(root, 0.14, 0.18, body_h, Vector3(cx, base_y + body_h * 0.5, cz), stone_mat)
-						_add_box(root, Vector3(0.42, 0.12, 0.42), Vector3(cx, base_y + body_h + 0.06, cz), stone_mat)
-				# Colunas laterais
-				for cz in [-0.72, 0.0, 0.72]:
-					for cx in [-1.65, 1.65]:
-						_add_cylinder(root, 0.14, 0.18, body_h, Vector3(cx, base_y + body_h * 0.5, cz), stone_mat)
-						_add_box(root, Vector3(0.42, 0.12, 0.42), Vector3(cx, base_y + body_h + 0.06, cz), stone_mat)
-				# Arquitrave, entablamento e friso dourado
-				_add_box(root, Vector3(fp * 1.30, 0.34, fp * 1.22), Vector3(0.0, base_y + body_h + 0.25, 0.0), stone_mat)
-				if tier >= 2:
-					_add_box(root, Vector3(fp * 1.32, 0.10, fp * 1.24), Vector3(0.0, base_y + body_h + 0.42, 0.0), gold_mat)
-				# Telhado de terracota em duas águas + cumeeira dourada
-				var roof_y: float = base_y + body_h + 0.44 + 0.68 * tier_scale
-				_add_prism_roof(root, fp * 1.34, 1.40 * tier_scale, fp * 1.26, Vector3(0.0, roof_y, 0.0), roof_mat)
-				_add_box(root, Vector3(fp * 1.36, 0.14, 0.18), Vector3(0.0, roof_y + 0.70 * tier_scale, 0.0), gold_mat)
-				# Tocheiros monumentais de bronze com chama viva nos degraus
-				var fire_mat := _make_mat(Color("#f97316"), 0.2, 0.1, true, Color("#fbbf24"), 2.4)
-				for sx in [-fp * 0.54, fp * 0.54]:
-					_add_cylinder(root, 0.26, 0.20, 0.65, Vector3(sx, 0.96, fp * 0.54), gold_mat)
-					_add_sphere(root, 0.24, Vector3(sx, 1.40, fp * 0.54), fire_mat)
+				# Stylobate clássico com 3 degraus de mármore
+				_add_box(root, Vector3(fp * 1.35, 0.22, fp * 1.35), Vector3(0.0, 0.42, 0.0), stone_mat)
+				_add_box(root, Vector3(fp * 1.22, 0.22, fp * 1.22), Vector3(0.0, 0.64, 0.0), stone_mat)
+				# Cela central de mármore
+				_add_box(root, Vector3(fp * 0.96, body_h, fp * 0.86), Vector3(0.0, 0.64 + body_h * 0.5, -0.12), stone_mat)
+				# Portal monumental com batente de bronze
+				_add_box(root, Vector3(1.3, body_h * 0.72, 0.2), Vector3(0.0, 0.64 + body_h * 0.36, fp * 0.38), wood_mat)
+				_add_box(root, Vector3(1.5, 0.18, 0.24), Vector3(0.0, 0.64 + body_h * 0.72, fp * 0.38), gold_mat)
+				# Colunata dórica frontal (6 colunas com fuste cônico e capitel)
+				for cx in [-1.55, -0.93, -0.31, 0.31, 0.93, 1.55]:
+					_add_cylinder(root, 0.15, 0.18, body_h, Vector3(cx, 0.64 + body_h * 0.5, fp * 0.44), stone_mat)
+					_add_box(root, Vector3(0.42, 0.12, 0.42), Vector3(cx, 0.64 + body_h + 0.06, fp * 0.44), stone_mat)
+				# Arquitrave e entablamento
+				_add_box(root, Vector3(fp * 1.25, 0.35, fp * 1.15), Vector3(0.0, 0.64 + body_h + 0.24, 0.0), stone_mat)
+				# Telhado de terracota em duas águas
+				_add_prism_roof(root, fp * 1.28, 1.35 * tier_scale, fp * 1.18, Vector3(0.0, 0.64 + body_h + 0.42 + 0.68 * tier_scale, 0.0), roof_mat)
+				# Brasões e tocheiros de fogo nos degraus
+				var fire_mat := _make_mat(Color("#f97316"), 0.2, 0.1, true, Color("#fbbf24"), 2.2)
+				_add_cylinder(root, 0.28, 0.22, 0.6, Vector3(-fp * 0.52, 0.85, fp * 0.52), stone_mat)
+				_add_sphere(root, 0.22, Vector3(-fp * 0.52, 1.25, fp * 0.52), fire_mat)
+				_add_cylinder(root, 0.28, 0.22, 0.6, Vector3(fp * 0.52, 0.85, fp * 0.52), stone_mat)
+				_add_sphere(root, 0.22, Vector3(fp * 0.52, 1.25, fp * 0.52), fire_mat)
 			else:
 				_add_box(root, Vector3(fp * 1.05, body_h, fp * 0.92), Vector3(0.0, 0.32 + body_h * 0.5, 0.0), stone_mat)
 				for cx in [-1.25, -0.45, 0.45, 1.25]:
