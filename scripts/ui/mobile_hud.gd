@@ -653,15 +653,18 @@ func _build_center_era_and_clock_badge() -> PanelContainer:
 	panel.custom_minimum_size = Vector2(200.0, 36.0)
 
 	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color(0.05, 0.07, 0.12, 0.94)
-	sb.border_color = Color(0.85, 0.72, 0.32, 0.90)
-	sb.border_width_left = 1
-	sb.border_width_right = 1
-	sb.border_width_top = 1
-	sb.border_width_bottom = 2
-	sb.set_corner_radius_all(6)
-	sb.shadow_color = Color(0.0, 0.0, 0.0, 0.4)
-	sb.shadow_size = 4
+	sb.bg_color = Color(0.04, 0.06, 0.11, 0.93)
+	sb.border_color = Color(0.92, 0.78, 0.35, 0.92)
+	sb.border_width_left = 2
+	sb.border_width_right = 2
+	sb.border_width_top = 2
+	sb.border_width_bottom = 3
+	sb.border_blend = true
+	sb.set_corner_radius_all(8)
+	sb.shadow_color = Color(0.0, 0.0, 0.0, 0.60)
+	sb.shadow_size = 10
+	sb.shadow_offset = Vector2(0.0, 4.0)
+	sb.anti_aliasing = true
 	panel.add_theme_stylebox_override("panel", sb)
 
 	var m := MarginContainer.new()
@@ -938,22 +941,29 @@ func _refresh_power_buttons_state() -> void:
 
 		var short_name: String = String(spec.get("short", pid))
 		var sb := StyleBoxFlat.new()
-		sb.set_corner_radius_all(5)
+		sb.set_corner_radius_all(7)
+		sb.border_blend = true
+		sb.anti_aliasing = true
 
 		if GameState.current_age < req_age:
 			btn.text = "%s\n[Era %d]" % [short_name, req_age]
 			btn.disabled = true
-			sb.bg_color = Color(0.04, 0.06, 0.10, 0.70)
-			sb.border_color = Color(0.25, 0.30, 0.38, 0.40)
+			sb.bg_color = Color(0.04, 0.06, 0.10, 0.65)
+			sb.border_color = Color(0.28, 0.34, 0.44, 0.35)
 			sb.set_border_width_all(1)
-			btn.add_theme_color_override("font_color", Color(0.55, 0.60, 0.68, 0.60))
-			btn.add_theme_color_override("font_disabled_color", Color(0.55, 0.60, 0.68, 0.60))
+			btn.add_theme_color_override("font_color", Color(0.55, 0.62, 0.72, 0.55))
+			btn.add_theme_color_override("font_disabled_color", Color(0.55, 0.62, 0.72, 0.55))
 		elif cd > 0.0:
 			btn.text = "%s\n%.0fs" % [short_name, cd]
 			btn.disabled = true
-			sb.bg_color = Color(0.03, 0.08, 0.14, 0.85)
-			sb.border_color = Color(0.22, 0.74, 0.97, 0.70)
-			sb.set_border_width_all(1)
+			sb.bg_color = Color(0.03, 0.09, 0.17, 0.88)
+			sb.border_color = Color(0.22, 0.74, 0.97, 0.75)
+			sb.border_width_left = 1
+			sb.border_width_right = 1
+			sb.border_width_top = 2
+			sb.border_width_bottom = 2
+			sb.shadow_color = Color(0.15, 0.65, 0.95, 0.25)
+			sb.shadow_size = 5
 			btn.add_theme_color_override("font_color", Color("#38bdf8"))
 			btn.add_theme_color_override("font_disabled_color", Color("#38bdf8"))
 		else:
@@ -965,19 +975,32 @@ func _refresh_power_buttons_state() -> void:
 			btn.add_theme_color_override("font_disabled_color", Color(0.65, 0.65, 0.65, 0.55))
 
 			if is_targeted:
-				sb.bg_color = Color(0.85, 0.72, 0.32, 0.95)
-				sb.border_color = Color(1.0, 1.0, 1.0, 1.0)
-				sb.set_border_width_all(2)
-				btn.add_theme_color_override("font_color", Color("#0d121c"))
+				sb.bg_color = Color(0.88, 0.73, 0.28, 0.98)
+				sb.border_color = Color(1.0, 0.97, 0.78, 1.0)
+				sb.border_width_left = 2
+				sb.border_width_right = 2
+				sb.border_width_top = 2
+				sb.border_width_bottom = 3
+				sb.shadow_color = Color(1.0, 0.85, 0.35, 0.65)
+				sb.shadow_size = 10
+				btn.add_theme_color_override("font_color", Color("#0b0f18"))
 			else:
-				sb.bg_color = Color(0.06, 0.09, 0.15, 0.92)
-				sb.border_color = Color(0.85, 0.72, 0.32, 0.80) if can_afford else Color(0.40, 0.35, 0.25, 0.50)
-				sb.set_border_width_all(1)
-				btn.add_theme_color_override("font_color", Color("#fef3c7") if can_afford else Color(0.7, 0.7, 0.7, 0.6))
+				sb.bg_color = Color(0.06, 0.11, 0.20, 0.94) if can_afford else Color(0.05, 0.07, 0.11, 0.78)
+				sb.border_color = Color(0.92, 0.78, 0.35, 0.92) if can_afford else Color(0.40, 0.35, 0.25, 0.45)
+				sb.border_width_left = 1
+				sb.border_width_right = 1
+				sb.border_width_top = 2
+				sb.border_width_bottom = 3
+				if can_afford:
+					sb.shadow_color = Color(0.25, 0.68, 1.0, 0.32)
+					sb.shadow_size = 7
+					sb.shadow_offset = Vector2(0.0, 2.0)
+				btn.add_theme_color_override("font_color", Color("#fef3c7") if can_afford else Color(0.7, 0.7, 0.7, 0.55))
 
 		btn.add_theme_stylebox_override("normal", sb)
 		var sb_hover := sb.duplicate() as StyleBoxFlat
-		sb_hover.border_color = Color(1.0, 0.9, 0.45, 1.0)
+		sb_hover.border_color = Color(1.0, 0.92, 0.52, 1.0)
+		sb_hover.bg_color = sb.bg_color.lightened(0.12)
 		btn.add_theme_stylebox_override("hover", sb_hover)
 		btn.add_theme_stylebox_override("pressed", sb)
 		btn.add_theme_stylebox_override("disabled", sb)
@@ -1121,38 +1144,56 @@ func _build_bottom_left_zone() -> void:
 
 
 func _build_unit_inspection_card() -> void:
-	# Painel Central Clássico Imperial (Centro Inferior)
+	# Painel Central Épico Imperial Moderno (Relicário da Unidade — Centro Inferior)
 	_unit_card_panel = PanelContainer.new()
 	_unit_card_panel.anchor_left = 0.5
 	_unit_card_panel.anchor_right = 0.5
 	_unit_card_panel.anchor_top = 1.0
 	_unit_card_panel.anchor_bottom = 1.0
-	_unit_card_panel.offset_left = -195.0
-	_unit_card_panel.offset_right = 195.0
-	_unit_card_panel.offset_top = -175.0
+	_unit_card_panel.offset_left = -215.0
+	_unit_card_panel.offset_right = 215.0
+	_unit_card_panel.offset_top = -170.0
 	_unit_card_panel.offset_bottom = -14.0
-	_unit_card_panel.add_theme_stylebox_override("panel", _make_panel_style(Color(0.04, 0.05, 0.08, 0.95), 10, Color(0.83, 0.69, 0.22, 0.65), true))
+	_unit_card_panel.add_theme_stylebox_override("panel", _make_panel_style(Color(0.04, 0.06, 0.11, 0.93), 12, Color(0.90, 0.76, 0.32, 0.85), true))
 	add_child(_unit_card_panel)
 
+	var outer_vbox := VBoxContainer.new()
+	outer_vbox.add_theme_constant_override("separation", 0)
+	_unit_card_panel.add_child(outer_vbox)
+
+	# Faixa luminosa dourada superior (accent bar imperial)
+	var top_accent := ColorRect.new()
+	top_accent.custom_minimum_size = Vector2(0.0, 2.0)
+	top_accent.color = Color(0.98, 0.86, 0.44, 0.90)
+	outer_vbox.add_child(top_accent)
+
 	var margin := MarginContainer.new()
-	margin.add_theme_constant_override("margin_left", 10)
-	margin.add_theme_constant_override("margin_right", 10)
-	margin.add_theme_constant_override("margin_top", 8)
-	margin.add_theme_constant_override("margin_bottom", 8)
-	_unit_card_panel.add_child(margin)
+	margin.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	margin.add_theme_constant_override("margin_left", 12)
+	margin.add_theme_constant_override("margin_right", 12)
+	margin.add_theme_constant_override("margin_top", 10)
+	margin.add_theme_constant_override("margin_bottom", 10)
+	outer_vbox.add_child(margin)
 
 	var main_hbox := HBoxContainer.new()
-	main_hbox.add_theme_constant_override("separation", 10)
+	main_hbox.add_theme_constant_override("separation", 12)
 	margin.add_child(main_hbox)
 
-	# Retrato com moldura dourada
+	# Retrato estilo Relicário Dourado com profundidade e brilho
 	var portrait_box := PanelContainer.new()
-	portrait_box.custom_minimum_size = Vector2(80.0, 100.0)
+	portrait_box.custom_minimum_size = Vector2(84.0, 108.0)
 	var portrait_style := StyleBoxFlat.new()
-	portrait_style.bg_color = Color(0.08, 0.12, 0.18, 0.9)
-	portrait_style.border_color = Color("#d4af37")
-	portrait_style.set_border_width_all(2)
-	portrait_style.set_corner_radius_all(6)
+	portrait_style.bg_color = Color(0.06, 0.11, 0.21, 0.96)
+	portrait_style.border_color = Color("#e8c456")
+	portrait_style.border_width_left = 2
+	portrait_style.border_width_right = 2
+	portrait_style.border_width_top = 2
+	portrait_style.border_width_bottom = 3
+	portrait_style.border_blend = true
+	portrait_style.set_corner_radius_all(9)
+	portrait_style.shadow_color = Color(0.88, 0.72, 0.25, 0.28)
+	portrait_style.shadow_size = 7
+	portrait_style.anti_aliasing = true
 	portrait_box.add_theme_stylebox_override("panel", portrait_style)
 	main_hbox.add_child(portrait_box)
 
@@ -1160,35 +1201,51 @@ func _build_unit_inspection_card() -> void:
 	_unit_card_portrait_icon.text = "🏛️"
 	_unit_card_portrait_icon.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_unit_card_portrait_icon.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	_unit_card_portrait_icon.add_theme_font_size_override("font_size", 34)
+	_unit_card_portrait_icon.add_theme_font_size_override("font_size", 38)
 	portrait_box.add_child(_unit_card_portrait_icon)
 
-	# Informações textuais, barra de HP e atributos
+	# Informações textuais, barra de HP cristalina e atributos
 	var info_vbox := VBoxContainer.new()
 	info_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	info_vbox.add_theme_constant_override("separation", 4)
+	info_vbox.add_theme_constant_override("separation", 6)
 	main_hbox.add_child(info_vbox)
 
-	# Título e Nível
+	# Título e Badge de Nível
 	var title_hbox := HBoxContainer.new()
+	title_hbox.add_theme_constant_override("separation", 6)
 	info_vbox.add_child(title_hbox)
 
 	_unit_card_name = Label.new()
 	_unit_card_name.text = "Nenhuma seleção"
-	_unit_card_name.add_theme_color_override("font_color", Color("#f6e08b"))
-	_unit_card_name.add_theme_font_size_override("font_size", 14)
+	_unit_card_name.add_theme_color_override("font_color", Color("#fef08a"))
+	_unit_card_name.add_theme_font_size_override("font_size", 15)
+	_unit_card_name.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.85))
+	_unit_card_name.add_theme_constant_override("shadow_offset_y", 1)
 	_unit_card_name.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	title_hbox.add_child(_unit_card_name)
 
+	var lvl_badge := PanelContainer.new()
+	var lvl_sb := StyleBoxFlat.new()
+	lvl_sb.bg_color = Color(0.85, 0.70, 0.24, 0.18)
+	lvl_sb.border_color = Color(0.90, 0.76, 0.34, 0.65)
+	lvl_sb.set_border_width_all(1)
+	lvl_sb.set_corner_radius_all(5)
+	lvl_sb.content_margin_left = 7
+	lvl_sb.content_margin_right = 7
+	lvl_sb.content_margin_top = 1
+	lvl_sb.content_margin_bottom = 1
+	lvl_badge.add_theme_stylebox_override("panel", lvl_sb)
+	title_hbox.add_child(lvl_badge)
+
 	_unit_card_lvl = Label.new()
 	_unit_card_lvl.text = "Lvl 1"
-	_unit_card_lvl.add_theme_color_override("font_color", Color("#94a3b8"))
+	_unit_card_lvl.add_theme_color_override("font_color", Color("#fde047"))
 	_unit_card_lvl.add_theme_font_size_override("font_size", 11)
-	title_hbox.add_child(_unit_card_lvl)
+	lvl_badge.add_child(_unit_card_lvl)
 
-	# Barra de Vida (Verde Esmeralda Imperial)
+	# Barra de Vida Cristalina (Verde Esmeralda com borda luminosa superior)
 	var hp_container := Control.new()
-	hp_container.custom_minimum_size = Vector2(0.0, 16.0)
+	hp_container.custom_minimum_size = Vector2(0.0, 20.0)
 	info_vbox.add_child(hp_container)
 
 	_unit_card_hp_bar = ProgressBar.new()
@@ -1198,11 +1255,16 @@ func _build_unit_inspection_card() -> void:
 	_unit_card_hp_bar.value = 100.0
 	_unit_card_hp_bar.show_percentage = false
 	var hp_bg := StyleBoxFlat.new()
-	hp_bg.bg_color = Color(0.1, 0.12, 0.16, 0.8)
-	hp_bg.set_corner_radius_all(3)
+	hp_bg.bg_color = Color(0.06, 0.08, 0.13, 0.92)
+	hp_bg.border_color = Color(0.83, 0.69, 0.22, 0.50)
+	hp_bg.set_border_width_all(1)
+	hp_bg.set_corner_radius_all(5)
 	var hp_fill := StyleBoxFlat.new()
-	hp_fill.bg_color = Color("#22c55e")
-	hp_fill.set_corner_radius_all(3)
+	hp_fill.bg_color = Color("#10b981")
+	hp_fill.border_color = Color("#6ee7b7")
+	hp_fill.border_width_top = 2
+	hp_fill.border_blend = true
+	hp_fill.set_corner_radius_all(4)
 	_unit_card_hp_bar.add_theme_stylebox_override("background", hp_bg)
 	_unit_card_hp_bar.add_theme_stylebox_override("fill", hp_fill)
 	hp_container.add_child(_unit_card_hp_bar)
@@ -1212,9 +1274,9 @@ func _build_unit_inspection_card() -> void:
 	_unit_card_hp_lbl.text = "HP: --/--"
 	_unit_card_hp_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_unit_card_hp_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	_unit_card_hp_lbl.add_theme_font_size_override("font_size", 10)
+	_unit_card_hp_lbl.add_theme_font_size_override("font_size", 11)
 	_unit_card_hp_lbl.add_theme_color_override("font_color", Color("#ffffff"))
-	_unit_card_hp_lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.8))
+	_unit_card_hp_lbl.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.9))
 	_unit_card_hp_lbl.add_theme_constant_override("shadow_offset_x", 1)
 	_unit_card_hp_lbl.add_theme_constant_override("shadow_offset_y", 1)
 	hp_container.add_child(_unit_card_hp_lbl)
@@ -1224,13 +1286,27 @@ func _build_unit_inspection_card() -> void:
 	_unit_card_stats_row.add_theme_constant_override("separation", 8)
 	info_vbox.add_child(_unit_card_stats_row)
 
-	# Banner de Habilidade Ativa
+	# Banner de Habilidade Ativa em Pílula Dourada Translúcida
+	var banner_pill := PanelContainer.new()
+	var banner_sb := StyleBoxFlat.new()
+	banner_sb.bg_color = Color(0.85, 0.70, 0.24, 0.11)
+	banner_sb.border_color = Color(0.85, 0.70, 0.24, 0.35)
+	banner_sb.set_border_width_all(1)
+	banner_sb.set_corner_radius_all(6)
+	banner_sb.content_margin_left = 8
+	banner_sb.content_margin_right = 8
+	banner_sb.content_margin_top = 4
+	banner_sb.content_margin_bottom = 4
+	banner_pill.add_theme_stylebox_override("panel", banner_sb)
+	info_vbox.add_child(banner_pill)
+
 	_unit_card_banner_lbl = Label.new()
 	_unit_card_banner_lbl.text = "PRONTO PARA BATALHA"
 	_unit_card_banner_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_unit_card_banner_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_unit_card_banner_lbl.add_theme_font_size_override("font_size", 10)
-	_unit_card_banner_lbl.add_theme_color_override("font_color", Color("#d4af37"))
-	info_vbox.add_child(_unit_card_banner_lbl)
+	_unit_card_banner_lbl.add_theme_color_override("font_color", Color("#f6e08b"))
+	banner_pill.add_child(_unit_card_banner_lbl)
 
 	# Variáveis legadas mantidas para não quebrar compatibilidade
 	_selection_title = _unit_card_name
@@ -1238,41 +1314,59 @@ func _build_unit_inspection_card() -> void:
 
 
 func _build_bottom_right_commands() -> void:
-	# Painel de Comandos e Ordens (Canto Inferior Direito) - Moldura Dourada Clássica
+	# Painel de Comandos e Ordens Épico Imperial (Canto Inferior Direito)
 	var panel := PanelContainer.new()
 	panel.anchor_left = 1.0
 	panel.anchor_right = 1.0
 	panel.anchor_top = 1.0
 	panel.anchor_bottom = 1.0
-	panel.offset_left = -336.0
+	panel.offset_left = -368.0
 	panel.offset_right = -14.0
-	panel.offset_top = -242.0
+	panel.offset_top = -250.0
 	panel.offset_bottom = -14.0
-	panel.add_theme_stylebox_override("panel", _make_panel_style(Color(0.04, 0.06, 0.10, 0.94), 10, Color(0.83, 0.69, 0.22, 0.75), true))
+	panel.add_theme_stylebox_override("panel", _make_panel_style(Color(0.04, 0.06, 0.11, 0.93), 12, Color(0.90, 0.76, 0.32, 0.85), true))
 	add_child(panel)
 
-	var margin := MarginContainer.new()
-	margin.add_theme_constant_override("margin_left", 8)
-	margin.add_theme_constant_override("margin_right", 8)
-	margin.add_theme_constant_override("margin_top", 6)
-	margin.add_theme_constant_override("margin_bottom", 6)
-	panel.add_child(margin)
+	var outer_vbox := VBoxContainer.new()
+	outer_vbox.add_theme_constant_override("separation", 0)
+	panel.add_child(outer_vbox)
 
-	var vbox := VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 4)
-	margin.add_child(vbox)
-
-	var header_bar := HBoxContainer.new()
-	header_bar.add_theme_constant_override("separation", 4)
-	vbox.add_child(header_bar)
+	# Cabeçalho Arquitetônico Imperial com linha dourada
+	var header_panel := PanelContainer.new()
+	var h_sb := StyleBoxFlat.new()
+	h_sb.bg_color = Color(0.07, 0.10, 0.18, 0.92)
+	h_sb.border_color = Color(0.88, 0.74, 0.32, 0.55)
+	h_sb.border_width_bottom = 2
+	h_sb.corner_radius_top_left = 10
+	h_sb.corner_radius_top_right = 10
+	h_sb.content_margin_left = 10
+	h_sb.content_margin_right = 10
+	h_sb.content_margin_top = 6
+	h_sb.content_margin_bottom = 6
+	header_panel.add_theme_stylebox_override("panel", h_sb)
+	outer_vbox.add_child(header_panel)
 
 	var header_lbl := Label.new()
 	header_lbl.text = "✦ AÇÕES & ORDENS ✦"
 	header_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	header_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	header_lbl.add_theme_color_override("font_color", Color(0.83, 0.69, 0.22, 0.85))
+	header_lbl.add_theme_color_override("font_color", Color("#fde68a"))
 	header_lbl.add_theme_font_size_override("font_size", 11)
-	header_bar.add_child(header_lbl)
+	header_lbl.add_theme_color_override("font_shadow_color", Color(0.0, 0.0, 0.0, 0.85))
+	header_lbl.add_theme_constant_override("shadow_offset_y", 1)
+	header_panel.add_child(header_lbl)
+
+	var margin := MarginContainer.new()
+	margin.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	margin.add_theme_constant_override("margin_left", 10)
+	margin.add_theme_constant_override("margin_right", 10)
+	margin.add_theme_constant_override("margin_top", 8)
+	margin.add_theme_constant_override("margin_bottom", 8)
+	outer_vbox.add_child(margin)
+
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 6)
+	margin.add_child(vbox)
 
 	_age_progress_bar = ProgressBar.new()
 	_age_progress_bar.min_value = 0.0
@@ -1281,7 +1375,7 @@ func _build_bottom_right_commands() -> void:
 	_age_progress_bar.visible = false
 	var bar_fill := StyleBoxFlat.new()
 	bar_fill.bg_color = Color("#d4af37")
-	bar_fill.set_corner_radius_all(3)
+	bar_fill.set_corner_radius_all(4)
 	_age_progress_bar.add_theme_stylebox_override("fill", bar_fill)
 	vbox.add_child(_age_progress_bar)
 
@@ -1294,8 +1388,8 @@ func _build_bottom_right_commands() -> void:
 	_command_grid = GridContainer.new()
 	_command_grid.columns = 3
 	_command_grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_command_grid.add_theme_constant_override("h_separation", 6)
-	_command_grid.add_theme_constant_override("v_separation", 6)
+	_command_grid.add_theme_constant_override("h_separation", 7)
+	_command_grid.add_theme_constant_override("v_separation", 7)
 	scroll.add_child(_command_grid)
 
 
@@ -2600,56 +2694,85 @@ func _make_action_button(label_text: String, primary: bool, min_w: float, min_h:
 	return btn
 
 
-func _make_panel_style(bg: Color, radius: int, border_col: Color = Color(0.83, 0.69, 0.22, 0.42), shadow: bool = true) -> StyleBoxFlat:
+func _make_panel_style(bg: Color, radius: int, border_col: Color = Color(0.88, 0.74, 0.30, 0.65), shadow: bool = true) -> StyleBoxFlat:
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = bg
 	sb.border_color = border_col
-	sb.set_border_width_all(1)
+	sb.border_width_left = 2
+	sb.border_width_right = 2
+	sb.border_width_top = 2
+	sb.border_width_bottom = 3
+	sb.border_blend = true
 	sb.set_corner_radius_all(radius)
+	sb.anti_aliasing = true
 	if shadow:
-		sb.shadow_color = Color(0.0, 0.0, 0.0, 0.42)
-		sb.shadow_size = 6
-		sb.shadow_offset = Vector2(0.0, 2.0)
+		sb.shadow_color = Color(0.0, 0.0, 0.0, 0.65)
+		sb.shadow_size = 12
+		sb.shadow_offset = Vector2(0.0, 5.0)
 	return sb
 
 
 func _make_btn_style(primary: bool, hover: bool = false, pressed: bool = false) -> StyleBoxFlat:
 	var sb := StyleBoxFlat.new()
+	sb.border_blend = true
+	sb.anti_aliasing = true
+	sb.content_margin_left = 6
+	sb.content_margin_right = 6
+	sb.content_margin_top = 4
+	sb.content_margin_bottom = 4
 	if primary:
 		if pressed:
-			sb.bg_color = Color("#b89428")
+			sb.bg_color = Color("#a8821d")
 			sb.border_color = Color("#e5c158")
+			sb.border_width_top = 1
+			sb.border_width_bottom = 1
 		elif hover:
-			sb.bg_color = Color("#f0cf6a")
-			sb.border_color = Color("#fff0aa")
+			sb.bg_color = Color("#f4d46c")
+			sb.border_color = Color("#fff7cc")
+			sb.border_width_top = 2
+			sb.border_width_bottom = 3
 		else:
 			sb.bg_color = Color("#d4af37")
-			sb.border_color = Color("#f6e08b")
-		sb.shadow_color = Color(0.83, 0.69, 0.22, 0.35)
-		sb.shadow_size = 3
+			sb.border_color = Color("#fce99a")
+			sb.border_width_top = 2
+			sb.border_width_bottom = 3
+		sb.border_width_left = 1
+		sb.border_width_right = 1
+		sb.shadow_color = Color(0.95, 0.78, 0.25, 0.42)
+		sb.shadow_size = 6
+		sb.shadow_offset = Vector2(0.0, 2.0)
 	else:
 		if pressed:
-			sb.bg_color = Color("#0f1522")
+			sb.bg_color = Color("#0b101b")
 			sb.border_color = Color("#f6e08b")
+			sb.border_width_top = 1
+			sb.border_width_bottom = 1
 		elif hover:
-			sb.bg_color = Color("#2a384f")
-			sb.border_color = Color(0.92, 0.82, 0.45, 0.65)
+			sb.bg_color = Color("#1e2d48")
+			sb.border_color = Color(0.95, 0.82, 0.42, 0.85)
+			sb.border_width_top = 2
+			sb.border_width_bottom = 3
 		else:
-			sb.bg_color = Color("#172030")
-			sb.border_color = Color(0.83, 0.69, 0.22, 0.4)
-		sb.shadow_color = Color(0.0, 0.0, 0.0, 0.25)
-		sb.shadow_size = 2
-	sb.set_border_width_all(1)
-	sb.set_corner_radius_all(8)
+			sb.bg_color = Color("#121b2d")
+			sb.border_color = Color(0.83, 0.69, 0.22, 0.45)
+			sb.border_width_top = 2
+			sb.border_width_bottom = 3
+		sb.border_width_left = 1
+		sb.border_width_right = 1
+		sb.shadow_color = Color(0.0, 0.0, 0.0, 0.40)
+		sb.shadow_size = 4
+		sb.shadow_offset = Vector2(0.0, 2.0)
+	sb.set_corner_radius_all(9)
 	return sb
 
 
 func _make_btn_style_disabled() -> StyleBoxFlat:
 	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color(0.08, 0.11, 0.16, 0.45)
-	sb.border_color = Color(0.35, 0.4, 0.5, 0.2)
+	sb.bg_color = Color(0.06, 0.08, 0.13, 0.55)
+	sb.border_color = Color(0.30, 0.36, 0.46, 0.25)
 	sb.set_border_width_all(1)
-	sb.set_corner_radius_all(8)
+	sb.set_corner_radius_all(9)
+	sb.anti_aliasing = true
 	return sb
 
 

@@ -139,6 +139,7 @@ static func _instantiate_aom_bundle(bundle_dir: String, slug: String, initial_ac
 		return null
 
 	_force_opaque_materials(loaded)
+	_apply_external_manifest_texture(loaded, bundle_dir, manifest)
 	_align_model_to_ground(loaded)
 	_attach_aom_accessories(loaded, bundle_dir, manifest, slug, initial_action)
 	_log_model_diag("UNIT:" + slug + ":" + initial_action, glb_path, loaded)
@@ -157,6 +158,63 @@ static func _instantiate_aom_bundle(bundle_dir: String, slug: String, initial_ac
 	loaded.set_meta("aom_slug", slug)
 	loaded.set_meta("aom_action", initial_action)
 	return loaded
+
+
+static var _external_tex_cache: Dictionary = {}
+
+static func _load_cached_tex(path: String) -> ImageTexture:
+	if not FileAccess.file_exists(path):
+		return null
+	var tex: ImageTexture = _external_tex_cache.get(path, null) as ImageTexture
+	if tex == null:
+		var img := Image.load_from_file(path)
+		if img == null or img.is_empty():
+			return null
+		tex = ImageTexture.create_from_image(img)
+		_external_tex_cache[path] = tex
+	return tex
+
+static func _apply_external_manifest_texture(node: Node, bundle_dir: String, manifest: Dictionary) -> void:
+	var textures: Array = manifest.get("textures", [])
+	if textures.is_empty():
+		return
+	var tex_name: String = String(textures[0])
+	if tex_name == "":
+		return
+	var tex_path: String = "%s/textures/%s" % [bundle_dir, tex_name]
+	var tex: ImageTexture = _load_cached_tex(tex_path)
+	if tex == null:
+		return
+	var base_path: String = tex_path.get_basename()
+	var norm_tex: ImageTexture = _load_cached_tex("%s_normal.png" % base_path)
+	var em_tex: ImageTexture = _load_cached_tex("%s_emissive.png" % base_path)
+	var stack: Array[Node] = [node]
+	while not stack.is_empty():
+		var cur: Node = stack.pop_back()
+		if cur is MeshInstance3D:
+			var mi := cur as MeshInstance3D
+			if mi.mesh != null:
+				for i in range(mi.mesh.get_surface_count()):
+					var mat: Material = mi.get_surface_override_material(i)
+					if mat == null:
+						mat = mi.mesh.surface_get_material(i)
+					if mat is StandardMaterial3D:
+						var std := mat.duplicate() as StandardMaterial3D
+						std.albedo_texture = tex
+						if norm_tex != null:
+							std.normal_enabled = true
+							std.normal_scale = 1.15
+							std.normal_texture = norm_tex
+							std.metallic = 0.88
+							std.roughness = 0.30
+						if em_tex != null:
+							std.emission_enabled = true
+							std.emission = Color(0.25, 0.78, 1.0)
+							std.emission_energy_multiplier = 3.2
+							std.emission_texture = em_tex
+						mi.set_surface_override_material(i, std)
+		for child in cur.get_children():
+			stack.append(child)
 
 
 static func _attach_aom_accessories(root: Node3D, bundle_dir: String, manifest: Dictionary, slug: String = "", action: String = "idle") -> void:
