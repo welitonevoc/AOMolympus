@@ -59,6 +59,7 @@ var _selection_title: Label
 var _selection_status: Label
 var _command_grid: GridContainer
 var _age_progress_bar: ProgressBar
+var _top_age_progress_bar: ProgressBar
 var _toast_panel: PanelContainer
 var _toast_label: Label
 var _toast_tween: Tween
@@ -670,10 +671,14 @@ func _build_center_era_and_clock_badge() -> PanelContainer:
 	m.add_theme_constant_override("margin_bottom", 2)
 	panel.add_child(m)
 
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 2)
+	m.add_child(vbox)
+
 	var hbox := HBoxContainer.new()
 	hbox.alignment = BoxContainer.ALIGNMENT_CENTER
 	hbox.add_theme_constant_override("separation", 8)
-	m.add_child(hbox)
+	vbox.add_child(hbox)
 
 	# Botão de Era (interativo)
 	var age_btn := Button.new()
@@ -711,6 +716,28 @@ func _build_center_era_and_clock_badge() -> PanelContainer:
 	_match_time_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_match_time_lbl.label_settings = OlympusTypography.get_label_settings(OlympusTypography.Style.TACTICAL, 11, Color("#fde047"), 1)
 	hbox.add_child(_match_time_lbl)
+
+	# Barra de progresso discreta abaixo do tempo/era (visível apenas ao evoluir de era)
+	_top_age_progress_bar = ProgressBar.new()
+	_top_age_progress_bar.name = "TopAgeProgressBar"
+	_top_age_progress_bar.min_value = 0.0
+	_top_age_progress_bar.max_value = 100.0
+	_top_age_progress_bar.value = 0.0
+	_top_age_progress_bar.show_percentage = false
+	_top_age_progress_bar.custom_minimum_size = Vector2(0.0, 4.0)
+	_top_age_progress_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_top_age_progress_bar.visible = false
+
+	var bar_bg := StyleBoxFlat.new()
+	bar_bg.bg_color = Color(0.02, 0.03, 0.06, 0.85)
+	bar_bg.set_corner_radius_all(2)
+	_top_age_progress_bar.add_theme_stylebox_override("background", bar_bg)
+
+	var bar_fill := StyleBoxFlat.new()
+	bar_fill.bg_color = Color("#f59e0b")
+	bar_fill.set_corner_radius_all(2)
+	_top_age_progress_bar.add_theme_stylebox_override("fill", bar_fill)
+	vbox.add_child(_top_age_progress_bar)
 
 	return panel
 
@@ -2350,6 +2377,9 @@ func _on_age_advance_progress(active: bool, target_age: int, ratio: float) -> vo
 	if _age_progress_bar != null:
 		_age_progress_bar.visible = active
 		_age_progress_bar.value = ratio * 100.0
+	if _top_age_progress_bar != null:
+		_top_age_progress_bar.visible = active
+		_top_age_progress_bar.value = ratio * 100.0
 	if _age_lbl != null:
 		if active:
 			_age_lbl.text = "🏛️ %s (%.0f%%)" % [PantheonCatalog.get_age_name(target_age), ratio * 100.0]

@@ -106,11 +106,15 @@ func _build_model(key: String, model_path: String, unit_data: Dictionary) -> Dic
 					for act in mdata["animations"].keys():
 						animations.append(String(act))
 
+	var anim_array: Array[String] = []
+	for a in animations:
+		anim_array.append(String(a))
+
 	var entry: Dictionary = {
 		"instance": instance,
 		"skeleton": skeleton,
 		"anim_player": anim_player,
-		"animations": animations,
+		"animations": anim_array,
 		"model_path": model_path,
 	}
 	_loaded_models[key] = entry
