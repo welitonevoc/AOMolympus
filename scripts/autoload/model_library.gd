@@ -199,8 +199,9 @@ static func _instantiate_aom_bundle(bundle_dir: String, slug: String, initial_ac
 	var manifest: Dictionary = _load_aom_manifest(bundle_dir)
 	var glb_path: String = ""
 	var anims: Dictionary = manifest.get("animations", {})
-	if anims.has(initial_action):
-		glb_path = "%s/%s" % [bundle_dir, String(anims[initial_action])]
+	var base_action: String = "gather" if initial_action.begins_with("gather_") else initial_action
+	if anims.has(base_action):
+		glb_path = "%s/%s" % [bundle_dir, String(anims[base_action])]
 	elif manifest.has("base"):
 		glb_path = "%s/%s" % [bundle_dir, String(manifest["base"])]
 	else:
@@ -312,7 +313,7 @@ static func _attach_aom_accessories(root: Node3D, bundle_dir: String, manifest: 
 			# - idle / walk / death: maos vazias (sem arco/lanca/cesta)
 			# - attack: faquinha/adaga (attachments_a_knife.glb) na RightHand
 			# - gather / build: ferramenta na RightHand (sem arco na LeftHand)
-			if act_low in ["idle", "walk", "death", "bored"]:
+			if act_low in ["idle", "walk", "death", "bored", "gather_food"]:
 				continue
 			if sock_up != "RIGHTHAND":
 				continue
@@ -320,11 +321,15 @@ static func _attach_aom_accessories(root: Node3D, bundle_dir: String, manifest: 
 				var knife_rel: String = "accessories/attachments_a_knife.glb"
 				if FileAccess.file_exists("%s/%s" % [bundle_dir, knife_rel]):
 					acc_rel = knife_rel
-		var acc_path: String = "%s/%s" % [bundle_dir, acc_rel]
 		var socket_node: Node3D = _find_socket_node(root, sock_str)
 		if socket_node == null:
 			continue
-		var acc_inst: Node3D = _try_instantiate_glb(acc_path)
+		var acc_inst: Node3D = null
+		if is_villager and sock_up == "RIGHTHAND" and act_low == "gather_gold":
+			acc_inst = _build_pickaxe_prop()
+		else:
+			var acc_path: String = "%s/%s" % [bundle_dir, acc_rel]
+			acc_inst = _try_instantiate_glb(acc_path)
 		if acc_inst != null:
 			_force_opaque_materials(acc_inst)
 			if "hoplite" in slug.to_lower():
@@ -337,11 +342,55 @@ static func _attach_aom_accessories(root: Node3D, bundle_dir: String, manifest: 
 			socket_node.add_child(acc_inst)
 
 
+static func _build_pickaxe_prop() -> Node3D:
+	var root := Node3D.new()
+	root.name = "PickaxeProp"
+	var wood_mat := StandardMaterial3D.new()
+	wood_mat.albedo_color = Color("#6b4423")
+	wood_mat.roughness = 0.85
+	var steel_mat := StandardMaterial3D.new()
+	steel_mat.albedo_color = Color("#94a3b8")
+	steel_mat.metallic = 0.82
+	steel_mat.roughness = 0.28
+
+	var handle := MeshInstance3D.new()
+	var h_mesh := CylinderMesh.new()
+	h_mesh.top_radius = 0.025
+	h_mesh.bottom_radius = 0.028
+	h_mesh.height = 0.65
+	handle.mesh = h_mesh
+	handle.material_override = wood_mat
+	handle.position = Vector3(0.0, 0.25, 0.0)
+	root.add_child(handle)
+
+	var head := MeshInstance3D.new()
+	var head_mesh := BoxMesh.new()
+	head_mesh.size = Vector3(0.36, 0.055, 0.045)
+	head.mesh = head_mesh
+	head.material_override = steel_mat
+	head.position = Vector3(0.0, 0.54, 0.0)
+	root.add_child(head)
+	return root
+
+
 static func _find_socket_node(node: Node, socket_name: String) -> Node3D:
 	var target_upper: String = socket_name.to_upper()
 	var queue: Array[Node] = [node]
 	while not queue.is_empty():
 		var cur: Node = queue.pop_front()
+		if cur is Skeleton3D:
+			var skel := cur as Skeleton3D
+			for b_idx in range(skel.get_bone_count()):
+				if String(skel.get_bone_name(b_idx)).to_upper() == target_upper:
+					var att_name: String = "BoneAttach_%s" % target_upper
+					var existing := skel.get_node_or_null(att_name)
+					if existing is BoneAttachment3D:
+						return existing as Node3D
+					var att := BoneAttachment3D.new()
+					att.name = att_name
+					att.bone_name = skel.get_bone_name(b_idx)
+					skel.add_child(att)
+					return att
 		if cur is Node3D:
 			var cname: String = String(cur.name).to_upper()
 			if cname == target_upper + "_SOCKET" or cname == target_upper:
@@ -374,7 +423,8 @@ static func switch_aom_action(visual_holder: Node3D, action: String) -> bool:
 	var slug: String = String(current.get_meta("aom_slug", ""))
 	var manifest: Dictionary = _load_aom_manifest(bundle_dir)
 	var anims: Dictionary = manifest.get("animations", {})
-	if not anims.has(action):
+	var base_action: String = "gather" if action.begins_with("gather_") else action
+	if not anims.has(base_action):
 		return false
 	var next_visual: Node3D = _instantiate_aom_bundle(bundle_dir, slug, action)
 	if next_visual == null:

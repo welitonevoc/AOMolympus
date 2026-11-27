@@ -806,7 +806,10 @@ func _animate_idle(delta: float = 0.0) -> void:
 
 
 func _animate_work() -> void:
-	if _visual_holder != null and ModelLibrary.switch_aom_action(_visual_holder, "gather"):
+	var gather_act: String = "gather"
+	if is_instance_valid(target_resource):
+		gather_act = "gather_%s" % target_resource.resource_kind
+	if _visual_holder != null and ModelLibrary.switch_aom_action(_visual_holder, gather_act):
 		return
 	if _anim_player != null:
 		if carried_kind == "gold" or (target_resource != null and target_resource.resource_kind == "gold"):
