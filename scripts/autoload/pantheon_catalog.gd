@@ -322,9 +322,18 @@ const FORMATIONS: Dictionary = {
 		"attack_mult": 1.15,
 		"description": "Investida em ponta: +20% velocidade e +15% ataque.",
 	},
+	"column": {
+		"id": "column",
+		"name": "Coluna (Fila)",
+		"short": "Coluna",
+		"speed_mult": 1.05,
+		"armor_bonus": 0.0,
+		"attack_mult": 1.0,
+		"description": "Fila indiana estreita: ideal para travessia de vaus, pontes e desfiladeiros.",
+	},
 }
 
-const FORMATION_ORDER: Array[String] = ["box", "line", "staggered", "phalanx", "wedge"]
+const FORMATION_ORDER: Array[String] = ["box", "line", "staggered", "phalanx", "wedge", "column"]
 
 const STANCES: Dictionary = {
 	"aggressive": {"id": "aggressive", "name": "Agressiva", "aggro_radius": 13.0, "leash": 22.0},

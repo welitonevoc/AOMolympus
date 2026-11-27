@@ -103,6 +103,15 @@ static func compute_formation_offsets(
 				var rank: int = int((i + 1) / 2)
 				var side: float = -1.0 if (i % 2 == 1) else 1.0
 				local_pts.append(Vector2(side * float(rank) * 1.45, -float(rank) * 1.55))
+		"column":
+			# Fila indiana estreita com 2 colunas compactas para vaus, pontes e gargalos
+			var cols_c: int = 2 if count > 4 else 1
+			for i in range(count):
+				var row_c: int = i / cols_c
+				var col_c: int = i % cols_c
+				var x_c: float = (float(col_c) - float(cols_c - 1) * 0.5) * 1.2
+				var z_c: float = -float(row_c) * 1.55
+				local_pts.append(Vector2(x_c, z_c))
 		_:
 			var cols_b: int = maxi(1, int(ceil(sqrt(float(count)))))
 			for i in range(count):

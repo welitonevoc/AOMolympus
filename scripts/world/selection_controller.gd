@@ -296,6 +296,28 @@ func _clamp_to_walkable_terrain(pos: Vector3, reference_from: Vector3) -> Vector
 	return p
 
 
+func _is_choke_point_near(pos: Vector3, reference_from: Vector3) -> bool:
+	# Detecta se a rota ou o destino atravessa uma passagem estreita ladeada por agua ou desfiladeiro
+	# Testa amostras perpendiculares a direcao de movimento
+	var dir := pos - reference_from
+	dir.y = 0.0
+	if dir.length_squared() < 0.01:
+		return false
+	dir = dir.normalized()
+	var perp := Vector3(-dir.z, 0.0, dir.x)
+	var left_sample := pos + perp * 5.0
+	var right_sample := pos - perp * 5.0
+	if MapEcology.is_water(left_sample.x, left_sample.z) or MapEcology.is_water(right_sample.x, right_sample.z):
+		return true
+	# Testa tambem se o ponto central do caminho (meio da travessia) esta entre corpos de agua
+	var mid := reference_from.lerp(pos, 0.5)
+	var mid_l := mid + perp * 5.0
+	var mid_r := mid - perp * 5.0
+	if MapEcology.is_water(mid_l.x, mid_l.z) or MapEcology.is_water(mid_r.x, mid_r.z):
+		return true
+	return false
+
+
 func _move_units_in_formation(units: Array, center: Vector3) -> void:
 	if units.is_empty():
 		return
@@ -315,8 +337,14 @@ func _move_units_in_formation(units: Array, center: Vector3) -> void:
 		return _formation_rank_weight(a.role) < _formation_rank_weight(b.role)
 	)
 
+	# Afunilamento inteligente de marcha: se o destino ou a rota passar por vau, ponte ou gargalo estreito,
+	# e houver mais de 3 unidades, adota automaticamente a formacao de Coluna para evitar engarrafamento e travamento
+	var chosen_formation := GameState.active_formation
+	if ordered.size() >= 3 and _is_choke_point_near(valid_center, centroid):
+		chosen_formation = "column"
+
 	var offsets: Array[Vector3] = CombatResolver.compute_formation_offsets(
-		GameState.active_formation,
+		chosen_formation,
 		ordered.size(),
 		facing_dir
 	)
@@ -329,7 +357,7 @@ func _move_units_in_formation(units: Array, center: Vector3) -> void:
 			clampf(valid_center.z + off.z, -arena_limit, arena_limit)
 		)
 		var dest := _clamp_to_walkable_terrain(raw_dest, valid_center)
-		ordered[i].set_formation(GameState.active_formation)
+		ordered[i].set_formation(chosen_formation)
 		ordered[i].command_move(dest)
 
 
