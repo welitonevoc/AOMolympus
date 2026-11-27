@@ -134,7 +134,6 @@ static func create_building_visual(
 			var loaded: Node3D = _try_instantiate_glb(path)
 			if loaded != null:
 				_force_opaque_materials(loaded)
-				_apply_external_manifest_texture(loaded, bundle_dir, _load_aom_manifest(bundle_dir))
 				if building_kind != "town_center":
 					_align_model_to_ground(loaded)
 				_log_model_diag("BUILDING:" + building_kind, path, loaded)
@@ -254,7 +253,9 @@ static func _load_cached_tex(path: String) -> ImageTexture:
 
 static func _apply_external_manifest_texture(node: Node, bundle_dir: String, manifest: Dictionary) -> void:
 	var textures: Array = manifest.get("textures", [])
-	if textures.is_empty():
+	# Modelos multi-superficie (ex: construcoes com walls, roof e attachments) ja trazem
+	# suas texturas mapeadas por superficie no .glb; nunca sobrescrever todas com textures[0].
+	if textures.is_empty() or textures.size() > 1:
 		return
 	var tex_name: String = String(textures[0])
 	if tex_name == "":
