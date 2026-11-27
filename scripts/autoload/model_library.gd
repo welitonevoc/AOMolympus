@@ -334,6 +334,9 @@ static func _attach_aom_accessories(root: Node3D, bundle_dir: String, manifest: 
 					acc_inst.rotation_degrees.y = 165.0
 				elif sock_up == "RIGHTHAND":
 					acc_inst.scale = Vector3(0.55, 1.0, 0.55)
+			elif is_villager and sock_up == "RIGHTHAND":
+				acc_inst.rotation_degrees = Vector3(90.0, 90.0, 0.0)
+				acc_inst.position = Vector3(0.0, 0.04, 0.06)
 			socket_node.add_child(acc_inst)
 
 
