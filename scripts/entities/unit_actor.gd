@@ -52,6 +52,8 @@ var _freeze_timer: float = 0.0
 var _gather_sfx_timer: float = 0.0
 var _build_sfx_timer: float = 0.0
 var _bored_timer: float = 8.0
+var _avoid_side: float = 0.0
+var _avoid_timer: float = 0.0
 
 var _nav_agent: NavigationAgent3D
 var _visual_holder: Node3D
@@ -676,8 +678,13 @@ func _step_navigation(delta: float) -> void:
 		return
 	dir = dir.normalized()
 	var speed_mult: float = float(PantheonCatalog.get_formation(formation_id).get("speed_mult", 1.0))
+	if _avoid_timer > 0.0:
+		_avoid_timer = maxf(0.0, _avoid_timer - delta)
+		if _avoid_timer <= 0.0:
+			_avoid_side = 0.0
 	var sep: Vector3 = _compute_unit_separation()
-	var move_dir: Vector3 = (dir + sep * 0.45).normalized()
+	var avoid: Vector3 = _compute_obstacle_avoidance(dir, target_dest)
+	var move_dir: Vector3 = (dir + sep * 0.45 + avoid * 1.35).normalized()
 	velocity = move_dir * base_speed * speed_mult
 	move_and_slide()
 	if get_slide_collision_count() > 0:
@@ -687,9 +694,13 @@ func _step_navigation(delta: float) -> void:
 			n.y = 0.0
 			if n.length_squared() > 0.01:
 				var tangent: Vector3 = Vector3(-n.z, 0.0, n.x).normalized()
-				if tangent.dot(dir) < 0.0:
+				if _avoid_side != 0.0:
+					var side_vec: Vector3 = Vector3(-dir.z, 0.0, dir.x) * _avoid_side
+					if tangent.dot(side_vec) < 0.0:
+						tangent = -tangent
+				elif tangent.dot(dir) < 0.0:
 					tangent = -tangent
-				velocity = tangent * base_speed * speed_mult * 0.85
+				velocity = tangent * base_speed * speed_mult * 0.9
 				move_and_slide()
 	global_position.y = 0.0
 	_face_towards(global_position + move_dir, delta)
@@ -702,6 +713,51 @@ func _step_navigation(delta: float) -> void:
 		else:
 			_visual_holder.position.y = absf(sin(_anim_time * 10.5)) * 0.09
 			_visual_holder.rotation.x = 0.0
+
+
+func _compute_obstacle_avoidance(desired_dir: Vector3, _target_dest: Vector3) -> Vector3:
+	var steer := Vector3.ZERO
+	var right_vec := Vector3(-desired_dir.z, 0.0, desired_dir.x)
+
+	for b in get_tree().get_nodes_in_group("buildings"):
+		if not is_instance_valid(b) or not (b is BuildingActor):
+			continue
+		if b == target_building or b == dropoff_building or b == combat_target:
+			continue
+		var ba := b as BuildingActor
+		var fp: float = float(PantheonCatalog.get_building_spec(ba.building_kind).get("footprint", 2.4))
+		var avoid_r: float = fp * 1.15 + 1.1
+		var to_obs: Vector3 = ba.global_position - global_position
+		to_obs.y = 0.0
+		var dist: float = to_obs.length()
+		if dist > 0.05 and dist < avoid_r:
+			var obs_dir: Vector3 = to_obs / dist
+			if obs_dir.dot(desired_dir) > 0.1:
+				if _avoid_side == 0.0:
+					_avoid_side = 1.0 if right_vec.dot(obs_dir) < 0.0 else -1.0
+				_avoid_timer = 0.75
+				var weight: float = (avoid_r - dist) / avoid_r
+				steer += (right_vec * _avoid_side - obs_dir * 0.35).normalized() * (1.2 + weight)
+
+	for r in get_tree().get_nodes_in_group("resources"):
+		if not is_instance_valid(r) or not (r is ResourceNode):
+			continue
+		if r == target_resource:
+			continue
+		var rn := r as ResourceNode
+		var avoid_r: float = 1.75
+		var to_obs: Vector3 = rn.global_position - global_position
+		to_obs.y = 0.0
+		var dist: float = to_obs.length()
+		if dist > 0.05 and dist < avoid_r:
+			var obs_dir: Vector3 = to_obs / dist
+			if obs_dir.dot(desired_dir) > 0.15:
+				if _avoid_side == 0.0:
+					_avoid_side = 1.0 if right_vec.dot(obs_dir) < 0.0 else -1.0
+				_avoid_timer = 0.55
+				steer += (right_vec * _avoid_side).normalized() * 0.9
+
+	return steer
 
 
 func _compute_unit_separation() -> Vector3:

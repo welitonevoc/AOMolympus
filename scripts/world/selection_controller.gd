@@ -454,12 +454,15 @@ func _can_place_at(pos: Vector3, kind: String) -> bool:
 	if absf(pos.x) > half_limit or absf(pos.z) > half_limit:
 		return false
 	var spec: Dictionary = PantheonCatalog.get_building_spec(kind)
-	var min_clear: float = float(spec["footprint"]) + 1.8
+	var fp_new: float = float(spec.get("footprint", 2.2))
 	for b in get_tree().get_nodes_in_group("buildings"):
-		if b is BuildingActor and b.global_position.distance_to(pos) < min_clear + 2.0:
-			return false
+		if b is BuildingActor:
+			var fp_other: float = float(PantheonCatalog.get_building_spec(b.building_kind).get("footprint", 2.2))
+			var min_dist: float = (fp_new + fp_other) * 1.15 + 1.4
+			if b.global_position.distance_to(pos) < min_dist:
+				return false
 	for r in get_tree().get_nodes_in_group("resources"):
-		if r is ResourceNode and r.global_position.distance_to(pos) < min_clear:
+		if r is ResourceNode and r.global_position.distance_to(pos) < fp_new * 1.15 + 1.8:
 			return false
 	return true
 
