@@ -171,22 +171,6 @@ static func _build_plateau_base(root: Node3D, base_pos: Vector3, _height: float,
 	p_inst.position = Vector3(base_pos.x, -0.07, base_pos.z)
 	root.add_child(p_inst)
 
-	# Borda rochosa segmentada ao redor do plato, deixando rampa aberta para o centro
-	var to_center: Vector3 = (-base_pos).normalized()
-	for i in range(14):
-		var ang: float = TAU * float(i) / 14.0
-		var dir_v := Vector3(cos(ang), 0.0, sin(ang))
-		if dir_v.dot(to_center) > 0.65:
-			continue
-		var r_mesh := BoxMesh.new()
-		r_mesh.size = Vector3(4.2, 1.35, 3.6)
-		var r_inst := MeshInstance3D.new()
-		r_inst.mesh = r_mesh
-		r_inst.material_override = mat
-		r_inst.position = Vector3(base_pos.x + dir_v.x * 21.5, 0.55, base_pos.z + dir_v.z * 21.5)
-		r_inst.rotation.y = ang
-		root.add_child(r_inst)
-
 
 static func _build_central_sea(root: Node3D, arena_size: float, ratio: float, water_color: Color) -> void:
 	var sea_radius: float = arena_size * ratio
@@ -386,13 +370,22 @@ static func _build_river_divide(root: Node3D, arena_size: float, water_color: Co
 
 
 static func _build_neutral_settlements(root: Node3D, arena_size: float, rock_color: Color) -> void:
-	var mat := StandardMaterial3D.new()
-	mat.albedo_color = rock_color.lightened(0.18)
-	mat.roughness = 0.85
 	var ext: float = arena_size * 0.26
+	var glb_path: String = "res://models/civilizations/egyptian/cidade/settlement_level_1/settlement_level_1_base.glb"
+	var ps: PackedScene = ResourceLoader.load(glb_path) as PackedScene if ResourceLoader.exists(glb_path) else null
 	for idx in range(4):
 		var sx: float = ext if (idx % 2 == 0) else -ext
 		var sz: float = ext * 0.7 if idx < 2 else -ext * 0.7
+		if ps != null:
+			var inst := ps.instantiate() as Node3D
+			if inst != null:
+				inst.name = "NeutralSettlement_%d" % idx
+				inst.position = Vector3(sx, 0.0, sz)
+				root.add_child(inst)
+				continue
+		var mat := StandardMaterial3D.new()
+		mat.albedo_color = rock_color.lightened(0.18)
+		mat.roughness = 0.85
 		var ring := TorusMesh.new()
 		ring.inner_radius = 4.2
 		ring.outer_radius = 4.8
@@ -406,35 +399,13 @@ static func _build_neutral_settlements(root: Node3D, arena_size: float, rock_col
 
 static func _build_epic_ground_details(
 	root: Node3D,
-	arena_size: float,
+	_arena_size: float,
 	biome: Dictionary,
 	player_base: Vector3,
 	enemy_base: Vector3,
-	rng: RandomNumberGenerator
+	_rng: RandomNumberGenerator
 ) -> void:
-	var g_col: Color = biome.get("ground_color", Color("#5d7d47"))
-	var patch_mat_a := StandardMaterial3D.new()
-	patch_mat_a.albedo_color = g_col.darkened(0.14)
-	patch_mat_a.roughness = 0.95
-	var patch_mat_b := StandardMaterial3D.new()
-	patch_mat_b.albedo_color = g_col.lightened(0.10)
-	patch_mat_b.roughness = 0.94
-
-	# Manchas organicas de solo para quebrar o plano liso
-	var ext: float = arena_size * 0.42
-	for i in range(22):
-		var cyl := CylinderMesh.new()
-		var r: float = rng.randf_range(5.0, 12.5)
-		cyl.top_radius = r
-		cyl.bottom_radius = r * 1.15
-		cyl.height = 0.03
-		var mi := MeshInstance3D.new()
-		mi.mesh = cyl
-		mi.material_override = patch_mat_a if (i % 2 == 0) else patch_mat_b
-		mi.position = Vector3(rng.randf_range(-ext, ext), 0.008, rng.randf_range(-ext, ext))
-		root.add_child(mi)
-
-	# Estrada antiga ligando as duas bases pelo centro
+	# Estrada antiga sutil ligando as duas bases pelo centro (sem z-fighting nem caixas)
 	var road_mat := StandardMaterial3D.new()
 	road_mat.albedo_color = biome.get("plaza_player", Color("#c4b698")).darkened(0.18)
 	road_mat.roughness = 0.92
@@ -450,54 +421,6 @@ static func _build_epic_ground_details(
 		r_mi.material_override = road_mat
 		r_mi.position = Vector3(r_pos.x, 0.012, r_pos.z)
 		root.add_child(r_mi)
-
-	# Flora decorativa (tufos de grama/arbustos baixos) em 1 draw call (MultiMesh)
-	var flora_mat := StandardMaterial3D.new()
-	flora_mat.albedo_color = biome.get("tree_canopy", Color("#36693a")).lightened(0.12)
-	flora_mat.roughness = 0.88
-	var tuft_mesh := SphereMesh.new()
-	tuft_mesh.radius = 0.42
-	tuft_mesh.height = 0.38
-	var flora_mm := MultiMesh.new()
-	flora_mm.transform_format = MultiMesh.TRANSFORM_3D
-	flora_mm.mesh = tuft_mesh
-	flora_mm.instance_count = 80
-	for i in range(80):
-		var fx: float = rng.randf_range(-ext, ext)
-		var fz: float = rng.randf_range(-ext, ext)
-		var s: float = rng.randf_range(0.7, 1.55)
-		var tr := Transform3D(Basis().scaled(Vector3(s, s * 0.7, s)), Vector3(fx, 0.12, fz))
-		flora_mm.set_instance_transform(i, tr)
-	var flora_inst := MultiMeshInstance3D.new()
-	flora_inst.name = "EpicFloraMultiMesh"
-	flora_inst.multimesh = flora_mm
-	flora_inst.material_override = flora_mat
-	root.add_child(flora_inst)
-
-	# Rochedos variados pelo mapa em 1 draw call (MultiMesh)
-	var rock_mat := StandardMaterial3D.new()
-	rock_mat.albedo_color = biome.get("rock_color", Color("#7a7468"))
-	rock_mat.roughness = 0.90
-	var rock_mesh := BoxMesh.new()
-	rock_mesh.size = Vector3(1.6, 1.1, 1.4)
-	var rock_mm := MultiMesh.new()
-	rock_mm.transform_format = MultiMesh.TRANSFORM_3D
-	rock_mm.mesh = rock_mesh
-	rock_mm.instance_count = 40
-	for i in range(40):
-		var rx: float = rng.randf_range(-ext, ext)
-		var rz: float = rng.randf_range(-ext, ext)
-		var pos_v := Vector3(rx, 0.35, rz)
-		if pos_v.distance_to(player_base) < 18.0 or pos_v.distance_to(enemy_base) < 18.0:
-			pos_v = Vector3(ext * 0.95, 0.35, rz)
-		var s: float = rng.randf_range(0.6, 1.4)
-		var rot_b := Basis(Vector3.UP, rng.randf_range(0.0, TAU)).scaled(Vector3(s, s * rng.randf_range(0.6, 1.2), s))
-		rock_mm.set_instance_transform(i, Transform3D(rot_b, pos_v))
-	var rock_inst := MultiMeshInstance3D.new()
-	rock_inst.name = "EpicRocksMultiMesh"
-	rock_inst.multimesh = rock_mm
-	rock_inst.material_override = rock_mat
-	root.add_child(rock_inst)
 
 
 static func _build_dual_coast_seas(root: Node3D, arena_size: float, water_color: Color) -> void:
@@ -670,10 +593,10 @@ static func _generate_resource_plan(
 	var wood_mult: float = float(preset.get("wood_multiplier", 1.0))
 
 	# ── ANEL 1: Recursos Imediatos de Abertura (14m - 22m da base) ──────────
-	# Jogador: 2 bosques (5 arvores cada), 2 minas de ouro e 3 fontes de alimento
-	for b_off in [Vector3(-12.0, 0.0, 11.0), Vector3(8.0, 0.0, -14.0)]:
-		for t_i in range(5):
-			var j := Vector3(rng.randf_range(-3.2, 3.2), 0.0, rng.randf_range(-3.2, 3.2))
+	# Jogador: 3 bosques (6 arvores cada = 18 iniciais), 2 minas de ouro e 3 fontes de alimento
+	for b_off in [Vector3(-12.0, 0.0, 11.0), Vector3(8.0, 0.0, -14.0), Vector3(-16.0, 0.0, -2.0)]:
+		for t_i in range(6):
+			var j := Vector3(rng.randf_range(-3.5, 3.5), 0.0, rng.randf_range(-3.5, 3.5))
 			plan.append({"kind": "wood", "pos": player_base + b_off + j, "amount": 550.0 * mult * wood_mult})
 	plan.append({"kind": "food", "pos": player_base + Vector3(-12.5, 0.0, -4.5), "amount": 550.0 * mult * food_mult})
 	plan.append({"kind": "food", "pos": player_base + Vector3(-14.0, 0.0, 2.5), "amount": 550.0 * mult * food_mult})
@@ -682,9 +605,9 @@ static func _generate_resource_plan(
 	plan.append({"kind": "gold", "pos": player_base + Vector3(-15.5, 0.0, -11.0), "amount": 1200.0 * mult * gold_mult})
 
 	# Inimigo (Espelhado)
-	for b_off in [Vector3(12.0, 0.0, -11.0), Vector3(-8.0, 0.0, 14.0)]:
-		for t_i in range(5):
-			var j := Vector3(rng.randf_range(-3.2, 3.2), 0.0, rng.randf_range(-3.2, 3.2))
+	for b_off in [Vector3(12.0, 0.0, -11.0), Vector3(-8.0, 0.0, 14.0), Vector3(16.0, 0.0, 2.0)]:
+		for t_i in range(6):
+			var j := Vector3(rng.randf_range(-3.5, 3.5), 0.0, rng.randf_range(-3.5, 3.5))
 			plan.append({"kind": "wood", "pos": enemy_base + b_off + j, "amount": 550.0 * mult * wood_mult})
 	plan.append({"kind": "food", "pos": enemy_base + Vector3(12.5, 0.0, 4.5), "amount": 550.0 * mult * food_mult})
 	plan.append({"kind": "food", "pos": enemy_base + Vector3(14.0, 0.0, -2.5), "amount": 550.0 * mult * food_mult})
@@ -738,17 +661,17 @@ static func _generate_resource_plan(
 		var jitter := Vector3(rng.randf_range(-3.0, 3.0), 0.0, rng.randf_range(-3.0, 3.0))
 		plan.append({"kind": "gold", "pos": base_gold + jitter, "amount": 1000.0 * mult * gold_mult})
 
-	# Bosques em clusters densos (5-6 arvores por bosque) + agrupamentos de alimento
+	# Bosques em clusters densos (6-7 arvores por bosque) + agrupamentos de alimento
 	var spawn_extent: float = arena_size * 0.42
-	var forest_clusters: int = 14 if topography == "dense_forest" else 10
+	var forest_clusters: int = 24 if topography == "dense_forest" else 18
 	for _fc in range(forest_clusters):
 		var cx: float = rng.randf_range(-spawn_extent, spawn_extent)
 		var cz: float = rng.randf_range(-spawn_extent, spawn_extent)
 		var c_pos := Vector3(cx, 0.0, cz)
 		if c_pos.distance_to(player_base) < 24.0 or c_pos.distance_to(enemy_base) < 24.0 or c_pos.length() < central_exclusion_radius:
 			continue
-		for _t in range(rng.randi_range(5, 6)):
-			var off := Vector3(rng.randf_range(-4.0, 4.0), 0.0, rng.randf_range(-4.0, 4.0))
+		for _t in range(rng.randi_range(6, 7)):
+			var off := Vector3(rng.randf_range(-4.5, 4.5), 0.0, rng.randf_range(-4.5, 4.5))
 			plan.append({"kind": "wood", "pos": c_pos + off, "amount": 540.0 * mult * wood_mult})
 
 	for _fa in range(8):
