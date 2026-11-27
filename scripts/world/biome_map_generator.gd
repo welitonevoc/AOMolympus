@@ -63,23 +63,31 @@ static func build_biome_environment(
 	sea.position = Vector3(0.0, -0.45, 0.0)
 	terrain_root.add_child(sea)
 
-	# 3. Esculpe a Topografia Procedural do Preset (Acropole, Mar Central, Altar, etc.)
+	# 3. Esculpe a Topografia Procedural do Preset Oficial AoM
 	match topo_type:
 		"plateau":
 			_build_plateau_base(terrain_root, player_base, float(preset.get("plateau_height", 5.5)), biome["rock_color"])
 			_build_plateau_base(terrain_root, enemy_base, float(preset.get("plateau_height", 5.5)), biome["rock_color"])
-		"central_sea":
+		"central_sea", "worm_sea", "midgard_ring":
 			_build_central_sea(terrain_root, arena_size, float(preset.get("water_radius_ratio", 0.22)), biome["water_color"])
 		"altar_hill":
 			_build_divine_altar_hill(terrain_root, float(preset.get("hill_height", 4.5)), biome)
-		"frozen_lake":
+		"frozen_lake", "vinland_ice":
 			_build_frozen_mirror_lake(terrain_root, arena_size, float(preset.get("water_radius_ratio", 0.20)))
-		"oasis":
+		"oasis", "watering_hole":
 			_build_expanded_oasis(terrain_root, arena_size, float(preset.get("water_radius_ratio", 0.14)), biome)
-		"canyon_divide":
+		"canyon_divide", "valley_gold":
 			_build_canyon_divide(terrain_root, arena_size, biome["rock_color"], rng)
+		"river_divide", "highlands":
+			_build_river_divide(terrain_root, arena_size, biome["water_color"], biome["rock_color"])
+		"dual_coast", "archipelago", "islands", "team_migration_sea":
+			_build_dual_coast_seas(terrain_root, arena_size, biome["water_color"])
+		"magma_rift":
+			_build_magma_rift(terrain_root, arena_size, biome["rock_color"])
+		"marshland":
+			_build_marsh_pools(terrain_root, arena_size, biome["water_color"], rng)
 		_:
-			# Destaque padrão do bioma caso não tenha topografia especializada
+			# Planicies, florestas densas, savana, tundra, megalopole, nomade, morte subita e desconhecido
 			_build_biome_centerpiece(terrain_root, biome_id, biome, rng, arena_size)
 
 	# 4. Pracas das duas cidadelas
@@ -292,6 +300,102 @@ static func _build_canyon_divide(root: Node3D, arena_size: float, rock_color: Co
 		root.add_child(body)
 
 
+static func _build_river_divide(root: Node3D, arena_size: float, water_color: Color, rock_color: Color) -> void:
+	var river_mesh := BoxMesh.new()
+	river_mesh.size = Vector3(10.0, 0.08, arena_size * 0.96)
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = water_color
+	mat.roughness = 0.16
+	mat.metallic = 0.25
+	var inst := MeshInstance3D.new()
+	inst.name = "RiverDivide"
+	inst.mesh = river_mesh
+	inst.material_override = mat
+	inst.position = Vector3(0.0, 0.02, 0.0)
+	root.add_child(inst)
+
+	# Vau central navegavel (ponte rasa de pedra)
+	var ford_mesh := BoxMesh.new()
+	ford_mesh.size = Vector3(12.0, 0.12, 16.0)
+	var ford_mat := StandardMaterial3D.new()
+	ford_mat.albedo_color = rock_color
+	ford_mat.roughness = 0.9
+	var ford := MeshInstance3D.new()
+	ford.name = "CentralRiverFord"
+	ford.mesh = ford_mesh
+	ford.material_override = ford_mat
+	ford.position = Vector3(0.0, 0.03, 0.0)
+	root.add_child(ford)
+
+
+static func _build_dual_coast_seas(root: Node3D, arena_size: float, water_color: Color) -> void:
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = water_color
+	mat.roughness = 0.16
+	mat.metallic = 0.25
+	for side in [-1.0, 1.0]:
+		var sea_mesh := BoxMesh.new()
+		sea_mesh.size = Vector3(arena_size * 0.85, 0.12, arena_size * 0.18)
+		var inst := MeshInstance3D.new()
+		inst.name = "CoastSea_%d" % int(side)
+		inst.mesh = sea_mesh
+		inst.material_override = mat
+		inst.position = Vector3(0.0, 0.02, side * (arena_size * 0.42))
+		root.add_child(inst)
+
+
+static func _build_magma_rift(root: Node3D, arena_size: float, rock_color: Color) -> void:
+	var lava_mat := StandardMaterial3D.new()
+	lava_mat.albedo_color = Color("#f97316")
+	lava_mat.emission_enabled = true
+	lava_mat.emission = Color("#ea580c")
+	lava_mat.emission_energy_multiplier = 2.0
+
+	var rift := BoxMesh.new()
+	rift.size = Vector3(arena_size * 0.45, 0.09, 5.5)
+	var inst := MeshInstance3D.new()
+	inst.name = "ErebusMagmaRift"
+	inst.mesh = rift
+	inst.material_override = lava_mat
+	inst.position = Vector3(0.0, 0.03, 0.0)
+	inst.rotation_degrees = Vector3(0.0, 35.0, 0.0)
+	root.add_child(inst)
+
+	var bridge := BoxMesh.new()
+	bridge.size = Vector3(10.0, 0.14, 12.0)
+	var b_mat := StandardMaterial3D.new()
+	b_mat.albedo_color = rock_color
+	b_mat.roughness = 0.92
+	var b_inst := MeshInstance3D.new()
+	b_inst.name = "ErebusStoneBridge"
+	b_inst.mesh = bridge
+	b_inst.material_override = b_mat
+	b_inst.position = Vector3(0.0, 0.04, 0.0)
+	root.add_child(b_inst)
+
+
+static func _build_marsh_pools(root: Node3D, arena_size: float, water_color: Color, rng: RandomNumberGenerator) -> void:
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = water_color
+	mat.roughness = 0.22
+	for i in range(6):
+		var pool := CylinderMesh.new()
+		var r: float = rng.randf_range(4.5, 8.5)
+		pool.top_radius = r
+		pool.bottom_radius = r * 1.1
+		pool.height = 0.08
+		var inst := MeshInstance3D.new()
+		inst.name = "MarshPool_%d" % i
+		inst.mesh = pool
+		inst.material_override = mat
+		inst.position = Vector3(
+			rng.randf_range(-arena_size * 0.25, arena_size * 0.25),
+			0.02,
+			rng.randf_range(-arena_size * 0.25, arena_size * 0.25)
+		)
+		root.add_child(inst)
+
+
 static func _build_biome_centerpiece(
 	root: Node3D,
 	biome_id: String,
@@ -390,20 +494,22 @@ static func _generate_resource_plan(
 	var plan: Array[Dictionary] = []
 	var mult: float = float(PantheonCatalog.get_map_size(GameState.active_map_size).get("resource_mult", 1.0))
 	var gold_mult: float = float(preset.get("gold_multiplier", 1.0))
+	var food_mult: float = float(preset.get("food_multiplier", 1.0))
+	var wood_mult: float = float(preset.get("wood_multiplier", 1.0))
 
 	# ── ANEL 1: Recursos Imediatos de Abertura (18m - 24m da base) ──────────
 	# Jogador
-	plan.append({"kind": "food", "pos": player_base + Vector3(-12.5, 0.0, -4.5), "amount": 500.0 * mult})
-	plan.append({"kind": "food", "pos": player_base + Vector3(-14.0, 0.0, 2.5), "amount": 500.0 * mult})
-	plan.append({"kind": "wood", "pos": player_base + Vector3(-11.0, 0.0, 12.0), "amount": 600.0 * mult})
-	plan.append({"kind": "wood", "pos": player_base + Vector3(-6.5, 0.0, 15.0), "amount": 600.0 * mult})
+	plan.append({"kind": "food", "pos": player_base + Vector3(-12.5, 0.0, -4.5), "amount": 500.0 * mult * food_mult})
+	plan.append({"kind": "food", "pos": player_base + Vector3(-14.0, 0.0, 2.5), "amount": 500.0 * mult * food_mult})
+	plan.append({"kind": "wood", "pos": player_base + Vector3(-11.0, 0.0, 12.0), "amount": 600.0 * mult * wood_mult})
+	plan.append({"kind": "wood", "pos": player_base + Vector3(-6.5, 0.0, 15.0), "amount": 600.0 * mult * wood_mult})
 	plan.append({"kind": "gold", "pos": player_base + Vector3(14.5, 0.0, 10.5), "amount": 800.0 * mult * gold_mult})
 
 	# Inimigo (Espelhado)
-	plan.append({"kind": "food", "pos": enemy_base + Vector3(12.5, 0.0, 4.5), "amount": 500.0 * mult})
-	plan.append({"kind": "food", "pos": enemy_base + Vector3(14.0, 0.0, -2.5), "amount": 500.0 * mult})
-	plan.append({"kind": "wood", "pos": enemy_base + Vector3(11.0, 0.0, -12.0), "amount": 600.0 * mult})
-	plan.append({"kind": "wood", "pos": enemy_base + Vector3(6.5, 0.0, -15.0), "amount": 600.0 * mult})
+	plan.append({"kind": "food", "pos": enemy_base + Vector3(12.5, 0.0, 4.5), "amount": 500.0 * mult * food_mult})
+	plan.append({"kind": "food", "pos": enemy_base + Vector3(14.0, 0.0, -2.5), "amount": 500.0 * mult * food_mult})
+	plan.append({"kind": "wood", "pos": enemy_base + Vector3(11.0, 0.0, -12.0), "amount": 600.0 * mult * wood_mult})
+	plan.append({"kind": "wood", "pos": enemy_base + Vector3(6.5, 0.0, -15.0), "amount": 600.0 * mult * wood_mult})
 	plan.append({"kind": "gold", "pos": enemy_base + Vector3(-14.5, 0.0, -10.5), "amount": 800.0 * mult * gold_mult})
 
 	# ── ANEL 2: Recursos Médios de Expansão (40m - 60m nos flancos) ─────────
@@ -411,8 +517,8 @@ static func _generate_resource_plan(
 	var med_gold_e: Vector3 = enemy_base + Vector3(-36.0, 0.0, 12.0)
 	plan.append({"kind": "gold", "pos": med_gold_p, "amount": 900.0 * mult * gold_mult})
 	plan.append({"kind": "gold", "pos": med_gold_e, "amount": 900.0 * mult * gold_mult})
-	plan.append({"kind": "wood", "pos": med_gold_p + Vector3(-6.0, 0.0, 8.0), "amount": 600.0 * mult})
-	plan.append({"kind": "wood", "pos": med_gold_e + Vector3(6.0, 0.0, -8.0), "amount": 600.0 * mult})
+	plan.append({"kind": "wood", "pos": med_gold_p + Vector3(-6.0, 0.0, 8.0), "amount": 600.0 * mult * wood_mult})
+	plan.append({"kind": "wood", "pos": med_gold_e + Vector3(6.0, 0.0, -8.0), "amount": 600.0 * mult * wood_mult})
 
 	# ── ANEL 3: Recursos Neutros Disputados no Centro e Zonas Abertas ────────
 	var topography: String = String(preset.get("topography_type", "plains"))

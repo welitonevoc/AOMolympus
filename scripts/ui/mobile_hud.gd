@@ -110,7 +110,7 @@ var _biome_buttons: Dictionary = {}
 var _diff_buttons: Dictionary = {}
 var _res_mode_buttons: Dictionary = {}
 var _chapter_buttons: Dictionary = {}
-var _chosen_random_map_preset: String = "olympus_acropolis"
+var _chosen_random_map_preset: String = "acropolis"
 var _random_map_buttons: Dictionary = {}
 var _random_map_desc_label: Label
 var _pantheon_desc_label: Label
@@ -2122,13 +2122,19 @@ func _select_start_random_map(mid: String) -> void:
 	_chosen_random_map_preset = mid
 	_highlight_choice_group(_random_map_buttons, mid)
 	var spec: Dictionary = OlympusRandomMapPresets.get_preset(mid)
-	if not spec.is_empty() and _random_map_desc_label != null:
-		_random_map_desc_label.text = "%s %s — %s\n%s" % [
-			spec.get("icon", "🗺️"),
-			spec.get("name", mid),
-			spec.get("tagline", ""),
-			spec.get("description", "")
-		]
+	if not spec.is_empty():
+		var default_biome: String = String(spec.get("default_biome", ""))
+		if not default_biome.is_empty():
+			_select_start_biome(default_biome)
+		if _random_map_desc_label != null:
+			var deity: String = String(spec.get("patron_deity", "Panteão Livre"))
+			_random_map_desc_label.text = "%s %s [%s] — %s\n%s" % [
+				spec.get("icon", "🗺️"),
+				spec.get("name", mid),
+				deity,
+				spec.get("tagline", ""),
+				spec.get("description", "")
+			]
 
 
 func _highlight_choice_group(btn_map: Dictionary, active_key: String) -> void:

@@ -1,11 +1,11 @@
 031fd14c4f62f09d974deed29042f09b
-::res://::1795648623
+::res://::1795783738
 .mcp.json::JSON::-1::1795625098::0::1::::<><><>0<>0<><>::
 _zz_diag_probe.gd::GDScript::1742026968341532981::1795625098::0::1::::ZzDiagProbe<>Node<><>0<>0<><>::
 AGENTS.md::TextFile::-1::1795625098::0::1::::<><><>0<>0<><>::
 ANALISE_GERAL_UPGRADE.md::TextFile::-1::1795625098::0::1::::<><><>0<>0<><>::
 catalogo_db.json::JSON::-1::1795625098::0::1::::<><><>0<>0<><>::
-debug_model_diag.txt::TextFile::-1::1795648573::0::1::::<><><>0<>0<><>::
+debug_model_diag.txt::TextFile::-1::1795727434::0::1::::<><><>0<>0<><>::
 export_presets.cfg::TextFile::-1::1795625098::0::1::::<><><>0<>0<><>::
 icon.svg::CompressedTexture2D::1838794579965128469::1795625098::1795642592::1::::<><><>0<>0<>2e548944aabc4eecdc9c7c74466db0af<>res://.godot/imported/icon.svg-218a8f2b3041327d8a5756f3a245f83b.ctex::
 opencode.json::JSON::-1::1795625098::0::1::::<><><>0<>0<><>::
@@ -383,7 +383,7 @@ procedures.md::TextFile::-1::1795647971::0::1::::<><><>0<>0<><>::
 sources.md::TextFile::-1::1795647971::0::1::::<><><>0<>0<><>::
 ::res://addons/godot-expert-skills/godot-2d/scripts/::1795647971
 ::res://addons/godot-expert-skills/godot-2d/scripts/agentkit/::1795647971
-::res://addons/godot-expert-skills/godot-2d/scripts/agentkit/2d/::1795647971
+::res://addons/godot-expert-skills/godot-2d/scripts/agentkit/2d/::1795648640
 audit_2d.gd::GDScript::4082975119875740117::1795647971::0::1::::<>RefCounted<><>0<>0<><>::
 dual_grid.gd::GDScript::4248598782802560179::1795647971::0::1::::<>Node2D<><>0<>1<><>::
 follow_camera_2d.gd::GDScript::6876081334798419358::1795647971::0::1::::<>Camera2D<><>0<>0<><>::
@@ -406,7 +406,7 @@ procedures.md::TextFile::-1::1795647971::0::1::::<><><>0<>0<><>::
 sources.md::TextFile::-1::1795647971::0::1::::<><><>0<>0<><>::
 ::res://addons/godot-expert-skills/godot-3d-world/scripts/::1795647971
 ::res://addons/godot-expert-skills/godot-3d-world/scripts/agentkit/::1795647971
-::res://addons/godot-expert-skills/godot-3d-world/scripts/agentkit/world/::1795647971
+::res://addons/godot-expert-skills/godot-3d-world/scripts/agentkit/world/::1795648641
 post_import_prop.gd::GDScript::3724286620305720797::1795647971::0::1::::<>EditorScenePostImport<><>0<>1<><>::
 world_audit.gd::GDScript::867630876062353661::1795647971::0::1::::<>RefCounted<><>0<>0<><>::
 world_blockout.gd::GDScript::4631025768916005444::1795647971::0::1::::<>RefCounted<><>0<>0<><>::
@@ -420,7 +420,7 @@ world_scatter.gd::GDScript::5625583685668572812::1795647971::0::1::::<>RefCounte
 world_stream.gd::GDScript::8701584191812055254::1795647971::0::1::::<>RefCounted<><>0<>0<><>::
 world_terrain3d.gd::GDScript::7930332818114333790::1795647971::0::1::::<>RefCounted<><>0<>0<><>::
 world_terrain.gd::GDScript::7160777417998615706::1795647971::0::1::::<>RefCounted<><>0<>0<><>::
-::res://addons/godot-expert-skills/godot-3d-world/scripts/agentkit/world/runtime/::1795647971
+::res://addons/godot-expert-skills/godot-3d-world/scripts/agentkit/world/runtime/::1795648640
 cell_streamer.gd::GDScript::2545622837629074040::1795647971::0::1::::<>Node3D<><>0<>0<><>::
 third_person_controller.gd::GDScript::4547775595690484601::1795647971::0::1::::<>CharacterBody3D<><>0<>0<><>::
 ::res://addons/godot-expert-skills/godot-animation/::1795647971
@@ -433,7 +433,7 @@ procedures.md::TextFile::-1::1795647971::0::1::::<><><>0<>0<><>::
 sources.md::TextFile::-1::1795647971::0::1::::<><><>0<>0<><>::
 ::res://addons/godot-expert-skills/godot-animation/scripts/::1795647971
 ::res://addons/godot-expert-skills/godot-animation/scripts/agentkit/::1795647971
-::res://addons/godot-expert-skills/godot-animation/scripts/agentkit/animation/::1795647971
+::res://addons/godot-expert-skills/godot-animation/scripts/agentkit/animation/::1795648641
 anim_audit.gd::GDScript::1914043641184391596::1795647971::0::1::::<>RefCounted<><>0<>0<><>::
 anim_capture.gd::GDScript::839433246208596816::1795647971::0::1::::<>RefCounted<><>0<>0<><>::
 anim_cutscene.gd::GDScript::5428931943132711580::1795647971::0::1::::<>RefCounted<><>0<>0<><>::
@@ -458,7 +458,7 @@ procedures.md::TextFile::-1::1795647971::0::1::::<><><>0<>0<><>::
 sources.md::TextFile::-1::1795647971::0::1::::<><><>0<>0<><>::
 ::res://addons/godot-expert-skills/godot-architecture/scripts/::1795647971
 ::res://addons/godot-expert-skills/godot-architecture/scripts/agentkit/::1795647971
-::res://addons/godot-expert-skills/godot-architecture/scripts/agentkit/architecture/::1795647971
+::res://addons/godot-expert-skills/godot-architecture/scripts/agentkit/architecture/::1795648641
 arch_audit.gd::GDScript::8327146594652100652::1795647971::0::1::::<>RefCounted<><>0<>0<><>::
 bench.gd::GDScript::8915029614310831019::1795647971::0::1::::<>RefCounted<><>0<>0<><>::
 build_catalog.gd::GDScript::4100368788923773711::1795647971::0::1::::<>RefCounted<><>0<>0<><>::
@@ -468,26 +468,26 @@ setup_input.gd::GDScript::2029360953090703491::1795647971::0::1::::<>RefCounted<
 validate_data.gd::GDScript::6670973166519185250::1795647971::0::1::::<>RefCounted<><>0<>0<><>::
 ::res://addons/godot-expert-skills/godot-architecture/scripts/templates/::1795647971
 ::res://addons/godot-expert-skills/godot-architecture/scripts/templates/core/::1795647971
-::res://addons/godot-expert-skills/godot-architecture/scripts/templates/core/combat/::1795647971
+::res://addons/godot-expert-skills/godot-architecture/scripts/templates/core/combat/::1795648641
 damage_info.gd::GDScript::4667375441708631311::1795647971::0::1::::DamageInfo<>RefCounted<><>0<>0<><>::
 health_component.gd::GDScript::8694729371608895446::1795647971::0::1::::HealthComponent<>Node<><>0<>0<><>::
 hitbox_3d.gd::GDScript::378725051073657376::1795647971::0::1::::Hitbox3D<>Area3D<><>0<>0<><>::
 hurtbox_3d.gd::GDScript::8562099520914462853::1795647971::0::1::::Hurtbox3D<>Area3D<><>0<>1<><>::
-::res://addons/godot-expert-skills/godot-architecture/scripts/templates/core/data/::1795647971
+::res://addons/godot-expert-skills/godot-architecture/scripts/templates/core/data/::1795648642
 item_catalog.gd::GDScript::2685474135745250926::1795647971::0::1::::ItemCatalog<>Resource<><>0<>0<><>::
 item_definition.gd::GDScript::1070892965494469172::1795647971::0::1::::ItemDefinition<>Resource<><>0<>0<><>::
-::res://addons/godot-expert-skills/godot-architecture/scripts/templates/core/events/::1795647971
+::res://addons/godot-expert-skills/godot-architecture/scripts/templates/core/events/::1795648642
 events.gd::GDScript::8300104540663341065::1795647971::0::1::::<>Node<><>0<>0<><>::
-::res://addons/godot-expert-skills/godot-architecture/scripts/templates/core/input/::1795647971
+::res://addons/godot-expert-skills/godot-architecture/scripts/templates/core/input/::1795648642
 input_actions.gd::GDScript::2348995622234120071::1795647971::0::1::::InputActions<>RefCounted<><>0<>0<><>::
 input_remap.gd::GDScript::2738339568595675215::1795647971::0::1::::InputRemap<>RefCounted<><>0<>0<><>::
-::res://addons/godot-expert-skills/godot-architecture/scripts/templates/core/inventory/::1795647971
+::res://addons/godot-expert-skills/godot-architecture/scripts/templates/core/inventory/::1795648642
 inventory.gd::GDScript::4557742333357654884::1795647971::0::1::::Inventory<>RefCounted<><>0<>0<><>::
 item_stack.gd::GDScript::7914947570282492891::1795647971::0::1::::ItemStack<>RefCounted<><>0<>0<><>::
-::res://addons/godot-expert-skills/godot-architecture/scripts/templates/core/main/::1795647971
+::res://addons/godot-expert-skills/godot-architecture/scripts/templates/core/main/::1795648642
 base_level.gd::GDScript::726710473299967569::1795647971::0::1::::BaseLevel<>Node3D<><>0<>0<><>::
 main_game.gd::GDScript::8138942883073908577::1795647971::0::1::::MainGame<>Node<><>0<>0<><>::
-::res://addons/godot-expert-skills/godot-architecture/scripts/templates/core/save/::1795647971
+::res://addons/godot-expert-skills/godot-architecture/scripts/templates/core/save/::1795648642
 persist_component.gd::GDScript::2831332741290322927::1795647971::0::1::::PersistComponent<>Node<><>0<>0<><>::
 save_service.gd::GDScript::6042078694658017576::1795647971::0::1::::SaveService<>RefCounted<><>0<>0<><>::
 ::res://addons/godot-expert-skills/godot-audio/::1795647971
@@ -500,7 +500,7 @@ procedures.md::TextFile::-1::1795647971::0::1::::<><><>0<>0<><>::
 sources.md::TextFile::-1::1795647971::0::1::::<><><>0<>0<><>::
 ::res://addons/godot-expert-skills/godot-audio/scripts/::1795647971
 ::res://addons/godot-expert-skills/godot-audio/scripts/agentkit/::1795647971
-::res://addons/godot-expert-skills/godot-audio/scripts/agentkit/audio/::1795647971
+::res://addons/godot-expert-skills/godot-audio/scripts/agentkit/audio/::1795648642
 audio_audit.gd::GDScript::7763335003166736969::1795647971::0::1::::<>RefCounted<><>0<>0<><>::
 audio_buses.gd::GDScript::8030339945711687028::1795647971::0::1::::<>RefCounted<><>0<>0<><>::
 audio_meter.gd::GDScript::8564706695081678992::1795647971::0::1::::<>RefCounted<><>0<>0<><>::
@@ -517,7 +517,7 @@ gui-paths.md::TextFile::-1::1795647971::0::1::::<><><>0<>0<><>::
 procedures.md::TextFile::-1::1795647971::0::1::::<><><>0<>0<><>::
 sources.md::TextFile::-1::1795647971::0::1::::<><><>0<>0<><>::
 ::res://addons/godot-expert-skills/godot-expert/scripts/::1795647971
-::res://addons/godot-expert-skills/godot-expert/scripts/agentkit/::1795647971
+::res://addons/godot-expert-skills/godot-expert/scripts/agentkit/::1795648642
 agent_audit.gd::GDScript::6274391331588011771::1795647971::0::1::::<>RefCounted<><>0<>0<><>::
 agent_build.gd::GDScript::7477939914359735274::1795647971::0::1::::<>RefCounted<><>0<>0<><>::
 agent_capture.gd::GDScript::9103994728427227611::1795647971::0::1::::<>RefCounted<><>0<>0<><>::
@@ -533,7 +533,7 @@ procedures.md::TextFile::-1::1795647971::0::1::::<><><>0<>0<><>::
 sources.md::TextFile::-1::1795647971::0::1::::<><><>0<>0<><>::
 ::res://addons/godot-expert-skills/godot-gameplay/scripts/::1795647971
 ::res://addons/godot-expert-skills/godot-gameplay/scripts/agentkit/::1795647971
-::res://addons/godot-expert-skills/godot-gameplay/scripts/agentkit/gameplay/::1795647971
+::res://addons/godot-expert-skills/godot-gameplay/scripts/agentkit/gameplay/::1795648643
 arena.gd::GDScript::2222614743079617186::1795647971::0::1::::<>RefCounted<><>0<>0<><>::
 brain.gd::GDScript::9102790540986258326::1795647971::0::1::::<>RefCounted<><>0<>0<><>::
 bullet_pool.gd::GDScript::7703547418594863758::1795647971::0::1::::<>Node3D<><>0<>0<><>::
@@ -553,11 +553,11 @@ save_io.gd::GDScript::6695822455626553788::1795647971::0::1::::<>RefCounted<><>0
 state.gd::GDScript::3412613208566830564::1795647971::0::1::::<>Node<><>0<>0<><>::
 state_machine.gd::GDScript::6608504010597605197::1795647971::0::1::::<>Node<><>0<>0<><>::
 voice_pool.gd::GDScript::3827925958499087876::1795647971::0::1::::<>Node3D<><>0<>0<><>::
-::res://addons/godot-expert-skills/godot-gameplay/scripts/agentkit/gameplay/inventory/::1795647971
+::res://addons/godot-expert-skills/godot-gameplay/scripts/agentkit/gameplay/inventory/::1795648642
 inventory.gd::GDScript::7663098904886666629::1795647971::0::1::::<>Resource<><>0<>0<><>::
 item.gd::GDScript::7562794461450808348::1795647971::0::1::::<>Resource<><>0<>0<><>::
 item_stack.gd::GDScript::8287590236958547170::1795647971::0::1::::<>Resource<><>0<>0<><>::
-::res://addons/godot-expert-skills/godot-gameplay/scripts/agentkit/gameplay/states/::1795647971
+::res://addons/godot-expert-skills/godot-gameplay/scripts/agentkit/gameplay/states/::1795648642
 attack.gd::GDScript::1860184487891286746::1795647971::0::1::::<><><>0<>0<><>::
 chase.gd::GDScript::1304647674419308132::1795647971::0::1::::<><><>0<>0<><>::
 patrol.gd::GDScript::2031229492007564791::1795647971::0::1::::<><><>0<>0<><>::
@@ -572,7 +572,7 @@ procedures.md::TextFile::-1::1795647971::0::1::::<><><>0<>0<><>::
 sources.md::TextFile::-1::1795647971::0::1::::<><><>0<>0<><>::
 ::res://addons/godot-expert-skills/godot-multiplayer/scripts/::1795647971
 ::res://addons/godot-expert-skills/godot-multiplayer/scripts/agentkit/::1795647971
-::res://addons/godot-expert-skills/godot-multiplayer/scripts/agentkit/multiplayer/::1795647971
+::res://addons/godot-expert-skills/godot-multiplayer/scripts/agentkit/multiplayer/::1795648643
 net_audit.gd::GDScript::2694536693263708373::1795647971::0::1::::<>RefCounted<><>0<>0<><>::
 net_boot.gd::GDScript::5895703101678565150::1795647971::0::1::::<>Node<><>0<>0<><>::
 net_build.gd::GDScript::5473070642033882152::1795647971::0::1::::<>RefCounted<><>0<>0<><>::
@@ -592,7 +592,7 @@ procedures.md::TextFile::-1::1795647971::0::1::::<><><>0<>0<><>::
 sources.md::TextFile::-1::1795647971::0::1::::<><><>0<>0<><>::
 ::res://addons/godot-expert-skills/godot-performance-export/scripts/::1795647971
 ::res://addons/godot-expert-skills/godot-performance-export/scripts/agentkit/::1795647971
-::res://addons/godot-expert-skills/godot-performance-export/scripts/agentkit/perf/::1795647971
+::res://addons/godot-expert-skills/godot-performance-export/scripts/agentkit/perf/::1795648643
 mobile_touch.gd::GDScript::8127449685882556383::1795647971::0::1::::<>RefCounted<><>0<>0<><>::
 perf_audit.gd::GDScript::7576261911221858360::1795647971::0::1::::<>RefCounted<><>0<>0<><>::
 perf_bench.gd::GDScript::6693310158490326493::1795647971::0::1::::<>RefCounted<><>0<>0<><>::
@@ -611,30 +611,29 @@ procedures.md::TextFile::-1::1795647971::0::1::::<><><>0<>0<><>::
 sources.md::TextFile::-1::1795647971::0::1::::<><><>0<>0<><>::
 ::res://addons/godot-expert-skills/godot-pipeline-automation/scripts/::1795647971
 ::res://addons/godot-expert-skills/godot-pipeline-automation/scripts/agentkit/::1795647971
-::res://addons/godot-expert-skills/godot-pipeline-automation/scripts/agentkit/pipeline/::1795647971
+::res://addons/godot-expert-skills/godot-pipeline-automation/scripts/agentkit/pipeline/::1795648644
 glb_probe.gd::GDScript::4677156267221222499::1795647971::0::1::::<>RefCounted<><>0<>0<><>::
 prop_audit.gd::GDScript::5188169617227284115::1795647971::0::1::::<>RefCounted<><>0<>0<><>::
 prop_ingest.gd::GDScript::9094867458460227867::1795647971::0::1::::<>RefCounted<><>0<>0<><>::
 prop_rules.gd::GDScript::6389344766633919947::1795647971::0::1::::<>RefCounted<><>0<>0<><>::
 prop_textures.gd::GDScript::4715016066707461353::1795647971::0::1::::<>RefCounted<><>0<>0<><>::
 prop_thumbs.gd::GDScript::3336702649309162364::1795647971::0::1::::<>RefCounted<><>0<>0<><>::
-::res://addons/godot-expert-skills/godot-pipeline-automation/scripts/agentkit/prop_pipeline_addon/::1795647971
+::res://addons/godot-expert-skills/godot-pipeline-automation/scripts/agentkit/prop_pipeline_addon/::1795648644
 plugin.cfg::TextFile::-1::1795647971::0::1::::<><><>0<>0<><>::
 plugin.gd::GDScript::5520873222202490183::1795647971::0::1::::<>EditorPlugin<><>0<>1<><>::
 prop_post_import.gd::GDScript::8062159830843020307::1795647971::0::1::::<>EditorScenePostImportPlugin<><>0<>1<><>::
 ::res://addons/godot-expert-skills/godot-pipeline-automation/scripts/ci/::1795647971
 godot-ci.yml::TextFile::-1::1795647971::0::1::::<><><>0<>0<><>::
 ::res://addons/godot-expert-skills/godot-pipeline-automation/scripts/examples/::1795647971
-::res://addons/godot-expert-skills/godot-pipeline-automation/scripts/examples/gdext_c/::1795647971
-pipeline_ext.gdextension::GDExtension::562613828776784594::1795647971::0::1::::<><><>0<>0<><>::
-::res://addons/godot-expert-skills/godot-pipeline-automation/scripts/examples/level_importer/::1795647971
+::res://addons/godot-expert-skills/godot-pipeline-automation/scripts/examples/gdext_c/::1795727575
+::res://addons/godot-expert-skills/godot-pipeline-automation/scripts/examples/level_importer/::1795648644
 lvl_import.gd::GDScript::8482923922570264201::1795647971::0::1::::<>EditorImportPlugin<><>0<>1<><>::
 plugin.cfg::TextFile::-1::1795647971::0::1::::<><><>0<>0<><>::
 plugin.gd::GDScript::1327939374298534006::1795647971::0::1::::<>EditorPlugin<><>0<>1<><>::
-::res://addons/godot-expert-skills/godot-pipeline-automation/scripts/examples/tools/::1795647971
+::res://addons/godot-expert-skills/godot-pipeline-automation/scripts/examples/tools/::1795648644
 add_spawns.gd::GDScript::3347359033706107635::1795647971::0::1::::<>EditorScript<><>0<>1<><>::
 spawn_point.gd::GDScript::1981900443747862854::1795647971::0::1::::SpawnPoint<>Marker3D<><>0<>1<><>::
-::res://addons/godot-expert-skills/godot-pipeline-automation/scripts/gdunit/::1795647971
+::res://addons/godot-expert-skills/godot-pipeline-automation/scripts/gdunit/::1795648644
 door.gd::GDScript::1637996799999244669::1795647971::0::1::::<>Node<><>0<>0<><>::
 test_glb_probe.gd::GDScript::2699972491951284815::1795647971::0::1::::<>GdUnitTestSuite<><>0<>0<><>::
 test_imported_props.gd::GDScript::1564482211642378979::1795647971::0::1::::<>GdUnitTestSuite<><>0<>0<><>::
@@ -650,14 +649,14 @@ procedures.md::TextFile::-1::1795647971::0::1::::<><><>0<>0<><>::
 sources.md::TextFile::-1::1795647971::0::1::::<><><>0<>0<><>::
 ::res://addons/godot-expert-skills/godot-rendering-lighting/scripts/::1795647971
 ::res://addons/godot-expert-skills/godot-rendering-lighting/scripts/agentkit/::1795647971
-::res://addons/godot-expert-skills/godot-rendering-lighting/scripts/agentkit/rendering/::1795647971
+::res://addons/godot-expert-skills/godot-rendering-lighting/scripts/agentkit/rendering/::1795648644
 compositor_tools.gd::GDScript::4990540605420311723::1795647971::0::1::::<>RefCounted<><>0<>0<><>::
 gi_bake.gd::GDScript::2867646207896315198::1795647971::0::1::::<>RefCounted<><>0<>0<><>::
 graphics_tiers.gd::GDScript::7900278494464353438::1795647971::0::1::::<>RefCounted<><>0<>0<><>::
 light_audit.gd::GDScript::9171873968206651513::1795647971::0::1::::<>RefCounted<><>0<>0<><>::
 lookdev.gd::GDScript::108166355334976420::1795647971::0::1::::<>RefCounted<><>0<>0<><>::
 sweep.gd::GDScript::6927331140191727703::1795647971::0::1::::<>RefCounted<><>0<>0<><>::
-::res://addons/godot-expert-skills/godot-rendering-lighting/scripts/agentkit/rendering/compositor/::1795647971
+::res://addons/godot-expert-skills/godot-rendering-lighting/scripts/agentkit/rendering/compositor/::1795648650
 grayscale.glsl::RDShaderFile::1773301816130201243::1795647971::1795648650::1::::<><><>0<>0<>8b92046786fc066c30b93c686aac6454<>res://.godot/imported/grayscale.glsl-60b50ff5638adac80b5bdcefae2b033a.res::
 post_effect.gd::GDScript::3603728989846765665::1795647971::0::1::::<>CompositorEffect<><>0<>1<><>::
 ::res://addons/godot-expert-skills/godot-shaders/::1795647971
@@ -670,7 +669,7 @@ procedures.md::TextFile::-1::1795647971::0::1::::<><><>0<>0<><>::
 sources.md::TextFile::-1::1795647971::0::1::::<><><>0<>0<><>::
 ::res://addons/godot-expert-skills/godot-shaders/scripts/::1795647971
 ::res://addons/godot-expert-skills/godot-shaders/scripts/agentkit/::1795647971
-::res://addons/godot-expert-skills/godot-shaders/scripts/agentkit/shaders/::1795647971
+::res://addons/godot-expert-skills/godot-shaders/scripts/agentkit/shaders/::1795648645
 dissolve.gdshader::Shader::6591562554111003293::1795647971::0::1::::<><><>0<>0<><>::
 dissolve_swap.gd::GDScript::1661432694142274083::1795647971::0::1::::<>RefCounted<><>0<>0<><>::
 fullscreen_depth.gdshader::Shader::3400943018290574451::1795647971::0::1::::<><><>0<>0<><>::
@@ -683,7 +682,7 @@ sky_toon.gdshader::Shader::178821011211915496::1795647971::0::1::::<><><>0<>0<><
 water_common.gdshaderinc::ShaderInclude::3550724758395853065::1795647971::0::1::::<><><>0<>0<><>::
 water_lite.gdshader::Shader::5869363976771002343::1795647971::0::1::::<><><>0<>0<><>::
 water_stylized.gdshader::Shader::1164897283629354132::1795647971::0::1::::<><><>0<>0<><>::
-::res://addons/godot-expert-skills/godot-shaders/scripts/agentkit/shaders/examples/::1795647971
+::res://addons/godot-expert-skills/godot-shaders/scripts/agentkit/shaders/examples/::1795648644
 animate_instance_uniform.gd::GDScript::2569596018104718714::1795647971::0::1::::<><><>0<>0<><>::
 build_dissolve_scene.gd::GDScript::3320839301887351907::1795647971::0::1::::<><><>0<>0<><>::
 build_flash_scene.gd::GDScript::3551733124260166046::1795647971::0::1::::<><><>0<>0<><>::
@@ -706,7 +705,7 @@ procedures.md::TextFile::-1::1795647971::0::1::::<><><>0<>0<><>::
 sources.md::TextFile::-1::1795647971::0::1::::<><><>0<>0<><>::
 ::res://addons/godot-expert-skills/godot-ui/scripts/::1795647971
 ::res://addons/godot-expert-skills/godot-ui/scripts/agentkit/::1795647971
-::res://addons/godot-expert-skills/godot-ui/scripts/agentkit/ui/::1795647971
+::res://addons/godot-expert-skills/godot-ui/scripts/agentkit/ui/::1795648645
 hud_bar.gd::GDScript::3269616070151774890::1795647971::0::1::::<>ProgressBar<><>0<>0<><>::
 menu_stack.gd::GDScript::1300118036385275130::1795647971::0::1::::<>Node<><>0<>0<><>::
 safe_area.gd::GDScript::3716425499352573928::1795647971::0::1::::<>MarginContainer<><>0<>0<><>::
@@ -719,7 +718,7 @@ ui_selftest.gd::GDScript::6133887592390058379::1795647971::0::1::::<>RefCounted<
 ui_settings.gd::GDScript::6769188510201089422::1795647971::0::1::::<>Node<><>0<>0<><>::
 ui_stretch.gd::GDScript::1546186793135145208::1795647971::0::1::::<>RefCounted<><>0<>0<><>::
 ui_theme.gd::GDScript::1679053537485191758::1795647971::0::1::::<>RefCounted<><>0<>0<><>::
-::res://addons/godot-expert-skills/godot-ui/scripts/agentkit/ui/examples/::1795647971
+::res://addons/godot-expert-skills/godot-ui/scripts/agentkit/ui/examples/::1795648645
 build_g7.gd::GDScript::5650249644015456647::1795647971::0::1::::<>RefCounted<><>0<>0<><>::
 ::res://addons/godot-expert-skills/godot-vfx/::1795647971
 SKILL.md::TextFile::-1::1795647971::0::1::::<><><>0<>0<><>::
@@ -731,7 +730,7 @@ procedures.md::TextFile::-1::1795647971::0::1::::<><><>0<>0<><>::
 sources.md::TextFile::-1::1795647971::0::1::::<><><>0<>0<><>::
 ::res://addons/godot-expert-skills/godot-vfx/scripts/::1795647971
 ::res://addons/godot-expert-skills/godot-vfx/scripts/agentkit/::1795647971
-::res://addons/godot-expert-skills/godot-vfx/scripts/agentkit/vfx/::1795647971
+::res://addons/godot-expert-skills/godot-vfx/scripts/agentkit/vfx/::1795648645
 fx_looper.gd::GDScript::2224051841050546029::1795647971::0::1::::<>Node3D<><>0<>0<><>::
 vfx_audit.gd::GDScript::6529377992331111820::1795647971::0::1::::<>RefCounted<><>0<>0<><>::
 vfx_build.gd::GDScript::284341436358754728::1795647971::0::1::::<>RefCounted<><>0<>0<><>::
@@ -739,11 +738,11 @@ vfx_capture.gd::GDScript::6436763734833243014::1795647971::0::1::::<>RefCounted<
 vfx_jobs.gd::GDScript::6439115925462656000::1795647971::0::1::::<>RefCounted<><>0<>0<><>::
 vfx_recipes.gd::GDScript::3201382429450431723::1795647971::0::1::::<>RefCounted<><>0<>0<><>::
 vfx_selftest.gd::GDScript::4714657337371175031::1795647971::0::1::::<>RefCounted<><>0<>0<><>::
-::res://addons/godot-expert-skills/godot-vfx/scripts/agentkit/vfx/runtime/::1795647971
+::res://addons/godot-expert-skills/godot-vfx/scripts/agentkit/vfx/runtime/::1795648645
 fx_burst.gd::GDScript::91052971664904919::1795647971::0::1::::<>Node3D<><>0<>0<><>::
 fx_projectile.gd::GDScript::9129138992984621401::1795647971::0::1::::<>Node3D<><>0<>0<><>::
 juice.gd::GDScript::3693385228577814271::1795647971::0::1::::<>Node<><>0<>0<><>::
-::res://addons/godot-expert-skills/godot-vfx/scripts/agentkit/vfx/shaders/::1795647971
+::res://addons/godot-expert-skills/godot-vfx/scripts/agentkit/vfx/shaders/::1795648645
 fx_erode.gdshaderinc::ShaderInclude::9013451122440458298::1795647971::0::1::::<><><>0<>0<><>::
 fx_erode_add.gdshader::Shader::1583297021996274441::1795647971::0::1::::<><><>0<>0<><>::
 fx_erode_mix.gdshader::Shader::2934671056111374760::1795647971::0::1::::<><><>0<>0<><>::
@@ -1224,13 +1223,13 @@ olympus_deity_god_power_walking_woods.png::CompressedTexture2D::3147142288497010
 olympus_deity_god_power_walking_woods_icon.png::CompressedTexture2D::289819787498357462::1795625098::1795640599::1::::<><><>0<>0<>66c8a06be948db7fea8f5e3817124c55<>res://.godot/imported/olympus_deity_god_power_walking_woods_icon.png-105da89d0c3dc274f4690adcfc883217.ctex::
 olympus_deity_god_power_wonder_deconstruction_icons.png::CompressedTexture2D::8498031596907748086::1795625098::1795640598::1::::<><><>0<>0<>15009e3ef52fd69cbe7972b85488d74e<>res://.godot/imported/olympus_deity_god_power_wonder_deconstruction_icons.png-62e90fd9b2e4c7b02bdf2c51f90ac937.ctex::
 olympus_deity_god_power_wonder_deconstruction_icons_32.png::CompressedTexture2D::1266492044761537920::1795625098::1795640598::1::::<><><>0<>0<>3915d18ad6a452b6f93d277a8f91c090<>res://.godot/imported/olympus_deity_god_power_wonder_deconstruction_icons_32.png-6d68455870e73d5348f173201583864d.ctex::
-::res://assets/ui/icons/resources/::1795640598
-olympus_res_resource_favor.png::CompressedTexture2D::7418312361308114606::1795625098::1795640598::1::::<><><>0<>0<>3c2fb90068011cf0817f6cc1799baf94<>res://.godot/imported/olympus_res_resource_favor.png-8b0545ccc6e3bbb70c2d6ff9f2e41d5d.ctex::
-olympus_res_resource_favor_full.png::CompressedTexture2D::57934041847263179::1795625098::1795640598::1::::<><><>0<>0<>032cdb9bdb19187834666726ecb9ba9f<>res://.godot/imported/olympus_res_resource_favor_full.png-15012b336220e70caaec60966f8d630f.ctex::
-olympus_res_resource_food.png::CompressedTexture2D::4064915955856939506::1795625098::1795640598::1::::<><><>0<>0<>355f4c60dfa5dff3b8a379f6b36b1c98<>res://.godot/imported/olympus_res_resource_food.png-42e8795f803ee31ab8cb514b9918e541.ctex::
-olympus_res_resource_gold.png::CompressedTexture2D::9034820093242389468::1795625098::1795640598::1::::<><><>0<>0<>bf1fab43ae0ec9f9992cbc78aa1f07dc<>res://.godot/imported/olympus_res_resource_gold.png-d3b3a997de89d7b0486763ff103fa1bf.ctex::
-olympus_res_resource_population.png::CompressedTexture2D::991004405656024230::1795625098::1795640598::1::::<><><>0<>0<>1f58a1f7b2bd3687ba9b27350668b8e4<>res://.godot/imported/olympus_res_resource_population.png-cb5428afea3ffda63e95089944d9b16f.ctex::
-olympus_res_resource_wood.png::CompressedTexture2D::7854847607789190907::1795625098::1795640598::1::::<><><>0<>0<>100f73372614ea9ad33918fb4b04ea4b<>res://.godot/imported/olympus_res_resource_wood.png-af308a0a49e06857ae6f2242605ccc63.ctex::
+::res://assets/ui/icons/resources/::1795727334
+olympus_res_resource_favor.png::CompressedTexture2D::7418312361308114606::1795721912::1795727334::1::::<><><>0<>0<>3c2fb90068011cf0817f6cc1799baf94<>res://.godot/imported/olympus_res_resource_favor.png-8b0545ccc6e3bbb70c2d6ff9f2e41d5d.ctex::
+olympus_res_resource_favor_full.png::CompressedTexture2D::57934041847263179::1795721912::1795727334::1::::<><><>0<>0<>032cdb9bdb19187834666726ecb9ba9f<>res://.godot/imported/olympus_res_resource_favor_full.png-15012b336220e70caaec60966f8d630f.ctex::
+olympus_res_resource_food.png::CompressedTexture2D::4064915955856939506::1795721912::1795727334::1::::<><><>0<>0<>355f4c60dfa5dff3b8a379f6b36b1c98<>res://.godot/imported/olympus_res_resource_food.png-42e8795f803ee31ab8cb514b9918e541.ctex::
+olympus_res_resource_gold.png::CompressedTexture2D::9034820093242389468::1795721912::1795727334::1::::<><><>0<>0<>bf1fab43ae0ec9f9992cbc78aa1f07dc<>res://.godot/imported/olympus_res_resource_gold.png-d3b3a997de89d7b0486763ff103fa1bf.ctex::
+olympus_res_resource_population.png::CompressedTexture2D::991004405656024230::1795721912::1795727334::1::::<><><>0<>0<>1f58a1f7b2bd3687ba9b27350668b8e4<>res://.godot/imported/olympus_res_resource_population.png-cb5428afea3ffda63e95089944d9b16f.ctex::
+olympus_res_resource_wood.png::CompressedTexture2D::7854847607789190907::1795721912::1795727334::1::::<><><>0<>0<>100f73372614ea9ad33918fb4b04ea4b<>res://.godot/imported/olympus_res_resource_wood.png-af308a0a49e06857ae6f2242605ccc63.ctex::
 ::res://assets/ui/icons/skills/::1795640616
 olympus_ability_special_a_titan_promethean.png::CompressedTexture2D::324577439004711853::1795625098::1795640598::1::::<><><>0<>0<>0202d2fcde841c067600e569a9d15f7a<>res://.godot/imported/olympus_ability_special_a_titan_promethean.png-e51c57594639b717415748e27c827d54.ctex::
 olympus_ability_special_e_amanra.png::CompressedTexture2D::2784446567435396959::1795625098::1795640597::1::::<><><>0<>0<>1382d3b0242521ff69de959bef05d31d<>res://.godot/imported/olympus_ability_special_e_amanra.png-7fca576ad6d8e311a41ee9b3a95b37cd.ctex::
@@ -6154,7 +6153,7 @@ attachments_a_arrow.png::CompressedTexture2D::293696670278818869::1795641553::17
 attachments_a_bow_bronze.png::CompressedTexture2D::2002145398062351855::1795641553::1795641596::1::::<><><>0<>0<>55825d6f7e93a6b637ae78cf66f8028f<>res://.godot/imported/attachments_a_bow_bronze.png-23a00a363256df4d851db8fa862710b0.ctex::
 attachments_a_quiver.png::CompressedTexture2D::8431444337161413923::1795641553::1795641596::1::::<><><>0<>0<>a676d0459c5c569126f367c67d78b248<>res://.godot/imported/attachments_a_quiver.png-9a8ca454a63f1993f98ac217df03f8e3.ctex::
 scenario_g_chiron_map.png::CompressedTexture2D::874797334184724094::1795641553::1795641596::1::::<><><>0<>0<>b48f44e6722730381ab311ca56bdc686<>res://.godot/imported/scenario_g_chiron_map.png-ca0436dfb5e24435785cbb8057260c56.ctex::
-::res://models/civilizations/greek/cidade/::1795641592
+::res://models/civilizations/greek/cidade/::1795783567
 ::res://models/civilizations/greek/cidade/academy/::1795642948
 academy_base.glb::PackedScene::8985946732840949815::1795641544::1795642948::1::::<><><>0<>0<>0ceeb2cf15072f03a4a1550148ebdc97<>res://.godot/imported/academy_base.glb-6f280d9bea1ac4a81d79be9fbe0be8ee.scn::uid://djdj1w1xqw33q::::res://models/civilizations/greek/cidade/academy/academy_base_Building G RoofAge1.png<>uid://k1ob3pxgi85w::::res://models/civilizations/greek/cidade/academy/academy_base_Building Attachments.png<>uid://biw5wwjj415pk::::res://models/civilizations/greek/cidade/academy/academy_base_Building G WallsAge1.png
 academy_base_Building Attachments.png::CompressedTexture2D::756415576557770070::1795642948::1795642948::1::::<><><>0<>0<>3d9936652a92d0887630bbb048545e5d<>res://.godot/imported/academy_base_Building Attachments.png-1ff4ef03f23d31c2b505d1ac2ab9caa6.ctex::
@@ -6383,6 +6382,36 @@ idle_World G Hades Temple.png::CompressedTexture2D::6629231674426220406::1795642
 ::res://models/civilizations/greek/cidade/temple_underworld/textures/::1795642585
 world_e_statue_isis.png::CompressedTexture2D::4726310622957683392::1795641593::1795642584::1::::<><><>0<>0<>7d1c742ac4394bec4669c9d161c8b7c8<>res://.godot/imported/world_e_statue_isis.png-8e4df418df2d8b1bc446ce93f1733e06.ctex::
 world_g_hades_temple.png::CompressedTexture2D::5137125934012130766::1795641592::1795642585::1::::<><><>0<>0<>81ce12b363deb2af18aad390794ef5e7<>res://.godot/imported/world_g_hades_temple.png-c9591625c234406ae477d2a84ecbdf95.ctex::
+::res://models/civilizations/greek/cidade/town_center/::1795783567
+town_center_base_Building G SettlementFence.png::CompressedTexture2D::6235463476841339179::1795783783::1795783826::1::::<><><>0<>0<>b42c0d1a7b6d8f83ec6669e1252b0039<>res://.godot/imported/town_center_base_Building G SettlementFence.png-6a763facb272a6235d1cf59e1e9713b9.s3tc.ctex<*>res://.godot/imported/town_center_base_Building G SettlementFence.png-6a763facb272a6235d1cf59e1e9713b9.etc2.ctex::
+town_center_base_Building G SettlementAge1.png::CompressedTexture2D::4904783910219172052::1795783783::1795783826::1::::<><><>0<>0<>147b587dac8451b06cda52a31d60bdd7<>res://.godot/imported/town_center_base_Building G SettlementAge1.png-67f4d78b579a20f3a8afec15b6e94e52.s3tc.ctex<*>res://.godot/imported/town_center_base_Building G SettlementAge1.png-67f4d78b579a20f3a8afec15b6e94e52.etc2.ctex::
+town_center_base_Building Attachments.png::CompressedTexture2D::6273147832026274373::1795783783::1795783826::1::::<><><>0<>0<>2d03715e828cb944bc3dd2ee2c5b1b4b<>res://.godot/imported/town_center_base_Building Attachments.png-add987a3c13e7417cef1ce5891c863df.s3tc.ctex<*>res://.godot/imported/town_center_base_Building Attachments.png-add987a3c13e7417cef1ce5891c863df.etc2.ctex::
+town_center_age4_Building G FortressRoof.png::CompressedTexture2D::418556075708148874::1795783780::1795783826::1::::<><><>0<>0<>02b14576c5a30cedf5b7875596e6a896<>res://.godot/imported/town_center_age4_Building G FortressRoof.png-cf13f402f86a12d646afed6e7b11a6a5.s3tc.ctex<*>res://.godot/imported/town_center_age4_Building G FortressRoof.png-cf13f402f86a12d646afed6e7b11a6a5.etc2.ctex::
+town_center_age4_Building G Fortress.png::CompressedTexture2D::2872369082767421161::1795783780::1795783826::1::::<><><>0<>0<>5d96d68ddd6afa0e11f7ad1aea85594d<>res://.godot/imported/town_center_age4_Building G Fortress.png-b3a7e21f7787c90a425130e9fd86ff2b.s3tc.ctex<*>res://.godot/imported/town_center_age4_Building G Fortress.png-b3a7e21f7787c90a425130e9fd86ff2b.etc2.ctex::
+town_center_age4_Building G SettlementAge3.png::CompressedTexture2D::9008503916234710927::1795783780::1795783827::1::::<><><>0<>0<>dafc8a0c0cee28cccd72ab8e317d1628<>res://.godot/imported/town_center_age4_Building G SettlementAge3.png-419e4b2335261f016b4a9470e80123ac.s3tc.ctex<*>res://.godot/imported/town_center_age4_Building G SettlementAge3.png-419e4b2335261f016b4a9470e80123ac.etc2.ctex::
+town_center_age4_Building Attachments.png::CompressedTexture2D::9192609529087636077::1795783780::1795783827::1::::<><><>0<>0<>7d6a4e4a56de8809175d50f1240144be<>res://.godot/imported/town_center_age4_Building Attachments.png-96b8f461849d5eaf79e7392cdf8a6a83.s3tc.ctex<*>res://.godot/imported/town_center_age4_Building Attachments.png-96b8f461849d5eaf79e7392cdf8a6a83.etc2.ctex::
+town_center_age3_Building G SettlementFence.png::CompressedTexture2D::3274097550686327349::1795783775::1795783827::1::::<><><>0<>0<>c3b9079b2453cbe5fa034ba5e857b0e3<>res://.godot/imported/town_center_age3_Building G SettlementFence.png-7f93429fa409714081fe3da00778aa53.s3tc.ctex<*>res://.godot/imported/town_center_age3_Building G SettlementFence.png-7f93429fa409714081fe3da00778aa53.etc2.ctex::
+town_center_age3_Building G SettlementAge3.png::CompressedTexture2D::6508396280569212510::1795783775::1795783827::1::::<><><>0<>0<>a057fb19d115e7151b17e4585bef7f2f<>res://.godot/imported/town_center_age3_Building G SettlementAge3.png-c0709934353f4ba9a9aa39cf43562201.s3tc.ctex<*>res://.godot/imported/town_center_age3_Building G SettlementAge3.png-c0709934353f4ba9a9aa39cf43562201.etc2.ctex::
+town_center_age3_Building Attachments.png::CompressedTexture2D::4009584763684079268::1795783775::1795783827::1::::<><><>0<>0<>6ec49027b50249a13c0772282611673e<>res://.godot/imported/town_center_age3_Building Attachments.png-935a7cb126a9b7e6501ccee6951b090d.s3tc.ctex<*>res://.godot/imported/town_center_age3_Building Attachments.png-935a7cb126a9b7e6501ccee6951b090d.etc2.ctex::
+town_center_age2_Building G SettlementFence.png::CompressedTexture2D::8900637824667509913::1795783769::1795783827::1::::<><><>0<>0<>3885e43f2ad49898af5f47f5ab893177<>res://.godot/imported/town_center_age2_Building G SettlementFence.png-e64ba56f189846c87441ac2d27fab141.s3tc.ctex<*>res://.godot/imported/town_center_age2_Building G SettlementFence.png-e64ba56f189846c87441ac2d27fab141.etc2.ctex::
+town_center_age2_Building G SettlementAge2.png::CompressedTexture2D::238135595011719791::1795783769::1795783827::1::::<><><>0<>0<>1e518a1edaa987e1a850447a25916bbf<>res://.godot/imported/town_center_age2_Building G SettlementAge2.png-93eec436b0e3d190ea08c899d5d29e2f.s3tc.ctex<*>res://.godot/imported/town_center_age2_Building G SettlementAge2.png-93eec436b0e3d190ea08c899d5d29e2f.etc2.ctex::
+town_center_age2_Building Attachments.png::CompressedTexture2D::1775089811370956611::1795783769::1795783827::1::::<><><>0<>0<>6117eacf84d02138becdfaeba9723d9f<>res://.godot/imported/town_center_age2_Building Attachments.png-e113d8e79c0d6a1fa198cc789c2ff41c.s3tc.ctex<*>res://.godot/imported/town_center_age2_Building Attachments.png-e113d8e79c0d6a1fa198cc789c2ff41c.etc2.ctex::
+town_center_age1_Building G SettlementFence.png::CompressedTexture2D::759570914663456635::1795783765::1795783827::1::::<><><>0<>0<>51f4d950a87cdcd80b74cb982e89e2f9<>res://.godot/imported/town_center_age1_Building G SettlementFence.png-7c930026d7dda855f1f0dfb6a80029a3.s3tc.ctex<*>res://.godot/imported/town_center_age1_Building G SettlementFence.png-7c930026d7dda855f1f0dfb6a80029a3.etc2.ctex::
+town_center_age1_Building G SettlementAge1.png::CompressedTexture2D::6408885492487923259::1795783765::1795783827::1::::<><><>0<>0<>8e4c134616b81656dc09ff883a3bbc8a<>res://.godot/imported/town_center_age1_Building G SettlementAge1.png-3b10dee785d88d26f751e458ad6299b4.s3tc.ctex<*>res://.godot/imported/town_center_age1_Building G SettlementAge1.png-3b10dee785d88d26f751e458ad6299b4.etc2.ctex::
+town_center_age1_Building Attachments.png::CompressedTexture2D::4261686109772326100::1795783765::1795783827::1::::<><><>0<>0<>4a7d7a3d0951789337079bf478dfe6d5<>res://.godot/imported/town_center_age1_Building Attachments.png-42ba12b81fafe5887c4f8b7c2b72549f.s3tc.ctex<*>res://.godot/imported/town_center_age1_Building Attachments.png-42ba12b81fafe5887c4f8b7c2b72549f.etc2.ctex::
+town_center_age1.glb::PackedScene::3203632827916192583::1795783567::1795783768::1::::<><><>0<>0<>54fb8f334452bb93b712432bc7b45288<>res://.godot/imported/town_center_age1.glb-87b9d4bf731aa6831e047964df05a4bd.scn::uid://k27a0oj1h71p::::res://models/civilizations/greek/cidade/town_center/town_center_age1_Building G SettlementFence.png<>uid://b1ynl22ud4adw::::res://models/civilizations/greek/cidade/town_center/town_center_age1_Building Attachments.png<>uid://cxkrn4kxn0ow6::::res://models/civilizations/greek/cidade/town_center/town_center_age1_Building G SettlementAge1.png
+town_center_age2.glb::PackedScene::3460134215112032935::1795783567::1795783772::1::::<><><>0<>0<>851869a846530f35ede511859f3b9057<>res://.godot/imported/town_center_age2.glb-bcc73149e5ec06d414b3516c530642f9.scn::uid://dy2sg7qsarhun::::res://models/civilizations/greek/cidade/town_center/town_center_age2_Building G SettlementFence.png<>uid://0j4p8e7xjk8b::::res://models/civilizations/greek/cidade/town_center/town_center_age2_Building Attachments.png<>uid://dnmb8tvi2hp4::::res://models/civilizations/greek/cidade/town_center/town_center_age2_Building G SettlementAge2.png
+town_center_age3.glb::PackedScene::7693398179173810004::1795783567::1795783777::1::::<><><>0<>0<>dbc4e4f0454cd01a560f04d6ca8c4e04<>res://.godot/imported/town_center_age3.glb-0012fdff9c5a8cc9da6b992aadb639d2.scn::uid://bmv855ae5urk4::::res://models/civilizations/greek/cidade/town_center/town_center_age3_Building G SettlementFence.png<>uid://bxejjmgo1cd6k::::res://models/civilizations/greek/cidade/town_center/town_center_age3_Building Attachments.png<>uid://cyyyloilvguqo::::res://models/civilizations/greek/cidade/town_center/town_center_age3_Building G SettlementAge3.png
+town_center_age4.glb::PackedScene::9069245866852386550::1795783567::1795783782::1::::<><><>0<>0<>ea7e2d4eecc5f326121581f2049e0bff<>res://.godot/imported/town_center_age4.glb-e4608dcf0524c448d6d25352d6386dbf.scn::uid://d377625driitx::::res://models/civilizations/greek/cidade/town_center/town_center_age4_Building Attachments.png<>uid://d1l10jkj84d8j::::res://models/civilizations/greek/cidade/town_center/town_center_age4_Building G SettlementAge3.png<>uid://bg6nq7882qa70::::res://models/civilizations/greek/cidade/town_center/town_center_age4_Building G Fortress.png<>uid://f70s7mv4wd4e::::res://models/civilizations/greek/cidade/town_center/town_center_age4_Building G FortressRoof.png
+town_center_base.glb::PackedScene::6543696795711071100::1795783567::1795783786::1::::<><><>0<>0<>8aaa6b8d7dedf34f4e63b0c18dd04e04<>res://.godot/imported/town_center_base.glb-8d80a8dfe4111bd3401c607c06153fee.scn::uid://cu3rf4maos73d::::res://models/civilizations/greek/cidade/town_center/town_center_base_Building G SettlementFence.png<>uid://cvm03fqr3sx8x::::res://models/civilizations/greek/cidade/town_center/town_center_base_Building Attachments.png<>uid://cb46csal7t205::::res://models/civilizations/greek/cidade/town_center/town_center_base_Building G SettlementAge1.png
+::res://models/civilizations/greek/cidade/town_center/textures/::1795783567
+building_attachments.png::CompressedTexture2D::6627335208651179811::1795783567::1795783763::1::::<><><>0<>0<>38d30e876f23f6530e901c3d2c5bd480<>res://.godot/imported/building_attachments.png-4541ba431a25df6a1ae47f82fce4b397.ctex::
+building_g_fortress.png::CompressedTexture2D::747270389964848538::1795783567::1795783763::1::::<><><>0<>0<>7dd84f8bb840ee0dad1e6bd353e64ffe<>res://.godot/imported/building_g_fortress.png-54ee93595aff39b0061fc15a787db7ca.ctex::
+building_g_fortressroof.png::CompressedTexture2D::7453104092460438758::1795783567::1795783763::1::::<><><>0<>0<>2c0d3f94873e6c986adf74ff48e2c22b<>res://.godot/imported/building_g_fortressroof.png-3584cba589ca97d0cb7e643ca4468651.ctex::
+building_g_settlementage1.png::CompressedTexture2D::1638281250560952362::1795783567::1795783763::1::::<><><>0<>0<>14b84fc7b1cf76481f42b6c06be8f183<>res://.godot/imported/building_g_settlementage1.png-35270f20aac8393707de83b90447de7c.ctex::
+building_g_settlementage2.png::CompressedTexture2D::521872314682958745::1795783567::1795783763::1::::<><><>0<>0<>8888f8a2470b566fd0fa5b3548c6d071<>res://.godot/imported/building_g_settlementage2.png-ef57b4a878a6027226d1f6d210398ee6.ctex::
+building_g_settlementage3.png::CompressedTexture2D::4218184411409145725::1795783567::1795783763::1::::<><><>0<>0<>d0d28271d1998cab3aa5c2db93d7ce57<>res://.godot/imported/building_g_settlementage3.png-d62edc6f70a86e38f2d026c223bf06b9.ctex::
+building_g_settlementfence.png::CompressedTexture2D::2633054499178478410::1795783567::1795783763::1::::<><><>0<>0<>b7c29ff67ada8c7a689ea0f2f99658ba<>res://.godot/imported/building_g_settlementfence.png-37c9195a345645a02b5237aca26de47d.ctex::
 ::res://models/civilizations/greek/cinematic_trees/::1795642657
 cinematic_trees_base.glb::PackedScene::205091466534264740::1795641553::1795642657::1::::<><><>0<>0<>ceb9d890ab73fb1ad5af24b04cc7558d<>res://.godot/imported/cinematic_trees_base.glb-f98482a5206ccb74b3e72f125e6bd7b2.scn::uid://caevf0dn1p8hb::::res://models/civilizations/greek/cinematic_trees/cinematic_trees_base_World G Oak Cinematic map.png
 cinematic_trees_base_World G Oak Cinematic map.png::CompressedTexture2D::4782384182564261483::1795642656::1795642657::1::::<><><>0<>0<>8e061cfb52c7c2cc1a0367ea910f7856<>res://.godot/imported/cinematic_trees_base_World G Oak Cinematic map.png-59046ecedac95b54308c48055b864f7c.ctex::
@@ -6433,8 +6462,10 @@ idle_special g colossus sword.png::CompressedTexture2D::8803238530394018073::179
 walk.glb::PackedScene::2197404885650944853::1795641554::1795642655::1::::<><><>0<>0<>a9b640e571fec9969d5aa3857e651aaf<>res://.godot/imported/walk.glb-994970e9d619473345a6fe7450e0b7f3.scn::uid://drobimcc4fx7h::::res://models/civilizations/greek/colossus/animations/walk_special g colossus sword.png<>uid://c8mbkosn6fijg::::res://models/civilizations/greek/colossus/animations/walk_Special G Colossus map.png
 walk_Special G Colossus map.png::CompressedTexture2D::7113925079187478032::1795642655::1795642655::1::::<><><>0<>0<>b5cb7159896e095ee0ba6fcf57c131df<>res://.godot/imported/walk_Special G Colossus map.png-d2175ac404c847fd5118ebbc1ee8e0f7.ctex::
 walk_special g colossus sword.png::CompressedTexture2D::8381449318326355547::1795642655::1795642655::1::::<><><>0<>0<>fdfe08939165fc06b4f9e06172df0fb6<>res://.godot/imported/walk_special g colossus sword.png-3df0949ec275fb8e0c58008cd643dc6f.ctex::
-::res://models/civilizations/greek/colossus/textures/::1795641594
-special_g_colossus_map.png::CompressedTexture2D::8449190481032960963::1795641554::1795641594::1::::<><><>0<>0<>53c5aae62ca3672e110f215800514d2a<>res://.godot/imported/special_g_colossus_map.png-21e244df37c0c24271471ffabf981b8b.ctex::
+::res://models/civilizations/greek/colossus/textures/::1795783567
+special_g_colossus_map.png::CompressedTexture2D::8449190481032960963::1795783567::1795783764::1::::<><><>0<>0<>53c5aae62ca3672e110f215800514d2a<>res://.godot/imported/special_g_colossus_map.png-21e244df37c0c24271471ffabf981b8b.ctex::
+special_g_colossus_map_emissive.png::CompressedTexture2D::8492337557812125843::1795783567::1795783763::1::::<><><>0<>0<>fe8858a9442b15e14b77c8d8dea39905<>res://.godot/imported/special_g_colossus_map_emissive.png-07b55dfc79e0af035178d5015b068827.ctex::
+special_g_colossus_map_normal.png::CompressedTexture2D::1589278026433810399::1795783567::1795783763::1::::<><><>0<>0<>f70dbef0775bbf447a5f16abc02c5a2c<>res://.godot/imported/special_g_colossus_map_normal.png-6f107703a8cacc05e6b764fc3fbc7e97.ctex::
 special_g_colossus_sword.png::CompressedTexture2D::4566646319887197874::1795641554::1795641594::1::::<><><>0<>0<>994c0ce12ea5c2716d5fcbd6a57f4f2c<>res://.godot/imported/special_g_colossus_sword.png-b236affffe8bc26d0bd7b78a8fe98122.ctex::
 ::res://models/civilizations/greek/contarius/::1795642653
 contarius_base.glb::PackedScene::2521200407348643000::1795641554::1795642653::1::::<><><>0<>0<>426c7f05add75984c779a096a06d0efb<>res://.godot/imported/contarius_base.glb-68842823126fe57b596f48917e901ac5.scn::uid://33ssyq37a8i0::::res://models/civilizations/greek/contarius/contarius_base_Cavalry G Hippikon Standard.png<>uid://bxp166ccpkhv0::::res://models/civilizations/greek/contarius/contarius_base_Cavalry G Hippikon Horse Standard.png<>uid://bbrkpydgmgmbj::::res://models/civilizations/greek/contarius/contarius_base_Cavalry G Hippikon Cape.png
@@ -7122,31 +7153,31 @@ walk.glb::PackedScene::7089209279872219041::1795641566::1795641982::1::::<><><>0
 walk_Special G Hippocampus.png::CompressedTexture2D::8751130937668514555::1795641980::1795641980::1::::<><><>0<>0<>837919c48b9f14b1dcd7e282e3fdd7bf<>res://.godot/imported/walk_Special G Hippocampus.png-f3c732d1942c576766a54bfd770bf97c.ctex::
 ::res://models/civilizations/greek/hippocampus/textures/::1795641596
 special_g_hippocampus.png::CompressedTexture2D::2544244169406225113::1795641566::1795641596::1::::<><><>0<>0<>1651529ffef1cccf15e3f640436a3e81<>res://.godot/imported/special_g_hippocampus.png-9808ffabb6e6e164f2e56094badf2555.ctex::
-::res://models/civilizations/greek/hoplite/::1795641767
-hoplite_base.glb::PackedScene::4234423801563727617::1795641566::1795641767::1::::<><><>0<>0<>e49a23b9a2f6ed67e1eecf89389b89bf<>res://.godot/imported/hoplite_base.glb-ae7329b744c2419c3f2b5785226e1485.scn::
-hoplite_base_Infantry G Hoplite Standard.png::CompressedTexture2D::5623993258948977552::1795641766::1795641766::1::::<><><>0<>0<>293c9a02b52ddaab9032b6d59e0dcf21<>res://.godot/imported/hoplite_base_Infantry G Hoplite Standard.png-34a0d65484346e1e7eef04cde6506085.ctex::
+::res://models/civilizations/greek/hoplite/::1795783568
+hoplite_base.glb::PackedScene::4234423801563727617::1795783568::1795783783::1::::<><><>0<>0<>e49a23b9a2f6ed67e1eecf89389b89bf<>res://.godot/imported/hoplite_base.glb-ae7329b744c2419c3f2b5785226e1485.scn::uid://cmekl2qioak5m::::res://models/civilizations/greek/hoplite/hoplite_base_Infantry G Hoplite Standard.png
+hoplite_base_Infantry G Hoplite Standard.png::CompressedTexture2D::5623993258948977552::1795783568::1795783826::1::::<><><>0<>0<>aea88bdfcf90403ed0e16521f67e9cba<>res://.godot/imported/hoplite_base_Infantry G Hoplite Standard.png-34a0d65484346e1e7eef04cde6506085.s3tc.ctex<*>res://.godot/imported/hoplite_base_Infantry G Hoplite Standard.png-34a0d65484346e1e7eef04cde6506085.etc2.ctex::
 manifest.json::JSON::-1::1795641566::0::1::::<><><>0<>0<><>::
-::res://models/civilizations/greek/hoplite/accessories/::1795641993
-attachments_a_spear_copper.glb::PackedScene::3538164637821780756::1795641566::1795641989::1::::<><><>0<>0<>f6c69fc888747c7a4c669a0131565b8c<>res://.godot/imported/attachments_a_spear_copper.glb-526c537d6e177f401f96b263c2729b13.scn::
-attachments_a_spear_copper_Attachments A Spear Copper.png::CompressedTexture2D::2156470661173368620::1795641988::1795641988::1::::<><><>0<>0<>a5f647d9e4f5377e36f08ba4f1675c4a<>res://.godot/imported/attachments_a_spear_copper_Attachments A Spear Copper.png-d1cd4e7c6afe25c9349bb6eb748bc539.ctex::
-attachments_g_shield_large_copper.glb::PackedScene::8421830515490036786::1795641566::1795641991::1::::<><><>0<>0<>41cc8377d85f6d39756667285b6ad4a9<>res://.godot/imported/attachments_g_shield_large_copper.glb-9097d21cef814d69e1eb14a4e7df7de0.scn::
-attachments_g_shield_large_copper_Attachments G Shield Copper.png::CompressedTexture2D::3858958518618478209::1795641990::1795641990::1::::<><><>0<>0<>7074e0ee92acac422cd2ef31a229e1d6<>res://.godot/imported/attachments_g_shield_large_copper_Attachments G Shield Copper.png-de1d98babc9f3cae707eabd3fe36317d.ctex::
-infantry_g_hoplite_head_standard.glb::PackedScene::2793323426800810993::1795641566::1795641993::1::::<><><>0<>0<>9aae56e8c274a2d5eb29d9d2507d4287<>res://.godot/imported/infantry_g_hoplite_head_standard.glb-b0d0d26edc14b98d32232bc5d9faa3dd.scn::
-infantry_g_hoplite_head_standard_Infantry G Hoplite Head Standard.png::CompressedTexture2D::1662704670839363346::1795641991::1795641992::1::::<><><>0<>0<>5c332124a77f8088826cb2eb0b19a8b1<>res://.godot/imported/infantry_g_hoplite_head_standard_Infantry G Hoplite Head Standard.png-50bb9b111601d2584fefe1dde0969163.ctex::
-::res://models/civilizations/greek/hoplite/animations/::1795641660
-attack.glb::PackedScene::1404819706099587375::1795641566::1795641660::1::::<><><>0<>0<>e6727e984b66cb79c79d71e73fd6295c<>res://.godot/imported/attack.glb-3e232a2ad11dcb5138ff0f3eb6b3816f.scn::
-attack_Infantry G Hoplite Standard.png::CompressedTexture2D::5031219010530012584::1795641656::1795641656::1::::<><><>0<>0<>40e8623678ab6a0110bf496a66489a4b<>res://.godot/imported/attack_Infantry G Hoplite Standard.png-0507778f776a69a2a09241436f2f5473.ctex::
-death.glb::PackedScene::1607270572301707174::1795641566::1795641617::1::::<><><>0<>0<>7e7356144b85c8017ac2b696f70cf51e<>res://.godot/imported/death.glb-5aef29a55284e0e7ee308b6f46e9dc7e.scn::
-death_Infantry G Hoplite Standard.png::CompressedTexture2D::5012095464575175881::1795641613::1795641614::1::::<><><>0<>0<>9bbed88a42f7b4b6d5c8389cf2ab5fb5<>res://.godot/imported/death_Infantry G Hoplite Standard.png-9fd20db0da537396a399146edc24cd7a.ctex::
-idle.glb::PackedScene::907661517202447149::1795641566::1795641632::1::::<><><>0<>0<>2dc8dbddbd3614ebefe2a1ef63f1b49e<>res://.godot/imported/idle.glb-f33abb511467fa38c701fa2c9d54d29c.scn::
-idle_Infantry G Hoplite Standard.png::CompressedTexture2D::2661848867786233696::1795641628::1795641628::1::::<><><>0<>0<>a7f17d5e23559103cbe387036d2cda65<>res://.godot/imported/idle_Infantry G Hoplite Standard.png-98ef55a6f87b2d6c8fe973aa8acd4f34.ctex::
-walk.glb::PackedScene::8436106631674785812::1795641566::1795641636::1::::<><><>0<>0<>70a2c79e41080e3418595e1b01e998a5<>res://.godot/imported/walk.glb-4f1f48ad6bb70439518aef52f8db3ff3.scn::
-walk_Infantry G Hoplite Standard.png::CompressedTexture2D::3178528245956193270::1795641632::1795641632::1::::<><><>0<>0<>e1d502589db2981121f80dfd32c96b7d<>res://.godot/imported/walk_Infantry G Hoplite Standard.png-2bf869e2c7b8d09f02c0b35c3d688fbc.ctex::
-::res://models/civilizations/greek/hoplite/textures/::1795641596
+::res://models/civilizations/greek/hoplite/accessories/::1795783568
+attachments_a_spear_copper.glb::PackedScene::3538164637821780756::1795783567::1795783780::1::::<><><>0<>0<>f6c69fc888747c7a4c669a0131565b8c<>res://.godot/imported/attachments_a_spear_copper.glb-526c537d6e177f401f96b263c2729b13.scn::uid://5yu0y1lffvlk::::res://models/civilizations/greek/hoplite/accessories/attachments_a_spear_copper_Attachments A Spear Copper.png
+attachments_a_spear_copper_Attachments A Spear Copper.png::CompressedTexture2D::2156470661173368620::1795641988::1795783827::1::::<><><>0<>0<>37d729d6e9b395831125caa2259884b3<>res://.godot/imported/attachments_a_spear_copper_Attachments A Spear Copper.png-d1cd4e7c6afe25c9349bb6eb748bc539.s3tc.ctex<*>res://.godot/imported/attachments_a_spear_copper_Attachments A Spear Copper.png-d1cd4e7c6afe25c9349bb6eb748bc539.etc2.ctex::
+attachments_g_shield_large_copper.glb::PackedScene::8421830515490036786::1795783568::1795783774::1::::<><><>0<>0<>41cc8377d85f6d39756667285b6ad4a9<>res://.godot/imported/attachments_g_shield_large_copper.glb-9097d21cef814d69e1eb14a4e7df7de0.scn::uid://bu8kqol4j503f::::res://models/civilizations/greek/hoplite/accessories/attachments_g_shield_large_copper_Attachments G Shield Copper.png
+attachments_g_shield_large_copper_Attachments G Shield Copper.png::CompressedTexture2D::3858958518618478209::1795641990::1795783827::1::::<><><>0<>0<>18d3b5fe7801c5a44ffe4762ad3e8882<>res://.godot/imported/attachments_g_shield_large_copper_Attachments G Shield Copper.png-de1d98babc9f3cae707eabd3fe36317d.s3tc.ctex<*>res://.godot/imported/attachments_g_shield_large_copper_Attachments G Shield Copper.png-de1d98babc9f3cae707eabd3fe36317d.etc2.ctex::
+infantry_g_hoplite_head_standard.glb::PackedScene::2793323426800810993::1795783568::1795783765::1::::<><><>0<>0<>9aae56e8c274a2d5eb29d9d2507d4287<>res://.godot/imported/infantry_g_hoplite_head_standard.glb-b0d0d26edc14b98d32232bc5d9faa3dd.scn::uid://xxordqdcf347::::res://models/civilizations/greek/hoplite/accessories/infantry_g_hoplite_head_standard_Infantry G Hoplite Head Standard.png
+infantry_g_hoplite_head_standard_Infantry G Hoplite Head Standard.png::CompressedTexture2D::1662704670839363346::1795641991::1795783827::1::::<><><>0<>0<>ed4477c3d08d48eb1fba305df9bef831<>res://.godot/imported/infantry_g_hoplite_head_standard_Infantry G Hoplite Head Standard.png-50bb9b111601d2584fefe1dde0969163.s3tc.ctex<*>res://.godot/imported/infantry_g_hoplite_head_standard_Infantry G Hoplite Head Standard.png-50bb9b111601d2584fefe1dde0969163.etc2.ctex::
+::res://models/civilizations/greek/hoplite/animations/::1795783568
+attack.glb::PackedScene::1404819706099587375::1795783568::1795783769::1::::<><><>0<>0<>e6727e984b66cb79c79d71e73fd6295c<>res://.godot/imported/attack.glb-3e232a2ad11dcb5138ff0f3eb6b3816f.scn::uid://cdxfpa8w12bqm::::res://models/civilizations/greek/hoplite/animations/attack_Infantry G Hoplite Standard.png
+attack_Infantry G Hoplite Standard.png::CompressedTexture2D::5031219010530012584::1795641656::1795783827::1::::<><><>0<>0<>ab9b5cb59f1d9f1d488df46a92ffb127<>res://.godot/imported/attack_Infantry G Hoplite Standard.png-0507778f776a69a2a09241436f2f5473.s3tc.ctex<*>res://.godot/imported/attack_Infantry G Hoplite Standard.png-0507778f776a69a2a09241436f2f5473.etc2.ctex::
+death.glb::PackedScene::1607270572301707174::1795783568::1795783773::1::::<><><>0<>0<>7e7356144b85c8017ac2b696f70cf51e<>res://.godot/imported/death.glb-5aef29a55284e0e7ee308b6f46e9dc7e.scn::uid://cdn5qk56amum8::::res://models/civilizations/greek/hoplite/animations/death_Infantry G Hoplite Standard.png
+death_Infantry G Hoplite Standard.png::CompressedTexture2D::5012095464575175881::1795641613::1795783827::1::::<><><>0<>0<>7d74a8e310b9b31f867a6a9308f028dd<>res://.godot/imported/death_Infantry G Hoplite Standard.png-9fd20db0da537396a399146edc24cd7a.s3tc.ctex<*>res://.godot/imported/death_Infantry G Hoplite Standard.png-9fd20db0da537396a399146edc24cd7a.etc2.ctex::
+idle.glb::PackedScene::907661517202447149::1795783568::1795783775::1::::<><><>0<>0<>2dc8dbddbd3614ebefe2a1ef63f1b49e<>res://.godot/imported/idle.glb-f33abb511467fa38c701fa2c9d54d29c.scn::uid://bd6oi520fky85::::res://models/civilizations/greek/hoplite/animations/idle_Infantry G Hoplite Standard.png
+idle_Infantry G Hoplite Standard.png::CompressedTexture2D::2661848867786233696::1795641628::1795783827::1::::<><><>0<>0<>e3a2f627c8494eab993a39b0ce40b609<>res://.godot/imported/idle_Infantry G Hoplite Standard.png-98ef55a6f87b2d6c8fe973aa8acd4f34.s3tc.ctex<*>res://.godot/imported/idle_Infantry G Hoplite Standard.png-98ef55a6f87b2d6c8fe973aa8acd4f34.etc2.ctex::
+walk.glb::PackedScene::8436106631674785812::1795783568::1795783779::1::::<><><>0<>0<>70a2c79e41080e3418595e1b01e998a5<>res://.godot/imported/walk.glb-4f1f48ad6bb70439518aef52f8db3ff3.scn::uid://bljx5ptnlnnf7::::res://models/civilizations/greek/hoplite/animations/walk_Infantry G Hoplite Standard.png
+walk_Infantry G Hoplite Standard.png::CompressedTexture2D::3178528245956193270::1795641632::1795783827::1::::<><><>0<>0<>d3f6c4ee6b520d2eaad472e6414f6ea6<>res://.godot/imported/walk_Infantry G Hoplite Standard.png-2bf869e2c7b8d09f02c0b35c3d688fbc.s3tc.ctex<*>res://.godot/imported/walk_Infantry G Hoplite Standard.png-2bf869e2c7b8d09f02c0b35c3d688fbc.etc2.ctex::
+::res://models/civilizations/greek/hoplite/textures/::1795783568
 attachments_a_spear_copper.png::CompressedTexture2D::2442538079309827676::1795641566::1795641596::1::::<><><>0<>0<>33d0c622a18f063d7054fa10b810f90f<>res://.godot/imported/attachments_a_spear_copper.png-ca3834e218819e54882fc3e1042c7d9a.ctex::
 attachments_g_shield_copper.png::CompressedTexture2D::6804046472914707735::1795641566::1795641596::1::::<><><>0<>0<>fb3a442d3f6856839d207cb066d1088e<>res://.godot/imported/attachments_g_shield_copper.png-75dff977119b36c133d1d3f069a53908.ctex::
 infantry_g_hoplite_head_standard.png::CompressedTexture2D::26141825489533773::1795641566::1795641596::1::::<><><>0<>0<>196b74b86247f3e52a8f676d7b54843e<>res://.godot/imported/infantry_g_hoplite_head_standard.png-99b240d60fa1859f9934ea44b0ac9bad.ctex::
-infantry_g_hoplite_standard.png::CompressedTexture2D::1369533374629771264::1795641566::1795641596::1::::<><><>0<>0<>74b9ad44d136e5f68016008a500c39cb<>res://.godot/imported/infantry_g_hoplite_standard.png-f7efd4ff467fe3203abaa2f31e75f6a2.ctex::
+infantry_g_hoplite_standard.png::CompressedTexture2D::1369533374629771264::1795783568::1795783763::1::::<><><>0<>0<>74b9ad44d136e5f68016008a500c39cb<>res://.godot/imported/infantry_g_hoplite_standard.png-f7efd4ff467fe3203abaa2f31e75f6a2.ctex::
 ::res://models/civilizations/greek/hydra/::1795641790
 hydra_base.glb::PackedScene::6527254071082740299::1795641567::1795641790::1::::<><><>0<>0<>b7752a1353c24cdc81954be2162379be<>res://.godot/imported/hydra_base.glb-9aae555a2b16b112717c4c4d6fdc2fae.scn::
 hydra_base_Special G Hydra Land.png::CompressedTexture2D::8471870628876581299::1795641789::1795641789::1::::<><><>0<>0<>82eec2d092aaf4cb60d7549aaa8ed2ec<>res://.godot/imported/hydra_base_Special G Hydra Land.png-36d5ca21740fa7774cff97e6b183ffa7.ctex::
@@ -9982,9 +10013,9 @@ low_poly_forest_tree_pack_15.png::CompressedTexture2D::6714793756723757101::1795
 low_poly_forest_tree_pack_16.png::CompressedTexture2D::8999651820281402588::1795625098::1795642592::1::::<><><>0<>0<>2ba1199c2f069742f942b9d2b5223819<>res://.godot/imported/low_poly_forest_tree_pack_16.png-f3dc439d94d7dde08abab83261a1fe60.s3tc.ctex<*>res://.godot/imported/low_poly_forest_tree_pack_16.png-f3dc439d94d7dde08abab83261a1fe60.etc2.ctex::
 mixamo_bonemap.tres::BoneMap::-1::1795625098::0::1::::<><><>0<>0<><>::
 villager.glb::PackedScene::6506921733747290270::1795625098::1795642726::1::::<><><>0<>0<>dff1e690aac9ba377b0090eb1e6385c3<>res://.godot/imported/villager.glb-0cd15eb8dbbfbcb3ace0b91dd69b9170.scn::
-::res://scenes/::1795648027
+::res://scenes/::1795783568
 battle_screen.tscn::PackedScene::-1::1795639334::0::1::::<><><>0<>0<><>::res://scripts/ui/battle_hud.gd
-galeria_olympus.tscn::PackedScene::-1::1795640367::0::1::::<><><>0<>0<><>::res://scripts/ui/galeria_olympus.gd<>res://scripts/ui/galeria_3d_stage.gd<>res://scripts/ui/galeria_model_loader.gd<>res://scripts/ui/galeria_filter_bar.gd<>res://scripts/ui/galeria_detail_panel.gd<>res://themes/gallery_env.tres
+galeria_olympus.tscn::PackedScene::-1::1795783568::0::1::::<><><>0<>0<><>::res://scripts/ui/galeria_olympus.gd<>res://scripts/ui/galeria_3d_stage.gd<>res://scripts/ui/galeria_model_loader.gd<>res://scripts/ui/galeria_filter_bar.gd<>res://scripts/ui/galeria_detail_panel.gd<>res://themes/gallery_env.tres
 game_ui_panel.tscn::PackedScene::4721565459013989489::1795648027::0::1::::<><><>0<>0<><>::res://scripts/ui/game_ui_panel.gd
 main.tscn::PackedScene::6117981895275864416::1795625098::0::1::::<><><>0<>0<><>::uid://bpkxusuaqrk2e::::res://scripts/world/battle_world.gd<>uid://dss2f6q0qxrgh::::res://scripts/world/touch_rts_camera.gd<>uid://cq4jvjmm1ekug::::res://scripts/world/selection_controller.gd<>uid://dcxae8xnfjj6o::::res://scripts/ui/mobile_hud.gd<>uid://b6471q2e4qtyo::::res://scripts/world/fog_of_war.gd<>uid://b04ajjdtqjvmb::::res://scripts/ai/enemy_ai_controller.gd<>uid://cibvnq7hgk8h8::::res://scripts/divine/divine_power_system.gd<>uid://kghm5lbpo20h::::res://scripts/campaign/campaign_manager.gd
 title_screen.tscn::PackedScene::3139738399415653238::1795625098::0::1::::<><><>0<>0<><>::res://scripts/ui/title_screen.gd<>res://themes/rts_fantasy_theme.tres
@@ -10000,14 +10031,14 @@ enemy_ai_controller.gd::GDScript::4201025279886385621::1795625098::0::1::::Enemy
 olympus_animation_director.gd::GDScript::2597136523037525355::1795625098::0::1::::<>Node<><>0<>0<><>::
 ::res://scripts/audio/::1795625098
 audio_director.gd::GDScript::2224084533585810421::1795625098::0::1::::<>Node<><>0<>0<><>::
-::res://scripts/autoload/::1795625098
-game_state.gd::GDScript::9078855644320287741::1795625098::0::1::::<>Node<><>0<>0<><>::
-model_library.gd::GDScript::8872440178132609540::1795625098::0::1::::<>Node<><>0<>0<><>::
+::res://scripts/autoload/::1795783568
+game_state.gd::GDScript::9078855644320287741::1795725051::0::1::::<>Node<><>0<>0<><>::
+model_library.gd::GDScript::8872440178132609540::1795783568::0::1::::<>Node<><>0<>0<><>::
 olympus_codex.gd::GDScript::4988267455083378730::1795625098::0::1::::<>Node<><>0<>0<><>::
 olympus_locale_catalog.gd::GDScript::685488177374605440::1795625098::0::1::::OlympusLocaleCatalog<>RefCounted<><>0<>0<><>::
 olympus_profile_manager.gd::GDScript::3208473187012829112::1795625098::0::1::::<>Node<><>0<>0<><>::
 olympus_unit_catalog.gd::GDScript::6848493547898843811::1795625098::0::1::::<>Node<><>0<>0<><>::
-pantheon_catalog.gd::GDScript::4199182008307382373::1795625098::0::1::::<>Node<><>0<>0<><>::
+pantheon_catalog.gd::GDScript::4199182008307382373::1795724926::0::1::::<>Node<><>0<>0<><>::
 save_load_system.gd::GDScript::2946763357227479365::1795625098::0::1::::<>Node<><>0<>0<><>::
 ::res://scripts/campaign/::1795625098
 campaign_manager.gd::GDScript::714722744140322181::1795625098::0::1::::CampaignManager<>Node<><>0<>0<><>::
@@ -10026,8 +10057,8 @@ olympus_startup_config.gd::GDScript::6306897213344699779::1795625098::0::1::::Ol
 divine_power_catalog.gd::GDScript::8296889190229547418::1795625098::0::1::::DivinePowerCatalog<>RefCounted<><>0<>0<><>::
 divine_power_system.gd::GDScript::5337715656547221411::1795625098::0::1::::DivinePowerSystem<>Node3D<><>0<>0<><>::
 olympus_relic_catalog.gd::GDScript::9067927711245669531::1795625098::0::1::::<>Node<><>0<>0<><>::
-::res://scripts/entities/::1795625098
-building_actor.gd::GDScript::8874433877010218493::1795625098::0::1::::BuildingActor<>StaticBody3D<><>0<>0<><>::
+::res://scripts/entities/::1795783568
+building_actor.gd::GDScript::8874433877010218493::1795783568::0::1::::BuildingActor<>StaticBody3D<><>0<>0<><>::
 olympus_combat_matrix.gd::GDScript::4455275747477736899::1795625098::0::1::::OlympusCombatMatrix<>RefCounted<><>0<>0<><>::
 projectile_actor.gd::GDScript::5291192746108807099::1795625098::0::1::::ProjectileActor<>Node3D<><>0<>0<><>::
 resource_node.gd::GDScript::1272738359117210077::1795625098::0::1::::ResourceNode<>StaticBody3D<><>0<>0<><>::
@@ -10036,27 +10067,27 @@ unit_actor.gd::GDScript::5536581258730129117::1795625098::0::1::::UnitActor<>Cha
 multiplayer_manager.gd::GDScript::3779038874927115871::1795625098::0::1::::<>Node<><>0<>0<><>::
 ::res://scripts/optimization/::1795625098
 lod_controller.gd::GDScript::5317443346341456124::1795625098::0::1::::LODController<>RefCounted<><>0<>0<><>::
-::res://scripts/pipeline/::1795637910
+::res://scripts/pipeline/::1795783568
 ::res://scripts/pipeline/__pycache__/::1795637910
 ::res://scripts/pipeline/_legacy/::1795625098
 ::res://scripts/rules/::1795625098
 olympus_victory_rules.gd::GDScript::4221017714302777932::1795625098::0::1::::OlympusVictoryRules<>Node<><>0<>0<><>::
 ::res://scripts/tools/::1795625098
-::res://scripts/ui/::1795648414
+::res://scripts/ui/::1795783568
 battle_hud.gd::GDScript::2146678917979848070::1795625098::0::1::::<>Control<><>0<>0<><>::
 cursor_manager.gd::GDScript::3468767164661344095::1795625098::0::1::::<>Node<><>0<>0<><>::
-galeria_3d_stage.gd::GDScript::6778869397728581957::1795640808::0::1::::Galeria3DStage<>Node3D<><>0<>0<><>::
-galeria_detail_panel.gd::GDScript::2293839252150768111::1795639397::0::1::::GaleriaDetailPanel<>Control<><>0<>0<><>::
-galeria_filter_bar.gd::GDScript::2076119272295901142::1795640006::0::1::::GaleriaFilterBar<>Control<><>0<>0<><>::
-galeria_model_loader.gd::GDScript::1393251971070331576::1795640096::0::1::::GaleriaModelLoader<>Node<><>0<>0<><>::
-galeria_olympus.gd::GDScript::7150706311359794762::1795640280::0::1::::GaleriaOlympus<>CanvasLayer<><>0<>0<><>::
+galeria_3d_stage.gd::GDScript::6778869397728581957::1795783568::0::1::::Galeria3DStage<>SubViewportContainer<><>0<>0<><>::
+galeria_detail_panel.gd::GDScript::2293839252150768111::1795701896::0::1::::GaleriaDetailPanel<>Control<><>0<>0<><>::
+galeria_filter_bar.gd::GDScript::2076119272295901142::1795783568::0::1::::GaleriaFilterBar<>Control<><>0<>0<><>::
+galeria_model_loader.gd::GDScript::1393251971070331576::1795783568::0::1::::GaleriaModelLoader<>Node<><>0<>0<><>::
+galeria_olympus.gd::GDScript::7150706311359794762::1795700596::0::1::::GaleriaOlympus<>CanvasLayer<><>0<>0<><>::
 game_ui_panel.gd::GDScript::544786666144356373::1795648414::0::1::::<>Control<><>0<>0<><>::
-mobile_hud.gd::GDScript::7347129339273126088::1795625098::0::1::::MobileHUD<>CanvasLayer<><>0<>0<><>::
+mobile_hud.gd::GDScript::7347129339273126088::1795783568::0::1::::MobileHUD<>CanvasLayer<><>0<>0<><>::
 olympus_cinematic_player.gd::GDScript::7550469454825271149::1795625098::0::1::::<>CanvasLayer<><>0<>0<><>::
 olympus_diorama_view.gd::GDScript::3998673441086166757::1795625098::0::1::::OlympusDioramaView<>Node3D<><>0<>0<><>::
 olympus_typography.gd::GDScript::4600809752243663375::1795625098::0::1::::OlympusTypography<>Node<><>0<>0<><>::
-tactical_minimap.gd::GDScript::1993794161360573212::1795625098::0::1::::TacticalMinimap<>Control<><>0<>0<><>::
-title_screen.gd::GDScript::1480892024044502664::1795625098::0::1::::TitleScreen<>Control<><>0<>0<><>::
+tactical_minimap.gd::GDScript::1993794161360573212::1795724113::0::1::::TacticalMinimap<>Control<><>0<>0<><>::
+title_screen.gd::GDScript::1480892024044502664::1795783568::0::1::::TitleScreen<>Control<><>0<>0<><>::
 ::res://scripts/world/::1795625098
 battle_world.gd::GDScript::3461330298854364106::1795625098::0::1::::BattleWorld<>Node3D<><>0<>0<><>::
 biome_map_generator.gd::GDScript::6854900436422711805::1795625098::0::1::::BiomeMapGenerator<>RefCounted<><>0<>0<><>::
