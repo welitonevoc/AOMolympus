@@ -34,10 +34,7 @@ static func build_biome_environment(
 	ground_mesh.subdivide_width = 16
 	ground_mesh.subdivide_depth = 16
 
-	var ground_mat := StandardMaterial3D.new()
-	ground_mat.albedo_color = biome["ground_color"]
-	ground_mat.roughness = 0.92
-	ground_mat.metallic = 0.0
+	var ground_mat: StandardMaterial3D = _make_terrain_material(biome, biome_id, map_seed)
 
 	var ground_inst := MeshInstance3D.new()
 	ground_inst.name = "TerrainMesh"
@@ -48,14 +45,7 @@ static func build_biome_environment(
 	# 2. Mar / Fiorde / Rio de Lava circundante
 	var sea_mesh := PlaneMesh.new()
 	sea_mesh.size = Vector2(arena_size * 3.5, arena_size * 3.5)
-	var sea_mat := StandardMaterial3D.new()
-	sea_mat.albedo_color = biome["water_color"]
-	sea_mat.roughness = 0.24
-	sea_mat.metallic = 0.14
-	if bool(biome.get("water_emissive", false)):
-		sea_mat.emission_enabled = true
-		sea_mat.emission = biome["water_color"]
-		sea_mat.emission_energy_multiplier = 1.45
+	var sea_mat: StandardMaterial3D = _make_water_material(biome, map_seed)
 	var sea := MeshInstance3D.new()
 	sea.name = "PerimeterWater"
 	sea.mesh = sea_mesh
@@ -148,6 +138,87 @@ static func build_biome_environment(
 		"preset": preset,
 		"resources": resource_plan,
 	}
+
+
+static func _make_terrain_material(biome: Dictionary, biome_id: String, map_seed: int) -> StandardMaterial3D:
+	var g_col: Color = biome.get("ground_color", Color("#5d7d47"))
+	var earth_col: Color = biome.get("plaza_player", Color("#8a795d")).darkened(0.25)
+	if biome_id == "nordic_tundra":
+		earth_col = Color("#7d8b96")
+	elif biome_id == "erebus_volcanic":
+		earth_col = Color("#2a2224")
+
+	var grad := Gradient.new()
+	grad.offsets = PackedFloat32Array([0.0, 0.35, 0.72, 1.0])
+	grad.colors = PackedColorArray([
+		g_col.darkened(0.22),
+		g_col,
+		g_col.lightened(0.12),
+		earth_col,
+	])
+
+	var noise := FastNoiseLite.new()
+	noise.noise_type = FastNoiseLite.TYPE_SIMPLEX_SMOOTH
+	noise.fractal_type = FastNoiseLite.FRACTAL_FBM
+	noise.fractal_octaves = 4
+	noise.frequency = 0.025
+	noise.seed = map_seed
+
+	var albedo_tex := NoiseTexture2D.new()
+	albedo_tex.width = 512
+	albedo_tex.height = 512
+	albedo_tex.seamless = true
+	albedo_tex.noise = noise
+	albedo_tex.color_ramp = grad
+
+	var norm_tex := NoiseTexture2D.new()
+	norm_tex.width = 512
+	norm_tex.height = 512
+	norm_tex.seamless = true
+	norm_tex.as_normal_map = true
+	norm_tex.bump_strength = 5.0
+	norm_tex.noise = noise
+
+	var mat := StandardMaterial3D.new()
+	mat.albedo_texture = albedo_tex
+	mat.normal_enabled = true
+	mat.normal_texture = norm_tex
+	mat.normal_scale = 0.85
+	mat.uv1_scale = Vector3(14.0, 14.0, 14.0)
+	mat.roughness = 0.92
+	mat.metallic = 0.0
+	return mat
+
+
+static func _make_water_material(biome: Dictionary, map_seed: int) -> StandardMaterial3D:
+	var w_noise := FastNoiseLite.new()
+	w_noise.noise_type = FastNoiseLite.TYPE_SIMPLEX_SMOOTH
+	w_noise.fractal_type = FastNoiseLite.FRACTAL_FBM
+	w_noise.fractal_octaves = 3
+	w_noise.frequency = 0.04
+	w_noise.seed = map_seed + 99
+
+	var w_norm := NoiseTexture2D.new()
+	w_norm.width = 256
+	w_norm.height = 256
+	w_norm.seamless = true
+	w_norm.as_normal_map = true
+	w_norm.bump_strength = 3.5
+	w_norm.noise = w_noise
+
+	var sea_mat := StandardMaterial3D.new()
+	sea_mat.albedo_color = biome["water_color"]
+	sea_mat.normal_enabled = true
+	sea_mat.normal_texture = w_norm
+	sea_mat.normal_scale = 0.65
+	sea_mat.uv1_scale = Vector3(24.0, 24.0, 24.0)
+	sea_mat.roughness = 0.16
+	sea_mat.metallic = 0.22
+	if bool(biome.get("water_emissive", false)):
+		sea_mat.emission_enabled = true
+		sea_mat.emission = biome["water_color"]
+		sea_mat.emission_energy_multiplier = 1.45
+	return sea_mat
 
 
 # === FUNÇÕES DE ESCULTURA TOPOGRÁFICA PROCEDURAL ===
