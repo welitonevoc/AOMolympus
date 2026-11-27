@@ -1,0 +1,22 @@
+{
+  "unit": "nidhogg_frost",
+  "name": "Icehogg, Drag\u00e3o de Gelo Profundo",
+  "civ": "norse",
+  "category": "unidades",
+  "base": "nidhogg_frost_base.glb",
+  "sockets": [
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "walk": "animations/walk.glb",
+    "idle": "animations/idle.glb",
+    "death": "animations/death.glb",
+    "attack": "animations/attack.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "sfx_n_nidhogg.png"
+  ],
+  "era": "T5",
+  "mod_source": "Norse Ice Age Modpack"
+}

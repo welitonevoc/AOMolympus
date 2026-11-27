@@ -1,0 +1,22 @@
+{
+  "unit": "battle_boar_frost",
+  "name": "Javali Glacial de Batalha",
+  "civ": "norse",
+  "category": "unidades",
+  "base": "battle_boar_frost_base.glb",
+  "sockets": [
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "death": "animations/death.glb",
+    "walk": "animations/walk.glb",
+    "attack": "animations/attack.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "special_n_battle_boar.png"
+  ],
+  "era": "T5",
+  "mod_source": "Norse Ice Age Modpack"
+}

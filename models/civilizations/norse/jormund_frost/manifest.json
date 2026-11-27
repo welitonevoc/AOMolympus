@@ -1,0 +1,22 @@
+{
+  "unit": "jormund_frost",
+  "name": "Cria Glacial de Jormungandr",
+  "civ": "norse",
+  "category": "unidades",
+  "base": "jormund_frost_base.glb",
+  "sockets": [
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "death": "animations/death.glb",
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "attack": "animations/attack.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "special_n_jormund_brood.png"
+  ],
+  "era": "T5",
+  "mod_source": "Norse Ice Age Modpack"
+}

@@ -1,0 +1,38 @@
+{
+  "unit": "troll_frost",
+  "name": "Troll Glacial dos Fiordes",
+  "civ": "norse",
+  "category": "unidades",
+  "base": "troll_frost_base.glb",
+  "sockets": [
+    "ATTACHPOINT",
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "NECK",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {
+    "Attachpoint": "accessories/special_n_troll_head_left.glb",
+    "Neck": "accessories/special_n_troll_head_left.glb",
+    "Topofhead": "accessories/special_n_troll_head_left.glb"
+  },
+  "textures": [
+    "special_n_troll.png"
+  ],
+  "era": "T5",
+  "mod_source": "Norse Ice Age Modpack"
+}

@@ -1,0 +1,33 @@
+{
+  "unit": "fire_giant_frost",
+  "name": "Gigante Primordial de Gelo",
+  "civ": "norse",
+  "category": "unidades",
+  "base": "fire_giant_frost_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "PELVIS",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "death": "animations/death.glb",
+    "walk": "animations/walk.glb",
+    "attack": "animations/attack.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "special_n_fire_giant.png"
+  ],
+  "era": "T5",
+  "mod_source": "Norse Ice Age Modpack"
+}

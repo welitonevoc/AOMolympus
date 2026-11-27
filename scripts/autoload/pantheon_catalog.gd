@@ -756,6 +756,154 @@ const DIVINE_MAX_MINORS_PER_PANTHEON: int = 2
 const DIVINE_MAX_TOTAL_PER_PLAYER: int = 3
 const DIVINE_MIN_AGE: int = 5  # Era V / Era dos Deuses
 
+# --- Catalogo de Variantes Mitologicas da Era do Gelo (Norse Ice Age - T5) ---
+const NORSE_ICE_AGE_UNITS: Dictionary = {
+	"battle_boar_frost": {
+		"id": "battle_boar_frost",
+		"name": "Javali Glacial de Batalha",
+		"civ": "norse",
+		"role": "myth",
+		"min_age": 5,
+		"cost": {"food": 250, "gold": 120, "favor": 25},
+		"train_time": 10.0,
+		"pop": 4,
+		"hp": 650,
+		"attack": 42.0,
+		"armor": 0.35,
+		"speed": 6.2,
+		"icon": "res://assets/ui/icons/battle_boar_frost.png",
+		"desc": "Javali mitológico recoberto por gelo impenetrável com investida congelante."
+	},
+	"fire_giant_frost": {
+		"id": "fire_giant_frost",
+		"name": "Gigante Primordial de Gelo",
+		"civ": "norse",
+		"role": "myth",
+		"min_age": 5,
+		"cost": {"food": 320, "gold": 180, "favor": 30},
+		"train_time": 12.0,
+		"pop": 5,
+		"hp": 900,
+		"attack": 55.0,
+		"armor": 0.40,
+		"speed": 5.0,
+		"icon": "res://assets/ui/icons/fire_giant_frost.png",
+		"desc": "Antigo gigante de fogo cujas chamas foram convertidas em gelo místico absoluto."
+	},
+	"mountain_giant_snow": {
+		"id": "mountain_giant_snow",
+		"name": "Gigante das Neves Eternas",
+		"civ": "norse",
+		"role": "myth",
+		"min_age": 5,
+		"cost": {"food": 380, "wood": 150, "favor": 32},
+		"train_time": 14.0,
+		"pop": 5,
+		"hp": 1100,
+		"attack": 50.0,
+		"armor": 0.45,
+		"speed": 4.5,
+		"icon": "res://assets/ui/icons/mountain_giant_snow.png",
+		"desc": "Colosso das montanhas nórdicas nevadas que desfere golpes sísmicos de gelo."
+	},
+	"kraken_ice": {
+		"id": "kraken_ice",
+		"name": "Kraken Glacial Abissal",
+		"civ": "norse",
+		"role": "myth",
+		"min_age": 5,
+		"cost": {"food": 400, "wood": 200, "favor": 35},
+		"train_time": 15.0,
+		"pop": 5,
+		"hp": 1400,
+		"attack": 70.0,
+		"armor": 0.50,
+		"speed": 5.5,
+		"icon": "res://assets/ui/icons/kraken_ice.png",
+		"desc": "Monstro marinho das calotas polares que congela navios e afunda frotas inteiras."
+	},
+	"jormund_frost": {
+		"id": "jormund_frost",
+		"name": "Cria Glacial de Jormungandr",
+		"civ": "norse",
+		"role": "myth",
+		"min_age": 5,
+		"cost": {"food": 220, "gold": 100, "favor": 20},
+		"train_time": 9.0,
+		"pop": 3,
+		"hp": 550,
+		"attack": 38.0,
+		"armor": 0.30,
+		"speed": 6.5,
+		"icon": "res://assets/ui/icons/jormund_frost.png",
+		"desc": "Serpente costeira glacial cuspindo geada tóxica de congelamento rápido."
+	},
+	"nidhogg_frost": {
+		"id": "nidhogg_frost",
+		"name": "Icehogg, Dragão de Gelo Profundo",
+		"civ": "norse",
+		"role": "myth",
+		"min_age": 5,
+		"cost": {"food": 600, "gold": 400, "favor": 45},
+		"train_time": 20.0,
+		"pop": 6,
+		"hp": 2800,
+		"attack": 85.0,
+		"armor": 0.55,
+		"speed": 6.8,
+		"icon": "res://assets/ui/icons/nidhogg_frost.png",
+		"desc": "Dragão mitológico alado da era do gelo com sopro ártico destruidor de exércitos."
+	},
+	"troll_frost": {
+		"id": "troll_frost",
+		"name": "Troll Glacial dos Fiordes",
+		"civ": "norse",
+		"role": "myth",
+		"min_age": 5,
+		"cost": {"food": 180, "wood": 90, "favor": 18},
+		"train_time": 8.0,
+		"pop": 3,
+		"hp": 480,
+		"attack": 32.0,
+		"armor": 0.32,
+		"speed": 5.2,
+		"icon": "res://assets/ui/icons/troll_frost.png",
+		"desc": "Troll dos fiordes gelados que arremessa pedras maciças envoltas em gelo."
+	},
+	"ajax_frost": {
+		"id": "ajax_frost",
+		"name": "Ajax, Campeão Glacial",
+		"civ": "atlantean",
+		"role": "hero",
+		"min_age": 5,
+		"cost": {"food": 250, "gold": 250, "favor": 20},
+		"train_time": 12.0,
+		"pop": 4,
+		"hp": 850,
+		"attack": 45.0,
+		"armor": 0.45,
+		"speed": 6.0,
+		"icon": "res://assets/ui/portraits/hero_ajax.jpg",
+		"desc": "Ajax portando escudo e lança encantados pelo gelo primordial da Era V."
+	},
+	"hill_fort_snow": {
+		"id": "hill_fort_snow",
+		"name": "Forte Glacial da Colina",
+		"civ": "norse",
+		"role": "fortress",
+		"min_age": 5,
+		"cost": {"wood": 400, "gold": 200},
+		"train_time": 35.0,
+		"pop": 0,
+		"hp": 3500,
+		"attack": 35.0,
+		"armor": 0.60,
+		"speed": 0.0,
+		"icon": "res://assets/ui/icons/norse_hill_fort.png",
+		"desc": "Fortaleza nórdica com telhado e parapeitos de gelo reforçado da Era V."
+	}
+}
+
 # --- Catálogo de Deuses Menores para Avanço de Era (Estilo AoM Clássico & Retold) ---
 # Fornece as escolhas de deuses menores para cada transição de Era (II Clássica, III Heroica, IV Mítica, V Titânica).
 const MINOR_GODS_ADVANCEMENT: Dictionary = {
@@ -1421,6 +1569,36 @@ const MINOR_GODS_ADVANCEMENT: Dictionary = {
 				"passives": [
 					"• Forja de Thor aplica melhorias divinas máximas a todas as armas.",
 					"• Altar Divino ativo."
+				]
+			},
+			{
+				"id": "skadi_ice_age",
+				"name": "Skadi da Era Glacial",
+				"title": "Soberana do Inverno Eterno e das Feras de Gelo",
+				"pantheon": "norse",
+				"age": 5,
+				"portrait": "res://assets/ui/portraits/minor_skadi.jpg",
+				"god_power": {
+					"id": "eternal_fimbulwinter",
+					"name": "Fimbulwinter Eterno",
+					"icon": "❄️",
+					"desc": "Nevasca devastadora congela o campo de batalha, reduzindo a velocidade dos inimigos e invocando matilhas de gelo."
+				},
+				"myth_unit": {
+					"id": "nidhogg_frost",
+					"name": "Icehogg, Dragão de Gelo",
+					"icon": "🐉",
+					"desc": "Dragão mitológico glacial da Era V com sopro ártico avassalador de 2.800 HP."
+				},
+				"tech": {
+					"id": "frost_supremacy",
+					"name": "Supremacia Glacial",
+					"icon": "🧊",
+					"desc": "Todas as feras mitológicas de gelo (Javali, Gigantes, Kraken e Icehogg) ganham +30% de armadura e dano congelante."
+				},
+				"passives": [
+					"• Desbloqueia todas as 7 variantes mitológicas nórdicas da Era do Gelo (T5).",
+					"• Fortes da Colina Nórdicos evoluem para Fortes Glaciais reforçados."
 				]
 			}
 		]

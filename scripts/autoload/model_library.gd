@@ -31,14 +31,18 @@ const AOM_UNIT_BUNDLES: Dictionary = {
 		"archer": ["throwing_axeman"],
 		"cavalry": ["raiding_cavalry", "jarl"],
 		"hero": ["hersir"],
-		"myth": ["valkyrie", "frost_giant", "troll"],
+		"myth": [
+			"valkyrie", "frost_giant", "troll",
+			"battle_boar_frost", "fire_giant_frost", "mountain_giant_snow",
+			"kraken_ice", "jormund_frost", "nidhogg_frost", "troll_frost"
+		],
 	},
 	"atlantean": {
 		"villager": ["villager_atlantean"],
 		"infantry": ["murmillo", "destroyer", "fanatic"],
 		"archer": ["archer_atlantean"],
 		"cavalry": ["turma", "contarius"],
-		"hero": ["villager_atlantean_hero", "archer_atlantean_hero"],
+		"hero": ["villager_atlantean_hero", "archer_atlantean_hero", "ajax_frost"],
 		"myth": ["automaton", "argus", "promethean"],
 	},
 }
@@ -79,7 +83,7 @@ const AOM_BUILDING_BUNDLES: Dictionary = {
 		"archery": ["norse/hill_fort", "greek/archery_range"],
 		"stable": ["norse/hill_fort", "greek/stable"],
 		"tower": ["norse/odins_tower", "shared/tower"],
-		"fortress": ["norse/hill_fort"],
+		"fortress": ["norse/hill_fort", "norse/hill_fort_snow"],
 		"divine_altar": ["norse/odins_tower", "egyptian/monument"],
 		"wonder": ["egyptian/wonder"],
 		"titan_gate": ["egyptian/titan_gate"],

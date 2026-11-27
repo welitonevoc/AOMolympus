@@ -1,0 +1,33 @@
+{
+  "unit": "mountain_giant_snow",
+  "name": "Gigante das Neves Eternas",
+  "civ": "norse",
+  "category": "unidades",
+  "base": "mountain_giant_snow_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "death": "animations/death.glb",
+    "walk": "animations/walk.glb",
+    "attack": "animations/attack.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "special_n_giant.png",
+    "special_n_giant_head.png"
+  ],
+  "era": "T5",
+  "mod_source": "Norse Ice Age Modpack"
+}

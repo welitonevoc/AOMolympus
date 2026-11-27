@@ -1,0 +1,32 @@
+{
+  "unit": "kraken_ice",
+  "name": "Kraken Glacial Abissal",
+  "civ": "norse",
+  "category": "unidades",
+  "base": "kraken_ice_base.glb",
+  "sockets": [
+    "ATTACHPOINT",
+    "LEFTHAND",
+    "RIGHTHAND",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {
+    "LEFTFOOT": "accessories/naval_n_tenaclea_idle.glb",
+    "RIGHTFOOT": "accessories/naval_n_tenacleb_idle.glb",
+    "LEFTHAND": "accessories/naval_n_tenaclec_idle.glb",
+    "RIGHTHAND": "accessories/naval_n_tenaclea_idle.glb"
+  },
+  "textures": [
+    "naval_n_kraken.png"
+  ],
+  "era": "T5",
+  "mod_source": "Norse Ice Age Modpack"
+}

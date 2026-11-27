@@ -1,0 +1,35 @@
+{
+  "unit": "ajax_frost",
+  "name": "Ajax, Campe\u00e3o Glacial",
+  "civ": "atlantean",
+  "category": "unidades",
+  "base": "ajax_frost_base.glb",
+  "sockets": [
+    "ATTACHPOINT",
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb",
+    "walk": "animations/walk.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "hero_x_ajax.png",
+    "hero_x_ajax_shield.png",
+    "hero_x_ajax_spear.png"
+  ],
+  "era": "T5",
+  "mod_source": "Norse Ice Age Modpack"
+}
