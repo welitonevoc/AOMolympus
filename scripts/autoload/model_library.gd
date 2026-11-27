@@ -587,6 +587,67 @@ static func create_resource_visual(resource_kind: String) -> Node3D:
 	return root
 
 
+static var UNIT_PROFILES = {
+	"villager": {
+		"scale": 0.95,
+		"skin_color": Color("#e6bc98"),
+		"armor_color": Color("#94a3b8"),
+		"wood_color": Color("#6b4423"),
+		"has_weapon": true,
+		"weapon_type": "tool",
+	},
+	"infantry": {
+		"scale": 1.0,
+		"skin_color": Color("#e6bc98"),
+		"armor_color": Color("#94a3b8"),
+		"wood_color": Color("#6b4423"),
+		"has_weapon": true,
+		"weapon_type": "spear",
+	},
+	"archer": {
+		"scale": 1.0,
+		"skin_color": Color("#e6bc98"),
+		"armor_color": Color("#94a3b8"),
+		"wood_color": Color("#6b4423"),
+		"has_weapon": true,
+		"weapon_type": "bow",
+	},
+	"cavalry": {
+		"scale": 1.1,
+		"skin_color": Color("#e6bc98"),
+		"armor_color": Color("#94a3b8"),
+		"wood_color": Color("#6b4423"),
+		"has_weapon": true,
+		"weapon_type": "lance",
+	},
+	"hero": {
+		"scale": 1.15,
+		"skin_color": Color("#e6bc98"),
+		"armor_color": Color("#94a3b8"),
+		"wood_color": Color("#6b4423"),
+		"has_weapon": true,
+		"weapon_type": "sword",
+		"aura_color": Color("#38bdf8"),
+	},
+	"myth": {
+		"scale": 1.3,
+		"skin_color": Color("#e6bc98"),
+		"armor_color": Color("#94a3b8"),
+		"wood_color": Color("#6b4423"),
+		"has_weapon": true,
+		"weapon_type": "claws",
+		"aura_color": Color("#38bdf8"),
+	},
+	"siege": {
+		"scale": 1.4,
+		"skin_color": Color("#e6bc98"),
+		"armor_color": Color("#94a3b8"),
+		"wood_color": Color("#6b4423"),
+		"has_weapon": false,
+		"weapon_type": "none",
+	},
+}
+
 static func _unit_profile(p: Dictionary, kind: String) -> Dictionary:
 	var base: Dictionary = UNIT_PROFILES.get(kind, UNIT_PROFILES["villager"])
 	# Cores do panteão têm prioridade sobre cores padrão
