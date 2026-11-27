@@ -54,7 +54,9 @@ static func create_building_visual(
 	var tier: int = clampi(age_tier, 1, 5)
 	var civ_order: Array[String] = [pantheon_id, "shared", "greek"]
 	var candidates: Array[String] = []
+	var age_model_tier: int = clampi(tier, 1, 4)
 	for civ in civ_order:
+		candidates.append("res://models/civilizations/%s/cidade/%s/%s_age%d.glb" % [civ, building_kind, building_kind, age_model_tier])
 		candidates.append("res://models/civilizations/%s/cidade/%s/%s_base.glb" % [civ, building_kind, building_kind])
 	for path in candidates:
 		var loaded: Node3D = _try_instantiate_glb(path)
@@ -250,7 +252,9 @@ static func _attach_aom_accessories(root: Node3D, bundle_dir: String, manifest: 
 		if acc_inst != null:
 			_force_opaque_materials(acc_inst)
 			if "hoplite" in slug.to_lower():
-				if sock_up == "LEFTFOREARM":
+				if sock_up == "TOPOFHEAD":
+					acc_inst.rotation_degrees.y = 90.0
+				elif sock_up == "LEFTFOREARM":
 					acc_inst.rotation_degrees.y = 165.0
 				elif sock_up == "RIGHTHAND":
 					acc_inst.scale = Vector3(0.55, 1.0, 0.55)
