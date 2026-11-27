@@ -635,7 +635,78 @@ const AOM_RESOURCE_BUNDLES: Dictionary = {
 }
 
 
-static func create_resource_visual(resource_kind: String) -> Node3D:
+const TREE_STYLE_BUNDLES: Dictionary = {
+	"oak": ["res://models/civilizations/greek/oak_tree/oak_tree_base.glb", "res://models/civilizations/greek/aspen_tree/aspen_tree_base.glb"],
+	"palm": ["res://models/civilizations/egyptian/palm/palm_base.glb"],
+	"savannah": ["res://models/civilizations/egyptian/savannah_tree/savannah_tree_base.glb"],
+	"pine": ["res://models/civilizations/norse/pine/pine_base.glb"],
+	"pine_snow": ["res://models/civilizations/norse/pine_snow/pine_snow_base.glb", "res://models/civilizations/norse/pine/pine_base.glb"],
+	"dead": ["res://models/civilizations/norse/pine_dead/pine_dead_base.glb", "res://models/civilizations/greek/oak_autumn/oak_autumn_base.glb"],
+}
+
+
+## Fauna sem modelo AoM extraido ainda: silhueta procedural (corpo + cabeca + patas) colorida por especie.
+static func create_fauna_placeholder(species_id: String) -> Node3D:
+	var sp: Dictionary = OlympusMapEcology.SPECIES.get(species_id, OlympusMapEcology.SPECIES["deer"])
+	var col := Color(String(sp["color"]))
+	var sc: float = float(sp["scale"])
+	var root := Node3D.new()
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = col
+	mat.roughness = 0.9
+	if species_id == "berry":
+		var bush := MeshInstance3D.new()
+		var sph := SphereMesh.new()
+		sph.radius = 0.5 * sc
+		sph.height = 0.8 * sc
+		bush.mesh = sph
+		bush.material_override = mat
+		bush.position = Vector3(0.0, 0.4 * sc, 0.0)
+		root.add_child(bush)
+		return root
+	var body := MeshInstance3D.new()
+	var cap := CapsuleMesh.new()
+	cap.radius = 0.32 * sc
+	cap.height = 1.1 * sc
+	body.mesh = cap
+	body.material_override = mat
+	body.rotation_degrees = Vector3(0.0, 0.0, 90.0)
+	body.position = Vector3(0.0, 0.62 * sc, 0.0)
+	root.add_child(body)
+	var head := MeshInstance3D.new()
+	var hs := SphereMesh.new()
+	hs.radius = 0.2 * sc
+	hs.height = 0.4 * sc
+	head.mesh = hs
+	head.material_override = mat
+	head.position = Vector3(0.62 * sc, 0.8 * sc, 0.0)
+	root.add_child(head)
+	for lx in [-0.3, 0.3]:
+		for lz in [-0.15, 0.15]:
+			var leg := MeshInstance3D.new()
+			var cyl := CylinderMesh.new()
+			cyl.top_radius = 0.06 * sc
+			cyl.bottom_radius = 0.05 * sc
+			cyl.height = 0.5 * sc
+			leg.mesh = cyl
+			leg.material_override = mat
+			leg.position = Vector3(float(lx) * sc, 0.25 * sc, float(lz) * sc)
+			root.add_child(leg)
+	if species_id in ["fish", "whale"]:
+		root.position.y = 0.0
+	return root
+
+
+static func create_resource_visual(resource_kind: String, variant: String = "") -> Node3D:
+	if resource_kind == "food" and not variant.is_empty():
+		return create_fauna_placeholder(variant)
+	if resource_kind == "wood" and TREE_STYLE_BUNDLES.has(variant):
+		for tpath in TREE_STYLE_BUNDLES[variant]:
+			var tree: Node3D = _try_instantiate_glb(String(tpath))
+			if tree != null:
+				_force_opaque_materials(tree)
+				_align_model_to_ground(tree)
+				return tree
 	var key: String = resource_kind
 	if resource_kind == "wood":
 		var biome_key: String = "wood_%s" % GameState.active_biome

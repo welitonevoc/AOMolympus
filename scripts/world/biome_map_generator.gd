@@ -8,6 +8,33 @@ extends RefCounted
 ## Suporta os 14 Presets Topograficos do OlympusRandomMapPresets (Platos, Mar Central, Canyons, Altar, etc.).
 ## Deterministico por semente (map_seed), gera terreno, decoracao cenario e plano balanceado de recursos.
 
+static var _height_grid: int = 0
+static var _height_half: float = 0.0
+static var _height_step: float = 1.0
+static var _height_data: PackedFloat32Array = PackedFloat32Array()
+
+
+## Altura Y do relevo em (x, z) no mundo; 0.0 se o terreno ainda nao foi gerado.
+static func get_height(x: float, z: float) -> float:
+	if _height_grid <= 0 or _height_data.is_empty():
+		return 0.0
+	var fx: float = clampf((x + _height_half) / _height_step, 0.0, float(_height_grid) - 0.001)
+	var fz: float = clampf((z + _height_half) / _height_step, 0.0, float(_height_grid) - 0.001)
+	var gx: int = int(fx)
+	var gz: int = int(fz)
+	var tx: float = fx - float(gx)
+	var tz: float = fz - float(gz)
+	var w: int = _height_grid + 1
+	var h00: float = _height_data[gz * w + gx]
+	var h10: float = _height_data[gz * w + gx + 1]
+	var h01: float = _height_data[(gz + 1) * w + gx]
+	var h11: float = _height_data[(gz + 1) * w + gx + 1]
+	# Mesma diagonal da malha: triangulos (00,10,11) e (00,11,01)
+	if tx >= tz:
+		return h00 + (h10 - h00) * tx + (h11 - h10) * tz
+	return h00 + (h11 - h01) * tx + (h01 - h00) * tz
+
+
 static func build_biome_environment(
 	terrain_root: Node3D,
 	biome_id: String,
@@ -200,6 +227,11 @@ static func _build_sculpted_terrain_mesh(
 
 			# Area jogavel interna suave, colinas nos flancos e bordas
 			heights[gz * (grid + 1) + gx] = raw_h * flat_mask
+
+	_height_grid = grid
+	_height_half = half
+	_height_step = step
+	_height_data = heights
 
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
@@ -847,7 +879,9 @@ static func _generate_resource_plan(
 
 	# Bosques em clusters densos (6-7 arvores por bosque) + agrupamentos de alimento
 	var spawn_extent: float = arena_size * 0.42
-	var forest_clusters: int = 24 if topography == "dense_forest" else 18
+	var eco: Dictionary = OlympusMapEcology.get_profile(topography)
+	var tree_style: String = String(eco.get("tree_style", "oak"))
+	var forest_clusters: int = int(eco.get("tree_clusters", 18))
 	for _fc in range(forest_clusters):
 		var cx: float = rng.randf_range(-spawn_extent, spawn_extent)
 		var cz: float = rng.randf_range(-spawn_extent, spawn_extent)
@@ -856,7 +890,7 @@ static func _generate_resource_plan(
 			continue
 		for _t in range(rng.randi_range(6, 7)):
 			var off := Vector3(rng.randf_range(-4.5, 4.5), 0.0, rng.randf_range(-4.5, 4.5))
-			plan.append({"kind": "wood", "pos": c_pos + off, "amount": 540.0 * mult * wood_mult})
+			plan.append({"kind": "wood", "variant": tree_style, "pos": c_pos + off, "amount": 540.0 * mult * wood_mult})
 
 	for _fa in range(8):
 		var fx: float = rng.randf_range(-spawn_extent, spawn_extent)
@@ -868,4 +902,11 @@ static func _generate_resource_plan(
 			var off := Vector3(rng.randf_range(-2.2, 2.2), 0.0, rng.randf_range(-2.2, 2.2))
 			plan.append({"kind": "food", "pos": f_pos + off, "amount": 520.0 * mult * food_mult})
 
-	return plan
+	# Fauna, rebanhos e peixes por mapa (OlympusMapEcology) + filtro: nada de arvore/ouro/comida em agua.
+	plan.append_array(OlympusMapEcology.build_fauna_plan(topography, player_base, enemy_base, arena_size, rng, food_mult * mult))
+	var dry_plan: Array[Dictionary] = []
+	for entry in plan:
+		var ep: Vector3 = entry["pos"]
+		if String(entry.get("variant", "")) in ["fish", "whale"] or not OlympusMapEcology.is_water(ep.x, ep.z):
+			dry_plan.append(entry)
+	return dry_plan

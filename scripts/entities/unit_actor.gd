@@ -231,6 +231,7 @@ func _physics_process(delta: float) -> void:
 			_visual_holder.visible = true
 
 
+	_snap_to_terrain(delta)
 	match state:
 		State.IDLE:
 			velocity = Vector3.ZERO
@@ -650,6 +651,15 @@ func _process_building(delta: float) -> void:
 		state = State.IDLE
 
 
+## Mantem a unidade sobre o relevo: sobe instantaneo se estiver abaixo do chao, desce suavemente se acima (permite arcos de knockback).
+func _snap_to_terrain(delta: float) -> void:
+	var ground_y: float = BiomeMapGenerator.get_height(global_position.x, global_position.z)
+	if global_position.y < ground_y:
+		global_position.y = ground_y
+	elif global_position.y > ground_y + 0.02:
+		global_position.y = maxf(ground_y, global_position.y - 14.0 * delta)
+
+
 func _step_navigation(delta: float) -> void:
 	var target_dest := Vector3.ZERO
 	if state == State.GATHERING and is_instance_valid(target_resource):
@@ -702,7 +712,7 @@ func _step_navigation(delta: float) -> void:
 					tangent = -tangent
 				velocity = tangent * base_speed * speed_mult * 0.9
 				move_and_slide()
-	global_position.y = 0.0
+	_snap_to_terrain(delta)
 	_face_towards(global_position + move_dir, delta)
 	if _visual_holder != null:
 		if ModelLibrary.switch_aom_action(_visual_holder, "walk"):

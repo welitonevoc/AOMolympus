@@ -8,12 +8,14 @@ signal depleted(node: Node)
 @export var max_amount: float = 450.0
 
 var remaining: float = 450.0
+var variant: String = ""
 var _tree_felled: bool = false
 var _visual_root: Node3D
 var _highlight_ring: MeshInstance3D
 
 
-func setup(kind: String, amount: float) -> void:
+func setup(kind: String, amount: float, p_variant: String = "") -> void:
+	variant = p_variant
 	resource_kind = kind
 	max_amount = amount
 	remaining = amount
@@ -21,6 +23,8 @@ func setup(kind: String, amount: float) -> void:
 
 func _ready() -> void:
 	add_to_group("resources")
+	if variant in ["fish", "whale"]:
+		position.y = -0.35
 	collision_layer = 2
 	collision_mask = 0
 
@@ -32,7 +36,7 @@ func _ready() -> void:
 	shape.position = Vector3(0.0, 1.2, 0.0)
 	add_child(shape)
 
-	_visual_root = ModelLibrary.create_resource_visual(resource_kind)
+	_visual_root = ModelLibrary.create_resource_visual(resource_kind, variant)
 	add_child(_visual_root)
 
 	_highlight_ring = _create_ring(1.35, _color_for_kind())

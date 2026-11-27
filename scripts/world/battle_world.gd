@@ -170,7 +170,7 @@ func _on_match_started(pantheon_id: String, enemy_pantheon_id: String) -> void:
 	# 3. Instancia recursos procedurais do plano do bioma
 	var res_plan: Array = gen_result.get("resources", [])
 	for item in res_plan:
-		_spawn_resource(String(item["kind"]), item["pos"], float(item["amount"]))
+		_spawn_resource(String(item["kind"]), item["pos"], float(item["amount"]), String(item.get("variant", "")))
 
 	# 3.1 Spawna relíquias sagradas dispersas pelo mapa (OlympusRelicCatalog)
 	var relics: Array[Dictionary] = OlympusRelicCatalog.get_random_relics_for_map(3)
@@ -279,7 +279,7 @@ func spawn_building(
 	var age: int = (GameState.current_age if p_faction == "player" else GameState.enemy_age) if p_age < 1 else p_age
 	var b := BuildingActor.new()
 	b.setup(pid, kind, age, starts_complete, p_faction)
-	b.position = Vector3(world_pos.x, 0.0, world_pos.z)
+	b.position = Vector3(world_pos.x, BiomeMapGenerator.get_height(world_pos.x, world_pos.z), world_pos.z)
 	b.training_completed.connect(_on_building_training_completed)
 	b.projectile_requested.connect(_on_projectile_requested)
 	b.building_destroyed.connect(_on_building_destroyed)
@@ -302,7 +302,7 @@ func spawn_unit(
 	var pid: String = GameState.active_pantheon if p_pantheon.is_empty() else p_pantheon
 	var u := UnitActor.new()
 	u.setup(pid, unit_kind, p_faction)
-	u.position = Vector3(world_pos.x, 0.0, world_pos.z)
+	u.position = Vector3(world_pos.x, BiomeMapGenerator.get_height(world_pos.x, world_pos.z), world_pos.z)
 	u.projectile_requested.connect(_on_projectile_requested)
 	_entities_root.add_child(u)
 	return u
@@ -606,10 +606,10 @@ func spawn_resource_node(kind: String, pos: Vector3, amount: float) -> ResourceN
 	return _spawn_resource(kind, pos, amount)
 
 
-func _spawn_resource(kind: String, pos: Vector3, amount: float) -> ResourceNode:
+func _spawn_resource(kind: String, pos: Vector3, amount: float, variant: String = "") -> ResourceNode:
 	var res := ResourceNode.new()
-	res.setup(kind, amount)
-	res.position = Vector3(pos.x, 0.0, pos.z)
+	res.setup(kind, amount, variant)
+	res.position = Vector3(pos.x, BiomeMapGenerator.get_height(pos.x, pos.z), pos.z)
 	_entities_root.add_child(res)
 	return res
 
