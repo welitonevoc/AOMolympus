@@ -593,7 +593,7 @@ func _build_skirmish_modal() -> void:
 		_diff_buttons[did] = opt_btn
 
 	# 5. Mapas Oficiais do AoM (27 Mapas & Divindades)
-	s_vbox.add_child(_make_section_title("5. MAPA OFICIAL DO AoM (27 MAPAS & DIVINDADES):"))
+	s_vbox.add_child(_make_section_title("5. MAPA DA BATALHA (18 MAPAS DO OLYMPUS & DIVINDADES):"))
 	var map_scroll := ScrollContainer.new()
 	map_scroll.custom_minimum_size = Vector2(600, 128)
 	map_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
@@ -1002,12 +1002,20 @@ func _refresh_skirmish_highlights() -> void:
 			p_tween.tween_property(_preview_god_portrait_rect, "modulate", Color.WHITE, 0.28).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 			p_tween.tween_property(_preview_god_portrait_rect, "scale", Vector2.ONE, 0.35).set_trans(Tween.TRANS_SPRING).set_ease(Tween.EASE_OUT)
 
-	# Atualiza o preview do bioma
-	var b_data: Dictionary = PantheonCatalog.get_biome(_selected_biome)
-	_preview_biome_desc_lbl.text = "%s — %s" % [
-		b_data.get("name", _selected_biome),
-		b_data.get("subtitle", "Terreno de combate aberto")
-	]
+	# Atualiza o preview do mapa autoral selecionado
+	var m_spec: Dictionary = OlympusRandomMapPresets.get_preset(_selected_random_map)
+	if not m_spec.is_empty():
+		_preview_biome_desc_lbl.text = "%s %s [%s] — %s\n%s" % [
+			m_spec.get("icon", "🗺️"),
+			m_spec.get("name", _selected_random_map),
+			m_spec.get("patron_deity", "Panteão Livre"),
+			m_spec.get("tagline", ""),
+			m_spec.get("description", "")
+		]
+	for mk in _map_preset_buttons.keys():
+		var m_btn: Button = _map_preset_buttons[mk]
+		if is_instance_valid(m_btn):
+			m_btn.modulate = Color(1.0, 0.9, 0.45, 1.0) if mk == _selected_random_map else Color(1.0, 1.0, 1.0, 0.85)
 
 	# Carrega e exibe a vinheta panorâmica do bioma/mapa
 	if _preview_map_preview_rect:
