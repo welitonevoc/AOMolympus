@@ -554,38 +554,49 @@ static func _try_instantiate_model(res_path: String) -> Node3D:
 	return null
 
 
-static func create_resource_visual(resource_kind: String) -> Node3D:
-	var root := Node3D.new()
-	match resource_kind:
-		"food":
-			# Arbusto de comida - esfera verde com base marrom
-			var bush_mat := _make_mat(Color("#22c55e"), 0.8, 0.0)
-			var base_mat := _make_mat(Color("#5c4028"), 0.9, 0.0)
-			_add_box(root, Vector3(1.4, 0.4, 1.4), Vector3(0.0, 0.2, 0.0), base_mat)
-			_add_sphere(root, 0.9, Vector3(0.0, 0.9, 0.0), bush_mat)
-			_add_sphere(root, 0.7, Vector3(-0.4, 1.1, 0.2), bush_mat)
-			_add_sphere(root, 0.7, Vector3(0.4, 1.1, -0.2), bush_mat)
-		"wood":
-			# Árvore - tronco marrom + copa verde
-			var trunk_mat := _make_mat(Color("#5c4028"), 0.85, 0.0)
-			var leaf_mat := _make_mat(Color("#16a34a"), 0.8, 0.0)
-			_add_cylinder(root, 0.25, 0.25, 2.0, Vector3(0.0, 1.0, 0.0), trunk_mat)
-			_add_sphere(root, 0.9, Vector3(0.0, 2.2, 0.0), leaf_mat)
-			_add_sphere(root, 0.7, Vector3(-0.5, 2.0, 0.3), leaf_mat)
-			_add_sphere(root, 0.7, Vector3(0.5, 2.0, -0.3), leaf_mat)
-		"gold":
-			# Mina de ouro - rocha cinza com brilho dourado
-			var rock_mat := _make_mat(Color("#64748b"), 0.7, 0.1)
-			var gold_mat := _make_mat(Color("#facc15"), 0.3, 0.8)
-			_add_box(root, Vector3(1.2, 1.6, 1.2), Vector3(0.0, 0.8, 0.0), rock_mat)
-			_add_box(root, Vector3(0.4, 0.6, 0.4), Vector3(0.3, 1.5, 0.3), gold_mat)
-			_add_box(root, Vector3(0.4, 0.6, 0.4), Vector3(-0.3, 1.5, -0.3), gold_mat)
-		_:
-			# Fallback genérico
-			var fallback_mat := _make_mat(Color("#94a3b8"), 0.8, 0.1)
-			_add_box(root, Vector3(1.0, 1.5, 1.0), Vector3(0.0, 0.75, 0.0), fallback_mat)
+const AOM_RESOURCE_BUNDLES: Dictionary = {
+	"gold": [
+		"res://models/civilizations/norse/gold_mine_dwarven/gold_mine_dwarven_base.glb",
+		"res://models/civilizations/norse/mine/mine_base.glb",
+	],
+	"food": [
+		"res://models/civilizations/norse/battle_boar/battle_boar_base.glb",
+		"res://models/civilizations/egyptian/cidade/temple/accessories/world_a_bush_short_f.glb",
+	],
+	"wood_mediterranean": [
+		"res://models/civilizations/greek/oak_tree/oak_tree_base.glb",
+		"res://models/civilizations/greek/aspen_tree/aspen_tree_base.glb",
+	],
+	"wood_nile_desert": [
+		"res://models/civilizations/egyptian/palm/palm_base.glb",
+		"res://models/civilizations/egyptian/savannah_tree/savannah_tree_base.glb",
+	],
+	"wood_nordic_tundra": [
+		"res://models/civilizations/norse/pine_snow/pine_snow_base.glb",
+		"res://models/civilizations/norse/pine/pine_base.glb",
+	],
+	"wood_erebus_volcanic": [
+		"res://models/civilizations/norse/pine_dead/pine_dead_base.glb",
+		"res://models/civilizations/greek/oak_autumn/oak_autumn_base.glb",
+	],
+}
 
-	return root
+
+static func create_resource_visual(resource_kind: String) -> Node3D:
+	var key: String = resource_kind
+	if resource_kind == "wood":
+		var biome_key: String = "wood_%s" % GameState.active_biome
+		key = biome_key if AOM_RESOURCE_BUNDLES.has(biome_key) else "wood_mediterranean"
+	var candidates: Array = AOM_RESOURCE_BUNDLES.get(key, [])
+	for path in candidates:
+		var loaded: Node3D = _try_instantiate_glb(String(path))
+		if loaded != null:
+			_force_opaque_materials(loaded)
+			_align_model_to_ground(loaded)
+			_log_model_diag("RESOURCE:" + resource_kind, String(path), loaded)
+			return loaded
+	push_error("ModelLibrary: modelo AoM nao encontrado para recurso '%s'." % resource_kind)
+	return Node3D.new()
 
 
 static var UNIT_PROFILES = {
