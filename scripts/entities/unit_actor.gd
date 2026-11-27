@@ -583,7 +583,6 @@ func _process_gathering(delta: float) -> void:
 		return
 
 	carried_amount += taken
-	_update_carry_visual(true)
 	if carried_amount >= carry_capacity:
 		_begin_return()
 
@@ -597,6 +596,7 @@ func _begin_return() -> void:
 		state = State.IDLE
 		return
 	state = State.RETURNING
+	_update_carry_visual(true)
 	_nav_agent.target_position = dropoff_building.global_position
 
 
