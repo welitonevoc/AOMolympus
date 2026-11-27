@@ -699,12 +699,10 @@ def export_brg_to_glb(
             continue
         p0 = (frame_list[0][0] * scale_factor).astype(np.float32)
         p0[1] += y_shift
-        q0 = _mat3_to_quat(frame_list[0][1])
         n_idx = len(nodes)
         nodes.append({
             "name": f"{aname}_Socket",
             "translation": [float(p0[0]), float(p0[1]), float(p0[2])],
-            "rotation": q0,
         })
         nodes[0]["children"].append(n_idx)
         socket_node_map[aname] = n_idx
@@ -716,7 +714,7 @@ def export_brg_to_glb(
     if targets:
         mesh_obj["weights"] = [0.0] * len(targets)
 
-    # Build glTF animation (morph weights + socket translations/rotations)
+    # Build glTF animation (morph weights + socket translations)
     animations = []
     if use_morph and targets:
         n_t = len(targets)
@@ -733,33 +731,24 @@ def export_brg_to_glb(
         samplers = [{"input": time_acc, "output": w_acc, "interpolation": "LINEAR"}]
         channels = [{"sampler": 0, "target": {"node": 0, "path": "weights"}}]
 
-        # Also animate socket translations & rotations across frames
+        # Also animate socket translations across frames
         for aname, s_node_idx in socket_node_map.items():
             flist = brg.attachpoints.get(aname, [])
             if len(flist) >= len(target_frame_indices) + 1:
                 pts = []
-                rots = []
                 p0 = (flist[0][0] * scale_factor).astype(np.float32)
                 p0[1] += y_shift
                 pts.append(p0)
-                rots.append(_mat3_to_quat(flist[0][1]))
                 for fi in target_frame_indices:
                     fr = flist[min(fi, len(flist) - 1)]
                     pf = (fr[0] * scale_factor).astype(np.float32)
                     pf[1] += y_shift
                     pts.append(pf)
-                    rots.append(_mat3_to_quat(fr[1]))
                 pts_arr = np.array(pts, dtype=np.float32)
                 p_acc = add_accessor(pts_arr, 5126, "VEC3")
                 s_idx = len(samplers)
                 samplers.append({"input": time_acc, "output": p_acc, "interpolation": "LINEAR"})
                 channels.append({"sampler": s_idx, "target": {"node": s_node_idx, "path": "translation"}})
-
-                rots_arr = np.array(rots, dtype=np.float32)
-                r_acc = add_accessor(rots_arr, 5126, "VEC4")
-                sr_idx = len(samplers)
-                samplers.append({"input": time_acc, "output": r_acc, "interpolation": "LINEAR"})
-                channels.append({"sampler": sr_idx, "target": {"node": s_node_idx, "path": "rotation"}})
 
         animations.append({"name": anim_name, "channels": channels, "samplers": samplers})
 

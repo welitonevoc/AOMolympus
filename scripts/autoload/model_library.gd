@@ -60,7 +60,8 @@ static func create_building_visual(
 		var loaded: Node3D = _try_instantiate_glb(path)
 		if loaded != null:
 			_force_opaque_materials(loaded)
-			_align_model_to_ground(loaded)
+			if building_kind != "town_center":
+				_align_model_to_ground(loaded)
 			_log_model_diag("BUILDING:" + building_kind, path, loaded)
 			return loaded
 	return _build_procedural_building(p, building_kind, tier, faction)
@@ -248,6 +249,11 @@ static func _attach_aom_accessories(root: Node3D, bundle_dir: String, manifest: 
 		var acc_inst: Node3D = _try_instantiate_glb(acc_path)
 		if acc_inst != null:
 			_force_opaque_materials(acc_inst)
+			if "hoplite" in slug.to_lower():
+				if sock_up == "LEFTFOREARM":
+					acc_inst.rotation_degrees.y = 165.0
+				elif sock_up == "RIGHTHAND":
+					acc_inst.scale = Vector3(0.55, 1.0, 0.55)
 			socket_node.add_child(acc_inst)
 
 
