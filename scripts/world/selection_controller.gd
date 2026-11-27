@@ -4,7 +4,7 @@ extends Node
 ## Suporta toque simples, caixa de selecao (somente unidades aliadas), ordens de ataque,
 ## movimentacao em 5 formacoes, posicionamento de obras e conjuracao de Poderes Divinos no solo.
 
-const TAP_MAX_MOVE_PX: float = 20.0
+const TAP_MAX_MOVE_PX: float = 26.0
 
 var camera_rig: TouchRTSCamera
 var world: Node3D
@@ -146,8 +146,11 @@ func _handle_single_tap(screen_pos: Vector2) -> void:
 	var selected_units := _get_selected_units()
 	var selected_villagers: Array = []
 
-	if not hit.is_empty():
-		var collider: Object = hit.get("collider")
+	var collider: Object = hit.get("collider") if not hit.is_empty() else null
+	if collider == null:
+		collider = _pick_nearest_entity_on_screen(screen_pos)
+
+	if collider != null:
 		if collider is UnitActor and not collider.is_dead() and collider.visible:
 			if collider.faction == "enemy":
 				if selected_units.size() > 0:
@@ -475,6 +478,48 @@ func _project_to_ground(screen_pos: Vector2) -> Variant:
 	var dir: Vector3 = camera_rig.camera.project_ray_normal(screen_pos)
 	var ground_plane := Plane(Vector3.UP, 0.0)
 	return ground_plane.intersects_ray(origin, dir)
+
+
+func _pick_nearest_entity_on_screen(screen_pos: Vector2) -> Object:
+	if camera_rig == null or camera_rig.camera == null:
+		return null
+	var cam: Camera3D = camera_rig.camera
+	var best_unit: Object = null
+	var best_unit_dist: float = 48.0
+	for u in get_tree().get_nodes_in_group("units"):
+		if not is_instance_valid(u) or not (u is UnitActor):
+			continue
+		var ua := u as UnitActor
+		if ua.is_dead() or not ua.visible:
+			continue
+		var wpos: Vector3 = ua.global_position + Vector3(0.0, 0.9, 0.0)
+		if cam.is_position_behind(wpos):
+			continue
+		var spos: Vector2 = cam.unproject_position(wpos)
+		var d: float = spos.distance_to(screen_pos)
+		if d < best_unit_dist:
+			best_unit_dist = d
+			best_unit = ua
+	if best_unit != null:
+		return best_unit
+
+	var best_bldg: Object = null
+	var best_bldg_dist: float = 64.0
+	for b in get_tree().get_nodes_in_group("buildings"):
+		if not is_instance_valid(b) or not (b is BuildingActor):
+			continue
+		var ba := b as BuildingActor
+		if not ba.visible:
+			continue
+		var wpos: Vector3 = ba.global_position + Vector3(0.0, 1.4, 0.0)
+		if cam.is_position_behind(wpos):
+			continue
+		var spos: Vector2 = cam.unproject_position(wpos)
+		var d: float = spos.distance_to(screen_pos)
+		if d < best_bldg_dist:
+			best_bldg_dist = d
+			best_bldg = ba
+	return best_bldg
 
 
 func _get_selected_units() -> Array:

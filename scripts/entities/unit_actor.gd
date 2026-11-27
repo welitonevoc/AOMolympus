@@ -140,7 +140,9 @@ func _ready() -> void:
 		if role == "titan":
 			add_to_group("titans")
 	collision_layer = 1
-	collision_mask = 0
+	collision_mask = 1 | 2 | 4
+	safe_margin = 0.08
+	floor_stop_on_slope = false
 	_anchor_pos = global_position
 
 	var shape := CollisionShape3D.new()
@@ -674,10 +676,23 @@ func _step_navigation(delta: float) -> void:
 		return
 	dir = dir.normalized()
 	var speed_mult: float = float(PantheonCatalog.get_formation(formation_id).get("speed_mult", 1.0))
-	velocity = dir * base_speed * speed_mult
+	var sep: Vector3 = _compute_unit_separation()
+	var move_dir: Vector3 = (dir + sep * 0.45).normalized()
+	velocity = move_dir * base_speed * speed_mult
 	move_and_slide()
+	if get_slide_collision_count() > 0:
+		var col := get_slide_collision(0)
+		if col != null:
+			var n: Vector3 = col.get_normal()
+			n.y = 0.0
+			if n.length_squared() > 0.01:
+				var tangent: Vector3 = Vector3(-n.z, 0.0, n.x).normalized()
+				if tangent.dot(dir) < 0.0:
+					tangent = -tangent
+				velocity = tangent * base_speed * speed_mult * 0.85
+				move_and_slide()
 	global_position.y = 0.0
-	_face_towards(global_position + dir, delta)
+	_face_towards(global_position + move_dir, delta)
 	if _visual_holder != null:
 		if ModelLibrary.switch_aom_action(_visual_holder, "walk"):
 			_visual_holder.position.y = 0.0
@@ -687,6 +702,23 @@ func _step_navigation(delta: float) -> void:
 		else:
 			_visual_holder.position.y = absf(sin(_anim_time * 10.5)) * 0.09
 			_visual_holder.rotation.x = 0.0
+
+
+func _compute_unit_separation() -> Vector3:
+	var push := Vector3.ZERO
+	var count: int = 0
+	for u in get_tree().get_nodes_in_group("units"):
+		if u == self or not is_instance_valid(u) or not (u is Node3D):
+			continue
+		var diff: Vector3 = global_position - (u as Node3D).global_position
+		diff.y = 0.0
+		var dist: float = diff.length()
+		if dist > 0.001 and dist < 1.15:
+			push += diff.normalized() * ((1.15 - dist) / 1.15)
+			count += 1
+			if count >= 6:
+				break
+	return push
 
 
 func _face_towards(target_pos: Vector3, delta: float) -> void:
