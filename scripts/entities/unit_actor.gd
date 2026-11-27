@@ -240,7 +240,10 @@ func _physics_process(delta: float) -> void:
 				_scan_for_enemies(delta)
 		State.MOVING:
 			_step_navigation(delta)
-			if _nav_agent.is_navigation_finished():
+			var dest_flat := Vector2(_anchor_pos.x, _anchor_pos.z)
+			var pos_flat := Vector2(global_position.x, global_position.z)
+			if _nav_agent.is_navigation_finished() or pos_flat.distance_to(dest_flat) <= _nav_agent.target_desired_distance:
+				velocity = Vector3.ZERO
 				_anchor_pos = global_position
 				state = State.IDLE
 		State.GATHERING:
@@ -269,6 +272,9 @@ func command_stop() -> void:
 	target_building = null
 	combat_target = null
 	_anchor_pos = global_position
+	velocity = Vector3.ZERO
+	if _nav_agent != null:
+		_nav_agent.target_position = global_position
 	state = State.IDLE
 
 
