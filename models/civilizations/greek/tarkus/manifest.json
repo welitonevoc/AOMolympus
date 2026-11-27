@@ -1,0 +1,49 @@
+{
+  "unit": "tarkus",
+  "name": "Tarkus de Term\u00f3pilas",
+  "title": "Capit\u00e3o das Guardas de Bronze",
+  "civ": "greek",
+  "category": "herois",
+  "role": "hero",
+  "base": "tarkus_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {
+    "RightHand": "accessories/attachments_a_spear_copper.glb",
+    "LeftForearm": "accessories/attachments_g_shield_large_copper.glb",
+    "TopOfHead": "accessories/infantry_g_hoplite_head_standard.glb"
+  },
+  "textures": [
+    "infantry_g_hoplite_standard.png"
+  ],
+  "stats": {
+    "hp": 470,
+    "attack": 27.0,
+    "armor": 0.36,
+    "speed": 5.5,
+    "cost": {
+      "food": 135,
+      "gold": 85,
+      "favor": 7
+    }
+  },
+  "desc": "L\u00edder de choque espartano focado em repelir ondas de infantaria inimiga.",
+  "mod_source": "Heroes and Generals"
+}

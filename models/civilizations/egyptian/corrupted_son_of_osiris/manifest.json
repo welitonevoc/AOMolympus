@@ -1,0 +1,49 @@
+{
+  "unit": "corrupted_son_of_osiris",
+  "name": "Filho Corrompido de Os\u00edris",
+  "title": "Avatar das Sombras Proibidas",
+  "civ": "egyptian",
+  "category": "herois",
+  "role": "hero",
+  "base": "corrupted_son_of_osiris_base.glb",
+  "sockets": [
+    "ATTACHPOINT",
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR",
+    "SMOKE0"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "death": "animations/death.glb",
+    "gather": "animations/gather.glb"
+  },
+  "accessories": {
+    "RightHand": "accessories/attachment_e_staff.glb"
+  },
+  "textures": [
+    "sfx_e_son_of_osiris.png",
+    "sfx_e_son_of_osiris_head.png"
+  ],
+  "stats": {
+    "hp": 950,
+    "attack": 52.0,
+    "armor": 0.45,
+    "speed": 5.5,
+    "cost": {
+      "gold": 400,
+      "favor": 25
+    }
+  },
+  "desc": "Poderoso avatar ancestral que dispara raios necrom\u00e2nticos de destrui\u00e7\u00e3o em massa.",
+  "mod_source": "Heroes and Generals"
+}

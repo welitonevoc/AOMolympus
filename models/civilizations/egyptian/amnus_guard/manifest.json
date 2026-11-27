@@ -1,0 +1,50 @@
+{
+  "unit": "amnus_guard",
+  "name": "Guarda de Elite de Amnu",
+  "title": "Vanguarda Montada do Deserto",
+  "civ": "egyptian",
+  "category": "herois",
+  "role": "hero",
+  "base": "amnus_guard_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "death": "animations/death.glb",
+    "attack": "animations/attack.glb"
+  },
+  "accessories": {
+    "LeftForearm": "accessories/attachments_e_shield_small_copper.glb"
+  },
+  "textures": [
+    "attachments_e_sword_iron.png",
+    "cavalry_e_mercenary_horse_standard.png",
+    "infantry_e_mercenary.png",
+    "infantry_e_mercenary_head.png"
+  ],
+  "stats": {
+    "hp": 530,
+    "attack": 32.0,
+    "armor": 0.36,
+    "speed": 7.0,
+    "cost": {
+      "food": 180,
+      "gold": 120,
+      "favor": 8
+    }
+  },
+  "desc": "Cavalaria de elite do deserto com armadura de escamas e sabre curvo mortal.",
+  "mod_source": "Heroes and Generals"
+}

@@ -1,0 +1,38 @@
+{
+  "unit": "lao_ming",
+  "name": "Lao Ming, Mestre Tao\u00edsta",
+  "title": "Ermit\u00e3o dos Picos Nebulosos",
+  "civ": "chinese",
+  "category": "herois",
+  "role": "hero",
+  "base": "lao_ming_base.glb",
+  "sockets": [
+    "ATTACHPOINT",
+    "RIGHTHAND",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "scenario_theocrat.png",
+    "scenario_theocrat_head.png",
+    "scenario_theocrat_staff.png"
+  ],
+  "stats": {
+    "hp": 440,
+    "attack": 26.0,
+    "armor": 0.28,
+    "speed": 5.6,
+    "cost": {
+      "gold": 180,
+      "favor": 12
+    }
+  },
+  "desc": "Monge sagrado que dissipa maldi\u00e7\u00f5es inimigas e converte monstros m\u00edticos ca\u00eddos.",
+  "mod_source": "Heroes and Generals"
+}

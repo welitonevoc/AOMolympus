@@ -1,0 +1,50 @@
+{
+  "unit": "acheus",
+  "name": "Aqueu dos Pel\u00f3pidas",
+  "title": "Mestre da Espada Mic\u00eanica",
+  "civ": "greek",
+  "category": "herois",
+  "role": "hero",
+  "base": "acheus_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {
+    "RightHand": "accessories/attachments_x_sword_standard.glb",
+    "LeftForearm": "accessories/attachments_g_shield_large_copper.glb",
+    "TopOfHead": "accessories/infantry_g_hypaspist_head_standard.glb"
+  },
+  "textures": [
+    "infantry_g_hypaspist_cape.png",
+    "infantry_g_hypaspist_standard.png"
+  ],
+  "stats": {
+    "hp": 450,
+    "attack": 30.0,
+    "armor": 0.32,
+    "speed": 6.0,
+    "cost": {
+      "food": 140,
+      "gold": 90,
+      "favor": 7
+    }
+  },
+  "desc": "Guerreiro nobre da H\u00e9lade especializado no duelo corpo a corpo e moral de tropa.",
+  "mod_source": "Heroes and Generals"
+}

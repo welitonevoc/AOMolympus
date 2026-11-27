@@ -1,0 +1,45 @@
+{
+  "unit": "fendrel",
+  "name": "General Fendrel",
+  "title": "Marechal das Legi\u00f5es de Tit\u00e3s",
+  "civ": "atlantean",
+  "category": "herois",
+  "role": "general",
+  "base": "fendrel_base.glb",
+  "sockets": [
+    "ATTACHPOINT",
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "LEFTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {
+    "RightHand": "accessories/infantry_x_trident_soldier_trident.glb",
+    "TopOfHead": "accessories/infantry_x_trident_soldier_head_hero.glb"
+  },
+  "textures": [
+    "infantry_x_trident_soldier_cape_iron.png",
+    "infantry_x_trident_soldier_iron.png",
+    "infantry_x_trident_soldier_shield_iron.png"
+  ],
+  "stats": {
+    "hp": 650,
+    "attack": 37.0,
+    "armor": 0.44,
+    "speed": 5.8,
+    "cost": {
+      "food": 220,
+      "gold": 150,
+      "favor": 14
+    }
+  },
+  "desc": "General de guerra atlante de tridente tit\u00e2nico com b\u00f4nus massivo contra edif\u00edcios e muralhas.",
+  "mod_source": "Heroes and Generals"
+}

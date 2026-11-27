@@ -14,7 +14,11 @@ const AOM_UNIT_BUNDLES: Dictionary = {
 		"infantry": ["hoplite", "swordman"],
 		"archer": ["toxotes"],
 		"cavalry": ["hippikon"],
-		"hero": ["hero_greek_ajax", "ajax", "arkantos", "hero_greek_achilles"],
+		"hero": [
+			"hero_greek_ajax", "ajax", "arkantos", "hero_greek_achilles",
+			"hector", "kos", "phocus", "pollux", "teleon", "idas", "tarkus",
+			"helle", "acheus", "libon", "philon", "zethos", "charon"
+		],
 		"myth": ["colossus", "centaur", "cyclops", "chimera", "hippocampus"],
 	},
 	"egyptian": {
@@ -22,7 +26,11 @@ const AOM_UNIT_BUNDLES: Dictionary = {
 		"infantry": ["spearman", "axeman"],
 		"archer": ["chariot_archer", "slinger"],
 		"cavalry": ["camelry", "mercenary_cavalry"],
-		"hero": ["pharaoh", "priest"],
+		"hero": [
+			"pharaoh", "priest",
+			"general_imothep", "ahhotep", "neheb", "amnu", "sethos", "tiye",
+			"djoser", "amnus_guard", "corrupted_son_of_osiris"
+		],
 		"myth": ["petsuchos", "avenger", "anubite", "sphinx"],
 	},
 	"norse": {
@@ -30,7 +38,10 @@ const AOM_UNIT_BUNDLES: Dictionary = {
 		"infantry": ["ulfsark", "huskarl"],
 		"archer": ["throwing_axeman"],
 		"cavalry": ["raiding_cavalry", "jarl"],
-		"hero": ["hersir"],
+		"hero": [
+			"hersir",
+			"vibald", "angrim", "niordsir", "ulf", "harald", "skarde", "bjorn"
+		],
 		"myth": [
 			"valkyrie", "frost_giant", "troll",
 			"battle_boar_frost", "fire_giant_frost", "mountain_giant_snow",
@@ -42,8 +53,22 @@ const AOM_UNIT_BUNDLES: Dictionary = {
 		"infantry": ["murmillo", "destroyer", "fanatic"],
 		"archer": ["archer_atlantean"],
 		"cavalry": ["turma", "contarius"],
-		"hero": ["villager_atlantean_hero", "archer_atlantean_hero", "ajax_frost"],
+		"hero": [
+			"villager_atlantean_hero", "archer_atlantean_hero", "ajax_frost",
+			"tambal", "fendrel", "fendrel_call_army"
+		],
 		"myth": ["automaton", "argus", "promethean"],
+	},
+	"chinese": {
+		"villager": ["greek/villager_greek"],
+		"infantry": ["hou_jin", "general_zheng"],
+		"archer": ["huang"],
+		"cavalry": ["general_han", "tang"],
+		"hero": [
+			"general_han", "general_zheng", "general_wang", "huang",
+			"jian_chen", "lao_ming", "hou_jin", "tang"
+		],
+		"myth": ["greek/colossus"],
 	},
 }
 

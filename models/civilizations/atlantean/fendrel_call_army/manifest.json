@@ -1,0 +1,49 @@
+{
+  "unit": "fendrel_call_army",
+  "name": "Fendrel Convocador",
+  "title": "Arauto das Hostes de Oranos",
+  "civ": "atlantean",
+  "category": "herois",
+  "role": "hero",
+  "base": "fendrel_call_army_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {
+    "RightHand": "accessories/attachments_x_double_sword_standard.glb",
+    "LeftHand": "accessories/attachments_x_double_sword_standard.glb",
+    "TopOfHead": "accessories/infantry_x_2_sword_fighter_head_hero.glb"
+  },
+  "textures": [
+    "infantry_x_2_sword_fighter_iron.png"
+  ],
+  "stats": {
+    "hp": 580,
+    "attack": 38.0,
+    "armor": 0.4,
+    "speed": 6.0,
+    "cost": {
+      "food": 200,
+      "gold": 140,
+      "favor": 12
+    }
+  },
+  "desc": "Forma berserker do marechal atlante brandindo duas espadas de cristal energ\u00e9tico.",
+  "mod_source": "Heroes and Generals"
+}

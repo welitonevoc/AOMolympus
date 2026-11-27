@@ -1,0 +1,49 @@
+{
+  "unit": "teleon",
+  "name": "Teleon de L\u00f3crida",
+  "title": "Argonauta de Escudo Inquebr\u00e1vel",
+  "civ": "greek",
+  "category": "herois",
+  "role": "hero",
+  "base": "teleon_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {
+    "RightHand": "accessories/attachments_a_spear_copper.glb",
+    "LeftForearm": "accessories/attachments_g_shield_large_copper.glb",
+    "TopOfHead": "accessories/infantry_g_hoplite_head_standard.glb"
+  },
+  "textures": [
+    "infantry_g_hoplite_standard.png"
+  ],
+  "stats": {
+    "hp": 460,
+    "attack": 26.0,
+    "armor": 0.38,
+    "speed": 5.5,
+    "cost": {
+      "food": 130,
+      "gold": 80,
+      "favor": 6
+    }
+  },
+  "desc": "Veterano da nau Argo que resiste a cargas inimigas com sua postura inabal\u00e1vel.",
+  "mod_source": "Heroes and Generals"
+}

@@ -904,6 +904,59 @@ const NORSE_ICE_AGE_UNITS: Dictionary = {
 	}
 }
 
+# --- Catálogo dos 40 Novos Heróis e Generais (Modpack Heroes and Generals) ---
+const HEROES_AND_GENERALS_ROSTER: Dictionary = {
+	# Panteão Grego
+	"hector": {"name": "Hector de Tróia", "civ": "greek", "role": "hero", "hp": 550, "attack": 34.0, "armor": 0.35, "speed": 7.2, "cost": {"food": 180, "gold": 120, "favor": 10}},
+	"kos": {"name": "Kos, Campeão de Cós", "civ": "greek", "role": "hero", "hp": 480, "attack": 28.0, "armor": 0.40, "speed": 5.4, "cost": {"food": 140, "gold": 90, "favor": 8}},
+	"phocus": {"name": "Foco de Égina", "civ": "greek", "role": "hero", "hp": 450, "attack": 32.0, "armor": 0.30, "speed": 6.0, "cost": {"food": 130, "gold": 80, "favor": 6}},
+	"pollux": {"name": "Pólux, o Imortal", "civ": "greek", "role": "hero", "hp": 580, "attack": 36.0, "armor": 0.38, "speed": 5.8, "cost": {"food": 200, "gold": 150, "favor": 12}},
+	"teleon": {"name": "Teleon de Lócrida", "civ": "greek", "role": "hero", "hp": 460, "attack": 26.0, "armor": 0.38, "speed": 5.5, "cost": {"food": 130, "gold": 80, "favor": 6}},
+	"idas": {"name": "Idas, Caçador Messênio", "civ": "greek", "role": "hero", "hp": 380, "attack": 30.0, "armor": 0.22, "speed": 6.2, "cost": {"wood": 160, "gold": 100, "favor": 8}},
+	"tarkus": {"name": "Tarkus de Termópilas", "civ": "greek", "role": "hero", "hp": 470, "attack": 27.0, "armor": 0.36, "speed": 5.5, "cost": {"food": 135, "gold": 85, "favor": 7}},
+	"helle": {"name": "Helle de Cálquida", "civ": "greek", "role": "hero", "hp": 400, "attack": 25.0, "armor": 0.25, "speed": 5.8, "cost": {"food": 120, "gold": 120, "favor": 10}},
+	"acheus": {"name": "Aqueu dos Pelópidas", "civ": "greek", "role": "hero", "hp": 450, "attack": 30.0, "armor": 0.32, "speed": 6.0, "cost": {"food": 140, "gold": 90, "favor": 7}},
+	"libon": {"name": "Libon de Élis", "civ": "greek", "role": "hero", "hp": 520, "attack": 33.0, "armor": 0.34, "speed": 6.4, "cost": {"food": 170, "gold": 110, "favor": 9}},
+	"philon": {"name": "Philon, Olho de Apolo", "civ": "greek", "role": "hero", "hp": 390, "attack": 31.0, "armor": 0.20, "speed": 6.3, "cost": {"wood": 170, "gold": 110, "favor": 9}},
+	"zethos": {"name": "Zethos, Rei de Tebas", "civ": "greek", "role": "hero", "hp": 590, "attack": 37.0, "armor": 0.40, "speed": 5.6, "cost": {"food": 210, "gold": 140, "favor": 12}},
+	"charon": {"name": "Charon das Trevas", "civ": "greek", "role": "hero", "hp": 480, "attack": 32.0, "armor": 0.35, "speed": 5.5, "cost": {"gold": 220, "favor": 15}},
+
+	# Panteão Egípcio
+	"general_imothep": {"name": "General Imhotep", "civ": "egyptian", "role": "general", "hp": 680, "attack": 38.0, "armor": 0.42, "speed": 6.8, "cost": {"gold": 300, "favor": 15}},
+	"ahhotep": {"name": "Rainha Ahhotep I", "civ": "egyptian", "role": "hero", "hp": 510, "attack": 33.0, "armor": 0.35, "speed": 5.9, "cost": {"food": 160, "gold": 100, "favor": 8}},
+	"neheb": {"name": "Neheb, Escorpião de Tebas", "civ": "egyptian", "role": "hero", "hp": 470, "attack": 29.0, "armor": 0.34, "speed": 5.8, "cost": {"food": 140, "gold": 80, "favor": 7}},
+	"amnu": {"name": "Amnu das Dunas", "civ": "egyptian", "role": "hero", "hp": 460, "attack": 30.0, "armor": 0.32, "speed": 6.2, "cost": {"food": 140, "gold": 80, "favor": 7}},
+	"sethos": {"name": "Sethos, Garra de Set", "civ": "egyptian", "role": "hero", "hp": 520, "attack": 36.0, "armor": 0.33, "speed": 5.7, "cost": {"food": 170, "gold": 110, "favor": 9}},
+	"tiye": {"name": "Grã-Sacerdotisa Tiye", "civ": "egyptian", "role": "hero", "hp": 420, "attack": 27.0, "armor": 0.28, "speed": 5.6, "cost": {"gold": 180, "favor": 12}},
+	"djoser": {"name": "Faraó Djoser", "civ": "egyptian", "role": "hero", "hp": 600, "attack": 34.0, "armor": 0.40, "speed": 5.6, "cost": {"gold": 250, "favor": 14}},
+	"amnus_guard": {"name": "Guarda de Elite de Amnu", "civ": "egyptian", "role": "hero", "hp": 530, "attack": 32.0, "armor": 0.36, "speed": 7.0, "cost": {"food": 180, "gold": 120, "favor": 8}},
+	"corrupted_son_of_osiris": {"name": "Filho Corrompido de Osíris", "civ": "egyptian", "role": "hero", "hp": 950, "attack": 52.0, "armor": 0.45, "speed": 5.5, "cost": {"gold": 400, "favor": 25}},
+
+	# Panteão Nórdico
+	"vibald": {"name": "Vibald, Martelo de Thor", "civ": "norse", "role": "hero", "hp": 560, "attack": 36.0, "armor": 0.38, "speed": 5.9, "cost": {"food": 190, "gold": 110, "favor": 10}},
+	"angrim": {"name": "Angrim, Berserker de Tyrfing", "civ": "norse", "role": "hero", "hp": 520, "attack": 39.0, "armor": 0.28, "speed": 6.4, "cost": {"food": 170, "gold": 90, "favor": 8}},
+	"niordsir": {"name": "Niordsir dos Fiordes", "civ": "norse", "role": "hero", "hp": 510, "attack": 31.0, "armor": 0.35, "speed": 5.8, "cost": {"food": 160, "gold": 100, "favor": 9}},
+	"ulf": {"name": "Ulf, Garra de Fenris", "civ": "norse", "role": "hero", "hp": 480, "attack": 34.0, "armor": 0.30, "speed": 6.3, "cost": {"food": 150, "gold": 80, "favor": 7}},
+	"harald": {"name": "Harald Cabelo Belo", "civ": "norse", "role": "hero", "hp": 620, "attack": 35.0, "armor": 0.40, "speed": 7.4, "cost": {"food": 220, "gold": 140, "favor": 11}},
+	"skarde": {"name": "Skarde, Arremessador de Gelo", "civ": "norse", "role": "hero", "hp": 430, "attack": 33.0, "armor": 0.26, "speed": 6.0, "cost": {"food": 140, "wood": 100, "favor": 7}},
+	"bjorn": {"name": "Bjorn Braço de Ferro", "civ": "norse", "role": "hero", "hp": 580, "attack": 33.0, "armor": 0.36, "speed": 7.6, "cost": {"food": 200, "gold": 120, "favor": 9}},
+
+	# Panteão Atlante
+	"tambal": {"name": "Tambal, Punho de Atlas", "civ": "atlantean", "role": "hero", "hp": 540, "attack": 35.0, "armor": 0.38, "speed": 6.2, "cost": {"food": 180, "gold": 110, "favor": 8}},
+	"fendrel": {"name": "General Fendrel", "civ": "atlantean", "role": "general", "hp": 650, "attack": 37.0, "armor": 0.44, "speed": 5.8, "cost": {"food": 220, "gold": 150, "favor": 14}},
+	"fendrel_call_army": {"name": "Fendrel Convocador", "civ": "atlantean", "role": "hero", "hp": 580, "attack": 38.0, "armor": 0.40, "speed": 6.0, "cost": {"food": 200, "gold": 140, "favor": 12}},
+
+	# Panteão Chinês
+	"general_han": {"name": "General Han Xin", "civ": "chinese", "role": "general", "hp": 650, "attack": 36.0, "armor": 0.42, "speed": 7.0, "cost": {"food": 220, "gold": 150, "favor": 12}},
+	"general_zheng": {"name": "General Zheng He", "civ": "chinese", "role": "general", "hp": 620, "attack": 34.0, "armor": 0.40, "speed": 5.8, "cost": {"food": 200, "gold": 130, "favor": 10}},
+	"general_wang": {"name": "General Wang Jian", "civ": "chinese", "role": "general", "hp": 600, "attack": 35.0, "armor": 0.38, "speed": 6.1, "cost": {"food": 190, "gold": 120, "favor": 10}},
+	"huang": {"name": "Huang Zhong", "civ": "chinese", "role": "hero", "hp": 410, "attack": 33.0, "armor": 0.24, "speed": 6.3, "cost": {"wood": 180, "gold": 110, "favor": 9}},
+	"jian_chen": {"name": "Jian Chen", "civ": "chinese", "role": "hero", "hp": 490, "attack": 35.0, "armor": 0.32, "speed": 6.4, "cost": {"food": 160, "gold": 110, "favor": 9}},
+	"lao_ming": {"name": "Lao Ming, Mestre Taoísta", "civ": "chinese", "role": "hero", "hp": 440, "attack": 26.0, "armor": 0.28, "speed": 5.6, "cost": {"gold": 180, "favor": 12}},
+	"hou_jin": {"name": "Hou Jin da Guarda Proibida", "civ": "chinese", "role": "hero", "hp": 520, "attack": 33.0, "armor": 0.38, "speed": 5.7, "cost": {"food": 160, "gold": 90, "favor": 8}},
+	"tang": {"name": "Tang, Cavaleiro Imperial", "civ": "chinese", "role": "hero", "hp": 570, "attack": 34.0, "armor": 0.36, "speed": 7.3, "cost": {"food": 190, "gold": 130, "favor": 9}}
+}
+
 # --- Catálogo de Deuses Menores para Avanço de Era (Estilo AoM Clássico & Retold) ---
 # Fornece as escolhas de deuses menores para cada transição de Era (II Clássica, III Heroica, IV Mítica, V Titânica).
 const MINOR_GODS_ADVANCEMENT: Dictionary = {

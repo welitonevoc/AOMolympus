@@ -1,0 +1,51 @@
+{
+  "unit": "hector",
+  "name": "Hector de Tr\u00f3ia",
+  "title": "Domador de Cavalos e Defensor Supremo de \u00cdlion",
+  "civ": "greek",
+  "category": "herois",
+  "role": "hero",
+  "base": "hector_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "death": "animations/death.glb",
+    "attack": "animations/attack.glb"
+  },
+  "accessories": {
+    "RightHand": "accessories/attachments_g_sword_standard.glb",
+    "LeftForearm": "accessories/attachments_g_shield_small_copper.glb",
+    "TopOfHead": "accessories/cavalry_g_hippikon_head_standard.glb"
+  },
+  "textures": [
+    "cavalry_g_hippikon_cape.png",
+    "cavalry_g_hippikon_horse_standard.png",
+    "cavalry_g_hippikon_standard.png"
+  ],
+  "stats": {
+    "hp": 550,
+    "attack": 34.0,
+    "armor": 0.35,
+    "speed": 7.2,
+    "cost": {
+      "food": 180,
+      "gold": 120,
+      "favor": 10
+    }
+  },
+  "desc": "Her\u00f3i lanceiro montado que lidera a cavalaria troiana com coragem indom\u00e1vel.",
+  "mod_source": "Heroes and Generals"
+}

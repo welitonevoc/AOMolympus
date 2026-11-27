@@ -1,0 +1,50 @@
+{
+  "unit": "jian_chen",
+  "name": "Jian Chen",
+  "title": "Mestre Imortal da Espada de Jade",
+  "civ": "chinese",
+  "category": "herois",
+  "role": "hero",
+  "base": "jian_chen_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {
+    "RightHand": "accessories/attachments_x_sword_standard.glb",
+    "LeftForearm": "accessories/attachments_g_shield_large_copper.glb",
+    "TopOfHead": "accessories/infantry_g_hypaspist_head_standard.glb"
+  },
+  "textures": [
+    "infantry_g_hypaspist_cape.png",
+    "infantry_g_hypaspist_standard.png"
+  ],
+  "stats": {
+    "hp": 490,
+    "attack": 35.0,
+    "armor": 0.32,
+    "speed": 6.4,
+    "cost": {
+      "food": 160,
+      "gold": 110,
+      "favor": 9
+    }
+  },
+  "desc": "Espadachim m\u00edstico imortal canalizando o Qi para desferir golpes em arco fulminantes.",
+  "mod_source": "Heroes and Generals"
+}

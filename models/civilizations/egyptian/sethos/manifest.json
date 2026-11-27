@@ -1,0 +1,49 @@
+{
+  "unit": "sethos",
+  "name": "Sethos, Garra de Set",
+  "title": "Carrasco do Templo do Caos",
+  "civ": "egyptian",
+  "category": "herois",
+  "role": "hero",
+  "base": "sethos_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {
+    "RightHand": "accessories/attachments_e_axe_2handed_standard.glb",
+    "leftforearm": "accessories/attachments_e_shield_large_copper.glb"
+  },
+  "textures": [
+    "infantry_e_axeman_head_standard.png",
+    "infantry_e_axeman_standard.png"
+  ],
+  "stats": {
+    "hp": 520,
+    "attack": 36.0,
+    "armor": 0.33,
+    "speed": 5.7,
+    "cost": {
+      "food": 170,
+      "gold": 110,
+      "favor": 9
+    }
+  },
+  "desc": "Guerreiro impiedoso brandindo machado duplo imbu\u00eddo com as tempestades de poeira de Set.",
+  "mod_source": "Heroes and Generals"
+}

@@ -1,0 +1,51 @@
+{
+  "unit": "general_han",
+  "name": "General Han Xin",
+  "title": "Grande Estrategista dos Tr\u00eas Reinos",
+  "civ": "chinese",
+  "category": "herois",
+  "role": "general",
+  "base": "general_han_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "death": "animations/death.glb",
+    "attack": "animations/attack.glb"
+  },
+  "accessories": {
+    "RightHand": "accessories/attachments_g_sword_standard.glb",
+    "LeftForearm": "accessories/attachments_g_shield_small_copper.glb",
+    "TopOfHead": "accessories/cavalry_g_hippikon_head_standard.glb"
+  },
+  "textures": [
+    "cavalry_g_hippikon_cape.png",
+    "cavalry_g_hippikon_horse_standard.png",
+    "cavalry_g_hippikon_standard.png"
+  ],
+  "stats": {
+    "hp": 650,
+    "attack": 36.0,
+    "armor": 0.42,
+    "speed": 7.0,
+    "cost": {
+      "food": 220,
+      "gold": 150,
+      "favor": 12
+    }
+  },
+  "desc": "General montado supremo que concede velocidade e redu\u00e7\u00e3o de dano a todas as tropas chinesas pr\u00f3ximas.",
+  "mod_source": "Heroes and Generals"
+}

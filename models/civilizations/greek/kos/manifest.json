@@ -1,0 +1,49 @@
+{
+  "unit": "kos",
+  "name": "Kos, Campe\u00e3o de C\u00f3s",
+  "title": "Guardi\u00e3o da Falange Egeia",
+  "civ": "greek",
+  "category": "herois",
+  "role": "hero",
+  "base": "kos_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {
+    "RightHand": "accessories/attachments_a_spear_copper.glb",
+    "LeftForearm": "accessories/attachments_g_shield_large_copper.glb",
+    "TopOfHead": "accessories/infantry_g_hoplite_head_standard.glb"
+  },
+  "textures": [
+    "infantry_g_hoplite_standard.png"
+  ],
+  "stats": {
+    "hp": 480,
+    "attack": 28.0,
+    "armor": 0.4,
+    "speed": 5.4,
+    "cost": {
+      "food": 140,
+      "gold": 90,
+      "favor": 8
+    }
+  },
+  "desc": "Hoplita lend\u00e1rio com dory refor\u00e7ada e armadura de bronze maci\u00e7o.",
+  "mod_source": "Heroes and Generals"
+}

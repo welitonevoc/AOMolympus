@@ -1,0 +1,48 @@
+{
+  "unit": "pollux",
+  "name": "P\u00f3lux, o Imortal",
+  "title": "G\u00eameo Divino e Protetor dos Navegantes",
+  "civ": "greek",
+  "category": "herois",
+  "role": "hero",
+  "base": "pollux_base.glb",
+  "sockets": [
+    "ATTACHPOINT",
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb",
+    "walk": "animations/walk.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "hero_g_ajax.png",
+    "hero_g_ajax_shield.png",
+    "hero_g_ajax_spear.png"
+  ],
+  "stats": {
+    "hp": 580,
+    "attack": 36.0,
+    "armor": 0.38,
+    "speed": 5.8,
+    "cost": {
+      "food": 200,
+      "gold": 150,
+      "favor": 12
+    }
+  },
+  "desc": "Campe\u00e3o pugilista e lanceiro de for\u00e7a tit\u00e2nica agraciado pela imortalidade de Zeus.",
+  "mod_source": "Heroes and Generals"
+}

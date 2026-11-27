@@ -1,0 +1,49 @@
+{
+  "unit": "general_zheng",
+  "name": "General Zheng He",
+  "title": "Almirante das Frotas do Tesouro",
+  "civ": "chinese",
+  "category": "herois",
+  "role": "general",
+  "base": "general_zheng_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {
+    "RightHand": "accessories/attachments_a_spear_copper.glb",
+    "LeftForearm": "accessories/attachments_g_shield_large_copper.glb",
+    "TopOfHead": "accessories/infantry_g_hoplite_head_standard.glb"
+  },
+  "textures": [
+    "infantry_g_hoplite_standard.png"
+  ],
+  "stats": {
+    "hp": 620,
+    "attack": 34.0,
+    "armor": 0.4,
+    "speed": 5.8,
+    "cost": {
+      "food": 200,
+      "gold": 130,
+      "favor": 10
+    }
+  },
+  "desc": "L\u00edder e diplomata armado de alabarda com vis\u00e3o ampliada e comando de cerco.",
+  "mod_source": "Heroes and Generals"
+}

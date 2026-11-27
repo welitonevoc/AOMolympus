@@ -1,0 +1,50 @@
+{
+  "unit": "general_wang",
+  "name": "General Wang Jian",
+  "title": "Comandante Vitorioso de Qin",
+  "civ": "chinese",
+  "category": "herois",
+  "role": "general",
+  "base": "general_wang_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {
+    "RightHand": "accessories/attachments_x_sword_standard.glb",
+    "LeftForearm": "accessories/attachments_g_shield_large_copper.glb",
+    "TopOfHead": "accessories/infantry_g_hypaspist_head_standard.glb"
+  },
+  "textures": [
+    "infantry_g_hypaspist_cape.png",
+    "infantry_g_hypaspist_standard.png"
+  ],
+  "stats": {
+    "hp": 600,
+    "attack": 35.0,
+    "armor": 0.38,
+    "speed": 6.1,
+    "cost": {
+      "food": 190,
+      "gold": 120,
+      "favor": 10
+    }
+  },
+  "desc": "General de infantaria com espada jian que quebra forma\u00e7\u00f5es inimigas com golpes precisos.",
+  "mod_source": "Heroes and Generals"
+}

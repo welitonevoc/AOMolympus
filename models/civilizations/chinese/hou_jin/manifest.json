@@ -1,0 +1,49 @@
+{
+  "unit": "hou_jin",
+  "name": "Hou Jin da Guarda Proibida",
+  "title": "Guardi\u00e3o da Alabarda Celestial",
+  "civ": "chinese",
+  "category": "herois",
+  "role": "hero",
+  "base": "hou_jin_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {
+    "RightHand": "accessories/attachments_a_spear_copper.glb",
+    "LeftForearm": "accessories/attachments_g_shield_large_copper.glb",
+    "TopOfHead": "accessories/infantry_g_hoplite_head_standard.glb"
+  },
+  "textures": [
+    "infantry_g_hoplite_standard.png"
+  ],
+  "stats": {
+    "hp": 520,
+    "attack": 33.0,
+    "armor": 0.38,
+    "speed": 5.7,
+    "cost": {
+      "food": 160,
+      "gold": 90,
+      "favor": 8
+    }
+  },
+  "desc": "Guerreiro de choque com alabarda ji capaz de repelir cargas de cavalaria e feras.",
+  "mod_source": "Heroes and Generals"
+}

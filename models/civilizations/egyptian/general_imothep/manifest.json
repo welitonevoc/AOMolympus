@@ -1,0 +1,49 @@
+{
+  "unit": "general_imothep",
+  "name": "General Imhotep",
+  "title": "Marechal Supremo do Imp\u00e9rio e Chanceler das Areias",
+  "civ": "egyptian",
+  "category": "herois",
+  "role": "general",
+  "base": "general_imothep_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "death": "animations/death.glb",
+    "attack": "animations/attack.glb"
+  },
+  "accessories": {
+    "RightHand": "accessories/attachments_e_sword_standard.glb",
+    "LeftForearm": "accessories/attachments_e_shield_small_copper.glb"
+  },
+  "textures": [
+    "cavalry_e_camelry_camel_copper.png",
+    "cavalry_e_camelry_copper.png",
+    "cavalry_e_camelry_head_copper.png"
+  ],
+  "stats": {
+    "hp": 680,
+    "attack": 38.0,
+    "armor": 0.42,
+    "speed": 6.8,
+    "cost": {
+      "gold": 300,
+      "favor": 15
+    }
+  },
+  "desc": "General de guerra supremo montado que emana aura de comando acelerando todas as tropas eg\u00edpcias.",
+  "mod_source": "Heroes and Generals"
+}

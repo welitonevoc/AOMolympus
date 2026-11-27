@@ -1,0 +1,49 @@
+{
+  "unit": "neheb",
+  "name": "Neheb, Escorpi\u00e3o de Tebas",
+  "title": "Capit\u00e3o da Vanguarda do Nilo",
+  "civ": "egyptian",
+  "category": "herois",
+  "role": "hero",
+  "base": "neheb_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {
+    "TopOfHead": "accessories/infantry_e_spearman_head_standard.glb",
+    "RightHand": "accessories/attachments_a_spear_copper.glb",
+    "LeftForearm": "accessories/attachments_e_shield_large_copper.glb"
+  },
+  "textures": [
+    "infantry_e_spearman_standard.png"
+  ],
+  "stats": {
+    "hp": 470,
+    "attack": 29.0,
+    "armor": 0.34,
+    "speed": 5.8,
+    "cost": {
+      "food": 140,
+      "gold": 80,
+      "favor": 7
+    }
+  },
+  "desc": "Lanceiro de elite treinado nos templos para desmantelar cavalarias e monstros.",
+  "mod_source": "Heroes and Generals"
+}

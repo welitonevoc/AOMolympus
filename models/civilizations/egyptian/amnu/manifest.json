@@ -1,0 +1,49 @@
+{
+  "unit": "amnu",
+  "name": "Amnu das Dunas",
+  "title": "Senhor dos Batedores do Deserto",
+  "civ": "egyptian",
+  "category": "herois",
+  "role": "hero",
+  "base": "amnu_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {
+    "TopOfHead": "accessories/infantry_e_spearman_head_standard.glb",
+    "RightHand": "accessories/attachments_a_spear_copper.glb",
+    "LeftForearm": "accessories/attachments_e_shield_large_copper.glb"
+  },
+  "textures": [
+    "infantry_e_spearman_standard.png"
+  ],
+  "stats": {
+    "hp": 460,
+    "attack": 30.0,
+    "armor": 0.32,
+    "speed": 6.2,
+    "cost": {
+      "food": 140,
+      "gold": 80,
+      "favor": 7
+    }
+  },
+  "desc": "Guerreiro do deserto profundo com movimentos velozes e lan\u00e7a perfurante de cobre.",
+  "mod_source": "Heroes and Generals"
+}

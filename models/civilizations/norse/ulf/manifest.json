@@ -1,0 +1,45 @@
+{
+  "unit": "ulf",
+  "name": "Ulf, Garra de Fenris",
+  "title": "Ca\u00e7ador das Montanhas Geladas",
+  "civ": "norse",
+  "category": "herois",
+  "role": "hero",
+  "base": "ulf_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "LEFTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "gather": "animations/gather.glb",
+    "walk": "animations/walk.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {
+    "RightHand": "accessories/attachments_n_axe_2handed_standard.glb",
+    "LeftForearm": "accessories/attachments_n_shield_large_copper.glb",
+    "TopOfHead": "accessories/infantry_n_ulfsark_head_standard.glb"
+  },
+  "textures": [
+    "infantry_n_ulfsark_head_standard.png",
+    "infantry_n_ulfsark_standard.png"
+  ],
+  "stats": {
+    "hp": 480,
+    "attack": 34.0,
+    "armor": 0.3,
+    "speed": 6.3,
+    "cost": {
+      "food": 150,
+      "gold": 80,
+      "favor": 7
+    }
+  },
+  "desc": "Espadachim selvagem com sentidos agu\u00e7ados e ataque cr\u00edtico de emboscada.",
+  "mod_source": "Heroes and Generals"
+}

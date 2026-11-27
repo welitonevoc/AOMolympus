@@ -1,0 +1,49 @@
+{
+  "unit": "djoser",
+  "name": "Fara\u00f3 Djoser",
+  "title": "Senhor da Pir\u00e2mide de Degraus",
+  "civ": "egyptian",
+  "category": "herois",
+  "role": "hero",
+  "base": "djoser_base.glb",
+  "sockets": [
+    "ATTACHPOINT",
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "gather": "animations/gather.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {
+    "RightHand": "accessories/attachments_e_scepter.glb"
+  },
+  "textures": [
+    "special_e_pharaoh.png",
+    "special_e_pharaoh_head.png"
+  ],
+  "stats": {
+    "hp": 600,
+    "attack": 34.0,
+    "armor": 0.4,
+    "speed": 5.6,
+    "cost": {
+      "gold": 250,
+      "favor": 14
+    }
+  },
+  "desc": "Fara\u00f3 divino de Saqqara que capacita constru\u00e7\u00f5es pr\u00f3ximas com acelera\u00e7\u00e3o de produ\u00e7\u00e3o.",
+  "mod_source": "Heroes and Generals"
+}

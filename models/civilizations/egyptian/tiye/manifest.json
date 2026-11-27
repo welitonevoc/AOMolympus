@@ -1,0 +1,50 @@
+{
+  "unit": "tiye",
+  "name": "Gr\u00e3-Sacerdotisa Tiye",
+  "title": "Voz Sagrada de \u00c1mon-R\u00e1",
+  "civ": "egyptian",
+  "category": "herois",
+  "role": "hero",
+  "base": "tiye_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "attack": "animations/attack.glb",
+    "gather": "animations/gather.glb",
+    "death": "animations/death.glb",
+    "walk": "animations/walk.glb"
+  },
+  "accessories": {
+    "TopOfHead": "accessories/special_e_priest_head.glb",
+    "RightHand": "accessories/special_e_priest_staff.glb"
+  },
+  "textures": [
+    "special_e_priest.png",
+    "special_e_priest_head.png",
+    "special_e_priest_staff.png"
+  ],
+  "stats": {
+    "hp": 420,
+    "attack": 27.0,
+    "armor": 0.28,
+    "speed": 5.6,
+    "cost": {
+      "gold": 180,
+      "favor": 12
+    }
+  },
+  "desc": "Hero\u00edna m\u00edstica capaz de curar aliados feridos \u00e0 dist\u00e2ncia e afastar criaturas sombrias.",
+  "mod_source": "Heroes and Generals"
+}

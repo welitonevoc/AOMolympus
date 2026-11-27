@@ -1,0 +1,48 @@
+{
+  "unit": "vibald",
+  "name": "Vibald, Martelo de Thor",
+  "title": "Paladino do Trov\u00e3o de Midgard",
+  "civ": "norse",
+  "category": "herois",
+  "role": "hero",
+  "base": "vibald_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "walk": "animations/walk.glb",
+    "idle": "animations/idle.glb",
+    "gather": "animations/gather.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "hero_n_hero.png",
+    "hero_n_hero_hammer.png",
+    "hero_n_hero_head.png"
+  ],
+  "stats": {
+    "hp": 560,
+    "attack": 36.0,
+    "armor": 0.38,
+    "speed": 5.9,
+    "cost": {
+      "food": 190,
+      "gold": 110,
+      "favor": 10
+    }
+  },
+  "desc": "Guerreiro sagrado empunhando machado e martelo com b\u00f4nus de dano divino contra monstros.",
+  "mod_source": "Heroes and Generals"
+}

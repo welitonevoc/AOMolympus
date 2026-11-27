@@ -1,0 +1,50 @@
+{
+  "unit": "philon",
+  "name": "Philon, Olho de Apolo",
+  "title": "Atirador Sagrado de Delfos",
+  "civ": "greek",
+  "category": "herois",
+  "role": "hero",
+  "base": "philon_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {
+    "Righthand": "accessories/attachments_a_bow.glb",
+    "TopOfHead": "accessories/archer_g_toxotes_head_standard.glb",
+    "leftforearm": "accessories/attachments_g_shield_small_copper.glb",
+    "righthand": "accessories/attachments_a_bow.glb"
+  },
+  "textures": [
+    "archer_g_toxotes_standard.png"
+  ],
+  "stats": {
+    "hp": 390,
+    "attack": 31.0,
+    "armor": 0.2,
+    "speed": 6.3,
+    "cost": {
+      "wood": 170,
+      "gold": 110,
+      "favor": 9
+    }
+  },
+  "desc": "Arqueiro iluminado pelos or\u00e1culos com rajadas certeiras e vis\u00e3o ampliada no nevoeiro.",
+  "mod_source": "Heroes and Generals"
+}

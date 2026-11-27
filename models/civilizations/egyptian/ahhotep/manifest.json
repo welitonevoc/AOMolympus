@@ -1,0 +1,49 @@
+{
+  "unit": "ahhotep",
+  "name": "Rainha Ahhotep I",
+  "title": "Guerreira das Tr\u00eas Moscas de Ouro",
+  "civ": "egyptian",
+  "category": "herois",
+  "role": "hero",
+  "base": "ahhotep_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {
+    "RightHand": "accessories/attachments_e_axe_2handed_standard.glb",
+    "leftforearm": "accessories/attachments_e_shield_large_copper.glb"
+  },
+  "textures": [
+    "infantry_e_axeman_head_standard.png",
+    "infantry_e_axeman_standard.png"
+  ],
+  "stats": {
+    "hp": 510,
+    "attack": 33.0,
+    "armor": 0.35,
+    "speed": 5.9,
+    "cost": {
+      "food": 160,
+      "gold": 100,
+      "favor": 8
+    }
+  },
+  "desc": "Rainha libertadora portando khopesh sagrada e escudo com medalhas reais tebanas.",
+  "mod_source": "Heroes and Generals"
+}

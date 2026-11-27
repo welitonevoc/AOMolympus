@@ -1,0 +1,50 @@
+{
+  "unit": "bjorn",
+  "name": "Bjorn Bra\u00e7o de Ferro",
+  "title": "Cors\u00e1rio e Saqueador Lend\u00e1rio",
+  "civ": "norse",
+  "category": "herois",
+  "role": "hero",
+  "base": "bjorn_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "death": "animations/death.glb",
+    "attack": "animations/attack.glb"
+  },
+  "accessories": {
+    "TopOfHead": "accessories/cavalry_n_raiding_cavalry_head_standard.glb",
+    "RightHand": "accessories/attachments_n_axe_throwing_standard.glb",
+    "LeftForearm": "accessories/attachments_n_shield_small_copper.glb"
+  },
+  "textures": [
+    "cavalry_n_raiding_cavalry_horse_standard.png",
+    "cavalry_n_raiding_cavalry_standard.png"
+  ],
+  "stats": {
+    "hp": 580,
+    "attack": 33.0,
+    "armor": 0.36,
+    "speed": 7.6,
+    "cost": {
+      "food": 200,
+      "gold": 120,
+      "favor": 9
+    }
+  },
+  "desc": "Cavalaria r\u00e1pida de saque que ganha ouro e tributos ao abater soldados e constru\u00e7\u00f5es.",
+  "mod_source": "Heroes and Generals"
+}

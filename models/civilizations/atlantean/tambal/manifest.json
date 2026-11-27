@@ -1,0 +1,44 @@
+{
+  "unit": "tambal",
+  "name": "Tambal, Punho de Atlas",
+  "title": "Gladiador Lend\u00e1rio da Nova Atl\u00e2ntida",
+  "civ": "atlantean",
+  "category": "herois",
+  "role": "hero",
+  "base": "tambal_base.glb",
+  "sockets": [
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTABDOMEN",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "LEFTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {
+    "RightHand": "accessories/attachments_x_sword_standard.glb",
+    "LeftForearm": "accessories/attachments_x_shield_large_copper.glb"
+  },
+  "textures": [
+    "infantry_x_swordsman_iron.png"
+  ],
+  "stats": {
+    "hp": 540,
+    "attack": 35.0,
+    "armor": 0.38,
+    "speed": 6.2,
+    "cost": {
+      "food": 180,
+      "gold": 110,
+      "favor": 8
+    }
+  },
+  "desc": "Her\u00f3i da infantaria atlante com l\u00e2mina dupla e escudo el\u00edptico de oricalco.",
+  "mod_source": "Heroes and Generals"
+}

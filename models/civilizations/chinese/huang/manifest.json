@@ -1,0 +1,50 @@
+{
+  "unit": "huang",
+  "name": "Huang Zhong",
+  "title": "O Tigre da Pontaria Perfeita",
+  "civ": "chinese",
+  "category": "herois",
+  "role": "hero",
+  "base": "huang_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {
+    "Righthand": "accessories/attachments_a_bow.glb",
+    "TopOfHead": "accessories/archer_g_toxotes_head_standard.glb",
+    "leftforearm": "accessories/attachments_g_shield_small_copper.glb",
+    "righthand": "accessories/attachments_a_bow.glb"
+  },
+  "textures": [
+    "archer_g_toxotes_standard.png"
+  ],
+  "stats": {
+    "hp": 410,
+    "attack": 33.0,
+    "armor": 0.24,
+    "speed": 6.3,
+    "cost": {
+      "wood": 180,
+      "gold": 110,
+      "favor": 9
+    }
+  },
+  "desc": "Arqueiro veterano imperial que dispara proj\u00e9teis incendi\u00e1rios de longo alcance.",
+  "mod_source": "Heroes and Generals"
+}

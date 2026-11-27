@@ -1,0 +1,48 @@
+{
+  "unit": "niordsir",
+  "name": "Niordsir dos Fiordes",
+  "title": "Gothi Aben\u00e7oado de Njord",
+  "civ": "norse",
+  "category": "herois",
+  "role": "hero",
+  "base": "niordsir_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "walk": "animations/walk.glb",
+    "idle": "animations/idle.glb",
+    "gather": "animations/gather.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "hero_n_hero.png",
+    "hero_n_hero_hammer.png",
+    "hero_n_hero_head.png"
+  ],
+  "stats": {
+    "hp": 510,
+    "attack": 31.0,
+    "armor": 0.35,
+    "speed": 5.8,
+    "cost": {
+      "food": 160,
+      "gold": 100,
+      "favor": 9
+    }
+  },
+  "desc": "Sacerdote guerreiro que gera Favor adicional ao combater unidades m\u00edticas.",
+  "mod_source": "Heroes and Generals"
+}

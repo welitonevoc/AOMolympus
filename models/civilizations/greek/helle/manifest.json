@@ -1,0 +1,46 @@
+{
+  "unit": "helle",
+  "name": "Helle de C\u00e1lquida",
+  "title": "Sacerdotisa do Velocino Dourado",
+  "civ": "greek",
+  "category": "herois",
+  "role": "hero",
+  "base": "helle_base.glb",
+  "sockets": [
+    "ATTACHPOINT",
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "death": "animations/death.glb",
+    "walk": "animations/walk.glb"
+  },
+  "accessories": {},
+  "textures": [
+    "special_g_athena.png",
+    "special_g_athena_head.png"
+  ],
+  "stats": {
+    "hp": 400,
+    "attack": 25.0,
+    "armor": 0.25,
+    "speed": 5.8,
+    "cost": {
+      "food": 120,
+      "gold": 120,
+      "favor": 10
+    }
+  },
+  "desc": "Hero\u00edna aben\u00e7oada pelos deuses mar\u00edtimos e a\u00e9reos com b\u00ean\u00e7\u00e3os protetoras.",
+  "mod_source": "Heroes and Generals"
+}

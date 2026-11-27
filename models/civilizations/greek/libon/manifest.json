@@ -1,0 +1,50 @@
+{
+  "unit": "libon",
+  "name": "Libon de \u00c9lis",
+  "title": "Arquiteto e Marechal Ol\u00edmpico",
+  "civ": "greek",
+  "category": "herois",
+  "role": "hero",
+  "base": "libon_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "FRONTCHEST",
+    "BACKCHEST",
+    "FRONTABDOMEN",
+    "LEFTFOOT",
+    "RIGHTFOOT",
+    "LEFTFOREARM",
+    "RIGHTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "walk": "animations/walk.glb",
+    "death": "animations/death.glb",
+    "attack": "animations/attack.glb"
+  },
+  "accessories": {
+    "RightHand": "accessories/attachments_g_sword_standard.glb",
+    "LeftForearm": "accessories/attachments_g_shield_small_copper.glb"
+  },
+  "textures": [
+    "cavalry_g_cataphract_head_iron.png",
+    "cavalry_g_cataphract_horse_iron.png",
+    "cavalry_g_cataphract_iron.png"
+  ],
+  "stats": {
+    "hp": 520,
+    "attack": 33.0,
+    "armor": 0.34,
+    "speed": 6.4,
+    "cost": {
+      "food": 170,
+      "gold": 110,
+      "favor": 9
+    }
+  },
+  "desc": "Comandante estrategista que inspira maior velocidade e b\u00f4nus estrutural nas linhas gregas.",
+  "mod_source": "Heroes and Generals"
+}

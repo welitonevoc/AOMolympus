@@ -1,0 +1,46 @@
+{
+  "unit": "skarde",
+  "name": "Skarde, Arremessador de Gelo",
+  "title": "Arremessador de Machado de Skadi",
+  "civ": "norse",
+  "category": "herois",
+  "role": "hero",
+  "base": "skarde_base.glb",
+  "sockets": [
+    "SMOKEPOINT",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "BACKCHEST",
+    "LEFTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "gather": "animations/gather.glb",
+    "walk": "animations/walk.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {
+    "Righthand": "accessories/attachments_n_axe_throwing_standard.glb",
+    "Smokepoint": "accessories/attachments_n_axe_throwing_standard.glb",
+    "LeftForearm": "accessories/attachments_n_shield_small_copper.glb",
+    "TopOfHead": "accessories/archer_n_throwing_axeman_head_standard.glb"
+  },
+  "textures": [
+    "archer_n_throwing_axeman_standard.png"
+  ],
+  "stats": {
+    "hp": 430,
+    "attack": 33.0,
+    "armor": 0.26,
+    "speed": 6.0,
+    "cost": {
+      "food": 140,
+      "wood": 100,
+      "favor": 7
+    }
+  },
+  "desc": "Heroico arremessador que atira machados pesados capazes de despeda\u00e7ar armaduras \u00e0 dist\u00e2ncia.",
+  "mod_source": "Heroes and Generals"
+}

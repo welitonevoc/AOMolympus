@@ -1,0 +1,45 @@
+{
+  "unit": "angrim",
+  "name": "Angrim, Berserker de Tyrfing",
+  "title": "L\u00e2mina Furiosa de Odin",
+  "civ": "norse",
+  "category": "herois",
+  "role": "hero",
+  "base": "angrim_base.glb",
+  "sockets": [
+    "LEFTHAND",
+    "RIGHTHAND",
+    "TOPOFHEAD",
+    "LEFTFOREARM",
+    "HITPOINTBAR"
+  ],
+  "animations": {
+    "idle": "animations/idle.glb",
+    "gather": "animations/gather.glb",
+    "walk": "animations/walk.glb",
+    "attack": "animations/attack.glb",
+    "death": "animations/death.glb"
+  },
+  "accessories": {
+    "RightHand": "accessories/attachments_n_axe_2handed_standard.glb",
+    "LeftForearm": "accessories/attachments_n_shield_large_copper.glb",
+    "TopOfHead": "accessories/infantry_n_ulfsark_head_standard.glb"
+  },
+  "textures": [
+    "infantry_n_ulfsark_head_standard.png",
+    "infantry_n_ulfsark_standard.png"
+  ],
+  "stats": {
+    "hp": 520,
+    "attack": 39.0,
+    "armor": 0.28,
+    "speed": 6.4,
+    "cost": {
+      "food": 170,
+      "gold": 90,
+      "favor": 8
+    }
+  },
+  "desc": "Guerreiro berserker cuja velocidade de ataque aumenta conforme sua vida diminui.",
+  "mod_source": "Heroes and Generals"
+}
