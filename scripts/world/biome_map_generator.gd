@@ -90,7 +90,8 @@ static func build_biome_environment(
 			# Planicies, florestas densas, savana, tundra, megalopole, nomade, morte subita e desconhecido
 			_build_biome_centerpiece(terrain_root, biome_id, biome, rng, arena_size)
 
-	# 4. Pracas das duas cidadelas
+	# 4. Pracas das duas cidadelas + 4 Assentamentos Neutros de expansao
+	_build_neutral_settlements(terrain_root, arena_size, biome["rock_color"])
 	for plaza_cfg in [
 		{"pos": player_base, "col": biome["plaza_player"]},
 		{"pos": enemy_base, "col": biome["plaza_enemy"]},
@@ -190,6 +191,18 @@ static func _build_central_sea(root: Node3D, arena_size: float, ratio: float, wa
 	inst.position = Vector3(0.0, 0.05, 0.0)
 	root.add_child(inst)
 
+	var body := StaticBody3D.new()
+	body.name = "CentralSeaCollision"
+	body.collision_layer = 4
+	body.collision_mask = 0
+	var col := CollisionShape3D.new()
+	var cyl_shape := CylinderShape3D.new()
+	cyl_shape.radius = sea_radius * 0.96
+	cyl_shape.height = 4.0
+	col.shape = cyl_shape
+	body.add_child(col)
+	root.add_child(body)
+
 
 static func _build_divine_altar_hill(root: Node3D, height: float, biome: Dictionary) -> void:
 	# Grande colina circular central com altura balanceada
@@ -269,6 +282,18 @@ static func _build_expanded_oasis(root: Node3D, arena_size: float, ratio: float,
 	inst.position = Vector3(0.0, 0.02, 0.0)
 	root.add_child(inst)
 
+	var body := StaticBody3D.new()
+	body.name = "OasisLakeCollision"
+	body.collision_layer = 4
+	body.collision_mask = 0
+	var col := CollisionShape3D.new()
+	var cyl_shape := CylinderShape3D.new()
+	cyl_shape.radius = oasis_radius * 0.94
+	cyl_shape.height = 4.0
+	col.shape = cyl_shape
+	body.add_child(col)
+	root.add_child(body)
+
 
 static func _build_canyon_divide(root: Node3D, arena_size: float, rock_color: Color, rng: RandomNumberGenerator) -> void:
 	var mat := StandardMaterial3D.new()
@@ -326,6 +351,40 @@ static func _build_river_divide(root: Node3D, arena_size: float, water_color: Co
 	ford.material_override = ford_mat
 	ford.position = Vector3(0.0, 0.03, 0.0)
 	root.add_child(ford)
+
+	# Colisores nos trechos norte e sul do rio, mantendo o vau central livre
+	var seg_len: float = maxf(8.0, (arena_size * 0.96 - 18.0) * 0.5)
+	for side in [-1.0, 1.0]:
+		var body := StaticBody3D.new()
+		body.name = "RiverCollision_%d" % int(side)
+		body.collision_layer = 4
+		body.collision_mask = 0
+		body.position = Vector3(0.0, 1.5, side * (9.0 + seg_len * 0.5))
+		var col := CollisionShape3D.new()
+		var box_shape := BoxShape3D.new()
+		box_shape.size = Vector3(9.5, 4.0, seg_len)
+		col.shape = box_shape
+		body.add_child(col)
+		root.add_child(body)
+
+
+static func _build_neutral_settlements(root: Node3D, arena_size: float, rock_color: Color) -> void:
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = rock_color.lightened(0.18)
+	mat.roughness = 0.85
+	var ext: float = arena_size * 0.26
+	for idx in range(4):
+		var sx: float = ext if (idx % 2 == 0) else -ext
+		var sz: float = ext * 0.7 if idx < 2 else -ext * 0.7
+		var ring := TorusMesh.new()
+		ring.inner_radius = 4.2
+		ring.outer_radius = 4.8
+		var mi := MeshInstance3D.new()
+		mi.name = "NeutralSettlement_%d" % idx
+		mi.mesh = ring
+		mi.material_override = mat
+		mi.position = Vector3(sx, 0.03, sz)
+		root.add_child(mi)
 
 
 static func _build_dual_coast_seas(root: Node3D, arena_size: float, water_color: Color) -> void:

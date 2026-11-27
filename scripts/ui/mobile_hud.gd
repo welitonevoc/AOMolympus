@@ -110,7 +110,7 @@ var _biome_buttons: Dictionary = {}
 var _diff_buttons: Dictionary = {}
 var _res_mode_buttons: Dictionary = {}
 var _chapter_buttons: Dictionary = {}
-var _chosen_random_map_preset: String = "acropolis"
+var _chosen_random_map_preset: String = "cidadela_do_olimpo"
 var _random_map_buttons: Dictionary = {}
 var _random_map_desc_label: Label
 var _pantheon_desc_label: Label

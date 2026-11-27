@@ -455,6 +455,12 @@ func _can_place_at(pos: Vector3, kind: String) -> bool:
 		return false
 	var spec: Dictionary = PantheonCatalog.get_building_spec(kind)
 	var fp_new: float = float(spec.get("footprint", 2.2))
+	var preset: Dictionary = OlympusRandomMapPresets.get_preset(GameState.active_random_map_preset)
+	var no_build_ratio: float = float(preset.get("no_build_center_ratio", 0.0))
+	if no_build_ratio > 0.0:
+		var no_build_r: float = GameState.get_active_arena_size() * no_build_ratio + fp_new
+		if Vector2(pos.x, pos.z).length() < no_build_r:
+			return false
 	for b in get_tree().get_nodes_in_group("buildings"):
 		if b is BuildingActor:
 			var fp_other: float = float(PantheonCatalog.get_building_spec(b.building_kind).get("footprint", 2.2))
