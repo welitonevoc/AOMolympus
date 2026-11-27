@@ -591,7 +591,8 @@ func _process_gathering(delta: float) -> void:
 				"gold":
 					sfx_kind = "gather_gold"
 				"food":
-					sfx_kind = "gather_forage"
+					var is_animal: bool = target_resource.variant != "berry" and not (target_resource.variant in ["fish", "whale"])
+					sfx_kind = "attack_bow" if is_animal else "gather_forage"
 				_:
 					sfx_kind = "gather_wood"
 			AudioDirector.play_sfx_3d(sfx_kind, global_position, pantheon_id)
@@ -601,6 +602,13 @@ func _process_gathering(delta: float) -> void:
 	var taken: float = target_resource.harvest(gather_rate * mult * delta)
 	if taken <= 0.0:
 		return
+
+	# Reação de manada: animais próximos entram em pânico e se dispersam
+	if target_resource.resource_kind == "food" and target_resource.variant in ["deer", "gazelle", "zebra", "caribou"]:
+		for r in get_tree().get_nodes_in_group("resources"):
+			if r is ResourceNode and r != target_resource and r.resource_kind == "food" and r.variant == target_resource.variant:
+				if r.global_position.distance_to(global_position) < 7.5:
+					r.trigger_panic_flee(global_position)
 
 	carried_kind = target_resource.resource_kind
 	if bool(p.get("autonomous_gather", false)):
