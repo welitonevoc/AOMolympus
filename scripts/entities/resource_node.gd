@@ -45,6 +45,8 @@ func harvest(requested: float) -> float:
 		return 0.0
 	if resource_kind == "wood" and not _tree_felled:
 		_tree_felled = true
+		var stump: Node3D = ModelLibrary.create_stump_visual()
+		add_child(stump)
 		if _visual_root != null and is_instance_valid(_visual_root):
 			var fall_tw := create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 			fall_tw.parallel().tween_property(_visual_root, "rotation_degrees:z", 82.0, 0.85)

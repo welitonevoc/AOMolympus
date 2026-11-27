@@ -922,17 +922,47 @@ func _update_carry_visual(visible_flag: bool) -> void:
 	for ch in _carry_crate.get_children():
 		ch.queue_free()
 	_carry_crate.mesh = null
-	_carry_crate.visible = visible_flag
-	if visible_flag:
-		var res_path: String = "res://models/civilizations/greek/villager_greek/accessories/attachments_a_resource_grain.glb" if carried_kind == "food" else "res://models/civilizations/greek/villager_greek/accessories/attachments_a_basket.glb"
-		if ResourceLoader.exists(res_path):
-			var ps := ResourceLoader.load(res_path) as PackedScene
-			if ps != null:
-				var inst := ps.instantiate() as Node3D
-				if inst != null:
-					inst.scale = Vector3.ONE * 0.85
-					_carry_crate.add_child(inst)
-					return
+	var show_carry: bool = visible_flag and state == State.RETURNING
+	_carry_crate.visible = show_carry
+	if not show_carry:
+		return
+	if carried_kind == "wood":
+		var log_mat := StandardMaterial3D.new()
+		log_mat.albedo_color = Color("#6b4423")
+		log_mat.roughness = 0.88
+		for offset in [Vector3(-0.09, 0.0, 0.0), Vector3(0.09, 0.0, 0.0), Vector3(0.0, 0.11, 0.0)]:
+			var log_mi := MeshInstance3D.new()
+			var cyl := CylinderMesh.new()
+			cyl.top_radius = 0.075
+			cyl.bottom_radius = 0.075
+			cyl.height = 0.56
+			log_mi.mesh = cyl
+			log_mi.material_override = log_mat
+			log_mi.rotation_degrees = Vector3(0.0, 0.0, 90.0)
+			log_mi.position = offset
+			_carry_crate.add_child(log_mi)
+		return
+	if carried_kind == "gold":
+		var gold_mat := StandardMaterial3D.new()
+		gold_mat.albedo_color = Color("#facc15")
+		gold_mat.metallic = 0.82
+		gold_mat.roughness = 0.28
+		var nugget := MeshInstance3D.new()
+		var sph := SphereMesh.new()
+		sph.radius = 0.20
+		sph.height = 0.34
+		nugget.mesh = sph
+		nugget.material_override = gold_mat
+		_carry_crate.add_child(nugget)
+		return
+	var res_path: String = "res://models/civilizations/greek/villager_greek/accessories/attachments_a_resource_grain.glb"
+	if ResourceLoader.exists(res_path):
+		var ps := ResourceLoader.load(res_path) as PackedScene
+		if ps != null:
+			var inst := ps.instantiate() as Node3D
+			if inst != null:
+				inst.scale = Vector3.ONE * 0.85
+				_carry_crate.add_child(inst)
 
 
 func _find_nearest_town_center() -> BuildingActor:
