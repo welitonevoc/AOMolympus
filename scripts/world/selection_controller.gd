@@ -5,6 +5,13 @@ extends Node
 ## movimentacao em 5 formacoes, posicionamento de obras e conjuracao de Poderes Divinos no solo.
 
 const TAP_MAX_MOVE_PX: float = 26.0
+const BUILDING_LIMITS: Dictionary = {
+	"house": 30,
+	"tower": 40,
+	"fortress": 10,
+	"wonder": 1,
+	"titan_gate": 1,
+}
 
 var camera_rig: TouchRTSCamera
 var world: Node3D
@@ -429,6 +436,15 @@ func _confirm_build_placement(screen_pos: Vector2) -> void:
 	if not _can_place_at(pos, kind):
 		GameState.notify("Local obstruido ou fora do terreno jogavel.", true)
 		return
+	if BUILDING_LIMITS.has(kind):
+		var max_lim: int = int(BUILDING_LIMITS[kind])
+		var cur_count: int = 0
+		for b in get_tree().get_nodes_in_group("buildings"):
+			if b is BuildingActor and (b as BuildingActor).faction == "player" and (b as BuildingActor).building_kind == kind:
+				cur_count += 1
+		if cur_count >= max_lim:
+			GameState.notify("Limite atingido para esta construcao (%d/%d)." % [cur_count, max_lim], true)
+			return
 	var spec: Dictionary = PantheonCatalog.get_building_spec(kind)
 	if not GameState.spend_resources(spec["cost"]):
 		GameState.cancel_build_mode()

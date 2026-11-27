@@ -45,9 +45,90 @@ const SAGAS: Array[Dictionary] = [
 		"description": "A ascensão da Nova Atlântida, a manipulação do culto aos Titãs e o selamento no Abismo.",
 		"scenario_count": 12,
 	},
+	{
+		"id": "saga_era_dos_herois",
+		"name": "Saga VI: A Era dos Heróis",
+		"pantheon": "greek",
+		"icon": "zeus_lightning",
+		"description": "50 anos após a queda da Atlântida, novos heróis escolhidos por Atena enfrentam a aliança de Poseidon, Polifemo e gigantes nórdicos.",
+		"scenario_count": 3,
+	},
 ]
 
 const SCENARIOS: Dictionary = {
+	# =========================================================================
+	# SAGA VI: A ERA DOS HERÓIS (3 Cenários — Inspirado em Age Of Heroes)
+	# =========================================================================
+	"herois_01_chamado_de_atena": {
+		"id": "herois_01_chamado_de_atena",
+		"saga_id": "saga_era_dos_herois",
+		"chapter_index": 1,
+		"title": "O Chamado de Atena",
+		"pantheon": "greek",
+		"enemy_pantheon": "greek",
+		"biome": "mediterranean",
+		"difficulty": "normal",
+		"seed": 30001,
+		"starting_age": 1,
+		"speaker": "Atena",
+		"briefing": "Poseidon conspira novamente contra o Olimpo e Polifemo busca vingança. Reúna novos heróis dignos e derrote a vanguarda ciclópica.",
+		"victory_rule": "conquest",
+		"starting_resources": {"gold": 400.0, "wood": 400.0, "food": 450.0, "favor": 25.0},
+		"objectives": [
+			{"id": "train_army", "label": "Treinar 8 Guerreiros", "type": "military", "count": 8},
+			{"id": "destroy_enemy_camp", "label": "Destruir a Base de Polifemo", "type": "victory", "count": 1},
+		],
+		"dialogues": [
+			{"time": 3.0, "speaker": "Atena", "text": "Heróis mortais, o Olimpo precisa de sua coragem mais uma vez!"},
+		],
+		"reinforcements": [],
+	},
+	"herois_02_piratas_do_nilo": {
+		"id": "herois_02_piratas_do_nilo",
+		"saga_id": "saga_era_dos_herois",
+		"chapter_index": 2,
+		"title": "Piratas do Nilo",
+		"pantheon": "egyptian",
+		"enemy_pantheon": "greek",
+		"biome": "nile_desert",
+		"difficulty": "normal",
+		"seed": 30002,
+		"starting_age": 2,
+		"speaker": "Sacerdote de Rá",
+		"briefing": "Para impedir o apoio egípcio aos gregos, piratas enviados por Poseidon atacam nossa cidade no deserto. Defenda os portões e expulse a frota.",
+		"victory_rule": "conquest",
+		"starting_resources": {"gold": 500.0, "wood": 450.0, "food": 500.0, "favor": 35.0},
+		"objectives": [
+			{"id": "destroy_enemy_camp", "label": "Expulsar os Piratas Invasores", "type": "victory", "count": 1},
+		],
+		"dialogues": [
+			{"time": 3.0, "speaker": "Sacerdote de Rá", "text": "O sol de Rá queimará os invasores antes que tomem nossas margens!"},
+		],
+		"reinforcements": [],
+	},
+	"herois_03_uniao_do_ragnarok": {
+		"id": "herois_03_uniao_do_ragnarok",
+		"saga_id": "saga_era_dos_herois",
+		"chapter_index": 3,
+		"title": "A Aliança do Norte",
+		"pantheon": "norse",
+		"enemy_pantheon": "norse",
+		"biome": "nordic_tundra",
+		"difficulty": "hard",
+		"seed": 30003,
+		"starting_age": 2,
+		"speaker": "Comandante Nórdico",
+		"briefing": "Nas terras geladas, gigantes foram recrutados com promessas de poder no Ragnarok. Quebre o pacto sombrio na tundra.",
+		"victory_rule": "conquest",
+		"starting_resources": {"gold": 550.0, "wood": 550.0, "food": 550.0, "favor": 40.0},
+		"objectives": [
+			{"id": "destroy_enemy_camp", "label": "Derrotar os Gigantes Rebeldes", "type": "victory", "count": 1},
+		],
+		"dialogues": [
+			{"time": 3.0, "speaker": "Comandante Nórdico", "text": "Pelo martelo de Thor, nenhum traidor passará por estas montanhas!"},
+		],
+		"reinforcements": [],
+	},
 	# =========================================================================
 	# SAGA I: A ALVORADA DA HÉLADE (12 Cenários)
 	# =========================================================================
