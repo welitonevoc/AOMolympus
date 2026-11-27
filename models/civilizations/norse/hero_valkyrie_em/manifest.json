@@ -1,0 +1,28 @@
+{
+  "slug": "hero_valkyrie_em",
+  "name": "Valquíria Heroína de Elite",
+  "civilization": "norse",
+  "category": "unit",
+  "role": "hero",
+  "base": "hero_valkyrie_em_base.glb",
+  "source_model": "hero n valkyrie_idlea",
+  "source_type": "mod",
+  "frames": 1,
+  "vertices": 64,
+  "faces": 83,
+  "materials": 1,
+  "textures": [
+    "hero_n_valkyrie_standard.png"
+  ],
+  "sockets": {
+    "ATTACHPOINT_Socket": [
+      0.0027,
+      1.4922,
+      0.0006
+    ]
+  },
+  "accessories": [],
+  "animations": {
+    "idle": "hero_valkyrie_em_base.glb"
+  }
+}

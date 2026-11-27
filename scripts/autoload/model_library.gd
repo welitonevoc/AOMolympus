@@ -11,10 +11,11 @@ static var _manifest_cache: Dictionary = {}
 const AOM_UNIT_BUNDLES: Dictionary = {
 	"greek": {
 		"villager": ["villager_greek"],
-		"infantry": ["hoplite", "swordman"],
-		"archer": ["toxotes"],
-		"cavalry": ["hippikon"],
+		"infantry": ["hoplite", "swordman", "spartan_hoplite", "theban_sacred_band"],
+		"archer": ["toxotes", "agrianian"],
+		"cavalry": ["hippikon", "amazon_horse_archer"],
 		"hero": [
+			"hero_leonidas", "hero_alexander", "hero_amazon_queen", "hero_achilles_em",
 			"hero_greek_ajax", "ajax", "arkantos", "hero_greek_achilles",
 			"hector", "kos", "phocus", "pollux", "teleon", "idas", "tarkus",
 			"helle", "acheus", "libon", "philon", "zethos", "charon"
@@ -23,22 +24,24 @@ const AOM_UNIT_BUNDLES: Dictionary = {
 	},
 	"egyptian": {
 		"villager": ["villager_egyptian"],
-		"infantry": ["spearman", "axeman"],
-		"archer": ["chariot_archer", "slinger"],
-		"cavalry": ["camelry", "mercenary_cavalry"],
+		"infantry": ["spearman", "axeman", "nubian_warrior"],
+		"archer": ["chariot_archer", "slinger", "nubian_archer"],
+		"cavalry": ["camelry", "mercenary_cavalry", "dwarf_elephant"],
 		"hero": [
+			"hero_amanra_queen", "hero_osiris_falcon",
 			"pharaoh", "priest",
 			"general_imothep", "ahhotep", "neheb", "amnu", "sethos", "tiye",
 			"djoser", "amnus_guard", "corrupted_son_of_osiris"
 		],
-		"myth": ["petsuchos", "avenger", "anubite", "sphinx"],
+		"myth": ["petsuchos", "avenger", "anubite", "sphinx", "armored_elephant"],
 	},
 	"norse": {
 		"villager": ["villager_norse", "dwarf"],
-		"infantry": ["ulfsark", "huskarl"],
-		"archer": ["throwing_axeman"],
+		"infantry": ["ulfsark", "huskarl", "akimbo_warrior"],
+		"archer": ["throwing_axeman", "alfar"],
 		"cavalry": ["raiding_cavalry", "jarl"],
 		"hero": [
+			"hero_valkyrie_em", "hero_brun",
 			"hersir",
 			"vibald", "angrim", "niordsir", "ulf", "harald", "skarde", "bjorn"
 		],
@@ -85,6 +88,16 @@ const AOM_UNIT_BUNDLES: Dictionary = {
 			"maquizcoatl", "tlaloque", "tzitzimime", "xiuhcoatl",
 			"xochitonal", "yahui", "acihuatl", "quetzal_bird", "titan_aztec"
 		],
+	},
+	"roman": {
+		"villager": ["greek/villager_greek"],
+		"infantry": ["roman/roman_legionary", "roman/roman_praetorian", "roman/roman_triarii"],
+		"archer": ["greek/toxotes"],
+		"cavalry": ["roman/roman_praetorian_cavalry"],
+		"hero": [
+			"roman/hero_roman_centurion", "roman/hero_roman_aquilifer", "roman/hero_principes"
+		],
+		"myth": ["greek/colossus"],
 	},
 }
 
@@ -154,6 +167,19 @@ const AOM_BUILDING_BUNDLES: Dictionary = {
 		"divine_altar": ["aztec/tzompantli", "aztec/temple"],
 		"wonder": ["aztec/wonder_quetzalcoatl", "aztec/wonder_huitzilopochtli", "aztec/wonder_tezcatlipoca"],
 		"titan_gate": ["aztec/titan_gate"],
+	},
+	"roman": {
+		"town_center": ["greek/town_center"],
+		"house": ["greek/storehouse"],
+		"temple": ["roman/temple_of_jupiter", "greek/temple_underworld"],
+		"barracks": ["greek/academy"],
+		"archery": ["greek/archery_range"],
+		"stable": ["greek/stable"],
+		"tower": ["shared/tower"],
+		"fortress": ["greek/fortress"],
+		"divine_altar": ["roman/temple_of_jupiter"],
+		"wonder": ["roman/temple_of_jupiter"],
+		"titan_gate": ["egyptian/titan_gate"],
 	},
 }
 

@@ -1,0 +1,28 @@
+{
+  "slug": "hero_osiris_falcon",
+  "name": "Falcão Sagrado de Osíris",
+  "civilization": "egyptian",
+  "category": "unit",
+  "role": "hero",
+  "base": "hero_osiris_falcon_base.glb",
+  "source_model": "animal falcon_idlea",
+  "source_type": "mod",
+  "frames": 1,
+  "vertices": 64,
+  "faces": 83,
+  "materials": 1,
+  "textures": [
+    "animal_falcon_map.png"
+  ],
+  "sockets": {
+    "ATTACHPOINT_Socket": [
+      0.0027,
+      1.4922,
+      0.0006
+    ]
+  },
+  "accessories": [],
+  "animations": {
+    "idle": "hero_osiris_falcon_base.glb"
+  }
+}

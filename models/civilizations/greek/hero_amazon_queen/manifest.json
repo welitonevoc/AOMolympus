@@ -1,0 +1,88 @@
+{
+  "slug": "hero_amazon_queen",
+  "name": "Rainha das Amazonas",
+  "civilization": "greek",
+  "category": "unit",
+  "role": "hero",
+  "base": "hero_amazon_queen_base.glb",
+  "source_model": "archer g amazon_attacka",
+  "source_type": "mod",
+  "frames": 13,
+  "vertices": 151,
+  "faces": 150,
+  "materials": 1,
+  "textures": [
+    "archer_g_amazon_standard.png"
+  ],
+  "sockets": {
+    "ATTACHPOINT_Socket": [
+      -1.2891,
+      -1.5547,
+      0.0
+    ],
+    "LEFTHAND_Socket": [
+      0.2793,
+      -0.1079,
+      0.2812
+    ],
+    "RIGHTHAND_Socket": [
+      -0.2061,
+      -0.1079,
+      -0.1123
+    ],
+    "TOPOFHEAD_Socket": [
+      0.0366,
+      0.8711,
+      0.1055
+    ],
+    "FRONTCHEST_Socket": [
+      -0.0923,
+      0.543,
+      0.3008
+    ],
+    "BACKCHEST_Socket": [
+      0.1201,
+      0.4355,
+      -0.0474
+    ],
+    "FRONTABDOMEN_Socket": [
+      -0.103,
+      0.25,
+      0.3125
+    ],
+    "LEFTFOOT_Socket": [
+      0.126,
+      -1.5781,
+      0.1094
+    ],
+    "RIGHTFOOT_Socket": [
+      -0.2422,
+      -1.5781,
+      0.1367
+    ],
+    "LEFTFOREARM_Socket": [
+      0.4023,
+      0.1309,
+      0.2715
+    ],
+    "RIGHTFOREARM_Socket": [
+      -0.1758,
+      0.1338,
+      -0.2354
+    ],
+    "HITPOINTBAR_Socket": [
+      0.0,
+      1.9453,
+      -0.0
+    ],
+    "LAUNCHPOINT_Socket": [
+      0.0,
+      0.6992,
+      1.2656
+    ]
+  },
+  "accessories": [],
+  "animations": {
+    "idle": "hero_amazon_queen_base.glb"
+  }
+}

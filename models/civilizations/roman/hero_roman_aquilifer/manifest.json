@@ -1,0 +1,78 @@
+{
+  "slug": "hero_roman_aquilifer",
+  "name": "Aquilifer (Portador da Águia)",
+  "civilization": "roman",
+  "category": "unit",
+  "role": "hero",
+  "base": "hero_roman_aquilifer_base.glb",
+  "source_model": "cavalry g prodromos_idlea",
+  "source_type": "vanilla",
+  "frames": 4,
+  "vertices": 237,
+  "faces": 218,
+  "materials": 4,
+  "textures": [
+    "auxilliary_iron.png"
+  ],
+  "sockets": {
+    "LEFTHAND_Socket": [
+      -0.0327,
+      1.9062,
+      0.1982
+    ],
+    "RIGHTHAND_Socket": [
+      -0.3906,
+      1.7344,
+      -0.4082
+    ],
+    "TOPOFHEAD_Socket": [
+      0.0115,
+      2.4531,
+      -0.1738
+    ],
+    "FRONTCHEST_Socket": [
+      -0.0525,
+      2.1406,
+      -0.0596
+    ],
+    "BACKCHEST_Socket": [
+      0.0408,
+      2.1719,
+      -0.2832
+    ],
+    "FRONTABDOMEN_Socket": [
+      0.0,
+      1.9531,
+      -0.1748
+    ],
+    "LEFTFOOT_Socket": [
+      0.1206,
+      0.0425,
+      0.4941
+    ],
+    "RIGHTFOOT_Socket": [
+      -0.1299,
+      0.0403,
+      0.2539
+    ],
+    "LEFTFOREARM_Socket": [
+      0.085,
+      1.9844,
+      0.124
+    ],
+    "RIGHTFOREARM_Socket": [
+      -0.3496,
+      1.9375,
+      -0.4023
+    ],
+    "HITPOINTBAR_Socket": [
+      -0.0,
+      3.0156,
+      0.0
+    ]
+  },
+  "accessories": [],
+  "animations": {
+    "idle": "hero_roman_aquilifer_base.glb"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "slug": "hero_amanra_queen",
+  "name": "Rainha Amanra Anciã",
+  "civilization": "egyptian",
+  "category": "unit",
+  "role": "hero",
+  "base": "hero_amanra_queen_base.glb",
+  "source_model": "hero e amanra_idlea",
+  "source_type": "mod",
+  "frames": 1,
+  "vertices": 64,
+  "faces": 83,
+  "materials": 1,
+  "textures": [],
+  "sockets": {
+    "ATTACHPOINT_Socket": [
+      0.0027,
+      1.4922,
+      0.0006
+    ]
+  },
+  "accessories": [],
+  "animations": {
+    "idle": "hero_amanra_queen_base.glb"
+  }
+}

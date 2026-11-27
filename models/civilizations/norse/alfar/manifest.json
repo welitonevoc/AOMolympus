@@ -1,0 +1,53 @@
+{
+  "slug": "alfar",
+  "name": "Alfar (Elfos Nórdicos da Luz)",
+  "civilization": "norse",
+  "category": "unit",
+  "role": "archer",
+  "base": "alfar_base.glb",
+  "source_model": "archer n throwing axeman_idlea",
+  "source_type": "vanilla",
+  "frames": 5,
+  "vertices": 129,
+  "faces": 126,
+  "materials": 2,
+  "textures": [
+    "alfar_map.png"
+  ],
+  "sockets": {
+    "SMOKEPOINT_Socket": [
+      -0.021,
+      0.5039,
+      -0.2344
+    ],
+    "RIGHTHAND_Socket": [
+      -0.5273,
+      -0.0432,
+      -0.1689
+    ],
+    "TOPOFHEAD_Socket": [
+      0.002,
+      0.7734,
+      0.0192
+    ],
+    "BACKCHEST_Socket": [
+      0.0254,
+      0.4648,
+      -0.1465
+    ],
+    "LEFTFOREARM_Socket": [
+      0.3379,
+      0.2051,
+      0.2275
+    ],
+    "HITPOINTBAR_Socket": [
+      -0.0155,
+      1.7656,
+      0.0
+    ]
+  },
+  "accessories": [],
+  "animations": {
+    "idle": "alfar_base.glb"
+  }
+}

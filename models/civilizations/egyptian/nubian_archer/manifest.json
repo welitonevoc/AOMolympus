@@ -1,0 +1,26 @@
+{
+  "slug": "nubian_archer",
+  "name": "Arqueiro Núbio de Elite",
+  "civilization": "egyptian",
+  "category": "unit",
+  "role": "archer",
+  "base": "nubian_archer_base.glb",
+  "source_model": "archer e bowman_idlea",
+  "source_type": "mod",
+  "frames": 1,
+  "vertices": 64,
+  "faces": 83,
+  "materials": 1,
+  "textures": [],
+  "sockets": {
+    "ATTACHPOINT_Socket": [
+      0.0027,
+      1.4922,
+      0.0006
+    ]
+  },
+  "accessories": [],
+  "animations": {
+    "idle": "nubian_archer_base.glb"
+  }
+}

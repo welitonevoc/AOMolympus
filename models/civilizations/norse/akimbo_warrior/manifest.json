@@ -1,0 +1,53 @@
+{
+  "slug": "akimbo_warrior",
+  "name": "Guerreiro Nórdico Akimbo",
+  "civilization": "norse",
+  "category": "unit",
+  "role": "infantry",
+  "base": "akimbo_warrior_base.glb",
+  "source_model": "infantry n ulfsark_attacka",
+  "source_type": "vanilla",
+  "frames": 12,
+  "vertices": 138,
+  "faces": 126,
+  "materials": 3,
+  "textures": [
+    "infantry_n_ulfsark_standard.png"
+  ],
+  "sockets": {
+    "RIGHTHAND_Socket": [
+      -0.5586,
+      0.1709,
+      0.0525
+    ],
+    "TOPOFHEAD_Socket": [
+      -0.0894,
+      0.5117,
+      0.0713
+    ],
+    "LEFTFOOT_Socket": [
+      0.3516,
+      -1.1719,
+      0.293
+    ],
+    "RIGHTFOOT_Socket": [
+      -0.166,
+      -1.1719,
+      -0.1846
+    ],
+    "LEFTFOREARM_Socket": [
+      -0.006,
+      -0.1167,
+      0.293
+    ],
+    "HITPOINTBAR_Socket": [
+      -0.0,
+      1.5,
+      -0.0
+    ]
+  },
+  "accessories": [],
+  "animations": {
+    "idle": "akimbo_warrior_base.glb"
+  }
+}

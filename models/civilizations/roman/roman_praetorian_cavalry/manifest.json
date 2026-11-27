@@ -1,0 +1,78 @@
+{
+  "slug": "roman_praetorian_cavalry",
+  "name": "Cavalaria Pretoriana",
+  "civilization": "roman",
+  "category": "unit",
+  "role": "cavalry",
+  "base": "roman_praetorian_cavalry_base.glb",
+  "source_model": "cavalry g hetairoi_idlea",
+  "source_type": "vanilla",
+  "frames": 4,
+  "vertices": 330,
+  "faces": 281,
+  "materials": 6,
+  "textures": [
+    "praetorian_cavalry_shield.png"
+  ],
+  "sockets": {
+    "LEFTHAND_Socket": [
+      -0.0327,
+      0.8359,
+      0.4707
+    ],
+    "RIGHTHAND_Socket": [
+      -0.3906,
+      0.6602,
+      -0.1357
+    ],
+    "TOPOFHEAD_Socket": [
+      0.0115,
+      1.3828,
+      0.0986
+    ],
+    "FRONTCHEST_Socket": [
+      -0.0525,
+      1.0703,
+      0.2129
+    ],
+    "BACKCHEST_Socket": [
+      0.0408,
+      1.0938,
+      -0.0106
+    ],
+    "FRONTABDOMEN_Socket": [
+      0.0,
+      0.8789,
+      0.0981
+    ],
+    "LEFTFOOT_Socket": [
+      0.1328,
+      -0.9531,
+      0.8008
+    ],
+    "RIGHTFOOT_Socket": [
+      -0.1426,
+      -0.9531,
+      0.5586
+    ],
+    "LEFTFOREARM_Socket": [
+      0.085,
+      0.9141,
+      0.3965
+    ],
+    "RIGHTFOREARM_Socket": [
+      -0.3496,
+      0.8633,
+      -0.1299
+    ],
+    "HITPOINTBAR_Socket": [
+      0.0,
+      2.0,
+      0.2715
+    ]
+  },
+  "accessories": [],
+  "animations": {
+    "idle": "roman_praetorian_cavalry_base.glb"
+  }
+}

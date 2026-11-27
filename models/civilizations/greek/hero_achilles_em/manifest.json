@@ -1,0 +1,28 @@
+{
+  "slug": "hero_achilles_em",
+  "name": "Aquiles (Expanded)",
+  "civilization": "greek",
+  "category": "unit",
+  "role": "hero",
+  "base": "hero_achilles_em_base.glb",
+  "source_model": "hero greek achilles_idlea",
+  "source_type": "mod",
+  "frames": 1,
+  "vertices": 64,
+  "faces": 83,
+  "materials": 1,
+  "textures": [
+    "hero_greek_achilles_standard.png"
+  ],
+  "sockets": {
+    "ATTACHPOINT_Socket": [
+      0.0027,
+      1.4922,
+      0.0006
+    ]
+  },
+  "accessories": [],
+  "animations": {
+    "idle": "hero_achilles_em_base.glb"
+  }
+}

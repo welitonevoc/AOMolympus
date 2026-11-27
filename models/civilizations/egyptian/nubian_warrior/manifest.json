@@ -1,0 +1,78 @@
+{
+  "slug": "nubian_warrior",
+  "name": "Guerreiro Núbio",
+  "civilization": "egyptian",
+  "category": "unit",
+  "role": "infantry",
+  "base": "nubian_warrior_base.glb",
+  "source_model": "infantry e axeman_idlea",
+  "source_type": "vanilla",
+  "frames": 6,
+  "vertices": 167,
+  "faces": 158,
+  "materials": 3,
+  "textures": [
+    "nubian_warrior_map.png"
+  ],
+  "sockets": {
+    "LEFTHAND_Socket": [
+      0.0386,
+      0.3516,
+      0.4023
+    ],
+    "RIGHTHAND_Socket": [
+      -0.248,
+      0.1699,
+      0.3086
+    ],
+    "TOPOFHEAD_Socket": [
+      0.0001,
+      0.9648,
+      0.0457
+    ],
+    "FRONTCHEST_Socket": [
+      -0.033,
+      0.6133,
+      0.165
+    ],
+    "BACKCHEST_Socket": [
+      0.0305,
+      0.6445,
+      -0.0962
+    ],
+    "FRONTABDOMEN_Socket": [
+      -0.0164,
+      0.4062,
+      0.0486
+    ],
+    "LEFTFOOT_Socket": [
+      0.1523,
+      -1.1172,
+      0.1914
+    ],
+    "RIGHTFOOT_Socket": [
+      -0.209,
+      -1.1172,
+      -0.2139
+    ],
+    "LEFTFOREARM_Socket": [
+      0.2051,
+      0.3789,
+      0.2617
+    ],
+    "RIGHTFOREARM_Socket": [
+      -0.2832,
+      0.3457,
+      0.125
+    ],
+    "HITPOINTBAR_Socket": [
+      -0.0155,
+      1.8125,
+      0.0
+    ]
+  },
+  "accessories": [],
+  "animations": {
+    "idle": "nubian_warrior_base.glb"
+  }
+}

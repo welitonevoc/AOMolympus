@@ -1,0 +1,76 @@
+{
+  "slug": "theban_sacred_band",
+  "name": "Batalhão Sagrado de Tebas",
+  "civilization": "greek",
+  "category": "unit",
+  "role": "infantry",
+  "base": "theban_sacred_band_base.glb",
+  "source_model": "infantry g hoplite_idlea",
+  "source_type": "vanilla",
+  "frames": 3,
+  "vertices": 197,
+  "faces": 140,
+  "materials": 2,
+  "textures": [],
+  "sockets": {
+    "LEFTHAND_Socket": [
+      0.0767,
+      0.1245,
+      0.3457
+    ],
+    "RIGHTHAND_Socket": [
+      -0.2754,
+      0.3398,
+      0.3203
+    ],
+    "TOPOFHEAD_Socket": [
+      0.0962,
+      0.7578,
+      0.0854
+    ],
+    "FRONTCHEST_Socket": [
+      -0.0378,
+      0.4746,
+      0.1895
+    ],
+    "BACKCHEST_Socket": [
+      0.1621,
+      0.4492,
+      0.0087
+    ],
+    "FRONTABDOMEN_Socket": [
+      0.0155,
+      0.252,
+      0.1914
+    ],
+    "LEFTFOOT_Socket": [
+      0.2109,
+      -1.1094,
+      0.2373
+    ],
+    "RIGHTFOOT_Socket": [
+      -0.127,
+      -1.1172,
+      -0.1201
+    ],
+    "LEFTFOREARM_Socket": [
+      0.2236,
+      0.2383,
+      0.3984
+    ],
+    "RIGHTFOREARM_Socket": [
+      -0.291,
+      0.3301,
+      0.0742
+    ],
+    "HITPOINTBAR_Socket": [
+      -0.0155,
+      1.8125,
+      0.0
+    ]
+  },
+  "accessories": [],
+  "animations": {
+    "idle": "theban_sacred_band_base.glb"
+  }
+}

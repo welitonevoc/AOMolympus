@@ -1,0 +1,48 @@
+{
+  "slug": "hero_roman_centurion",
+  "name": "Centurião Romano",
+  "civilization": "roman",
+  "category": "unit",
+  "role": "hero",
+  "base": "hero_roman_centurion_base.glb",
+  "source_model": "infantry x trident soldier_boreda",
+  "source_type": "vanilla",
+  "frames": 14,
+  "vertices": 223,
+  "faces": 164,
+  "materials": 4,
+  "textures": [
+    "centurio_corpo.png"
+  ],
+  "sockets": {
+    "LEFTHAND_Socket": [
+      0.2051,
+      0.2617,
+      0.4609
+    ],
+    "RIGHTHAND_Socket": [
+      -0.2559,
+      -0.1025,
+      -0.1992
+    ],
+    "TOPOFHEAD_Socket": [
+      0.1465,
+      0.7773,
+      -0.0786
+    ],
+    "LEFTFOREARM_Socket": [
+      0.3926,
+      0.2334,
+      0.3164
+    ],
+    "HITPOINTBAR_Socket": [
+      -0.0,
+      2.5938,
+      -0.0
+    ]
+  },
+  "accessories": [],
+  "animations": {
+    "idle": "hero_roman_centurion_base.glb"
+  }
+}

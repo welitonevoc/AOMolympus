@@ -1,0 +1,28 @@
+{
+  "slug": "temple_of_jupiter",
+  "name": "Templo de Júpiter Capitolino",
+  "civilization": "roman",
+  "category": "building",
+  "role": "building",
+  "base": "temple_of_jupiter_base.glb",
+  "source_model": "building g temple base age3",
+  "source_type": "mod",
+  "frames": 1,
+  "vertices": 64,
+  "faces": 83,
+  "materials": 1,
+  "textures": [
+    "building_g_temple_base_age3.png"
+  ],
+  "sockets": {
+    "ATTACHPOINT_Socket": [
+      0.0027,
+      1.4922,
+      0.0006
+    ]
+  },
+  "accessories": [],
+  "animations": {
+    "idle": "temple_of_jupiter_base.glb"
+  }
+}

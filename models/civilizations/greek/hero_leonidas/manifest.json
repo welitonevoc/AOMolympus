@@ -1,0 +1,78 @@
+{
+  "slug": "hero_leonidas",
+  "name": "Rei Leônidas de Esparta",
+  "civilization": "greek",
+  "category": "unit",
+  "role": "hero",
+  "base": "hero_leonidas_base.glb",
+  "source_model": "infantry g hypaspist_idlea",
+  "source_type": "vanilla",
+  "frames": 5,
+  "vertices": 219,
+  "faces": 154,
+  "materials": 3,
+  "textures": [
+    "hero_leonidas_standard.png"
+  ],
+  "sockets": {
+    "LEFTHAND_Socket": [
+      0.4727,
+      1.1641,
+      0.1064
+    ],
+    "RIGHTHAND_Socket": [
+      -0.3555,
+      1.0625,
+      0.0996
+    ],
+    "TOPOFHEAD_Socket": [
+      0.0072,
+      1.8984,
+      -0.0154
+    ],
+    "FRONTCHEST_Socket": [
+      0.0601,
+      1.6172,
+      0.1562
+    ],
+    "BACKCHEST_Socket": [
+      -0.0095,
+      1.5859,
+      -0.1025
+    ],
+    "FRONTABDOMEN_Socket": [
+      0.0378,
+      1.3906,
+      0.0737
+    ],
+    "LEFTFOOT_Socket": [
+      0.2715,
+      0.0008,
+      0.0067
+    ],
+    "RIGHTFOOT_Socket": [
+      -0.1787,
+      0.0008,
+      -0.1514
+    ],
+    "LEFTFOREARM_Socket": [
+      0.4102,
+      1.3359,
+      -0.0869
+    ],
+    "RIGHTFOREARM_Socket": [
+      -0.3457,
+      1.2422,
+      -0.0029
+    ],
+    "HITPOINTBAR_Socket": [
+      -0.0155,
+      2.9375,
+      0.0
+    ]
+  },
+  "accessories": [],
+  "animations": {
+    "idle": "hero_leonidas_base.glb"
+  }
+}

@@ -99,9 +99,25 @@ const PANTHEONS: Dictionary = {
 		"can_promote_hero": false,
 		"gather_multiplier": 1.05,
 	},
+	"roman": {
+		"id": "roman",
+		"name": "Romanos",
+		"deity": "Jupiter",
+		"deity_slug": "jupiter",
+		"architecture_label": "Templos colossais, aquedutos de pedra e estradas imperiais",
+		"bonus_label": "Legioes disciplinadas, Centurioes de elite e auras do Aquilifero",
+		"primary_color": Color("#991b1b"),
+		"accent_color": Color("#eab308"),
+		"stone_color": Color("#f1f5f9"),
+		"roof_color": Color("#7f1d1d"),
+		"starting_bonus": {"food": 60, "wood": 60, "gold": 60, "favor": 15},
+		"autonomous_gather": false,
+		"can_promote_hero": false,
+		"gather_multiplier": 1.05,
+	},
 }
 
-const PANTHEON_ORDER: Array[String] = ["greek", "egyptian", "norse", "atlantean", "chinese", "aztec"]
+const PANTHEON_ORDER: Array[String] = ["greek", "egyptian", "norse", "atlantean", "chinese", "aztec", "roman"]
 
 const BIOMES: Dictionary = {
 	"mediterranean": {
@@ -740,6 +756,16 @@ const PANTHEON_UNIT_NAMES: Dictionary = {
 		"siege": "Ariete Asteca",
 		"titan": "Titã Asteca",
 	},
+	"roman": {
+		"villager": "Cidadao Plebeu",
+		"infantry": "Legionario Romano",
+		"archer": "Arqueiro Auxiliar",
+		"cavalry": "Cavalaria Pretoriana",
+		"hero": "Centuriao Romano",
+		"myth": "Guarda Pretoriana",
+		"siege": "Onagro Romano",
+		"titan": "Colosso de Jupiter",
+	},
 }
 
 const HERO_PROMOTION_COST: Dictionary = {"food": 50, "gold": 50, "favor": 5}
@@ -778,6 +804,11 @@ const DIVINE_GODS: Dictionary = {
 		"majors": ["quetzalcoatl_major", "tezcatlipoca_major", "huitzilopochtli_major"],
 		"minors": ["tlaloc_minor", "xolotl_minor", "coatlicue_minor", "mictlantecuhtli_minor",
 		           "coyolxauhqui_minor", "tonatiuh_minor", "chalchiuhtlicue_minor"],
+	},
+	"roman": {
+		"majors": ["jupiter_major", "mars_major", "neptune_major"],
+		"minors": ["minerva_minor", "vulcan_minor", "mercury_minor", "venus_minor",
+		           "apollo_roman_minor", "diana_minor", "pluto_minor", "ceres_minor"],
 	},
 }
 
@@ -2267,6 +2298,16 @@ func get_unit_spec(pantheon_id: String, unit_kind: String) -> Dictionary:
 		base["speed"] = 8.0
 		base["attack"] = 18.0
 		base["armor"] = 0.12
+	elif unit_kind == "infantry" and pantheon_id == "roman":
+		# Legionário Romano (Armadura de Placas e Pilum de impacto)
+		base["armor"] = 0.32
+		base["hp"] = 165
+		base["attack"] = 17.5
+	elif unit_kind == "cavalry" and pantheon_id == "roman":
+		# Cavalaria Pretoriana (Cavalaria Pesada de Guarda de Elite)
+		base["speed"] = 7.6
+		base["attack"] = 23.0
+		base["armor"] = 0.25
 
 	return base
 

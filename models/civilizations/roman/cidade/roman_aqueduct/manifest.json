@@ -1,0 +1,28 @@
+{
+  "slug": "roman_aqueduct",
+  "name": "Aqueduto Romano Monumental",
+  "civilization": "roman",
+  "category": "building",
+  "role": "building",
+  "base": "roman_aqueduct_base.glb",
+  "source_model": "building x aquaduct arch1",
+  "source_type": "mod",
+  "frames": 1,
+  "vertices": 30,
+  "faces": 20,
+  "materials": 1,
+  "textures": [
+    "building_g_stone.png"
+  ],
+  "sockets": {
+    "HITPOINTBAR_Socket": [
+      0.0,
+      10.5625,
+      -0.0
+    ]
+  },
+  "accessories": [],
+  "animations": {
+    "idle": "roman_aqueduct_base.glb"
+  }
+}

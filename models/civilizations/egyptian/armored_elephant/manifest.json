@@ -1,0 +1,33 @@
+{
+  "slug": "armored_elephant",
+  "name": "Elefante de Guerra Blindado",
+  "civilization": "egyptian",
+  "category": "unit",
+  "role": "siege",
+  "base": "armored_elephant_base.glb",
+  "source_model": "animal dwarf elephant_attacka",
+  "source_type": "mod",
+  "frames": 20,
+  "vertices": 296,
+  "faces": 285,
+  "materials": 1,
+  "textures": [
+    "animal_elephant_standard.png"
+  ],
+  "sockets": {
+    "CHIN_Socket": [
+      -0.0029,
+      1.0078,
+      1.1016
+    ],
+    "HITPOINTBAR_Socket": [
+      -0.0029,
+      2.5469,
+      0.0283
+    ]
+  },
+  "accessories": [],
+  "animations": {
+    "idle": "armored_elephant_base.glb"
+  }
+}

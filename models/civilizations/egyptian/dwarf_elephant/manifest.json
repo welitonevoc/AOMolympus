@@ -1,0 +1,38 @@
+{
+  "slug": "dwarf_elephant",
+  "name": "Elefante Anão do Norte da África",
+  "civilization": "egyptian",
+  "category": "unit",
+  "role": "cavalry",
+  "base": "dwarf_elephant_base.glb",
+  "source_model": "animal dwarf elephant_boreda",
+  "source_type": "mod",
+  "frames": 37,
+  "vertices": 296,
+  "faces": 285,
+  "materials": 1,
+  "textures": [
+    "animal_elephant_standard.png"
+  ],
+  "sockets": {
+    "ATTACHPOINT_Socket": [
+      -0.007,
+      1.4297,
+      0.0287
+    ],
+    "CHIN_Socket": [
+      -0.006,
+      0.9922,
+      1.1016
+    ],
+    "HITPOINTBAR_Socket": [
+      -0.006,
+      2.5469,
+      0.0233
+    ]
+  },
+  "accessories": [],
+  "animations": {
+    "idle": "dwarf_elephant_base.glb"
+  }
+}

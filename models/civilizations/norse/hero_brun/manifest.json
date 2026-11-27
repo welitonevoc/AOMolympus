@@ -1,0 +1,48 @@
+{
+  "slug": "hero_brun",
+  "name": "Brun (Herói Berserker Nórdico)",
+  "civilization": "norse",
+  "category": "unit",
+  "role": "hero",
+  "base": "hero_brun_base.glb",
+  "source_model": "infantry n ulfsark_idlea",
+  "source_type": "vanilla",
+  "frames": 6,
+  "vertices": 138,
+  "faces": 126,
+  "materials": 3,
+  "textures": [
+    "infantry_n_ulfsark_standard.png"
+  ],
+  "sockets": {
+    "LEFTHAND_Socket": [
+      -0.1934,
+      -0.2441,
+      0.2383
+    ],
+    "RIGHTHAND_Socket": [
+      -0.2412,
+      -0.1943,
+      0.1289
+    ],
+    "TOPOFHEAD_Socket": [
+      -0.0811,
+      0.5195,
+      0.0674
+    ],
+    "LEFTFOREARM_Socket": [
+      0.0023,
+      -0.1025,
+      0.2988
+    ],
+    "HITPOINTBAR_Socket": [
+      -0.0,
+      1.5,
+      -0.0
+    ]
+  },
+  "accessories": [],
+  "animations": {
+    "idle": "hero_brun_base.glb"
+  }
+}

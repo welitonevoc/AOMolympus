@@ -1,0 +1,156 @@
+{
+  "slug": "agrianian",
+  "name": "Lançador Agrianiano de Dardos",
+  "civilization": "greek",
+  "category": "unit",
+  "role": "archer",
+  "base": "agrianian_base.glb",
+  "source_model": "infantry g agrianian scout_walka",
+  "source_type": "mod",
+  "frames": 15,
+  "vertices": 197,
+  "faces": 140,
+  "materials": 1,
+  "textures": [],
+  "sockets": {
+    "LEFTHAND_Socket": [
+      0.3184,
+      -0.0266,
+      0.2031
+    ],
+    "RIGHTHAND_Socket": [
+      -0.5469,
+      0.21,
+      -0.1514
+    ],
+    "TOPOFHEAD_Socket": [
+      0.0476,
+      0.7539,
+      -0.0064
+    ],
+    "FOREHEAD_Socket": [
+      0.0776,
+      0.8984,
+      0.1523
+    ],
+    "FACE_Socket": [
+      0.0618,
+      0.7656,
+      0.1982
+    ],
+    "CHIN_Socket": [
+      0.0388,
+      0.625,
+      0.1436
+    ],
+    "LEFTEAR_Socket": [
+      0.2021,
+      0.7695,
+      0.0199
+    ],
+    "RIGHTEAR_Socket": [
+      -0.0933,
+      0.8125,
+      0.0376
+    ],
+    "NECK_Socket": [
+      0.0317,
+      0.582,
+      0.0072
+    ],
+    "LEFTSHOULDER_Socket": [
+      0.2236,
+      0.5703,
+      0.0272
+    ],
+    "RIGHTSHOULDER_Socket": [
+      -0.1416,
+      0.5938,
+      -0.0698
+    ],
+    "FRONTCHEST_Socket": [
+      -0.0084,
+      0.4199,
+      0.1069
+    ],
+    "BACKCHEST_Socket": [
+      0.0771,
+      0.4883,
+      -0.1865
+    ],
+    "FRONTABDOMEN_Socket": [
+      0.0106,
+      0.0535,
+      0.0723
+    ],
+    "BACKABDOMEN_Socket": [
+      0.0143,
+      0.1699,
+      -0.1855
+    ],
+    "PELVIS_Socket": [
+      0.015,
+      -0.1025,
+      -0.0874
+    ],
+    "LEFTTHIGH_Socket": [
+      0.1826,
+      -0.1982,
+      0.1099
+    ],
+    "RIGHTTHIGH_Socket": [
+      -0.1475,
+      -0.3223,
+      -0.1807
+    ],
+    "LEFTLEG_Socket": [
+      0.1641,
+      -0.4883,
+      0.2285
+    ],
+    "RIGHTLEG_Socket": [
+      -0.1406,
+      -0.6797,
+      -0.3672
+    ],
+    "LEFTFOOT_Socket": [
+      0.1572,
+      -0.75,
+      0.2773
+    ],
+    "RIGHTFOOT_Socket": [
+      -0.1436,
+      -0.9414,
+      -0.5117
+    ],
+    "LEFTFOREARM_Socket": [
+      0.3105,
+      0.1543,
+      0.1387
+    ],
+    "RIGHTFOREARM_Socket": [
+      -0.4238,
+      0.3184,
+      -0.2188
+    ],
+    "HITPOINTBAR_Socket": [
+      0.0,
+      1.8125,
+      0.0
+    ],
+    "LAUNCHPOINT_Socket": [
+      -0.0479,
+      0.5156,
+      0.2891
+    ],
+    "TARGETPOINT_Socket": [
+      0.0157,
+      0.2812,
+      -0.0137
+    ]
+  },
+  "accessories": [],
+  "animations": {
+    "idle": "agrianian_base.glb"
+  }
+}
