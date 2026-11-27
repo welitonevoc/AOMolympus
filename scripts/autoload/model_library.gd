@@ -104,9 +104,8 @@ static func create_building_visual(
 	pantheon_id: String,
 	building_kind: String,
 	age_tier: int,
-	faction: String = "player"
+	_faction: String = "player"
 ) -> Node3D:
-	var p: Dictionary = PantheonCatalog.get_pantheon(pantheon_id)
 	var tier: int = clampi(age_tier, 1, 5)
 	var age_model_tier: int = clampi(tier, 1, 4)
 
@@ -141,7 +140,8 @@ static func create_building_visual(
 				_log_model_diag("BUILDING:" + building_kind, path, loaded)
 				return loaded
 
-	return _build_procedural_building(p, building_kind, tier, faction)
+	push_error("ModelLibrary: modelo AoM nao encontrado para construcao '%s' (%s)." % [building_kind, pantheon_id])
+	return Node3D.new()
 
 
 static func create_unit_visual(
@@ -586,209 +586,6 @@ static func create_resource_visual(resource_kind: String) -> Node3D:
 
 	return root
 
-
-static func _build_procedural_building(p: Dictionary, kind: String, tier: int, faction: String) -> Node3D:
-	var root := Node3D.new()
-	var stone_col: Color = p["stone_color"]
-	var roof_col: Color = Color("#991b1b") if faction == "enemy" else p["roof_color"]
-	var primary_col: Color = Color("#dc2626") if faction == "enemy" else p["primary_color"]
-	var accent_col: Color = p["accent_color"]
-
-	var stone_mat := _make_mat(stone_col, 0.78, 0.05)
-	var roof_mat := _make_mat(roof_col, 0.55, 0.12)
-	var primary_mat := _make_mat(primary_col, 0.5, 0.15)
-	var gold_mat := _make_mat(accent_col, 0.28, 0.78)
-	var wood_mat := _make_mat(Color("#5c4028"), 0.85, 0.0)
-
-	var tier_scale: float = 1.0 + float(tier - 1) * 0.075
-	var spec: Dictionary = PantheonCatalog.get_building_spec(kind)
-	var fp: float = float(spec["footprint"])
-
-	# Plinto de base escalado pela Era
-	_add_box(root, Vector3(fp * 1.4, 0.32 + float(tier - 1) * 0.08, fp * 1.4), Vector3(0.0, 0.16, 0.0), stone_mat)
-
-	match kind:
-		"town_center":
-			var body_h: float = 2.1 * tier_scale
-			if p["id"] == "greek":
-				# Stylobate clássico com 3 degraus de mármore
-				_add_box(root, Vector3(fp * 1.35, 0.22, fp * 1.35), Vector3(0.0, 0.42, 0.0), stone_mat)
-				_add_box(root, Vector3(fp * 1.22, 0.22, fp * 1.22), Vector3(0.0, 0.64, 0.0), stone_mat)
-				# Cela central de mármore
-				_add_box(root, Vector3(fp * 0.96, body_h, fp * 0.86), Vector3(0.0, 0.64 + body_h * 0.5, -0.12), stone_mat)
-				# Portal monumental com batente de bronze
-				_add_box(root, Vector3(1.3, body_h * 0.72, 0.2), Vector3(0.0, 0.64 + body_h * 0.36, fp * 0.38), wood_mat)
-				_add_box(root, Vector3(1.5, 0.18, 0.24), Vector3(0.0, 0.64 + body_h * 0.72, fp * 0.38), gold_mat)
-				# Colunata dórica frontal (6 colunas com fuste cônico e capitel)
-				for cx in [-1.55, -0.93, -0.31, 0.31, 0.93, 1.55]:
-					_add_cylinder(root, 0.15, 0.18, body_h, Vector3(cx, 0.64 + body_h * 0.5, fp * 0.44), stone_mat)
-					_add_box(root, Vector3(0.42, 0.12, 0.42), Vector3(cx, 0.64 + body_h + 0.06, fp * 0.44), stone_mat)
-				# Arquitrave e entablamento
-				_add_box(root, Vector3(fp * 1.25, 0.35, fp * 1.15), Vector3(0.0, 0.64 + body_h + 0.24, 0.0), stone_mat)
-				# Telhado de terracota em duas águas
-				_add_prism_roof(root, fp * 1.28, 1.35 * tier_scale, fp * 1.18, Vector3(0.0, 0.64 + body_h + 0.42 + 0.68 * tier_scale, 0.0), roof_mat)
-				# Brasões e tocheiros de fogo nos degraus
-				var fire_mat := _make_mat(Color("#f97316"), 0.2, 0.1, true, Color("#fbbf24"), 2.2)
-				_add_cylinder(root, 0.28, 0.22, 0.6, Vector3(-fp * 0.52, 0.85, fp * 0.52), stone_mat)
-				_add_sphere(root, 0.22, Vector3(-fp * 0.52, 1.25, fp * 0.52), fire_mat)
-				_add_cylinder(root, 0.28, 0.22, 0.6, Vector3(fp * 0.52, 0.85, fp * 0.52), stone_mat)
-				_add_sphere(root, 0.22, Vector3(fp * 0.52, 1.25, fp * 0.52), fire_mat)
-			else:
-				_add_box(root, Vector3(fp * 1.05, body_h, fp * 0.92), Vector3(0.0, 0.32 + body_h * 0.5, 0.0), stone_mat)
-				for cx in [-1.25, -0.45, 0.45, 1.25]:
-					_add_cylinder(root, 0.16, 0.19, body_h, Vector3(cx, 0.32 + body_h * 0.5, fp * 0.5), stone_mat)
-				if p["id"] == "atlantean":
-					_add_sphere(root, 1.45 * tier_scale, Vector3(0.0, 0.32 + body_h + 0.55, 0.0), roof_mat)
-				elif p["id"] == "egyptian":
-					_add_box(root, Vector3(fp * 1.15, 0.45, fp * 1.0), Vector3(0.0, 0.32 + body_h + 0.22, 0.0), gold_mat)
-					_add_cylinder(root, 0.18, 0.42, 1.8 * tier_scale, Vector3(0.0, 0.32 + body_h + 1.1, -0.4), gold_mat)
-				else:
-					_add_prism_roof(root, fp * 1.25, 1.25 * tier_scale, fp * 1.12, Vector3(0.0, 0.32 + body_h + 0.62 * tier_scale, 0.0), roof_mat)
-
-			# Estandarte de faccao + pinaculo dourado T3-T5
-			_add_box(root, Vector3(0.28, 1.5, 0.08), Vector3(fp * 0.58, 1.25, fp * 0.52), primary_mat)
-			if tier >= 3:
-				_add_cylinder(root, 0.06, 0.22, 1.1 + float(tier - 3) * 0.45, Vector3(0.0, 0.32 + body_h + 1.7 * tier_scale, 0.0), gold_mat)
-			if tier >= 4:
-				_add_torus(root, 0.55, 0.68, Vector3(0.0, 0.32 + body_h + 2.0 * tier_scale, 0.0), gold_mat)
-		"house":
-			var h_h: float = 1.15 * tier_scale
-			_add_box(root, Vector3(fp * 1.0, h_h, fp * 0.9), Vector3(0.0, 0.3 + h_h * 0.5, 0.0), stone_mat)
-			_add_prism_roof(root, fp * 1.15, 0.78 * tier_scale, fp * 1.05, Vector3(0.0, 0.3 + h_h + 0.38 * tier_scale, 0.0), roof_mat)
-			if tier >= 3:
-				_add_box(root, Vector3(fp * 0.4, 0.35, fp * 0.4), Vector3(0.0, 0.3 + h_h + 0.75 * tier_scale, 0.0), gold_mat)
-		"temple":
-			var t_h: float = 2.0 * tier_scale
-			_add_box(root, Vector3(fp * 0.96, t_h, fp * 0.96), Vector3(0.0, 0.32 + t_h * 0.5, 0.0), stone_mat)
-			for cx in [-0.95, 0.95]:
-				for cz in [-0.95, 0.95]:
-					_add_cylinder(root, 0.16, 0.2, t_h + 0.2, Vector3(cx, 0.32 + t_h * 0.5, cz), gold_mat)
-			_add_sphere(root, 1.05 * tier_scale, Vector3(0.0, 0.32 + t_h + 0.48, 0.0), roof_mat)
-			var orb_mat := _make_mat(accent_col, 0.15, 0.85, true, accent_col, 1.7)
-			_add_sphere(root, 0.36 + float(tier - 1) * 0.06, Vector3(0.0, 0.32 + t_h + 1.55 * tier_scale, 0.0), orb_mat)
-		"barracks":
-			var b_h: float = 1.55 * tier_scale
-			_add_box(root, Vector3(fp * 1.12, b_h, fp * 0.9), Vector3(0.0, 0.32 + b_h * 0.5, 0.0), stone_mat)
-			_add_prism_roof(root, fp * 1.2, 0.85 * tier_scale, fp * 1.0, Vector3(0.0, 0.32 + b_h + 0.42 * tier_scale, 0.0), roof_mat)
-			# Escudo frontal de quartel
-			_add_cylinder(root, 0.45, 0.45, 0.12, Vector3(0.0, 1.2, fp * 0.48), primary_mat, Vector3(PI * 0.5, 0.0, 0.0))
-			_add_box(root, Vector3(0.24, 1.35, 0.06), Vector3(fp * 0.52, 1.1, fp * 0.46), primary_mat)
-		"archery":
-			var a_h: float = 1.45 * tier_scale
-			_add_box(root, Vector3(fp * 1.05, a_h, fp * 0.88), Vector3(0.0, 0.32 + a_h * 0.5, 0.0), wood_mat)
-			_add_prism_roof(root, fp * 1.18, 0.72 * tier_scale, fp * 0.98, Vector3(0.0, 0.32 + a_h + 0.36 * tier_scale, 0.0), roof_mat)
-			# Alvo de arquearia no pateo
-			_add_cylinder(root, 0.42, 0.42, 0.12, Vector3(fp * 0.5, 0.9, fp * 0.42), gold_mat, Vector3(PI * 0.5, 0.0, 0.0))
-			_add_cylinder(root, 0.2, 0.2, 0.15, Vector3(fp * 0.5, 0.9, fp * 0.44), primary_mat, Vector3(PI * 0.5, 0.0, 0.0))
-		"stable":
-			var s_h: float = 1.5 * tier_scale
-			_add_box(root, Vector3(fp * 1.15, s_h, fp * 0.86), Vector3(0.0, 0.32 + s_h * 0.5, 0.0), wood_mat)
-			_add_prism_roof(root, fp * 1.24, 0.8 * tier_scale, fp * 0.96, Vector3(0.0, 0.32 + s_h + 0.4 * tier_scale, 0.0), roof_mat)
-			# Cerca do curral frontal
-			_add_box(root, Vector3(fp * 1.0, 0.48, 0.1), Vector3(0.0, 0.56, fp * 0.62), wood_mat)
-			_add_box(root, Vector3(0.26, 1.25, 0.08), Vector3(-fp * 0.52, 1.05, fp * 0.45), primary_mat)
-		"tower":
-			var tw_h: float = 3.2 * tier_scale
-			_add_box(root, Vector3(fp * 0.78, tw_h, fp * 0.78), Vector3(0.0, 0.32 + tw_h * 0.5, 0.0), stone_mat)
-			_add_box(root, Vector3(fp * 0.98, 0.52, fp * 0.98), Vector3(0.0, 0.32 + tw_h + 0.22, 0.0), primary_mat)
-			_add_prism_roof(root, fp * 1.05, 0.95 * tier_scale, fp * 1.05, Vector3(0.0, 0.32 + tw_h + 0.85, 0.0), roof_mat)
-		"fortress":
-			var f_h: float = 2.4 * tier_scale
-			_add_box(root, Vector3(fp * 1.12, f_h, fp * 1.12), Vector3(0.0, 0.32 + f_h * 0.5, 0.0), stone_mat)
-			# 4 torres de canto da fortaleza
-			for sx in [-1.0, 1.0]:
-				for sz in [-1.0, 1.0]:
-					_add_box(root, Vector3(0.9, f_h + 0.95, 0.9), Vector3(sx * fp * 0.48, 0.32 + (f_h + 0.95) * 0.5, sz * fp * 0.48), stone_mat)
-					_add_prism_roof(root, 1.05, 0.72, 1.05, Vector3(sx * fp * 0.48, 0.32 + f_h + 1.28, sz * fp * 0.48), roof_mat)
-			_add_cylinder(root, 0.25, 0.35, 1.5, Vector3(0.0, 0.32 + f_h + 0.75, 0.0), gold_mat)
-			_add_box(root, Vector3(0.38, 1.5, 0.08), Vector3(0.0, 0.32 + f_h + 0.95, fp * 0.6), primary_mat)
-		"divine_altar":
-			var da_h: float = 2.6 * tier_scale
-			# Plinto circular elevado (pedra sagrada)
-			_add_box(root, Vector3(fp * 1.55, 0.5, fp * 1.55), Vector3(0.0, 0.25, 0.0), stone_mat)
-			# Colunas laterais em volta do altar
-			for cx in [-1.35, 1.35]:
-				for cz in [-1.35, 1.35]:
-					_add_cylinder(root, 0.2, 0.24, da_h * 0.85, Vector3(cx * 0.62, 0.25 + da_h * 0.42, cz * 0.62), gold_mat)
-			# Pedestal central onde o deus se manifesta
-			_add_box(root, Vector3(fp * 0.75, da_h, fp * 0.75), Vector3(0.0, 0.25 + da_h * 0.5, 0.0), stone_mat)
-			# Orbe divino flutuante no topo (emissivo)
-			var altar_orb_mat := _make_mat(accent_col, 0.12, 0.95, true, accent_col, 3.0)
-			_add_sphere(root, 0.75 * tier_scale, Vector3(0.0, 0.25 + da_h + 1.0 * tier_scale, 0.0), altar_orb_mat)
-			# Anel de poder giratório ao redor da base do orbe
-			var ring_mat := _make_mat(accent_col, 0.05, 0.88, true, accent_col, 2.2)
-			_add_torus(root, 1.1 * tier_scale, 1.28 * tier_scale, Vector3(0.0, 0.25 + da_h + 0.95 * tier_scale, 0.0), ring_mat)
-			# Tochas cerimoniais nos cantos
-			for tx in [-1.1, 1.1]:
-				for tz in [-1.1, 1.1]:
-					_add_cylinder(root, 0.07, 0.07, 0.45, Vector3(tx * fp * 0.55, 0.25 + da_h * 0.35, tz * fp * 0.55), primary_mat)
-					_add_box(root, Vector3(0.18, 0.12, 0.18), Vector3(tx * fp * 0.55, 0.25 + da_h * 0.35 + 0.48, tz * fp * 0.55), gold_mat)
-		_:
-			_add_box(root, Vector3(fp, 1.4, fp), Vector3(0.0, 0.9, 0.0), stone_mat)
-
-	return root
-
-
-static var UNIT_PROFILES = {
-	"villager": {
-		"scale": 0.95,
-		"skin_color": Color("#e6bc98"),
-		"armor_color": Color("#94a3b8"),
-		"wood_color": Color("#6b4423"),
-		"has_weapon": true,
-		"weapon_type": "tool",
-	},
-	"infantry": {
-		"scale": 1.0,
-		"skin_color": Color("#e6bc98"),
-		"armor_color": Color("#94a3b8"),
-		"wood_color": Color("#6b4423"),
-		"has_weapon": true,
-		"weapon_type": "spear",
-	},
-	"archer": {
-		"scale": 1.0,
-		"skin_color": Color("#e6bc98"),
-		"armor_color": Color("#94a3b8"),
-		"wood_color": Color("#6b4423"),
-		"has_weapon": true,
-		"weapon_type": "bow",
-	},
-	"cavalry": {
-		"scale": 1.1,
-		"skin_color": Color("#e6bc98"),
-		"armor_color": Color("#94a3b8"),
-		"wood_color": Color("#6b4423"),
-		"has_weapon": true,
-		"weapon_type": "lance",
-	},
-	"hero": {
-		"scale": 1.15,
-		"skin_color": Color("#e6bc98"),
-		"armor_color": Color("#94a3b8"),
-		"wood_color": Color("#6b4423"),
-		"has_weapon": true,
-		"weapon_type": "sword",
-		"aura_color": Color("#38bdf8"),
-	},
-	"myth": {
-		"scale": 1.3,
-		"skin_color": Color("#e6bc98"),
-		"armor_color": Color("#94a3b8"),
-		"wood_color": Color("#6b4423"),
-		"has_weapon": true,
-		"weapon_type": "claws",
-		"aura_color": Color("#38bdf8"),
-	},
-	"siege": {
-		"scale": 1.4,
-		"skin_color": Color("#e6bc98"),
-		"armor_color": Color("#94a3b8"),
-		"wood_color": Color("#6b4423"),
-		"has_weapon": false,
-		"weapon_type": "none",
-	},
-}
 
 static func _unit_profile(p: Dictionary, kind: String) -> Dictionary:
 	var base: Dictionary = UNIT_PROFILES.get(kind, UNIT_PROFILES["villager"])
