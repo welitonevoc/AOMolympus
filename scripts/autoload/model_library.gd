@@ -199,7 +199,9 @@ static func _instantiate_aom_bundle(bundle_dir: String, slug: String, initial_ac
 	var manifest: Dictionary = _load_aom_manifest(bundle_dir)
 	var glb_path: String = ""
 	var anims: Dictionary = manifest.get("animations", {})
-	var base_action: String = "gather" if initial_action.begins_with("gather_") else initial_action
+	var base_action: String = initial_action
+	if not anims.has(base_action) and initial_action.begins_with("gather_"):
+		base_action = "gather"
 	if anims.has(base_action):
 		glb_path = "%s/%s" % [bundle_dir, String(anims[base_action])]
 	elif manifest.has("base"):
@@ -423,7 +425,9 @@ static func switch_aom_action(visual_holder: Node3D, action: String) -> bool:
 	var slug: String = String(current.get_meta("aom_slug", ""))
 	var manifest: Dictionary = _load_aom_manifest(bundle_dir)
 	var anims: Dictionary = manifest.get("animations", {})
-	var base_action: String = "gather" if action.begins_with("gather_") else action
+	var base_action: String = action
+	if not anims.has(base_action) and action.begins_with("gather_"):
+		base_action = "gather"
 	if not anims.has(base_action):
 		return false
 	var next_visual: Node3D = _instantiate_aom_bundle(bundle_dir, slug, action)

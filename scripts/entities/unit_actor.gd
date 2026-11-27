@@ -810,6 +810,10 @@ func _animate_work() -> void:
 	if is_instance_valid(target_resource):
 		gather_act = "gather_%s" % target_resource.resource_kind
 	if _visual_holder != null and ModelLibrary.switch_aom_action(_visual_holder, gather_act):
+		if gather_act in ["gather_wood", "gather_gold"]:
+			var rh := _visual_holder.find_child("RIGHTHAND_Socket", true, false) as Node3D
+			if rh != null:
+				rh.rotation_degrees.x = -25.0 + sin(_anim_time * 7.5) * 52.0
 		return
 	if _anim_player != null:
 		if carried_kind == "gold" or (target_resource != null and target_resource.resource_kind == "gold"):
