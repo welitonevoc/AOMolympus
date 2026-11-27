@@ -209,8 +209,9 @@ static func _apply_external_manifest_texture(node: Node, bundle_dir: String, man
 							std.roughness = 0.30
 						if em_tex != null:
 							std.emission_enabled = true
-							std.emission = Color(0.25, 0.78, 1.0)
-							std.emission_energy_multiplier = 3.2
+							std.emission = Color(0.0, 0.0, 0.0)
+							std.emission_operator = BaseMaterial3D.EMISSION_OP_ADD
+							std.emission_energy_multiplier = 2.5
 							std.emission_texture = em_tex
 						mi.set_surface_override_material(i, std)
 		for child in cur.get_children():
@@ -247,9 +248,6 @@ static func _attach_aom_accessories(root: Node3D, bundle_dir: String, manifest: 
 		var acc_inst: Node3D = _try_instantiate_glb(acc_path)
 		if acc_inst != null:
 			_force_opaque_materials(acc_inst)
-			if sock_up == "TOPOFHEAD" and "hoplite" in slug.to_lower():
-				# Corrige orientação da cabeça/elmo do hoplita que vem rotacionada 90° de lado no socket
-				acc_inst.rotation_degrees.y = -90.0
 			socket_node.add_child(acc_inst)
 
 

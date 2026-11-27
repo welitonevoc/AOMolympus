@@ -28,6 +28,9 @@ from PIL import Image
 def _find_aom_root() -> str:
     """Auto-detect AoM: The Titans installation on Windows."""
     candidates = [
+        os.environ.get("AOM_ROOT", ""),
+        "/sdcard/aom",
+        "/storage/emulated/0/aom",
         r"E:\Age of Mythology\Age of Mythology",
         r"C:\Age of Mythology\Age of Mythology",
         r"D:\Age of Mythology\Age of Mythology",
@@ -36,6 +39,8 @@ def _find_aom_root() -> str:
         os.path.join(os.environ.get("LOCALAPPDATA", ""), "Age of Mythology"),
     ]
     for c in candidates:
+        if not c:
+            continue
         models_bar = os.path.join(c, "models", "models.bar")
         if os.path.exists(models_bar):
             return c
@@ -645,7 +650,48 @@ def export_brg_to_glb(
             prim["targets"] = targets
         primitives.append(prim)
 
-    # Nodes: root mesh node + socket child nodes
+    def _mat3_to_quat(m: np.ndarray) -> List[float]:
+        r = m.copy()
+        r[0, 1] = -r[0, 1]
+        r[0, 2] = -r[0, 2]
+        r[1, 0] = -r[1, 0]
+        r[2, 0] = -r[2, 0]
+        u, _, vt = np.linalg.svd(r)
+        r = u @ vt
+        if np.linalg.det(r) < 0:
+            u[:, -1] *= -1
+            r = u @ vt
+        tr = float(r[0, 0] + r[1, 1] + r[2, 2])
+        if tr > 0.0:
+            s = np.sqrt(tr + 1.0) * 2.0
+            qw = 0.25 * s
+            qx = (r[2, 1] - r[1, 2]) / s
+            qy = (r[0, 2] - r[2, 0]) / s
+            qz = (r[1, 0] - r[0, 1]) / s
+        elif r[0, 0] > r[1, 1] and r[0, 0] > r[2, 2]:
+            s = np.sqrt(1.0 + r[0, 0] - r[1, 1] - r[2, 2]) * 2.0
+            qw = (r[2, 1] - r[1, 2]) / s
+            qx = 0.25 * s
+            qy = (r[0, 1] + r[1, 0]) / s
+            qz = (r[0, 2] + r[2, 0]) / s
+        elif r[1, 1] > r[2, 2]:
+            s = np.sqrt(1.0 + r[1, 1] - r[0, 0] - r[2, 2]) * 2.0
+            qw = (r[0, 2] - r[2, 0]) / s
+            qx = (r[0, 1] + r[1, 0]) / s
+            qy = 0.25 * s
+            qz = (r[1, 2] + r[2, 1]) / s
+        else:
+            s = np.sqrt(1.0 + r[2, 2] - r[0, 0] - r[1, 1]) * 2.0
+            qw = (r[1, 0] - r[0, 1]) / s
+            qx = (r[0, 2] + r[2, 0]) / s
+            qy = (r[1, 2] + r[2, 1]) / s
+            qz = 0.25 * s
+        q = np.array([qx, qy, qz, qw], dtype=np.float32)
+        n = np.linalg.norm(q)
+        if n > 1e-6:
+            q /= n
+        return [float(q[0]), float(q[1]), float(q[2]), float(q[3])]
+
     nodes = [{"name": "MeshRoot", "mesh": 0, "children": []}]
     socket_node_map: Dict[str, int] = {}
     for aname, frame_list in brg.attachpoints.items():
@@ -653,10 +699,12 @@ def export_brg_to_glb(
             continue
         p0 = (frame_list[0][0] * scale_factor).astype(np.float32)
         p0[1] += y_shift
+        q0 = _mat3_to_quat(frame_list[0][1])
         n_idx = len(nodes)
         nodes.append({
             "name": f"{aname}_Socket",
             "translation": [float(p0[0]), float(p0[1]), float(p0[2])],
+            "rotation": q0,
         })
         nodes[0]["children"].append(n_idx)
         socket_node_map[aname] = n_idx
@@ -668,7 +716,7 @@ def export_brg_to_glb(
     if targets:
         mesh_obj["weights"] = [0.0] * len(targets)
 
-    # Build glTF animation (morph weights + socket translations)
+    # Build glTF animation (morph weights + socket translations/rotations)
     animations = []
     if use_morph and targets:
         n_t = len(targets)
@@ -685,23 +733,33 @@ def export_brg_to_glb(
         samplers = [{"input": time_acc, "output": w_acc, "interpolation": "LINEAR"}]
         channels = [{"sampler": 0, "target": {"node": 0, "path": "weights"}}]
 
-        # Also animate socket translations across frames
+        # Also animate socket translations & rotations across frames
         for aname, s_node_idx in socket_node_map.items():
             flist = brg.attachpoints.get(aname, [])
             if len(flist) >= len(target_frame_indices) + 1:
                 pts = []
+                rots = []
                 p0 = (flist[0][0] * scale_factor).astype(np.float32)
                 p0[1] += y_shift
                 pts.append(p0)
+                rots.append(_mat3_to_quat(flist[0][1]))
                 for fi in target_frame_indices:
-                    pf = (flist[min(fi, len(flist) - 1)][0] * scale_factor).astype(np.float32)
+                    fr = flist[min(fi, len(flist) - 1)]
+                    pf = (fr[0] * scale_factor).astype(np.float32)
                     pf[1] += y_shift
                     pts.append(pf)
+                    rots.append(_mat3_to_quat(fr[1]))
                 pts_arr = np.array(pts, dtype=np.float32)
                 p_acc = add_accessor(pts_arr, 5126, "VEC3")
                 s_idx = len(samplers)
                 samplers.append({"input": time_acc, "output": p_acc, "interpolation": "LINEAR"})
                 channels.append({"sampler": s_idx, "target": {"node": s_node_idx, "path": "translation"}})
+
+                rots_arr = np.array(rots, dtype=np.float32)
+                r_acc = add_accessor(rots_arr, 5126, "VEC4")
+                sr_idx = len(samplers)
+                samplers.append({"input": time_acc, "output": r_acc, "interpolation": "LINEAR"})
+                channels.append({"sampler": sr_idx, "target": {"node": s_node_idx, "path": "rotation"}})
 
         animations.append({"name": anim_name, "channels": channels, "samplers": samplers})
 
