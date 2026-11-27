@@ -647,11 +647,23 @@ const TREE_STYLE_BUNDLES: Dictionary = {
 }
 
 
-## Fauna sem modelo AoM extraido ainda: silhueta procedural (corpo + cabeca + patas) colorida por especie.
+## Fauna oficial AoM extraída de /sdcard/aom/models/models.bar
 static func create_fauna_placeholder(species_id: String) -> Node3D:
+	var glb_path := "res://models/fauna/%s/%s_base.glb" % [species_id, species_id]
+	if ResourceLoader.exists(glb_path):
+		var inst: Node3D = _try_instantiate_glb(glb_path)
+		if inst != null:
+			_force_opaque_materials(inst)
+			if species_id not in ["fish", "whale"]:
+				_align_model_to_ground(inst)
+			else:
+				inst.position.y = -0.15
+			return inst
+
+	# Fallback com silhueta dimensional caso a espécie ainda não tenha modelo
 	var sp: Dictionary = MapEcology.SPECIES.get(species_id, MapEcology.SPECIES["deer"])
-	var col := Color(String(sp["color"]))
-	var sc: float = float(sp["scale"])
+	var col := Color(String(sp.get("color", "#a16c3a")))
+	var sc: float = float(sp.get("scale", 1.0))
 	var root := Node3D.new()
 	var mat := StandardMaterial3D.new()
 	mat.albedo_color = col

@@ -5,6 +5,7 @@ extends Node
 ## movimentacao em 5 formacoes, posicionamento de obras e conjuracao de Poderes Divinos no solo.
 
 const TAP_MAX_MOVE_PX: float = 26.0
+const MapEcology = preload("res://scripts/world/olympus_map_ecology.gd")
 const BUILDING_LIMITS: Dictionary = {
 	"house": 30,
 	"tower": 40,
@@ -279,6 +280,22 @@ func _command_units_attack(units: Array, target: Node3D) -> void:
 	GameState.notify("Atacando %s!" % target_name, false)
 
 
+func _clamp_to_walkable_terrain(pos: Vector3, reference_from: Vector3) -> Vector3:
+	var p := pos
+	# Se a posicao de destino estiver submersa em agua inacessivel, recua em direcao a referencia
+	if MapEcology.is_water(p.x, p.z):
+		var dir := reference_from - pos
+		dir.y = 0.0
+		var dist := dir.length()
+		if dist > 0.01:
+			dir = dir.normalized()
+			for step_i in range(1, 15):
+				var test_pos := pos + dir * (float(step_i) * 1.5)
+				if not MapEcology.is_water(test_pos.x, test_pos.z):
+					return test_pos
+	return p
+
+
 func _move_units_in_formation(units: Array, center: Vector3) -> void:
 	if units.is_empty():
 		return
@@ -287,7 +304,9 @@ func _move_units_in_formation(units: Array, center: Vector3) -> void:
 		centroid += u.global_position
 	centroid /= float(units.size())
 
-	var facing_dir := Vector3(center.x - centroid.x, 0.0, center.z - centroid.z)
+	var valid_center := _clamp_to_walkable_terrain(center, centroid)
+
+	var facing_dir := Vector3(valid_center.x - centroid.x, 0.0, valid_center.z - centroid.z)
 	if facing_dir.length_squared() < 0.01:
 		facing_dir = Vector3(0.0, 0.0, -1.0)
 
@@ -304,11 +323,12 @@ func _move_units_in_formation(units: Array, center: Vector3) -> void:
 	var arena_limit: float = GameState.get_active_arena_size() * 0.48
 	for i in range(ordered.size()):
 		var off: Vector3 = offsets[i] if i < offsets.size() else Vector3.ZERO
-		var dest := Vector3(
-			clampf(center.x + off.x, -arena_limit, arena_limit),
+		var raw_dest := Vector3(
+			clampf(valid_center.x + off.x, -arena_limit, arena_limit),
 			0.0,
-			clampf(center.z + off.z, -arena_limit, arena_limit)
+			clampf(valid_center.z + off.z, -arena_limit, arena_limit)
 		)
+		var dest := _clamp_to_walkable_terrain(raw_dest, valid_center)
 		ordered[i].set_formation(GameState.active_formation)
 		ordered[i].command_move(dest)
 

@@ -1,0 +1,8 @@
+{
+  "species": "walrus",
+  "brg_source": "animal walrus_idlea.brg",
+  "textures": [
+    "animal_walrus_map.png"
+  ],
+  "glb": "walrus_base.glb"
+}

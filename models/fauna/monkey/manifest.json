@@ -1,0 +1,8 @@
+{
+  "species": "monkey",
+  "brg_source": "animal monkey_idlea.brg",
+  "textures": [
+    "animal_monkey_map.png"
+  ],
+  "glb": "monkey_base.glb"
+}

@@ -1,0 +1,8 @@
+{
+  "species": "goat",
+  "brg_source": "animal goat_idlea.brg",
+  "textures": [
+    "animal_goat_map.png"
+  ],
+  "glb": "goat_base.glb"
+}

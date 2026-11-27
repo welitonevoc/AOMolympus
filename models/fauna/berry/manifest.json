@@ -1,0 +1,8 @@
+{
+  "species": "berry",
+  "brg_source": "world a berries.brg",
+  "textures": [
+    "world_a_berries.png"
+  ],
+  "glb": "berry_base.glb"
+}

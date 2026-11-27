@@ -1,0 +1,8 @@
+{
+  "species": "lion",
+  "brg_source": "animal lion_idlea.brg",
+  "textures": [
+    "animal_lion_map.png"
+  ],
+  "glb": "lion_base.glb"
+}

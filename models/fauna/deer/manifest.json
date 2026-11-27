@@ -1,0 +1,8 @@
+{
+  "species": "deer",
+  "brg_source": "animal doe_idlea.brg",
+  "textures": [
+    "animal_deer_map.png"
+  ],
+  "glb": "deer_base.glb"
+}

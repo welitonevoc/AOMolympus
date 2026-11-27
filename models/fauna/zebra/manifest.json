@@ -1,0 +1,8 @@
+{
+  "species": "zebra",
+  "brg_source": "animal zebra_idlea.brg",
+  "textures": [
+    "animal_zebra_map.png"
+  ],
+  "glb": "zebra_base.glb"
+}

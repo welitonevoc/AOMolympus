@@ -1,0 +1,8 @@
+{
+  "species": "hippo",
+  "brg_source": "animal hippo_idlea.brg",
+  "textures": [
+    "animal_hippo_map.png"
+  ],
+  "glb": "hippo_base.glb"
+}

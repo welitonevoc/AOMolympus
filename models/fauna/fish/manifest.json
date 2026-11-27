@@ -1,0 +1,8 @@
+{
+  "species": "fish",
+  "brg_source": "animal fish salmon_a.brg",
+  "textures": [
+    "animal_fish_salmon.png"
+  ],
+  "glb": "fish_base.glb"
+}

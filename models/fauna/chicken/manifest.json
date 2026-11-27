@@ -1,0 +1,8 @@
+{
+  "species": "chicken",
+  "brg_source": "animal chicken_idlea.brg",
+  "textures": [
+    "animal_chicken_map.png"
+  ],
+  "glb": "chicken_base.glb"
+}

@@ -1,0 +1,8 @@
+{
+  "species": "giraffe",
+  "brg_source": "animal giraffe_idlea.brg",
+  "textures": [
+    "animal_giraffe_map.png"
+  ],
+  "glb": "giraffe_base.glb"
+}

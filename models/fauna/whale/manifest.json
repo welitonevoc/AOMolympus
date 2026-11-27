@@ -1,0 +1,8 @@
+{
+  "species": "whale",
+  "brg_source": "animal whale_walk.brg",
+  "textures": [
+    "animal_whale_map.png"
+  ],
+  "glb": "whale_base.glb"
+}

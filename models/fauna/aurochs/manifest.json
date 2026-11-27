@@ -1,0 +1,8 @@
+{
+  "species": "aurochs",
+  "brg_source": "animal aurochs_idlea.brg",
+  "textures": [
+    "animal_aurochs_map.png"
+  ],
+  "glb": "aurochs_base.glb"
+}

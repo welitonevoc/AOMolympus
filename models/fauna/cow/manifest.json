@@ -1,0 +1,8 @@
+{
+  "species": "cow",
+  "brg_source": "animal cow_idlea.brg",
+  "textures": [
+    "animal_cow_a_map.png"
+  ],
+  "glb": "cow_base.glb"
+}

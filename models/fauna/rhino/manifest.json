@@ -1,0 +1,8 @@
+{
+  "species": "rhino",
+  "brg_source": "animal rhino_idlea.brg",
+  "textures": [
+    "animal_rhino_map.png"
+  ],
+  "glb": "rhino_base.glb"
+}

@@ -1,0 +1,8 @@
+{
+  "species": "crocodile",
+  "brg_source": "animal crocodile_idlea.brg",
+  "textures": [
+    "animal_crocodile_map.png"
+  ],
+  "glb": "crocodile_base.glb"
+}

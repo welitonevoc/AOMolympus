@@ -54,6 +54,8 @@ var _build_sfx_timer: float = 0.0
 var _bored_timer: float = 8.0
 var _avoid_side: float = 0.0
 var _avoid_timer: float = 0.0
+var _stuck_timer: float = 0.0
+var _last_stuck_pos: Vector3 = Vector3.ZERO
 
 var _nav_agent: NavigationAgent3D
 var _visual_holder: Node3D
@@ -245,7 +247,21 @@ func _physics_process(delta: float) -> void:
 			if _nav_agent.is_navigation_finished() or pos_flat.distance_to(dest_flat) <= _nav_agent.target_desired_distance:
 				velocity = Vector3.ZERO
 				_anchor_pos = global_position
+				_stuck_timer = 0.0
 				state = State.IDLE
+			else:
+				# Watchdog anti-travamento: se a unidade tentar se mover mas ficar colidindo sem sair do lugar por >0.65s
+				var dist_moved: float = global_position.distance_to(_last_stuck_pos)
+				if dist_moved < 0.06 and get_slide_collision_count() > 0:
+					_stuck_timer += delta
+					if _stuck_timer >= 0.65:
+						velocity = Vector3.ZERO
+						_anchor_pos = global_position
+						_stuck_timer = 0.0
+						state = State.IDLE
+				else:
+					_last_stuck_pos = global_position
+					_stuck_timer = 0.0
 		State.GATHERING:
 			_process_gathering(delta)
 		State.RETURNING:
@@ -261,6 +277,8 @@ func command_move(world_pos: Vector3) -> void:
 	target_building = null
 	combat_target = null
 	_anchor_pos = Vector3(world_pos.x, 0.0, world_pos.z)
+	_stuck_timer = 0.0
+	_last_stuck_pos = global_position
 	state = State.MOVING
 	_nav_agent.target_position = _anchor_pos
 	if faction == "player":
@@ -272,6 +290,7 @@ func command_stop() -> void:
 	target_building = null
 	combat_target = null
 	_anchor_pos = global_position
+	_stuck_timer = 0.0
 	velocity = Vector3.ZERO
 	if _nav_agent != null:
 		_nav_agent.target_position = global_position

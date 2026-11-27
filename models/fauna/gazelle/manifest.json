@@ -1,0 +1,8 @@
+{
+  "species": "gazelle",
+  "brg_source": "animal gazelle_idlea.brg",
+  "textures": [
+    "animal_gazelle_map.png"
+  ],
+  "glb": "gazelle_base.glb"
+}
