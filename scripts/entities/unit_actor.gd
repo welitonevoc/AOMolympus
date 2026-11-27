@@ -56,6 +56,7 @@ var _avoid_side: float = 0.0
 var _avoid_timer: float = 0.0
 var _stuck_timer: float = 0.0
 var _last_stuck_pos: Vector3 = Vector3.ZERO
+var _current_lod: int = LODController.LODLevel.HIGH
 
 var _nav_agent: NavigationAgent3D
 var _visual_holder: Node3D
@@ -227,10 +228,15 @@ func _physics_process(delta: float) -> void:
 	if Engine.get_physics_frames() % 18 == 0:
 		var cam: Camera3D = get_viewport().get_camera_3d() if get_viewport() != null else null
 		if cam != null:
-			var lod: LODController.LODLevel = LODController.calculate_lod_level(cam.global_position, global_position, false)
-			LODController.apply_lod_to_node(_visual_holder, lod)
+			_current_lod = LODController.calculate_lod_level(cam.global_position, global_position, false)
+			LODController.apply_lod_to_node(_visual_holder, _current_lod)
 		elif _visual_holder != null:
 			_visual_holder.visible = true
+			_current_lod = LODController.LODLevel.HIGH
+
+	# Se a unidade estiver completamente fora do campo da camera (CULLED), pula animacao e apenas move
+	if _current_lod == LODController.LODLevel.CULLED and _visual_holder != null and not _selected:
+		_visual_holder.visible = false
 
 
 	_snap_to_terrain(delta)
