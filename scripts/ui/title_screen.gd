@@ -500,7 +500,7 @@ const MAJOR_GOD_PROFILES: Dictionary = {
 
 # ── Submenu 1: Batalha Rápida (Skirmish) — Layout em 2 Colunas RTS ──────────
 func _build_skirmish_modal() -> void:
-	_skirmish_modal = _create_base_modal("⚔️ CONFIGURAR BATALHA RÁPIDA (LOBBY RTS)", 1080, 620)
+	_skirmish_modal = _create_base_modal("✦ CONFIGURAR BATALHA RÁPIDA (LOBBY RTS)", 1080, 620)
 	var content: VBoxContainer = _skirmish_modal.get_node("VBox/Content") as VBoxContainer
 
 	# Divisão Principal em 2 Colunas: Configurações (Esquerda) + Preview Card (Direita)
@@ -884,43 +884,55 @@ func _select_map_size(ms_id: String) -> void:
 	_refresh_skirmish_highlights()
 
 
+func _apply_choice_btn_state(btn: Button, selected: bool) -> void:
+	if btn == null:
+		return
+	btn.add_theme_stylebox_override("normal", _make_btn_style(selected))
+	btn.add_theme_stylebox_override("hover", _make_btn_style(selected))
+	btn.add_theme_stylebox_override("pressed", _make_btn_style(true))
+	var col: Color = Color("#0b0f18") if selected else Color("#e2e8f0")
+	btn.add_theme_color_override("font_color", col)
+	btn.add_theme_color_override("font_hover_color", col)
+	btn.add_theme_color_override("font_pressed_color", Color("#0b0f18"))
+
+
 func _refresh_skirmish_highlights() -> void:
 	var btn: Button = null
 	for pid in _pantheon_buttons:
 		btn = _pantheon_buttons[pid]
-		btn.add_theme_stylebox_override("normal", _make_btn_style(pid == _selected_pantheon))
+		_apply_choice_btn_state(btn, pid == _selected_pantheon)
 
 	for gid in _major_god_buttons:
 		btn = _major_god_buttons[gid]
-		btn.add_theme_stylebox_override("normal", _make_btn_style(gid == _selected_major_god))
+		_apply_choice_btn_state(btn, gid == _selected_major_god)
 
 	for rid in _rival_buttons:
 		btn = _rival_buttons[rid]
-		btn.add_theme_stylebox_override("normal", _make_btn_style(rid == _selected_rival_pantheon))
+		_apply_choice_btn_state(btn, rid == _selected_rival_pantheon)
 
 	for bid in _biome_buttons:
 		btn = _biome_buttons[bid]
-		btn.add_theme_stylebox_override("normal", _make_btn_style(bid == _selected_biome))
+		_apply_choice_btn_state(btn, bid == _selected_biome)
 
 	for did in _diff_buttons:
 		btn = _diff_buttons[did]
-		btn.add_theme_stylebox_override("normal", _make_btn_style(did == _selected_difficulty))
+		_apply_choice_btn_state(btn, did == _selected_difficulty)
 
 	for rmode in _resource_buttons:
 		btn = _resource_buttons[rmode]
-		btn.add_theme_stylebox_override("normal", _make_btn_style(rmode == _selected_resources))
+		_apply_choice_btn_state(btn, rmode == _selected_resources)
 
 	for age_val in _starting_age_buttons:
 		btn = _starting_age_buttons[age_val]
-		btn.add_theme_stylebox_override("normal", _make_btn_style(age_val == _selected_starting_age))
+		_apply_choice_btn_state(btn, age_val == _selected_starting_age)
 
 	for vid in _victory_buttons:
 		btn = _victory_buttons[vid]
-		btn.add_theme_stylebox_override("normal", _make_btn_style(vid == _selected_victory))
+		_apply_choice_btn_state(btn, vid == _selected_victory)
 
 	for sid in _map_size_buttons:
 		btn = _map_size_buttons[sid]
-		btn.add_theme_stylebox_override("normal", _make_btn_style(sid == _selected_map_size))
+		_apply_choice_btn_state(btn, sid == _selected_map_size)
 
 	# Atualiza o Card de Visualização do Deus Maior (Coluna Direita)
 	var p_data: Dictionary = PantheonCatalog.get_pantheon(_selected_pantheon)
