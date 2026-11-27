@@ -30,10 +30,11 @@ func _ready() -> void:
 
 	var shape := CollisionShape3D.new()
 	var cyl := CylinderShape3D.new()
-	cyl.radius = 1.25
-	cyl.height = 2.4
+	var is_animal: bool = resource_kind == "food" and variant != "berry" and not (variant in ["fish", "whale"])
+	cyl.radius = 0.55 if is_animal else (0.85 if resource_kind == "wood" else 1.15)
+	cyl.height = 1.4 if is_animal else 2.4
 	shape.shape = cyl
-	shape.position = Vector3(0.0, 1.2, 0.0)
+	shape.position = Vector3(0.0, cyl.height * 0.5, 0.0)
 	add_child(shape)
 
 	_visual_root = ModelLibrary.create_resource_visual(resource_kind, variant)

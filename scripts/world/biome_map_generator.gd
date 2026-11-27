@@ -558,9 +558,9 @@ static func _build_river_divide(root: Node3D, arena_size: float, water_color: Co
 	inst.position = Vector3(0.0, 0.02, 0.0)
 	root.add_child(inst)
 
-	# Vau central navegavel (ponte rasa de pedra)
+	# Vau central navegavel (ponte rasa de pedra - padrao Shallows do AoM)
 	var ford_mesh := BoxMesh.new()
-	ford_mesh.size = Vector3(12.0, 0.12, 16.0)
+	ford_mesh.size = Vector3(18.0, 0.16, 24.0)
 	var ford_mat := StandardMaterial3D.new()
 	ford_mat.albedo_color = rock_color
 	ford_mat.roughness = 0.9
@@ -568,17 +568,18 @@ static func _build_river_divide(root: Node3D, arena_size: float, water_color: Co
 	ford.name = "CentralRiverFord"
 	ford.mesh = ford_mesh
 	ford.material_override = ford_mat
-	ford.position = Vector3(0.0, 0.03, 0.0)
+	ford.position = Vector3(0.0, 0.04, 0.0)
 	root.add_child(ford)
 
-	# Colisores nos trechos norte e sul do rio, mantendo o vau central livre
-	var seg_len: float = maxf(8.0, (arena_size * 0.96 - 18.0) * 0.5)
+	# Colisores nos trechos norte e sul do rio, mantendo o vau central livre com folga
+	var ford_half_gap: float = 13.0
+	var seg_len: float = maxf(8.0, (arena_size * 0.96 - ford_half_gap * 2.0) * 0.5)
 	for side in [-1.0, 1.0]:
 		var body := StaticBody3D.new()
 		body.name = "RiverCollision_%d" % int(side)
 		body.collision_layer = 4
 		body.collision_mask = 0
-		body.position = Vector3(0.0, 1.5, side * (9.0 + seg_len * 0.5))
+		body.position = Vector3(0.0, 1.5, side * (ford_half_gap + seg_len * 0.5))
 		var col := CollisionShape3D.new()
 		var box_shape := BoxShape3D.new()
 		box_shape.size = Vector3(9.5, 4.0, seg_len)

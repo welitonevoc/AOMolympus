@@ -761,17 +761,19 @@ func _compute_obstacle_avoidance(desired_dir: Vector3, _target_dest: Vector3) ->
 		if r == target_resource:
 			continue
 		var rn := r as ResourceNode
-		var avoid_r: float = 1.75
+		var is_animal: bool = rn.resource_kind == "food" and rn.variant != "berry" and not (rn.variant in ["fish", "whale"])
+		var avoid_r: float = 1.45 if is_animal else 2.1
 		var to_obs: Vector3 = rn.global_position - global_position
 		to_obs.y = 0.0
 		var dist: float = to_obs.length()
 		if dist > 0.05 and dist < avoid_r:
 			var obs_dir: Vector3 = to_obs / dist
-			if obs_dir.dot(desired_dir) > 0.15:
+			if obs_dir.dot(desired_dir) > 0.05:
 				if _avoid_side == 0.0:
 					_avoid_side = 1.0 if right_vec.dot(obs_dir) < 0.0 else -1.0
-				_avoid_timer = 0.55
-				steer += (right_vec * _avoid_side).normalized() * 0.9
+				_avoid_timer = 0.65
+				var weight: float = (avoid_r - dist) / avoid_r
+				steer += (right_vec * _avoid_side - obs_dir * 0.45).normalized() * (1.1 + weight)
 
 	return steer
 
