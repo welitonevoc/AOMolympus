@@ -349,16 +349,16 @@ const BUILDINGS: Dictionary = {
 		"name": "Centro Urbano",
 		"min_age": 1,
 		"cost": {"wood": 300, "gold": 300},
-		"base_hp": 2200,
-		"hp_per_age": 450,
+		"base_hp": 2600,
+		"hp_per_age": 550,
 		"pop_bonus": 15,
 		"build_time": 18.0,
 		"footprint": 3.4,
-		"vision_radius": 18.0,
+		"vision_radius": 19.0,
 		"favor_rate": 0.15,
-		"attack_damage": 14.0,
-		"attack_range": 13.0,
-		"attack_cooldown": 1.35,
+		"attack_damage": 28.0,
+		"attack_range": 14.0,
+		"attack_cooldown": 1.25,
 	},
 	"house": {
 		"kind": "house",
@@ -445,32 +445,32 @@ const BUILDINGS: Dictionary = {
 		"name": "Torre de Vigia",
 		"min_age": 1,
 		"cost": {"wood": 80, "gold": 60},
-		"base_hp": 900,
-		"hp_per_age": 220,
+		"base_hp": 950,
+		"hp_per_age": 240,
 		"pop_bonus": 0,
 		"build_time": 8.0,
 		"footprint": 1.6,
 		"vision_radius": 20.0,
 		"favor_rate": 0.0,
-		"attack_damage": 16.0,
-		"attack_range": 14.5,
-		"attack_cooldown": 1.15,
+		"attack_damage": 24.0,
+		"attack_range": 15.0,
+		"attack_cooldown": 1.10,
 	},
 	"fortress": {
 		"kind": "fortress",
 		"name": "Fortaleza",
 		"min_age": 3,
 		"cost": {"wood": 260, "gold": 280},
-		"base_hp": 2600,
-		"hp_per_age": 550,
+		"base_hp": 3200,
+		"hp_per_age": 650,
 		"pop_bonus": 10,
 		"build_time": 16.0,
 		"footprint": 3.2,
-		"vision_radius": 21.0,
+		"vision_radius": 22.0,
 		"favor_rate": 0.0,
-		"attack_damage": 26.0,
-		"attack_range": 16.5,
-		"attack_cooldown": 1.05,
+		"attack_damage": 48.0,
+		"attack_range": 17.5,
+		"attack_cooldown": 0.95,
 	},
 	"divine_altar": {
 		"kind": "divine_altar",
@@ -1972,6 +1972,30 @@ func get_unit_spec(pantheon_id: String, unit_kind: String) -> Dictionary:
 	var base: Dictionary = UNITS.get(unit_kind, UNITS["villager"]).duplicate(true)
 	var names: Dictionary = PANTHEON_UNIT_NAMES.get(pantheon_id, PANTHEON_UNIT_NAMES["greek"])
 	base["display_name"] = String(names.get(unit_kind, unit_kind.capitalize()))
+	base["hp_regen"] = 0.0
+
+	# Balanceamento competitivo & sinergias do Meaningful Myth
+	if unit_kind == "myth":
+		match pantheon_id:
+			"greek":
+				# Hidra / Cila / Minotauro — regeneração mítica de 2.0 HP/s
+				base["hp_regen"] = 2.0
+				base["hp"] = 460
+			"norse":
+				# Trolls nórdicos recebem regeneração de 2.5 HP/s e bônus de HP
+				base["hp_regen"] = 2.5
+				base["hp"] = 440
+			"chinese":
+				# Qilin / Imortal regeneração contínua
+				base["hp_regen"] = 2.0
+			"atlantean":
+				# Unidades atlantes recebem regeneração mística contínua
+				base["hp_regen"] = 1.5
+	elif unit_kind == "cavalry" and pantheon_id == "greek":
+		# Hetairoi (Cavalaria de Choque grega do Poseidon): velocidade e impacto aumentados
+		base["speed"] = 7.8
+		base["attack"] = 22.0
+
 	return base
 
 

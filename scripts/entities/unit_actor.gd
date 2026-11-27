@@ -17,6 +17,8 @@ var display_name: String = "Aldeao"
 
 var max_hp: int = 85
 var current_hp: int = 85
+var hp_regen: float = 0.0
+var _regen_accumulator: float = 0.0
 var base_attack: float = 6.0
 var armor: float = 0.05
 var attack_range: float = 1.8
@@ -117,6 +119,7 @@ func setup(p_pantheon: String, p_kind: String = "villager", p_faction: String = 
 	role = String(spec["role"])
 	max_hp = int(spec["hp"])
 	current_hp = max_hp
+	hp_regen = float(spec.get("hp_regen", 0.0))
 	base_attack = float(spec["attack"])
 	armor = float(spec["armor"])
 	attack_range = float(spec["range"])
@@ -214,6 +217,14 @@ func _physics_process(delta: float) -> void:
 		return
 	_anim_time += delta
 	_attack_timer = maxf(0.0, _attack_timer - delta)
+
+	# Regeneração passiva (Meaningful Myth / sinergias míticas)
+	if hp_regen > 0.0 and current_hp < max_hp:
+		_regen_accumulator += hp_regen * delta
+		if _regen_accumulator >= 1.0:
+			var heal_pts: int = int(_regen_accumulator)
+			_regen_accumulator -= float(heal_pts)
+			heal(heal_pts)
 
 	if not special_ability_id.is_empty():
 		if special_ability_timer > 0.0:
