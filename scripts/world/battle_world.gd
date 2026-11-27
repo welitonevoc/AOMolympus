@@ -170,6 +170,9 @@ func _on_match_started(pantheon_id: String, enemy_pantheon_id: String) -> void:
 	# 3. Instancia recursos procedurais do plano do bioma
 	var res_plan: Array = gen_result.get("resources", [])
 	for item in res_plan:
+		if String(item["kind"]) == "predator":
+			_spawn_predator(String(item.get("variant", "wolf")), item["pos"])
+			continue
 		_spawn_resource(String(item["kind"]), item["pos"], float(item["amount"]), String(item.get("variant", "")))
 
 	# 3.1 Spawna relíquias sagradas dispersas pelo mapa (OlympusRelicCatalog)
@@ -604,6 +607,13 @@ func get_command_bindings() -> OlympusCommandBindings:
 
 func spawn_resource_node(kind: String, pos: Vector3, amount: float) -> ResourceNode:
 	return _spawn_resource(kind, pos, amount)
+
+
+func _spawn_predator(species: String, pos: Vector3) -> void:
+	var pr: Node3D = preload("res://scripts/entities/wild_predator.gd").new()
+	pr.setup(species)
+	pr.position = Vector3(pos.x, BiomeMapGenerator.get_height(pos.x, pos.z), pos.z)
+	_entities_root.add_child(pr)
 
 
 func _spawn_resource(kind: String, pos: Vector3, amount: float, variant: String = "") -> ResourceNode:

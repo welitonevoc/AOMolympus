@@ -635,6 +635,8 @@ const AOM_RESOURCE_BUNDLES: Dictionary = {
 }
 
 
+const MapEcology = preload("res://scripts/world/olympus_map_ecology.gd")
+
 const TREE_STYLE_BUNDLES: Dictionary = {
 	"oak": ["res://models/civilizations/greek/oak_tree/oak_tree_base.glb", "res://models/civilizations/greek/aspen_tree/aspen_tree_base.glb"],
 	"palm": ["res://models/civilizations/egyptian/palm/palm_base.glb"],
@@ -647,7 +649,7 @@ const TREE_STYLE_BUNDLES: Dictionary = {
 
 ## Fauna sem modelo AoM extraido ainda: silhueta procedural (corpo + cabeca + patas) colorida por especie.
 static func create_fauna_placeholder(species_id: String) -> Node3D:
-	var sp: Dictionary = OlympusMapEcology.SPECIES.get(species_id, OlympusMapEcology.SPECIES["deer"])
+	var sp: Dictionary = MapEcology.SPECIES.get(species_id, MapEcology.SPECIES["deer"])
 	var col := Color(String(sp["color"]))
 	var sc: float = float(sp["scale"])
 	var root := Node3D.new()

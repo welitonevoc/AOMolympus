@@ -1,4 +1,3 @@
-class_name OlympusMapEcology
 extends RefCounted
 ## Ecologia dos 18 mapas do Olympus (flora, fauna, pesca e aneis de recurso).
 ## Derivada dos scripts oficiais do AoM (/sdcard/aom/rm2/*.xs): cada categoria de
@@ -180,6 +179,16 @@ const PROFILES: Dictionary = {
 const DEFAULT_PROFILE: String = "unknown_random"
 const WATER_LEVEL: float = -0.3
 
+## Predadores por estilo de flora (como lion/hyena na savana, wolf/bear nos mapas norse).
+const PREDATORS: Dictionary = {
+	"savannah": ["lion", "hyena"],
+	"palm": ["crocodile", "lion"],
+	"pine": ["wolf", "bear"],
+	"pine_snow": ["wolf", "bear"],
+	"dead": ["wolf"],
+	"oak": ["wolf", "bear"],
+}
+
 ## Faixas de distancia (metros) por anel, como nos .xs do AoM.
 const RINGS: Dictionary = {
 	"near": Vector2(18.0, 30.0),
@@ -226,6 +235,18 @@ static func build_fauna_plan(
 	for entry in prof.get("far", []):
 		var c: int = rng.randi_range(2, 4)
 		_scatter(plan, String(entry["s"]), c, float(entry.get("g", 2)), Vector3.ZERO, Vector2(0.0, arena_size * 0.30), rng, limit, food_mult)
+
+	# Predadores neutros no anel LONGE de cada base (+1 no centro), longe do spawn inicial.
+	var pred_list: Array = PREDATORS.get(String(prof.get("tree_style", "oak")), ["wolf"])
+	for base in [player_base, enemy_base, Vector3.ZERO]:
+		var ring: Vector2 = RINGS["far"] if base != Vector3.ZERO else Vector2(10.0, arena_size * 0.25)
+		for _p in range(rng.randi_range(1, 2)):
+			var pa: float = rng.randf_range(0.0, TAU)
+			var pd: float = rng.randf_range(ring.x, ring.y)
+			var pp := Vector3(base.x + cos(pa) * pd, 0.0, base.z + sin(pa) * pd)
+			if absf(pp.x) > limit or absf(pp.z) > limit or is_water(pp.x, pp.z):
+				continue
+			plan.append({"kind": "predator", "variant": String(pred_list[rng.randi_range(0, pred_list.size() - 1)]), "pos": pp, "amount": 0.0})
 
 	# Cardumes e baleias: exigem agua. Tenta ate achar pontos aquaticos.
 	var fish_total: int = int(prof.get("fish", 0))

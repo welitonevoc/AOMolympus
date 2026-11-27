@@ -8,6 +8,8 @@ extends RefCounted
 ## Suporta os 14 Presets Topograficos do OlympusRandomMapPresets (Platos, Mar Central, Canyons, Altar, etc.).
 ## Deterministico por semente (map_seed), gera terreno, decoracao cenario e plano balanceado de recursos.
 
+const MapEcology = preload("res://scripts/world/olympus_map_ecology.gd")
+
 static var _height_grid: int = 0
 static var _height_half: float = 0.0
 static var _height_step: float = 1.0
@@ -879,7 +881,7 @@ static func _generate_resource_plan(
 
 	# Bosques em clusters densos (6-7 arvores por bosque) + agrupamentos de alimento
 	var spawn_extent: float = arena_size * 0.42
-	var eco: Dictionary = OlympusMapEcology.get_profile(topography)
+	var eco: Dictionary = MapEcology.get_profile(topography)
 	var tree_style: String = String(eco.get("tree_style", "oak"))
 	var forest_clusters: int = int(eco.get("tree_clusters", 18))
 	for _fc in range(forest_clusters):
@@ -903,10 +905,10 @@ static func _generate_resource_plan(
 			plan.append({"kind": "food", "pos": f_pos + off, "amount": 520.0 * mult * food_mult})
 
 	# Fauna, rebanhos e peixes por mapa (OlympusMapEcology) + filtro: nada de arvore/ouro/comida em agua.
-	plan.append_array(OlympusMapEcology.build_fauna_plan(topography, player_base, enemy_base, arena_size, rng, food_mult * mult))
+	plan.append_array(MapEcology.build_fauna_plan(topography, player_base, enemy_base, arena_size, rng, food_mult * mult))
 	var dry_plan: Array[Dictionary] = []
 	for entry in plan:
 		var ep: Vector3 = entry["pos"]
-		if String(entry.get("variant", "")) in ["fish", "whale"] or not OlympusMapEcology.is_water(ep.x, ep.z):
+		if String(entry.get("variant", "")) in ["fish", "whale"] or not MapEcology.is_water(ep.x, ep.z):
 			dry_plan.append(entry)
 	return dry_plan

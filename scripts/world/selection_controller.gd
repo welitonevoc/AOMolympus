@@ -501,8 +501,18 @@ func _raycast_world(screen_pos: Vector2, mask: int) -> Dictionary:
 func _project_to_ground(screen_pos: Vector2) -> Variant:
 	var origin: Vector3 = camera_rig.camera.project_ray_origin(screen_pos)
 	var dir: Vector3 = camera_rig.camera.project_ray_normal(screen_pos)
-	var ground_plane := Plane(Vector3.UP, 0.0)
-	return ground_plane.intersects_ray(origin, dir)
+	# Intersecta o plano y=0 e refina iterando com a altura real do relevo.
+	var hit: Variant = Plane(Vector3.UP, 0.0).intersects_ray(origin, dir)
+	if hit == null:
+		return null
+	var p: Vector3 = hit
+	for _i in range(4):
+		var h: float = BiomeMapGenerator.get_height(p.x, p.z)
+		var refined: Variant = Plane(Vector3.UP, h).intersects_ray(origin, dir)
+		if refined == null:
+			break
+		p = refined
+	return p
 
 
 func _pick_nearest_entity_on_screen(screen_pos: Vector2) -> Object:
