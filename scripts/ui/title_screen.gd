@@ -27,6 +27,7 @@ var _selected_pantheon: String = "greek"
 var _selected_major_god: String = "zeus_major"
 var _selected_rival_pantheon: String = "random"
 var _selected_biome: String = "mediterranean"
+var _selected_random_map: String = "acropolis"
 var _selected_difficulty: String = "normal"
 var _selected_victory: String = "conquest"
 var _selected_resources: String = "standard"
@@ -38,6 +39,7 @@ var _major_god_buttons: Dictionary = {}
 var _major_gods_container: HBoxContainer
 var _rival_buttons: Dictionary = {}
 var _biome_buttons: Dictionary = {}
+var _map_preset_buttons: Dictionary = {}
 var _diff_buttons: Dictionary = {}
 var _victory_buttons: Dictionary = {}
 var _resource_buttons: Dictionary = {}
@@ -590,23 +592,28 @@ func _build_skirmish_modal() -> void:
 		d_row.add_child(opt_btn)
 		_diff_buttons[did] = opt_btn
 
-	# 5. Bioma e Cenário
-	s_vbox.add_child(_make_section_title("5. BIOMA DO CAMPO DE BATALHA:"))
+	# 5. Mapas Oficiais do AoM (27 Mapas & Divindades)
+	s_vbox.add_child(_make_section_title("5. MAPA OFICIAL DO AoM (27 MAPAS & DIVINDADES):"))
+	var map_scroll := ScrollContainer.new()
+	map_scroll.custom_minimum_size = Vector2(600, 128)
+	map_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	s_vbox.add_child(map_scroll)
+
 	var b_grid := GridContainer.new()
 	b_grid.columns = 2
 	b_grid.add_theme_constant_override("h_separation", 8)
 	b_grid.add_theme_constant_override("v_separation", 6)
-	s_vbox.add_child(b_grid)
+	map_scroll.add_child(b_grid)
 
-	for bid in PantheonCatalog.BIOME_ORDER:
-		var b_data: Dictionary = PantheonCatalog.get_biome(bid)
+	for mid in OlympusRandomMapPresets.PRESET_ORDER:
+		var m_data: Dictionary = OlympusRandomMapPresets.get_preset(mid)
 		opt_btn = Button.new()
-		opt_btn.text = "🗺️ %s" % b_data.get("name", bid)
-		opt_btn.custom_minimum_size = Vector2(295, 38)
-		opt_btn.add_theme_font_size_override("font_size", 12)
-		opt_btn.pressed.connect(func() -> void: _select_biome(bid))
+		opt_btn.text = "%s %s (%s)" % [m_data.get("icon", "🗺️"), m_data.get("name", mid), m_data.get("patron_deity", "Livre")]
+		opt_btn.custom_minimum_size = Vector2(288, 36)
+		opt_btn.add_theme_font_size_override("font_size", 11)
+		opt_btn.pressed.connect(func() -> void: _select_random_map(mid))
 		b_grid.add_child(opt_btn)
-		_biome_buttons[bid] = opt_btn
+		_map_preset_buttons[mid] = opt_btn
 
 	# 6. Recursos Iniciais & Era de Partida
 	s_vbox.add_child(_make_section_title("6. RECURSOS INICIAIS & ERA DE PARTIDA:"))
@@ -856,6 +863,26 @@ func _select_rival_pantheon(rid: String) -> void:
 
 func _select_biome(bid: String) -> void:
 	_selected_biome = bid
+	_refresh_skirmish_highlights()
+
+
+func _select_random_map(mid: String) -> void:
+	_selected_random_map = mid
+	var spec: Dictionary = OlympusRandomMapPresets.get_preset(mid)
+	if not spec.is_empty():
+		_selected_biome = String(spec.get("default_biome", "mediterranean"))
+		if _preview_biome_desc_lbl != null:
+			_preview_biome_desc_lbl.text = "%s %s [%s] — %s\n%s" % [
+				spec.get("icon", "🗺️"),
+				spec.get("name", mid),
+				spec.get("patron_deity", "Panteão Livre"),
+				spec.get("tagline", ""),
+				spec.get("description", "")
+			]
+	for k in _map_preset_buttons.keys():
+		var btn: Button = _map_preset_buttons[k]
+		if is_instance_valid(btn):
+			btn.modulate = Color(1.0, 0.9, 0.45, 1.0) if k == mid else Color(1.0, 1.0, 1.0, 0.85)
 	_refresh_skirmish_highlights()
 
 
@@ -1774,7 +1801,8 @@ func _launch_skirmish() -> void:
 		_selected_victory,
 		_selected_resources,
 		_selected_starting_age,
-		_selected_map_size
+		_selected_map_size,
+		_selected_random_map
 	)
 	var err: Error = get_tree().change_scene_to_file(MAIN_SCENE_PATH)
 	if err != OK:

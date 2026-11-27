@@ -43,6 +43,62 @@ const AOM_UNIT_BUNDLES: Dictionary = {
 	},
 }
 
+## Mapeamento oficial de construcoes (panteao -> building_kind -> "<civ>/<slug>" em cidade/)
+const AOM_BUILDING_BUNDLES: Dictionary = {
+	"greek": {
+		"town_center": ["greek/town_center"],
+		"house": ["greek/storehouse", "greek/granary", "egyptian/house"],
+		"temple": ["greek/temple_underworld", "egyptian/temple"],
+		"barracks": ["greek/academy"],
+		"archery": ["greek/archery_range"],
+		"stable": ["greek/stable"],
+		"tower": ["shared/tower", "egyptian/starting_tower"],
+		"fortress": ["greek/fortress"],
+		"divine_altar": ["egyptian/monument", "greek/temple_underworld"],
+		"wonder": ["egyptian/wonder"],
+		"titan_gate": ["egyptian/titan_gate"],
+	},
+	"egyptian": {
+		"town_center": ["egyptian/settlement_level_1", "greek/town_center"],
+		"house": ["egyptian/house"],
+		"temple": ["egyptian/temple"],
+		"barracks": ["egyptian/barracks"],
+		"archery": ["egyptian/siege_camp", "egyptian/barracks"],
+		"stable": ["egyptian/migdol_stronghold", "greek/stable"],
+		"tower": ["egyptian/starting_tower", "egyptian/outpost", "shared/tower"],
+		"fortress": ["egyptian/migdol_stronghold"],
+		"divine_altar": ["egyptian/monument", "egyptian/shrine"],
+		"wonder": ["egyptian/wonder", "egyptian/pyramid_large"],
+		"titan_gate": ["egyptian/titan_gate"],
+	},
+	"norse": {
+		"town_center": ["greek/town_center", "egyptian/settlement_level_1"],
+		"house": ["norse/longhouse", "egyptian/house"],
+		"temple": ["egyptian/temple", "greek/temple_underworld"],
+		"barracks": ["norse/longhouse"],
+		"archery": ["norse/hill_fort", "greek/archery_range"],
+		"stable": ["norse/hill_fort", "greek/stable"],
+		"tower": ["norse/odins_tower", "shared/tower"],
+		"fortress": ["norse/hill_fort"],
+		"divine_altar": ["norse/odins_tower", "egyptian/monument"],
+		"wonder": ["egyptian/wonder"],
+		"titan_gate": ["egyptian/titan_gate"],
+	},
+	"atlantean": {
+		"town_center": ["greek/town_center", "egyptian/settlement_level_1"],
+		"house": ["atlantean/manor"],
+		"temple": ["atlantean/temple_overgrown", "egyptian/temple"],
+		"barracks": ["atlantean/counter_building"],
+		"archery": ["atlantean/counter_building", "greek/archery_range"],
+		"stable": ["atlantean/palace", "greek/stable"],
+		"tower": ["atlantean/tower_mirror", "shared/tower"],
+		"fortress": ["atlantean/palace"],
+		"divine_altar": ["atlantean/sky_passage", "atlantean/temple_overgrown"],
+		"wonder": ["egyptian/wonder"],
+		"titan_gate": ["egyptian/titan_gate"],
+	},
+}
+
 
 static func create_building_visual(
 	pantheon_id: String,
@@ -52,20 +108,39 @@ static func create_building_visual(
 ) -> Node3D:
 	var p: Dictionary = PantheonCatalog.get_pantheon(pantheon_id)
 	var tier: int = clampi(age_tier, 1, 5)
-	var civ_order: Array[String] = [pantheon_id, "shared", "greek"]
-	var candidates: Array[String] = []
 	var age_model_tier: int = clampi(tier, 1, 4)
-	for civ in civ_order:
-		candidates.append("res://models/civilizations/%s/cidade/%s/%s_age%d.glb" % [civ, building_kind, building_kind, age_model_tier])
-		candidates.append("res://models/civilizations/%s/cidade/%s/%s_base.glb" % [civ, building_kind, building_kind])
-	for path in candidates:
-		var loaded: Node3D = _try_instantiate_glb(path)
-		if loaded != null:
-			_force_opaque_materials(loaded)
-			if building_kind != "town_center":
-				_align_model_to_ground(loaded)
-			_log_model_diag("BUILDING:" + building_kind, path, loaded)
-			return loaded
+
+	var civ_key: String = pantheon_id if AOM_BUILDING_BUNDLES.has(pantheon_id) else "greek"
+	var civ_map: Dictionary = AOM_BUILDING_BUNDLES.get(civ_key, {})
+	var bundle_refs: Array = []
+	if civ_map.has(building_kind):
+		bundle_refs.append_array(civ_map[building_kind])
+	if civ_key != "greek" and AOM_BUILDING_BUNDLES["greek"].has(building_kind):
+		for g_ref in AOM_BUILDING_BUNDLES["greek"][building_kind]:
+			if not bundle_refs.has(g_ref):
+				bundle_refs.append(g_ref)
+
+	for ref in bundle_refs:
+		var parts: PackedStringArray = String(ref).split("/")
+		if parts.size() != 2:
+			continue
+		var civ: String = parts[0]
+		var slug: String = parts[1]
+		var bundle_dir: String = "res://models/civilizations/%s/cidade/%s" % [civ, slug]
+		var candidates: Array[String] = [
+			"%s/%s_age%d.glb" % [bundle_dir, slug, age_model_tier],
+			"%s/%s_base.glb" % [bundle_dir, slug],
+		]
+		for path in candidates:
+			var loaded: Node3D = _try_instantiate_glb(path)
+			if loaded != null:
+				_force_opaque_materials(loaded)
+				_apply_external_manifest_texture(loaded, bundle_dir, _load_aom_manifest(bundle_dir))
+				if building_kind != "town_center":
+					_align_model_to_ground(loaded)
+				_log_model_diag("BUILDING:" + building_kind, path, loaded)
+				return loaded
+
 	return _build_procedural_building(p, building_kind, tier, faction)
 
 
