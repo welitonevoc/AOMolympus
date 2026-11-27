@@ -8,6 +8,7 @@ signal depleted(node: Node)
 @export var max_amount: float = 450.0
 
 var remaining: float = 450.0
+var _tree_felled: bool = false
 var _visual_root: Node3D
 var _highlight_ring: MeshInstance3D
 
@@ -42,11 +43,18 @@ func _ready() -> void:
 func harvest(requested: float) -> float:
 	if remaining <= 0.0:
 		return 0.0
+	if resource_kind == "wood" and not _tree_felled:
+		_tree_felled = true
+		if _visual_root != null and is_instance_valid(_visual_root):
+			var fall_tw := create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+			fall_tw.parallel().tween_property(_visual_root, "rotation_degrees:z", 82.0, 0.85)
+			fall_tw.parallel().tween_property(_visual_root, "position:y", 0.25, 0.85)
 	var taken: float = minf(requested, remaining)
 	remaining -= taken
-	var ratio: float = clampf(remaining / maxf(1.0, max_amount), 0.35, 1.0)
-	if _visual_root != null:
-		_visual_root.scale = Vector3.ONE * ratio
+	if resource_kind != "wood":
+		var ratio: float = clampf(remaining / maxf(1.0, max_amount), 0.35, 1.0)
+		if _visual_root != null:
+			_visual_root.scale = Vector3.ONE * ratio
 	if remaining <= 0.01:
 		depleted.emit(self)
 		queue_free()

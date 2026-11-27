@@ -560,7 +560,6 @@ const AOM_RESOURCE_BUNDLES: Dictionary = {
 		"res://models/civilizations/norse/mine/mine_base.glb",
 	],
 	"food": [
-		"res://models/civilizations/norse/battle_boar/battle_boar_base.glb",
 		"res://models/civilizations/egyptian/cidade/temple/accessories/world_a_bush_short_f.glb",
 	],
 	"wood_mediterranean": [

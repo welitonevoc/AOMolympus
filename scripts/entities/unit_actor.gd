@@ -919,19 +919,20 @@ func _die() -> void:
 func _update_carry_visual(visible_flag: bool) -> void:
 	if _carry_crate == null:
 		return
+	for ch in _carry_crate.get_children():
+		ch.queue_free()
+	_carry_crate.mesh = null
 	_carry_crate.visible = visible_flag
 	if visible_flag:
-		var mat := StandardMaterial3D.new()
-		match carried_kind:
-			"food":
-				mat.albedo_color = Color("#dc2626")
-			"gold":
-				mat.albedo_color = Color("#facc15")
-				mat.metallic = 0.8
-				mat.roughness = 0.25
-			_:
-				mat.albedo_color = Color("#8b5a2b")
-		_carry_crate.material_override = mat
+		var res_path: String = "res://models/civilizations/greek/villager_greek/accessories/attachments_a_resource_grain.glb" if carried_kind == "food" else "res://models/civilizations/greek/villager_greek/accessories/attachments_a_basket.glb"
+		if ResourceLoader.exists(res_path):
+			var ps := ResourceLoader.load(res_path) as PackedScene
+			if ps != null:
+				var inst := ps.instantiate() as Node3D
+				if inst != null:
+					inst.scale = Vector3.ONE * 0.85
+					_carry_crate.add_child(inst)
+					return
 
 
 func _find_nearest_town_center() -> BuildingActor:
