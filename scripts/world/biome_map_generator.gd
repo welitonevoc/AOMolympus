@@ -28,17 +28,12 @@ static func build_biome_environment(
 	var preset: Dictionary = OlympusRandomMapPresets.get_preset(preset_id)
 	var topo_type: String = String(preset.get("topography_type", "open_plains"))
 
-	# 1. Plano principal de terreno navegavel
-	var ground_mesh := PlaneMesh.new()
-	ground_mesh.size = Vector2(arena_size, arena_size)
-	ground_mesh.subdivide_width = 16
-	ground_mesh.subdivide_depth = 16
-
+	# 1. Malha 3D esculpida de terreno com relevo real (colinas, vales e bacias)
 	var ground_mat: StandardMaterial3D = _make_terrain_material(biome, biome_id, map_seed)
 
 	var ground_inst := MeshInstance3D.new()
 	ground_inst.name = "TerrainMesh"
-	ground_inst.mesh = ground_mesh
+	ground_inst.mesh = _build_sculpted_terrain_mesh(arena_size, player_base, enemy_base, preset, map_seed)
 	ground_inst.material_override = ground_mat
 	terrain_root.add_child(ground_inst)
 
@@ -80,9 +75,10 @@ static func build_biome_environment(
 			# Planicies, florestas densas, savana, tundra, megalopole, nomade, morte subita e desconhecido
 			_build_biome_centerpiece(terrain_root, biome_id, biome, rng, arena_size)
 
-	# 4. Pracas das duas cidadelas + 4 Assentamentos Neutros de expansao + Detalhes epicos de terreno/flora
+	# 4. Pracas das duas cidadelas + 4 Assentamentos Neutros + Ruinas Antigas + Estrada
 	_build_epic_ground_details(terrain_root, arena_size, biome, player_base, enemy_base, rng)
 	_build_neutral_settlements(terrain_root, arena_size, biome["rock_color"])
+	_build_ancient_ruins(terrain_root, arena_size, biome_id, rng)
 	for plaza_cfg in [
 		{"pos": player_base, "col": biome["plaza_player"]},
 		{"pos": enemy_base, "col": biome["plaza_enemy"]},
@@ -138,6 +134,123 @@ static func build_biome_environment(
 		"preset": preset,
 		"resources": resource_plan,
 	}
+
+
+static func _build_sculpted_terrain_mesh(
+	arena_size: float,
+	player_base: Vector3,
+	enemy_base: Vector3,
+	preset: Dictionary,
+	map_seed: int
+) -> ArrayMesh:
+	var grid: int = 64
+	var half: float = arena_size * 0.5
+	var step: float = arena_size / float(grid)
+	var topo: String = String(preset.get("topography_type", "plains"))
+	var water_ratio: float = float(preset.get("water_radius_ratio", 0.0))
+
+	var h_noise := FastNoiseLite.new()
+	h_noise.noise_type = FastNoiseLite.TYPE_SIMPLEX_SMOOTH
+	h_noise.fractal_type = FastNoiseLite.FRACTAL_FBM
+	h_noise.fractal_octaves = 4
+	h_noise.frequency = 0.018
+	h_noise.seed = map_seed + 7
+
+	var heights := PackedFloat32Array()
+	heights.resize((grid + 1) * (grid + 1))
+
+	for gz in range(grid + 1):
+		for gx in range(grid + 1):
+			var wx: float = -half + float(gx) * step
+			var wz: float = -half + float(gz) * step
+			var p2 := Vector2(wx, wz)
+
+			# Relevo organico base de colinas e vales
+			var raw_h: float = h_noise.get_noise_2d(wx, wz) * 4.2 + 0.6
+
+			# Elevacao natural nas bordas externas (moldura montanhosa)
+			var edge_dist: float = maxf(absf(wx), absf(wz)) / half
+			if edge_dist > 0.78:
+				var rim_t: float = clampf((edge_dist - 0.78) / 0.22, 0.0, 1.0)
+				raw_h += rim_t * rim_t * 7.5
+
+			# Depressao para mares/oasis/rios ou colina central
+			if topo in ["central_sea", "worm_sea", "midgard_ring", "oasis", "watering_hole"] and water_ratio > 0.0:
+				var wr: float = arena_size * water_ratio
+				if p2.length() < wr:
+					raw_h = -1.6
+			elif topo == "altar_hill":
+				var hr: float = 20.0
+				if p2.length() < hr:
+					var ht: float = 1.0 - (p2.length() / hr)
+					raw_h = maxf(raw_h, ht * 2.2)
+
+			# Suaviza para Y=0.0 nas bases, assentamentos e estrada central
+			var flat_mask: float = 1.0
+			var d_p1: float = p2.distance_to(Vector2(player_base.x, player_base.z))
+			var d_p2: float = p2.distance_to(Vector2(enemy_base.x, enemy_base.z))
+			flat_mask = minf(flat_mask, clampf((minf(d_p1, d_p2) - 20.0) / 14.0, 0.0, 1.0))
+
+			# Corredor da estrada entre as bases
+			var ab := Vector2(enemy_base.x - player_base.x, enemy_base.z - player_base.z)
+			var ap := p2 - Vector2(player_base.x, player_base.z)
+			var t_proj: float = clampf(ap.dot(ab) / maxf(1.0, ab.length_squared()), 0.0, 1.0)
+			var road_d: float = (Vector2(player_base.x, player_base.z) + ab * t_proj).distance_to(p2)
+			flat_mask = minf(flat_mask, clampf((road_d - 6.0) / 10.0, 0.0, 1.0))
+
+			# Area jogavel interna suave, colinas nos flancos e bordas
+			heights[gz * (grid + 1) + gx] = raw_h * flat_mask
+
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for gz in range(grid):
+		for gx in range(grid):
+			var i00: int = gz * (grid + 1) + gx
+			var i10: int = i00 + 1
+			var i01: int = (gz + 1) * (grid + 1) + gx
+			var i11: int = i01 + 1
+
+			var v00 := Vector3(-half + float(gx) * step, heights[i00], -half + float(gz) * step)
+			var v10 := Vector3(-half + float(gx + 1) * step, heights[i10], -half + float(gz) * step)
+			var v01 := Vector3(-half + float(gx) * step, heights[i01], -half + float(gz + 1) * step)
+			var v11 := Vector3(-half + float(gx + 1) * step, heights[i11], -half + float(gz + 1) * step)
+
+			var uv00 := Vector2(float(gx) / float(grid), float(gz) / float(grid))
+			var uv10 := Vector2(float(gx + 1) / float(grid), float(gz) / float(grid))
+			var uv01 := Vector2(float(gx) / float(grid), float(gz + 1) / float(grid))
+			var uv11 := Vector2(float(gx + 1) / float(grid), float(gz + 1) / float(grid))
+
+			st.set_uv(uv00); st.add_vertex(v00)
+			st.set_uv(uv10); st.add_vertex(v10)
+			st.set_uv(uv11); st.add_vertex(v11)
+
+			st.set_uv(uv00); st.add_vertex(v00)
+			st.set_uv(uv11); st.add_vertex(v11)
+			st.set_uv(uv01); st.add_vertex(v01)
+
+	st.generate_normals()
+	st.generate_tangents()
+	return st.commit()
+
+
+static func _build_ancient_ruins(root: Node3D, arena_size: float, biome_id: String, rng: RandomNumberGenerator) -> void:
+	var path: String = "res://models/civilizations/greek/cidade/ruins/ruins_base.glb"
+	if biome_id == "nile_desert" and ResourceLoader.exists("res://models/civilizations/egyptian/cidade/statue_pharaoh/statue_pharaoh_base.glb"):
+		path = "res://models/civilizations/egyptian/cidade/statue_pharaoh/statue_pharaoh_base.glb"
+	if not ResourceLoader.exists(path):
+		return
+	var ps := ResourceLoader.load(path) as PackedScene
+	if ps == null:
+		return
+	var d: float = arena_size * 0.34
+	for idx in range(4):
+		var ang: float = PI * 0.25 + float(idx) * PI * 0.5
+		var inst := ps.instantiate() as Node3D
+		if inst != null:
+			inst.name = "AncientRuin_%d" % idx
+			inst.position = Vector3(cos(ang) * d, 0.0, sin(ang) * d)
+			inst.rotation.y = rng.randf_range(0.0, TAU)
+			root.add_child(inst)
 
 
 static func _make_terrain_material(biome: Dictionary, biome_id: String, map_seed: int) -> StandardMaterial3D:
