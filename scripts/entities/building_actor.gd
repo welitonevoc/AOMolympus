@@ -25,6 +25,7 @@ var vision_radius: float = 14.0
 var training_queue: Array[String] = []
 var training_elapsed: float = 0.0
 var _attack_timer: float = 0.0
+var _anim_time: float = 0.0
 var _pop_granted: bool = false
 var _selected: bool = false
 var _dead: bool = false
@@ -136,6 +137,22 @@ func _process(delta: float) -> void:
 				var fire_origin := global_position + Vector3(0.0, 3.8, 0.0)
 				projectile_requested.emit(fire_origin, target, scaled_dmg, faction, pantheon_id, "arrow")
 				_attack_timer = float(spec.get("attack_cooldown", 1.2))
+
+	# Animação contínua estilo AoM original para o Centro da Cidade
+	if building_kind == "town_center":
+		_anim_time += delta
+		var is_training: bool = training_queue.size() > 0
+		if _night_torch != null and is_instance_valid(_night_torch):
+			var base_energy: float = 2.6 if is_training else 2.2
+			var pulse_speed: float = 6.0 if is_training else 2.5
+			var pulse_amp: float = 0.55 if is_training else 0.18
+			_night_torch.light_energy = base_energy + sin(_anim_time * pulse_speed) * pulse_amp
+		if _visual_holder != null and is_instance_valid(_visual_holder):
+			if is_training:
+				var s: float = 1.0 + sin(_anim_time * 4.5) * 0.008
+				_visual_holder.scale = Vector3(1.0, s, 1.0)
+			elif _visual_holder.scale != Vector3.ONE:
+				_visual_holder.scale = Vector3.ONE
 
 
 func get_vision_radius() -> float:

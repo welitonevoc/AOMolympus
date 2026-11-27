@@ -189,6 +189,9 @@ static func _attach_aom_accessories(root: Node3D, bundle_dir: String, manifest: 
 		var acc_inst: Node3D = _try_instantiate_glb(acc_path)
 		if acc_inst != null:
 			_force_opaque_materials(acc_inst)
+			if sock_up == "TOPOFHEAD" and "hoplite" in slug.to_lower():
+				# Corrige orientação da cabeça/elmo do hoplita que vem rotacionada 90° de lado no socket
+				acc_inst.rotation_degrees.y = -90.0
 			socket_node.add_child(acc_inst)
 
 
