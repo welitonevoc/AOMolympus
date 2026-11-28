@@ -3152,6 +3152,8 @@ static func _build_procedural_flora(kind: String, biome: String) -> Node3D:
 			leaf_col = Color("#1e3a1e")
 		"erebus_volcanic":
 			leaf_col = Color("#065f46")
+		"rainforest":
+			leaf_col = Color("#047857")
 		_:
 			leaf_col = Color("#15803d")
 	var leaf_mat := _make_mat(leaf_col, 0.6, 0.0)

@@ -316,6 +316,22 @@ const PRESETS: Dictionary = {
 		"wood_multiplier": 1.15,
 		"relic_count": 5,
 	},
+	"selva_tropical_rainforest": {
+		"id": "selva_tropical_rainforest",
+		"name": "Selva Tropical (Rainforest)",
+		"pantheon_division": "aztec",
+		"patron_deity": "Quetzalcoatl",
+		"default_biome": "rainforest",
+		"icon": "🌴",
+		"tagline": "Selva Densa, Pântanos e Rios Tropicais",
+		"description": "Densa floresta tropical cortada por rios de água doce e lagos esmeralda. Recursos florestais abundantes e passagens estreitas propícias a emboscadas.",
+		"topography_type": "plateau",
+		"water_type": "perimeter",
+		"gold_multiplier": 1.10,
+		"food_multiplier": 1.25,
+		"wood_multiplier": 1.50,
+		"relic_count": 4,
+	},
 }
 
 const PRESET_ORDER: Array[String] = [
@@ -342,6 +358,7 @@ const PRESET_ORDER: Array[String] = [
 	"trono_dos_deuses",
 	"errantes_da_era",
 	"destino_dos_oraculos",
+	"selva_tropical_rainforest",
 ]
 
 

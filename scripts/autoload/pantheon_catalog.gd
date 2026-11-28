@@ -204,9 +204,31 @@ const BIOMES: Dictionary = {
 		"minimap_ground": Color("#3c383d"),
 		"minimap_water": Color("#b83b12"),
 	},
+	"rainforest": {
+		"id": "rainforest",
+		"name": "Floresta Tropical (Rainforest)",
+		"subtitle": "Selva densa, rios esmeralda, palmeiras e ruínas antigas",
+		"ground_color": Color("#2d5a27"),
+		"plaza_player": Color("#8a9a65"),
+		"plaza_enemy": Color("#4a583e"),
+		"water_color": Color("#1e7a68"),
+		"water_emissive": false,
+		"rock_color": Color("#4d5843"),
+		"tree_canopy": Color("#047857"),
+		"hill_color": Color("#264c21"),
+		"day_sun": Color("#fff3c4"),
+		"day_sky_top": Color("#1a6fb0"),
+		"day_sky_horizon": Color("#8ed9cf"),
+		"day_fog": Color("#85cbbe"),
+		"night_sky_top": Color("#061b24"),
+		"night_sky_horizon": Color("#133c39"),
+		"minimap_ground": Color("#254c20"),
+		"minimap_water": Color("#1a6a5a"),
+		"icon": "res://assets/ui/icons/biome_rainforest.png",
+	},
 }
 
-const BIOME_ORDER: Array[String] = ["mediterranean", "nile_desert", "nordic_tundra", "erebus_volcanic"]
+const BIOME_ORDER: Array[String] = ["mediterranean", "nile_desert", "nordic_tundra", "erebus_volcanic", "rainforest"]
 
 const AI_DIFFICULTIES: Dictionary = {
 	"easy": {
