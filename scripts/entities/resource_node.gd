@@ -25,14 +25,32 @@ func _ready() -> void:
 	add_to_group("resources")
 	if variant in ["fish", "whale"]:
 		position.y = -0.35
+	else:
+		# Encaixa a base do recurso perfeitamente na superficie do relevo
+		position.y = BiomeMapGenerator.get_height(position.x, position.z)
+
+	# Camada 2: Recursos coletaveis (colide com CharacterBody3D das unidades e raios do mouse)
 	collision_layer = 2
 	collision_mask = 0
 
 	var shape := CollisionShape3D.new()
 	var cyl := CylinderShape3D.new()
 	var is_animal: bool = resource_kind == "food" and variant != "berry" and not (variant in ["fish", "whale"])
-	cyl.radius = 0.55 if is_animal else (0.85 if resource_kind == "wood" else 1.15)
-	cyl.height = 1.4 if is_animal else 2.4
+	if resource_kind == "gold":
+		# Minas de ouro tem pegada de 2.2m com altura de 2.0m para permitir passagem fluida de aldeões
+		cyl.radius = 1.6
+		cyl.height = 2.2
+	elif resource_kind == "wood":
+		# Arvores tem tronco solido de 0.65m para evitar que unidades atravessem o tronco
+		cyl.radius = 0.65
+		cyl.height = 4.2
+	elif is_animal:
+		cyl.radius = 0.55
+		cyl.height = 1.4
+	else:
+		cyl.radius = 0.95
+		cyl.height = 1.8
+
 	shape.shape = cyl
 	shape.position = Vector3(0.0, cyl.height * 0.5, 0.0)
 	add_child(shape)
@@ -40,7 +58,7 @@ func _ready() -> void:
 	_visual_root = ModelLibrary.create_resource_visual(resource_kind, variant)
 	add_child(_visual_root)
 
-	_highlight_ring = _create_ring(1.35, _color_for_kind())
+	_highlight_ring = _create_ring(cyl.radius * 1.35, _color_for_kind())
 	_highlight_ring.visible = false
 	add_child(_highlight_ring)
 
