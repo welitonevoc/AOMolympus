@@ -62,9 +62,21 @@ static func build_biome_environment(
 
 	var ground_inst := MeshInstance3D.new()
 	ground_inst.name = "TerrainMesh"
-	ground_inst.mesh = _build_sculpted_terrain_mesh(arena_size, player_base, enemy_base, preset, map_seed)
+	var sculpt_mesh: ArrayMesh = _build_sculpted_terrain_mesh(arena_size, player_base, enemy_base, preset, map_seed)
+	ground_inst.mesh = sculpt_mesh
 	ground_inst.material_override = ground_mat
 	terrain_root.add_child(ground_inst)
+
+	# 1.1 Colisor Fisico do Terreno Relevo (StaticBody3D na camada 1/terreno)
+	var terrain_body := StaticBody3D.new()
+	terrain_body.name = "TerrainStaticBody"
+	terrain_body.collision_layer = 1
+	terrain_body.collision_mask = 0
+	var terrain_col := CollisionShape3D.new()
+	terrain_col.name = "TerrainCollisionShape"
+	terrain_col.shape = sculpt_mesh.create_trimesh_shape()
+	terrain_body.add_child(terrain_col)
+	terrain_root.add_child(terrain_body)
 
 	# 2. Mar / Fiorde / Rio de Lava circundante
 	var sea_mesh := PlaneMesh.new()
@@ -76,6 +88,27 @@ static func build_biome_environment(
 	sea.material_override = sea_mat
 	sea.position = Vector3(0.0, -0.45, 0.0)
 	terrain_root.add_child(sea)
+
+	# 2.1 Colisao perimetral das bordas de agua (impede unidades de andarem para fora da arena no mar)
+	var sea_body := StaticBody3D.new()
+	sea_body.name = "PerimeterWaterCollision"
+	sea_body.collision_layer = 4 # Camada 4 = Obstaculos/Agua bloqueante
+	sea_body.collision_mask = 0
+	for side_idx in range(4):
+		var p_col := CollisionShape3D.new()
+		var p_box := BoxShape3D.new()
+		var border_w: float = arena_size * 1.2
+		var border_th: float = arena_size * 0.6
+		var b_offset: float = arena_size * 0.5 + border_th * 0.5
+		p_box.size = Vector3(border_w if side_idx % 2 == 0 else border_th, 6.0, border_th if side_idx % 2 == 0 else border_w)
+		p_col.shape = p_box
+		match side_idx:
+			0: p_col.position = Vector3(0.0, 1.5, b_offset)
+			1: p_col.position = Vector3(0.0, 1.5, -b_offset)
+			2: p_col.position = Vector3(b_offset, 1.5, 0.0)
+			3: p_col.position = Vector3(-b_offset, 1.5, 0.0)
+		sea_body.add_child(p_col)
+	terrain_root.add_child(sea_body)
 
 	# 3. Esculpe a Topografia Procedural do Preset Oficial AoM
 	match topo_type:
@@ -657,6 +690,18 @@ static func _build_dual_coast_seas(root: Node3D, arena_size: float, water_color:
 		inst.position = Vector3(0.0, 0.02, side * (arena_size * 0.42))
 		root.add_child(inst)
 
+		var body := StaticBody3D.new()
+		body.name = "CoastSeaCollision_%d" % int(side)
+		body.collision_layer = 4
+		body.collision_mask = 0
+		body.position = inst.position
+		var col := CollisionShape3D.new()
+		var box := BoxShape3D.new()
+		box.size = Vector3(arena_size * 0.85, 3.5, arena_size * 0.18)
+		col.shape = box
+		body.add_child(col)
+		root.add_child(body)
+
 
 static func _build_magma_rift(root: Node3D, arena_size: float, rock_color: Color) -> void:
 	var lava_mat := StandardMaterial3D.new()
@@ -686,6 +731,25 @@ static func _build_magma_rift(root: Node3D, arena_size: float, rock_color: Color
 	b_inst.material_override = b_mat
 	b_inst.position = Vector3(0.0, 0.04, 0.0)
 	root.add_child(b_inst)
+
+	# Colisor de magma que deixa apenas a ponte de pedra transitavel
+	var rift_half_len: float = arena_size * 0.45 * 0.5
+	var seg_len: float = maxf(6.0, rift_half_len - 6.0)
+	var rot_rad: float = deg_to_rad(35.0)
+	var dir_rift := Vector3(cos(rot_rad), 0.0, -sin(rot_rad))
+	for side in [-1.0, 1.0]:
+		var m_body := StaticBody3D.new()
+		m_body.name = "MagmaCollision_%d" % int(side)
+		m_body.collision_layer = 4
+		m_body.collision_mask = 0
+		m_body.position = dir_rift * side * (6.0 + seg_len * 0.5) + Vector3(0.0, 1.5, 0.0)
+		m_body.rotation_degrees = Vector3(0.0, 35.0, 0.0)
+		var m_col := CollisionShape3D.new()
+		var m_box := BoxShape3D.new()
+		m_box.size = Vector3(seg_len, 3.5, 5.5)
+		m_col.shape = m_box
+		m_body.add_child(m_col)
+		root.add_child(m_body)
 
 
 static func _build_marsh_pools(root: Node3D, arena_size: float, water_color: Color, rng: RandomNumberGenerator) -> void:

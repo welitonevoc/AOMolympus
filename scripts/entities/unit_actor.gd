@@ -762,6 +762,10 @@ func _step_navigation(delta: float) -> void:
 					tangent = -tangent
 				velocity = tangent * base_speed * speed_mult * 0.9
 				move_and_slide()
+				# Se apos deslizar continuar colidindo frontalmente, alterna lado de contorno
+				if get_slide_collision_count() > 0 and _avoid_side == 0.0:
+					_avoid_side = 1.0 if (randf() > 0.5) else -1.0
+					_avoid_timer = 0.8
 	_snap_to_terrain(delta)
 	_face_towards(global_position + move_dir, delta)
 	if _visual_holder != null:
