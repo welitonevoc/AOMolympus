@@ -67,14 +67,38 @@ var _flee_timer: float = 0.0
 var _flee_direction: Vector3 = Vector3.ZERO
 var _is_carcass: bool = false
 var _death_tween: Tween = null
+var _graze_timer: float = 0.0
+var _graze_direction: Vector3 = Vector3.ZERO
 
 
 func _process(delta: float) -> void:
-	if _flee_timer > 0.0 and not _is_carcass:
+	var is_animal: bool = resource_kind == "food" and variant != "berry" and not (variant in ["fish", "whale"])
+	if not is_animal or _is_carcass:
+		return
+
+	if _flee_timer > 0.0:
 		_flee_timer -= delta
 		global_position += _flee_direction * (4.2 * delta)
+		global_position.y = BiomeMapGenerator.get_height(global_position.x, global_position.z)
 		if _visual_root != null:
-			_visual_root.position.y = absf(sin(Time.get_ticks_msec() * 0.012)) * 0.12
+			_visual_root.position.y = absf(sin(Time.get_ticks_msec() * 0.014)) * 0.15
+	else:
+		# Comportamento natural de pastoreio calmo (move-se devagar aleatoriamente)
+		_graze_timer -= delta
+		if _graze_timer <= 0.0:
+			_graze_timer = randf_range(4.0, 9.0)
+			if randf() < 0.45:
+				var ang: float = randf_range(0.0, TAU)
+				_graze_direction = Vector3(cos(ang), 0.0, sin(ang))
+				if _visual_root != null:
+					_visual_root.look_at(global_position + _graze_direction, Vector3.UP)
+			else:
+				_graze_direction = Vector3.ZERO
+		if _graze_direction.length_squared() > 0.01:
+			global_position += _graze_direction * (0.85 * delta)
+			global_position.y = BiomeMapGenerator.get_height(global_position.x, global_position.z)
+			if _visual_root != null:
+				_visual_root.position.y = absf(sin(Time.get_ticks_msec() * 0.005)) * 0.05
 
 
 func harvest(requested: float) -> float:
