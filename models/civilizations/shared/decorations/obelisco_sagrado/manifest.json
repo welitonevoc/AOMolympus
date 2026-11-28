@@ -1,0 +1,14 @@
+{
+  "id": "obelisco_sagrado",
+  "name": "Obelisco Hieroglífico",
+  "civilization": "shared",
+  "category": "decorations",
+  "role": "decoration",
+  "cost": {
+    "gold": 35
+  },
+  "hitpoints": 400,
+  "description": "Monumento esguio de granito talhado com preces aos deuses solares.",
+  "icon": "res://assets/ui/icons/obelisco_sagrado.png",
+  "model": "res://models/civilizations/shared/decorations/obelisco_sagrado/obelisco_sagrado_base.glb"
+}

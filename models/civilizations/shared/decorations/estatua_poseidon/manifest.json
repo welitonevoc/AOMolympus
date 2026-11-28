@@ -1,0 +1,14 @@
+{
+  "id": "estatua_poseidon",
+  "name": "Estátua Monumental de Poseidon",
+  "civilization": "shared",
+  "category": "decorations",
+  "role": "decoration",
+  "cost": {
+    "gold": 50
+  },
+  "hitpoints": 650,
+  "description": "Colosso de Poseidon empunhando o tridente para abençoar os mares.",
+  "icon": "res://assets/ui/icons/estatua_poseidon.png",
+  "model": "res://models/civilizations/shared/decorations/estatua_poseidon/estatua_poseidon_base.glb"
+}

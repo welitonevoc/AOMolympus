@@ -1,0 +1,15 @@
+{
+  "id": "santuario_nordico",
+  "name": "Santuário dos Aesir",
+  "civilization": "shared",
+  "category": "decorations",
+  "role": "decoration",
+  "cost": {
+    "wood": 25,
+    "gold": 20
+  },
+  "hitpoints": 400,
+  "description": "Hörgr nórdico edificado com pedras sobrepostas em honra aos Aesir.",
+  "icon": "res://assets/ui/icons/santuario_nordico.png",
+  "model": "res://models/civilizations/shared/decorations/santuario_nordico/santuario_nordico_base.glb"
+}

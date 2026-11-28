@@ -1,0 +1,14 @@
+{
+  "id": "lenha_estocada",
+  "name": "Pilhas de Lenha de Carvalho",
+  "civilization": "shared",
+  "category": "decorations",
+  "role": "decoration",
+  "cost": {
+    "wood": 10
+  },
+  "hitpoints": 100,
+  "description": "Troncos rachados e organizados para manter forjas e lareiras vivas.",
+  "icon": "res://assets/ui/icons/lenha_estocada.png",
+  "model": "res://models/civilizations/shared/decorations/lenha_estocada/lenha_estocada_base.glb"
+}

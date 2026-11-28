@@ -1,0 +1,15 @@
+{
+  "id": "ruinas_gregas",
+  "name": "Ruínas Esquecidas",
+  "civilization": "shared",
+  "category": "decorations",
+  "role": "decoration",
+  "cost": {
+    "wood": 20,
+    "gold": 20
+  },
+  "hitpoints": 300,
+  "description": "Vestígios misteriosos de santuários desmoronados da Primeira Era.",
+  "icon": "res://assets/ui/icons/ruinas_gregas.png",
+  "model": "res://models/civilizations/shared/decorations/ruinas_gregas/ruinas_gregas_base.glb"
+}

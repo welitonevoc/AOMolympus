@@ -1,0 +1,14 @@
+{
+  "id": "tenda_nomade",
+  "name": "Tenda Nômade de Couro",
+  "civilization": "shared",
+  "category": "decorations",
+  "role": "decoration",
+  "cost": {
+    "wood": 20
+  },
+  "hitpoints": 250,
+  "description": "Abrigo portátil feito com peles curtidas e estacas firmes de carvalho.",
+  "icon": "res://assets/ui/icons/tenda_nomade.png",
+  "model": "res://models/civilizations/shared/decorations/tenda_nomade/tenda_nomade_base.glb"
+}

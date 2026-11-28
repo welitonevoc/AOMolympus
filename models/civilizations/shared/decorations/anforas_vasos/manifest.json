@@ -1,0 +1,14 @@
+{
+  "id": "anforas_vasos",
+  "name": "Ânforas e Potes de Cerâmica",
+  "civilization": "shared",
+  "category": "decorations",
+  "role": "decoration",
+  "cost": {
+    "wood": 10
+  },
+  "hitpoints": 80,
+  "description": "Recipientes cerâmicos para armazenar azeite, mel e grãos raros.",
+  "icon": "res://assets/ui/icons/anforas_vasos.png",
+  "model": "res://models/civilizations/shared/decorations/anforas_vasos/anforas_vasos_base.glb"
+}

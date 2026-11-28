@@ -1,0 +1,15 @@
+{
+  "id": "colunas_antigas",
+  "name": "Colunas Antigas",
+  "civilization": "shared",
+  "category": "decorations",
+  "role": "decoration",
+  "cost": {
+    "wood": 15,
+    "gold": 10
+  },
+  "hitpoints": 250,
+  "description": "Colunas de mármore clássicas evocando as glórias dos templos arcaicos.",
+  "icon": "res://assets/ui/icons/colunas_antigas.png",
+  "model": "res://models/civilizations/shared/decorations/colunas_antigas/colunas_antigas_base.glb"
+}

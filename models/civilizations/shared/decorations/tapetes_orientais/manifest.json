@@ -1,0 +1,15 @@
+{
+  "id": "tapetes_orientais",
+  "name": "Tapetes e Almofadas de Seda",
+  "civilization": "shared",
+  "category": "decorations",
+  "role": "decoration",
+  "cost": {
+    "wood": 15,
+    "gold": 15
+  },
+  "hitpoints": 60,
+  "description": "Tapeçarias suntuosas tecidas com corantes purpúreos e dourados.",
+  "icon": "res://assets/ui/icons/tapetes_orientais.png",
+  "model": "res://models/civilizations/shared/decorations/tapetes_orientais/tapetes_orientais_base.glb"
+}

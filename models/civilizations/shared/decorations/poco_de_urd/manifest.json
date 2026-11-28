@@ -1,0 +1,15 @@
+{
+  "id": "poco_de_urd",
+  "name": "Poço Sagrado de Urd",
+  "civilization": "shared",
+  "category": "decorations",
+  "role": "decoration",
+  "cost": {
+    "wood": 35,
+    "gold": 30
+  },
+  "hitpoints": 600,
+  "description": "Manancial ancestral que brota das raízes cósmicas de Yggdrasil.",
+  "icon": "res://assets/ui/icons/poco_de_urd.png",
+  "model": "res://models/civilizations/shared/decorations/poco_de_urd/poco_de_urd_base.glb"
+}

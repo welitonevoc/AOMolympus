@@ -1,0 +1,15 @@
+{
+  "id": "cerca_de_pedra",
+  "name": "Cerca de Pedra Firme",
+  "civilization": "shared",
+  "category": "decorations",
+  "role": "decoration",
+  "cost": {
+    "wood": 5,
+    "gold": 5
+  },
+  "hitpoints": 350,
+  "description": "Cerca ornamental de pedra para guarnecer os arredores da cidadela.",
+  "icon": "res://assets/ui/icons/cerca_de_pedra.png",
+  "model": "res://models/civilizations/shared/decorations/cerca_de_pedra/cerca_de_pedra_base.glb"
+}

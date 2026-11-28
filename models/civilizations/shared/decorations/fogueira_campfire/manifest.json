@@ -1,0 +1,14 @@
+{
+  "id": "fogueira_campfire",
+  "name": "Fogueira de Acampamento",
+  "civilization": "shared",
+  "category": "decorations",
+  "role": "decoration",
+  "cost": {
+    "wood": 10
+  },
+  "hitpoints": 150,
+  "description": "Fogueira comunitária que ilumina a base e aquece os aldeões.",
+  "icon": "res://assets/ui/icons/fogueira_campfire.png",
+  "model": "res://models/civilizations/shared/decorations/fogueira_campfire/fogueira_campfire_base.glb"
+}

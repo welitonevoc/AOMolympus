@@ -2662,3 +2662,219 @@ func format_cost(cost: Dictionary) -> String:
 	if cost.get("favor", 0) > 0:
 		parts.append("%d Fav" % int(cost["favor"]))
 	return " · ".join(parts)
+
+
+## Catalogo Oficial de Decoracoes e Embelezamento de Base (Embellishment Builder)
+const DECORATIONS: Dictionary = {
+	"fogueira_campfire": {
+		"id": "fogueira_campfire",
+		"name": "Fogueira de Acampamento",
+		"category": "decorations",
+		"cost": {"wood": 10},
+		"hp": 150,
+		"description": "Fogueira comunitaria que ilumina a base e aquece os aldeoes.",
+		"icon": "res://assets/ui/icons/fogueira_campfire.png",
+		"model": "res://models/civilizations/shared/decorations/fogueira_campfire/fogueira_campfire_base.glb"
+	},
+	"colunas_antigas": {
+		"id": "colunas_antigas",
+		"name": "Colunas Antigas",
+		"category": "decorations",
+		"cost": {"wood": 15, "gold": 10},
+		"hp": 250,
+		"description": "Colunas de marmore classicas evocando as glorias dos templos arcaicos.",
+		"icon": "res://assets/ui/icons/colunas_antigas.png",
+		"model": "res://models/civilizations/shared/decorations/colunas_antigas/colunas_antigas_base.glb"
+	},
+	"caixotes_mercador": {
+		"id": "caixotes_mercador",
+		"name": "Caixotes de Mercadorias",
+		"category": "decorations",
+		"cost": {"wood": 15},
+		"hp": 120,
+		"description": "Caixotes de suprimentos e provisoes estocados para o comercio.",
+		"icon": "res://assets/ui/icons/caixotes_mercador.png",
+		"model": "res://models/civilizations/shared/decorations/caixotes_mercador/caixotes_mercador_base.glb"
+	},
+	"cerca_de_madeira": {
+		"id": "cerca_de_madeira",
+		"name": "Cerca de Madeira Rustica",
+		"category": "decorations",
+		"cost": {"wood": 5},
+		"hp": 200,
+		"description": "Palicada de madeira para delimitar fazendas e areas de pastagem.",
+		"icon": "res://assets/ui/icons/cerca_de_madeira.png",
+		"model": "res://models/civilizations/shared/decorations/cerca_de_madeira/cerca_de_madeira_base.glb"
+	},
+	"cerca_de_pedra": {
+		"id": "cerca_de_pedra",
+		"name": "Cerca de Pedra Firme",
+		"category": "decorations",
+		"cost": {"wood": 5, "gold": 5},
+		"hp": 350,
+		"description": "Cerca ornamental de pedra para guarnecer os arredores da cidadela.",
+		"icon": "res://assets/ui/icons/cerca_de_pedra.png",
+		"model": "res://models/civilizations/shared/decorations/cerca_de_pedra/cerca_de_pedra_base.glb"
+	},
+	"fonte_monumental": {
+		"id": "fonte_monumental",
+		"name": "Fonte Monumental",
+		"category": "decorations",
+		"cost": {"wood": 30, "gold": 25},
+		"hp": 500,
+		"description": "Bela fonte de agua cristalina esculpida em cantaria grega.",
+		"icon": "res://assets/ui/icons/fonte_monumental.png",
+		"model": "res://models/civilizations/shared/decorations/fonte_monumental/fonte_monumental_base.glb"
+	},
+	"obelisco_sagrado": {
+		"id": "obelisco_sagrado",
+		"name": "Obelisco Hieroglifico",
+		"category": "decorations",
+		"cost": {"gold": 35},
+		"hp": 400,
+		"description": "Monumento esguio de granito talhado com preces aos deuses solares.",
+		"icon": "res://assets/ui/icons/obelisco_sagrado.png",
+		"model": "res://models/civilizations/shared/decorations/obelisco_sagrado/obelisco_sagrado_base.glb"
+	},
+	"anforas_vasos": {
+		"id": "anforas_vasos",
+		"name": "Anforas e Potes de Ceramica",
+		"category": "decorations",
+		"cost": {"wood": 10},
+		"hp": 80,
+		"description": "Recipientes ceramicos para armazenar azeite, mel e graos raros.",
+		"icon": "res://assets/ui/icons/anforas_vasos.png",
+		"model": "res://models/civilizations/shared/decorations/anforas_vasos/anforas_vasos_base.glb"
+	},
+	"tapetes_orientais": {
+		"id": "tapetes_orientais",
+		"name": "Tapetes e Almofadas de Seda",
+		"category": "decorations",
+		"cost": {"wood": 15, "gold": 15},
+		"hp": 60,
+		"description": "Tapecarias suntuosas tecidas com corantes purpureos e dourados.",
+		"icon": "res://assets/ui/icons/tapetes_orientais.png",
+		"model": "res://models/civilizations/shared/decorations/tapetes_orientais/tapetes_orientais_base.glb"
+	},
+	"ruinas_gregas": {
+		"id": "ruinas_gregas",
+		"name": "Ruinas Esquecidas",
+		"category": "decorations",
+		"cost": {"wood": 20, "gold": 20},
+		"hp": 300,
+		"description": "Vestigios misteriosos de santuarios desmoronados da Primeira Era.",
+		"icon": "res://assets/ui/icons/ruinas_gregas.png",
+		"model": "res://models/civilizations/shared/decorations/ruinas_gregas/ruinas_gregas_base.glb"
+	},
+	"pedra_runica": {
+		"id": "pedra_runica",
+		"name": "Pedra Runica Nordica",
+		"category": "decorations",
+		"cost": {"gold": 25},
+		"hp": 450,
+		"description": "Monolito cinzelado com runas futhark entoando o destino de guerreiros.",
+		"icon": "res://assets/ui/icons/pedra_runica.png",
+		"model": "res://models/civilizations/shared/decorations/pedra_runica/pedra_runica_base.glb"
+	},
+	"tenda_nomade": {
+		"id": "tenda_nomade",
+		"name": "Tenda Nomade de Couro",
+		"category": "decorations",
+		"cost": {"wood": 20},
+		"hp": 250,
+		"description": "Abrigo portatil feito com peles curtidas e estacas firmes de carvalho.",
+		"icon": "res://assets/ui/icons/tenda_nomade.png",
+		"model": "res://models/civilizations/shared/decorations/tenda_nomade/tenda_nomade_base.glb"
+	},
+	"tocha_cerimonial": {
+		"id": "tocha_cerimonial",
+		"name": "Tocha Cerimonial Sagrada",
+		"category": "decorations",
+		"cost": {"wood": 10},
+		"hp": 100,
+		"description": "Pira elevada com chama perpetua consagrada aos festivais divinos.",
+		"icon": "res://assets/ui/icons/tocha_cerimonial.png",
+		"model": "res://models/civilizations/shared/decorations/tocha_cerimonial/tocha_cerimonial_base.glb"
+	},
+	"poco_de_urd": {
+		"id": "poco_de_urd",
+		"name": "Poco Sagrado de Urd",
+		"category": "decorations",
+		"cost": {"wood": 35, "gold": 30},
+		"hp": 600,
+		"description": "Manancial ancestral que brota das raizes cosmicas de Yggdrasil.",
+		"icon": "res://assets/ui/icons/poco_de_urd.png",
+		"model": "res://models/civilizations/shared/decorations/poco_de_urd/poco_de_urd_base.glb"
+	},
+	"santuario_grego": {
+		"id": "santuario_grego",
+		"name": "Santuario Votivo Grego",
+		"category": "decorations",
+		"cost": {"wood": 25, "gold": 20},
+		"hp": 400,
+		"description": "Pequeno altar ao ar livre onde se queimam incensos e oferendas votivas.",
+		"icon": "res://assets/ui/icons/santuario_grego.png",
+		"model": "res://models/civilizations/shared/decorations/santuario_grego/santuario_grego_base.glb"
+	},
+	"santuario_egipcio": {
+		"id": "santuario_egipcio",
+		"name": "Santuario dos Deuses Antigos",
+		"category": "decorations",
+		"cost": {"wood": 25, "gold": 20},
+		"hp": 400,
+		"description": "Camara sagrada ladeada por colunas de lotus e reliquias do Nilo.",
+		"icon": "res://assets/ui/icons/santuario_egipcio.png",
+		"model": "res://models/civilizations/shared/decorations/santuario_egipcio/santuario_egipcio_base.glb"
+	},
+	"santuario_nordico": {
+		"id": "santuario_nordico",
+		"name": "Santuario dos Aesir",
+		"category": "decorations",
+		"cost": {"wood": 25, "gold": 20},
+		"hp": 400,
+		"description": "Horgr nordico edificado com pedras sobrepostas em honra aos Aesir.",
+		"icon": "res://assets/ui/icons/santuario_nordico.png",
+		"model": "res://models/civilizations/shared/decorations/santuario_nordico/santuario_nordico_base.glb"
+	},
+	"estatua_farao": {
+		"id": "estatua_farao",
+		"name": "Estatua do Farao Entronado",
+		"category": "decorations",
+		"cost": {"gold": 40},
+		"hp": 550,
+		"description": "Escultura solene do soberano divino ornado com a coroa dupla do Egito.",
+		"icon": "res://assets/ui/icons/estatua_farao.png",
+		"model": "res://models/civilizations/shared/decorations/estatua_farao/estatua_farao_base.glb"
+	},
+	"estatua_poseidon": {
+		"id": "estatua_poseidon",
+		"name": "Estatua Monumental de Poseidon",
+		"category": "decorations",
+		"cost": {"gold": 50},
+		"hp": 650,
+		"description": "Colosso de Poseidon empunhando o tridente para abencoar os mares.",
+		"icon": "res://assets/ui/icons/estatua_poseidon.png",
+		"model": "res://models/civilizations/shared/decorations/estatua_poseidon/estatua_poseidon_base.glb"
+	},
+	"lenha_estocada": {
+		"id": "lenha_estocada",
+		"name": "Pilhas de Lenha de Carvalho",
+		"category": "decorations",
+		"cost": {"wood": 10},
+		"hp": 100,
+		"description": "Troncos rachados e organizados para manter forjas e lareiras vivas.",
+		"icon": "res://assets/ui/icons/lenha_estocada.png",
+		"model": "res://models/civilizations/shared/decorations/lenha_estocada/lenha_estocada_base.glb"
+	}
+}
+
+
+func get_decoration(id: String) -> Dictionary:
+	return DECORATIONS.get(id, {})
+
+
+func get_all_decorations() -> Array[Dictionary]:
+	var list: Array[Dictionary] = []
+	for key in DECORATIONS:
+		list.append(DECORATIONS[key])
+	return list

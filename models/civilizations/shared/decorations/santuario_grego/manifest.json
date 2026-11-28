@@ -1,0 +1,15 @@
+{
+  "id": "santuario_grego",
+  "name": "Santuário Votivo Grego",
+  "civilization": "shared",
+  "category": "decorations",
+  "role": "decoration",
+  "cost": {
+    "wood": 25,
+    "gold": 20
+  },
+  "hitpoints": 400,
+  "description": "Pequeno altar ao ar livre onde se queimam incensos e oferendas votivas.",
+  "icon": "res://assets/ui/icons/santuario_grego.png",
+  "model": "res://models/civilizations/shared/decorations/santuario_grego/santuario_grego_base.glb"
+}

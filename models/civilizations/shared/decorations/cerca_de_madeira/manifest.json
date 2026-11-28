@@ -1,0 +1,14 @@
+{
+  "id": "cerca_de_madeira",
+  "name": "Cerca de Madeira Rústica",
+  "civilization": "shared",
+  "category": "decorations",
+  "role": "decoration",
+  "cost": {
+    "wood": 5
+  },
+  "hitpoints": 200,
+  "description": "Paliçada de madeira para delimitar fazendas e áreas de pastagem.",
+  "icon": "res://assets/ui/icons/cerca_de_madeira.png",
+  "model": "res://models/civilizations/shared/decorations/cerca_de_madeira/cerca_de_madeira_base.glb"
+}

@@ -1,0 +1,14 @@
+{
+  "id": "estatua_farao",
+  "name": "Estátua do Faraó Entronado",
+  "civilization": "shared",
+  "category": "decorations",
+  "role": "decoration",
+  "cost": {
+    "gold": 40
+  },
+  "hitpoints": 550,
+  "description": "Escultura solene do soberano divino ornado com a coroa dupla do Egito.",
+  "icon": "res://assets/ui/icons/estatua_farao.png",
+  "model": "res://models/civilizations/shared/decorations/estatua_farao/estatua_farao_base.glb"
+}

@@ -1,0 +1,14 @@
+{
+  "id": "tocha_cerimonial",
+  "name": "Tocha Cerimonial Sagrada",
+  "civilization": "shared",
+  "category": "decorations",
+  "role": "decoration",
+  "cost": {
+    "wood": 10
+  },
+  "hitpoints": 100,
+  "description": "Pira elevada com chama perpétua consagrada aos festivais divinos.",
+  "icon": "res://assets/ui/icons/tocha_cerimonial.png",
+  "model": "res://models/civilizations/shared/decorations/tocha_cerimonial/tocha_cerimonial_base.glb"
+}

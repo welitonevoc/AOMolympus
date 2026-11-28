@@ -1,0 +1,14 @@
+{
+  "id": "caixotes_mercador",
+  "name": "Caixotes de Mercadorias",
+  "civilization": "shared",
+  "category": "decorations",
+  "role": "decoration",
+  "cost": {
+    "wood": 15
+  },
+  "hitpoints": 120,
+  "description": "Caixotes de suprimentos e provisões estocados para o comércio.",
+  "icon": "res://assets/ui/icons/caixotes_mercador.png",
+  "model": "res://models/civilizations/shared/decorations/caixotes_mercador/caixotes_mercador_base.glb"
+}

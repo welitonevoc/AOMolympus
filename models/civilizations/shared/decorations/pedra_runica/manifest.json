@@ -1,0 +1,14 @@
+{
+  "id": "pedra_runica",
+  "name": "Pedra Rúnica Nórdica",
+  "civilization": "shared",
+  "category": "decorations",
+  "role": "decoration",
+  "cost": {
+    "gold": 25
+  },
+  "hitpoints": 450,
+  "description": "Monólito cinzelado com runas fúthark entoando o destino de guerreiros.",
+  "icon": "res://assets/ui/icons/pedra_runica.png",
+  "model": "res://models/civilizations/shared/decorations/pedra_runica/pedra_runica_base.glb"
+}

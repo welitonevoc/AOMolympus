@@ -1,0 +1,15 @@
+{
+  "id": "fonte_monumental",
+  "name": "Fonte Monumental",
+  "civilization": "shared",
+  "category": "decorations",
+  "role": "decoration",
+  "cost": {
+    "wood": 30,
+    "gold": 25
+  },
+  "hitpoints": 500,
+  "description": "Bela fonte de água cristalina esculpida em cantaria grega.",
+  "icon": "res://assets/ui/icons/fonte_monumental.png",
+  "model": "res://models/civilizations/shared/decorations/fonte_monumental/fonte_monumental_base.glb"
+}
