@@ -1,0 +1,84 @@
+{
+  "slug": "avatar_poseidon",
+  "name": "Avatar dos Mares de Poseidon",
+  "civilization": "greek",
+  "category": "unit",
+  "role": "god",
+  "base": "avatar_poseidon_base.glb",
+  "source_model": "scenario g odysseus_idlea",
+  "source_type": "vanilla",
+  "frames": 10,
+  "vertices": 177,
+  "faces": 162,
+  "materials": 2,
+  "textures": [
+    "poseidon.png"
+  ],
+  "has_icon": false,
+  "sockets": {
+    "ATTACHPOINT_Socket": [
+      -1.0547,
+      -1.1953,
+      0.0
+    ],
+    "LEFTHAND_Socket": [
+      0.4375,
+      0.165,
+      0.0121
+    ],
+    "RIGHTHAND_Socket": [
+      -0.3691,
+      0.0928,
+      0.0659
+    ],
+    "TOPOFHEAD_Socket": [
+      -0.0,
+      1.1719,
+      -0.0308
+    ],
+    "FRONTCHEST_Socket": [
+      0.0,
+      0.7227,
+      0.1523
+    ],
+    "BACKCHEST_Socket": [
+      -0.0,
+      0.7227,
+      -0.1367
+    ],
+    "FRONTABDOMEN_Socket": [
+      -0.0,
+      0.4629,
+      0.0444
+    ],
+    "LEFTFOOT_Socket": [
+      0.2471,
+      -1.1953,
+      -0.0234
+    ],
+    "RIGHTFOOT_Socket": [
+      -0.2441,
+      -1.1953,
+      -0.0525
+    ],
+    "LEFTFOREARM_Socket": [
+      0.4531,
+      0.3711,
+      -0.0579
+    ],
+    "RIGHTFOREARM_Socket": [
+      -0.3945,
+      0.3438,
+      -0.0583
+    ],
+    "HITPOINTBAR_Socket": [
+      -0.0,
+      2.3438,
+      0.0
+    ]
+  },
+  "accessories": [],
+  "animations": {
+    "idle": "avatar_poseidon_base.glb"
+  }
+}

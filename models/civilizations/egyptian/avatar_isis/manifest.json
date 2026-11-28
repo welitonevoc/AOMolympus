@@ -1,0 +1,86 @@
+{
+  "slug": "avatar_isis",
+  "name": "Avatar Celeste de Ísis",
+  "civilization": "egyptian",
+  "category": "unit",
+  "role": "god",
+  "base": "avatar_isis_base.glb",
+  "source_model": "hero g circe_idlea",
+  "source_type": "vanilla",
+  "frames": 6,
+  "vertices": 215,
+  "faces": 197,
+  "materials": 5,
+  "textures": [
+    "scenario_g_circe.png",
+    "scenario_g_circe_head.png",
+    "special_e_priest_staff.png"
+  ],
+  "has_icon": true,
+  "sockets": {
+    "LEFTHAND_Socket": [
+      0.4414,
+      -0.1416,
+      0.3398
+    ],
+    "RIGHTHAND_Socket": [
+      -0.2578,
+      -0.0752,
+      -0.0776
+    ],
+    "TOPOFHEAD_Socket": [
+      0.0703,
+      0.8281,
+      0.1846
+    ],
+    "FRONTCHEST_Socket": [
+      -0.0562,
+      0.3926,
+      0.3027
+    ],
+    "BACKCHEST_Socket": [
+      0.1865,
+      0.3887,
+      0.0199
+    ],
+    "FRONTABDOMEN_Socket": [
+      -0.0128,
+      0.1406,
+      0.3145
+    ],
+    "LEFTFOOT_Socket": [
+      0.2773,
+      -1.3828,
+      0.2617
+    ],
+    "RIGHTFOOT_Socket": [
+      -0.1514,
+      -1.3828,
+      -0.1475
+    ],
+    "LEFTFOREARM_Socket": [
+      0.457,
+      0.1079,
+      0.2256
+    ],
+    "RIGHTFOREARM_Socket": [
+      -0.248,
+      0.1533,
+      -0.1328
+    ],
+    "HITPOINTBAR_Socket": [
+      -0.0,
+      1.7188,
+      -0.0
+    ],
+    "LAUNCHPOINT_Socket": [
+      -1.2188,
+      -0.8203,
+      0.1904
+    ]
+  },
+  "accessories": [],
+  "animations": {
+    "idle": "avatar_isis_base.glb"
+  }
+}

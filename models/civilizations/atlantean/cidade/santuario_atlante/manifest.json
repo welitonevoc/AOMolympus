@@ -1,0 +1,39 @@
+{
+  "slug": "santuario_atlante",
+  "name": "Santuário Antigo de Cronos",
+  "civilization": "atlantean",
+  "category": "building",
+  "role": "shrine",
+  "base": "santuario_atlante_base.glb",
+  "source_model": "building e shrine",
+  "source_type": "mod",
+  "frames": 1,
+  "vertices": 264,
+  "faces": 140,
+  "materials": 1,
+  "textures": [
+    "building_x_shrine.png"
+  ],
+  "has_icon": false,
+  "sockets": {
+    "ATTACHPOINT_Socket": [
+      -2.7969,
+      0.3477,
+      2.3594
+    ],
+    "FACE_Socket": [
+      2.7656,
+      0.3477,
+      2.3594
+    ],
+    "HITPOINTBAR_Socket": [
+      -0.0325,
+      7.2188,
+      -0.0287
+    ]
+  },
+  "accessories": [],
+  "animations": {
+    "idle": "santuario_atlante_base.glb"
+  }
+}

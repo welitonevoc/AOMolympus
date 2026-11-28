@@ -1,0 +1,64 @@
+{
+  "slug": "apep_colossal",
+  "name": "Apep - Serpente Suprema do Caos",
+  "civilization": "egyptian",
+  "category": "unit",
+  "role": "myth",
+  "base": "apep_colossal_base.glb",
+  "source_model": "special e apep_Eata",
+  "source_type": "mod",
+  "frames": 12,
+  "vertices": 252,
+  "faces": 174,
+  "materials": 1,
+  "textures": [
+    "special_e_apep_map.png"
+  ],
+  "has_icon": true,
+  "sockets": {
+    "ATTACHPOINT_Socket": [
+      0.1553,
+      2.8594,
+      1.8281
+    ],
+    "TOPOFHEAD_Socket": [
+      0.0,
+      0.8281,
+      -0.0
+    ],
+    "FRONTCHEST_Socket": [
+      0.0,
+      0.8281,
+      -0.0
+    ],
+    "BACKCHEST_Socket": [
+      0.0,
+      0.8281,
+      -0.0
+    ],
+    "FRONTABDOMEN_Socket": [
+      0.0,
+      0.8281,
+      -0.0
+    ],
+    "LEFTFOOT_Socket": [
+      0.0,
+      0.8281,
+      -0.0
+    ],
+    "RIGHTFOOT_Socket": [
+      0.0,
+      0.8281,
+      -0.0
+    ],
+    "HITPOINTBAR_Socket": [
+      0.0,
+      4.0,
+      -0.0
+    ]
+  },
+  "accessories": [],
+  "animations": {
+    "idle": "apep_colossal_base.glb"
+  }
+}

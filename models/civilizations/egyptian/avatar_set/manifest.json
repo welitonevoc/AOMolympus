@@ -1,0 +1,79 @@
+{
+  "slug": "avatar_set",
+  "name": "Avatar Guardião de Set",
+  "civilization": "egyptian",
+  "category": "unit",
+  "role": "god",
+  "base": "avatar_set_base.glb",
+  "source_model": "scenario e guardian_idlea",
+  "source_type": "vanilla",
+  "frames": 3,
+  "vertices": 243,
+  "faces": 224,
+  "materials": 2,
+  "textures": [
+    "scenario_e_guardian.png"
+  ],
+  "has_icon": true,
+  "sockets": {
+    "LEFTHAND_Socket": [
+      0.9219,
+      -0.3125,
+      -0.1113
+    ],
+    "RIGHTHAND_Socket": [
+      -0.9336,
+      -0.2695,
+      -0.2051
+    ],
+    "TOPOFHEAD_Socket": [
+      0.0,
+      1.8984,
+      0.0034
+    ],
+    "FRONTCHEST_Socket": [
+      -0.0,
+      0.8945,
+      0.3438
+    ],
+    "BACKCHEST_Socket": [
+      -0.0,
+      0.8086,
+      -0.4629
+    ],
+    "FRONTABDOMEN_Socket": [
+      0.0,
+      0.4727,
+      0.3496
+    ],
+    "LEFTFOOT_Socket": [
+      0.5273,
+      -2.9844,
+      -0.0084
+    ],
+    "RIGHTFOOT_Socket": [
+      -0.5273,
+      -2.9844,
+      -0.0144
+    ],
+    "LEFTFOREARM_Socket": [
+      1.0547,
+      0.209,
+      -0.1533
+    ],
+    "RIGHTFOREARM_Socket": [
+      -1.0547,
+      0.209,
+      -0.1533
+    ],
+    "HITPOINTBAR_Socket": [
+      -0.0,
+      3.75,
+      -0.0
+    ]
+  },
+  "accessories": [],
+  "animations": {
+    "idle": "avatar_set_base.glb"
+  }
+}

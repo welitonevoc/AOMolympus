@@ -1,0 +1,90 @@
+{
+  "slug": "avatar_ra",
+  "name": "Avatar Solar de Rá",
+  "civilization": "egyptian",
+  "category": "unit",
+  "role": "god",
+  "base": "avatar_ra_base.glb",
+  "source_model": "sfx e son of osiris_idlea",
+  "source_type": "vanilla",
+  "frames": 6,
+  "vertices": 167,
+  "faces": 160,
+  "materials": 3,
+  "textures": [
+    "sfx_e_son_of_osiris_head.png",
+    "sfx_e_son_of_osiris.png"
+  ],
+  "has_icon": true,
+  "sockets": {
+    "ATTACHPOINT_Socket": [
+      -0.793,
+      -0.957,
+      0.0
+    ],
+    "LEFTHAND_Socket": [
+      0.3242,
+      0.4844,
+      -0.0305
+    ],
+    "RIGHTHAND_Socket": [
+      -0.4043,
+      0.3516,
+      0.2344
+    ],
+    "TOPOFHEAD_Socket": [
+      0.0227,
+      1.4141,
+      -0.0515
+    ],
+    "FRONTCHEST_Socket": [
+      0.0315,
+      1.0547,
+      0.126
+    ],
+    "BACKCHEST_Socket": [
+      -0.0021,
+      0.9805,
+      -0.1201
+    ],
+    "FRONTABDOMEN_Socket": [
+      0.01,
+      0.7539,
+      0.168
+    ],
+    "LEFTFOOT_Socket": [
+      0.2773,
+      -0.9414,
+      0.0251
+    ],
+    "RIGHTFOOT_Socket": [
+      -0.3438,
+      -0.9258,
+      -0.1367
+    ],
+    "LEFTFOREARM_Socket": [
+      0.4316,
+      0.7422,
+      -0.125
+    ],
+    "RIGHTFOREARM_Socket": [
+      -0.5078,
+      0.8047,
+      -0.0928
+    ],
+    "HITPOINTBAR_Socket": [
+      -0.0005,
+      2.1875,
+      -0.0014
+    ],
+    "SMOKE0_Socket": [
+      -0.3672,
+      -0.0613,
+      1.1016
+    ]
+  },
+  "accessories": [],
+  "animations": {
+    "idle": "avatar_ra_base.glb"
+  }
+}

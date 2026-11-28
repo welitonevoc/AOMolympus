@@ -1,0 +1,79 @@
+{
+  "slug": "hero_physician",
+  "name": "Médico Hipocrático",
+  "civilization": "greek",
+  "category": "unit",
+  "role": "hero",
+  "base": "hero_physician_base.glb",
+  "source_model": "hero g physician_idlea",
+  "source_type": "mod",
+  "frames": 5,
+  "vertices": 218,
+  "faces": 140,
+  "materials": 1,
+  "textures": [
+    "hero_g_physician.png"
+  ],
+  "has_icon": true,
+  "sockets": {
+    "LEFTHAND_Socket": [
+      0.2715,
+      1.0312,
+      0.0811
+    ],
+    "RIGHTHAND_Socket": [
+      -0.2793,
+      1.0156,
+      0.0767
+    ],
+    "TOPOFHEAD_Socket": [
+      -0.0065,
+      1.9141,
+      0.0008
+    ],
+    "FRONTCHEST_Socket": [
+      -0.0065,
+      1.6016,
+      0.1875
+    ],
+    "BACKCHEST_Socket": [
+      -0.0065,
+      1.5547,
+      -0.1338
+    ],
+    "FRONTABDOMEN_Socket": [
+      -0.0065,
+      1.375,
+      0.1973
+    ],
+    "LEFTFOOT_Socket": [
+      0.3145,
+      0.1553,
+      -0.0615
+    ],
+    "RIGHTFOOT_Socket": [
+      -0.2734,
+      0.1533,
+      -0.0033
+    ],
+    "LEFTFOREARM_Socket": [
+      0.3496,
+      1.2656,
+      0.0535
+    ],
+    "RIGHTFOREARM_Socket": [
+      -0.3203,
+      1.2422,
+      -0.0032
+    ],
+    "HITPOINTBAR_Socket": [
+      0.0,
+      2.6875,
+      -0.0
+    ]
+  },
+  "accessories": [],
+  "animations": {
+    "idle": "hero_physician_base.glb"
+  }
+}

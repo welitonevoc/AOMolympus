@@ -1,0 +1,74 @@
+{
+  "slug": "archer_bogsveigir",
+  "name": "Bögsveigir de Elite",
+  "civilization": "norse",
+  "category": "unit",
+  "role": "archer",
+  "base": "archer_bogsveigir_base.glb",
+  "source_model": "archer n normal_idlea",
+  "source_type": "mod",
+  "frames": 5,
+  "vertices": 238,
+  "faces": 126,
+  "materials": 1,
+  "textures": [
+    "archer_n_normal_iron.png"
+  ],
+  "has_icon": true,
+  "sockets": {
+    "LEFTHAND_Socket": [
+      0.0684,
+      1.2344,
+      0.2988
+    ],
+    "RIGHTHAND_Socket": [
+      -0.0854,
+      1.0391,
+      0.3516
+    ],
+    "TOPOFHEAD_Socket": [
+      -0.0294,
+      1.9688,
+      0.0033
+    ],
+    "FRONTCHEST_Socket": [
+      0.063,
+      1.6328,
+      0.1406
+    ],
+    "BACKCHEST_Socket": [
+      -0.0723,
+      1.6328,
+      -0.0933
+    ],
+    "FRONTABDOMEN_Socket": [
+      0.0085,
+      1.4062,
+      0.04
+    ],
+    "LEFTFOOT_Socket": [
+      -0.002,
+      0.0009,
+      -0.2949
+    ],
+    "RIGHTFOOT_Socket": [
+      -0.0864,
+      0.0009,
+      0.2812
+    ],
+    "LEFTFOREARM_Socket": [
+      0.207,
+      1.3594,
+      0.1387
+    ],
+    "RIGHTFOREARM_Socket": [
+      -0.167,
+      1.25,
+      0.2559
+    ]
+  },
+  "accessories": [],
+  "animations": {
+    "idle": "archer_bogsveigir_base.glb"
+  }
+}

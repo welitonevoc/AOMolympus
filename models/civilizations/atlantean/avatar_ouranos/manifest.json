@@ -1,0 +1,39 @@
+{
+  "slug": "avatar_ouranos",
+  "name": "Avatar Celeste de Urano",
+  "civilization": "atlantean",
+  "category": "unit",
+  "role": "god",
+  "base": "avatar_ouranos_base.glb",
+  "source_model": "Urano_idlea",
+  "source_type": "mod",
+  "frames": 6,
+  "vertices": 174,
+  "faces": 160,
+  "materials": 1,
+  "textures": [
+    "scenario_theocrat_head1.png"
+  ],
+  "has_icon": false,
+  "sockets": {
+    "ATTACHPOINT_Socket": [
+      2.7344,
+      -1.1641,
+      0.0439
+    ],
+    "RIGHTHAND_Socket": [
+      -1.9297,
+      3.5625,
+      0.6172
+    ],
+    "HITPOINTBAR_Socket": [
+      -0.4492,
+      10.75,
+      0.1113
+    ]
+  },
+  "accessories": [],
+  "animations": {
+    "idle": "avatar_ouranos_base.glb"
+  }
+}

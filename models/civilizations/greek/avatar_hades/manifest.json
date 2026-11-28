@@ -1,0 +1,79 @@
+{
+  "slug": "avatar_hades",
+  "name": "Avatar Sombrio de Hades",
+  "civilization": "greek",
+  "category": "unit",
+  "role": "god",
+  "base": "avatar_hades_base.glb",
+  "source_model": "infantry g myrmidon_idlea",
+  "source_type": "vanilla",
+  "frames": 12,
+  "vertices": 151,
+  "faces": 143,
+  "materials": 3,
+  "textures": [
+    "hades.png"
+  ],
+  "has_icon": false,
+  "sockets": {
+    "LEFTHAND_Socket": [
+      0.2207,
+      -0.1416,
+      0.418
+    ],
+    "RIGHTHAND_Socket": [
+      -0.3242,
+      -0.1289,
+      -0.2178
+    ],
+    "TOPOFHEAD_Socket": [
+      0.0203,
+      0.6836,
+      0.084
+    ],
+    "FRONTCHEST_Socket": [
+      -0.0713,
+      0.3867,
+      0.2363
+    ],
+    "BACKCHEST_Socket": [
+      0.0889,
+      0.3125,
+      -0.0366
+    ],
+    "FRONTABDOMEN_Socket": [
+      -0.0776,
+      0.1367,
+      0.2441
+    ],
+    "LEFTFOOT_Socket": [
+      0.2285,
+      -1.1953,
+      0.0938
+    ],
+    "RIGHTFOOT_Socket": [
+      -0.2617,
+      -1.1953,
+      -0.0247
+    ],
+    "LEFTFOREARM_Socket": [
+      0.332,
+      0.0535,
+      0.3516
+    ],
+    "RIGHTFOREARM_Socket": [
+      -0.2637,
+      0.0884,
+      -0.2832
+    ],
+    "HITPOINTBAR_Socket": [
+      -0.0,
+      1.5,
+      -0.0
+    ]
+  },
+  "accessories": [],
+  "animations": {
+    "idle": "avatar_hades_base.glb"
+  }
+}

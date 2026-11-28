@@ -1,0 +1,23 @@
+{
+  "slug": "avatar_gaia",
+  "name": "Avatar Mãe Terra de Gaia",
+  "civilization": "atlantean",
+  "category": "unit",
+  "role": "god",
+  "base": "avatar_gaia_base.glb",
+  "source_model": "statue x gaia",
+  "source_type": "vanilla",
+  "frames": 1,
+  "vertices": 205,
+  "faces": 146,
+  "materials": 2,
+  "textures": [
+    "statue_x_gaia_map.png"
+  ],
+  "has_icon": false,
+  "sockets": {},
+  "accessories": [],
+  "animations": {
+    "idle": "avatar_gaia_base.glb"
+  }
+}

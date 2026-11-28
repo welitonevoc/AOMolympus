@@ -1,0 +1,79 @@
+{
+  "slug": "avatar_thor",
+  "name": "Avatar do Trovão de Thor",
+  "civilization": "norse",
+  "category": "unit",
+  "role": "god",
+  "base": "avatar_thor_base.glb",
+  "source_model": "infantry n hero_idlea",
+  "source_type": "vanilla",
+  "frames": 3,
+  "vertices": 217,
+  "faces": 193,
+  "materials": 4,
+  "textures": [
+    "thor.png"
+  ],
+  "has_icon": false,
+  "sockets": {
+    "LEFTHAND_Socket": [
+      0.4199,
+      0.0111,
+      0.0947
+    ],
+    "RIGHTHAND_Socket": [
+      -0.1875,
+      -0.1436,
+      0.5469
+    ],
+    "TOPOFHEAD_Socket": [
+      -0.02,
+      0.8516,
+      0.125
+    ],
+    "FRONTCHEST_Socket": [
+      0.1001,
+      0.4492,
+      0.2871
+    ],
+    "BACKCHEST_Socket": [
+      -0.1108,
+      0.4102,
+      -0.0178
+    ],
+    "FRONTABDOMEN_Socket": [
+      0.0894,
+      0.1797,
+      0.2871
+    ],
+    "LEFTFOOT_Socket": [
+      0.2217,
+      -1.375,
+      -0.0635
+    ],
+    "RIGHTFOOT_Socket": [
+      -0.2812,
+      -1.375,
+      0.0942
+    ],
+    "LEFTFOREARM_Socket": [
+      0.3477,
+      0.1758,
+      -0.1797
+    ],
+    "RIGHTFOREARM_Socket": [
+      -0.3164,
+      0.1592,
+      0.5312
+    ],
+    "HITPOINTBAR_Socket": [
+      -0.0,
+      1.7188,
+      -0.0
+    ]
+  },
+  "accessories": [],
+  "animations": {
+    "idle": "avatar_thor_base.glb"
+  }
+}

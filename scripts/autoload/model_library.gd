@@ -15,16 +15,17 @@ const AOM_UNIT_BUNDLES: Dictionary = {
 		"archer": ["toxotes", "agrianian"],
 		"cavalry": ["hippikon", "amazon_horse_archer"],
 		"hero": [
-			"hero_leonidas", "hero_alexander", "hero_amazon_queen", "hero_achilles_em",
+			"hero_physician", "hero_leonidas", "hero_alexander", "hero_amazon_queen", "hero_achilles_em",
 			"hero_greek_ajax", "ajax", "arkantos", "hero_greek_achilles",
 			"hector", "kos", "phocus", "pollux", "teleon", "idas", "tarkus",
 			"helle", "acheus", "libon", "philon", "zethos", "charon"
 		],
 		"myth": ["colossus", "centaur", "cyclops", "chimera", "hippocampus"],
+		"god": ["avatar_zeus", "avatar_poseidon", "avatar_hades"],
 	},
 	"egyptian": {
 		"villager": ["villager_egyptian"],
-		"infantry": ["spearman", "axeman", "nubian_warrior"],
+		"infantry": ["spearman", "axeman", "infantry_khopesh", "nubian_warrior"],
 		"archer": ["chariot_archer", "slinger", "nubian_archer"],
 		"cavalry": ["camelry", "mercenary_cavalry", "dwarf_elephant"],
 		"hero": [
@@ -33,12 +34,13 @@ const AOM_UNIT_BUNDLES: Dictionary = {
 			"general_imothep", "ahhotep", "neheb", "amnu", "sethos", "tiye",
 			"djoser", "amnus_guard", "corrupted_son_of_osiris"
 		],
-		"myth": ["petsuchos", "avenger", "anubite", "sphinx", "armored_elephant"],
+		"myth": ["apep_colossal", "petsuchos", "avenger", "anubite", "sphinx", "armored_elephant"],
+		"god": ["avatar_ra", "avatar_isis", "avatar_set"],
 	},
 	"norse": {
 		"villager": ["villager_norse", "dwarf"],
 		"infantry": ["ulfsark", "huskarl", "akimbo_warrior"],
-		"archer": ["throwing_axeman", "alfar"],
+		"archer": ["archer_bogsveigir", "throwing_axeman", "alfar"],
 		"cavalry": ["raiding_cavalry", "jarl"],
 		"hero": [
 			"hero_valkyrie_em", "hero_brun",
@@ -50,17 +52,20 @@ const AOM_UNIT_BUNDLES: Dictionary = {
 			"battle_boar_frost", "fire_giant_frost", "mountain_giant_snow",
 			"kraken_ice", "jormund_frost", "nidhogg_frost", "troll_frost"
 		],
+		"god": ["avatar_thor", "avatar_odin", "avatar_loki"],
 	},
 	"atlantean": {
 		"villager": ["villager_atlantean"],
 		"infantry": ["murmillo", "destroyer", "fanatic"],
 		"archer": ["archer_atlantean"],
 		"cavalry": ["turma", "contarius"],
+		"siege": ["siege_onager"],
 		"hero": [
 			"villager_atlantean_hero", "archer_atlantean_hero", "ajax_frost",
 			"tambal", "fendrel", "fendrel_call_army"
 		],
 		"myth": ["automaton", "argus", "promethean"],
+		"god": ["avatar_kronos", "avatar_ouranos", "avatar_gaia"],
 	},
 	"chinese": {
 		"villager": ["greek/villager_greek"],
@@ -112,7 +117,8 @@ const AOM_BUILDING_BUNDLES: Dictionary = {
 		"stable": ["greek/stable"],
 		"tower": ["shared/tower", "egyptian/starting_tower"],
 		"fortress": ["greek/fortress"],
-		"divine_altar": ["egyptian/monument", "greek/temple_underworld"],
+		"divine_altar": ["greek/santuario_grego", "egyptian/monument", "greek/temple_underworld"],
+		"shrine": ["greek/santuario_grego"],
 		"wonder": ["egyptian/wonder"],
 		"titan_gate": ["egyptian/titan_gate"],
 	},
@@ -125,7 +131,8 @@ const AOM_BUILDING_BUNDLES: Dictionary = {
 		"stable": ["egyptian/migdol_stronghold", "greek/stable"],
 		"tower": ["egyptian/starting_tower", "egyptian/outpost", "shared/tower"],
 		"fortress": ["egyptian/migdol_stronghold"],
-		"divine_altar": ["egyptian/monument", "egyptian/shrine"],
+		"divine_altar": ["egyptian/santuario_egipcio", "egyptian/monument", "egyptian/shrine"],
+		"shrine": ["egyptian/santuario_egipcio"],
 		"wonder": ["egyptian/wonder", "egyptian/pyramid_large"],
 		"titan_gate": ["egyptian/titan_gate"],
 	},
@@ -138,7 +145,8 @@ const AOM_BUILDING_BUNDLES: Dictionary = {
 		"stable": ["norse/hill_fort", "greek/stable"],
 		"tower": ["norse/odins_tower", "shared/tower"],
 		"fortress": ["norse/hill_fort", "norse/hill_fort_snow"],
-		"divine_altar": ["norse/odins_tower", "egyptian/monument"],
+		"divine_altar": ["norse/santuario_nordico", "norse/odins_tower", "egyptian/monument"],
+		"shrine": ["norse/santuario_nordico"],
 		"wonder": ["egyptian/wonder"],
 		"titan_gate": ["egyptian/titan_gate"],
 	},
@@ -151,7 +159,8 @@ const AOM_BUILDING_BUNDLES: Dictionary = {
 		"stable": ["atlantean/palace", "greek/stable"],
 		"tower": ["atlantean/tower_mirror", "shared/tower"],
 		"fortress": ["atlantean/palace"],
-		"divine_altar": ["atlantean/sky_passage", "atlantean/temple_overgrown"],
+		"divine_altar": ["atlantean/santuario_atlante", "atlantean/sky_passage", "atlantean/temple_overgrown"],
+		"shrine": ["atlantean/santuario_atlante"],
 		"wonder": ["egyptian/wonder"],
 		"titan_gate": ["egyptian/titan_gate"],
 	},
@@ -603,6 +612,21 @@ static func create_divine_unit_visual(
 		god_base = god_base.left(-6)
 	if god_base != "":
 		deity_slug = god_base
+
+	# Prioridade 1: Pacote modular oficial AoM Titans (avatar_<god>)
+	var norm_god: String = god_base
+	if norm_god == "oranos":
+		norm_god = "ouranos"
+	var avatar_bundle: String = "res://models/civilizations/%s/avatar_%s" % [pantheon_id, norm_god]
+	if FileAccess.file_exists("%s/manifest.json" % avatar_bundle):
+		var b_inst: Node3D = _instantiate_aom_bundle(avatar_bundle, "avatar_%s" % norm_god, "idle")
+		if b_inst != null:
+			_force_opaque_materials(b_inst)
+			var scale: float = profile.get("scale", 2.2)
+			b_inst.scale = Vector3.ONE * scale
+			var aura_col: Color = profile.get("aura_color", Color("#fbbf24"))
+			_attach_hero_aura(b_inst, aura_col.lerp(Color.WHITE, 0.5))
+			return b_inst
 
 	var candidates: Array[String] = [
 		"res://models/civilizations/%s/%s_major/deuses/%s.glb" % [pantheon_id, deity_slug, god_base],

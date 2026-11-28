@@ -1,0 +1,39 @@
+{
+  "slug": "avatar_kronos",
+  "name": "Avatar Titânico de Cronos",
+  "civilization": "atlantean",
+  "category": "unit",
+  "role": "god",
+  "base": "avatar_kronos_base.glb",
+  "source_model": "statue x kronos",
+  "source_type": "vanilla",
+  "frames": 1,
+  "vertices": 226,
+  "faces": 161,
+  "materials": 1,
+  "textures": [
+    "statue_x_kronos_map.png"
+  ],
+  "has_icon": false,
+  "sockets": {
+    "FACE_Socket": [
+      -0.0,
+      0.0,
+      0.0
+    ],
+    "SMOKE0_Socket": [
+      -0.2598,
+      0.0187,
+      0.2637
+    ],
+    "SMOKE1_Socket": [
+      0.2734,
+      0.0187,
+      -0.252
+    ]
+  },
+  "accessories": [],
+  "animations": {
+    "idle": "avatar_kronos_base.glb"
+  }
+}
