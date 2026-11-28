@@ -1,0 +1,23 @@
+{
+  "slug": "destruicao_maravilha",
+  "name": "Colapso de Maravilha Grega",
+  "civilization": "greek",
+  "category": "building_collapse",
+  "role": "collapse",
+  "base": "destruicao_maravilha_base.glb",
+  "source_model": "building g zeus wonder_death.brg",
+  "source_type": "mod_magnified_destruction",
+  "frames": 62,
+  "vertices": 1634,
+  "faces": 1273,
+  "materials": 1,
+  "textures": [
+    "building_g_zues_wonder.png"
+  ],
+  "sockets": {},
+  "accessories": [],
+  "animations": {
+    "idle": "destruicao_maravilha_base.glb",
+    "collapse": "destruicao_maravilha_base.glb"
+  }
+}

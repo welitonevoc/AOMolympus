@@ -273,6 +273,10 @@ func _die() -> void:
 		var spec: Dictionary = PantheonCatalog.get_building_spec(building_kind)
 		GameState.add_population_cap(-int(spec.get("pop_bonus", 0)))
 	building_destroyed.emit(self)
+	# Spawna efeito visual de colapso realista de edifício (Magnified Destruction)
+	var parent_world := get_parent()
+	if parent_world != null:
+		ModelLibrary.create_building_collapse_visual(pantheon_id, building_kind, global_position, parent_world)
 	queue_free()
 
 

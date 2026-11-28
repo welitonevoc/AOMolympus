@@ -1,0 +1,25 @@
+{
+  "slug": "destruicao_maravilha",
+  "name": "Colapso de Maravilha Nórdica",
+  "civilization": "norse",
+  "category": "building_collapse",
+  "role": "collapse",
+  "base": "destruicao_maravilha_base.glb",
+  "source_model": "building n wonder_death.brg",
+  "source_type": "mod_magnified_destruction",
+  "frames": 21,
+  "vertices": 561,
+  "faces": 390,
+  "materials": 4,
+  "textures": [
+    "building_n_wonder.png",
+    "building_n_wonderbranch.png",
+    "building_n_wonderleaf.png"
+  ],
+  "sockets": {},
+  "accessories": [],
+  "animations": {
+    "idle": "destruicao_maravilha_base.glb",
+    "collapse": "destruicao_maravilha_base.glb"
+  }
+}

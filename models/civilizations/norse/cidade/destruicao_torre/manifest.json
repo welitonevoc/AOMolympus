@@ -1,0 +1,23 @@
+{
+  "slug": "destruicao_torre",
+  "name": "Colapso de Torre Nórdica",
+  "civilization": "norse",
+  "category": "building_collapse",
+  "role": "collapse",
+  "base": "destruicao_torre_base.glb",
+  "source_model": "building n towerage2_death.brg",
+  "source_type": "mod_magnified_destruction",
+  "frames": 38,
+  "vertices": 620,
+  "faces": 360,
+  "materials": 1,
+  "textures": [
+    "building_n_tower.png"
+  ],
+  "sockets": {},
+  "accessories": [],
+  "animations": {
+    "idle": "destruicao_torre_base.glb",
+    "collapse": "destruicao_torre_base.glb"
+  }
+}

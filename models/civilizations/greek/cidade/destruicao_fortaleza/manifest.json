@@ -1,0 +1,23 @@
+{
+  "slug": "destruicao_fortaleza",
+  "name": "Colapso de Fortaleza Grega",
+  "civilization": "greek",
+  "category": "building_collapse",
+  "role": "collapse",
+  "base": "destruicao_fortaleza_base.glb",
+  "source_model": "building g fortress age3_death.brg",
+  "source_type": "mod_magnified_destruction",
+  "frames": 38,
+  "vertices": 2349,
+  "faces": 1239,
+  "materials": 1,
+  "textures": [
+    "building_attachments.png"
+  ],
+  "sockets": {},
+  "accessories": [],
+  "animations": {
+    "idle": "destruicao_fortaleza_base.glb",
+    "collapse": "destruicao_fortaleza_base.glb"
+  }
+}

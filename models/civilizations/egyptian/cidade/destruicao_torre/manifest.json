@@ -1,0 +1,23 @@
+{
+  "slug": "destruicao_torre",
+  "name": "Colapso de Torre Egípcia",
+  "civilization": "egyptian",
+  "category": "building_collapse",
+  "role": "collapse",
+  "base": "destruicao_torre_base.glb",
+  "source_model": "building e watch tower age3_death.brg",
+  "source_type": "mod_magnified_destruction",
+  "frames": 38,
+  "vertices": 284,
+  "faces": 148,
+  "materials": 1,
+  "textures": [
+    "building_e_age3.png"
+  ],
+  "sockets": {},
+  "accessories": [],
+  "animations": {
+    "idle": "destruicao_torre_base.glb",
+    "collapse": "destruicao_torre_base.glb"
+  }
+}

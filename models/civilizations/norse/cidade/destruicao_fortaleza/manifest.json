@@ -1,0 +1,23 @@
+{
+  "slug": "destruicao_fortaleza",
+  "name": "Colapso de Fortaleza Nórdica",
+  "civilization": "norse",
+  "category": "building_collapse",
+  "role": "collapse",
+  "base": "destruicao_fortaleza_base.glb",
+  "source_model": "building n hillfort_death.brg",
+  "source_type": "mod_magnified_destruction",
+  "frames": 52,
+  "vertices": 1298,
+  "faces": 684,
+  "materials": 1,
+  "textures": [
+    "building_n_hillfort.png"
+  ],
+  "sockets": {},
+  "accessories": [],
+  "animations": {
+    "idle": "destruicao_fortaleza_base.glb",
+    "collapse": "destruicao_fortaleza_base.glb"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "slug": "destruicao_palacio",
+  "name": "Colapso de Palácio Atlante",
+  "civilization": "atlantean",
+  "category": "building_collapse",
+  "role": "collapse",
+  "base": "destruicao_palacio_base.glb",
+  "source_model": "building x palace age2_death.brg",
+  "source_type": "mod_magnified_destruction",
+  "frames": 33,
+  "vertices": 1994,
+  "faces": 996,
+  "materials": 1,
+  "textures": [],
+  "sockets": {},
+  "accessories": [],
+  "animations": {
+    "idle": "destruicao_palacio_base.glb",
+    "collapse": "destruicao_palacio_base.glb"
+  }
+}

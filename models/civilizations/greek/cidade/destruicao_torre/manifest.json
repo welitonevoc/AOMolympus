@@ -1,0 +1,23 @@
+{
+  "slug": "destruicao_torre",
+  "name": "Colapso de Torre Grega",
+  "civilization": "greek",
+  "category": "building_collapse",
+  "role": "collapse",
+  "base": "destruicao_torre_base.glb",
+  "source_model": "building g watchtower_death.brg",
+  "source_type": "mod_magnified_destruction",
+  "frames": 25,
+  "vertices": 462,
+  "faces": 264,
+  "materials": 1,
+  "textures": [
+    "building_g_towers.png"
+  ],
+  "sockets": {},
+  "accessories": [],
+  "animations": {
+    "idle": "destruicao_torre_base.glb",
+    "collapse": "destruicao_torre_base.glb"
+  }
+}

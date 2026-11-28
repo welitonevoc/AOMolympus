@@ -1,0 +1,23 @@
+{
+  "slug": "destruicao_torre",
+  "name": "Colapso de Torre Atlante",
+  "civilization": "atlantean",
+  "category": "building_collapse",
+  "role": "collapse",
+  "base": "destruicao_torre_base.glb",
+  "source_model": "building x watch tower age2_death.brg",
+  "source_type": "mod_magnified_destruction",
+  "frames": 6,
+  "vertices": 256,
+  "faces": 124,
+  "materials": 1,
+  "textures": [
+    "building_x_roof_age1.png"
+  ],
+  "sockets": {},
+  "accessories": [],
+  "animations": {
+    "idle": "destruicao_torre_base.glb",
+    "collapse": "destruicao_torre_base.glb"
+  }
+}

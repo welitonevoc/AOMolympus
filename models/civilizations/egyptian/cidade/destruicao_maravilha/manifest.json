@@ -1,0 +1,23 @@
+{
+  "slug": "destruicao_maravilha",
+  "name": "Colapso de Maravilha Egípcia",
+  "civilization": "egyptian",
+  "category": "building_collapse",
+  "role": "collapse",
+  "base": "destruicao_maravilha_base.glb",
+  "source_model": "building e ra wonder_death.brg",
+  "source_type": "mod_magnified_destruction",
+  "frames": 48,
+  "vertices": 1188,
+  "faces": 598,
+  "materials": 1,
+  "textures": [
+    "building_e_ra_wonder01.png"
+  ],
+  "sockets": {},
+  "accessories": [],
+  "animations": {
+    "idle": "destruicao_maravilha_base.glb",
+    "collapse": "destruicao_maravilha_base.glb"
+  }
+}

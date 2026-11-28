@@ -1,0 +1,23 @@
+{
+  "slug": "destruicao_fortaleza",
+  "name": "Colapso de Fortaleza Egípcia",
+  "civilization": "egyptian",
+  "category": "building_collapse",
+  "role": "collapse",
+  "base": "destruicao_fortaleza_base.glb",
+  "source_model": "building e fortress age3_death.brg",
+  "source_type": "mod_magnified_destruction",
+  "frames": 52,
+  "vertices": 1776,
+  "faces": 984,
+  "materials": 1,
+  "textures": [
+    "building_attachments.png"
+  ],
+  "sockets": {},
+  "accessories": [],
+  "animations": {
+    "idle": "destruicao_fortaleza_base.glb",
+    "collapse": "destruicao_fortaleza_base.glb"
+  }
+}

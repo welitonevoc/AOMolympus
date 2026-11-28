@@ -192,6 +192,66 @@ const AOM_BUILDING_BUNDLES: Dictionary = {
 	},
 }
 
+## Mapeamento oficial de pacotes de colapso de edifícios (Magnified Destruction)
+const AOM_DESTRUCTION_BUNDLES: Dictionary = {
+	"greek": {
+		"fortress": "greek/destruicao_fortaleza",
+		"tower": "greek/destruicao_torre",
+		"wonder": "greek/destruicao_maravilha",
+	},
+	"egyptian": {
+		"fortress": "egyptian/destruicao_fortaleza",
+		"tower": "egyptian/destruicao_torre",
+		"wonder": "egyptian/destruicao_maravilha",
+	},
+	"norse": {
+		"fortress": "norse/destruicao_fortaleza",
+		"tower": "norse/destruicao_torre",
+		"wonder": "norse/destruicao_maravilha",
+	},
+	"atlantean": {
+		"fortress": "atlantean/destruicao_palacio",
+		"tower": "atlantean/destruicao_torre",
+		"wonder": "atlantean/destruicao_maravilha",
+	},
+}
+
+
+## Instancia o visual 3D animado de colapso de um edifício destruído (Magnified Destruction)
+static func create_building_collapse_visual(
+	pantheon_id: String,
+	building_kind: String,
+	global_pos: Vector3,
+	parent_node: Node
+) -> Node3D:
+	var civ_map: Dictionary = AOM_DESTRUCTION_BUNDLES.get(pantheon_id, AOM_DESTRUCTION_BUNDLES["greek"])
+	var rel_bundle: String = String(civ_map.get(building_kind, ""))
+	if rel_bundle == "":
+		if building_kind in ["fortress", "migdol_stronghold", "hill_fort", "palace"]:
+			rel_bundle = String(civ_map.get("fortress", ""))
+		elif building_kind in ["tower", "watchtower", "guardtower", "outpost"]:
+			rel_bundle = String(civ_map.get("tower", ""))
+		elif building_kind in ["wonder", "titan_gate", "divine_altar", "temple"]:
+			rel_bundle = String(civ_map.get("wonder", ""))
+	if rel_bundle == "":
+		return null
+	var bundle_path: String = "res://models/civilizations/%s/cidade/%s" % [rel_bundle.get_slice("/", 0), rel_bundle.get_slice("/", 1)]
+	var slug: String = rel_bundle.get_slice("/", 1)
+	var inst: Node3D = _instantiate_aom_bundle(bundle_path, slug, "idle")
+	if inst == null:
+		return null
+	_force_opaque_materials(inst)
+	parent_node.add_child(inst)
+	inst.global_position = global_pos
+	var anim_player: AnimationPlayer = _find_animation_player(inst)
+	if anim_player != null and anim_player.has_animation("idle"):
+		anim_player.play("idle")
+	var tween := inst.create_tween()
+	tween.tween_interval(2.5)
+	tween.tween_property(inst, "position:y", inst.position.y - 1.8, 2.0)
+	tween.tween_callback(inst.queue_free)
+	return inst
+
 
 static func create_building_visual(
 	pantheon_id: String,

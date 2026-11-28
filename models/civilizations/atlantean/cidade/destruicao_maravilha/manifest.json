@@ -1,0 +1,23 @@
+{
+  "slug": "destruicao_maravilha",
+  "name": "Colapso de Maravilha Atlante",
+  "civilization": "atlantean",
+  "category": "building_collapse",
+  "role": "collapse",
+  "base": "destruicao_maravilha_base.glb",
+  "source_model": "building x wonder kronos_death.brg",
+  "source_type": "mod_magnified_destruction",
+  "frames": 72,
+  "vertices": 1022,
+  "faces": 484,
+  "materials": 1,
+  "textures": [
+    "kronos_wonder_map2.png"
+  ],
+  "sockets": {},
+  "accessories": [],
+  "animations": {
+    "idle": "destruicao_maravilha_base.glb",
+    "collapse": "destruicao_maravilha_base.glb"
+  }
+}
