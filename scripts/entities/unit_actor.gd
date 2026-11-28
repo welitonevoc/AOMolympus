@@ -738,6 +738,7 @@ func _step_navigation(delta: float) -> void:
 		return
 	dir = dir.normalized()
 	var speed_mult: float = float(PantheonCatalog.get_formation(formation_id).get("speed_mult", 1.0))
+	speed_mult *= BiomeMapGenerator.get_terrain_speed_modifier(global_position.x, global_position.z)
 	if _avoid_timer > 0.0:
 		_avoid_timer = maxf(0.0, _avoid_timer - delta)
 		if _avoid_timer <= 0.0:

@@ -37,6 +37,18 @@ static func get_height(x: float, z: float) -> float:
 	return h00 + (h11 - h01) * tx + (h01 - h00) * tz
 
 
+## Retorna o modificador de velocidade de terreno do AoM (1.0 = plano/shallows, 0.65 = agua rasa/pantano, 0.85 = subida acentuada)
+static func get_terrain_speed_modifier(x: float, z: float) -> float:
+	var h: float = get_height(x, z)
+	if h < -0.1:
+		# Em bacias ou depressoes alagadas rasas / pantano
+		return 0.68
+	elif h > 2.8:
+		# Subidas ingremes de colina
+		return 0.85
+	return 1.0
+
+
 static func build_biome_environment(
 	terrain_root: Node3D,
 	biome_id: String,
